@@ -48,6 +48,7 @@ from .test_data import (
     bbs_signed_cred_no_credsubjectid,
     bbs_signed_cred_credsubjectid,
     creds_with_no_id,
+    is_holder_pd,
 )
 
 
@@ -76,6 +77,10 @@ async def setup_tuple(profile):
         wallet = session.inject(BaseWallet, required=False)
         await wallet.create_local_did(
             method=DIDMethod.SOV, key_type=KeyType.ED25519, did="WgWxqztrNooG92RXvxSTWv"
+        )
+        await wallet.create_local_did(
+            method=DIDMethod.KEY,
+            key_type=KeyType.BLS12381G2,
         )
         creds, pds = get_test_data()
         return creds, pds
@@ -3062,3 +3067,53 @@ class TestPresExchHandler:
                 pd=tmp_pd,
                 challenge="1f44d55f-f161-4938-a659-f8026467f126",
             )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_is_holder_valid(self, profile, setup_tuple):
+        context = profile.context
+        context.update_settings({"debug.auto_respond_presentation_request": True})
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_list, pd_list = setup_tuple
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=is_holder_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_is_holder_invalid_a(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_list, pd_list = setup_tuple
+        updated_cred_list = []
+        for tmp_cred in deepcopy(cred_list):
+            tmp_cred.subject_ids = ["did:sov:test"]
+            updated_cred_list.append(tmp_cred)
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=updated_cred_list,
+            pd=is_holder_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 0
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_is_holder_invalid_b(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_list, pd_list = setup_tuple
+        tmp_cred = deepcopy(cred_list[0])
+        tmp_cred.subject_ids = None
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=[tmp_cred],
+            pd=is_holder_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 0

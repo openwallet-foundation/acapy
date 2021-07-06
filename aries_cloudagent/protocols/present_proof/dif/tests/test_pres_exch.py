@@ -142,10 +142,21 @@ class TestPresExchSchemas(TestCase):
         with self.assertRaises(BaseModelError) as cm:
             (SubmissionRequirements.deserialize(test_json)).serialize()
 
+    def test_submission_requirements_from_both_missing(self):
+        test_json = """
+            {
+                "name": "Citizenship Information",
+                "rule": "pick",
+                "count": 1
+            }
+        """
+        with self.assertRaises(BaseModelError) as cm:
+            (SubmissionRequirements.deserialize(test_json)).serialize()
+
     def test_is_holder(self):
         test_json = """
             {
-                "field_id": [
+                "field_ids": [
                     "ce66380c-1990-4aec-b8b4-5d532e92a616",
                     "dd69e8a4-4cc0-4540-b34a-b4aa0e0d2214",
                     "d15802b4-eec8-45ef-b78f-e35125ac1bb8",
