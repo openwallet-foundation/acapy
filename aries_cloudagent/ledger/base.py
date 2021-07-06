@@ -4,6 +4,7 @@ import re
 
 from abc import ABC, abstractmethod, ABCMeta
 from enum import Enum
+from hashlib import sha256
 from typing import Sequence, Tuple, Union
 
 from ..indy.issuer import IndyIssuer
@@ -124,22 +125,30 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         if did:
             return re.sub(r"^did:\w+:", "", did)
 
+    @abstractmethod
     async def get_txn_author_agreement(self, reload: bool = False):
         """Get the current transaction author agreement, fetching it if necessary."""
 
+    @abstractmethod
     async def fetch_txn_author_agreement(self):
         """Fetch the current AML and TAA from the ledger."""
 
+    @abstractmethod
     async def accept_txn_author_agreement(
         self, taa_record: dict, mechanism: str, accept_time: int = None
     ):
         """Save a new record recording the acceptance of the TAA."""
 
+    @abstractmethod
     async def get_latest_txn_author_acceptance(self):
         """Look up the latest TAA acceptance."""
 
     def taa_digest(self, version: str, text: str):
         """Generate the digest of a TAA record."""
+        if not version or not text:
+            raise ValueError("Bad input for TAA digest")
+        taa_plaintext = version + text
+        return sha256(taa_plaintext.encode("utf-8")).digest().hex()
 
     @abstractmethod
     async def txn_endorse(
