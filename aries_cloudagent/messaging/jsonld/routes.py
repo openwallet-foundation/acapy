@@ -152,9 +152,15 @@ async def verify(request: web.BaseRequest):
                     )
 
                 if not isinstance(ver_meth_expanded, VerificationMethod):
-                    raise InvalidVerificationMethod(
-                        "verificationMethod does not identify a valid verification method"
-                    )
+                    try:
+                        ver_meth_expanded = VerificationMethod.deserialize(
+                            ver_meth_expanded.serialize()
+                        )
+                    except ValueError:
+                        raise InvalidVerificationMethod(
+                            "verificationMethod does not identify a valid "
+                            "verification method"
+                        )
 
                 verkey = ver_meth_expanded.material
 
