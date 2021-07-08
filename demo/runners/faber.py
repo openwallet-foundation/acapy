@@ -440,8 +440,17 @@ async def main(args):
                                                 ],
                                                 "constraints": {
                                                     "limit_disclosure": "required",
+                                                    "is_holder": [
+                                                        {
+                                                            "directive": "required",
+                                                            "field_id": [
+                                                                "1f44d55f-f161-4938-a659-f8026467f126"
+                                                            ],
+                                                        }
+                                                    ],
                                                     "fields": [
                                                         {
+                                                            "id": "1f44d55f-f161-4938-a659-f8026467f126",
                                                             "path": [
                                                                 "$.credentialSubject.familyName"
                                                             ],
