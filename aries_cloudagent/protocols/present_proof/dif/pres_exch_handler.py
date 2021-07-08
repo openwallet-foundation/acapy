@@ -38,7 +38,7 @@ from ....vc.ld_proofs.constants import (
 )
 from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
 from ....wallet.base import BaseWallet, DIDInfo
-from ....wallet.did_method import DIDMethod
+from ....wallet.error import WalletError, WalletNotFoundError
 from ....wallet.key_type import KeyType
 
 from .pres_exch import (
@@ -100,7 +100,6 @@ class DIFPresExchHandler:
             self.proof_type = Ed25519Signature2018.signature_type
         else:
             self.proof_type = proof_type
-        self.local_dids = None
 
     async def _get_issue_suite(
         self,
@@ -416,18 +415,6 @@ class DIFPresExchHandler:
             result.append(credential)
         return result
 
-    async def local_dids_list(self):
-        """Build a local DIDs list used to verify that holder controls subject ident."""
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            local_did_info_list = await wallet.get_local_dids()
-            self.local_dids = []
-            for did_info in local_did_info_list:
-                if did_info.method == DIDMethod.SOV:
-                    self.local_dids.append(f"did:sov:{did_info.did}")
-                else:
-                    self.local_dids.append(did_info.did)
-
     def field_ids_for_is_holder(self, constraints: Constraints) -> Sequence[str]:
         """Return list of field ids for whose subject holder verification is requested."""
         reqd_field_ids = set()
@@ -444,12 +431,14 @@ class DIFPresExchHandler:
         subject_ids: Sequence[str],
     ) -> bool:
         """Check if holder or subject of claim still controls the identifier."""
-        if not self.local_dids:
-            await self.local_dids_list()
-        for subject_id in subject_ids:
-            if subject_id not in self.local_dids:
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            try:
+                for subject_id in subject_ids:
+                    await wallet.get_local_did(subject_id.replace("did:sov:", ""))
+                return True
+            except (WalletError, WalletNotFoundError):
                 return False
-        return True
 
     def create_vcrecord(self, cred_dict: dict) -> VCRecord:
         """Return VCRecord from a credential dict."""
