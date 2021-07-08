@@ -100,6 +100,7 @@ class DIFPresExchHandler:
             self.proof_type = Ed25519Signature2018.signature_type
         else:
             self.proof_type = proof_type
+        self.is_holder = False
 
     async def _get_issue_suite(
         self,
@@ -436,6 +437,7 @@ class DIFPresExchHandler:
             try:
                 for subject_id in subject_ids:
                     await wallet.get_local_did(subject_id.replace("did:sov:", ""))
+                self.is_holder = True
                 return True
             except (WalletError, WalletNotFoundError):
                 return False
@@ -1186,7 +1188,7 @@ class DIFPresExchHandler:
         submission_property = PresentationSubmission(
             id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
         )
-        if self.check_sign_pres(applicable_creds):
+        if self.is_holder and self.check_sign_pres(applicable_creds):
             (
                 issuer_id,
                 filtered_creds_list,
