@@ -193,7 +193,7 @@ class DIFPresExchHandler:
         else:
             reqd_key_type = KeyType.ED25519
         for cred in applicable_creds:
-            if len(cred.subject_ids) > 0:
+            if cred.subject_ids and len(cred.subject_ids) > 0:
                 if not issuer_id:
                     for cred_subject_id in cred.subject_ids:
                         if not cred_subject_id.startswith("urn:"):
@@ -1188,7 +1188,7 @@ class DIFPresExchHandler:
         submission_property = PresentationSubmission(
             id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
         )
-        if self.is_holder and self.check_sign_pres(applicable_creds):
+        if self.is_holder:
             (
                 issuer_id,
                 filtered_creds_list,
@@ -1240,17 +1240,6 @@ class DIFPresExchHandler:
                     return signed_vp
             else:
                 return vp
-
-    def check_sign_pres(self, creds: Sequence[VCRecord]) -> bool:
-        """Check if applicable creds have CredentialSubject.id set."""
-        for cred in creds:
-            if (
-                cred.subject_ids
-                and len(cred.subject_ids) > 0
-                and not self.check_if_cred_id_derived(next(iter(cred.subject_ids)))
-            ):
-                return True
-        return False
 
     def check_if_cred_id_derived(self, id: str) -> bool:
         """Check if credential or credentialSubjet id is derived."""

@@ -2156,10 +2156,6 @@ class TestPresExchHandler:
             "merge",
             async_mock.CoroutineMock(),
         ) as mock_merge, async_mock.patch.object(
-            DIFPresExchHandler,
-            "check_sign_pres",
-            async_mock.CoroutineMock(),
-        ) as mock_check_sign_pres, async_mock.patch.object(
             test_module,
             "create_presentation",
             async_mock.CoroutineMock(),
@@ -2167,7 +2163,7 @@ class TestPresExchHandler:
             mock_make_req.return_value = async_mock.MagicMock()
             mock_apply_req.return_value = async_mock.MagicMock()
             mock_merge.return_value = (VC_RECORDS, {})
-            mock_check_sign_pres.return_value = True
+            dif_pres_exch_handler.is_holder = True
             mock_create_vp.return_value = {"test": "1"}
             did_info = DIDInfo(
                 did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
@@ -2211,10 +2207,6 @@ class TestPresExchHandler:
             "merge",
             async_mock.CoroutineMock(),
         ) as mock_merge, async_mock.patch.object(
-            DIFPresExchHandler,
-            "check_sign_pres",
-            async_mock.CoroutineMock(),
-        ) as mock_check_sign_pres, async_mock.patch.object(
             test_module,
             "create_presentation",
             async_mock.CoroutineMock(),
@@ -2226,7 +2218,7 @@ class TestPresExchHandler:
             mock_make_req.return_value = async_mock.MagicMock()
             mock_apply_req.return_value = async_mock.MagicMock()
             mock_merge.return_value = (cred_list, {})
-            mock_check_sign_pres.return_value = True
+            dif_pres_exch_handler.is_holder = True
             mock_create_vp.return_value = {"test": "1", "@context": ["test"]}
             mock_sign_vp.return_value = {
                 "test": "1",
@@ -2271,10 +2263,6 @@ class TestPresExchHandler:
             "merge",
             async_mock.CoroutineMock(),
         ) as mock_merge, async_mock.patch.object(
-            DIFPresExchHandler,
-            "check_sign_pres",
-            async_mock.CoroutineMock(),
-        ) as mock_check_sign_pres, async_mock.patch.object(
             test_module,
             "create_presentation",
             async_mock.CoroutineMock(),
@@ -2286,7 +2274,7 @@ class TestPresExchHandler:
             mock_make_req.return_value = async_mock.MagicMock()
             mock_apply_req.return_value = async_mock.MagicMock()
             mock_merge.return_value = (cred_list, {})
-            mock_check_sign_pres.return_value = True
+            dif_pres_exch_handler.is_holder = True
             mock_create_vp.return_value = {"test": "1", "@context": ["test"]}
             mock_sign_key_cred_subject.return_value = (None, [])
             did_info = DIDInfo(
@@ -3075,6 +3063,45 @@ class TestPresExchHandler:
     async def test_is_holder_valid_a(self, profile, setup_tuple):
         context = profile.context
         context.update_settings({"debug.auto_respond_presentation_request": True})
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        cred_list, pd_list = setup_tuple
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=is_holder_pd,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+        assert tmp_vp.get("proof")
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_is_holder_valid_b(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        cred_list, pd_list = setup_tuple
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=is_holder_pd_multiple_fields_included,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+        assert tmp_vp.get("proof")
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_is_holder_valid_c(self, profile, setup_tuple):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        cred_list, pd_list = setup_tuple
+        tmp_vp = await dif_pres_exch_handler.create_vp(
+            credentials=cred_list,
+            pd=is_holder_pd_multiple_fields_excluded,
+            challenge="1f44d55f-f161-4938-a659-f8026467f126",
+        )
+        assert len(tmp_vp.get("verifiableCredential")) == 6
+        assert tmp_vp.get("proof")
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_is_holder_signature_suite_mismatch(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(
             profile, proof_type=BbsBlsSignature2020.signature_type
         )
@@ -3085,34 +3112,7 @@ class TestPresExchHandler:
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
         assert len(tmp_vp.get("verifiableCredential")) == 6
-
-    @pytest.mark.asyncio
-    @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_valid_b(self, profile, setup_tuple):
-        dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
-        )
-        cred_list, pd_list = setup_tuple
-        tmp_vp = await dif_pres_exch_handler.create_vp(
-            credentials=cred_list,
-            pd=is_holder_pd_multiple_fields_included,
-            challenge="1f44d55f-f161-4938-a659-f8026467f126",
-        )
-        assert len(tmp_vp.get("verifiableCredential")) == 6
-
-    @pytest.mark.asyncio
-    @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_valid_c(self, profile, setup_tuple):
-        dif_pres_exch_handler = DIFPresExchHandler(
-            profile, proof_type=BbsBlsSignature2020.signature_type
-        )
-        cred_list, pd_list = setup_tuple
-        tmp_vp = await dif_pres_exch_handler.create_vp(
-            credentials=cred_list,
-            pd=is_holder_pd_multiple_fields_excluded,
-            challenge="1f44d55f-f161-4938-a659-f8026467f126",
-        )
-        assert len(tmp_vp.get("verifiableCredential")) == 6
+        assert not tmp_vp.get("proof")
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -3131,6 +3131,7 @@ class TestPresExchHandler:
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
         assert len(tmp_vp.get("verifiableCredential")) == 0
+        assert not tmp_vp.get("proof")
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -3147,3 +3148,4 @@ class TestPresExchHandler:
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
         assert len(tmp_vp.get("verifiableCredential")) == 0
+        assert not tmp_vp.get("proof")
