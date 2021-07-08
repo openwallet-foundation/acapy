@@ -142,6 +142,17 @@ class TestPresExchSchemas(TestCase):
         with self.assertRaises(BaseModelError) as cm:
             (SubmissionRequirements.deserialize(test_json)).serialize()
 
+    def test_submission_requirements_from_both_missing(self):
+        test_json = """
+            {
+                "name": "Citizenship Information",
+                "rule": "pick",
+                "count": 1
+            }
+        """
+        with self.assertRaises(BaseModelError) as cm:
+            (SubmissionRequirements.deserialize(test_json)).serialize()
+
     def test_is_holder(self):
         test_json = """
             {
