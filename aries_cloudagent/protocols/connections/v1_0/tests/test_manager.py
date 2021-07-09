@@ -1619,7 +1619,7 @@ class TestConnectionManager(AsyncTestCase):
         receipt = MessageReceipt(
             sender_verkey=self.test_verkey,
             recipient_verkey=self.test_target_verkey,
-            recipient_did_public=True,
+            recipient_did_public=None,
         )
 
         mock_conn = async_mock.MagicMock()
@@ -1641,11 +1641,47 @@ class TestConnectionManager(AsyncTestCase):
 
             assert await self.manager.resolve_inbound_connection(receipt)
 
+    async def test_resolve_inbound_connection_did_public(self):
+        receipt = MessageReceipt(
+            sender_verkey=self.test_verkey,
+            recipient_verkey=self.test_target_verkey,
+            recipient_did_public=None,
+        )
+
+        mock_conn = async_mock.MagicMock()
+        mock_conn.connection_id = "dummy"
+
+        with async_mock.patch.object(
+            InMemoryWallet, "get_local_did_for_verkey", async_mock.CoroutineMock()
+        ) as mock_wallet_get_local_did_for_verkey, async_mock.patch.object(
+            InMemoryWallet, "get_public_did", async_mock.CoroutineMock()
+        ) as mock_wallet_get_public_did, async_mock.patch.object(
+            self.manager, "find_connection", async_mock.CoroutineMock()
+        ) as mock_mgr_find_conn:
+            mock_wallet_get_local_did_for_verkey.return_value = DIDInfo(
+                self.test_did,
+                self.test_verkey,
+                {"posted": True},
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
+            )
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                self.test_did,
+                self.test_verkey,
+                {"posted": True},
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
+            )
+            mock_mgr_find_conn.return_value = mock_conn
+
+            assert await self.manager.resolve_inbound_connection(receipt)
+            assert receipt.recipient_did_public is True
+
     async def test_resolve_inbound_connection_injector_error(self):
         receipt = MessageReceipt(
             sender_verkey=self.test_verkey,
             recipient_verkey=self.test_target_verkey,
-            recipient_did_public=True,
+            recipient_did_public=None,
         )
 
         mock_conn = async_mock.MagicMock()
@@ -1665,7 +1701,7 @@ class TestConnectionManager(AsyncTestCase):
         receipt = MessageReceipt(
             sender_verkey=self.test_verkey,
             recipient_verkey=self.test_target_verkey,
-            recipient_did_public=True,
+            recipient_did_public=None,
         )
 
         mock_conn = async_mock.MagicMock()
