@@ -1063,7 +1063,8 @@ class ConnectionManager(BaseConnectionManager):
                     receipt.recipient_verkey
                 )
                 receipt.recipient_did = my_info.did
-                if "posted" in my_info.metadata and my_info.metadata["posted"] is True:
+                public_did_info = await wallet.get_public_did()
+                if public_did_info and public_did_info.did == receipt.recipient_did:
                     receipt.recipient_did_public = True
             except InjectionError:
                 self._logger.warning(
