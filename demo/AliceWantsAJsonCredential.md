@@ -363,8 +363,17 @@ To request a proof, submit the following (with appropriate `connection_id`) to F
                         ],
                         "constraints": {
                             "limit_disclosure": "required",
+                            "is_holder": [
+                                {
+                                    "directive": "required",
+                                    "field_id": [
+                                        "1f44d55f-f161-4938-a659-f8026467f126"
+                                    ],
+                                }
+                            ],
                             "fields": [
                                 {
+                                    "id": "1f44d55f-f161-4938-a659-f8026467f126",
                                     "path": [
                                         "$.credentialSubject.familyName"
                                     ],
@@ -389,7 +398,9 @@ To request a proof, submit the following (with appropriate `connection_id`) to F
 }
 ```
 
-There are several ways that Alice can prespond with a presentation.  The simplest will just tell aca-py to put the presentation together and send it to Faber - submit the following to Alice's `/request-presentation-2.0/{pres_ex_id}/send-presentation`:
+Note that the `is_holder` property can be used by Faber to verify that the holder of credential is the same as the subject of the attribute (`familyName`). Later on, the received presentation will be signed and verifiable only if `is_holder` with ` "directive": "required"` is included in the presentation request.
+
+There are several ways that Alice can respond with a presentation.  The simplest will just tell aca-py to put the presentation together and send it to Faber - submit the following to Alice's `/request-presentation-2.0/{pres_ex_id}/send-presentation`:
 
 ```
 {
@@ -429,8 +440,18 @@ Firstly, Alice can include the received presentation request in the body to the 
           ],
           "constraints": {
             "limit_disclosure": "required",
+            "is_holder": [
+                {
+                    "directive": "required",
+                    "field_id": [
+                        "1f44d55f-f161-4938-a659-f8026467f126",
+                        "332be361-823a-4863-b18b-c3b930c5623e"
+                    ],
+                }
+            ],
             "fields": [
               {
+                "id": "1f44d55f-f161-4938-a659-f8026467f126",
                 "path": [
                   "$.credentialSubject.familyName"
                 ],
@@ -440,6 +461,7 @@ Firstly, Alice can include the received presentation request in the body to the 
                 }
               },
               {
+                  "id": "332be361-823a-4863-b18b-c3b930c5623e",
                   "path": [
                       "$.id"
                   ],

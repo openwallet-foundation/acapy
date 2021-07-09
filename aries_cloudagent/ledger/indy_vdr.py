@@ -9,7 +9,6 @@ import os.path
 import tempfile
 
 from datetime import datetime, date
-from hashlib import sha256
 from io import StringIO
 from pathlib import Path
 from time import time
@@ -26,6 +25,7 @@ from ..storage.base import BaseStorage, StorageRecord
 from ..utils import sentinel
 from ..utils.env import storage_path
 from ..wallet.base import BaseWallet, DIDInfo
+from ..wallet.error import WalletNotFoundError
 from ..wallet.did_posture import DIDPosture
 
 from .base import BaseLedger, Role
@@ -423,7 +423,10 @@ class IndyVdrLedger(BaseLedger):
 
             try:
                 resp = await self._submit(
-                    schema_req, True, sign_did=public_info, write_ledger=write_ledger
+                    schema_req,
+                    sign=True,
+                    sign_did=public_info,
+                    write_ledger=write_ledger,
                 )
 
                 if not write_ledger:
@@ -949,19 +952,27 @@ class IndyVdrLedger(BaseLedger):
             )
 
         public_info = await self.get_wallet_public_did()
-        public_did = public_info.did if public_info else None
+        if not public_info:
+            raise BadLedgerRequestError("Cannot register NYM without a public DID")
+
         try:
-            nym_req = ledger.build_nym_request(public_did, did, verkey, alias, role)
+            nym_req = ledger.build_nym_request(
+                public_info.did, did, verkey, alias, role
+            )
         except VdrError as err:
             raise LedgerError("Exception when building nym request") from err
 
-        await self._submit(nym_req)
+        await self._submit(nym_req, sign=True, sign_did=public_info)
 
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
-            did_info = await wallet.get_local_did(did)
-            metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
-            await wallet.replace_local_did_metadata(did, metadata)
+            try:
+                did_info = await wallet.get_local_did(did)
+            except WalletNotFoundError:
+                pass  # not a local DID
+            else:
+                metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
+                await wallet.replace_local_did_metadata(did, metadata)
 
     async def get_nym_role(self, did: str) -> Role:
         """
@@ -1085,13 +1096,6 @@ class IndyVdrLedger(BaseLedger):
         """
         return int(datetime.combine(date.today(), datetime.min.time()).timestamp())
 
-    def taa_digest(self, version: str, text: str):
-        """Generate the digest of a TAA record."""
-        if not version or not text:
-            raise ValueError("Bad input for TAA digest")
-        taa_plaintext = version + text
-        return sha256(taa_plaintext.encode("utf-8")).digest().hex()
-
     async def accept_txn_author_agreement(
         self, taa_record: dict, mechanism: str, accept_time: int = None
     ):
@@ -1157,7 +1161,10 @@ class IndyVdrLedger(BaseLedger):
         revoc_reg_def["ver"] = "1.0"
         revoc_reg_def["txnTime"] = response["txnTime"]
 
-        assert revoc_reg_def.get("id") == revoc_reg_id
+        if revoc_reg_def.get("id") != revoc_reg_id:
+            raise LedgerError(
+                "ID of revocation registry response does not match requested ID"
+            )
         return revoc_reg_def
 
     async def get_revoc_reg_entry(
@@ -1180,7 +1187,10 @@ class IndyVdrLedger(BaseLedger):
             "ver": "1.0",
             "value": response["data"]["value"],
         }
-        assert response["data"]["revocRegDefId"] == revoc_reg_id
+        if response["data"]["revocRegDefId"] != revoc_reg_id:
+            raise LedgerError(
+                "ID of revocation registry response does not match requested ID"
+            )
         return reg_entry, ledger_timestamp
 
     async def get_revoc_reg_delta(
@@ -1223,7 +1233,10 @@ class IndyVdrLedger(BaseLedger):
         reg_delta = {"ver": "1.0", "value": delta_value}
         # question - why not response["to"] ?
         delta_timestamp = response_value["accum_to"]["txnTime"]
-        assert response["data"]["revocRegDefId"] == revoc_reg_id
+        if response["data"]["revocRegDefId"] != revoc_reg_id:
+            raise LedgerError(
+                "ID of revocation registry response does not match requested ID"
+            )
         return reg_delta, delta_timestamp
 
     async def send_revoc_reg_def(
@@ -1250,12 +1263,16 @@ class IndyVdrLedger(BaseLedger):
             request = ledger.build_revoc_reg_def_request(
                 did_info.did, json.dumps(revoc_reg_def)
             )
+            if endorser_did and not write_ledger:
+                request.set_endorser(endorser_did)
         except VdrError as err:
             raise LedgerError(
                 "Exception when sending revocation registry definition"
             ) from err
-
-        await self._submit(request, True, True, did_info)
+        resp = await self._submit(
+            request, True, sign_did=did_info, write_ledger=write_ledger
+        )
+        return {"result": resp}
 
     async def send_revoc_reg_entry(
         self,
@@ -1282,11 +1299,16 @@ class IndyVdrLedger(BaseLedger):
             request = ledger.build_revoc_reg_entry_request(
                 did_info.did, revoc_reg_id, revoc_def_type, json.dumps(revoc_reg_entry)
             )
+            if endorser_did and not write_ledger:
+                request.set_endorser(endorser_did)
         except VdrError as err:
             raise LedgerError(
                 "Exception when sending revocation registry entry"
             ) from err
-        await self._submit(request, True, True, did_info)
+        resp = await self._submit(
+            request, True, sign_did=did_info, write_ledger=write_ledger
+        )
+        return {"result": resp}
 
     async def get_wallet_public_did(self) -> DIDInfo:
         """Fetch the public DID from the wallet."""
@@ -1299,7 +1321,25 @@ class IndyVdrLedger(BaseLedger):
         request_json: str,
     ) -> str:
         """Endorse (sign) the provided transaction."""
-        raise NotImplementedError()
+        try:
+            request = ledger.build_custom_request(request_json)
+        except VdrError as err:
+            raise BadLedgerRequestError("Cannot endorse invalid request") from err
+
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            sign_did = await wallet.get_public_did()
+            if not sign_did:
+                raise BadLedgerRequestError(
+                    "Cannot endorse transaction without a public DID"
+                )
+            request.set_multi_signature(
+                sign_did.did,
+                await wallet.sign_message(request.signature_input, sign_did.verkey),
+            )
+            del wallet
+
+        return request.body
 
     async def txn_submit(
         self,
