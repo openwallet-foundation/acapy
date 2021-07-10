@@ -32,11 +32,11 @@ LOGGER = logging.getLogger(__name__)
 
 class AcmeAgent(AriesAgent):
     def __init__(
-        self, 
+        self,
         ident: str,
-        http_port: int, 
+        http_port: int,
         admin_port: int,
-        no_auto: bool = False, 
+        no_auto: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -121,7 +121,7 @@ async def main(args):
                 else ""
             )
         )
-        agent = AcmeAgent(            
+        agent = AcmeAgent(
             "acme.agent",
             acme_agent.start_port,
             acme_agent.start_port + 1,
@@ -141,9 +141,9 @@ async def main(args):
         # acme_schema_attrs = ["employee_id", "name", "date", "position"]
         await acme_agent.initialize(
             the_agent=agent,
-                # schema_name=acme_schema_name,
-                # schema_attrs=acme_schema_attrs,
-            )
+            # schema_name=acme_schema_name,
+            # schema_attrs=acme_schema_attrs,
+        )
 
         # generate an invitation for Alice
         await acme_agent.generate_invitation(display_qr=True, wait=True)
