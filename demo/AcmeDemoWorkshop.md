@@ -172,27 +172,16 @@ We're going to do option (a), but you can try to implement option (b) as homewor
 First though we need to register a schema and credential definition.  Find this code:
 
 ``` python
-        with log_timer("Publish schema and cred def duration:"):
-            pass
-            # TODO define schema
-            # version = format(
-            #     "%d.%d.%d"
-            #     % (
-            #         random.randint(1, 101),
-            #         random.randint(1, 101),
-            #         random.randint(1, 101),
-            #     )
-            # )
-            # (schema_id, cred_def_id) = await agent.register_schema_and_creddef(
-            #     "employee id schema",
-            #     version,
-            #     ["employee_id", "name", "date", "position"],
-            #     support_revocation=False,
-            #     revocation_registry_size=TAILS_FILE_COUNT,
-            # )
+        # TODO: Create schema
+        # acme_schema_name = "employee id schema"
+        # acme_schema_attrs = ["employee_id", "name", "date", "position"]
+        await acme_agent.initialize(
+            the_agent=agent,
+            # schema_name=acme_schema_name,
+            # schema_attrs=acme_schema_attrs,
 ```
 
-... and just remove the ```pass``` statement and ```TODO ```, then uncommment the rest.  Easy, no?
+... and just remove the ```TODO ```, then uncommment the rest.  Easy, no?
 
 ``` python
         with log_timer("Publish schema and cred def duration:"):
