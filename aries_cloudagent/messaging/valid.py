@@ -32,6 +32,19 @@ class StrOrDictField(Field):
             raise ValidationError("Field should be str or dict")
 
 
+class StrOrNumberField(Field):
+    """String or Number field for Marshmallow."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, (str, float, int)):
+            return value
+        else:
+            raise ValidationError("Field should be str or int or float")
+
+
 class DictOrDictListField(Field):
     """Dict or Dict List field for Marshmallow."""
 
@@ -224,6 +237,20 @@ class DIDKey(Regexp):
         )
 
 
+class DIDWeb(Regexp):
+    """Validate value against did:web specification."""
+
+    EXAMPLE = "did:web:example.com"
+    PATTERN = re.compile(r"^(did:web:)([a-zA-Z0-9%._-]*:)*[a-zA-Z0-9%._-]+$")
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            DIDWeb.PATTERN, error="Value {input} is not in W3C did:web format"
+        )
+
+
 class DIDPosture(OneOf):
     """Validate value against defined DID postures."""
 
@@ -271,6 +298,22 @@ class DIDValidation(Regexp):
 
         super().__init__(
             DIDValidation.PATTERN,
+            error="Value {input} is not a valid DID",
+        )
+
+
+# temporary support for short Indy DIDs in place of qualified DIDs
+class MaybeIndyDID(Regexp):
+    """Validate value against any valid DID spec or a short Indy DID."""
+
+    EXAMPLE = DIDValidation.EXAMPLE
+    PATTERN = re.compile(IndyDID.PATTERN.pattern + "|" + DIDValidation.PATTERN.pattern)
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            MaybeIndyDID.PATTERN,
             error="Value {input} is not a valid DID",
         )
 
@@ -638,6 +681,11 @@ class CredentialType(Validator):
         length = len(value)
         if length < 1 or CredentialType.CREDENTIAL_TYPE not in value:
             raise ValidationError(f"type must include {CredentialType.CREDENTIAL_TYPE}")
+        if length == 1:
+            raise ValidationError(
+                "type must include additional, more narrow,"
+                " types (e.g. UniversityDegreeCredential)"
+            )
 
         return value
 
@@ -724,6 +772,7 @@ JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
 DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
+GENERIC_DID = {"validate": MaybeIndyDID(), "example": MaybeIndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {
     "validate": IndyRawPublicKey(),
     "example": IndyRawPublicKey.EXAMPLE,

@@ -11,17 +11,17 @@ from ....connections.models.conn_record import ConnRecord
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
+from ....did.did_key import DIDKey
 from ....indy.holder import IndyHolder
-from ....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
-from ....messaging.responder import BaseResponder
+from ....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from ....messaging.decorators.attach_decorator import AttachDecorator
+from ....messaging.responder import BaseResponder
 from ....multitenant.manager import MultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import b64_to_bytes
 from ....wallet.key_type import KeyType
-from ....did.did_key import DIDKey
 
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...connections.v1_0.manager import ConnectionManager
@@ -38,8 +38,6 @@ from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 from ...present_proof.v2_0.manager import V20PresManager
 from ...present_proof.v2_0.message_types import PRES_20_REQUEST
-from ...present_proof.v2_0.messages.pres_format import V20PresFormat
-from ...present_proof.v2_0.messages.pres_request import V20PresRequest
 from ...present_proof.v2_0.models.pres_exchange import V20PresExRecord
 
 from .messages.invitation import HSProto, InvitationMessage
@@ -187,7 +185,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            pres_ex_rec.presentation_request_dict
+                            pres_ex_rec.presentation_request_dict.serialize()
                         )
                     )
                 except StorageNotFoundError:
@@ -197,7 +195,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            pres_ex_rec.pres_request.attachment()
+                            pres_ex_rec.pres_request.serialize()
                         )
                     )
             else:
@@ -206,6 +204,10 @@ class OutOfBandManager(BaseConnectionManager):
         handshake_protocols = [
             DIDCommPrefix.qualify_current(hsp.name) for hsp in hs_protos or []
         ] or None
+        connection_protocol = (
+            hs_protos[0].name if hs_protos and len(hs_protos) >= 1 else None
+        )
+
         if public:
             if not self._session.settings.get("public_invites"):
                 raise OutOfBandManagerError("Public invitations are not enabled")
@@ -236,6 +238,7 @@ class OutOfBandManager(BaseConnectionManager):
                 state=ConnRecord.State.INVITATION.rfc23,
                 accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
                 alias=alias,
+                connection_protocol=connection_protocol,
             )
 
             await conn_rec.save(self._session, reason="Created new invitation")
@@ -264,7 +267,9 @@ class OutOfBandManager(BaseConnectionManager):
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, connection_key.verkey)
-
+            # Initializing  InvitationMessage here to include
+            # invitation_msg_id in webhook poyload
+            invi_msg = InvitationMessage()
             # Create connection record
             conn_rec = ConnRecord(
                 invitation_key=connection_key.verkey,
@@ -273,6 +278,8 @@ class OutOfBandManager(BaseConnectionManager):
                 accept=ConnRecord.ACCEPT_AUTO if accept else ConnRecord.ACCEPT_MANUAL,
                 invitation_mode=invitation_mode,
                 alias=alias,
+                connection_protocol=connection_protocol,
+                invitation_msg_id=invi_msg._id,
             )
             await conn_rec.save(self._session, reason="Created new connection")
 
@@ -314,29 +321,25 @@ class OutOfBandManager(BaseConnectionManager):
             # Note: Need to split this into two stages to support inbound routing
             # of invitations
             # Would want to reuse create_did_document and convert the result
-            invi_msg = InvitationMessage(
-                label=my_label or self._session.settings.get("default_label"),
-                handshake_protocols=handshake_protocols,
-                requests_attach=message_attachments,
-                services=[
-                    ServiceMessage(
-                        _id="#inline",
-                        _type="did-communication",
-                        recipient_keys=[
-                            DIDKey.from_public_key_b58(
-                                connection_key.verkey, KeyType.ED25519
-                            ).did
-                        ],
-                        service_endpoint=my_endpoint,
-                        routing_keys=routing_keys,
-                    )
-                ],
-            )
+            invi_msg.label = my_label or self._session.settings.get("default_label")
+            invi_msg.handshake_protocols = handshake_protocols
+            invi_msg.requests_attach = message_attachments
+            invi_msg.services = [
+                ServiceMessage(
+                    _id="#inline",
+                    _type="did-communication",
+                    recipient_keys=[
+                        DIDKey.from_public_key_b58(
+                            connection_key.verkey, KeyType.ED25519
+                        ).did
+                    ],
+                    service_endpoint=my_endpoint,
+                    routing_keys=routing_keys,
+                )
+            ]
             invi_url = invi_msg.to_url()
 
             # Update connection record
-            conn_rec.invitation_msg_id = invi_msg._id
-            await conn_rec.save(self._session, reason="Added Invitation")
             await conn_rec.attach_invitation(self._session, invi_msg)
 
             if metadata:
@@ -710,30 +713,11 @@ class OutOfBandManager(BaseConnectionManager):
 
         pres_ex_record = await pres_mgr.receive_pres_request(pres_ex_record)
         if pres_ex_record.auto_present:
-            indy_proof_request = V20PresRequest.deserialize(
-                pres_request_msg
-            ).attachment(
-                V20PresFormat.Format.INDY
-            )  # assumption will change for DIF
-            try:
-                req_creds = await indy_proof_req_preview2indy_requested_creds(
-                    indy_proof_req=indy_proof_request,
-                    preview=None,
-                    holder=self._session.inject(IndyHolder),
-                )
-            except ValueError as err:
-                self._logger.warning(f"{err}")
-                raise OutOfBandManagerError(
-                    f"Cannot auto-respond to presentation request attachment: {err}"
-                )
-
             (pres_ex_record, pres_msg) = await pres_mgr.create_pres(
                 pres_ex_record=pres_ex_record,
-                requested_credentials=req_creds,
                 comment=(
-                    "auto-presented for proof request nonce={}".format(
-                        indy_proof_request["nonce"]
-                    )
+                    f"auto-presented for proof requests"
+                    f", pres_ex_record: {pres_ex_record.pres_ex_id}"
                 ),
             )
             responder = self._session.inject(BaseResponder, required=False)
@@ -747,7 +731,7 @@ class OutOfBandManager(BaseConnectionManager):
         else:
             raise OutOfBandManagerError(
                 (
-                    "Configuration sets auto_present false: cannot "
+                    "Configuration set auto_present false: cannot "
                     "respond automatically to presentation requests"
                 )
             )

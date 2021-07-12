@@ -10,7 +10,8 @@ from itertools import chain
 import logging
 from typing import Sequence, Tuple, Union
 
-from pydid import DID, DIDDocument, DIDError, DIDUrl, Service, VerificationMethod
+from pydid import DID, DIDError, DIDUrl, Resource
+import pydid
 
 from ..core.profile import Profile
 from .base import (
@@ -35,7 +36,7 @@ class DIDResolver:
 
     async def _resolve(
         self, profile: Profile, did: Union[str, DID]
-    ) -> Tuple[BaseDIDResolver, DIDDocument]:
+    ) -> Tuple[BaseDIDResolver, dict]:
         """Retrieve doc and return with resolver."""
         # TODO Cache results
         if isinstance(did, DID):
@@ -55,7 +56,7 @@ class DIDResolver:
 
         raise DIDNotFound(f"DID {did} could not be resolved")
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> dict:
         """Resolve a DID."""
         _, doc = await self._resolve(profile, did)
         return doc
@@ -98,15 +99,15 @@ class DIDResolver:
             raise DIDMethodNotSupported(f'No resolver supprting DID "{did}" loaded')
         return resolvers
 
-    async def dereference(
-        self, profile: Profile, did_url: str
-    ) -> Union[Service, VerificationMethod]:
+    async def dereference(self, profile: Profile, did_url: str) -> Resource:
         """Dereference a DID URL to its corresponding DID Doc object."""
         # TODO Use cached DID Docs when possible
         try:
             parsed = DIDUrl.parse(did_url)
-            doc = await self.resolve(profile, parsed.did)
-            return doc.dereference(parsed)
+            if not parsed.did:
+                raise ValueError("Invalid DID URL")
+            doc_dict = await self.resolve(profile, parsed.did)
+            return pydid.deserialize_document(doc_dict).dereference(parsed)
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)

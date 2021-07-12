@@ -18,7 +18,7 @@ from marshmallow.validate import Regexp
 
 from ...admin.request_context import AdminRequestContext
 from ...indy.issuer import IndyIssuer, IndyIssuerError
-from ...indy.sdk.models.schema import SchemaSchema
+from ...indy.models.schema import SchemaSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
@@ -212,9 +212,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not create_transaction_for_endorser:
-        return web.json_response(
-            {"sent": {"schema_id": schema_id, "schema": schema_def}}
-        )
+        return web.json_response({"schema_id": schema_id, "schema": schema_def})
     else:
         session = await context.session()
 

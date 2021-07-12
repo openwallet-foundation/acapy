@@ -13,7 +13,7 @@ from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Ser
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....indy.holder import IndyHolder
-from .....indy.sdk.models.pres_preview import (
+from .....indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,
@@ -55,12 +55,13 @@ from .....protocols.present_proof.v2_0.messages.pres import V20Pres
 from .....protocols.present_proof.v2_0.messages.pres_format import V20PresFormat
 from .....protocols.present_proof.v2_0.messages.pres_request import V20PresRequest
 from .....storage.error import StorageNotFoundError
+from .....storage.vc_holder.base import VCHolder
+from .....storage.vc_holder.vc_record import VCRecord
 from .....transport.inbound.receipt import MessageReceipt
-from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo, KeyInfo
+from .....wallet.did_method import DIDMethod
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import KeyType
-from .....wallet.did_method import DIDMethod
 
 from ....didcomm_prefix import DIDCommPrefix
 from ....issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
@@ -137,6 +138,44 @@ class TestConfig:
         }}
     }}"""
     )
+    DIF_PROOF_REQ = {
+        "presentation_definition": {
+            "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
+            "submission_requirements": [
+                {
+                    "name": "Citizenship Information",
+                    "rule": "pick",
+                    "min": 1,
+                    "from": "A",
+                }
+            ],
+            "input_descriptors": [
+                {
+                    "id": "citizenship_input_1",
+                    "name": "EU Driver's License",
+                    "group": ["A"],
+                    "schema": [
+                        {
+                            "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+                        }
+                    ],
+                    "constraints": {
+                        "limit_disclosure": "required",
+                        "fields": [
+                            {
+                                "path": ["$.credentialSubject.givenName"],
+                                "purpose": "The claim must be from one of the specified issuers",
+                                "filter": {
+                                    "type": "string",
+                                    "enum": ["JOHN", "CAI"],
+                                },
+                            }
+                        ],
+                    },
+                }
+            ],
+        },
+    }
 
     PRES_PREVIEW = IndyPresPreview(
         attributes=[
@@ -193,6 +232,23 @@ class TestConfig:
             AttachDecorator.data_base64(mapping=INDY_PROOF_REQ, ident="indy")
         ],
     )
+
+    DIF_PRES_REQ_V2 = V20PresRequest(
+        comment="some comment",
+        will_confirm=True,
+        formats=[
+            V20PresFormat(
+                attach_id="dif",
+                format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                    V20PresFormat.Format.DIF.api
+                ],
+            )
+        ],
+        request_presentations_attach=[
+            AttachDecorator.data_json(mapping=DIF_PROOF_REQ, ident="dif")
+        ],
+    )
+
     req_attach_v2 = AttachDecorator.data_json(
         mapping=PRES_REQ_V2.serialize(),
         ident="request-0",
@@ -513,7 +569,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 key_type=KeyType.ED25519,
             )
             mock_retrieve_pxid.return_value = async_mock.MagicMock(
-                presentation_request_dict={"pres": "req"}
+                presentation_request_dict=self.PRES_REQ_V1
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -548,11 +604,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             mock_retrieve_pxid_1.side_effect = StorageNotFoundError()
             mock_retrieve_pxid_2.return_value = async_mock.MagicMock(
-                pres_request=async_mock.MagicMock(
-                    attachment=async_mock.MagicMock(
-                        return_value=TestConfig.PRES_REQ_V2.serialize()
-                    )
-                )
+                pres_request=TestConfig.PRES_REQ_V2
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -569,6 +621,337 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_pxid_2.assert_called_once_with(
                 self.manager.session, "dummy-id"
             )
+
+    async def test_dif_req_v2_attach_pres_existing_conn_auto_present_pres_msg_with_challenge(
+        self,
+    ):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_presentation_request": True}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+        dif_proof_req = deepcopy(TestConfig.DIF_PROOF_REQ)
+        dif_proof_req["options"] = {}
+        dif_proof_req["options"]["challenge"] = "3fa85f64-5717-4562-b3fc-2c963f66afa7"
+        dif_pres_req_v2 = V20PresRequest(
+            comment="some comment",
+            will_confirm=True,
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(mapping=dif_proof_req, ident="dif")
+            ],
+        )
+
+        px2_rec = test_module.V20PresExRecord(
+            auto_present=True,
+            pres_request=dif_pres_req_v2.serialize(),
+        )
+
+        dif_req_attach_v2 = AttachDecorator.data_json(
+            mapping=dif_pres_req_v2.serialize(),
+            ident="request-0",
+        ).serialize()
+
+        with async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V20PresManager,
+            "receive_pres_request",
+            autospec=True,
+        ) as pres_mgr_receive_pres_req, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+            V20PresManager,
+            "create_pres",
+            autospec=True,
+        ) as pres_mgr_create_pres:
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            pres_mgr_receive_pres_req.return_value = px2_rec
+            pres_mgr_create_pres.return_value = (
+                px2_rec,
+                V20Pres(
+                    formats=[
+                        V20PresFormat(
+                            attach_id="dif",
+                            format_=ATTACHMENT_FORMAT[PRES_20][
+                                V20PresFormat.Format.DIF.api
+                            ],
+                        )
+                    ],
+                    presentations_attach=[
+                        AttachDecorator.data_json(
+                            mapping={"bogus": "proof"},
+                            ident="dif",
+                        )
+                    ],
+                ),
+            )
+            self.session.context.injector.bind_instance(
+                VCHolder,
+                async_mock.MagicMock(
+                    search_credentials=async_mock.MagicMock(
+                        return_value=async_mock.MagicMock(
+                            fetch=async_mock.CoroutineMock(
+                                return_value=[
+                                    VCRecord(
+                                        contexts=[
+                                            "https://www.w3.org/2018/credentials/v1",
+                                            "https://www.w3.org/2018/credentials/examples/v1",
+                                        ],
+                                        expanded_types=[
+                                            "https://www.w3.org/2018/credentials#VerifiableCredential",
+                                            "https://example.org/examples#UniversityDegreeCredential",
+                                        ],
+                                        issuer_id="https://example.edu/issuers/565049",
+                                        subject_ids=[
+                                            "did:example:ebfeb1f712ebc6f1c276e12ec21"
+                                        ],
+                                        proof_types=["Ed25519Signature2018"],
+                                        schema_ids=[
+                                            "https://example.org/examples/degree.json"
+                                        ],
+                                        cred_value={"...": "..."},
+                                        given_id="http://example.edu/credentials/3732",
+                                        cred_tags={"some": "tag"},
+                                    )
+                                ]
+                            )
+                        )
+                    )
+                ),
+            )
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_target_did],
+                requests_attach=[AttachDecorator.deserialize(dif_req_attach_v2)],
+            )
+
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+
+            conn_rec = await self.manager.receive_invitation(
+                mock_oob_invi, use_existing_connection=True
+            )
+            assert ConnRecord.deserialize(conn_rec)
+
+    async def test_dif_req_v2_attach_pres_existing_conn_auto_present_pres_msg_with_nonce(
+        self,
+    ):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_presentation_request": True}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+
+        dif_proof_req = deepcopy(TestConfig.DIF_PROOF_REQ)
+        dif_proof_req["options"] = {}
+        dif_proof_req["options"]["nonce"] = "12345"
+        dif_pres_req_v2 = V20PresRequest(
+            comment="some comment",
+            will_confirm=True,
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(mapping=dif_proof_req, ident="dif")
+            ],
+        )
+
+        px2_rec = test_module.V20PresExRecord(
+            auto_present=True,
+            pres_request=dif_pres_req_v2.serialize(),
+        )
+
+        dif_req_attach_v2 = AttachDecorator.data_json(
+            mapping=dif_pres_req_v2.serialize(),
+            ident="request-0",
+        ).serialize()
+
+        with async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V20PresManager,
+            "receive_pres_request",
+            autospec=True,
+        ) as pres_mgr_receive_pres_req, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+            V20PresManager,
+            "create_pres",
+            autospec=True,
+        ) as pres_mgr_create_pres:
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            pres_mgr_receive_pres_req.return_value = px2_rec
+            pres_mgr_create_pres.return_value = (
+                px2_rec,
+                V20Pres(
+                    formats=[
+                        V20PresFormat(
+                            attach_id="dif",
+                            format_=ATTACHMENT_FORMAT[PRES_20][
+                                V20PresFormat.Format.DIF.api
+                            ],
+                        )
+                    ],
+                    presentations_attach=[
+                        AttachDecorator.data_json(
+                            mapping={"bogus": "proof"},
+                            ident="dif",
+                        )
+                    ],
+                ),
+            )
+            self.session.context.injector.bind_instance(
+                VCHolder,
+                async_mock.MagicMock(
+                    search_credentials=async_mock.MagicMock(
+                        return_value=async_mock.MagicMock(
+                            fetch=async_mock.CoroutineMock(
+                                return_value=[
+                                    VCRecord(
+                                        contexts=[
+                                            "https://www.w3.org/2018/credentials/v1",
+                                            "https://www.w3.org/2018/credentials/examples/v1",
+                                        ],
+                                        expanded_types=[
+                                            "https://www.w3.org/2018/credentials#VerifiableCredential",
+                                            "https://example.org/examples#UniversityDegreeCredential",
+                                        ],
+                                        issuer_id="https://example.edu/issuers/565049",
+                                        subject_ids=[
+                                            "did:example:ebfeb1f712ebc6f1c276e12ec21"
+                                        ],
+                                        proof_types=["Ed25519Signature2018"],
+                                        schema_ids=[
+                                            "https://example.org/examples/degree.json"
+                                        ],
+                                        cred_value={"...": "..."},
+                                        given_id="http://example.edu/credentials/3732",
+                                        cred_tags={"some": "tag"},
+                                    )
+                                ]
+                            )
+                        )
+                    )
+                ),
+            )
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_target_did],
+                requests_attach=[AttachDecorator.deserialize(dif_req_attach_v2)],
+            )
+
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+
+            conn_rec = await self.manager.receive_invitation(
+                mock_oob_invi, use_existing_connection=True
+            )
+            assert ConnRecord.deserialize(conn_rec)
 
     async def test_create_invitation_public_x_no_public_invites(self):
         self.session.context.update_settings({"public_invites": False})
@@ -2200,7 +2583,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(
                     mock_oob_invi, use_existing_connection=True
                 )
-            assert "Configuration sets auto_present false" in str(context.exception)
+            assert (
+                "Configuration set auto_present false: cannot respond automatically to presentation requests"
+                == str(context.exception)
+            )
 
     async def test_req_v2_attach_presentation_existing_conn_auto_present_pres_msg(self):
         self.session.context.update_settings({"public_invites": True})
@@ -2332,7 +2718,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_req_v2_attach_pres_catch_value_error(self):
         self.session.context.update_settings({"public_invites": True})
         self.session.context.update_settings(
-            {"debug.auto_respond_presentation_request": True}
+            {"debug.auto_respond_presentation_request": False}
         )
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
@@ -2351,7 +2737,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         px2_rec = test_module.V20PresExRecord(
-            auto_present=True,
+            auto_present=False,
             pres_request=TestConfig.PRES_REQ_V2.serialize(),
         )
 
@@ -2443,7 +2829,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(
                     mock_oob_invi, use_existing_connection=True
                 )
-            assert "Cannot auto-respond" in str(context.exception)
+            assert "cannot respond automatically" in str(context.exception)
 
     async def test_req_attach_presentation_cred_offer(self):
         self.session.context.update_settings({"public_invites": True})

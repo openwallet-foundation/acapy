@@ -8,10 +8,9 @@ from ..core.error import BaseError
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer
 from ..storage.error import StorageNotFoundError
-
 from .indy import IndyRevocation
-from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
+from .models.issuer_rev_reg_record import IssuerRevRegRecord
 
 
 class RevocationManagerError(BaseError):
@@ -78,7 +77,7 @@ class RevocationManager:
                 along with any revocations pending against it
 
         """
-        issuer: IndyIssuer = self._profile.inject(IndyIssuer)
+        issuer = self._profile.inject(IndyIssuer)
 
         revoc = IndyRevocation(self._profile)
         issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
@@ -107,7 +106,10 @@ class RevocationManager:
                 await issuer_rr_rec.mark_pending(session, cred_rev_id)
 
     async def publish_pending_revocations(
-        self, rrid2crid: Mapping[Text, Sequence[Text]] = None
+        self,
+        rrid2crid: Mapping[Text, Sequence[Text]] = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> Mapping[Text, Sequence[Text]]:
         """
         Publish pending revocations to the ledger.
@@ -129,14 +131,17 @@ class RevocationManager:
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
                     - no pending revocations from any other revocation registries.
+            write_ledger: wether to write the transaction to the ledger, or prepare a
+                transaction to be endorsed
+            endorser_did: the did of the endorser, if endorsing the transaction
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
         result = {}
         issuer = self._profile.inject(IndyIssuer)
 
-        async with self._profile.session() as session:
-            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)
+        txn = await self._profile.transaction()
+        issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(txn)
         for issuer_rr_rec in issuer_rr_recs:
             rrid = issuer_rr_rec.revoc_reg_id
             crids = []
@@ -149,17 +154,23 @@ class RevocationManager:
                     if crid in (rrid2crid[rrid] or []) or not rrid2crid[rrid]
                 ]
             if crids:
+                # FIXME - must use the same transaction
                 (delta_json, failed_crids) = await issuer.revoke_credentials(
                     issuer_rr_rec.revoc_reg_id,
                     issuer_rr_rec.tails_local_path,
                     crids,
                 )
                 issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
-                await issuer_rr_rec.send_entry(self._profile)
+                send_entry_result = await issuer_rr_rec.send_entry(
+                    self._profile, write_ledger=write_ledger, endorser_did=endorser_did
+                )
+                if endorser_did and not write_ledger:
+                    return send_entry_result
+
                 published = [crid for crid in crids if crid not in failed_crids]
                 result[issuer_rr_rec.revoc_reg_id] = published
-                async with self._profile.session() as session:
-                    await issuer_rr_rec.clear_pending(session, published)
+                await issuer_rr_rec.clear_pending(txn, published)
+                await txn.commit()
 
         return result
 
@@ -194,12 +205,14 @@ class RevocationManager:
 
         """
         result = {}
-        async with self._profile.session() as session:
-            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)
+
+        async with self._profile.transaction() as txn:
+            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(txn)
             for issuer_rr_rec in issuer_rr_recs:
                 rrid = issuer_rr_rec.revoc_reg_id
-                await issuer_rr_rec.clear_pending(session, (purge or {}).get(rrid))
+                await issuer_rr_rec.clear_pending(txn, (purge or {}).get(rrid))
                 if issuer_rr_rec.pending_pub:
                     result[rrid] = issuer_rr_rec.pending_pub
+            await txn.commit()
 
         return result

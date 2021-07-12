@@ -1,5 +1,7 @@
 """BbsBlsSignatureProof2020 class."""
 
+import re
+
 from os import urandom
 from pyld import jsonld
 from typing import List
@@ -326,21 +328,11 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             List[str]: List of transformed output statements
 
         """
-        transformed_statements = []
-
-        for statement in statements:
-            if "_:c14n" in statement:
-                prefix_index = statement.index("_:c14n")
-                space_index = statement.index(" ", prefix_index)
-
-                statement = statement.replace(
-                    statement[prefix_index:space_index],
-                    "<urn:bnid:{ident}>".format(
-                        ident=statement[prefix_index:space_index]
-                    ),
-                )
-
-            transformed_statements.append(statement)
+        # replace all occurrences of _:c14nX with <urn:bnid:_:c14nX>
+        transformed_statements = [
+            re.sub(r"(_:c14n[0-9]+)", r"<urn:bnid:\1>", statement)
+            for statement in statements
+        ]
 
         return transformed_statements
 
@@ -359,24 +351,11 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             List[str]: List of transformed output statements
 
         """
-        transformed_statements = []
-
-        prefix_string = "<urn:bnid:"
-
-        for statement in statements:
-            if "<urn:bnid:_:c14n" in statement:
-                prefix_index = statement.index(prefix_string)
-                closing_index = statement.index(">", prefix_index)
-
-                urn_id_close = closing_index + 1  # >
-                urn_id_prefix_end = prefix_index + len(prefix_string)  # <urn:bnid:
-
-                statement = statement.replace(
-                    statement[prefix_index:urn_id_close],
-                    statement[urn_id_prefix_end:closing_index],
-                )
-
-            transformed_statements.append(statement)
+        # replace all occurrences of <urn:bnid:_:c14nX> with _:c14nX
+        transformed_statements = [
+            re.sub(r"<urn:bnid:(_:c14n[0-9]+)>", r"\1", statement)
+            for statement in statements
+        ]
 
         return transformed_statements
 

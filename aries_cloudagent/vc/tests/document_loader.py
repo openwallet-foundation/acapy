@@ -7,6 +7,7 @@ from .contexts import (
     EXAMPLES_V1,
     BBS_V1,
     CITIZENSHIP_V1,
+    VACCINATION_V1,
     ODRL,
     SCHEMA_ORG,
 )
@@ -44,6 +45,7 @@ DOCUMENTS = {
     "https://w3id.org/citizenship/v1": CITIZENSHIP_V1,
     "https://www.w3.org/ns/odrl.jsonld": ODRL,
     "http://schema.org/": SCHEMA_ORG,
+    "https://w3id.org/vaccination/v1": VACCINATION_V1,
 }
 
 
@@ -66,6 +68,5 @@ def custom_document_loader(url: str, options: dict):
             "document": DOCUMENTS[without_fragment],
             "documentUrl": url,
         }
-    print("Could not find")
 
     raise Exception(f"No custom context support for {url}")

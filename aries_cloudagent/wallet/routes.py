@@ -207,10 +207,9 @@ async def wallet_did_list(request: web.BaseRequest):
     filter_posture = DIDPosture.get(request.query.get("posture"))
     filter_key_type = KeyType.from_key_type(request.query.get("key_type"))
     results = []
-    public_did_info = await wallet.get_public_did()
-    posted_did_infos = await wallet.get_posted_dids()
 
     if filter_posture is DIDPosture.PUBLIC:
+        public_did_info = await wallet.get_public_did()
         if (
             public_did_info
             and (not filter_verkey or public_did_info.verkey == filter_verkey)
@@ -221,6 +220,7 @@ async def wallet_did_list(request: web.BaseRequest):
             results.append(format_did_info(public_did_info))
     elif filter_posture is DIDPosture.POSTED:
         results = []
+        posted_did_infos = await wallet.get_posted_dids()
         for info in posted_did_infos:
             if (
                 (not filter_verkey or info.verkey == filter_verkey)
@@ -401,7 +401,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
                 raise web.HTTPNotFound(reason=f"DID {did} is not posted to the ledger")
 
         did_info = await wallet.get_local_did(did)
-        info = await wallet.set_public_did(did)
+        info = await wallet.set_public_did(did_info)
         if info:
             # Publish endpoint if necessary
             endpoint = did_info.metadata.get("endpoint")

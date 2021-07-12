@@ -17,7 +17,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import ENDPOINT, INDY_DID, UUIDFour, UUID4
+from ....messaging.valid import ENDPOINT, GENERIC_DID, UUIDFour, UUID4
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 
@@ -41,8 +41,8 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
     their_public_did = fields.Str(
         required=True,
         allow_none=False,
-        description="Public DID to which to request connection",
-        **INDY_DID,
+        description="Qualified public DID to which to request connection",
+        **GENERIC_DID,
     )
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     my_label = fields.Str(
@@ -52,6 +52,10 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         required=False,
         description="Identifier for active mediation record to be used",
         **UUID4,
+    )
+    use_public_did = fields.Boolean(
+        required=False,
+        description="Use public DID for this connection",
     )
 
 
@@ -179,6 +183,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
+    use_public_did = json.loads(request.query.get("use_public_did", "null"))
 
     didx_mgr = DIDXManager(session)
     try:
@@ -187,6 +192,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             my_label=my_label,
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
+            use_public_did=use_public_did,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

@@ -226,7 +226,7 @@ class TestInMemoryWallet:
 
         with pytest.raises(WalletError) as context:
             await wallet.rotate_did_keypair_start(key_info.did)
-        assert "Did method key does not support key rotation" in str(context.value)
+        assert "DID method 'key' does not support key rotation" in str(context.value)
 
         new_verkey = await wallet.rotate_did_keypair_start(self.test_sov_did)
         assert info.verkey != new_verkey
@@ -252,7 +252,7 @@ class TestInMemoryWallet:
             await wallet.create_local_did(
                 DIDMethod.KEY, KeyType.ED25519, None, "did:sov:random"
             )
-        assert "Not allowed to set did for did method key" in str(context.value)
+        assert "Not allowed to set DID for DID method 'key'" in str(context.value)
 
     @pytest.mark.asyncio
     async def test_local_verkey(self, wallet: InMemoryWallet):
@@ -344,7 +344,6 @@ class TestInMemoryWallet:
             self.test_sov_did,
             self.test_metadata,
         )
-        assert not info.metadata.get("public")
         assert not info.metadata.get("posted")
 
         posted = await wallet.get_posted_dids()
@@ -354,22 +353,24 @@ class TestInMemoryWallet:
             DIDMethod.SOV,
             KeyType.ED25519,
         )
-        assert info_public.metadata.get("public")
         assert info_public.metadata.get("posted")
+        posted = await wallet.get_posted_dids()
+        assert posted[0].did == info_public.did
 
         # test replace
         info_replace = await wallet.create_public_did(
             DIDMethod.SOV,
             KeyType.ED25519,
         )
-        assert info_replace.metadata.get("public")
         assert info_replace.metadata.get("posted")
         info_check = await wallet.get_local_did(info_public.did)
-        assert not info_check.metadata.get("public")
         assert info_check.metadata.get("posted")
 
         posted = await wallet.get_posted_dids()
-        assert posted and posted[0].did == info_public.did
+        assert len(posted) == 2 and set(p.did for p in posted) == {
+            info_public.did,
+            info_replace.did,
+        }
 
     @pytest.mark.asyncio
     async def test_create_public_did_x_not_sov(self, wallet: InMemoryWallet):
@@ -378,7 +379,7 @@ class TestInMemoryWallet:
                 DIDMethod.KEY,
                 KeyType.ED25519,
             )
-        assert "Creating public did is only allowed for did:sov dids" in str(
+        assert "Setting public DID is only allowed for did:sov DIDs" in str(
             context.value
         )
 
@@ -402,7 +403,6 @@ class TestInMemoryWallet:
             self.test_sov_did,
             self.test_metadata,
         )
-        assert not info.metadata.get("public")
 
         with pytest.raises(WalletNotFoundError):
             await wallet.set_public_did("55GkHamhTU1ZbTbV2ab9DF")
@@ -410,21 +410,17 @@ class TestInMemoryWallet:
         # test assign
         info_same = await wallet.set_public_did(info.did)
         assert info_same.did == info.did
-        assert info_same.metadata.get("public")
 
         info_new = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
         assert info_new.did != info_same.did
-        assert not info_new.metadata.get("public")
 
         loc = await wallet.get_local_did(self.test_sov_did)
         pub = await wallet.set_public_did(loc.did)
         assert pub.did == loc.did
-        assert pub.metadata.get("public") == loc.metadata.get("public")
 
         # test replace
         info_final = await wallet.set_public_did(info_new.did)
         assert info_final.did == info_new.did
-        assert info_final.metadata.get("public")
 
     @pytest.mark.asyncio
     async def test_set_public_did_x_not_sov(self, wallet: InMemoryWallet):
@@ -434,7 +430,7 @@ class TestInMemoryWallet:
         )
         with pytest.raises(WalletError) as context:
             await wallet.set_public_did(info.did)
-        assert "Setting public did is only allowed for did:sov dids" in str(
+        assert "Setting public DID is only allowed for did:sov DIDs" in str(
             context.value
         )
 
@@ -609,6 +605,6 @@ class TestInMemoryWallet:
                 "https://google.com",
                 {},
             )
-        assert "Setting did endpoint is only allowed for did:sov dids" in str(
+        assert "Setting DID endpoint is only allowed for did:sov DIDs" in str(
             context.value
         )

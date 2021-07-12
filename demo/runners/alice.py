@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 import base64
 import binascii
@@ -8,8 +7,6 @@ import os
 import sys
 from urllib.parse import urlparse
 
-from aiohttp import ClientError
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from runners.agent_container import (  # noqa:E402
@@ -17,20 +14,13 @@ from runners.agent_container import (  # noqa:E402
     create_agent_with_args,
     AriesAgent,
 )
-from runners.support.agent import (  # noqa:E402
-    DemoAgent,
-    default_genesis_txns,
-    start_mediator_agent,
-    connect_wallet_to_mediator,
-)
 from runners.support.utils import (  # noqa:E402
-    log_json,
+    check_requires,
     log_msg,
     log_status,
     log_timer,
     prompt,
     prompt_loop,
-    require_indy,
 )
 
 logging.basicConfig(level=logging.WARNING)
@@ -78,116 +68,14 @@ class AliceAgent(AriesAgent):
         if (
             message["connection_id"] == self.connection_id
             and message["rfc23_state"] == "completed"
-            and not self._connection_ready.done()
+            and (self._connection_ready and not self._connection_ready.done())
         ):
             self.log("Connected")
             self._connection_ready.set_result(True)
 
-    async def handle_issue_credential_v2_0(self, message):
-        state = message["state"]
-        cred_ex_id = message["cred_ex_id"]
-        prev_state = self.cred_state.get(cred_ex_id)
-        if prev_state == state:
-            return  # ignore
-        self.cred_state[cred_ex_id] = state
 
-        self.log(f"Credential: state = {state}, cred_ex_id {cred_ex_id}")
-
-        if state == "offer-received":
-            log_status("#15 After receiving credential offer, send credential request")
-            await self.admin_POST(
-                f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
-            )
-
-        elif state == "done":
-            # Moved to indy detail record handler
-            pass
-
-    async def handle_issue_credential_v2_0_indy(self, message):
-        cred_req_metadata = message.get("cred_request_metadata")
-        if cred_req_metadata:
-            log_json(cred_req_metadata, label="Credential request metadata:")
-
-        log_json(message, label="indy message:")
-        cred_id = message.get("cred_id_stored")
-        if cred_id:
-            self.log(f"Stored credential {cred_id} in wallet")
-            log_status(f"#18.1 Stored credential {cred_id} in wallet")
-            cred = await self.admin_GET(f"/credential/{cred_id}")
-            log_json(cred, label="Credential details:")
-            self.log("credential_id", cred_id)
-            self.log("cred_def_id", cred["cred_def_id"])
-            self.log("schema_id", cred["schema_id"])
-
-    async def handle_present_proof_v2_0(self, message):
-        state = message["state"]
-        pres_ex_id = message["pres_ex_id"]
-        log_msg("Presentation: state =", state, ", pres_ex_id =", pres_ex_id)
-
-        if state == "request-received":
-            log_status(
-                "#24 Query for credentials in the wallet that satisfy the proof request"
-            )
-            pres_request = message["by_format"].get("pres_request", {}).get("indy")
-
-            # include self-attested attributes (not included in credentials)
-            creds_by_reft = {}
-            revealed = {}
-            self_attested = {}
-            predicates = {}
-
-            try:
-                # select credentials to provide for the proof
-                creds = await self.admin_GET(
-                    f"/present-proof-2.0/records/{pres_ex_id}/credentials"
-                )
-                if creds:
-                    for row in sorted(
-                        creds,
-                        key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
-                        reverse=True,
-                    ):
-                        for referent in row["presentation_referents"]:
-                            if referent not in creds_by_reft:
-                                creds_by_reft[referent] = row
-
-                for referent in pres_request["requested_attributes"]:
-                    if referent in creds_by_reft:
-                        revealed[referent] = {
-                            "cred_id": creds_by_reft[referent]["cred_info"]["referent"],
-                            "revealed": True,
-                        }
-                    else:
-                        self_attested[referent] = "my self-attested value"
-
-                for referent in pres_request["requested_predicates"]:
-                    if referent in creds_by_reft:
-                        predicates[referent] = {
-                            "cred_id": creds_by_reft[referent]["cred_info"]["referent"]
-                        }
-
-                log_status("#25 Generate the proof")
-                request = {
-                    "indy": {
-                        "requested_predicates": predicates,
-                        "requested_attributes": revealed,
-                        "self_attested_attributes": self_attested,
-                    }
-                }
-
-                log_status("#26 Send the proof to X")
-                await self.admin_POST(
-                    f"/present-proof-2.0/records/{pres_ex_id}/send-presentation",
-                    request,
-                )
-            except ClientError:
-                pass
-
-    async def handle_basicmessages(self, message):
-        self.log("Received message:", message["content"])
-
-
-async def input_invitation(agent):
+async def input_invitation(agent_container):
+    agent_container.agent._connection_ready = asyncio.Future()
     async for details in prompt_loop("Invite details: "):
         b64_invite = None
         try:
@@ -224,7 +112,7 @@ async def input_invitation(agent):
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
-        connection = await agent.input_invitation(details, wait=True)
+        connection = await agent_container.input_invitation(details, wait=True)
 
 
 async def main(args):
@@ -346,7 +234,7 @@ if __name__ == "__main__":
         except ImportError:
             print("pydevd_pycharm library was not found")
 
-    require_indy()
+    check_requires(args)
 
     try:
         asyncio.get_event_loop().run_until_complete(main(args))

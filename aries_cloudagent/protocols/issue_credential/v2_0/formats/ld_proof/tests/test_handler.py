@@ -49,14 +49,18 @@ from ....message_types import (
 from ...handler import LOGGER, V20CredFormatError
 
 from ..handler import LDProofCredFormatHandler
+from ..handler import LOGGER as LD_PROOF_LOGGER
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 
 LD_PROOF_VC_DETAIL = {
     "credential": {
-        "@context": ["https://www.w3.org/2018/credentials/v1"],
-        "type": ["VerifiableCredential"],
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/2018/credentials/examples/v1",
+        ],
+        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
         "credentialSubject": {"test": "key"},
         "issuanceDate": "2021-04-12",
         "issuer": TEST_DID_KEY,
@@ -68,8 +72,11 @@ LD_PROOF_VC_DETAIL = {
 }
 LD_PROOF_VC_DETAIL_BBS = {
     "credential": {
-        "@context": ["https://www.w3.org/2018/credentials/v1"],
-        "type": ["VerifiableCredential"],
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/2018/credentials/examples/v1",
+        ],
+        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
         "credentialSubject": {"test": "key"},
         "issuanceDate": "2021-04-12",
         "issuer": TEST_DID_KEY,
@@ -80,8 +87,11 @@ LD_PROOF_VC_DETAIL_BBS = {
     },
 }
 LD_PROOF_VC = {
-    "@context": ["https://www.w3.org/2018/credentials/v1"],
-    "type": ["VerifiableCredential"],
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1",
+    ],
+    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
     "credentialSubject": {"test": "key"},
     "issuanceDate": "2021-04-12",
     "issuer": TEST_DID_KEY,
@@ -173,7 +183,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         await details_ld_proof[1].save(self.session)  # exercise logger warning on get()
 
         with async_mock.patch.object(
-            LOGGER, "warning", async_mock.MagicMock()
+            LD_PROOF_LOGGER, "warning", async_mock.MagicMock()
         ) as mock_warning:
             assert await self.handler.get_detail_record(cred_ex_id) in details_ld_proof
             mock_warning.assert_called_once()
@@ -878,11 +888,13 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 document_loader=custom_document_loader,
                 purpose=mock_get_proof_purpose.return_value,
             )
-
             self.holder.store_credential.assert_called_once_with(
                 VCRecord(
                     contexts=LD_PROOF_VC["@context"],
-                    types=LD_PROOF_VC["type"],
+                    expanded_types=[
+                        "https://www.w3.org/2018/credentials#VerifiableCredential",
+                        "https://example.org/examples#UniversityDegreeCredential",
+                    ],
                     issuer_id=LD_PROOF_VC["issuer"],
                     subject_ids=[],
                     schema_ids=[],  # Schemas not supported yet
@@ -890,7 +902,6 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                     cred_value=LD_PROOF_VC,
                     given_id=None,
                     record_id=cred_id,
-                    cred_tags=None,  # Tags should be derived from credential values
                 )
             )
 

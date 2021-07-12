@@ -133,8 +133,10 @@ Note that with _Play with Docker_ it can be challenging to capture the informati
 If you are running in a _local bash shell_, navigate to [The demo directory](/demo) and run:
 
 ```bash
-TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
+TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --aip 10 --revocation --events
 ```
+
+(Note that we have to start faber with `--aip 10` for compatibility with mobile clients.)
 
 The `TAILS_NETWORK` parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).
 
@@ -143,7 +145,7 @@ The `TAILS_NETWORK` parameter lets the demo script know how to connect to the ta
 If you are running in _Play with Docker_, navigate to [The demo directory](/demo) and run:
 
 ```bash
-PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
+PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --aip 10 --revocation --events
 ```
 
 The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.

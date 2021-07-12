@@ -14,6 +14,7 @@ from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
+from ....wallet.error import WalletError
 from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
 from ....wallet.did_posture import DIDPosture
@@ -26,6 +27,7 @@ from ...out_of_band.v1_0.messages.invitation import (
 )
 from ...out_of_band.v1_0.messages.service import Service as OOBService
 
+from .message_types import ARIES_PROTOCOL as DIDX_PROTO
 from .messages.complete import DIDXComplete
 from .messages.request import DIDXRequest
 from .messages.response import DIDXResponse
@@ -123,6 +125,7 @@ class DIDXManager(BaseConnectionManager):
             accept=accept,
             alias=alias,
             their_public_did=their_public_did,
+            connection_protocol=DIDX_PROTO,
         )
 
         await conn_rec.save(
@@ -159,6 +162,7 @@ class DIDXManager(BaseConnectionManager):
         my_label: str = None,
         my_endpoint: str = None,
         mediation_id: str = None,
+        use_public_did: bool = False,
     ) -> ConnRecord:
         """
         Create and send a request against a public DID only (no explicit invitation).
@@ -168,14 +172,23 @@ class DIDXManager(BaseConnectionManager):
             my_label: my label for request
             my_endpoint: my endpoint
             mediation_id: record id for mediation with routing_keys, service endpoint
+            use_public_did: use my public DID for this connection
 
         Returns:
             The new `ConnRecord` instance
 
         """
+        my_public_info = None
+        if use_public_did:
+            wallet = self._session.inject(BaseWallet)
+            my_public_info = await wallet.get_public_did()
+            if not my_public_info:
+                raise WalletError("No public DID configured")
 
         conn_rec = ConnRecord(
-            my_did=None,  # create-request will fill in on local DID creation
+            my_did=my_public_info.did
+            if my_public_info
+            else None,  # create-request will fill in on local DID creation
             their_did=their_public_did,
             their_label=None,
             their_role=ConnRecord.Role.RESPONDER.rfc23,
@@ -184,6 +197,7 @@ class DIDXManager(BaseConnectionManager):
             accept=None,
             alias=my_label,
             their_public_did=their_public_did,
+            connection_protocol=DIDX_PROTO,
         )
         request = await self.create_request(  # saves and updates conn_rec
             conn_rec=conn_rec,
@@ -271,7 +285,14 @@ class DIDXManager(BaseConnectionManager):
                 filter(None, [base_mediation_record, mediation_record])
             ),
         )
-        pthid = conn_rec.invitation_msg_id or f"did:sov:{conn_rec.their_public_did}"
+        if (
+            conn_rec.their_public_did is not None
+            and conn_rec.their_public_did.startswith("did:")
+        ):
+            qualified_did = conn_rec.their_public_did
+        else:
+            qualified_did = f"did:sov:{conn_rec.their_public_did}"
+        pthid = conn_rec.invitation_msg_id or qualified_did
         attach = AttachDecorator.data_base64(did_doc.serialize())
         await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
@@ -387,6 +408,7 @@ class DIDXManager(BaseConnectionManager):
                     state=ConnRecord.State.REQUEST.rfc23,
                     accept=conn_rec.accept,
                     their_role=conn_rec.their_role,
+                    connection_protocol=DIDX_PROTO,
                 )
 
                 await new_conn_rec.save(
@@ -480,6 +502,7 @@ class DIDXManager(BaseConnectionManager):
                 invitation_msg_id=None,
                 request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc23,
+                connection_protocol=DIDX_PROTO,
             )
             await conn_rec.save(
                 self._session, reason="Received connection request from public DID"

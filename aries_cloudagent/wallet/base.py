@@ -7,7 +7,6 @@ from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from .error import WalletError
 
-from .did_posture import DIDPosture
 from .did_info import DIDInfo, KeyInfo
 from .key_type import KeyType
 from .did_method import DIDMethod
@@ -122,8 +121,6 @@ class BaseWallet(ABC):
         """
         Create and store a new public DID.
 
-        Implicitly flags all other dids as not public.
-
         Args:
             seed: Optional seed to use for DID
             did: The DID to use
@@ -133,72 +130,32 @@ class BaseWallet(ABC):
             The created `DIDInfo`
 
         """
-        if method != DIDMethod.SOV:
-            raise WalletError("Creating public did is only allowed for did:sov dids")
-
-        # validate key_type
-        if not method.supports_key_type(key_type):
-            raise WalletError(
-                f"Invalid key type {key_type.key_type} for method {method.method_name}"
-            )
-
-        metadata = DIDPosture.PUBLIC.metadata
-        dids = await self.get_local_dids()
-        for info in dids:
-            info_meta = info.metadata
-            info_meta["public"] = False
-            await self.replace_local_did_metadata(info.did, info_meta)
-        return await self.create_local_did(
+        metadata = metadata or {}
+        metadata.setdefault("posted", True)
+        did_info = await self.create_local_did(
             method=method, key_type=key_type, seed=seed, did=did, metadata=metadata
         )
+        return await self.set_public_did(did_info)
 
+    @abstractmethod
     async def get_public_did(self) -> DIDInfo:
         """
         Retrieve the public DID.
 
         Returns:
-            The created `DIDInfo`
+            The currently public `DIDInfo`, if any
 
         """
 
-        dids = await self.get_local_dids()
-        for info in dids:
-            if info.metadata.get("public"):
-                return info
-
-        return None
-
-    async def set_public_did(self, did: str) -> DIDInfo:
+    @abstractmethod
+    async def set_public_did(self, did: Union[str, DIDInfo]) -> DIDInfo:
         """
         Assign the public DID.
 
         Returns:
-            The created `DIDInfo`
+            The updated `DIDInfo`
 
         """
-
-        did_info = await self.get_local_did(did)
-        if did_info.method != DIDMethod.SOV:
-            raise WalletError("Setting public did is only allowed for did:sov dids")
-
-        # will raise an exception if not found
-        info = None if did is None else await self.get_local_did(did)
-
-        public = await self.get_public_did()
-        if public and info and public.did == info.did:
-            info = public
-        else:
-            if public:
-                metadata = public.metadata.copy()
-                del metadata["public"]
-                await self.replace_local_did_metadata(public.did, metadata)
-
-            if info:
-                metadata = {**info.metadata, **DIDPosture.PUBLIC.metadata}
-                await self.replace_local_did_metadata(info.did, metadata)
-                info = await self.get_local_did(info.did)
-
-        return info
 
     @abstractmethod
     async def get_local_dids(self) -> Sequence[DIDInfo]:
@@ -251,23 +208,21 @@ class BaseWallet(ABC):
 
     async def get_posted_dids(self) -> Sequence[DIDInfo]:
         """
-        Get list of defined posted DIDs, excluding public DID.
+        Get list of defined posted DIDs.
 
         Returns:
             A list of `DIDInfo` instances
 
         """
         return [
-            info
-            for info in await self.get_local_dids()
-            if info.metadata.get("posted") and not info.metadata.get("public")
+            info for info in await self.get_local_dids() if info.metadata.get("posted")
         ]
 
     async def set_did_endpoint(
         self,
         did: str,
         endpoint: str,
-        ledger: BaseLedger,
+        _ledger: BaseLedger,
         endpoint_type: EndpointType = None,
     ):
         """
@@ -284,7 +239,7 @@ class BaseWallet(ABC):
         did_info = await self.get_local_did(did)
 
         if did_info.method != DIDMethod.SOV:
-            raise WalletError("Setting did endpoint is only allowed for did:sov dids")
+            raise WalletError("Setting DID endpoint is only allowed for did:sov DIDs")
         metadata = {**did_info.metadata}
         if not endpoint_type:
             endpoint_type = EndpointType.ENDPOINT
