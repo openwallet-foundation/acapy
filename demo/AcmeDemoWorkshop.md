@@ -183,6 +183,8 @@ First though we need to register a schema and credential definition.  Find this 
 
 ... and just remove the ```TODO ```, then uncommment the rest.  Easy, no?
 
+Next, paste the below code snippet under the acme_agent.initialize function.
+
 ``` python
         with log_timer("Publish schema and cred def duration:"):
             # define schema
@@ -194,7 +196,7 @@ First though we need to register a schema and credential definition.  Find this 
                     random.randint(1, 101),
                 )
             )
-            # (schema_id, cred_def_id) = await agent.register_schema_and_creddef(
+            (schema_id, cred_def_id) = await agent.register_schema_and_creddef(
                 "employee id schema",
                 version,
                 ["employee_id", "name", "date", "position"],
