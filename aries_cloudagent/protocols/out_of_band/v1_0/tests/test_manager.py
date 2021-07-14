@@ -2926,7 +2926,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         del req_attach["data"]["json"]
         req_attach["data"]["json"] = TestConfig.CRED_OFFER_V1.serialize()
         exchange_rec = V10CredentialExchange()
-        exchange_rec.auto_offer = True
         exchange_rec.credential_offer = TestConfig.CRED_OFFER_V1
 
         with async_mock.patch.object(
@@ -3105,7 +3104,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         req_attach["data"]["json"] = TestConfig.CRED_OFFER_V2.serialize()
 
         exchange_rec = V20CredExRecord()
-        exchange_rec.auto_offer = True
         exchange_rec.cred_offer = TestConfig.CRED_OFFER_V2
 
         with async_mock.patch.object(
@@ -3197,7 +3195,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         req_attach["data"]["json"] = TestConfig.CRED_OFFER_V2.serialize()
 
         exchange_rec = V20CredExRecord()
-        exchange_rec.auto_offer = True
         exchange_rec.cred_offer = TestConfig.CRED_OFFER_V2
 
         with async_mock.patch.object(

@@ -773,7 +773,7 @@ class OutOfBandManager(BaseConnectionManager):
         cred_ex_record = await cred_mgr.receive_offer(
             message=cred_offer, connection_id=conn_rec.connection_id
         )
-        if cred_ex_record.auto_offer:
+        if self._session.context.settings.get("debug.auto_respond_credential_offer"):
             (_, cred_request_message) = await cred_mgr.create_request(
                 cred_ex_record=cred_ex_record,
                 holder_did=conn_rec.my_did,
@@ -817,7 +817,7 @@ class OutOfBandManager(BaseConnectionManager):
             cred_offer_message=cred_offer, connection_id=conn_rec.connection_id
         )
 
-        if cred_ex_record.auto_offer:
+        if self._session.context.settings.get("debug.auto_respond_credential_offer"):
             (_, cred_request_message) = await cred_mgr.create_request(
                 cred_ex_record=cred_ex_record,
                 holder_did=conn_rec.my_did,

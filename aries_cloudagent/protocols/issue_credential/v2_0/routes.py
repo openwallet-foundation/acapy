@@ -769,7 +769,6 @@ async def _create_free_offer(
     connection_id: str = None,
     auto_issue: bool = False,
     auto_remove: bool = False,
-    auto_offer: bool = False,
     preview_spec: dict = None,
     comment: str = None,
     trace_msg: bool = None,
@@ -794,7 +793,6 @@ async def _create_free_offer(
         cred_proposal=cred_proposal.serialize(),
         auto_issue=auto_issue,
         auto_remove=auto_remove,
-        auto_offer=auto_offer,
         trace=trace_msg,
     )
 
@@ -837,7 +835,6 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
     auto_remove = body.get("auto_remove")
-    auto_offer = context.settings.get("debug.auto_respond_credential_offer") or False
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     filt_spec = body.get("filter")
@@ -851,7 +848,6 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
             filt_spec=filt_spec,
             auto_issue=auto_issue,
             auto_remove=auto_remove,
-            auto_offer=auto_offer,
             preview_spec=preview_spec,
             comment=comment,
             trace_msg=trace_msg,
@@ -911,7 +907,6 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
     auto_remove = body.get("auto_remove")
-    auto_offer = context.settings.get("debug.auto_respond_credential_offer") or False
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     trace_msg = body.get("trace")
@@ -930,7 +925,6 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             connection_id=connection_id,
             auto_issue=auto_issue,
             auto_remove=auto_remove,
-            auto_offer=auto_offer,
             preview_spec=preview_spec,
             comment=comment,
             trace_msg=trace_msg,
