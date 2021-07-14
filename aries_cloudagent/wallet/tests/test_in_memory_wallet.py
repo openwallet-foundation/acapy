@@ -403,6 +403,7 @@ class TestInMemoryWallet:
             self.test_sov_did,
             self.test_metadata,
         )
+        assert not info.metadata.get("posted")
 
         with pytest.raises(WalletNotFoundError):
             await wallet.set_public_did("55GkHamhTU1ZbTbV2ab9DF")
@@ -410,17 +411,20 @@ class TestInMemoryWallet:
         # test assign
         info_same = await wallet.set_public_did(info.did)
         assert info_same.did == info.did
+        assert info_same.metadata.get("posted")
 
         info_new = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
         assert info_new.did != info_same.did
 
         loc = await wallet.get_local_did(self.test_sov_did)
-        pub = await wallet.set_public_did(loc.did)
+        pub = await wallet.set_public_did(loc)
         assert pub.did == loc.did
+        assert pub.metadata.get("posted")
 
         # test replace
         info_final = await wallet.set_public_did(info_new.did)
         assert info_final.did == info_new.did
+        assert info_final.metadata.get("posted")
 
     @pytest.mark.asyncio
     async def test_set_public_did_x_not_sov(self, wallet: InMemoryWallet):
