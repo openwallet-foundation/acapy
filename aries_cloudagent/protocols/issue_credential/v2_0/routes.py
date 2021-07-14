@@ -865,8 +865,8 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     ) as err:
         if cred_ex_record:
             async with context.session() as session:
-                raise web.HTTPBadRequest(reason=err.roll_up)
-        await cred_ex_record.save_error_state(session, reason=err.roll_up)
+                await cred_ex_record.save_error_state(session, reason=err.roll_up)
+        raise web.HTTPBadRequest(reason=err.roll_up)
     trace_event(
         context.settings,
         cred_offer_message,

@@ -3255,3 +3255,80 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     mock_oob_invi, use_existing_connection=True
                 )
                 assert "Configuration sets auto_offer false" in str(context.exception)
+
+    async def test_catch_unsupported_request_attach(self):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_credential_offer": False}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+        req_attach = deepcopy(TestConfig.req_attach_v1)
+        del req_attach["data"]["json"]
+        req_attach["data"]["json"] = TestConfig.CRED_OFFER_V1.serialize()
+        req_attach["data"]["json"]["@type"] = "test"
+
+        with async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report:
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_target_did],
+                requests_attach=[AttachDecorator.deserialize(req_attach)],
+            )
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            with self.assertRaises(OutOfBandManagerError) as context:
+                await self.manager.receive_invitation(
+                    mock_oob_invi, use_existing_connection=True
+                )
+                assert "Public invitations are not enabled" in str(context.exception)
