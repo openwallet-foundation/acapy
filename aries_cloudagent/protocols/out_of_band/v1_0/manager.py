@@ -584,17 +584,35 @@ class OutOfBandManager(BaseConnectionManager):
                             trace=(invi_msg._trace is not None),
                         )
                     elif unq_req_attach_type == CREDENTIAL_OFFER:
-                        await self._process_cred_offer_v1(
-                            req_attach=req_attach,
-                            conn_rec=conn_rec,
-                            trace=(invi_msg._trace is not None),
-                        )
+                        try:
+                            await asyncio.wait_for(
+                                self.conn_rec_is_active(conn_rec.connection_id),
+                                15,
+                            )
+                            await self._process_cred_offer_v1(
+                                req_attach=req_attach,
+                                conn_rec=conn_rec,
+                                trace=(invi_msg._trace is not None),
+                            )
+                        except asyncio.TimeoutError:
+                            raise OutOfBandManagerError(
+                                "Connection not ready for credential request workflow"
+                            )
                     elif unq_req_attach_type == CRED_20_OFFER:
-                        await self._process_cred_offer_v2(
-                            req_attach=req_attach,
-                            conn_rec=conn_rec,
-                            trace=(invi_msg._trace is not None),
-                        )
+                        try:
+                            await asyncio.wait_for(
+                                self.conn_rec_is_active(conn_rec.connection_id),
+                                15,
+                            )
+                            await self._process_cred_offer_v2(
+                                req_attach=req_attach,
+                                conn_rec=conn_rec,
+                                trace=(invi_msg._trace is not None),
+                            )
+                        except asyncio.TimeoutError:
+                            raise OutOfBandManagerError(
+                                "Connection not ready for credential request workflow"
+                            )
                     else:
                         raise OutOfBandManagerError(
                             (
@@ -889,6 +907,25 @@ class OutOfBandManager(BaseConnectionManager):
                 == "initial"
             ):
                 received = True
+        return
+
+    async def conn_rec_is_active(self, conn_rec_id: str):
+        """
+        Return when ConnRecord state becomes active.
+
+        Args:
+            conn_rec: ConnRecord
+
+        Returns:
+
+        """
+        active = False
+        while not active:
+            conn_rec = await ConnRecord.retrieve_by_id(self._session, conn_rec_id)
+            if conn_rec.state == "active":
+                active = True
+            else:
+                asyncio.sleep(1)
         return
 
     async def create_handshake_reuse_message(
