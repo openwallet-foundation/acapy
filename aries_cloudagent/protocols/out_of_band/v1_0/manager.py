@@ -28,10 +28,15 @@ from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManager
-from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from ...issue_credential.v1_0.manager import CredentialManager as V10CredManager
+from ...issue_credential.v1_0.messages.credential_offer import (
+    CredentialOffer as V10CredOffer,
+)
 from ...issue_credential.v1_0.message_types import CREDENTIAL_OFFER
-from ...issue_credential.v1_0.manager import CredentialManager
-from ...issue_credential.v1_0.manager import CredentialOffer
+from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
+from ...issue_credential.v2_0.manager import V20CredManager
+from ...issue_credential.v2_0.messages.cred_offer import V20CredOffer
+from ...issue_credential.v2_0.message_types import CRED_20_OFFER
 from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from ...present_proof.v1_0.manager import PresentationManager
 from ...present_proof.v1_0.message_types import PRESENTATION_REQUEST
@@ -166,7 +171,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
-                            cred_ex_rec.credential_offer_dict
+                            cred_ex_rec.credential_offer_dict.serialize()
                         )
                     )
                 except StorageNotFoundError:
@@ -175,7 +180,9 @@ class OutOfBandManager(BaseConnectionManager):
                         a_id,
                     )
                     message_attachments.append(
-                        InvitationMessage.wrap_message(cred_ex_rec.cred_offer.offer())
+                        InvitationMessage.wrap_message(
+                            cred_ex_rec.cred_offer.serialize()
+                        )
                     )
             elif a_type == "present-proof":
                 try:
@@ -580,13 +587,21 @@ class OutOfBandManager(BaseConnectionManager):
                         await self._process_cred_offer_v1(
                             req_attach=req_attach,
                             conn_rec=conn_rec,
+                            trace=(invi_msg._trace is not None),
+                        )
+                    elif unq_req_attach_type == CRED_20_OFFER:
+                        await self._process_cred_offer_v2(
+                            req_attach=req_attach,
+                            conn_rec=conn_rec,
+                            trace=(invi_msg._trace is not None),
                         )
                     else:
                         raise OutOfBandManagerError(
                             (
                                 "Unsupported requests~attach type "
                                 f"{req_attach.content['@type']}: must unqualify to"
-                                f"{PRESENTATION_REQUEST} or {PRES_20_REQUEST} or{CREDENTIAL_OFFER}"
+                                f"{PRESENTATION_REQUEST} or {PRES_20_REQUEST}"
+                                f"{CREDENTIAL_OFFER} or {CRED_20_OFFER}"
                             )
                         )
             else:
@@ -739,26 +754,72 @@ class OutOfBandManager(BaseConnectionManager):
     async def _process_cred_offer_v1(
         self,
         req_attach: AttachDecorator,
-        conn_rec: ConnRecord,       
+        conn_rec: ConnRecord,
+        trace: bool,
     ):
         """
         Create exchange for v1 cred offer attachment, auto-offer if configured.
+
         Args:
             req_attach: request attachment on invitation
             service: service message from invitation
             conn_rec: connection record
         """
-        cred_mgr = CredentialManager(self._session.profile)
-        cred_offer_dict = req_attach.content
-
-        cred_offer_msg = CredentialOffer.deserialize(cred_offer_dict)
-        
+        cred_mgr = V10CredManager(self._session.profile)
+        cred_offer_msg = req_attach.content
+        cred_offer = V10CredOffer.deserialize(cred_offer_msg)
+        cred_offer.assign_trace_decorator(self._session.profile.settings, trace)
         # receive credential offer
-        cred_ex_record = await cred_mgr.receive_offer(message=cred_offer_msg, connection_id=conn_rec.connection_id)
-        if self._session.context.settings.get("debug.auto_respond_credential_offer"): 
-            cred_request_message = None
+        cred_ex_record = await cred_mgr.receive_offer(
+            message=cred_offer, connection_id=conn_rec.connection_id
+        )
+        if cred_ex_record.auto_offer:
             (_, cred_request_message) = await cred_mgr.create_request(
-                cred_ex_record= cred_ex_record,
+                cred_ex_record=cred_ex_record,
+                holder_did=conn_rec.my_did,
+            )
+            responder = self._session.inject(BaseResponder, required=False)
+            if responder:
+                await responder.send(
+                    message=cred_request_message,
+                    target_list=await self.fetch_connection_targets(
+                        connection=conn_rec
+                    ),
+                )
+        else:
+            raise OutOfBandManagerError(
+                (
+                    "Configuration sets auto_offer false: cannot "
+                    "respond automatically to credential offers"
+                )
+            )
+
+    async def _process_cred_offer_v2(
+        self,
+        req_attach: AttachDecorator,
+        conn_rec: ConnRecord,
+        trace: bool,
+    ):
+        """
+        Create exchange for v1 cred offer attachment, auto-offer if configured.
+
+        Args:
+            req_attach: request attachment on invitation
+            service: service message from invitation
+            conn_rec: connection record
+        """
+        cred_mgr = V20CredManager(self._session.profile)
+        cred_offer_msg = req_attach.content
+        cred_offer = V20CredOffer.deserialize(cred_offer_msg)
+        cred_offer.assign_trace_decorator(self._session.profile.settings, trace)
+
+        cred_ex_record = await cred_mgr.receive_offer(
+            cred_offer_message=cred_offer, connection_id=conn_rec.connection_id
+        )
+
+        if cred_ex_record.auto_offer:
+            (_, cred_request_message) = await cred_mgr.create_request(
+                cred_ex_record=cred_ex_record,
                 holder_did=conn_rec.my_did,
             )
             responder = self._session.inject(BaseResponder, required=False)
