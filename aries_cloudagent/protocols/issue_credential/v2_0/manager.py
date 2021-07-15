@@ -410,20 +410,29 @@ class V20CredManager:
                         session, connection_id, cred_request_message._thread_id
                     )
                 )
-            except StorageNotFoundError:  # holder sent this request free of any offer
-                cred_ex_record = V20CredExRecord(
-                    connection_id=connection_id,
-                    thread_id=cred_request_message._thread_id,
-                    initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-                    role=V20CredExRecord.ROLE_ISSUER,
-                    auto_remove=not self._profile.settings.get(
-                        "preserve_exchange_records"
-                    ),
-                    trace=(cred_request_message._trace is not None),
-                    auto_issue=self._profile.settings.get(
-                        "debug.auto_respond_credential_request"
-                    ),
-                )
+            except StorageNotFoundError:
+                try:
+                    cred_ex_record = await V20CredExRecord.retrieve_by_tag_filter(
+                        session,
+                        {"thread_id": cred_request_message._thread_id},
+                        {"connection_id": None},
+                    )
+                    cred_ex_record.connection_id = connection_id
+                except StorageNotFoundError:
+                    # holder sent this request free of any offer
+                    cred_ex_record = V20CredExRecord(
+                        connection_id=connection_id,
+                        thread_id=cred_request_message._thread_id,
+                        initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+                        role=V20CredExRecord.ROLE_ISSUER,
+                        auto_remove=not self._profile.settings.get(
+                            "preserve_exchange_records"
+                        ),
+                        trace=(cred_request_message._trace is not None),
+                        auto_issue=self._profile.settings.get(
+                            "debug.auto_respond_credential_request"
+                        ),
+                    )
 
             for format in cred_request_message.formats:
                 cred_format = V20CredFormat.Format.get(format.format)

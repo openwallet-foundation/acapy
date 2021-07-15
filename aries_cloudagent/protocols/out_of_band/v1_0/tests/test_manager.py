@@ -3369,12 +3369,17 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         req_attach = deepcopy(TestConfig.req_attach_v1)
         del req_attach["data"]["json"]
         req_attach["data"]["json"] = TestConfig.CRED_OFFER_V1.serialize()
-
+        exchange_rec = V20CredExRecord()
+        exchange_rec.cred_offer = TestConfig.CRED_OFFER_V1
         with async_mock.patch.object(
             DIDXManager,
             "receive_invitation",
             autospec=True,
-        ) as didx_mgr_receive_invitation, async_mock.patch(
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V10CredManager,
+            "receive_offer",
+            autospec=True,
+        ) as cred_mgr_offer_receive, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
             autospec=True,
         ) as inv_message_cls, async_mock.patch.object(
@@ -3409,8 +3414,16 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             OutOfBandManager,
             "receive_problem_report",
             autospec=True,
-        ) as oob_mgr_receive_problem_report:
+        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+            V10CredManager,
+            "create_request",
+            autospec=True,
+        ) as cred_mgr_request_receive, async_mock.patch.object(
+            test_module.LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_logger_warning:
             oob_mgr_find_existing_conn.return_value = test_exist_conn
+            cred_mgr_offer_receive.return_value = exchange_rec
+            cred_mgr_request_receive.return_value = (exchange_rec, INDY_CRED_REQ)
             oob_mgr_check_conn_rec_active.side_effect = asyncio.TimeoutError
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
@@ -3420,13 +3433,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 requests_attach=[AttachDecorator.deserialize(req_attach)],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
-            with self.assertRaises(OutOfBandManagerError) as context:
-                await self.manager.receive_invitation(
-                    mock_oob_invi, use_existing_connection=True
-                )
-            assert "Connection not ready for credential request workflow" in str(
-                context.exception
+            conn_rec = await self.manager.receive_invitation(
+                mock_oob_invi, use_existing_connection=True
             )
+            mock_logger_warning.assert_called_once()
+            assert ConnRecord.deserialize(conn_rec)
 
     async def test_request_attach_cred_offer_v2_check_conn_rec_active_timeout(self):
         self.session.context.update_settings({"public_invites": True})
@@ -3452,12 +3463,17 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         req_attach = deepcopy(TestConfig.req_attach_v1)
         del req_attach["data"]["json"]
         req_attach["data"]["json"] = TestConfig.CRED_OFFER_V2.serialize()
-
+        exchange_rec = V20CredExRecord()
+        exchange_rec.cred_offer = TestConfig.CRED_OFFER_V2
         with async_mock.patch.object(
             DIDXManager,
             "receive_invitation",
             autospec=True,
-        ) as didx_mgr_receive_invitation, async_mock.patch(
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V20CredManager,
+            "receive_offer",
+            autospec=True,
+        ) as cred_mgr_offer_receive, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
             autospec=True,
         ) as inv_message_cls, async_mock.patch.object(
@@ -3492,8 +3508,16 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             OutOfBandManager,
             "receive_problem_report",
             autospec=True,
-        ) as oob_mgr_receive_problem_report:
+        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+            V20CredManager,
+            "create_request",
+            autospec=True,
+        ) as cred_mgr_request_receive, async_mock.patch.object(
+            test_module.LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_logger_warning:
             oob_mgr_find_existing_conn.return_value = test_exist_conn
+            cred_mgr_offer_receive.return_value = exchange_rec
+            cred_mgr_request_receive.return_value = (exchange_rec, INDY_CRED_REQ)
             oob_mgr_check_conn_rec_active.side_effect = asyncio.TimeoutError
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
@@ -3503,10 +3527,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 requests_attach=[AttachDecorator.deserialize(req_attach)],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
-            with self.assertRaises(OutOfBandManagerError) as context:
-                await self.manager.receive_invitation(
-                    mock_oob_invi, use_existing_connection=True
-                )
-            assert "Connection not ready for credential request workflow" in str(
-                context.exception
+            conn_rec = await self.manager.receive_invitation(
+                mock_oob_invi, use_existing_connection=True
             )
+            mock_logger_warning.assert_called_once()
+            assert ConnRecord.deserialize(conn_rec)

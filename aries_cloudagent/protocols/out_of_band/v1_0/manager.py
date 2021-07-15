@@ -52,6 +52,8 @@ from .messages.reuse_accept import HandshakeReuseAccept
 from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
 
+LOGGER = logging.getLogger(__name__)
+
 
 class OutOfBandManagerError(BaseError):
     """Out of band error."""
@@ -72,7 +74,6 @@ class OutOfBandManager(BaseConnectionManager):
             session: The profile session for this out of band manager
         """
         self._session = session
-        self._logger = logging.getLogger(__name__)
         super().__init__(self._session)
 
     @property
@@ -589,30 +590,34 @@ class OutOfBandManager(BaseConnectionManager):
                                 self.conn_rec_is_active(conn_rec.connection_id),
                                 15,
                             )
-                            await self._process_cred_offer_v1(
-                                req_attach=req_attach,
-                                conn_rec=conn_rec,
-                                trace=(invi_msg._trace is not None),
-                            )
                         except asyncio.TimeoutError:
-                            raise OutOfBandManagerError(
-                                "Connection not ready for credential request workflow"
+                            LOGGER.warning(
+                                "Connection not ready to receive credential, "
+                                f"For connection_id:{conn_rec.connection_id} and "
+                                f"invitation_msg_id {invi_msg._id}",
                             )
+                        await self._process_cred_offer_v1(
+                            req_attach=req_attach,
+                            conn_rec=conn_rec,
+                            trace=(invi_msg._trace is not None),
+                        )
                     elif unq_req_attach_type == CRED_20_OFFER:
                         try:
                             await asyncio.wait_for(
                                 self.conn_rec_is_active(conn_rec.connection_id),
                                 15,
                             )
-                            await self._process_cred_offer_v2(
-                                req_attach=req_attach,
-                                conn_rec=conn_rec,
-                                trace=(invi_msg._trace is not None),
-                            )
                         except asyncio.TimeoutError:
-                            raise OutOfBandManagerError(
-                                "Connection not ready for credential request workflow"
+                            LOGGER.warning(
+                                "Connection not ready to receive credential, "
+                                f"For connection_id:{conn_rec.connection_id} and "
+                                f"invitation_msg_id {invi_msg._id}",
                             )
+                        await self._process_cred_offer_v2(
+                            req_attach=req_attach,
+                            conn_rec=conn_rec,
+                            trace=(invi_msg._trace is not None),
+                        )
                     else:
                         raise OutOfBandManagerError(
                             (
@@ -678,7 +683,7 @@ class OutOfBandManager(BaseConnectionManager):
                     holder=self._session.inject(IndyHolder),
                 )
             except ValueError as err:
-                self._logger.warning(f"{err}")
+                LOGGER.warning(f"{err}")
                 raise OutOfBandManagerError(
                     f"Cannot auto-respond to presentation request attachment: {err}"
                 )
@@ -924,8 +929,7 @@ class OutOfBandManager(BaseConnectionManager):
             conn_rec = await ConnRecord.retrieve_by_id(self._session, conn_rec_id)
             if conn_rec.state == "active":
                 active = True
-            else:
-                asyncio.sleep(1)
+            asyncio.sleep(1)
         return
 
     async def create_handshake_reuse_message(
