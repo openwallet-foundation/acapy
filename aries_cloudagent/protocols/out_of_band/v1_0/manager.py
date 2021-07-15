@@ -588,7 +588,7 @@ class OutOfBandManager(BaseConnectionManager):
                         try:
                             await asyncio.wait_for(
                                 self.conn_rec_is_active(conn_rec.connection_id),
-                                15,
+                                10,
                             )
                         except asyncio.TimeoutError:
                             LOGGER.warning(
@@ -605,7 +605,7 @@ class OutOfBandManager(BaseConnectionManager):
                         try:
                             await asyncio.wait_for(
                                 self.conn_rec_is_active(conn_rec.connection_id),
-                                15,
+                                10,
                             )
                         except asyncio.TimeoutError:
                             LOGGER.warning(
@@ -929,7 +929,7 @@ class OutOfBandManager(BaseConnectionManager):
             conn_rec = await ConnRecord.retrieve_by_id(self._session, conn_rec_id)
             if conn_rec.state == "active":
                 active = True
-            asyncio.sleep(1)
+            asyncio.sleep(0.1)
         return
 
     async def create_handshake_reuse_message(
