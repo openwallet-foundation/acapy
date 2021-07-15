@@ -2909,6 +2909,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             their_public_did=TestConfig.test_target_did,
             invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
+            state=ConnRecord.State.COMPLETED,
         )
         await test_exist_conn.save(self.session)
         await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
@@ -2974,6 +2975,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             autospec=True,
         ) as cred_mgr_request_receive:
             oob_mgr_find_existing_conn.return_value = test_exist_conn
+            oob_mgr_check_conn_rec_active.return_value = test_exist_conn
             cred_mgr_offer_receive.return_value = exchange_rec
             cred_mgr_request_receive.return_value = (exchange_rec, INDY_CRED_REQ)
             mock_oob_invi = async_mock.MagicMock(
@@ -3000,6 +3002,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             their_public_did=TestConfig.test_target_did,
             invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
+            state=ConnRecord.State.COMPLETED,
         )
         await test_exist_conn.save(self.session)
         await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
@@ -3088,6 +3091,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             their_public_did=TestConfig.test_target_did,
             invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
+            state=ConnRecord.State.COMPLETED,
         )
         await test_exist_conn.save(self.session)
         await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
@@ -3154,6 +3158,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             autospec=True,
         ) as cred_mgr_request_receive:
             oob_mgr_find_existing_conn.return_value = test_exist_conn
+            oob_mgr_check_conn_rec_active.return_value = test_exist_conn
             cred_mgr_offer_receive.return_value = exchange_rec
             cred_mgr_request_receive.return_value = (exchange_rec, INDY_CRED_REQ)
             mock_oob_invi = async_mock.MagicMock(
@@ -3180,6 +3185,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             their_public_did=TestConfig.test_target_did,
             invitation_msg_id="12345678-0123-4567-1234-567812345678",
             their_role=ConnRecord.Role.REQUESTER,
+            state=ConnRecord.State.COMPLETED,
         )
         await test_exist_conn.save(self.session)
         await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
@@ -3202,7 +3208,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "receive_invitation",
             autospec=True,
         ) as didx_mgr_receive_invitation, async_mock.patch.object(
-            V10CredManager,
+            V20CredManager,
             "receive_offer",
             autospec=True,
         ) as cred_mgr_offer_receive, async_mock.patch(
@@ -3338,12 +3344,27 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
             assert "Unsupported requests~attach type" in str(context.exception)
 
-    async def test_check_conn_rec_active(self):
+    async def test_check_conn_rec_active_a(self):
         await self.test_conn_rec.save(self.session)
-        assert (
-            await self.manager.conn_rec_is_active(self.test_conn_rec.connection_id)
-            is None
+        conn_rec = await self.manager.conn_rec_is_active(
+            self.test_conn_rec.connection_id
         )
+        assert conn_rec.connection_id == self.test_conn_rec.connection_id
+
+    async def test_check_conn_rec_active_b(self):
+        connection_id = self.test_conn_rec.connection_id
+        conn_rec_request = deepcopy(self.test_conn_rec)
+        conn_rec_request.state = "request"
+        conn_rec_active = deepcopy(self.test_conn_rec)
+        conn_rec_active.state = "active"
+        with async_mock.patch.object(
+            test_module.ConnRecord,
+            "retrieve_by_id",
+            autospec=True,
+        ) as mock_conn_rec_retrieve:
+            mock_conn_rec_retrieve.side_effect = [conn_rec_request, conn_rec_active]
+            conn_rec = await self.manager.conn_rec_is_active(connection_id)
+            assert conn_rec.state == "active"
 
     async def test_request_attach_cred_offer_v1_check_conn_rec_active_timeout(self):
         self.session.context.update_settings({"public_invites": True})

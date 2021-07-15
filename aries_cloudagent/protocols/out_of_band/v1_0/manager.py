@@ -585,34 +585,40 @@ class OutOfBandManager(BaseConnectionManager):
                             trace=(invi_msg._trace is not None),
                         )
                     elif unq_req_attach_type == CREDENTIAL_OFFER:
-                        try:
-                            await asyncio.wait_for(
-                                self.conn_rec_is_active(conn_rec.connection_id),
-                                10,
-                            )
-                        except asyncio.TimeoutError:
-                            LOGGER.warning(
-                                "Connection not ready to receive credential, "
-                                f"For connection_id:{conn_rec.connection_id} and "
-                                f"invitation_msg_id {invi_msg._id}",
-                            )
+                        if auto_accept or self._session.settings.get(
+                            "debug.auto_accept_invites"
+                        ):
+                            try:
+                                conn_rec = await asyncio.wait_for(
+                                    self.conn_rec_is_active(conn_rec.connection_id),
+                                    7,
+                                )
+                            except asyncio.TimeoutError:
+                                LOGGER.warning(
+                                    "Connection not ready to receive credential, "
+                                    f"For connection_id:{conn_rec.connection_id} and "
+                                    f"invitation_msg_id {invi_msg._id}",
+                                )
                         await self._process_cred_offer_v1(
                             req_attach=req_attach,
                             conn_rec=conn_rec,
                             trace=(invi_msg._trace is not None),
                         )
                     elif unq_req_attach_type == CRED_20_OFFER:
-                        try:
-                            await asyncio.wait_for(
-                                self.conn_rec_is_active(conn_rec.connection_id),
-                                10,
-                            )
-                        except asyncio.TimeoutError:
-                            LOGGER.warning(
-                                "Connection not ready to receive credential, "
-                                f"For connection_id:{conn_rec.connection_id} and "
-                                f"invitation_msg_id {invi_msg._id}",
-                            )
+                        if auto_accept or self._session.settings.get(
+                            "debug.auto_accept_invites"
+                        ):
+                            try:
+                                conn_rec = await asyncio.wait_for(
+                                    self.conn_rec_is_active(conn_rec.connection_id),
+                                    7,
+                                )
+                            except asyncio.TimeoutError:
+                                LOGGER.warning(
+                                    "Connection not ready to receive credential, "
+                                    f"For connection_id:{conn_rec.connection_id} and "
+                                    f"invitation_msg_id {invi_msg._id}",
+                                )
                         await self._process_cred_offer_v2(
                             req_attach=req_attach,
                             conn_rec=conn_rec,
@@ -797,18 +803,19 @@ class OutOfBandManager(BaseConnectionManager):
             message=cred_offer, connection_id=conn_rec.connection_id
         )
         if self._session.context.settings.get("debug.auto_respond_credential_offer"):
-            (_, cred_request_message) = await cred_mgr.create_request(
-                cred_ex_record=cred_ex_record,
-                holder_did=conn_rec.my_did,
-            )
-            responder = self._session.inject(BaseResponder, required=False)
-            if responder:
-                await responder.send(
-                    message=cred_request_message,
-                    target_list=await self.fetch_connection_targets(
-                        connection=conn_rec
-                    ),
+            if conn_rec.is_ready:
+                (_, cred_request_message) = await cred_mgr.create_request(
+                    cred_ex_record=cred_ex_record,
+                    holder_did=conn_rec.my_did,
                 )
+                responder = self._session.inject(BaseResponder, required=False)
+                if responder:
+                    await responder.send(
+                        message=cred_request_message,
+                        target_list=await self.fetch_connection_targets(
+                            connection=conn_rec
+                        ),
+                    )
         else:
             raise OutOfBandManagerError(
                 (
@@ -839,20 +846,20 @@ class OutOfBandManager(BaseConnectionManager):
         cred_ex_record = await cred_mgr.receive_offer(
             cred_offer_message=cred_offer, connection_id=conn_rec.connection_id
         )
-
         if self._session.context.settings.get("debug.auto_respond_credential_offer"):
-            (_, cred_request_message) = await cred_mgr.create_request(
-                cred_ex_record=cred_ex_record,
-                holder_did=conn_rec.my_did,
-            )
-            responder = self._session.inject(BaseResponder, required=False)
-            if responder:
-                await responder.send(
-                    message=cred_request_message,
-                    target_list=await self.fetch_connection_targets(
-                        connection=conn_rec
-                    ),
+            if conn_rec.is_ready:
+                (_, cred_request_message) = await cred_mgr.create_request(
+                    cred_ex_record=cred_ex_record,
+                    holder_did=conn_rec.my_did,
                 )
+                responder = self._session.inject(BaseResponder, required=False)
+                if responder:
+                    await responder.send(
+                        message=cred_request_message,
+                        target_list=await self.fetch_connection_targets(
+                            connection=conn_rec
+                        ),
+                    )
         else:
             raise OutOfBandManagerError(
                 (
@@ -914,7 +921,7 @@ class OutOfBandManager(BaseConnectionManager):
                 received = True
         return
 
-    async def conn_rec_is_active(self, conn_rec_id: str):
+    async def conn_rec_is_active(self, conn_rec_id: str) -> ConnRecord:
         """
         Return when ConnRecord state becomes active.
 
@@ -922,15 +929,14 @@ class OutOfBandManager(BaseConnectionManager):
             conn_rec: ConnRecord
 
         Returns:
+            ConnRecord
 
         """
-        active = False
-        while not active:
+        while True:
             conn_rec = await ConnRecord.retrieve_by_id(self._session, conn_rec_id)
-            if conn_rec.state == "active":
-                active = True
-            asyncio.sleep(0.1)
-        return
+            if conn_rec.is_ready:
+                return conn_rec
+            asyncio.sleep(0.5)
 
     async def create_handshake_reuse_message(
         self,
