@@ -11,12 +11,13 @@ from aries_askar import (
     crypto_box,
     AskarError,
     AskarErrorCode,
+    Entry,
     Key,
     KeyAlg,
+    SeedMethod,
     Session,
 )
 from aries_askar.bindings import key_get_secret_bytes
-from aries_askar.store import Entry
 from marshmallow import ValidationError
 
 from ..askar.profile import AskarProfileSession
@@ -724,10 +725,12 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
     if key_type == KeyType.ED25519:
         alg = KeyAlg.ED25519
+        method = None
     # elif key_type == KeyType.BLS12381G1:
     #     alg = KeyAlg.BLS12_381_G1
     elif key_type == KeyType.BLS12381G2:
         alg = KeyAlg.BLS12_381_G2
+        method = SeedMethod.BlsKeyGen
     # elif key_type == KeyType.BLS12381G1G2:
     #     alg = KeyAlg.BLS12_381_G1G2
     else:
@@ -739,7 +742,7 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
                 seed = validate_seed(seed)
                 return Key.from_secret_bytes(alg, seed)
             else:
-                return Key.from_seed(alg, seed)
+                return Key.from_seed(alg, seed, method=method)
         except AskarError as err:
             if err.code == AskarErrorCode.INPUT:
                 raise WalletError("Invalid seed for key generation") from None
