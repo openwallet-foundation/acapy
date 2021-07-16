@@ -689,10 +689,14 @@ class OutOfBandManager(BaseConnectionManager):
                     holder=self._session.inject(IndyHolder),
                 )
             except ValueError as err:
-                LOGGER.warning(f"{err}")
-                raise OutOfBandManagerError(
-                    f"Cannot auto-respond to presentation request attachment: {err}"
+                LOGGER.exception(
+                    "Unable to auto-respond to presentation request "
+                    f"{pres_ex_record.presentation_exchange_id}, prover"
+                    "  could still build proof manually"
                 )
+                raise OutOfBandManagerError(
+                    "Cannot auto-respond to presentation request attachment"
+                ) from err
 
             (pres_ex_record, presentation_message) = await pres_mgr.create_presentation(
                 presentation_exchange_record=pres_ex_record,
