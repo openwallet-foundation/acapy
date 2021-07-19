@@ -315,6 +315,17 @@ class TestConnRecord(AsyncTestCase):
         reser = deser.serialize()
         assert "initiator" not in reser
 
+    async def test_deserialize_connection_protocol(self):
+        record = ConnRecord(
+            state=ConnRecord.State.INIT,
+            my_did=self.test_did,
+            their_role=ConnRecord.Role.REQUESTER,
+            connection_protocol="connections/1.0",
+        )
+        ser = record.serialize()
+        deser = ConnRecord.deserialize(ser)
+        assert deser.connection_protocol == "connections/1.0"
+
     async def test_metadata_set_get(self):
         record = ConnRecord(
             my_did=self.test_did,
