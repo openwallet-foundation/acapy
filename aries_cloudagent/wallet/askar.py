@@ -11,12 +11,13 @@ from aries_askar import (
     crypto_box,
     AskarError,
     AskarErrorCode,
+    Entry,
     Key,
     KeyAlg,
+    SeedMethod,
     Session,
 )
 from aries_askar.bindings import key_get_secret_bytes
-from aries_askar.store import Entry
 from marshmallow import ValidationError
 
 from ..askar.profile import AskarProfileSession
@@ -79,7 +80,7 @@ class AskarWallet(BaseWallet):
 
         Raises:
             WalletDuplicateError: If the resulting verkey already exists in the wallet
-            WalletError: If there is an aries_askar error
+            WalletError: If there is another backend error
 
         """
 
@@ -112,7 +113,7 @@ class AskarWallet(BaseWallet):
 
         Raises:
             WalletNotFoundError: If no keypair is associated with the verification key
-            WalletError: If there is a aries_askar error
+            WalletError: If there is another backend error
 
         """
 
@@ -173,7 +174,7 @@ class AskarWallet(BaseWallet):
 
         Raises:
             WalletDuplicateError: If the DID already exists in the wallet
-            WalletError: If there is a aries_askar error
+            WalletError: If there is another backend error
 
         """
 
@@ -250,8 +251,6 @@ class AskarWallet(BaseWallet):
             did=did, verkey=verkey, metadata=metadata, method=method, key_type=key_type
         )
 
-    # FIXME implement get_public_did more efficiently (store lookup record)
-
     async def get_local_dids(self) -> Sequence[DIDInfo]:
         """
         Get list of defined local DIDs.
@@ -278,7 +277,7 @@ class AskarWallet(BaseWallet):
 
         Raises:
             WalletNotFoundError: If the DID is not found
-            WalletError: If there is an aries_askar error
+            WalletError: If there is another backend error
 
         """
 
@@ -350,9 +349,12 @@ class AskarWallet(BaseWallet):
         """
         public_did = None
         public_info = None
+        public_item = None
         storage = AskarStorage(self._session)
         try:
-            public = await storage.get_record(CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID)
+            public_item = await storage.get_record(
+                CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID
+            )
         except StorageNotFoundError:
             # populate public DID record
             # this should only happen once, for an upgraded wallet
@@ -375,9 +377,11 @@ class AskarWallet(BaseWallet):
                 )
             except StorageDuplicateError:
                 # another process stored the record first
-                pass
-        else:
-            public_did = json.loads(public.value)["did"]
+                public_item = await storage.get_record(
+                    CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID
+                )
+        if public_item:
+            public_did = json.loads(public_item.value)["did"]
             if public_did:
                 try:
                     public_info = await self.get_local_did(public_did)
@@ -396,10 +400,18 @@ class AskarWallet(BaseWallet):
         """
 
         if isinstance(did, str):
-            # will raise an exception if not found
-            info = await self.get_local_did(did)
+            try:
+                item = await self._session.handle.fetch(
+                    CATEGORY_DID, did, for_update=True
+                )
+            except AskarError as err:
+                raise WalletError("Error when fetching local DID") from err
+            if not item:
+                raise WalletNotFoundError("Unknown DID: {}".format(did))
+            info = _load_did_entry(item)
         else:
             info = did
+            item = None
 
         if info.method != DIDMethod.SOV:
             raise WalletError("Setting public DID is only allowed for did:sov DIDs")
@@ -407,6 +419,19 @@ class AskarWallet(BaseWallet):
         public = await self.get_public_did()
         if not public or public.did != info.did:
             storage = AskarStorage(self._session)
+            if not info.metadata.get("posted"):
+                metadata = {**info.metadata, "posted": True}
+                if item:
+                    entry_val = item.value_json
+                    entry_val["metadata"] = metadata
+                    await self._session.handle.replace(
+                        CATEGORY_DID, did, value_json=entry_val, tags=item.tags
+                    )
+                else:
+                    await self.replace_local_did_metadata(info.did, metadata)
+                info = info._replace(
+                    metadata=metadata,
+                )
             await storage.update_record(
                 StorageRecord(
                     type=CATEGORY_CONFIG,
@@ -558,7 +583,7 @@ class AskarWallet(BaseWallet):
         Raises:
             WalletError: If the message is not provided
             WalletError: If the verkey is not provided
-            WalletError: If an aries_askar error occurs
+            WalletError: If another backend error occurs
 
         """
         if not message:
@@ -606,7 +631,7 @@ class AskarWallet(BaseWallet):
             WalletError: If the verkey is not provided
             WalletError: If the signature is not provided
             WalletError: If the message is not provided
-            WalletError: If an aries_askar error occurs
+            WalletError: If another backend error occurs
 
         """
         if not from_verkey:
@@ -649,7 +674,7 @@ class AskarWallet(BaseWallet):
 
         Raises:
             WalletError: If no message is provided
-            WalletError: If an aries_askar error occurs
+            WalletError: If another backend error occurs
 
         """
         if message is None:
@@ -680,7 +705,7 @@ class AskarWallet(BaseWallet):
 
         Raises:
             WalletError: If the message is not provided
-            WalletError: If an aries_askar error occurs
+            WalletError: If another backend error occurs
 
         """
         if not enc_message:
@@ -700,10 +725,12 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
     if key_type == KeyType.ED25519:
         alg = KeyAlg.ED25519
+        method = None
     # elif key_type == KeyType.BLS12381G1:
     #     alg = KeyAlg.BLS12_381_G1
     elif key_type == KeyType.BLS12381G2:
         alg = KeyAlg.BLS12_381_G2
+        method = SeedMethod.BlsKeyGen
     # elif key_type == KeyType.BLS12381G1G2:
     #     alg = KeyAlg.BLS12_381_G1G2
     else:
@@ -715,7 +742,7 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
                 seed = validate_seed(seed)
                 return Key.from_secret_bytes(alg, seed)
             else:
-                return Key.from_seed(alg, seed)
+                return Key.from_seed(alg, seed, method=method)
         except AskarError as err:
             if err.code == AskarErrorCode.INPUT:
                 raise WalletError("Invalid seed for key generation") from None

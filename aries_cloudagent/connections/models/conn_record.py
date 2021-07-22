@@ -582,9 +582,7 @@ class ConnRecordSchema(BaseRecordSchema):
     connection_protocol = fields.Str(
         required=False,
         description="Connection protocol used",
-        validate=validate.OneOf(
-            [label for proto in ConnRecord.Protocol for label in proto.value]
-        ),
+        validate=validate.OneOf([proto.value for proto in ConnRecord.Protocol]),
         example=ConnRecord.Protocol.RFC_0160.aries_protocol,
     )
     rfc23_state = fields.Str(

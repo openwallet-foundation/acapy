@@ -1,6 +1,5 @@
 """Standard packed message format classes."""
 
-from base64 import b64decode
 import json
 import logging
 from typing import List, Sequence, Tuple, Union
@@ -13,6 +12,7 @@ from ..messaging.util import time_now
 from ..utils.task_queue import TaskQueue
 from ..wallet.base import BaseWallet
 from ..wallet.error import WalletError
+from ..wallet.util import b64_to_str
 
 from .error import WireFormatParseError, WireFormatEncodeError, RecipientKeysError
 from .inbound.receipt import MessageReceipt
@@ -211,7 +211,7 @@ class PackWireFormat(BaseWireFormat):
 
         try:
             message_dict = json.loads(message_body)
-            protected = json.loads(b64decode(message_dict["protected"]))
+            protected = json.loads(b64_to_str(message_dict["protected"], urlsafe=True))
             recipients = protected["recipients"]
 
             recipient_keys = [recipient["header"]["kid"] for recipient in recipients]

@@ -738,6 +738,75 @@ class TestCredentialManager(AsyncTestCase):
             assert exchange.state == V10CredentialExchange.STATE_REQUEST_RECEIVED
             assert exchange._credential_request.ser == INDY_CRED_REQ
 
+    async def test_receive_request_no_connection_cred_request(self):
+        stored_exchange = V10CredentialExchange(
+            credential_exchange_id="dummy-cxid",
+            initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
+            role=V10CredentialExchange.ROLE_ISSUER,
+        )
+
+        request = CredentialRequest(
+            requests_attach=[CredentialRequest.wrap_indy_cred_req(INDY_CRED_REQ)]
+        )
+
+        with async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V10CredentialExchange,
+            "retrieve_by_connection_and_thread",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            V10CredentialExchange, "retrieve_by_tag_filter", async_mock.CoroutineMock()
+        ) as mock_retrieve_tag_filter:
+            mock_retrieve.side_effect = (StorageNotFoundError(),)
+            mock_retrieve_tag_filter.return_value = stored_exchange
+            cx_rec = await self.manager.receive_request(request, "test_conn_id")
+
+            mock_retrieve.assert_called_once_with(
+                self.session, "test_conn_id", request._thread_id
+            )
+            mock_retrieve_tag_filter.assert_called_once_with(
+                self.session, {"thread_id": request._thread_id}, {"connection_id": None}
+            )
+            mock_save.assert_called_once()
+            assert cx_rec.state == V10CredentialExchange.STATE_REQUEST_RECEIVED
+            assert cx_rec._credential_request.ser == INDY_CRED_REQ
+            assert cx_rec.connection_id == "test_conn_id"
+
+    async def test_receive_request_no_cred_ex_with_offer_found(self):
+        stored_exchange = V10CredentialExchange(
+            credential_exchange_id="dummy-cxid",
+            initiator=V10CredentialExchange.INITIATOR_EXTERNAL,
+            role=V10CredentialExchange.ROLE_ISSUER,
+        )
+
+        request = CredentialRequest(
+            requests_attach=[CredentialRequest.wrap_indy_cred_req(INDY_CRED_REQ)]
+        )
+
+        with async_mock.patch.object(
+            V10CredentialExchange, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V10CredentialExchange,
+            "retrieve_by_connection_and_thread",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            V10CredentialExchange, "retrieve_by_tag_filter", async_mock.CoroutineMock()
+        ) as mock_retrieve_tag_filter:
+            mock_retrieve.side_effect = (StorageNotFoundError(),)
+            mock_retrieve_tag_filter.side_effect = (StorageNotFoundError(),)
+            with self.assertRaises(CredentialManagerError):
+                cx_rec = await self.manager.receive_request(request, "test_conn_id")
+
+                mock_retrieve.assert_called_once_with(
+                    self.session, "test_conn_id", request._thread_id
+                )
+                mock_retrieve_tag_filter.assert_called_once_with(
+                    self.session,
+                    {"thread_id": request._thread_id},
+                    {"connection_id": None},
+                )
+
     async def test_issue_credential(self):
         connection_id = "test_conn_id"
         comment = "comment"

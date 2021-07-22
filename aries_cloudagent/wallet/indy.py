@@ -620,9 +620,10 @@ class IndySdkWallet(BaseWallet):
 
         public_did = None
         public_info = None
+        public_item = None
         storage = IndySdkStorage(self.opened)
         try:
-            public = await storage.get_record(
+            public_item = await storage.get_record(
                 RECORD_TYPE_CONFIG, RECORD_NAME_PUBLIC_DID
             )
         except StorageNotFoundError:
@@ -647,9 +648,11 @@ class IndySdkWallet(BaseWallet):
                 )
             except StorageDuplicateError:
                 # another process stored the record first
-                pass
-        else:
-            public_did = json.loads(public.value)["did"]
+                public_item = await storage.get_record(
+                    RECORD_TYPE_CONFIG, RECORD_NAME_PUBLIC_DID
+                )
+        if public_item:
+            public_did = json.loads(public_item.value)["did"]
             if public_did:
                 try:
                     public_info = await self.get_local_did(public_did)
@@ -678,6 +681,10 @@ class IndySdkWallet(BaseWallet):
 
         public = await self.get_public_did()
         if not public or public.did != info.did:
+            if not info.metadata.get("posted"):
+                metadata = {**info.metadata, "posted": True}
+                await self.replace_local_did_metadata(info.did, metadata)
+                info = info._replace(metadata=metadata)
             storage = IndySdkStorage(self.opened)
             await storage.update_record(
                 StorageRecord(

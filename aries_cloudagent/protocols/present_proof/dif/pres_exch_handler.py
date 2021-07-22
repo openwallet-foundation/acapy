@@ -38,6 +38,7 @@ from ....vc.ld_proofs.constants import (
 )
 from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
 from ....wallet.base import BaseWallet, DIDInfo
+from ....wallet.error import WalletError, WalletNotFoundError
 from ....wallet.key_type import KeyType
 
 from .pres_exch import (
@@ -99,6 +100,7 @@ class DIFPresExchHandler:
             self.proof_type = Ed25519Signature2018.signature_type
         else:
             self.proof_type = proof_type
+        self.is_holder = False
 
     async def _get_issue_suite(
         self,
@@ -191,7 +193,7 @@ class DIFPresExchHandler:
         else:
             reqd_key_type = KeyType.ED25519
         for cred in applicable_creds:
-            if len(cred.subject_ids) > 0:
+            if cred.subject_ids and len(cred.subject_ids) > 0:
                 if not issuer_id:
                     for cred_subject_id in cred.subject_ids:
                         if not cred_subject_id.startswith("urn:"):
@@ -373,13 +375,27 @@ class DIFPresExchHandler:
                 continue
 
             applicable = False
+            is_holder_field_ids = self.field_ids_for_is_holder(constraints)
             for field in constraints._fields:
                 applicable = await self.filter_by_field(field, credential)
-                if applicable:
+                # all fields in the constraint should be satisfied
+                if not applicable:
                     break
+                # is_holder with required directive requested for this field
+                if applicable and field.id and field.id in is_holder_field_ids:
+                    # Missing credentialSubject.id - cannot verify that holder of claim
+                    # is same as subject
+                    if not credential.subject_ids or len(credential.subject_ids) == 0:
+                        applicable = False
+                        break
+                    # Holder of claim is not same as the subject
+                    if not await self.process_constraint_holders(
+                        subject_ids=credential.subject_ids
+                    ):
+                        applicable = False
+                        break
             if not applicable:
                 continue
-
             if constraints.limit_disclosure == "required":
                 credential_dict = credential.cred_value
                 new_credential_dict = self.reveal_doc(
@@ -399,6 +415,32 @@ class DIFPresExchHandler:
                     credential = self.create_vcrecord(signed_new_credential_dict)
             result.append(credential)
         return result
+
+    def field_ids_for_is_holder(self, constraints: Constraints) -> Sequence[str]:
+        """Return list of field ids for whose subject holder verification is requested."""
+        reqd_field_ids = set()
+        if not constraints.holders:
+            reqd_field_ids = []
+            return reqd_field_ids
+        for holder in constraints.holders:
+            if holder.directive == "required":
+                reqd_field_ids = set.union(reqd_field_ids, set(holder.field_ids))
+        return list(reqd_field_ids)
+
+    async def process_constraint_holders(
+        self,
+        subject_ids: Sequence[str],
+    ) -> bool:
+        """Check if holder or subject of claim still controls the identifier."""
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            try:
+                for subject_id in subject_ids:
+                    await wallet.get_local_did(subject_id.replace("did:sov:", ""))
+                self.is_holder = True
+                return True
+            except (WalletError, WalletNotFoundError):
+                return False
 
     def create_vcrecord(self, cred_dict: dict) -> VCRecord:
         """Return VCRecord from a credential dict."""
@@ -1146,7 +1188,7 @@ class DIFPresExchHandler:
         submission_property = PresentationSubmission(
             id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
         )
-        if self.check_sign_pres(applicable_creds):
+        if self.is_holder:
             (
                 issuer_id,
                 filtered_creds_list,
@@ -1198,15 +1240,6 @@ class DIFPresExchHandler:
                     return signed_vp
             else:
                 return vp
-
-    def check_sign_pres(self, creds: Sequence[VCRecord]) -> bool:
-        """Check if applicable creds have CredentialSubject.id set."""
-        for cred in creds:
-            if len(cred.subject_ids) > 0 and not self.check_if_cred_id_derived(
-                next(iter(cred.subject_ids))
-            ):
-                return True
-        return False
 
     def check_if_cred_id_derived(self, id: str) -> bool:
         """Check if credential or credentialSubjet id is derived."""
