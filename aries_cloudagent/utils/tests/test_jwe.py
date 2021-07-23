@@ -39,6 +39,9 @@ class TestJwe(TestCase):
         assert loaded.iv == IV
         assert loaded.tag == TAG
         assert loaded.aad == AAD
+        assert loaded.combined_aad == loaded.protected_bytes + b"." + b64url(
+            AAD
+        ).encode("utf-8")
         assert loaded.ciphertext == CIPHERTEXT
 
         recips = list(loaded.recipients)
@@ -71,6 +74,9 @@ class TestJwe(TestCase):
         assert loaded.iv == IV
         assert loaded.tag == TAG
         assert loaded.aad == AAD
+        assert loaded.combined_aad == loaded.protected_bytes + b"." + b64url(
+            AAD
+        ).encode("utf-8")
         assert loaded.ciphertext == CIPHERTEXT
 
         recips = list(loaded.recipients)
@@ -106,6 +112,9 @@ class TestJwe(TestCase):
         assert loaded.iv == IV
         assert loaded.tag == TAG
         assert loaded.aad == AAD
+        assert loaded.combined_aad == loaded.protected_bytes + b"." + b64url(
+            AAD
+        ).encode("utf-8")
         assert loaded.ciphertext == CIPHERTEXT
 
         recips = list(loaded.recipients)
@@ -136,6 +145,9 @@ class TestJwe(TestCase):
         assert loaded.iv == IV
         assert loaded.tag == TAG
         assert loaded.aad == AAD
+        assert loaded.combined_aad == loaded.protected_bytes + b"." + b64url(
+            AAD
+        ).encode("utf-8")
         assert loaded.ciphertext == CIPHERTEXT
 
         recips = list(loaded.recipients)

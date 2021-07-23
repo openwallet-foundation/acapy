@@ -293,3 +293,11 @@ class JweEnvelope:
     def recipients_json(self) -> List[Dict[str, Any]]:
         """Encode the current recipients for JSON."""
         return [recip.serialize() for recip in self._recipients]
+
+    @property
+    def combined_aad(self) -> bytes:
+        """Accessor for the additional authenticated data."""
+        aad = self.protected_bytes
+        if self.aad:
+            aad += b"." + b64url(self.aad).encode("utf-8")
+        return aad

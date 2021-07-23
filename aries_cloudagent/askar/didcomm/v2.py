@@ -3,12 +3,12 @@
 import json
 
 from collections import OrderedDict
-from typing import Mapping, Tuple
+from typing import Mapping, Tuple, Union
 
 from aries_askar import ecdh, AskarError, Key, KeyAlg, Session
 from marshmallow import ValidationError
 
-from ...utils.jwe import b64url, JweEnvelope, JweRecipient
+from ...utils.jwe import b64url, from_b64url, JweEnvelope, JweRecipient
 from ...wallet.base import WalletError
 
 
@@ -63,7 +63,10 @@ def ecdh_es_encrypt(to_verkeys: Mapping[str, Key], message: bytes) -> bytes:
             ]
         )
     )
-    payload = cek.aead_encrypt(message, aad=wrapper.protected_bytes)
+    try:
+        payload = cek.aead_encrypt(message, aad=wrapper.protected_bytes)
+    except AskarError:
+        raise DidcommEnvelopeError("Error encrypting message payload")
     wrapper.set_payload(payload.ciphertext, payload.nonce, payload.tag)
 
     return wrapper.to_json().encode("utf-8")
@@ -91,9 +94,6 @@ def ecdh_es_decrypt(
 
     apu = wrapper.protected.get("apu")
     apv = wrapper.protected.get("apv")
-    aad = wrapper.protected_bytes
-    if wrapper.aad:
-        aad += "." + b64url(wrapper.aad)
 
     try:
         cek = ecdh.EcdhEs(alg_id, apu, apv).receiver_unwrap_key(
@@ -108,7 +108,10 @@ def ecdh_es_decrypt(
 
     try:
         plaintext = cek.aead_decrypt(
-            wrapper.ciphertext, nonce=wrapper.iv, tag=wrapper.tag, aad=aad
+            wrapper.ciphertext,
+            nonce=wrapper.iv,
+            tag=wrapper.tag,
+            aad=wrapper.combined_aad,
         )
     except AskarError:
         raise DidcommEnvelopeError("Error decrypting message payload")
@@ -117,7 +120,7 @@ def ecdh_es_decrypt(
 
 
 def ecdh_1pu_encrypt(
-    to_verkeys: Mapping[str, Key], sender_id: str, sender_key: Key, message: bytes
+    to_verkeys: Mapping[str, Key], sender_kid: str, sender_key: Key, message: bytes
 ) -> bytes:
     """Encode a message using DIDComm v2 authenticated encryption."""
     wrapper = JweEnvelope(with_flatten_recipients=False)
@@ -141,7 +144,7 @@ def ecdh_1pu_encrypt(
     except AskarError:
         raise DidcommEnvelopeError("Error creating ephemeral key")
 
-    apu = b64url(sender_id)
+    apu = b64url(sender_kid)
     apv = []
     for (kid, recip_key) in to_verkeys.items():
         if agree_alg:
@@ -161,11 +164,14 @@ def ecdh_1pu_encrypt(
                 ("apu", apu),
                 ("apv", apv),
                 ("epk", json.loads(epk.get_jwk_public())),
-                ("skid", sender_id),
+                ("skid", sender_kid),
             ]
         )
     )
-    payload = cek.aead_encrypt(message, aad=wrapper.protected_bytes)
+    try:
+        payload = cek.aead_encrypt(message, aad=wrapper.protected_bytes)
+    except AskarError:
+        raise DidcommEnvelopeError("Error encrypting message payload")
     wrapper.set_payload(payload.ciphertext, payload.nonce, payload.tag)
 
     for (kid, recip_key) in to_verkeys.items():
@@ -174,15 +180,6 @@ def ecdh_1pu_encrypt(
         )
         wrapper.add_recipient(
             JweRecipient(encrypted_key=enc_key.ciphertext, header={"kid": kid})
-        )
-        cek = ecdh.Ecdh1PU(alg_id, apu, apv).receiver_unwrap_key(
-            wrap_alg,
-            enc_alg,
-            epk,
-            sender_key,
-            recip_key,
-            enc_key.ciphertext,
-            cc_tag=payload.tag,
         )
 
     return wrapper.to_json().encode("utf-8")
@@ -212,9 +209,6 @@ def ecdh_1pu_decrypt(
 
     apu = wrapper.protected.get("apu")
     apv = wrapper.protected.get("apv")
-    aad = wrapper.protected_bytes
-    if wrapper.aad:
-        aad += "." + b64url(wrapper.aad)
 
     try:
         cek = ecdh.Ecdh1PU(alg_id, apu, apv).receiver_unwrap_key(
@@ -234,7 +228,7 @@ def ecdh_1pu_decrypt(
             wrapper.ciphertext,
             nonce=wrapper.iv,
             tag=wrapper.tag,
-            aad=aad,
+            aad=wrapper.combined_aad,
         )
     except AskarError:
         raise DidcommEnvelopeError("Error decrypting message payload")
@@ -242,7 +236,9 @@ def ecdh_1pu_decrypt(
     return plaintext
 
 
-async def unpack_message(session: Session, enc_message: bytes) -> Tuple[str, str, str]:
+async def unpack_message(
+    session: Session, enc_message: Union[bytes, str]
+) -> Tuple[str, str, str]:
     """Decode a message using DIDComm v2 encryption."""
     try:
         wrapper = JweEnvelope.from_json(enc_message)
@@ -252,9 +248,7 @@ async def unpack_message(session: Session, enc_message: bytes) -> Tuple[str, str
     alg = wrapper.protected.get("alg")
     method = next((m for m in ("ECDH-1PU", "ECDH-ES") if m in alg), None)
     if not method:
-        raise DidcommEnvelopeError(
-            "Unsupported DIDComm encryption algorithm: {}".format(alg)
-        )
+        raise DidcommEnvelopeError(f"Unsupported DIDComm encryption algorithm: {alg}")
 
     sender_key = None
     sender_kid = None
@@ -277,18 +271,26 @@ async def unpack_message(session: Session, enc_message: bytes) -> Tuple[str, str
         raise DidcommEnvelopeError("No recognized recipient key")
 
     if method == "ECDH-1PU":
+        sender_kid_apu = None
+        apu = wrapper.protected.get("apu")
+        if apu:
+            try:
+                sender_kid_apu = from_b64url(apu).decode("utf-8")
+            except (UnicodeDecodeError, ValidationError):
+                raise DidcommEnvelopeError("Invalid apu value")
+        sender_kid = wrapper.protected.get("skid") or sender_kid_apu
+        if sender_kid_apu and sender_kid != sender_kid_apu:
+            raise DidcommEnvelopeError("Mismatch between skid and apu")
+        if not sender_kid:
+            raise DidcommEnvelopeError("Sender key ID not provided")
+        # FIXME - validate apv if present?
         # FIXME - will need to insert proper sender key resolution method here
         # instead of looking in the wallet
-        # FIXME - verify apu and apv?
-        sender_kid = wrapper.protected.get("skid")
-        if not sender_kid:
-            # FIXME - may also want to use apu for backup sender key resolution
-            raise DidcommEnvelopeError("Sender key ID not provided")
         sender_key_entry = next(
             await session.fetch_all_keys(tag_filter={"kid": sender_kid}), None
         )
         if not sender_key_entry:
-            raise DidcommEnvelopeError("Error locating sender public key")
+            raise DidcommEnvelopeError("Sender public key not found")
         sender_key = sender_key_entry.key
         plaintext = ecdh_1pu_decrypt(wrapper, sender_key, recip_key, encrypted_key)
     else:
