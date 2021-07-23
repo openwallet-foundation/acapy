@@ -341,7 +341,7 @@ def encode_pack_message(
         The encoded message
 
     """
-    wrapper = JweEnvelope()
+    wrapper = JweEnvelope(with_protected_recipients=True, with_flatten_recipients=False)
     cek = nacl.bindings.crypto_secretstream_xchacha20poly1305_keygen()
     add_pack_recipients(wrapper, cek, to_verkeys, from_secret)
     wrapper.set_protected(
@@ -352,7 +352,6 @@ def encode_pack_message(
                 ("alg", "Authcrypt" if from_secret else "Anoncrypt"),
             ]
         ),
-        auto_flatten=False,
     )
     ciphertext, nonce, tag = encrypt_plaintext(message, wrapper.protected_bytes, cek)
     wrapper.set_payload(ciphertext, nonce, tag)
@@ -414,7 +413,8 @@ def decode_pack_message_outer(enc_message: bytes) -> Tuple[dict, dict, bool]:
     """
     try:
         wrapper = JweEnvelope.from_json(enc_message)
-    except ValidationError:
+    except ValidationError as err:
+        print(err)
         raise ValueError("Invalid packed message")
 
     alg = wrapper.protected.get("alg")
@@ -422,7 +422,7 @@ def decode_pack_message_outer(enc_message: bytes) -> Tuple[dict, dict, bool]:
     if not is_authcrypt and alg != "Anoncrypt":
         raise ValueError("Unsupported pack algorithm: {}".format(alg))
 
-    recips = extract_pack_recipients(wrapper.recipients())
+    recips = extract_pack_recipients(wrapper.recipients)
     return wrapper, recips, is_authcrypt
 
 
