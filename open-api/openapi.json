@@ -5841,7 +5841,7 @@
         "interval" : {
           "$ref" : "#/definitions/IndyCredPrecis_interval"
         },
-        "pres_referents" : {
+        "presentation_referents" : {
           "type" : "array",
           "items" : {
             "type" : "string",

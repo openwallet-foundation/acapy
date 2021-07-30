@@ -23,7 +23,6 @@ from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    ENDPOINT,
     INDY_CRED_DEF_ID,
     INDY_DID,
     INDY_SCHEMA_ID,
@@ -32,9 +31,6 @@ from ....messaging.valid import (
     UUID4,
 )
 from ....storage.error import StorageError, StorageNotFoundError
-from ....wallet.base import BaseWallet
-from ....wallet.error import WalletError
-from ....utils.outofband import serialize_outofband
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 
 from . import problem_report_for_record, report_problem
@@ -319,16 +315,15 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
     )
 
 
-class V20CreateFreeOfferResultSchema(OpenAPISchema):
-    """Result schema for creating free offer."""
+class V20CredOfferConnFreeRequestSchema(V20IssueCredSchemaCore):
+    """Request schema for creating credential offer free from connection."""
 
-    response = fields.Nested(
-        V20CredExRecord(),
-        description="Credential exchange record",
-    )
-    oob_url = fields.Str(
-        description="Out-of-band URL",
-        **ENDPOINT,
+    auto_issue = fields.Bool(
+        description=(
+            "Whether to respond automatically to credential requests, creating "
+            "and issuing requested credentials"
+        ),
+        required=False,
     )
 
 
@@ -812,10 +807,10 @@ async def _create_free_offer(
 
 @docs(
     tags=["issue-credential v2.0"],
-    summary="Create a credential offer, independent of any proposal",
+    summary="Create a credential offer, independent of any proposal or connection",
 )
-@request_schema(V20CredOfferRequestSchema())
-@response_schema(V20CreateFreeOfferResultSchema(), 200, description="")
+@request_schema(V20CredOfferConnFreeRequestSchema())
+@response_schema(V20CredExRecordSchema(), 200, description="")
 async def credential_exchange_create_free_offer(request: web.BaseRequest):
     """
     Request handler for creating free credential offer.
@@ -833,7 +828,6 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -846,55 +840,19 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
-    connection_id = body.get("connection_id")
     trace_msg = body.get("trace")
-
-    async with context.session() as session:
-        wallet = session.inject(BaseWallet)
-        if connection_id:
-            try:
-                conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-                conn_did = await wallet.get_local_did(conn_record.my_did)
-            except (WalletError, StorageError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-        else:
-            conn_did = await wallet.get_public_did()
-            if not conn_did:
-                raise web.HTTPBadRequest(reason="Wallet has no public DID")
-            connection_id = None
-
-        did_info = await wallet.get_public_did()
-        del wallet
-
-    endpoint = did_info.metadata.get(
-        "endpoint", context.settings.get("default_endpoint")
-    )
-    if not endpoint:
-        raise web.HTTPBadRequest(reason="An endpoint for the public DID is required")
-
     cred_ex_record = None
     try:
         (cred_ex_record, cred_offer_message) = await _create_free_offer(
-            context.profile,
-            filt_spec,
-            connection_id,
-            auto_issue,
-            auto_remove,
-            preview_spec,
-            comment,
-            trace_msg,
+            profile=context.profile,
+            filt_spec=filt_spec,
+            auto_issue=auto_issue,
+            auto_remove=auto_remove,
+            preview_spec=preview_spec,
+            comment=comment,
+            trace_msg=trace_msg,
         )
-
-        trace_event(
-            context.settings,
-            cred_offer_message,
-            outcome="credential_exchange_create_free_offer.END",
-            perf_counter=r_time,
-        )
-
-        oob_url = serialize_outofband(cred_offer_message, conn_did, endpoint)
         result = cred_ex_record.serialize()
-
     except (
         BaseModelError,
         LedgerError,
@@ -904,16 +862,14 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
         if cred_ex_record:
             async with context.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
-        await report_problem(
-            err,
-            ProblemReportReason.ISSUANCE_ABANDONED.value,
-            web.HTTPBadRequest,
-            cred_ex_record or conn_record,
-            outbound_handler,
-        )
-
-    response = {"record": result, "oob_url": oob_url}
-    return web.json_response(response)
+        raise web.HTTPBadRequest(reason=err.roll_up)
+    trace_event(
+        context.settings,
+        cred_offer_message,
+        outcome="credential_exchange_create_free_offer.END",
+        perf_counter=r_time,
+    )
+    return web.json_response(result)
 
 
 @docs(
@@ -964,14 +920,14 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
         cred_ex_record, cred_offer_message = await _create_free_offer(
-            context.profile,
-            filt_spec,
-            connection_id,
-            auto_issue,
-            auto_remove,
-            preview_spec,
-            comment,
-            trace_msg,
+            profile=context.profile,
+            filt_spec=filt_spec,
+            connection_id=connection_id,
+            auto_issue=auto_issue,
+            auto_remove=auto_remove,
+            preview_spec=preview_spec,
+            comment=comment,
+            trace_msg=trace_msg,
         )
         result = cred_ex_record.serialize()
 
@@ -1555,6 +1511,10 @@ async def register(app: web.Application):
                 "/issue-credential-2.0/records",
                 credential_exchange_list,
                 allow_head=False,
+            ),
+            web.post(
+                "/issue-credential-2.0/create-offer",
+                credential_exchange_create_free_offer,
             ),
             web.get(
                 "/issue-credential-2.0/records/{cred_ex_id}",

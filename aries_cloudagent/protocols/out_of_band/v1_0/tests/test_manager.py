@@ -27,13 +27,48 @@ from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
 )
 from .....protocols.coordinate_mediation.v1_0.manager import MediationManager
 from .....protocols.didexchange.v1_0.manager import DIDXManager
+from .....protocols.issue_credential.v1_0.manager import (
+    CredentialManager as V10CredManager,
+)
+from .....protocols.issue_credential.v1_0.messages.credential_proposal import (
+    CredentialProposal,
+)
+from .....protocols.issue_credential.v1_0.messages.credential_offer import (
+    CredentialOffer as V10CredOffer,
+)
+from .....protocols.issue_credential.v1_0.messages.inner.credential_preview import (
+    CredentialPreview as V10CredentialPreview,
+    CredAttrSpec as V10CredAttrSpec,
+)
 from .....protocols.issue_credential.v1_0.message_types import (
     CREDENTIAL_OFFER,
+    ATTACH_DECO_IDS as V10_CRED_ATTACH_FORMAT,
+)
+from .....protocols.issue_credential.v1_0.tests import (
+    CRED_DEF_ID,
+    INDY_OFFER,
+    INDY_CRED_REQ,
+    SCHEMA_ID,
+)
+from .....protocols.issue_credential.v2_0.manager import V20CredManager
+from .....protocols.issue_credential.v2_0.messages.cred_format import V20CredFormat
+from .....protocols.issue_credential.v2_0.messages.cred_offer import (
+    V20CredOffer,
+)
+from .....protocols.issue_credential.v2_0.messages.inner.cred_preview import (
+    V20CredPreview,
+    V20CredAttrSpec,
+)
+from .....protocols.issue_credential.v2_0.messages.cred_offer import V20CredOffer
+from .....protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from .....protocols.issue_credential.v2_0.message_types import (
+    ATTACHMENT_FORMAT as V20_CRED_ATTACH_FORMAT,
+    CRED_20_OFFER,
 )
 from .....protocols.present_proof.v1_0.manager import PresentationManager
 from .....protocols.present_proof.v1_0.message_types import (
     PRESENTATION_REQUEST,
-    ATTACH_DECO_IDS,
+    ATTACH_DECO_IDS as V10_PRES_ATTACH_FORMAT,
 )
 from .....protocols.present_proof.v1_0.messages.presentation import Presentation
 from .....protocols.present_proof.v1_0.messages.presentation_proposal import (
@@ -47,7 +82,7 @@ from .....protocols.present_proof.v1_0.models.presentation_exchange import (
 )
 from .....protocols.present_proof.v2_0.manager import V20PresManager
 from .....protocols.present_proof.v2_0.message_types import (
-    ATTACHMENT_FORMAT,
+    ATTACHMENT_FORMAT as V20_PRES_ATTACH_FORMAT,
     PRES_20,
     PRES_20_REQUEST,
 )
@@ -199,7 +234,7 @@ class TestConfig:
         request_presentations_attach=[
             AttachDecorator.data_base64(
                 mapping=INDY_PROOF_REQ,
-                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                ident=V10_PRES_ATTACH_FORMAT[PRESENTATION_REQUEST],
             )
         ],
     )
@@ -223,7 +258,7 @@ class TestConfig:
         formats=[
             V20PresFormat(
                 attach_id="indy",
-                format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                format_=V20_PRES_ATTACH_FORMAT[PRES_20_REQUEST][
                     V20PresFormat.Format.INDY.api
                 ],
             )
@@ -239,7 +274,7 @@ class TestConfig:
         formats=[
             V20PresFormat(
                 attach_id="dif",
-                format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                format_=V20_PRES_ATTACH_FORMAT[PRES_20_REQUEST][
                     V20PresFormat.Format.DIF.api
                 ],
             )
@@ -247,6 +282,38 @@ class TestConfig:
         request_presentations_attach=[
             AttachDecorator.data_json(mapping=DIF_PROOF_REQ, ident="dif")
         ],
+    )
+
+    CRED_OFFER_V1 = V10CredOffer(
+        credential_preview=V10CredentialPreview(
+            attributes=(
+                V10CredAttrSpec(name="legalName", value="value"),
+                V10CredAttrSpec(name="jurisdictionId", value="value"),
+                V10CredAttrSpec(name="incorporationDate", value="value"),
+            )
+        ),
+        offers_attach=[V10CredOffer.wrap_indy_offer(INDY_OFFER)],
+    )
+
+    CRED_OFFER_V2 = V20CredOffer(
+        credential_preview=V20CredPreview(
+            attributes=V20CredAttrSpec.list_plain(
+                {
+                    "legalName": "value",
+                    "jurisdictionId": "value",
+                    "incorporationDate": "value",
+                }
+            ),
+        ),
+        formats=[
+            V20CredFormat(
+                attach_id="indy",
+                format_=V20_CRED_ATTACH_FORMAT[CRED_20_OFFER][
+                    V20CredFormat.Format.INDY.api
+                ],
+            )
+        ],
+        offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="indy")],
     )
 
     req_attach_v2 = AttachDecorator.data_json(
@@ -473,7 +540,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 key_type=KeyType.ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
-                credential_offer_dict={"cred": "offer"}
+                credential_offer_dict=self.CRED_OFFER_V1
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -502,7 +569,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 key_type=KeyType.ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
-                credential_offer_dict={"cred": "offer"}
+                credential_offer_dict=self.CRED_OFFER_V1
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -537,7 +604,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
             mock_retrieve_cxid_v2.return_value = async_mock.MagicMock(
                 cred_offer=async_mock.MagicMock(
-                    offer=async_mock.MagicMock(
+                    serialize=async_mock.MagicMock(
                         return_value=json.dumps({"cred": "offer"})
                     )
                 )
@@ -653,7 +720,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             formats=[
                 V20PresFormat(
                     attach_id="dif",
-                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                    format_=V20_PRES_ATTACH_FORMAT[PRES_20_REQUEST][
                         V20PresFormat.Format.DIF.api
                     ],
                 )
@@ -725,7 +792,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     formats=[
                         V20PresFormat(
                             attach_id="dif",
-                            format_=ATTACHMENT_FORMAT[PRES_20][
+                            format_=V20_PRES_ATTACH_FORMAT[PRES_20][
                                 V20PresFormat.Format.DIF.api
                             ],
                         )
@@ -819,7 +886,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             formats=[
                 V20PresFormat(
                     attach_id="dif",
-                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                    format_=V20_PRES_ATTACH_FORMAT[PRES_20_REQUEST][
                         V20PresFormat.Format.DIF.api
                     ],
                 )
@@ -891,7 +958,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     formats=[
                         V20PresFormat(
                             attach_id="dif",
-                            format_=ATTACHMENT_FORMAT[PRES_20][
+                            format_=V20_PRES_ATTACH_FORMAT[PRES_20][
                                 V20PresFormat.Format.DIF.api
                             ],
                         )
@@ -2666,7 +2733,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     formats=[
                         V20PresFormat(
                             attach_id="indy",
-                            format_=ATTACHMENT_FORMAT[PRES_20][
+                            format_=V20_PRES_ATTACH_FORMAT[PRES_20][
                                 V20PresFormat.Format.INDY.api
                             ],
                         )
@@ -2793,7 +2860,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     formats=[
                         V20PresFormat(
                             attach_id="indy",
-                            format_=ATTACHMENT_FORMAT[PRES_20][
+                            format_=V20_PRES_ATTACH_FORMAT[PRES_20][
                                 V20PresFormat.Format.INDY.api
                             ],
                         )
@@ -2831,10 +2898,375 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
             assert "cannot respond automatically" in str(context.exception)
 
-    async def test_req_attach_presentation_cred_offer(self):
+    async def test_req_attach_cred_offer_v1(self):
         self.session.context.update_settings({"public_invites": True})
         self.session.context.update_settings(
-            {"debug.auto_respond_presentation_request": True}
+            {"debug.auto_respond_credential_offer": True}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+            state=ConnRecord.State.COMPLETED,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+        req_attach = deepcopy(TestConfig.req_attach_v1)
+        del req_attach["data"]["json"]
+        req_attach["data"]["json"] = TestConfig.CRED_OFFER_V1.serialize()
+        exchange_rec = V10CredentialExchange()
+        exchange_rec.credential_offer = TestConfig.CRED_OFFER_V1
+
+        with async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V10CredManager,
+            "receive_offer",
+            autospec=True,
+        ) as cred_mgr_offer_receive, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "conn_rec_is_active",
+            autospec=True,
+        ) as oob_mgr_check_conn_rec_active, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+            V10CredManager,
+            "create_request",
+            autospec=True,
+        ) as cred_mgr_request_receive:
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            oob_mgr_check_conn_rec_active.return_value = test_exist_conn
+            cred_mgr_offer_receive.return_value = exchange_rec
+            cred_mgr_request_receive.return_value = (exchange_rec, INDY_CRED_REQ)
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_target_did],
+                requests_attach=[AttachDecorator.deserialize(req_attach)],
+            )
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            conn_rec = await self.manager.receive_invitation(
+                mock_oob_invi, use_existing_connection=True
+            )
+            assert ConnRecord.deserialize(conn_rec)
+
+    async def test_req_attach_cred_offer_v1_no_issue(self):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_credential_offer": False}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+            state=ConnRecord.State.COMPLETED,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+        req_attach = deepcopy(TestConfig.req_attach_v1)
+        del req_attach["data"]["json"]
+        req_attach["data"]["json"] = TestConfig.CRED_OFFER_V1.serialize()
+
+        exchange_rec = V10CredentialExchange()
+        exchange_rec.credential_offer = TestConfig.CRED_OFFER_V1
+
+        with async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V10CredManager,
+            "receive_offer",
+            autospec=True,
+        ) as cred_mgr_offer_receive, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "conn_rec_is_active",
+            autospec=True,
+        ) as oob_mgr_check_conn_rec_active, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report:
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            cred_mgr_offer_receive.return_value = exchange_rec
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_target_did],
+                requests_attach=[AttachDecorator.deserialize(req_attach)],
+            )
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            with self.assertRaises(OutOfBandManagerError) as context:
+                await self.manager.receive_invitation(
+                    mock_oob_invi, use_existing_connection=True
+                )
+            assert "Configuration sets auto_offer false" in str(context.exception)
+
+    async def test_req_attach_cred_offer_v2(self):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_credential_offer": True}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+            state=ConnRecord.State.COMPLETED,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+        req_attach = deepcopy(TestConfig.req_attach_v1)
+        del req_attach["data"]["json"]
+        req_attach["data"]["json"] = TestConfig.CRED_OFFER_V2.serialize()
+
+        exchange_rec = V20CredExRecord()
+        exchange_rec.cred_offer = TestConfig.CRED_OFFER_V2
+
+        with async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V20CredManager,
+            "receive_offer",
+            autospec=True,
+        ) as cred_mgr_offer_receive, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "conn_rec_is_active",
+            autospec=True,
+        ) as oob_mgr_check_conn_rec_active, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+            V20CredManager,
+            "create_request",
+            autospec=True,
+        ) as cred_mgr_request_receive:
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            oob_mgr_check_conn_rec_active.return_value = test_exist_conn
+            cred_mgr_offer_receive.return_value = exchange_rec
+            cred_mgr_request_receive.return_value = (exchange_rec, INDY_CRED_REQ)
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_target_did],
+                requests_attach=[AttachDecorator.deserialize(req_attach)],
+            )
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            conn_rec = await self.manager.receive_invitation(
+                mock_oob_invi, use_existing_connection=True
+            )
+            assert ConnRecord.deserialize(conn_rec)
+
+    async def test_req_attach_cred_offer_v2_no_issue(self):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_credential_offer": False}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+            state=ConnRecord.State.COMPLETED,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+        req_attach = deepcopy(TestConfig.req_attach_v1)
+        del req_attach["data"]["json"]
+        req_attach["data"]["json"] = TestConfig.CRED_OFFER_V2.serialize()
+
+        exchange_rec = V20CredExRecord()
+        exchange_rec.cred_offer = TestConfig.CRED_OFFER_V2
+
+        with async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V20CredManager,
+            "receive_offer",
+            autospec=True,
+        ) as cred_mgr_offer_receive, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "conn_rec_is_active",
+            autospec=True,
+        ) as oob_mgr_check_conn_rec_active, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report:
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            cred_mgr_offer_receive.return_value = exchange_rec
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_target_did],
+                requests_attach=[AttachDecorator.deserialize(req_attach)],
+            )
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            with self.assertRaises(OutOfBandManagerError) as context:
+                await self.manager.receive_invitation(
+                    mock_oob_invi, use_existing_connection=True
+                )
+            assert "Configuration sets auto_offer false" in str(context.exception)
+
+    async def test_catch_unsupported_request_attach(self):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_credential_offer": False}
         )
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
@@ -2853,23 +3285,15 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             sender_did=TestConfig.test_target_did,
         )
         req_attach = deepcopy(TestConfig.req_attach_v1)
-        req_attach["data"]["json"]["@type"] = DIDCommPrefix.qualify_current(
-            CREDENTIAL_OFFER
-        )
-
-        exchange_rec = V10PresentationExchange()
-        exchange_rec.auto_present = True
-        exchange_rec.presentation_request = TestConfig.INDY_PROOF_REQ
+        del req_attach["data"]["json"]
+        req_attach["data"]["json"] = TestConfig.CRED_OFFER_V1.serialize()
+        req_attach["data"]["json"]["@type"] = "test"
 
         with async_mock.patch.object(
             DIDXManager,
             "receive_invitation",
             autospec=True,
-        ) as didx_mgr_receive_invitation, async_mock.patch.object(
-            PresentationManager,
-            "receive_request",
-            autospec=True,
-        ) as pres_mgr_receive_request, async_mock.patch(
+        ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
             autospec=True,
         ) as inv_message_cls, async_mock.patch.object(
@@ -2886,6 +3310,117 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             autospec=True,
         ) as oob_mgr_check_reuse_state, async_mock.patch.object(
             OutOfBandManager,
+            "conn_rec_is_active",
+            autospec=True,
+        ) as oob_mgr_check_conn_rec_active, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report:
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_target_did],
+                requests_attach=[AttachDecorator.deserialize(req_attach)],
+            )
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            with self.assertRaises(OutOfBandManagerError) as context:
+                await self.manager.receive_invitation(
+                    mock_oob_invi, use_existing_connection=True
+                )
+            assert "Unsupported requests~attach type" in str(context.exception)
+
+    async def test_check_conn_rec_active_a(self):
+        await self.test_conn_rec.save(self.session)
+        conn_rec = await self.manager.conn_rec_is_active(
+            self.test_conn_rec.connection_id
+        )
+        assert conn_rec.connection_id == self.test_conn_rec.connection_id
+
+    async def test_check_conn_rec_active_b(self):
+        connection_id = self.test_conn_rec.connection_id
+        conn_rec_request = deepcopy(self.test_conn_rec)
+        conn_rec_request.state = "request"
+        conn_rec_active = deepcopy(self.test_conn_rec)
+        conn_rec_active.state = "active"
+        with async_mock.patch.object(
+            test_module.ConnRecord,
+            "retrieve_by_id",
+            autospec=True,
+        ) as mock_conn_rec_retrieve:
+            mock_conn_rec_retrieve.side_effect = [conn_rec_request, conn_rec_active]
+            conn_rec = await self.manager.conn_rec_is_active(connection_id)
+            assert conn_rec.state == "active"
+
+    async def test_request_attach_cred_offer_v1_check_conn_rec_active_timeout(self):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_credential_offer": True}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+        req_attach = deepcopy(TestConfig.req_attach_v1)
+        del req_attach["data"]["json"]
+        req_attach["data"]["json"] = TestConfig.CRED_OFFER_V1.serialize()
+        exchange_rec = V20CredExRecord()
+        exchange_rec.cred_offer = TestConfig.CRED_OFFER_V1
+        with async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V10CredManager,
+            "receive_offer",
+            autospec=True,
+        ) as cred_mgr_offer_receive, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "conn_rec_is_active",
+            autospec=True,
+        ) as oob_mgr_check_conn_rec_active, async_mock.patch.object(
+            OutOfBandManager,
             "create_handshake_reuse_message",
             autospec=True,
         ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
@@ -2901,15 +3436,16 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             "receive_problem_report",
             autospec=True,
         ) as oob_mgr_receive_problem_report, async_mock.patch.object(
-            PresentationManager,
-            "create_presentation",
+            V10CredManager,
+            "create_request",
             autospec=True,
-        ) as pres_mgr_create_presentation:
+        ) as cred_mgr_request_receive, async_mock.patch.object(
+            test_module.LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_logger_warning:
             oob_mgr_find_existing_conn.return_value = test_exist_conn
-            pres_mgr_create_presentation.return_value = (
-                exchange_rec,
-                Presentation(comment="this is test"),
-            )
+            cred_mgr_offer_receive.return_value = exchange_rec
+            cred_mgr_request_receive.return_value = (exchange_rec, INDY_CRED_REQ)
+            oob_mgr_check_conn_rec_active.side_effect = asyncio.TimeoutError
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
@@ -2918,8 +3454,102 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 requests_attach=[AttachDecorator.deserialize(req_attach)],
             )
             inv_message_cls.deserialize.return_value = mock_oob_invi
-            with self.assertRaises(OutOfBandManagerError) as context:
-                result = await self.manager.receive_invitation(
-                    mock_oob_invi, use_existing_connection=True
-                )
-            assert "Unsupported requests~attach type" in str(context.exception)
+            conn_rec = await self.manager.receive_invitation(
+                mock_oob_invi, use_existing_connection=True
+            )
+            mock_logger_warning.assert_called_once()
+            assert ConnRecord.deserialize(conn_rec)
+
+    async def test_request_attach_cred_offer_v2_check_conn_rec_active_timeout(self):
+        self.session.context.update_settings({"public_invites": True})
+        self.session.context.update_settings(
+            {"debug.auto_respond_credential_offer": True}
+        )
+        test_exist_conn = ConnRecord(
+            my_did=TestConfig.test_did,
+            their_did=TestConfig.test_target_did,
+            their_public_did=TestConfig.test_target_did,
+            invitation_msg_id="12345678-0123-4567-1234-567812345678",
+            their_role=ConnRecord.Role.REQUESTER,
+        )
+        await test_exist_conn.save(self.session)
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
+        await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
+
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=False,
+            sender_did=TestConfig.test_target_did,
+        )
+        req_attach = deepcopy(TestConfig.req_attach_v1)
+        del req_attach["data"]["json"]
+        req_attach["data"]["json"] = TestConfig.CRED_OFFER_V2.serialize()
+        exchange_rec = V20CredExRecord()
+        exchange_rec.cred_offer = TestConfig.CRED_OFFER_V2
+        with async_mock.patch.object(
+            DIDXManager,
+            "receive_invitation",
+            autospec=True,
+        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+            V20CredManager,
+            "receive_offer",
+            autospec=True,
+        ) as cred_mgr_offer_receive, async_mock.patch(
+            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
+            autospec=True,
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "fetch_connection_targets",
+            autospec=True,
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "find_existing_connection",
+            autospec=True,
+        ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "conn_rec_is_active",
+            autospec=True,
+        ) as oob_mgr_check_conn_rec_active, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_message",
+            autospec=True,
+        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_reuse_accepted_message",
+            autospec=True,
+        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "receive_problem_report",
+            autospec=True,
+        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+            V20CredManager,
+            "create_request",
+            autospec=True,
+        ) as cred_mgr_request_receive, async_mock.patch.object(
+            test_module.LOGGER, "warning", async_mock.MagicMock()
+        ) as mock_logger_warning:
+            oob_mgr_find_existing_conn.return_value = test_exist_conn
+            cred_mgr_offer_receive.return_value = exchange_rec
+            cred_mgr_request_receive.return_value = (exchange_rec, INDY_CRED_REQ)
+            oob_mgr_check_conn_rec_active.side_effect = asyncio.TimeoutError
+            mock_oob_invi = async_mock.MagicMock(
+                handshake_protocols=[
+                    pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
+                ],
+                services=[TestConfig.test_target_did],
+                requests_attach=[AttachDecorator.deserialize(req_attach)],
+            )
+            inv_message_cls.deserialize.return_value = mock_oob_invi
+            conn_rec = await self.manager.receive_invitation(
+                mock_oob_invi, use_existing_connection=True
+            )
+            mock_logger_warning.assert_called_once()
+            assert ConnRecord.deserialize(conn_rec)
