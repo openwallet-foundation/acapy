@@ -92,7 +92,7 @@ class IndyCredPrecisSchema(OpenAPISchema):
         IndyNonRevocationIntervalSchema(),
         description="Non-revocation interval from presentation request",
     )
-    pres_referents = fields.List(  # aca-py augments with pres_referents
+    presentation_referents = fields.List(  # aca-py augments with pres_referents
         fields.Str(
             description="presentation referent",
             example="1_age_uuid",
