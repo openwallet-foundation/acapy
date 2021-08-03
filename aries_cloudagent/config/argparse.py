@@ -655,6 +655,21 @@ class LedgerGroup(ArgumentGroup):
             env_var="ACAPY_LEDGER_KEEP_ALIVE",
             help="Specifies how many seconds to keep the ledger open. Default: 5",
         )
+        parser.add_argument(
+            "--ledger-socks-proxy",
+            type=str,
+            dest="ledger_socks_proxy",
+            metavar="<host:port>",
+            required=False,
+            env_var="ACAPY_LEDGER_SOCKS_PROXY",
+            help=(
+                "Specifies the socks proxy (NOT http proxy) hostname and port in format "
+                "'hostname:port'. This is an optional parameter to be passed to ledger "
+                "pool configuration and ZMQ in case if aca-py is running "
+                "in a corporate/private network behind a corporate proxy and will "
+                "connect to the public (outside of corporate network) ledger pool"
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
@@ -678,6 +693,8 @@ class LedgerGroup(ArgumentGroup):
                 settings["ledger.pool_name"] = args.ledger_pool_name
             if args.ledger_keepalive:
                 settings["ledger.keepalive"] = args.ledger_keepalive
+            if args.ledger_socks_proxy:
+                settings["ledger.socks_proxy"] = args.ledger_socks_proxy
 
         return settings
 

@@ -79,6 +79,7 @@ class IndyVdrLedgerPool:
         cache_duration: int = 600,
         genesis_transactions: str = None,
         read_only: bool = False,
+        socks_proxy: str = None,
     ):
         """
         Initialize an IndyLedger instance.
@@ -90,6 +91,7 @@ class IndyVdrLedgerPool:
             cache_duration: The TTL for ledger cache entries
             genesis_transactions: The ledger genesis transaction as a string
             read_only: Prevent any ledger write operations
+            socks_proxy: Specifies socks proxy for ZMQ to connect to ledger pool
         """
         self.ref_count = 0
         self.ref_lock = asyncio.Lock()
@@ -105,6 +107,7 @@ class IndyVdrLedgerPool:
         self.init_config = bool(genesis_transactions)
         self.taa_cache: str = None
         self.read_only: bool = read_only
+        self.socks_proxy: str = socks_proxy
 
     @property
     def cfg_path(self) -> Path:
@@ -188,7 +191,7 @@ class IndyVdrLedgerPool:
             txns = self.genesis_txns
             cached = False
 
-        self.handle = await open_pool(transactions=txns)
+        self.handle = await open_pool(transactions=txns, socks_proxy=self.socks_proxy)
         upd_txns = _normalize_txns(await self.handle.get_transactions())
         if not cached or upd_txns != txns:
             try:
