@@ -52,6 +52,7 @@ class IndySdkLedgerPoolProvider(BaseProvider):
         pool_name = settings.get("ledger.pool_name", "default")
         keepalive = int(settings.get("ledger.keepalive", 5))
         read_only = bool(settings.get("ledger.read_only", False))
+        socks_proxy = settings.get("ledger.socks_proxy")
 
         if read_only:
             LOGGER.warning("Note: setting ledger to read-only mode")
@@ -65,6 +66,7 @@ class IndySdkLedgerPoolProvider(BaseProvider):
             cache=cache,
             genesis_transactions=genesis_transactions,
             read_only=read_only,
+            socks_proxy=socks_proxy,
         )
 
         return ledger_pool
@@ -83,6 +85,7 @@ class IndySdkLedgerPool:
         cache_duration: int = 600,
         genesis_transactions: str = None,
         read_only: bool = False,
+        socks_proxy: str = None,
     ):
         """
         Initialize an IndySdkLedgerPool instance.
@@ -94,6 +97,7 @@ class IndySdkLedgerPool:
             cache_duration: The TTL for ledger cache entries
             genesis_transactions: The ledger genesis transaction as a string
             read_only: Prevent any ledger write operations
+            socks_proxy: Specifies socks proxy for ZMQ to connect to ledger pool
         """
         self.checked = checked
         self.opened = False
@@ -108,6 +112,7 @@ class IndySdkLedgerPool:
         self.name = name
         self.taa_cache = None
         self.read_only = read_only
+        self.socks_proxy = socks_proxy
 
     async def create_pool_config(
         self, genesis_transactions: str, recreate: bool = False
@@ -164,7 +169,11 @@ class IndySdkLedgerPool:
         with IndyErrorHandler(
             f"Exception opening pool ledger {self.name}", LedgerConfigError
         ):
-            self.handle = await indy.pool.open_pool_ledger(self.name, "{}")
+            pool_config = json.dumps({})
+            if self.socks_proxy is not None:
+                pool_config = json.dumps({"socks_proxy": self.socks_proxy})
+                LOGGER.debug("Open pool with config: %s", pool_config)
+            self.handle = await indy.pool.open_pool_ledger(self.name, pool_config)
         self.opened = True
 
     async def close(self):
