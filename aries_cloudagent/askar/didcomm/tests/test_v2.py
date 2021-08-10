@@ -6,7 +6,7 @@ import pytest
 from aries_askar import AskarError, Key, KeyAlg, Session
 
 from ....config.injection_context import InjectionContext
-from ....utils.jwe import b64url, JweEnvelope
+from ....utils.jwe import JweRecipient, b64url, JweEnvelope
 
 from ...profile import AskarProfileManager
 from .. import v2 as test_module
@@ -14,6 +14,7 @@ from .. import v2 as test_module
 
 ALICE_KID = "did:example:alice#key-1"
 BOB_KID = "did:example:bob#key-1"
+CAROL_KID = "did:example:carol#key-2"
 MESSAGE = b"Expecto patronum"
 
 
@@ -41,8 +42,12 @@ class TestAskarDidCommV2:
         alg = KeyAlg.X25519
         bob_sk = Key.generate(alg)
         bob_pk = Key.from_jwk(bob_sk.get_jwk_public())
+        carol_sk = Key.generate(KeyAlg.P256)  # testing mixed recipient key types
+        carol_pk = Key.from_jwk(carol_sk.get_jwk_public())
 
-        enc_message = test_module.ecdh_es_encrypt({BOB_KID: bob_pk}, MESSAGE)
+        enc_message = test_module.ecdh_es_encrypt(
+            {BOB_KID: bob_pk, CAROL_KID: carol_pk}, MESSAGE
+        )
 
         # receiver must have the private keypair accessible
         await session.insert_key("my_sk", bob_sk, tags={"kid": BOB_KID})
@@ -64,13 +69,6 @@ class TestAskarDidCommV2:
             test_module.DidcommEnvelopeError, match="No message recipients"
         ):
             _ = test_module.ecdh_es_encrypt({}, MESSAGE)
-
-        alt_sk = Key.generate(KeyAlg.P256)
-        alt_pk = Key.from_jwk(alt_sk.get_jwk_public())
-        with pytest.raises(
-            test_module.DidcommEnvelopeError, match="key types must be consistent"
-        ):
-            _ = test_module.ecdh_es_encrypt({BOB_KID: bob_pk, "alt": alt_pk}, MESSAGE)
 
         with async_mock.patch(
             "aries_askar.Key.generate",
@@ -96,34 +94,54 @@ class TestAskarDidCommV2:
     async def test_es_decrypt_x(self):
         alg = KeyAlg.X25519
         bob_sk = Key.generate(alg)
-        bob_pk = Key.from_jwk(bob_sk.get_jwk_public())
 
         message_unknown_alg = JweEnvelope(
             protected={"alg": "NOT-SUPPORTED"},
+        )
+        message_unknown_alg.add_recipient(
+            JweRecipient(encrypted_key=b"0000", header={"kid": BOB_KID})
         )
         with pytest.raises(
             test_module.DidcommEnvelopeError,
             match="Unsupported ECDH-ES algorithm",
         ):
-            _ = test_module.ecdh_es_decrypt(message_unknown_alg, bob_sk, b"0000")
+            _ = test_module.ecdh_es_decrypt(
+                message_unknown_alg,
+                BOB_KID,
+                bob_sk,
+            )
 
         message_unknown_enc = JweEnvelope(
             protected={"alg": "ECDH-ES+A128KW", "enc": "UNKNOWN"},
+        )
+        message_unknown_enc.add_recipient(
+            JweRecipient(encrypted_key=b"0000", header={"kid": BOB_KID})
         )
         with pytest.raises(
             test_module.DidcommEnvelopeError,
             match="Unsupported ECDH-ES content encryption",
         ):
-            _ = test_module.ecdh_es_decrypt(message_unknown_enc, bob_sk, b"0000")
+            _ = test_module.ecdh_es_decrypt(
+                message_unknown_enc,
+                BOB_KID,
+                bob_sk,
+            )
 
         message_invalid_epk = JweEnvelope(
             protected={"alg": "ECDH-ES+A128KW", "enc": "A256GCM", "epk": {}},
+        )
+        message_invalid_epk.add_recipient(
+            JweRecipient(encrypted_key=b"0000", header={"kid": BOB_KID})
         )
         with pytest.raises(
             test_module.DidcommEnvelopeError,
             match="Error loading ephemeral key",
         ):
-            _ = test_module.ecdh_es_decrypt(message_invalid_epk, bob_sk, b"0000")
+            _ = test_module.ecdh_es_decrypt(
+                message_invalid_epk,
+                BOB_KID,
+                bob_sk,
+            )
 
     @pytest.mark.asyncio
     async def test_1pu_round_trip(self, session: Session):
@@ -200,39 +218,53 @@ class TestAskarDidCommV2:
         alice_sk = Key.generate(alg)
         alice_pk = Key.from_jwk(alice_sk.get_jwk_public())
         bob_sk = Key.generate(alg)
-        bob_pk = Key.from_jwk(bob_sk.get_jwk_public())
 
         message_unknown_alg = JweEnvelope(
             protected={"alg": "NOT-SUPPORTED"},
+        )
+        message_unknown_alg.add_recipient(
+            JweRecipient(encrypted_key=b"0000", header={"kid": BOB_KID})
         )
         with pytest.raises(
             test_module.DidcommEnvelopeError,
             match="Unsupported ECDH-1PU algorithm",
         ):
             _ = test_module.ecdh_1pu_decrypt(
-                message_unknown_alg, alice_pk, bob_sk, b"0000"
+                message_unknown_alg,
+                BOB_KID,
+                bob_sk,
+                alice_pk,
             )
 
         message_unknown_enc = JweEnvelope(
             protected={"alg": "ECDH-1PU+A128KW", "enc": "UNKNOWN"},
+        )
+        message_unknown_enc.add_recipient(
+            JweRecipient(encrypted_key=b"0000", header={"kid": BOB_KID})
         )
         with pytest.raises(
             test_module.DidcommEnvelopeError,
             match="Unsupported ECDH-1PU content encryption",
         ):
             _ = test_module.ecdh_1pu_decrypt(
-                message_unknown_enc, alice_pk, bob_sk, b"0000"
+                message_unknown_enc, BOB_KID, bob_sk, alice_pk
             )
 
         message_invalid_epk = JweEnvelope(
             protected={"alg": "ECDH-1PU+A128KW", "enc": "A256CBC-HS512", "epk": {}},
+        )
+        message_invalid_epk.add_recipient(
+            JweRecipient(encrypted_key=b"0000", header={"kid": BOB_KID})
         )
         with pytest.raises(
             test_module.DidcommEnvelopeError,
             match="Error loading ephemeral key",
         ):
             _ = test_module.ecdh_1pu_decrypt(
-                message_invalid_epk, alice_pk, bob_sk, b"0000"
+                message_invalid_epk,
+                BOB_KID,
+                bob_sk,
+                alice_pk,
             )
 
     @pytest.mark.asyncio

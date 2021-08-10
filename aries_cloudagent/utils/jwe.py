@@ -295,6 +295,22 @@ class JweEnvelope:
         return [recip.serialize() for recip in self._recipients]
 
     @property
+    def recipient_key_ids(self) -> Iterable[JweRecipient]:
+        """Accessor for an iterator over the JWE recipient key identifiers."""
+        for recip in self._recipients:
+            if recip.header and "kid" in recip.header:
+                yield recip.header["kid"]
+
+    def get_recipient(self, kid: str) -> JweRecipient:
+        """Find a recipient by key ID."""
+        for recip in self._recipients:
+            if recip.header and recip.header.get("kid") == kid:
+                header = self.protected.copy()
+                header.update(self.unprotected)
+                header.update(recip.header)
+                return JweRecipient(encrypted_key=recip.encrypted_key, header=header)
+
+    @property
     def combined_aad(self) -> bytes:
         """Accessor for the additional authenticated data."""
         aad = self.protected_bytes

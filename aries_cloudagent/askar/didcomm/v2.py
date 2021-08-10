@@ -28,30 +28,24 @@ def ecdh_es_encrypt(to_verkeys: Mapping[str, Key], message: bytes) -> bytes:
     if not to_verkeys:
         raise DidcommEnvelopeError("No message recipients")
 
-    agree_alg = None
-    for (kid, recip_key) in to_verkeys.items():
-        if agree_alg:
-            if agree_alg != recip_key.algorithm:
-                raise DidcommEnvelopeError("Recipient key types must be consistent")
-        else:
-            agree_alg = recip_key.algorithm
-
     try:
         cek = Key.generate(enc_alg)
     except AskarError:
         raise DidcommEnvelopeError("Error creating content encryption key")
 
-    try:
-        epk = Key.generate(agree_alg)
-    except AskarError:
-        raise DidcommEnvelopeError("Error creating ephemeral key")
-
     for (kid, recip_key) in to_verkeys.items():
+        try:
+            epk = Key.generate(recip_key.algorithm, ephemeral=True)
+        except AskarError:
+            raise DidcommEnvelopeError("Error creating ephemeral key")
         enc_key = ecdh.EcdhEs(alg_id, None, None).sender_wrap_key(
             wrap_alg, epk, recip_key, cek
         )
         wrapper.add_recipient(
-            JweRecipient(encrypted_key=enc_key.ciphertext, header={"kid": kid})
+            JweRecipient(
+                encrypted_key=enc_key.ciphertext,
+                header={"kid": kid, "epk": epk.get_jwk_public()},
+            )
         )
 
     wrapper.set_protected(
@@ -59,7 +53,6 @@ def ecdh_es_encrypt(to_verkeys: Mapping[str, Key], message: bytes) -> bytes:
             [
                 ("alg", alg_id),
                 ("enc", enc_id),
-                ("epk", json.loads(epk.get_jwk_public())),
             ]
         )
     )
@@ -73,7 +66,9 @@ def ecdh_es_encrypt(to_verkeys: Mapping[str, Key], message: bytes) -> bytes:
 
 
 def ecdh_es_decrypt(
-    wrapper: JweEnvelope, recip_key: Key, encrypted_key: bytes
+    wrapper: JweEnvelope,
+    recip_kid: str,
+    recip_key: Key,
 ) -> bytes:
     """Decode a message with DIDComm v2 anonymous encryption."""
 
@@ -83,17 +78,21 @@ def ecdh_es_decrypt(
     else:
         raise DidcommEnvelopeError(f"Unsupported ECDH-ES algorithm: {alg_id}")
 
-    enc_alg = wrapper.protected.get("enc")
+    recip = wrapper.get_recipient(recip_kid)
+    if not recip:
+        raise DidcommEnvelopeError(f"Recipient header not found: {recip_kid}")
+
+    enc_alg = recip.header.get("enc")
     if enc_alg not in ("A128GCM", "A256GCM", "A128CBC-HS256", "A256CBC-HS512", "XC20P"):
         raise DidcommEnvelopeError(f"Unsupported ECDH-ES content encryption: {enc_alg}")
 
     try:
-        epk = Key.from_jwk(wrapper.protected.get("epk"))
+        epk = Key.from_jwk(recip.header.get("epk"))
     except AskarError:
         raise DidcommEnvelopeError("Error loading ephemeral key")
 
-    apu = wrapper.protected.get("apu")
-    apv = wrapper.protected.get("apv")
+    apu = recip.header.get("apu")
+    apv = recip.header.get("apv")
 
     try:
         cek = ecdh.EcdhEs(alg_id, apu, apv).receiver_unwrap_key(
@@ -101,7 +100,7 @@ def ecdh_es_decrypt(
             enc_alg,
             epk,
             recip_key,
-            encrypted_key,
+            recip.encrypted_key,
         )
     except AskarError:
         raise DidcommEnvelopeError("Error decrypting content encryption key")
@@ -140,7 +139,7 @@ def ecdh_1pu_encrypt(
         raise DidcommEnvelopeError("Error creating content encryption key")
 
     try:
-        epk = Key.generate(agree_alg)
+        epk = Key.generate(agree_alg, ephemeral=True)
     except AskarError:
         raise DidcommEnvelopeError("Error creating ephemeral key")
 
@@ -186,7 +185,10 @@ def ecdh_1pu_encrypt(
 
 
 def ecdh_1pu_decrypt(
-    wrapper: JweEnvelope, sender_key: Key, recip_key: Key, encrypted_key: bytes
+    wrapper: JweEnvelope,
+    recip_kid: str,
+    recip_key: Key,
+    sender_key: Key,
 ) -> Tuple[str, str, str]:
     """Decode a message with DIDComm v2 authenticated encryption."""
 
@@ -201,6 +203,10 @@ def ecdh_1pu_decrypt(
         raise DidcommEnvelopeError(
             f"Unsupported ECDH-1PU content encryption: {enc_alg}"
         )
+
+    recip = wrapper.get_recipient(recip_kid)
+    if not recip:
+        raise DidcommEnvelopeError(f"Recipient header not found: {recip_kid}")
 
     try:
         epk = Key.from_jwk(wrapper.protected.get("epk"))
@@ -217,7 +223,7 @@ def ecdh_1pu_decrypt(
             epk,
             sender_key,
             recip_key,
-            encrypted_key,
+            recip.encrypted_key,
             cc_tag=wrapper.tag,
         )
     except AskarError:
@@ -254,18 +260,14 @@ async def unpack_message(
     sender_kid = None
     recip_key = None
     recip_kid = None
-    encrypted_key = None
-    for recip in wrapper.recipients:
-        kid = recip.header.get("kid")
-        if kid:
-            recip_key_entry = next(
-                await session.fetch_all_keys(tag_filter={"kid": kid}), None
-            )
-            if recip_key_entry:
-                recip_kid = kid
-                recip_key = recip_key_entry.key
-                encrypted_key = recip.encrypted_key
-                break
+    for kid in wrapper.recipient_key_ids:
+        recip_key_entry = next(
+            await session.fetch_all_keys(tag_filter={"kid": kid}), None
+        )
+        if recip_key_entry:
+            recip_kid = kid
+            recip_key = recip_key_entry.key
+            break
 
     if not recip_key:
         raise DidcommEnvelopeError("No recognized recipient key")
@@ -292,8 +294,8 @@ async def unpack_message(
         if not sender_key_entry:
             raise DidcommEnvelopeError("Sender public key not found")
         sender_key = sender_key_entry.key
-        plaintext = ecdh_1pu_decrypt(wrapper, sender_key, recip_key, encrypted_key)
+        plaintext = ecdh_1pu_decrypt(wrapper, recip_kid, recip_key, sender_key)
     else:
-        plaintext = ecdh_es_decrypt(wrapper, recip_key, encrypted_key)
+        plaintext = ecdh_es_decrypt(wrapper, recip_kid, recip_key)
 
     return plaintext, recip_kid, sender_kid
