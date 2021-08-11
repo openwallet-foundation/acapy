@@ -57,7 +57,7 @@ class RedisOutboundQueue(BaseOutboundQueue):
     async def push(self, key: bytes, message: bytes):
         """Push a ``message`` to redis on ``key``."""
         try:
-            await self.redis.rpush(key, message)
+            return await self.redis.rpush(key, message)
         except aioredis.RedisError as error:
             raise OutboundQueueError("Unexpected redis client exception") from error
 
