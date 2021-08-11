@@ -207,7 +207,7 @@ class MultitenantManager:
             print(wallet_record.wallet_id)
 
         over_settings = {
-            "wallet.id": profile_name,
+            "wallet.id": wallet_record.wallet_id,
         }
 
         profile_context.settings = (
