@@ -79,7 +79,7 @@ class TestLoggingConfigurator:
     def test_banner_outbound_queue(self):
         stdout = StringIO()
         mock_http = async_mock.MagicMock(scheme="http", host="1.2.3.4", port=8081)
-        mock_queue = async_mock.MagicMock(connection="redis://foo:1234")
+        mock_queue = "mocked queue text"
         mock_admin_server = async_mock.MagicMock(host="1.2.3.4", port=8091)
         with contextlib.redirect_stdout(stdout):
             test_label = "Aries Cloud Agent"
@@ -96,7 +96,7 @@ class TestLoggingConfigurator:
                 test_label, {"in": mock_http}, {}, mock_queue, test_did
             )
         output = stdout.getvalue()
-        assert "redis://foo:1234" in output
+        assert "mocked queue text" in output
 
     def test_load_resource(self):
         with async_mock.patch("builtins.open", async_mock.MagicMock()) as mock_open:
