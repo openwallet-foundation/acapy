@@ -15,6 +15,10 @@ class BaseOutboundQueue(ABC):
         """Initialize base queue type."""
         self.logger = logging.getLogger(__name__)
 
+    def __str__(self):
+        """Return string representation used in banner on startup."""
+        return type(self).__name__
+
     async def __aenter__(self):
         """Async context manager enter."""
         await self.start()
