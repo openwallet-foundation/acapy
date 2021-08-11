@@ -288,3 +288,30 @@ class TestArgParse(AsyncTestCase):
                 ["--clear-default-mediator", "--default-mediator-id", "asdf"]
             )
             group.get_settings(args)
+
+    def test_plugin_config_value_parsing(self):
+        required_args = ["-e", "http://localhost:3000"]
+        parser = argparse.create_argument_parser()
+        group = argparse.GeneralGroup()
+        group.add_arguments(parser)
+        args = parser.parse_args(
+            [
+                *required_args,
+                "--plugin-config-value",
+                "a.b.c=test",
+                "a.b.d=one",
+                "--plugin-config-value",
+                "x.y.z=value",
+                "--plugin-config-value",
+                "a_dict={key: value}",
+                "--plugin-config-value",
+                "a_list=[one, two]",
+            ]
+        )
+        settings = group.get_settings(args)
+
+        assert settings["plugin_config"]["a"]["b"]["c"] == "test"
+        assert settings["plugin_config"]["a"]["b"]["d"] == "one"
+        assert settings["plugin_config"]["x"]["y"]["z"] == "value"
+        assert settings["plugin_config"]["a_dict"] == {"key": "value"}
+        assert settings["plugin_config"]["a_list"] == ["one", "two"]
