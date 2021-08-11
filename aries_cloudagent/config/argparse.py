@@ -2,8 +2,10 @@
 
 import abc
 from functools import reduce
+from itertools import chain
 from os import environ
 
+import deepmerge
 import yaml
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 from typing import Type
@@ -582,11 +584,12 @@ class GeneralGroup(ArgumentGroup):
             if "plugin_config" not in settings:
                 settings["plugin_config"] = {}
 
-            for value_str in args.plugin_config_values:
+            for value_str in chain(*args.plugin_config_values):
                 key, value = value_str.split("=", maxsplit=1)
                 value = yaml.safe_load(value)
-                settings["plugin_config"].update(
-                    reduce(lambda v, k: {k: v}, key.split(".")[::-1], value)
+                deepmerge.always_merger.merge(
+                    settings["plugin_config"],
+                    reduce(lambda v, k: {k: v}, key.split(".")[::-1], value),
                 )
 
         if args.storage_type:
