@@ -138,6 +138,10 @@ class AskarStoreConfig:
 
         try:
             if provision:
+                print("self.get_uri(create=True)")
+                print(self.get_uri(create=True))
+                print(self.key_derivation_method)
+                print(self.key)
                 store = await Store.provision(
                     self.get_uri(create=True),
                     self.key_derivation_method,

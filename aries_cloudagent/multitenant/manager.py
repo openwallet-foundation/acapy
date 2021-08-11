@@ -23,6 +23,7 @@ from ..protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
     MediationRecord,
 )
+from ..askar.profile import AskarProfile
 
 from .error import WalletKeyMissingError
 
@@ -141,38 +142,86 @@ class MultitenantManager:
             Profile: Profile for the wallet record
 
         """
-        wallet_id = wallet_record.wallet_id
-        if wallet_id not in self._instances:
+        print("get wallet profile")
+        base_sub_wallet_name = "base_sub_wallet_name3"
+
+        context = base_context.copy()
+
+        if base_sub_wallet_name not in self._instances:
+
+#        if wallet_id not in self._instances:
             # Extend base context
-            context = base_context.copy()
 
             # Settings we don't want to use from base wallet
             reset_settings = {
                 "wallet.recreate": False,
                 "wallet.seed": None,
                 "wallet.rekey": None,
-                "wallet.name": None,
+                #"wallet.name": None,
+
                 "wallet.type": None,
                 "mediation.open": None,
                 "mediation.invite": None,
                 "mediation.default_id": None,
                 "mediation.clear": None,
+
+                "auto_provision": True,
+                #"wallet.key": "walletkey",
+                "wallet.name": base_sub_wallet_name,
             }
-            extra_settings["admin.webhook_urls"] = self.get_webhook_urls(
-                base_context, wallet_record
-            )
+
+
+            over_settings = {
+            "wallet.type": "askar",
+            "auto_provision": True,
+            "wallet.name": base_sub_wallet_name,
+            "wallet.id": None,
+            }
 
             context.settings = (
-                context.settings.extend(reset_settings)
-                .extend(wallet_record.settings)
-                .extend(extra_settings)
+                context.settings
+                    .extend(reset_settings)
+                    .extend(wallet_record.settings)
+                    .extend(over_settings)
             )
 
             # MTODO: add ledger config
-            profile, _ = await wallet_config(context, provision=provision)
-            self._instances[wallet_id] = profile
+            profile, _ = await wallet_config(context, provision=False)
+            self._instances[base_sub_wallet_name] = profile
 
-        return self._instances[wallet_id]
+        print("create profile")
+        base_sub_wallet = self._instances[base_sub_wallet_name]
+
+        profile_context = context
+
+        extra_settings["admin.webhook_urls"] = self.get_webhook_urls(
+            base_context, wallet_record
+        )
+
+        profile_name = ""
+
+        if provision:
+            print("provision")
+            profile_name = await base_sub_wallet.create_profile(wallet_record.wallet_id)
+            print(profile_name)
+            print(wallet_record.wallet_id)
+
+        over_settings = {
+            "wallet.id": profile_name,
+        }
+
+        profile_context.settings = (
+            profile_context.settings
+                .extend(wallet_record.settings)
+                .extend(extra_settings)
+                .extend(over_settings)
+        )
+
+
+
+        return AskarProfile(base_sub_wallet.opened, profile_context)
+
+#        return self._instances[wallet_id]
 
     async def create_wallet(
         self,
