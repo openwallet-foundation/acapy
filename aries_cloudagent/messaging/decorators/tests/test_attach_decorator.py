@@ -409,6 +409,25 @@ class TestAttachDecorator(TestCase):
         deco_aries_auto_id = AttachDecorator.data_json(mapping=INDY_CRED)
         assert deco_aries_auto_id.ident
 
+    def test_data_json_external_mutation(self):
+        data = {"key_one": "value_one", "key_two": "value_two"}
+
+        deco_aries = AttachDecorator.data_json(
+            mapping=data,
+            ident=IDENT,
+            description=DESCRIPTION,
+        )
+
+        # value should be cloned
+        assert deco_aries.data.json is not data
+
+        assert "key_one" in data
+        assert "key_one" in deco_aries.data.json
+
+        data.pop("key_one")
+        assert "key_one" in deco_aries.data.json
+        assert "key_one" not in data
+
 
 @pytest.mark.indy
 class TestAttachDecoratorSignature:
