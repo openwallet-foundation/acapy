@@ -132,6 +132,7 @@ class DemoAgent:
         aip: int = 10,
         arg_file: str = None,
         extra_args=None,
+        profile_subwallets: str = None,
         **params,
     ):
         self.ident = ident
@@ -158,6 +159,7 @@ class DemoAgent:
         self.mediator_request_id = None
         self.aip = aip
         self.arg_file = arg_file
+        self.profile_subwallets = profile_subwallets
 
         self.admin_url = f"http://{self.internal_host}:{admin_port}"
         if AGENT_ENDPOINT:
@@ -406,6 +408,7 @@ class DemoAgent:
         webhook_port: int = None,
         mediator_agent=None,
         cred_type: str = CRED_FORMAT_INDY,
+        profile_subwallets: str = None
     ):
         if webhook_port is not None:
             await self.listen_webhooks(webhook_port)
@@ -451,6 +454,7 @@ class DemoAgent:
             "label": target_wallet_name,
             "wallet_webhook_urls": self.webhook_url,
             "wallet_dispatch_type": "both",
+            "profile_subwallets": profile_subwallets,
         }
         self.wallet_name = target_wallet_name
         self.wallet_key = target_wallet_name

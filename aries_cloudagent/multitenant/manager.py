@@ -141,6 +141,10 @@ class MultitenantManager:
             Profile: Profile for the wallet record
 
         """
+
+        base_sub_wallet_name = extra_settings.get("wallet.profile_subwallets")
+        print("BASE SUBWALLET NAME: ", base_sub_wallet_name)
+
         wallet_id = wallet_record.wallet_id
         if wallet_id not in self._instances:
             # Extend base context
@@ -195,6 +199,7 @@ class MultitenantManager:
         """
         wallet_key = settings.get("wallet.key")
         wallet_name = settings.get("wallet.name")
+        profile_subwallets = settings.get("wallet.profile_subwallets")
 
         # base wallet context
         async with self._profile.session() as session:
@@ -220,6 +225,7 @@ class MultitenantManager:
             wallet_record,
             {
                 "wallet.key": wallet_key,
+                "wallet.profile_subwallets": profile_subwallets
             },
             provision=True,
         )

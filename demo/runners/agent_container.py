@@ -556,6 +556,7 @@ class AgentContainer:
         seed: str = "random",
         aip: int = 20,
         arg_file: str = None,
+        profile_subwallets: str = None
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -574,6 +575,7 @@ class AgentContainer:
         self.seed = seed
         self.aip = aip
         self.arg_file = arg_file
+        self.profile_subwallets = profile_subwallets
 
         self.exchange_tracing = False
 
@@ -609,6 +611,7 @@ class AgentContainer:
                 seed=self.seed,
                 aip=self.aip,
                 arg_file=self.arg_file,
+                profile_subwallets=self.profile_subwallets,
             )
         else:
             self.agent = the_agent
@@ -649,6 +652,7 @@ class AgentContainer:
                 public_did=self.public_did,
                 webhook_port=None,
                 mediator_agent=self.mediator_agent,
+                profile_subwallets=self.profile_subwallets,
             )
         elif self.mediation:
             # we need to pre-connect the agent to its mediator
@@ -1001,6 +1005,13 @@ def arg_parser(ident: str = None, port: int = 8020):
         metavar="<arg-file>",
         help="Specify a file containing additional aca-py parameters",
     )
+    parser.add_argument(
+        "--profile-subwallets",
+        type=str,
+        metavar="<profile-subwallets>",
+        help="Profile subwallets",
+    )
+
     return parser
 
 
@@ -1091,6 +1102,7 @@ async def create_agent_with_args(args, ident: str = None):
         seed="random" if public_did else None,
         arg_file=arg_file,
         aip=aip,
+        profile_subwallets=args.profile_subwallets
     )
 
     return agent

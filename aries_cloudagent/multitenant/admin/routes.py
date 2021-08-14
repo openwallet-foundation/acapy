@@ -285,6 +285,7 @@ async def wallet_create(request: web.BaseRequest):
     wallet_key = body.get("wallet_key")
     wallet_webhook_urls = body.get("wallet_webhook_urls") or []
     wallet_dispatch_type = body.get("wallet_dispatch_type") or "default"
+    profile_subwallets = body.get("profile_subwallets")
     # If no webhooks specified, then dispatch only to base webhook targets
     if wallet_webhook_urls == []:
         wallet_dispatch_type = "base"
@@ -295,6 +296,7 @@ async def wallet_create(request: web.BaseRequest):
         "wallet.key": wallet_key,
         "wallet.webhook_urls": wallet_webhook_urls,
         "wallet.dispatch_type": wallet_dispatch_type,
+        "wallet.profile_subwallets": profile_subwallets,
     }
 
     label = body.get("label")
