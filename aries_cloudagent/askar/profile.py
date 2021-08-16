@@ -54,6 +54,10 @@ class AskarProfile(Profile):
         """Accessor for the opened Store instance."""
         return self.opened.store
 
+    def opened(self) -> AskarOpenStore:
+        """Accessor for the askar open store instance."""
+        return self.opened
+
     def init_ledger_pool(self):
         """Initialize the ledger pool."""
         if self.settings.get("ledger.disabled"):
