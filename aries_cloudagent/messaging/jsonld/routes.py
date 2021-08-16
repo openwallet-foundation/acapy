@@ -3,7 +3,10 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import INCLUDE, Schema, fields
-from pydid import VerificationMethod
+from pydid.verification_method import (
+    Ed25519VerificationKey2018,
+    KnownVerificationMethods,
+)
 
 from ...admin.request_context import AdminRequestContext
 from ...config.base import InjectionError
@@ -14,9 +17,10 @@ from ..models.openapi import OpenAPISchema
 from .credential import sign_credential, verify_credential
 from .error import (
     BaseJSONLDMessagingError,
-    InvalidVerificationMethod,
-    MissingVerificationMethodError,
 )
+
+
+SUPPORTED_VERIFICATION_METHOD_TYPES = (Ed25519VerificationKey2018,)
 
 
 class SignatureOptionsSchema(Schema):
@@ -141,30 +145,22 @@ async def verify(request: web.BaseRequest):
         async with context.session() as session:
             if verkey is None:
                 resolver = session.inject(DIDResolver)
-                ver_meth_expanded = await resolver.dereference(
-                    profile, doc["proof"]["verificationMethod"]
+                vmethod = await resolver.dereference(
+                    profile,
+                    doc["proof"]["verificationMethod"],
+                    cls=KnownVerificationMethods,
                 )
 
-                if ver_meth_expanded is None:
-                    raise MissingVerificationMethodError(
-                        f"Verification method "
-                        f"{doc['proof']['verificationMethod']} not found."
+                if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):
+                    raise web.HTTPBadRequest(
+                        reason="{} is not supported".format(vmethod.type)
                     )
-
-                if not isinstance(ver_meth_expanded, VerificationMethod):
-                    raise InvalidVerificationMethod(
-                        "verificationMethod does not identify a valid verification method"
-                    )
-
-                verkey = ver_meth_expanded.material
+                verkey = vmethod.material
 
             valid = await verify_credential(session, doc, verkey)
 
         response["valid"] = valid
-    except (
-        BaseJSONLDMessagingError,
-        ResolverError,
-    ) as error:
+    except (BaseJSONLDMessagingError, ResolverError, ValueError) as error:
         response["error"] = str(error)
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
