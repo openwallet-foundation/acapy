@@ -1045,29 +1045,6 @@ class TransportGroup(ArgumentGroup):
             type=str,
             env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE",
             help=(
-                "Defines connection details for outbound queue in a single "
-                "connection string; e.g., 'redis://127.0.0.1:6379'."
-            ),
-        )
-        parser.add_argument(
-            "-oqp",
-            "--outbound-queue-prefix",
-            dest="outbound_queue_prefix",
-            type=str,
-            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX",
-            help=(
-                "Defines the prefix used to generate the queue key. The "
-                "default is 'acapy', which generates a queue key as follows: "
-                "'acapy.outbound_transport'."
-            ),
-        )
-        parser.add_argument(
-            "-oqc",
-            "--outbound-queue-class",
-            dest="outbound_queue_class",
-            type=str,
-            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_CLASS",
-            help=(
                 "Defines the location of the Outbound Queue Engine. This must be "
                 "a 'dotpath' to a Python module on the PYTHONPATH, followed by a "
                 "colon, followed by the name of a Python class that implements "
@@ -1147,13 +1124,6 @@ class TransportGroup(ArgumentGroup):
             settings["transport.outbound_configs"] = args.outbound_transports
         if args.outbound_queue:
             settings["transport.outbound_queue"] = args.outbound_queue
-        settings["transport.outbound_queue_prefix"] = (
-            args.outbound_queue_prefix or "acapy"
-        )
-        settings["transport.outbound_queue_class"] = (
-            args.outbound_queue_class
-            or "aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue"
-        )
 
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
