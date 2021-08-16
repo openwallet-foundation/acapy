@@ -9,8 +9,13 @@ from ..config.wallet import wallet_config
 from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
 from ..multitenant.base import BaseMultitenantManager
+from ..core.error import BaseError
 
 LOGGER = logging.getLogger(__name__)
+
+# TODO: temp remove!
+class MultitenantManagerError(BaseError):
+    """Generic multitenant error."""
 
 class MultitenantManager(BaseMultitenantManager):
     """Class for handling askar profile multitenancy."""
