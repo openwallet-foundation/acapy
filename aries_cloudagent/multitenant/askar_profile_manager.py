@@ -1,4 +1,4 @@
-"""Manager for multitenancy."""
+"""Manager for askar profile multitenancy mode."""
 
 import logging
 
@@ -22,7 +22,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         """Initialize askar profile multitenant Manager.
 
         Args:
-            profile: The profile for this manager
+            profile: The base profile for this manager
         """
         super().__init__(profile)
 
@@ -34,19 +34,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         *,
         provision=False,
     ) -> Profile:
-        """Get profile for a wallet record.
-
-        Args:
-            base_context: Base context to extend from
-            wallet_record: Wallet record to get the context for
-            extra_settings: Any extra context settings
-
-        Returns:
-            Profile: Profile for the wallet record
-
-        """
-
-        multitenant_wallet_name = base_context.settings.get("multitenant.wallet.name") or self.DEFAULT_MULTIENANT_WALLET_NAME
+        multitenant_wallet_name = base_context.settings.get("multitenant.wallet_name") or self.DEFAULT_MULTIENANT_WALLET_NAME
 
         if multitenant_wallet_name not in self._instances:
             context = base_context.copy()

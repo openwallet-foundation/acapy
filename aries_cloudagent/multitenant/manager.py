@@ -21,7 +21,7 @@ class MultitenantManager(BaseMultitenantManager):
     """Class for handling multitenancy."""
 
     def __init__(self, profile: Profile):
-        """Initialize multitenant Manager.
+        """Initialize default multitenant Manager.
 
         Args:
             profile: The profile for this manager
@@ -36,17 +36,6 @@ class MultitenantManager(BaseMultitenantManager):
             *,
             provision=False,
     ) -> Profile:
-        """Get profile for a wallet record.
-
-        Args:
-            base_context: Base context to extend from
-            wallet_record: Wallet record to get the context for
-            extra_settings: Any extra context settings
-
-        Returns:
-            Profile: Profile for the wallet record
-
-        """
         wallet_id = wallet_record.wallet_id
         if wallet_id not in self._instances:
             # Extend base context
