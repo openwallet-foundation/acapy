@@ -16,6 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 class AskarProfileMultitenantManager(BaseMultitenantManager):
     """Class for handling askar profile multitenancy."""
+
     DEFAULT_MULTIENANT_WALLET_NAME = "multitenant_sub_wallet"
 
     def __init__(self, profile: Profile):
@@ -34,7 +35,21 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         *,
         provision=False,
     ) -> Profile:
-        multitenant_wallet_name = base_context.settings.get("multitenant.wallet_name") or self.DEFAULT_MULTIENANT_WALLET_NAME
+        """Get Askar profile for a wallet record.
+
+        Args:
+            base_context: Base context to extend from
+            wallet_record: Wallet record to get the context for
+            extra_settings: Any extra context settings
+
+        Returns:
+            Profile: Profile for the wallet record
+
+        """
+        multitenant_wallet_name = (
+            base_context.settings.get("multitenant.wallet_name")
+            or self.DEFAULT_MULTIENANT_WALLET_NAME
+        )
 
         if multitenant_wallet_name not in self._instances:
             context = base_context.copy()
@@ -67,6 +82,10 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
             base_context, wallet_record
         )
 
-        profile_context.settings = (profile_context.settings.extend(wallet_record.settings).extend(extra_settings))
+        profile_context.settings = (
+            profile_context.settings
+            .extend(wallet_record.settings)
+            .extend(extra_settings)
+        )
 
         return AskarProfile(multitenant_wallet.opened, profile_context)

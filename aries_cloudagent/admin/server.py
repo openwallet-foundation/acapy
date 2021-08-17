@@ -26,7 +26,8 @@ from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
-from ..multitenant.manager import MultitenantManager, MultitenantManagerError
+from ..multitenant.manager import MultitenantManager
+from ..multitenant.base import MultitenantManagerError
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus

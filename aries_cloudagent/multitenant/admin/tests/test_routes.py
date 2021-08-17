@@ -2,10 +2,8 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow.exceptions import ValidationError
 
-from ...manager import (
-    MultitenantManager,
-    MultitenantManagerError,
-)
+from ...manager import MultitenantManager
+from ...base import MultitenantManagerError
 from ....admin.request_context import AdminRequestContext
 from ....wallet.models.wallet_record import WalletRecord
 from ....messaging.models.base import BaseModelError
