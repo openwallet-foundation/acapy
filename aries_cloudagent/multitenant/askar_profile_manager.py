@@ -16,7 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 class AskarProfileMultitenantManager(BaseMultitenantManager):
     """Class for handling askar profile multitenancy."""
-    DEFAULT_MULTIENANT_WALLET_NAME = "multitenant-wallet"
+    DEFAULT_MULTIENANT_WALLET_NAME = "multitenant_sub_wallet"
 
     def __init__(self, profile: Profile):
         """Initialize askar profile multitenant Manager.
@@ -45,11 +45,11 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
             Profile: Profile for the wallet record
 
         """
-        context = base_context.copy()
 
-        multitenant_wallet_name = context.settings.get("multitenant.wallet.name") or self.DEFAULT_MULTIENANT_WALLET_NAME
+        multitenant_wallet_name = base_context.settings.get("multitenant.wallet.name") or self.DEFAULT_MULTIENANT_WALLET_NAME
 
         if multitenant_wallet_name not in self._instances:
+            context = base_context.copy()
             # Settings we don't want to use from base wallet
             reset_settings = {
                 "wallet.recreate": False,
@@ -70,6 +70,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
             self._instances[multitenant_wallet_name] = profile
 
         multitenant_wallet = self._instances[multitenant_wallet_name]
+        profile_context = multitenant_wallet.context.copy()
 
         if provision:
             multitenant_wallet.store.create_profile(wallet_record.wallet_id)
@@ -77,6 +78,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         extra_settings["admin.webhook_urls"] = self.get_webhook_urls(
             base_context, wallet_record
         )
-        context.settings = (context.settings.extend(wallet_record.settings).extend(extra_settings))
 
-        return AskarProfile(multitenant_wallet, context)
+        profile_context.settings = (profile_context.settings.extend(wallet_record.settings).extend(extra_settings))
+
+        return AskarProfile(multitenant_wallet.opened, profile_context)
