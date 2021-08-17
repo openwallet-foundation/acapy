@@ -18,10 +18,10 @@ class MultitenantManagerError(BaseError):
     """Generic multitenant error."""
 
 class MultitenantManager(BaseMultitenantManager):
-    """Class for handling askar profile multitenancy."""
+    """Class for handling multitenancy."""
 
     def __init__(self, profile: Profile):
-        """Initialize askar profile multitenant Manager.
+        """Initialize multitenant Manager.
 
         Args:
             profile: The profile for this manager
