@@ -23,7 +23,7 @@ from ..base import BaseMultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
 
 
-class TestMultitenantManager(AsyncTestCase):
+class TestBaseMultitenantManager(AsyncTestCase):
     async def setUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context

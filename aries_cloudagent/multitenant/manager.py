@@ -9,13 +9,9 @@ from ..config.wallet import wallet_config
 from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
 from ..multitenant.base import BaseMultitenantManager
-from ..core.error import BaseError
 
 LOGGER = logging.getLogger(__name__)
 
-# TODO: temp remove!
-class MultitenantManagerError(BaseError):
-    """Generic multitenant error."""
 
 class MultitenantManager(BaseMultitenantManager):
     """Class for handling multitenancy."""
@@ -29,13 +25,24 @@ class MultitenantManager(BaseMultitenantManager):
         super().__init__(profile)
 
     async def get_wallet_profile(
-            self,
-            base_context: InjectionContext,
-            wallet_record: WalletRecord,
-            extra_settings: dict = {},
-            *,
-            provision=False,
+        self,
+        base_context: InjectionContext,
+        wallet_record: WalletRecord,
+        extra_settings: dict = {},
+        *,
+        provision=False,
     ) -> Profile:
+        """Get profile for a wallet record.
+
+        Args:
+            base_context: Base context to extend from
+            wallet_record: Wallet record to get the context for
+            extra_settings: Any extra context settings
+
+        Returns:
+            Profile: Profile for the wallet record
+
+        """
         wallet_id = wallet_record.wallet_id
         if wallet_id not in self._instances:
             # Extend base context
@@ -59,8 +66,8 @@ class MultitenantManager(BaseMultitenantManager):
 
             context.settings = (
                 context.settings.extend(reset_settings)
-                    .extend(wallet_record.settings)
-                    .extend(extra_settings)
+                .extend(wallet_record.settings)
+                .extend(extra_settings)
             )
 
             # MTODO: add ledger config
