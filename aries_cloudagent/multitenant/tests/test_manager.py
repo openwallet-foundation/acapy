@@ -1,27 +1,10 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
-import jwt
-
 from ...core.in_memory import InMemoryProfile
-from ...config.base import InjectionError
 from ...messaging.responder import BaseResponder
 from ...wallet.models.wallet_record import WalletRecord
-from ...wallet.in_memory import InMemoryWallet
-from ...wallet.did_info import DIDInfo
-from ...storage.error import StorageNotFoundError
-from ...storage.in_memory import InMemoryStorage
-from ...protocols.routing.v1_0.manager import RoutingManager
-from ...protocols.routing.v1_0.models.route_record import RouteRecord
-from ...protocols.coordinate_mediation.v1_0.manager import (
-    MediationRecord,
-    MediationManager,
-)
-from ...wallet.key_type import KeyType
-from ...wallet.did_method import DIDMethod
 from ..manager import MultitenantManager
-from ..base import BaseMultitenantManager, MultitenantManagerError
-from ..error import WalletKeyMissingError
 
 
 class TestMultitenantManager(AsyncTestCase):

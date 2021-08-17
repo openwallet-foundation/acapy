@@ -35,10 +35,10 @@ class MultitenantManagerError(BaseError):
 
 
 class BaseMultitenantManager:
-    """Class for handling multitenancy."""
+    """Base class for handling multitenancy."""
 
     def __init__(self, profile: Profile):
-        """Initialize multitenant Manager.
+        """Initialize base multitenant Manager.
 
         Args:
             profile: The profile for this manager
