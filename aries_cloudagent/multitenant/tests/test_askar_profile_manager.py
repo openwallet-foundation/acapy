@@ -51,10 +51,11 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
                 await self.manager.get_wallet_profile(self.profile.context, wallet_record)
 
                 wallet_config.assert_called_once()
-                assert wallet_config.call_args[0][0].settings.get("wallet.name") == self.DEFAULT_MULTIENANT_WALLET_NAME
-                assert wallet_config.call_args[0][0].settings.get("wallet.id") == None
-                assert wallet_config.call_args[0][0].settings.get("auto_provision") == True
-                assert wallet_config.call_args[0][0].settings.get("wallet.type") == "askar"
+                wallet_config_settings_argument = wallet_config.call_args[0][0].settings
+                assert wallet_config_settings_argument.get("wallet.name") == self.DEFAULT_MULTIENANT_WALLET_NAME
+                assert wallet_config_settings_argument.get("wallet.id") == None
+                assert wallet_config_settings_argument.get("auto_provision") == True
+                assert wallet_config_settings_argument.get("wallet.type") == "askar"
                 AskarProfile.assert_called_with(sub_wallet_profile.opened, sub_wallet_profile_context)
                 assert sub_wallet_profile_context.settings.get("wallet.seed") == "test_seed"
                 assert sub_wallet_profile_context.settings.get("wallet.rekey") == "test_rekey"
