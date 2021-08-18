@@ -11,8 +11,6 @@ from ..wallet.models.wallet_record import WalletRecord
 from ..askar.profile import AskarProfile
 from ..multitenant.base import BaseMultitenantManager
 
-LOGGER = logging.getLogger(__name__)
-
 
 class AskarProfileMultitenantManager(BaseMultitenantManager):
     """Class for handling askar profile multitenancy."""
