@@ -23,7 +23,6 @@ from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
-from ..multitenant.manager import MultitenantManager
 from ..multitenant.base import BaseMultitenantManager
 from ..multitenant.manager_provider import MultitenantManagerProvider
 from ..protocols.connections.v1_0.manager import (
@@ -129,7 +128,10 @@ class Conductor:
 
         # Bind manager for multitenancy related tasks
         if context.settings.get("multitenant.enabled"):
-            context.injector.bind_provider(BaseMultitenantManager, MultitenantManagerProvider(self.root_profile))
+            context.injector.bind_provider(
+                BaseMultitenantManager,
+                MultitenantManagerProvider(self.root_profile)
+            )
 
         # Bind default PyLD document loader
         context.injector.bind_instance(
