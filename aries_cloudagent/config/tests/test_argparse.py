@@ -252,7 +252,7 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("multitenant.wallet_type") == "askar-profile"
         assert settings.get("multitenant.wallet_name") == "test"
 
-    async def test_multitenancy_no_jwt_provided(self):
+    async def test_error_raised_when_multitenancy_used_and_no_jwt_provided(self):
         """Test that error is raised if no jwt_secret is provided with multitenancy."""
 
         parser = argparse.create_argument_parser()
@@ -266,7 +266,6 @@ class TestArgParse(AsyncTestCase):
         result = parser.parse_args(
             [
                 "--multitenant",
-                "--multitenant-admin",
                 "--multitenancy-config",
                 "{\"wallet_type\":\"askar-profile\",\"wallet_name\":\"test\"}",
             ]

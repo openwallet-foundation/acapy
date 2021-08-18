@@ -1459,8 +1459,11 @@ class MultitenantGroup(ArgumentGroup):
             type=str,
             metavar="<multitenancy-config>",
             env_var="ACAPY_MULTITENANCY_CONFIGURATION",
-            help="Specify multitenancy configuration (wallet type and wallet name). "
-            'For example: "{\"wallet_type\":\"askar\",\"wallet_name\":\"test\"}"',
+            help=(
+                'Specify multitenancy configuration ("wallet_type" and "wallet_name"). '
+                'For example: "{\"wallet_type\":\"askar-profile\",\"wallet_name\":\"askar-profile-name\"}"',
+                '"wallet_name" is only used when "wallet_type" is "askar-profile"'
+            ),
         )
 
     def get_settings(self, args: Namespace):
