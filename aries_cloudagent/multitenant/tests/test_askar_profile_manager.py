@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -20,6 +22,7 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
         self.manager = AskarProfileMultitenantManager(self.profile)
 
     async def test_get_wallet_profile_should_open_store_and_return_profile_with_wallet_context(self):
+        askar_profile_mock_name = "AskarProfile"
         wallet_record = WalletRecord(
             wallet_id="test",
             settings={
@@ -45,11 +48,13 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
                 sub_wallet_profile = AskarProfile(None, None)
                 sub_wallet_profile.context.copy.return_value = sub_wallet_profile_context
                 def side_effect(context, provision):
+                    sub_wallet_profile.name = askar_profile_mock_name
                     return sub_wallet_profile, None
                 wallet_config.side_effect = side_effect
 
-                await self.manager.get_wallet_profile(self.profile.context, wallet_record)
+                profile = await self.manager.get_wallet_profile(self.profile.context, wallet_record)
 
+                assert profile.name == askar_profile_mock_name
                 wallet_config.assert_called_once()
                 wallet_config_settings_argument = wallet_config.call_args[0][0].settings
                 assert wallet_config_settings_argument.get("wallet.name") == self.DEFAULT_MULTIENANT_WALLET_NAME
