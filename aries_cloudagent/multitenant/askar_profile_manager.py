@@ -1,7 +1,5 @@
 """Manager for askar profile multitenancy mode."""
 
-import logging
-
 from ..core.profile import (
     Profile,
 )
@@ -51,8 +49,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
 
         if multitenant_wallet_name not in self._instances:
             context = base_context.copy()
-            # Settings we don't want to use from base wallet
-            reset_settings = {
+            sub_wallet_settings = {
                 "wallet.recreate": False,
                 "wallet.seed": None,
                 "wallet.rekey": None,
@@ -65,7 +62,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
                 "mediation.clear": None,
                 "auto_provision": True,
             }
-            context.settings = (context.settings.extend(reset_settings))
+            context.settings = (context.settings.extend(sub_wallet_settings))
 
             profile, _ = await wallet_config(context, provision=False)
             self._instances[multitenant_wallet_name] = profile
