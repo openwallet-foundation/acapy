@@ -222,6 +222,57 @@ class TestArgParse(AsyncTestCase):
         )
         # no asserts, just testing that the parser doesn't fail
 
+    async def test_multitenancy_settings(self):
+        """Test required argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.MultitenantGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--multitenant",
+                "--jwt-secret",
+                "secret",
+                "--multitenancy-config",
+                "{\"wallet_type\":\"askar-profile\",\"wallet_name\":\"test\"}",
+            ]
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("multitenant.enabled") == True
+        assert settings.get("multitenant.jwt_secret") == "secret"
+        assert settings.get("multitenant.admin_enabled") == True
+        assert settings.get("multitenant.wallet_type") == "askar-profile"
+        assert settings.get("multitenant.wallet_name") == "test"
+
+    async def test_error_raised_when_multitenancy_used_and_no_jwt_provided(self):
+        """Test that error is raised if no jwt_secret is provided with multitenancy."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.MultitenantGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--multitenant",
+                "--multitenancy-config",
+                "{\"wallet_type\":\"askar-profile\",\"wallet_name\":\"test\"}",
+            ]
+        )
+
+        with self.assertRaises(argparse.ArgsParseError):
+            settings = group.get_settings(result)
+
     def test_bytesize(self):
         bs = ByteSize()
         with self.assertRaises(ArgumentTypeError):

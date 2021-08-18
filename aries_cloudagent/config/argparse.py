@@ -7,6 +7,7 @@ from os import environ
 
 import deepmerge
 import yaml
+import json
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 from typing import Type
 
@@ -1453,6 +1454,17 @@ class MultitenantGroup(ArgumentGroup):
             env_var="ACAPY_MULTITENANT_ADMIN",
             help="Specify whether to enable the multitenant admin api.",
         )
+        parser.add_argument(
+            "--multitenancy-config",
+            type=str,
+            metavar="<multitenancy-config>",
+            env_var="ACAPY_MULTITENANCY_CONFIGURATION",
+            help=(
+                'Specify multitenancy configuration ("wallet_type" and "wallet_name"). '
+                'For example: "{\"wallet_type\":\"askar-profile\",\"wallet_name\":\"askar-profile-name\"}"',
+                '"wallet_name" is only used when "wallet_type" is "askar-profile"'
+            ),
+        )
 
     def get_settings(self, args: Namespace):
         """Extract multitenant settings."""
@@ -1469,4 +1481,14 @@ class MultitenantGroup(ArgumentGroup):
 
             if args.multitenant_admin:
                 settings["multitenant.admin_enabled"] = True
+
+            if args.multitenancy_config:
+                multitenancyConfig = json.loads(args.multitenancy_config)
+
+                if multitenancyConfig.get("wallet_type"):
+                    settings["multitenant.wallet_type"] = multitenancyConfig.get("wallet_type")
+
+                if multitenancyConfig.get("wallet_name"):
+                    settings["multitenant.wallet_name"] = multitenancyConfig.get("wallet_name")
+
         return settings
