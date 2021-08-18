@@ -10,8 +10,6 @@ from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
 from ..multitenant.base import BaseMultitenantManager
 
-LOGGER = logging.getLogger(__name__)
-
 
 class MultitenantManager(BaseMultitenantManager):
     """Class for handling multitenancy."""
