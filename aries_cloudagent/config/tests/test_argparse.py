@@ -236,7 +236,6 @@ class TestArgParse(AsyncTestCase):
         result = parser.parse_args(
             [
                 "--multitenant",
-                "--multitenant-admin",
                 "--jwt-secret",
                 "secret",
                 "--multitenancy-config",
