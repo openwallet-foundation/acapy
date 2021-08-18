@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+import asyncio
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -8,6 +8,7 @@ from ...core.in_memory import InMemoryProfile
 from ...messaging.responder import BaseResponder
 from ...wallet.models.wallet_record import WalletRecord
 from ..askar_profile_manager import AskarProfileMultitenantManager
+
 
 class TestAskarProfileMultitenantManager(AsyncTestCase):
     DEFAULT_MULTIENANT_WALLET_NAME = "multitenant_sub_wallet"
@@ -78,12 +79,15 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
             wallet_id="test",
             settings={}
         )
+        create_profile_stub = asyncio.Future()
+        create_profile_stub.set_result("")
 
         with async_mock.patch(
             "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile"
         ) as AskarProfile:
             sub_wallet_profile = AskarProfile(None, None)
             sub_wallet_profile.context.copy.return_value = InjectionContext()
+            sub_wallet_profile.store.create_profile.return_value = create_profile_stub
             self.manager._instances[self.DEFAULT_MULTIENANT_WALLET_NAME] = sub_wallet_profile
 
             await self.manager.get_wallet_profile(self.profile.context, wallet_record, provision=True)
