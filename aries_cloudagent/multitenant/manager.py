@@ -1,7 +1,5 @@
 """Manager for multitenancy."""
 
-import logging
-
 from ..core.profile import (
     Profile,
 )
