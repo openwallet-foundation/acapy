@@ -32,16 +32,16 @@ class MultitenantManagerProvider(BaseProvider):
     def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create the multitenant manager instance."""
 
-        key_name = "multitenant.wallet_type"
-        manager_type = settings.get_value(key_name, default="basic").lower()
+        multitenant_wallet_type = "multitenant.wallet_type"
+        manager_type = settings.get_value(multitenant_wallet_type, default="basic").lower()
 
         if manager_type not in self.MANAGER_TYPES:
             raise InjectionError(f"Unknown manager type: {manager_type}")
 
-        manager_class = self.MANAGER_TYPES.get(manager_type)
-
         if manager_type not in self._inst:
             LOGGER.info("Create multitenant manager: %s", manager_type)
+            manager_class = self.MANAGER_TYPES.get(manager_type)
+
             self._inst[manager_type] = manager_class(self.root_profile)
 
         return self._inst[manager_type]
