@@ -36,12 +36,13 @@ autodoc_mock_imports = [
     "pydid",
     "aries_askar",
     "indy_vdr",
-    "aries_cloudagent.vc",
     "aioredis",
     "deepmerge",
     "ecdsa",
     "indy_credx",
     "dateutil",
+    "jsonpath_ng",
+    "unflatten",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",
