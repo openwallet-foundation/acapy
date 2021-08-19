@@ -263,8 +263,12 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
         self.type_filter = type_filter
         self.page_size = page_size or DEFAULT_PAGE_SIZE
         self._done = False
-        self._scan = None
         self._profile = profile
+        self._scan = self._profile.store.scan(
+            self.type_filter,
+            self.tag_query,
+            profile=self._profile.settings.get("wallet.id")
+        )
 
     @property
     def opened(self) -> bool:
@@ -364,7 +368,9 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
         if self._scan:
             return
         try:
-            self._scan = self._profile.store.scan(self.type_filter, self.tag_query)
+            self._scan = self._profile.store.scan(
+                self.type_filter, self.tag_query,
+                profile=self._profile.settings.get("wallet.id"))
         except AskarError as err:
             raise StorageSearchError("Error opening search query") from err
 
