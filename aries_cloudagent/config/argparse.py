@@ -1342,6 +1342,16 @@ class WalletGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--wallet-key-derivation-method",
+            type=str,
+            metavar="<key-derivation-method>",
+            env_var="ACAPY_WALLET_KEY_DERIVATION_METHOD",
+            help=(
+                "Specifies the key derivation method used for wallet encryption."
+                "If RAW key derivation method is used, also --wallet-key parameter is expected."
+            ),
+        )
+        parser.add_argument(
             "--wallet-storage-creds",
             type=str,
             metavar="<storage-creds>",
@@ -1394,6 +1404,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.storage_type"] = args.wallet_storage_type
         if args.wallet_type:
             settings["wallet.type"] = args.wallet_type
+        if args.wallet_key_derivation_method:
+            settings["wallet.key_derivation_method"] = args.wallet_key_derivation_method
         if args.wallet_storage_config:
             settings["wallet.storage_config"] = args.wallet_storage_config
         if args.wallet_storage_creds:
