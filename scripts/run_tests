@@ -24,9 +24,9 @@ if [ -n "${ENABLE_PTVSD}" ]; then
   DOCKER_ARGS="${DOCKER_ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
 
-if [[ $FAST -eq 1 ]]; then
-  DOCKER_ARGS="${DOCKER_ARGS} -v $(pwd)/../aries_cloudagent:/usr/src/app/aries_cloudagent:z"
-fi
+# if [[ $FAST -eq 1 ]]; then
+#   DOCKER_ARGS="${DOCKER_ARGS} -v $(pwd)/../aries_cloudagent:/usr/src/app/aries_cloudagent:z"
+# fi
 
 if [ ! -d ../test-reports ]; then mkdir ../test-reports; fi
 
@@ -40,5 +40,5 @@ if [ ! -z "$TEST_REDIS_CONFIG" ]; then
 fi
 
 $CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
-	-v "$(pwd)/../test-reports:/usr/src/app/test-reports:z" \
+	-v "C:\Users\zan\GID\aries-cloudagent-python\test-reports:/usr/src/app/test-reports" \
 	$DOCKER_ARGS aries-cloudagent-test "$@"

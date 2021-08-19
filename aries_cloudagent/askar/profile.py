@@ -159,9 +159,11 @@ class AskarProfileSession(ProfileSession):
         """Create a new IndySdkProfileSession instance."""
         super().__init__(profile=profile, context=context, settings=settings)
         if is_txn:
-            self._opener = self.profile.store.transaction()
+            self._opener = \
+                self.profile.store.transaction(profile.context.settings.get("wallet.id"))
         else:
-            self._opener = self.profile.store.session()
+            self._opener = \
+                self.profile.store.session(profile.context.settings.get("wallet.id"))
         self._handle: Session = None
         self._acquire_start: float = None
         self._acquire_end: float = None
