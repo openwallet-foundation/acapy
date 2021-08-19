@@ -22,7 +22,6 @@ autodoc_mock_imports = [
     "aiohttp_cors",
     "aiohttp",
     "aiohttp_apispec",
-    "marshmallow",
     "base58",
     "msgpack",
     "pytest",
@@ -34,6 +33,15 @@ autodoc_mock_imports = [
     "multicodec",
     "configargparse",
     "pyld",
+    "pydid",
+    "aries_askar",
+    "indy_vdr",
+    "aries_cloudagent.vc",
+    "aioredis",
+    "deepmerge",
+    "ecdsa",
+    "indy_credx",
+    "dateutil",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",

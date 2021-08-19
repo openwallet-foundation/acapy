@@ -25,6 +25,14 @@ aries\_cloudagent.protocols.present\_proof.v1\_0.handlers.presentation\_handler 
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.protocols.present\_proof.v1\_0.handlers.presentation\_problem\_report\_handler module
+-------------------------------------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.present_proof.v1_0.handlers.presentation_problem_report_handler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.protocols.present\_proof.v1\_0.handlers.presentation\_proposal\_handler module
 ------------------------------------------------------------------------------------------------
 

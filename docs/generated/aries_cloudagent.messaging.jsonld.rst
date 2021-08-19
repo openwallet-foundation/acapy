@@ -25,6 +25,14 @@ aries\_cloudagent.messaging.jsonld.credential module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.messaging.jsonld.error module
+-----------------------------------------------
+
+.. automodule:: aries_cloudagent.messaging.jsonld.error
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.messaging.jsonld.routes module
 ------------------------------------------------
 

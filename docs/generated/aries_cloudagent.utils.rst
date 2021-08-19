@@ -17,10 +17,34 @@ aries\_cloudagent.utils.classloader module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.utils.dependencies module
+-------------------------------------------
+
+.. automodule:: aries_cloudagent.utils.dependencies
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.utils.env module
+----------------------------------
+
+.. automodule:: aries_cloudagent.utils.env
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.utils.http module
 -----------------------------------
 
 .. automodule:: aries_cloudagent.utils.http
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.utils.jwe module
+----------------------------------
+
+.. automodule:: aries_cloudagent.utils.jwe
    :members:
    :undoc-members:
    :show-inheritance:
