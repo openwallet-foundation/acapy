@@ -40,5 +40,5 @@ if [ ! -z "$TEST_REDIS_CONFIG" ]; then
 fi
 
 $CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
-	-v "C:\Users\zan\GID\aries-cloudagent-python\test-reports:/usr/src/app/test-reports" \
+	-v "$(pwd)/../test-reports:/usr/src/app/test-reports:z" \
 	$DOCKER_ARGS aries-cloudagent-test "$@"
