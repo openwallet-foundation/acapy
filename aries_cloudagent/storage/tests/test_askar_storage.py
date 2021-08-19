@@ -4,6 +4,8 @@ import os
 
 from asynctest import mock as async_mock
 
+from asynctest import TestCase as AsyncTestCase
+
 from ...askar.profile import AskarProfileManager
 from ...config.injection_context import InjectionContext
 
@@ -349,3 +351,21 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
 
         await postgres_wallet.close()
         await postgres_wallet.remove()
+
+class TestAskarStorageSearchSession(AsyncTestCase):
+    @pytest.mark.asyncio
+    async def test_askar_storage_search_session(self):
+
+      with async_mock.patch(
+      "aries_cloudagent.storage.askar.AskarProfile"
+      ) as AskarProfile:
+        askar_profile = AskarProfile(None, True)
+        askar_profile_return = async_mock.MagicMock()
+        askar_profile.store.scan.return_value = askar_profile_return
+        askar_profile.settings.get.return_value = "walletId"
+
+        storageSearchSession = test_module.AskarStorageSearchSession(askar_profile, "filter", None)
+
+        assert storageSearchSession._scan == askar_profile_return
+        askar_profile.settings.get.called_once_with("wallet.id")
+        askar_profile.store.scan.called_once_with("filter", None, profile="walletId")
