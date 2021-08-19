@@ -15,7 +15,7 @@ Resolve did document admin routes.
 
             },
             "parameters": [
-                
+
                 {
                     "in": "path",
                     "name": "did",
