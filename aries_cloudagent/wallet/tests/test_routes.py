@@ -1,3 +1,4 @@
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from aiohttp.web import HTTPForbidden
 
@@ -409,7 +410,7 @@ class TestWalletRoutes(AsyncTestCase):
         self.session_inject[BaseLedger] = ledger
 
         multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
-        self.session_inject[MultitenantManager] = multitenant_mgr
+        self.session_inject[BaseMultitenantManager] = multitenant_mgr
 
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()

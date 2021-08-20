@@ -1,3 +1,4 @@
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import json
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
@@ -103,7 +104,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.session.context.injector.bind_instance(
-            MultitenantManager, self.multitenant_mgr
+            BaseMultitenantManager, self.multitenant_mgr
         )
 
         self.manager = DIDXManager(self.session)

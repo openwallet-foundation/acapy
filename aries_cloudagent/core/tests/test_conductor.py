@@ -21,7 +21,6 @@ from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
 from ...resolver.did_resolver import DIDResolver, DIDResolverRegistry
-from ...multitenant.manager import MultitenantManager
 from ...multitenant.base import BaseMultitenantManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
