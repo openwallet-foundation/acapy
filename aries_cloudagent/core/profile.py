@@ -96,7 +96,8 @@ class Profile(ABC):
 
     async def close(self):
         """Close the profile instance."""
-
+    
+    @abstractmethod
     async def remove(self):
         """Remove the profile."""
 
