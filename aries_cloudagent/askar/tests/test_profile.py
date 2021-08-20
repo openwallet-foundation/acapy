@@ -1,6 +1,7 @@
 import pytest
 
 import asyncio
+import pytest
 
 from asynctest import TestCase as AsyncTestCase, mock
 
@@ -60,7 +61,7 @@ class TestProfile(AsyncTestCase):
     async def test_profile_manager_transaction(self):
 
         with mock.patch(
-        "aries_cloudagent.askar.profile.AskarProfile"
+            "aries_cloudagent.askar.profile.AskarProfile"
         ) as AskarProfile:
             askar_profile = AskarProfile(None, True)
             askar_profile_transaction = mock.MagicMock()
@@ -72,12 +73,12 @@ class TestProfile(AsyncTestCase):
             assert transactionProfile._opener == askar_profile_transaction
             askar_profile.context.settings.get.assert_called_once_with("wallet.id")
             askar_profile.store.transaction.assert_called_once_with("walletId")
-    
+
     @pytest.mark.asyncio
     async def test_profile_manager_store(self):
 
         with mock.patch(
-        "aries_cloudagent.askar.profile.AskarProfile"
+            "aries_cloudagent.askar.profile.AskarProfile"
         ) as AskarProfile:
             askar_profile = AskarProfile(None, False)
             askar_profile_session = mock.MagicMock()
@@ -89,4 +90,3 @@ class TestProfile(AsyncTestCase):
             assert sessionProfile._opener == askar_profile_session
             askar_profile.context.settings.get.assert_called_once_with("wallet.id")
             askar_profile.store.session.assert_called_once_with("walletId")
-
