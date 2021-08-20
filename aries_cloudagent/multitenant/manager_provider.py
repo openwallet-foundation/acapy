@@ -21,7 +21,7 @@ class MultitenantManagerProvider(BaseProvider):
 
     MANAGER_TYPES = {
         "basic": MultitenantManager,
-        "askar": AskarProfileMultitenantManager,
+        "askar-profile": AskarProfileMultitenantManager,
     }
 
     def __init__(self, root_profile):
