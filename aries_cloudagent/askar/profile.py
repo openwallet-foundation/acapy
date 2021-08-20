@@ -58,6 +58,11 @@ class AskarProfile(Profile):
         """Accessor for the askar open store instance."""
         return self.opened
 
+    async def remove(self):
+        """Remove the profile."""
+        if self.settings.get("multitenant.wallet_type") == "askar-profile":
+            await self.store.remove_profile(self.settings.get("wallet.id"))
+
     def init_ledger_pool(self):
         """Initialize the ledger pool."""
         if self.settings.get("ledger.disabled"):
