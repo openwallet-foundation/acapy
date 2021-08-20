@@ -1,4 +1,5 @@
 """Test mediate grant message handler."""
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import pytest
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -9,7 +10,6 @@ from ......connections.models.conn_record import ConnRecord
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......multitenant.manager import MultitenantManager
 from ...messages.mediate_grant import MediationGrant
 from ...models.mediation_record import MediationRecord
 from ...manager import MediationManager
@@ -84,7 +84,7 @@ class TestMediationGrantHandler(AsyncTestCase):
         )
 
         multitenant_mgr = async_mock.CoroutineMock()
-        profile.context.injector.bind_instance(MultitenantManager, multitenant_mgr)
+        profile.context.injector.bind_instance(BaseMultitenantManager, multitenant_mgr)
 
         default_base_mediator = MediationRecord(routing_keys=["key1", "key2"])
         multitenant_mgr.get_default_mediator = async_mock.CoroutineMock()
