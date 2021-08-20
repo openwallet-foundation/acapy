@@ -1,3 +1,4 @@
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 from unittest.mock import call
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
@@ -83,7 +84,7 @@ class TestConnectionManager(AsyncTestCase):
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.session.context.injector.bind_instance(
-            MultitenantManager, self.multitenant_mgr
+            BaseMultitenantManager, self.multitenant_mgr
         )
 
         self.test_mediator_routing_keys = [
