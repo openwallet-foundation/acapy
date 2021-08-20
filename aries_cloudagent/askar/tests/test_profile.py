@@ -32,7 +32,6 @@ class TestProfile(AsyncTestCase):
             openStore,
             context
         )
-
         remove_profile_stub = asyncio.Future()
         remove_profile_stub.set_result(True)
         openStore.store.remove_profile.return_value = remove_profile_stub
@@ -42,7 +41,7 @@ class TestProfile(AsyncTestCase):
         openStore.store.remove_profile.assert_called_once()
 
     @mock.patch("aries_cloudagent.askar.store.AskarOpenStore")
-    async def test_remove_fail_if_wallet_type_not_askar_profile(self, AskarOpenStore):
+    async def test_remove_profile_not_removed_if_wallet_type_not_askar_profile(self, AskarOpenStore):
         openStore = AskarOpenStore
         context = InjectionContext() 
         context.settings = {
@@ -52,10 +51,6 @@ class TestProfile(AsyncTestCase):
             openStore,
             context
         )
-
-        remove_profile_stub = asyncio.Future()
-        remove_profile_stub.set_result(True)
-        openStore.store.remove_profile.return_value = remove_profile_stub
         
         await askar_profile.remove()
         
