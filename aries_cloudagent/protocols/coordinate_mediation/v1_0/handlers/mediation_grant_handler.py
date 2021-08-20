@@ -1,9 +1,9 @@
 """Handler for mediate-grant message."""
 
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
-from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 
 from ..manager import MediationManager
@@ -33,7 +33,8 @@ class MediationGrantHandler(BaseHandler):
             await mgr.request_granted(record, context.message)
 
             # Multitenancy setup
-            multitenant_mgr = context.profile.inject(MultitenantManager, required=False)
+            multitenant_mgr = context.profile.inject(
+                BaseMultitenantManager, required=False)
             wallet_id = context.profile.settings.get("wallet.id")
 
             if multitenant_mgr and wallet_id:

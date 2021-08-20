@@ -33,7 +33,8 @@ class MultitenantManagerProvider(BaseProvider):
         """Create the multitenant manager instance."""
 
         multitenant_wallet_type = "multitenant.wallet_type"
-        manager_type = settings.get_value(multitenant_wallet_type, default="basic").lower()
+        manager_type = settings.get_value(
+            multitenant_wallet_type, default="basic").lower()
 
         if manager_type not in self.MANAGER_TYPES:
             raise InjectionError(f"Unknown manager type: {manager_type}")
