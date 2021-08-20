@@ -20,7 +20,7 @@ class TestProfileManagerProvider(AsyncTestCase):
         profile = InMemoryProfile.test_profile()
         provider = MultitenantManagerProvider(profile)
         context = InjectionContext()
-        context.settings["multitenant.wallet_type"] = "askar"
+        context.settings["multitenant.wallet_type"] = "askar-profile"
 
         self.assertEqual(
             provider.provide(context.settings, context.injector).__class__.__name__,
