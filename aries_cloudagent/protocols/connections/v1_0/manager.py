@@ -1,5 +1,6 @@
 """Classes to manage connections."""
 
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import logging
 
 from typing import Coroutine, Sequence, Tuple
@@ -22,7 +23,6 @@ from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
-from ....multitenant.manager import MultitenantManager
 from ...routing.v1_0.manager import RoutingManager
 from ...coordinate_mediation.v1_0.manager import MediationManager
 
@@ -132,7 +132,7 @@ class ConnectionManager(BaseConnectionManager):
         image_url = self._session.context.settings.get("image_url")
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject(BaseMultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
 
         if not my_label:
@@ -377,7 +377,7 @@ class ConnectionManager(BaseConnectionManager):
             or_default=True,
         )
 
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject(BaseMultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
         base_mediation_record = None
 
@@ -474,7 +474,7 @@ class ConnectionManager(BaseConnectionManager):
         my_info = None
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject(BaseMultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
         wallet = self._session.inject(BaseWallet)
 
@@ -651,7 +651,7 @@ class ConnectionManager(BaseConnectionManager):
         mediation_record = await mediation_record_if_id(self._session, mediation_id)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject(BaseMultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
         base_mediation_record = None
 
@@ -881,7 +881,7 @@ class ConnectionManager(BaseConnectionManager):
         wallet = self._session.inject(BaseWallet)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject(BaseMultitenantManager, required=False)
         wallet_id = self._session.settings.get("wallet.id")
         base_mediation_record = None
 
