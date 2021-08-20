@@ -264,11 +264,7 @@ class AskarStorageSearchSession(BaseStorageSearchSession):
         self.page_size = page_size or DEFAULT_PAGE_SIZE
         self._done = False
         self._profile = profile
-        self._scan = self._profile.store.scan(
-            self.type_filter,
-            self.tag_query,
-            profile=self._profile.settings.get("wallet.id")
-        )
+        self._scan = None
 
     @property
     def opened(self) -> bool:

@@ -16,30 +16,29 @@ class testProfile(AsyncTestCase):
     "aries_cloudagent.askar.profile.AskarProfile"
     ) as AskarProfile:
       askar_profile = AskarProfile(None, True)
-      askar_profile_return = async_mock.MagicMock()
-      askar_profile.store.transaction.return_value = askar_profile_return
+      askar_profile_transaction = async_mock.MagicMock()
+      askar_profile.store.transaction.return_value = askar_profile_transaction
       askar_profile.context.settings.get.return_value = "walletId"
 
-      sessionProfile = test_module.AskarProfileSession(askar_profile, True)
+      transactionProfile = test_module.AskarProfileSession(askar_profile, True)
 
-      assert sessionProfile._opener == askar_profile_return
-      askar_profile.context.settings.get.called_once_with("wallet.id")
-      askar_profile.store.transaction.called_once_with("walletId")
+      assert transactionProfile._opener == askar_profile_transaction
+      askar_profile.context.settings.get.assert_called_once_with("wallet.id")
+      askar_profile.store.transaction.assert_called_once_with("walletId")
   
   @pytest.mark.asyncio
-  async def test_profile_manager_not_transaction(self):
+  async def test_profile_manager_store(self):
 
     with async_mock.patch(
     "aries_cloudagent.askar.profile.AskarProfile"
     ) as AskarProfile:
       askar_profile = AskarProfile(None, False)
-      askar_profile_return = async_mock.MagicMock()
-      askar_profile.store.session.return_value = askar_profile_return
+      askar_profile_session = async_mock.MagicMock()
+      askar_profile.store.session.return_value = askar_profile_session
       askar_profile.context.settings.get.return_value = "walletId"
 
       sessionProfile = test_module.AskarProfileSession(askar_profile, False)
 
-      assert sessionProfile._opener == askar_profile_return
-      askar_profile.context.settings.get.assert_called_with("wallet.id")
-      askar_profile.store.session.assert_called_with("walletId")
-
+      assert sessionProfile._opener == askar_profile_session
+      askar_profile.context.settings.get.assert_called_once_with("wallet.id")
+      askar_profile.store.session.assert_called_once_with("walletId")
