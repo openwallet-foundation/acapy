@@ -360,12 +360,13 @@ class TestAskarStorageSearchSession(AsyncTestCase):
       "aries_cloudagent.storage.askar.AskarProfile"
       ) as AskarProfile:
         askar_profile = AskarProfile(None, True)
-        askar_profile_return = async_mock.MagicMock()
-        askar_profile.store.scan.return_value = askar_profile_return
+        askar_profile_scan = async_mock.MagicMock()
+        askar_profile.store.scan.return_value = askar_profile_scan
         askar_profile.settings.get.return_value = "walletId"
 
         storageSearchSession = test_module.AskarStorageSearchSession(askar_profile, "filter", None)
+        await storageSearchSession._open()
 
-        assert storageSearchSession._scan == askar_profile_return
-        askar_profile.settings.get.called_once_with("wallet.id")
-        askar_profile.store.scan.called_once_with("filter", None, profile="walletId")
+        assert storageSearchSession._scan == askar_profile_scan
+        askar_profile.settings.get.assert_called_once_with("wallet.id")
+        askar_profile.store.scan.assert_called_once_with("filter", None, profile="walletId")
