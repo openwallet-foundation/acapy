@@ -1,4 +1,5 @@
 """Test OOB Manager."""
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import asyncio
 import json
 
@@ -362,11 +363,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.session.context.injector.bind_instance(BaseResponder, self.responder)
         self.mt_mgr = async_mock.MagicMock()
         self.mt_mgr = async_mock.create_autospec(MultitenantManager)
-        self.session.context.injector.bind_instance(MultitenantManager, self.mt_mgr)
+        self.session.context.injector.bind_instance(BaseMultitenantManager, self.mt_mgr)
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.session.context.injector.bind_instance(
-            MultitenantManager, self.multitenant_mgr
+            BaseMultitenantManager, self.multitenant_mgr
         )
 
         self.manager = OutOfBandManager(self.session)
