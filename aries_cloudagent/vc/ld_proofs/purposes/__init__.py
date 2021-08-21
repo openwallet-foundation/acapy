@@ -5,9 +5,9 @@ from .AuthenticationProofPurpose import AuthenticationProofPurpose
 from .CredentialIssuancePurpose import CredentialIssuancePurpose
 
 __all__ = [
-    ProofPurpose,
-    ControllerProofPurpose,
-    AssertionProofPurpose,
-    AuthenticationProofPurpose,
-    CredentialIssuancePurpose,
+    "ProofPurpose",
+    "ControllerProofPurpose",
+    "AssertionProofPurpose",
+    "AuthenticationProofPurpose",
+    "CredentialIssuancePurpose",
 ]

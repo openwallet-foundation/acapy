@@ -28,34 +28,34 @@ from .validation_result import DocumentVerificationResult, ProofResult, PurposeR
 from .check import get_properties_without_context
 
 __all__ = [
-    sign,
-    verify,
-    derive,
-    ProofSet,
+    "sign",
+    "verify",
+    "derive",
+    "ProofSet",
     # Proof purposes
-    ProofPurpose,
-    ControllerProofPurpose,
-    AssertionProofPurpose,
-    AuthenticationProofPurpose,
-    CredentialIssuancePurpose,
+    "ProofPurpose",
+    "ControllerProofPurpose",
+    "AssertionProofPurpose",
+    "AuthenticationProofPurpose",
+    "CredentialIssuancePurpose",
     # Suites
-    LinkedDataProof,
-    LinkedDataSignature,
-    JwsLinkedDataSignature,
-    Ed25519Signature2018,
-    BbsBlsSignature2020,
-    BbsBlsSignatureProof2020,
+    "LinkedDataProof",
+    "LinkedDataSignature",
+    "JwsLinkedDataSignature",
+    "Ed25519Signature2018",
+    "BbsBlsSignature2020",
+    "BbsBlsSignatureProof2020",
     # Key pairs
-    KeyPair,
-    WalletKeyPair,
+    "KeyPair",
+    "WalletKeyPair",
     # Document Loaders
-    DocumentLoaderMethod,
-    DocumentLoader,
+    "DocumentLoaderMethod",
+    "DocumentLoader",
     # Exceptions
-    LinkedDataProofException,
+    "LinkedDataProofException",
     # Validation results
-    DocumentVerificationResult,
-    ProofResult,
-    PurposeResult,
-    get_properties_without_context,
+    "DocumentVerificationResult",
+    "ProofResult",
+    "PurposeResult",
+    "get_properties_without_context",
 ]
