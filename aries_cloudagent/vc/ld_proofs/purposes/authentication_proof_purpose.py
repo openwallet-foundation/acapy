@@ -1,12 +1,17 @@
 """Authentication proof purpose class."""
 
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
+from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
-from ..document_loader import DocumentLoaderMethod
-from ..suites import LinkedDataProof
-from .ControllerProofPurpose import ControllerProofPurpose
+
+from .controller_proof_purpose import ControllerProofPurpose
+
+# Avoid circular dependency
+if TYPE_CHECKING:
+    from ..suites import LinkedDataProof
 
 
 class AuthenticationProofPurpose(ControllerProofPurpose):
@@ -37,7 +42,7 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
         *,
         proof: dict,
         document: dict,
-        suite: LinkedDataProof,
+        suite: "LinkedDataProof",
         verification_method: dict,
         document_loader: DocumentLoaderMethod,
     ) -> PurposeResult:

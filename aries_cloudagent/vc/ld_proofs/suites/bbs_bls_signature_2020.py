@@ -3,14 +3,15 @@
 from datetime import datetime
 from typing import List, Union
 
-
 from ....wallet.util import b64_to_bytes, bytes_to_b64
+
 from ..crypto import KeyPair
-from ..error import LinkedDataProofException
-from ..validation_result import ProofResult
 from ..document_loader import DocumentLoaderMethod
+from ..error import LinkedDataProofException
 from ..purposes import ProofPurpose
-from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
+from ..validation_result import ProofResult
+
+from .bbs_bls_signature_2020_base import BbsBlsSignature2020Base
 
 
 class BbsBlsSignature2020(BbsBlsSignature2020Base):

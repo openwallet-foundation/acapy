@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from asynctest import TestCase, mock as async_mock
 
 from .....messaging.util import datetime_to_str
-from ..ProofPurpose import ProofPurpose
+from ..proof_purpose import ProofPurpose
 
 
 class TestProofPurpose(TestCase):

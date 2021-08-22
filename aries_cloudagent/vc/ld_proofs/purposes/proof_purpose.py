@@ -1,11 +1,16 @@
 """Base Proof Purpose class."""
 
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
 from ....messaging.util import str_to_datetime
-from ..validation_result import PurposeResult
+
 from ..document_loader import DocumentLoaderMethod
-from ..suites import LinkedDataProof
+from ..validation_result import PurposeResult
+
+# Avoid circular dependency
+if TYPE_CHECKING:
+    from ..suites import LinkedDataProof
 
 
 class ProofPurpose:
@@ -24,7 +29,7 @@ class ProofPurpose:
         *,
         proof: dict,
         document: dict,
-        suite: LinkedDataProof,
+        suite: "LinkedDataProof",
         verification_method: dict,
         document_loader: DocumentLoaderMethod,
     ) -> PurposeResult:

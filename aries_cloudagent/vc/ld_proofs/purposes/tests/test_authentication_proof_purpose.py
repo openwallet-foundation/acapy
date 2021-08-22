@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 from asynctest import TestCase, mock as async_mock
 
 from ...validation_result import PurposeResult
-from ..ControllerProofPurpose import ControllerProofPurpose
-from ..AuthenticationProofPurpose import AuthenticationProofPurpose
+from ..controller_proof_purpose import ControllerProofPurpose
+from ..authentication_proof_purpose import AuthenticationProofPurpose
 
 
 class TestAuthenticationProofPurpose(TestCase):

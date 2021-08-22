@@ -3,9 +3,11 @@
 import re
 
 from os import urandom
-from pyld import jsonld
 from typing import List
-from .BbsBlsSignature2020Base import BbsBlsSignature2020Base
+
+from pyld import jsonld
+
+from .bbs_bls_signature_2020_base import BbsBlsSignature2020Base
 
 if BbsBlsSignature2020Base.BBS_SUPPORTED:
     from ursa_bbs_signatures import (
@@ -21,13 +23,15 @@ if BbsBlsSignature2020Base.BBS_SUPPORTED:
 
 from ....utils.dependencies import assert_ursa_bbs_signatures_installed
 from ....wallet.util import b64_to_bytes, bytes_to_b64
+
 from ..crypto import KeyPair
 from ..error import LinkedDataProofException
 from ..validation_result import ProofResult
 from ..document_loader import DocumentLoaderMethod
 from ..purposes import ProofPurpose
-from .BbsBlsSignature2020 import BbsBlsSignature2020
-from .LinkedDataProof import DeriveProofResult
+
+from .bbs_bls_signature_2020 import BbsBlsSignature2020
+from .linked_data_proof import DeriveProofResult
 
 
 class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):

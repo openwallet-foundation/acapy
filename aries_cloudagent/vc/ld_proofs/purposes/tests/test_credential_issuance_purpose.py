@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 from asynctest import TestCase, mock as async_mock
 
 from ...validation_result import PurposeResult
-from ..AssertionProofPurpose import AssertionProofPurpose
-from ..CredentialIssuancePurpose import CredentialIssuancePurpose
+from ..assertion_proof_purpose import AssertionProofPurpose
+from ..credential_issuance_purpose import CredentialIssuancePurpose
 from ....tests.data import TEST_VC_DOCUMENT_SIGNED_ED25519
 from ....tests.document_loader import custom_document_loader
 
