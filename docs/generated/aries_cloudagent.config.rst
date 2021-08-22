@@ -17,6 +17,14 @@ aries\_cloudagent.config.argparse module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.config.banner module
+--------------------------------------
+
+.. automodule:: aries_cloudagent.config.banner
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.config.base module
 ------------------------------------
 

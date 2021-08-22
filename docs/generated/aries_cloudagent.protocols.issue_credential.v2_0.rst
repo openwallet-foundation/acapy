@@ -12,6 +12,7 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
+   aries_cloudagent.protocols.issue_credential.v2_0.formats
    aries_cloudagent.protocols.issue_credential.v2_0.handlers
    aries_cloudagent.protocols.issue_credential.v2_0.messages
    aries_cloudagent.protocols.issue_credential.v2_0.models

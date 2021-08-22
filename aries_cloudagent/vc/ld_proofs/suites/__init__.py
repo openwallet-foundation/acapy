@@ -6,10 +6,10 @@ from .BbsBlsSignature2020 import BbsBlsSignature2020
 from .BbsBlsSignatureProof2020 import BbsBlsSignatureProof2020
 
 __all__ = [
-    LinkedDataProof,
-    LinkedDataSignature,
-    JwsLinkedDataSignature,
-    Ed25519Signature2018,
-    BbsBlsSignature2020,
-    BbsBlsSignatureProof2020,
+    "LinkedDataProof",
+    "LinkedDataSignature",
+    "JwsLinkedDataSignature",
+    "Ed25519Signature2018",
+    "BbsBlsSignature2020",
+    "BbsBlsSignatureProof2020",
 ]

@@ -2,8 +2,7 @@
 Contains the functions needed to produce and verify a json-ld signature.
 
 This file was ported from
-https://github.com/transmute-industries/Ed25519Signature2018/blob/master/
-    src/createVerifyData/index.js
+https://github.com/transmute-industries/Ed25519Signature2018/blob/master/src/createVerifyData/index.js
 """
 
 import datetime

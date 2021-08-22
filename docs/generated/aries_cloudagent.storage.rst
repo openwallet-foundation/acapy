@@ -6,8 +6,24 @@ aries\_cloudagent.storage package
    :undoc-members:
    :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   aries_cloudagent.storage.vc_holder
+
 Submodules
 ----------
+
+aries\_cloudagent.storage.askar module
+--------------------------------------
+
+.. automodule:: aries_cloudagent.storage.askar
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 aries\_cloudagent.storage.base module
 -------------------------------------
