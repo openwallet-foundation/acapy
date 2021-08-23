@@ -1,7 +1,4 @@
 from asynctest import TestCase
-from datetime import datetime
-
-import pytest
 
 from ..validation_result import PresentationVerificationResult
 

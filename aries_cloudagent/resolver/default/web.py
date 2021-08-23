@@ -2,7 +2,7 @@
 
 import urllib.parse
 
-from typing import Sequence, Pattern
+from typing import Pattern
 
 import aiohttp
 
@@ -34,10 +34,6 @@ class WebDIDResolver(BaseDIDResolver):
     def supported_did_regex(self) -> Pattern:
         """Return supported_did_regex of Web DID Resolver."""
         return DIDWeb.PATTERN
-
-    def supported_methods(self) -> Sequence[str]:
-        """Return list of supported methods."""
-        return ["web"]
 
     def __transform_to_url(self, did):
         """

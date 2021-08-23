@@ -1,10 +1,11 @@
 """Base Class for DID Resolvers."""
 
+import re
+import warnings
+
 from abc import ABC, abstractmethod
 from enum import Enum
-import re
 from typing import NamedTuple, Pattern, Sequence, Union
-import warnings
 
 from pydid import DID
 
@@ -116,7 +117,8 @@ class BaseDIDResolver(ABC):
         try:
             supported_did_regex = self.supported_did_regex
         except NotImplementedError as error:
-            if not self.supported_methods:
+            methods = self.supported_methods
+            if not methods:
                 raise error
             warnings.warn(
                 "BaseResolver.supported_methods is deprecated; "
@@ -125,7 +127,7 @@ class BaseDIDResolver(ABC):
             )
 
             supported_did_regex = re.compile(
-                "^did:(?:{}):.*$".format("|".join(self.supported_methods))
+                "^did:(?:{}):.*$".format("|".join(methods))
             )
 
         return bool(supported_did_regex.match(did))

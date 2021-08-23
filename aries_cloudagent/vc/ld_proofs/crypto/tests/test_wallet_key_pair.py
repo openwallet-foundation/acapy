@@ -1,9 +1,10 @@
-from asynctest import TestCase
-from asynctest import mock as async_mock
+from asynctest import TestCase, mock as async_mock
 
 from .....wallet.key_pair import KeyType
+
 from ...error import LinkedDataProofException
-from ..WalletKeyPair import WalletKeyPair
+
+from ..wallet_key_pair import WalletKeyPair
 
 
 class TestWalletKeyPair(TestCase):

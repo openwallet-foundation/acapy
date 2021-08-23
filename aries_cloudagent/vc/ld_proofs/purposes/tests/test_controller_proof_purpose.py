@@ -3,8 +3,8 @@ from asynctest import TestCase, mock as async_mock
 
 from ....tests.data import TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519
 from ....tests.document_loader import custom_document_loader
-from ..ProofPurpose import ProofPurpose
-from ..ControllerProofPurpose import ControllerProofPurpose
+from ..proof_purpose import ProofPurpose
+from ..controller_proof_purpose import ControllerProofPurpose
 
 
 class TestControllerProofPurpose(TestCase):

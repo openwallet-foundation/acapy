@@ -1,19 +1,17 @@
-import asyncio
 import json
+
+import pytest
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from marshmallow import EXCLUDE
 
 from ...config.injection_context import InjectionContext
-from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import EventBus
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import Profile
 from ...core.protocol_registry import ProtocolRegistry
 from ...messaging.agent_message import AgentMessage, AgentMessageSchema
-from ...messaging.responder import MockResponder
 from ...messaging.request_context import RequestContext
-from ...messaging.util import datetime_now
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...protocols.issue_credential.v2_0.message_types import CRED_20_PROBLEM_REPORT
 from ...protocols.issue_credential.v2_0.messages.cred_problem_report import (
@@ -393,7 +391,8 @@ class TestDispatcher(AsyncTestCase):
         context = RequestContext(profile)
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
-        await responder.send_webhook("topic", {"pay": "load"})
+        with pytest.deprecated_call():
+            await responder.send_webhook("topic", {"pay": "load"})
 
     async def test_create_enc_outbound(self):
         profile = make_profile()

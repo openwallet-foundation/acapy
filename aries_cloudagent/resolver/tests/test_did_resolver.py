@@ -1,5 +1,9 @@
 """Test did resolver registry."""
 
+from typing import Pattern
+
+import re
+
 import pytest
 
 from asynctest import mock as async_mock
@@ -64,15 +68,17 @@ TEST_METHOD_SPECIFIC_IDS = [
 class MockResolver(BaseDIDResolver):
     def __init__(self, supported_methods, resolved=None, native: bool = False):
         super().__init__(ResolverType.NATIVE if native else ResolverType.NON_NATIVE)
-        self._supported_methods = supported_methods
+        self._did_regex = re.compile(
+            "^did:(?:{}):.*$".format("|".join(supported_methods))
+        )
         self.resolved = resolved
+
+    @property
+    def supported_did_regex(self) -> Pattern:
+        return self._did_regex
 
     async def setup(self, context):
         pass
-
-    @property
-    def supported_methods(self):
-        return self._supported_methods
 
     async def _resolve(self, profile, did):
         if isinstance(self.resolved, Exception):

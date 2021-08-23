@@ -1,14 +1,15 @@
 """Class to represent a Linked Data proof set."""
 
 from typing import List, Union
+
 from pyld.jsonld import JsonLdProcessor
 
-from .error import LinkedDataProofException
-from .validation_result import DocumentVerificationResult, ProofResult
 from .constants import SECURITY_CONTEXT_URL
 from .document_loader import DocumentLoaderMethod
-from .purposes.ProofPurpose import ProofPurpose
+from .error import LinkedDataProofException
+from .purposes.proof_purpose import ProofPurpose
 from .suites import LinkedDataProof
+from .validation_result import DocumentVerificationResult, ProofResult
 
 
 class ProofSet:

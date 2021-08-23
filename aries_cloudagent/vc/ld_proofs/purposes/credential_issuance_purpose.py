@@ -1,15 +1,20 @@
 """Credential Issuance proof purpose class."""
 
-from typing import List
+from typing import List, TYPE_CHECKING
+
 from pyld.jsonld import JsonLdProcessor
 from pyld import jsonld
 
+from ..constants import CREDENTIALS_ISSUER_URL
+from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
-from ..suites import LinkedDataProof
-from ..document_loader import DocumentLoaderMethod
-from ..constants import CREDENTIALS_ISSUER_URL
-from .AssertionProofPurpose import AssertionProofPurpose
+
+from .assertion_proof_purpose import AssertionProofPurpose
+
+# Avoid circular dependency
+if TYPE_CHECKING:
+    from ..suites import LinkedDataProof
 
 
 class CredentialIssuancePurpose(AssertionProofPurpose):
@@ -20,7 +25,7 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
         *,
         proof: dict,
         document: dict,
-        suite: LinkedDataProof,
+        suite: "LinkedDataProof",
         verification_method: dict,
         document_loader: DocumentLoaderMethod,
     ) -> PurposeResult:
