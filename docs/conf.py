@@ -28,8 +28,6 @@ autodoc_mock_imports = [
     "asynctest",
     "markdown",
     "prompt_toolkit",
-    "aries_cloudagent.base_handler",
-    "aries_cloudagent.logging",
     "multicodec",
     "configargparse",
     "pyld",
