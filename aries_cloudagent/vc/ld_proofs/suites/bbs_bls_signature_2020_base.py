@@ -1,13 +1,16 @@
 """BbsBlsSignature2020Base class."""
 
 from abc import ABCMeta, abstractmethod
-from pyld import jsonld
 from typing import List
 
-from ..error import LinkedDataProofException
+from pyld import jsonld
+
 from ....utils.dependencies import is_ursa_bbs_signatures_module_installed
+
 from ..document_loader import DocumentLoaderMethod
-from .LinkedDataProof import LinkedDataProof
+from ..error import LinkedDataProofException
+
+from .linked_data_proof import LinkedDataProof
 
 
 class BbsBlsSignature2020Base(LinkedDataProof, metaclass=ABCMeta):

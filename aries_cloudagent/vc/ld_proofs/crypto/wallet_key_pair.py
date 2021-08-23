@@ -5,8 +5,10 @@ from typing import List, Optional, Union
 from ....wallet.util import b58_to_bytes
 from ....wallet.key_type import KeyType
 from ....wallet.base import BaseWallet
+
 from ..error import LinkedDataProofException
-from .KeyPair import KeyPair
+
+from .key_pair import KeyPair
 
 
 class WalletKeyPair(KeyPair):

@@ -2,20 +2,17 @@
 
 
 from abc import ABC
-from pyld import jsonld
-from typing import List, TYPE_CHECKING, Union
+from typing import List, Union
 
+from pyld import jsonld
 from typing_extensions import TypedDict
 
 from ..check import get_properties_without_context
 from ..constants import SECURITY_CONTEXT_URL
-from ..error import LinkedDataProofException
 from ..document_loader import DocumentLoaderMethod
+from ..error import LinkedDataProofException
+from ..purposes import ProofPurpose
 from ..validation_result import ProofResult
-
-# ProofPurpose and LinkedDataProof depend on each other
-if TYPE_CHECKING:
-    from ..purposes.ProofPurpose import ProofPurpose
 
 
 class DeriveProofResult(TypedDict):
@@ -44,7 +41,7 @@ class LinkedDataProof(ABC):
         self,
         *,
         document: dict,
-        purpose: "ProofPurpose",
+        purpose: ProofPurpose,
         document_loader: DocumentLoaderMethod,
     ) -> dict:
         """Create proof for document.
@@ -67,7 +64,7 @@ class LinkedDataProof(ABC):
         *,
         proof: dict,
         document: dict,
-        purpose: "ProofPurpose",
+        purpose: ProofPurpose,
         document_loader: DocumentLoaderMethod,
     ) -> ProofResult:
         """Verify proof against document and proof purpose.

@@ -21,13 +21,14 @@ from ....tests.data import (
     TEST_VC_DOCUMENT_PARTIAL_PROOF_BBS,
     TEST_VC_DOCUMENT_NESTED_REVEAL,
 )
-from ...crypto.WalletKeyPair import WalletKeyPair
-from ...purposes.AssertionProofPurpose import AssertionProofPurpose
+from ....vc_ld import derive_credential, verify_credential
 
+from ...crypto.wallet_key_pair import WalletKeyPair
+from ...purposes.assertion_proof_purpose import AssertionProofPurpose
 from ...error import LinkedDataProofException
 from ...ld_proofs import verify, derive
-from ....vc_ld import derive_credential, verify_credential
-from ..BbsBlsSignatureProof2020 import BbsBlsSignatureProof2020
+
+from ..bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
 
 
 @pytest.mark.ursa_bbs_signatures

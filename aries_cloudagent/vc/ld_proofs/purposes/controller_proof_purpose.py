@@ -1,14 +1,20 @@
 """Controller proof purpose class."""
 
+from typing import TYPE_CHECKING
+
 from pyld.jsonld import JsonLdProcessor
 from pyld import jsonld
 
+from ..constants import SECURITY_CONTEXT_URL
+from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..validation_result import PurposeResult
-from ..constants import SECURITY_CONTEXT_URL
-from ..suites import LinkedDataProof
-from ..document_loader import DocumentLoaderMethod
-from .ProofPurpose import ProofPurpose
+
+from .proof_purpose import ProofPurpose
+
+# Avoid circular dependency
+if TYPE_CHECKING:
+    from ..suites import LinkedDataProof
 
 
 class ControllerProofPurpose(ProofPurpose):
@@ -19,7 +25,7 @@ class ControllerProofPurpose(ProofPurpose):
         *,
         proof: dict,
         document: dict,
-        suite: LinkedDataProof,
+        suite: "LinkedDataProof",
         verification_method: dict,
         document_loader: DocumentLoaderMethod,
     ) -> PurposeResult:

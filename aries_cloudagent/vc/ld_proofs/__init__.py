@@ -1,5 +1,5 @@
 from .ld_proofs import sign, verify, derive
-from .ProofSet import ProofSet
+from .proof_set import ProofSet
 from .purposes import (
     ProofPurpose,
     ControllerProofPurpose,

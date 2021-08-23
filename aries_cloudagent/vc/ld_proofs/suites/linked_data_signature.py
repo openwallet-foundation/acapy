@@ -1,16 +1,17 @@
 """Linked Data Signature class."""
 
+from abc import abstractmethod, ABCMeta
 from datetime import datetime
 from hashlib import sha256
 from typing import Union
-from abc import abstractmethod, ABCMeta
 
-from ..error import LinkedDataProofException
-from ..validation_result import ProofResult
-from ..document_loader import DocumentLoaderMethod
-from ..purposes import ProofPurpose
 from ..constants import SECURITY_CONTEXT_URL
-from .LinkedDataProof import LinkedDataProof
+from ..document_loader import DocumentLoaderMethod
+from ..error import LinkedDataProofException
+from ..purposes import ProofPurpose
+from ..validation_result import ProofResult
+
+from .linked_data_proof import LinkedDataProof
 
 
 class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):

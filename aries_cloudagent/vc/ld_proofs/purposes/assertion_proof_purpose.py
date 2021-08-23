@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 
-from .ControllerProofPurpose import ControllerProofPurpose
+from .controller_proof_purpose import ControllerProofPurpose
 
 
 class AssertionProofPurpose(ControllerProofPurpose):
