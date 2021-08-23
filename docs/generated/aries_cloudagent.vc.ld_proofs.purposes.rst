@@ -9,42 +9,42 @@ aries\_cloudagent.vc.ld\_proofs.purposes package
 Submodules
 ----------
 
-aries\_cloudagent.vc.ld\_proofs.purposes.AssertionProofPurpose module
----------------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.AssertionProofPurpose
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-aries\_cloudagent.vc.ld\_proofs.purposes.AuthenticationProofPurpose module
---------------------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.AuthenticationProofPurpose
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-aries\_cloudagent.vc.ld\_proofs.purposes.ControllerProofPurpose module
-----------------------------------------------------------------------
-
-.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.ControllerProofPurpose
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-aries\_cloudagent.vc.ld\_proofs.purposes.CredentialIssuancePurpose module
+aries\_cloudagent.vc.ld\_proofs.purposes.assertion\_proof\_purpose module
 -------------------------------------------------------------------------
 
-.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.CredentialIssuancePurpose
+.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.assertion_proof_purpose
    :members:
    :undoc-members:
    :show-inheritance:
 
-aries\_cloudagent.vc.ld\_proofs.purposes.ProofPurpose module
-------------------------------------------------------------
+aries\_cloudagent.vc.ld\_proofs.purposes.authentication\_proof\_purpose module
+------------------------------------------------------------------------------
 
-.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.ProofPurpose
+.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.authentication_proof_purpose
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.vc.ld\_proofs.purposes.controller\_proof\_purpose module
+--------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.controller_proof_purpose
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.vc.ld\_proofs.purposes.credential\_issuance\_purpose module
+-----------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.credential_issuance_purpose
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.vc.ld\_proofs.purposes.proof\_purpose module
+--------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.ld_proofs.purposes.proof_purpose
    :members:
    :undoc-members:
    :show-inheritance:

@@ -19,14 +19,6 @@ Subpackages
 Submodules
 ----------
 
-aries\_cloudagent.vc.ld\_proofs.ProofSet module
------------------------------------------------
-
-.. automodule:: aries_cloudagent.vc.ld_proofs.ProofSet
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 aries\_cloudagent.vc.ld\_proofs.check module
 --------------------------------------------
 
@@ -63,6 +55,14 @@ aries\_cloudagent.vc.ld\_proofs.ld\_proofs module
 -------------------------------------------------
 
 .. automodule:: aries_cloudagent.vc.ld_proofs.ld_proofs
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.vc.ld\_proofs.proof\_set module
+-------------------------------------------------
+
+.. automodule:: aries_cloudagent.vc.ld_proofs.proof_set
    :members:
    :undoc-members:
    :show-inheritance:
