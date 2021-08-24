@@ -3,7 +3,7 @@
 Resolution is performed using the IndyLedger class.
 """
 
-from typing import Sequence, Pattern
+from typing import Pattern
 
 from ...did.did_key import DIDKey
 from ...config.injection_context import InjectionContext
@@ -22,15 +22,6 @@ class KeyDIDResolver(BaseDIDResolver):
 
     async def setup(self, context: InjectionContext):
         """Perform required setup for Key DID resolution."""
-
-    @property
-    def supported_methods(self) -> Sequence[str]:
-        """
-        Return supported methods of Key DID Resolver.
-
-        DEPRECATED: Use supported_did_regex instead.
-        """
-        return ["key"]
 
     @property
     def supported_did_regex(self) -> Pattern:

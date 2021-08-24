@@ -17,10 +17,10 @@ aries\_cloudagent.protocols.didexchange.v1\_0.messages.complete module
    :undoc-members:
    :show-inheritance:
 
-aries\_cloudagent.protocols.didexchange.v1\_0.messages.problem\_report module
------------------------------------------------------------------------------
+aries\_cloudagent.protocols.didexchange.v1\_0.messages.problem\_report\_reason module
+-------------------------------------------------------------------------------------
 
-.. automodule:: aries_cloudagent.protocols.didexchange.v1_0.messages.problem_report
+.. automodule:: aries_cloudagent.protocols.didexchange.v1_0.messages.problem_report_reason
    :members:
    :undoc-members:
    :show-inheritance:

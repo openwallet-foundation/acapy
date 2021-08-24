@@ -41,6 +41,14 @@ aries\_cloudagent.ledger.indy module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.ledger.indy\_vdr module
+-----------------------------------------
+
+.. automodule:: aries_cloudagent.ledger.indy_vdr
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.ledger.routes module
 --------------------------------------
 
