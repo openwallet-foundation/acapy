@@ -482,6 +482,19 @@ class TestIndySdkVerifier(AsyncTestCase):
             )
         assert "is superfluous vs. requested predicate" in str(context.exception)
 
+        # mismatched predicates and requested_predicates
+        proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
+        proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
+        proof_x["requested_proof"]["predicates"] = {}
+        with self.assertRaises(ValueError) as context:
+            await self.verifier.check_timestamps(
+                self.ledger,
+                proof_req_x,
+                proof_x,
+                REV_REG_DEFS,
+            )
+        assert "predicates mismatch requested predicate" in str(context.exception)
+
     async def test_non_revoc_intervals(self):
         big_pres_req = {
             "nonce": "12301197819298309547817",

@@ -8,10 +8,10 @@ retrieving did's from different sources provided by the method type.
 from datetime import datetime
 from itertools import chain
 import logging
-from typing import Sequence, Tuple, Union
+from typing import Sequence, Tuple, Type, TypeVar, Union
 
-from pydid import DID, DIDError, DIDUrl, Resource
-import pydid
+from pydid import DID, DIDError, DIDUrl, Resource, NonconformantDocument
+from pydid.doc.doc import IDNotFoundError
 
 from ..core.profile import Profile
 from .base import (
@@ -25,6 +25,9 @@ from .base import (
 from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
+
+
+ResourceType = TypeVar("ResourceType", bound=Resource)
 
 
 class DIDResolver:
@@ -99,16 +102,27 @@ class DIDResolver:
             raise DIDMethodNotSupported(f'No resolver supprting DID "{did}" loaded')
         return resolvers
 
-    async def dereference(self, profile: Profile, did_url: str) -> Resource:
+    async def dereference(
+        self, profile: Profile, did_url: str, *, cls: Type[ResourceType] = Resource
+    ) -> ResourceType:
         """Dereference a DID URL to its corresponding DID Doc object."""
         # TODO Use cached DID Docs when possible
         try:
             parsed = DIDUrl.parse(did_url)
             if not parsed.did:
                 raise ValueError("Invalid DID URL")
-            doc_dict = await self.resolve(profile, parsed.did)
-            return pydid.deserialize_document(doc_dict).dereference(parsed)
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)
             ) from err
+
+        doc_dict = await self.resolve(profile, parsed.did)
+        # Use non-conformant doc as the "least common denominator"
+        try:
+            return NonconformantDocument.deserialize(doc_dict).dereference_as(
+                cls, parsed
+            )
+        except IDNotFoundError as error:
+            raise ResolverError(
+                "Failed to dereference DID URL: {}".format(error)
+            ) from error

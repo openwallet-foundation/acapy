@@ -1,20 +1,23 @@
 """Base classes for the queue module."""
 from abc import ABC, abstractmethod
+import logging
 import asyncio
 from typing import Union
 
-from ...error import TransportError
+from ...error import TransportError, BaseError
+from ....config.settings import Settings
 
 
 class BaseOutboundQueue(ABC):
     """Base class for the outbound queue generic type."""
 
-    protocol = None  # string value representing protocol, e.g. "redis"
-
-    def __init__(self, connection: str, prefix: str = None):
+    def __init__(self, settings: Settings):
         """Initialize base queue type."""
-        self.connection = connection
-        self.prefix = prefix or "acapy"
+        self.logger = logging.getLogger(__name__)
+
+    def __str__(self):
+        """Return string representation used in banner on startup."""
+        return type(self).__name__
 
     async def __aenter__(self):
         """Async context manager enter."""
@@ -49,3 +52,11 @@ class BaseOutboundQueue(ABC):
 
 class OutboundQueueError(TransportError):
     """Generic outbound transport error."""
+
+
+class OutboundQueueConfigurationError(BaseError):
+    """An error with the queue configuration."""
+
+    def __init__(self, message):
+        """Initialize the exception instance."""
+        super().__init__(message)

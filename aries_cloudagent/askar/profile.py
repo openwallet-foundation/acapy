@@ -63,6 +63,7 @@ class AskarProfile(Profile):
         pool_name = self.settings.get("ledger.pool_name", "default")
         keepalive = int(self.settings.get("ledger.keepalive", 5))
         read_only = bool(self.settings.get("ledger.read_only", False))
+        socks_proxy = self.settings.get("ledger.socks_proxy")
         if read_only:
             LOGGER.error("Note: setting ledger to read-only mode")
         genesis_transactions = self.settings.get("ledger.genesis_transactions")
@@ -73,6 +74,7 @@ class AskarProfile(Profile):
             cache=cache,
             genesis_transactions=genesis_transactions,
             read_only=read_only,
+            socks_proxy=socks_proxy,
         )
 
     def bind_providers(self):

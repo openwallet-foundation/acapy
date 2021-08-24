@@ -12,15 +12,15 @@ from .schema_org import SCHEMA_ORG
 
 
 __all__ = [
-    DID_V1,
-    SECURITY_V1,
-    SECURITY_V2,
-    SECURITY_V3_UNSTABLE,
-    BBS_V1,
-    CREDENTIALS_V1,
-    CITIZENSHIP_V1,
-    VACCINATION_V1,
-    EXAMPLES_V1,
-    ODRL,
-    SCHEMA_ORG,
+    "DID_V1",
+    "SECURITY_V1",
+    "SECURITY_V2",
+    "SECURITY_V3_UNSTABLE",
+    "BBS_V1",
+    "CREDENTIALS_V1",
+    "CITIZENSHIP_V1",
+    "VACCINATION_V1",
+    "EXAMPLES_V1",
+    "ODRL",
+    "SCHEMA_ORG",
 ]

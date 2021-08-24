@@ -7,6 +7,7 @@ An attach decorator embeds content or specifies appended content.
 
 import json
 import uuid
+import copy
 
 from typing import Any, Mapping, Sequence, Tuple, Union
 
@@ -253,7 +254,8 @@ class AttachDecoratorData(BaseModel):
         if base64_:
             self.base64_ = base64_
         elif json_:
-            self.json_ = json_
+            # prevent external manipulation of attachment data
+            self.json_ = copy.deepcopy(json_)
         else:
             assert isinstance(links_, (str, Sequence))
             self.links_ = [links_] if isinstance(links_, str) else list(links_)
@@ -313,8 +315,10 @@ class AttachDecoratorData(BaseModel):
     @property
     def json(self):
         """Accessor for json decorator data, or None."""
+        json_data = getattr(self, "json_", None)
 
-        return getattr(self, "json_", None)
+        # Prevent external manipulation of attachment data
+        return copy.deepcopy(json_data) if json_data else None
 
     @property
     def links(self):

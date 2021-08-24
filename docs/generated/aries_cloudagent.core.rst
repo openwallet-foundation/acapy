@@ -33,6 +33,14 @@ aries\_cloudagent.core.error module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.core.event\_bus module
+----------------------------------------
+
+.. automodule:: aries_cloudagent.core.event_bus
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.core.in\_memory module
 ----------------------------------------
 

@@ -2,24 +2,19 @@ from ..base import BaseOutboundQueue
 
 
 class QueueClassNoBaseClass:
-    pass
-
-
-class QueueClassNoProtocol(BaseOutboundQueue):
-    pass
+    def __init__(self, settings):
+        pass
 
 
 class QueueClassValid(BaseOutboundQueue):
-    protocol = "testprotocol"
-
-    def enqueue_message(self, payload, endpoint):
+    async def enqueue_message(self, payload, endpoint):
         pass
 
-    def push(self, key, message):
+    async def push(self, key, message):
         pass
 
-    def start(self):
+    async def start(self):
         pass
 
-    def stop(self):
+    async def stop(self):
         pass

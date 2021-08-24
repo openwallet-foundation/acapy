@@ -17,6 +17,14 @@ Subpackages
 Submodules
 ----------
 
+aries\_cloudagent.wallet.askar module
+-------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.askar
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.wallet.base module
 ------------------------------------
 
@@ -25,10 +33,34 @@ aries\_cloudagent.wallet.base module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.wallet.bbs module
+-----------------------------------
+
+.. automodule:: aries_cloudagent.wallet.bbs
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.wallet.crypto module
 --------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.crypto
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.wallet.did\_info module
+-----------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.did_info
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.wallet.did\_method module
+-------------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.did_method
    :members:
    :undoc-members:
    :show-inheritance:
@@ -61,6 +93,22 @@ aries\_cloudagent.wallet.indy module
 ------------------------------------
 
 .. automodule:: aries_cloudagent.wallet.indy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.wallet.key\_pair module
+-----------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.key_pair
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.wallet.key\_type module
+-----------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.key_type
    :members:
    :undoc-members:
    :show-inheritance:

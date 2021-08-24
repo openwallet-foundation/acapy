@@ -6,14 +6,6 @@ aries\_cloudagent.protocols.present\_proof.v1\_0.messages package
    :undoc-members:
    :show-inheritance:
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   aries_cloudagent.protocols.present_proof.v1_0.messages.inner
-
 Submodules
 ----------
 
@@ -29,6 +21,14 @@ aries\_cloudagent.protocols.present\_proof.v1\_0.messages.presentation\_ack modu
 ----------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.protocols.present_proof.v1_0.messages.presentation_ack
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.protocols.present\_proof.v1\_0.messages.presentation\_problem\_report module
+----------------------------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.present_proof.v1_0.messages.presentation_problem_report
    :members:
    :undoc-members:
    :show-inheritance:
