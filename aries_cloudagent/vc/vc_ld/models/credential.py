@@ -1,6 +1,7 @@
 """Verifiable Credential marshmallow schema classes."""
 
 from datetime import datetime
+from pytz import utc
 from typing import List, Optional, Union
 
 from marshmallow import INCLUDE, fields, post_dump, ValidationError
@@ -168,6 +169,8 @@ class VerifiableCredential(BaseModel):
     def issuance_date(self, date: Union[str, datetime]):
         """Setter for issuance date."""
         if isinstance(date, datetime):
+            if not date.tzinfo:
+                date = utc.localize(date)
             date = date.isoformat()
 
         self._issuance_date = date
@@ -181,6 +184,8 @@ class VerifiableCredential(BaseModel):
     def expiration_date(self, date: Union[str, datetime, None]):
         """Setter for expiration date."""
         if isinstance(date, datetime):
+            if not date.tzinfo:
+                date = utc.localize(date)
             date = date.isoformat()
 
         self._expiration_date = date
