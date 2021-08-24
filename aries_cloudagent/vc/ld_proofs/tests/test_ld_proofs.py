@@ -1,6 +1,6 @@
 import pytest
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from asynctest import TestCase
 
@@ -65,7 +65,7 @@ class TestLDProofs(TestCase):
                 key_type=KeyType.ED25519,
                 public_key_base58=self.ed25519_key_info.verkey,
             ),
-            date=datetime.strptime("2019-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
+            date=datetime(2019, 12, 11, 3, 50, 55, 0, timezone.utc),
         )
         signed = await sign(
             document=DOC_TEMPLATE,
@@ -103,7 +103,7 @@ class TestLDProofs(TestCase):
                 key_type=KeyType.BLS12381G2,
                 public_key_base58=self.bls12381g2_key_info.verkey,
             ),
-            date=datetime.strptime("2019-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
+            date=datetime(2019, 12, 11, 3, 50, 55, 0),
         )
         signed = await sign(
             document=DOC_TEMPLATE_BBS,
