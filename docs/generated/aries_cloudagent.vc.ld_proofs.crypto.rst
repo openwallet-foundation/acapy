@@ -9,18 +9,18 @@ aries\_cloudagent.vc.ld\_proofs.crypto package
 Submodules
 ----------
 
-aries\_cloudagent.vc.ld\_proofs.crypto.KeyPair module
------------------------------------------------------
+aries\_cloudagent.vc.ld\_proofs.crypto.key\_pair module
+-------------------------------------------------------
 
-.. automodule:: aries_cloudagent.vc.ld_proofs.crypto.KeyPair
+.. automodule:: aries_cloudagent.vc.ld_proofs.crypto.key_pair
    :members:
    :undoc-members:
    :show-inheritance:
 
-aries\_cloudagent.vc.ld\_proofs.crypto.WalletKeyPair module
------------------------------------------------------------
+aries\_cloudagent.vc.ld\_proofs.crypto.wallet\_key\_pair module
+---------------------------------------------------------------
 
-.. automodule:: aries_cloudagent.vc.ld_proofs.crypto.WalletKeyPair
+.. automodule:: aries_cloudagent.vc.ld_proofs.crypto.wallet_key_pair
    :members:
    :undoc-members:
    :show-inheritance:
