@@ -21,7 +21,7 @@ updated, as noted below.
 To test generate and view the RTD documentation locally, you must install [Sphinx](https://www.sphinx-doc.org/en/master/) and the
 [Sphinx RTD theme](https://pypi.org/project/sphinx-rtd-theme/). Both can be installed from PyPi using pip. For example:
 
-```
+``` bash
 pip install -U sphinx
 pip install -U sphinx-rtd-theme
 ```
@@ -29,7 +29,8 @@ pip install -U sphinx-rtd-theme
 ### Generate Module Files
 
 To rebuild the project and settings from scratch (you'll need to move the generated index file up a level):
-```
+
+``` bash
 rm -rf generated
 sphinx-apidoc -f -M -o  ./generated ../aries_cloudagent/ $(find ../aries_cloudagent/ -name '*tests*')
 ```
@@ -42,12 +43,12 @@ Check the  `git status` in your repo to see if the generator updates, adds or re
 
 To auto-generate the module documentation locally run:
 
-```
+``` bash
 sphinx-build -b html -a -E -c ./ ./ ./_build
 ```
 
 Once generated, go into the `_build` folder and open `index.html` in a browser. Note that the `_build` is
-`.gitignore'd` and so will not be part of a git push.
+`.gitignore`'d and so will not be part of a git push.
 
 ### Look for Errors
 
