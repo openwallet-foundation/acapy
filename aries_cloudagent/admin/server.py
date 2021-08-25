@@ -251,7 +251,9 @@ class AdminServer(BaseAdminServer):
         self.webhook_router = webhook_router
         self.websocket_queues = {}
         self.site = None
-        self.multitenant_manager = context.inject(BaseMultitenantManager, required=False)
+        self.multitenant_manager = context.inject(
+            BaseMultitenantManager, required=False
+        )
 
         self.server_paths = []
 

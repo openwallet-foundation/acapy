@@ -42,8 +42,10 @@ class AskarStoreConfig:
             config.get("key_derivation_method") or self.DEFAULT_KEY_DERIVATION
         )
 
-        if self.key_derivation_method.lower() == self.KEY_DERIVATION_RAW.lower() and \
-           self.key == "":
+        if (
+            self.key_derivation_method.lower() == self.KEY_DERIVATION_RAW.lower()
+            and self.key == ""
+        ):
             raise ProfileError(
                 f"With key derivation method '{self.KEY_DERIVATION_RAW}',"
                 "key should also be provided"

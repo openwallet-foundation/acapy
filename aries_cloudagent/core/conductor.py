@@ -129,8 +129,7 @@ class Conductor:
         # Bind manager for multitenancy related tasks
         if context.settings.get("multitenant.enabled"):
             context.injector.bind_provider(
-                BaseMultitenantManager,
-                MultitenantManagerProvider(self.root_profile)
+                BaseMultitenantManager, MultitenantManagerProvider(self.root_profile)
             )
 
         # Bind default PyLD document loader

@@ -263,4 +263,6 @@ class TestWalletConfig(AsyncTestCase):
 
             await test_module.wallet_config(self.context, provision=True)
 
-            mock_mgr_provision.assert_called_once_with(self.context, {'key_derivation_method': 'derivation_method'})
+            mock_mgr_provision.assert_called_once_with(
+                self.context, {"key_derivation_method": "derivation_method"}
+            )

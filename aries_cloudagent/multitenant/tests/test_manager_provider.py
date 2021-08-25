@@ -5,6 +5,7 @@ from ...config.base import InjectionError
 from ..manager_provider import MultitenantManagerProvider
 from ...core.in_memory import InMemoryProfile
 
+
 class TestProfileManagerProvider(AsyncTestCase):
     async def test_provide_manager(self):
         profile = InMemoryProfile.test_profile()

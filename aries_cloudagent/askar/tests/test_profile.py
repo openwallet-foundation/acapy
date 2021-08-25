@@ -23,46 +23,38 @@ class TestProfile(AsyncTestCase):
     @mock.patch("aries_cloudagent.askar.store.AskarOpenStore")
     async def test_remove_success(self, AskarOpenStore):
         openStore = AskarOpenStore
-        context = InjectionContext() 
+        context = InjectionContext()
         wallet_id = "wallet_id"
         context.settings = {
             "multitenant.wallet_type": "askar-profile",
-            "wallet.id": wallet_id
+            "wallet.id": wallet_id,
         }
-        askar_profile = AskarProfile(
-            openStore,
-            context
-        )
+        askar_profile = AskarProfile(openStore, context)
         remove_profile_stub = asyncio.Future()
         remove_profile_stub.set_result(True)
         openStore.store.remove_profile.return_value = remove_profile_stub
 
         await askar_profile.remove()
-        
+
         openStore.store.remove_profile.assert_called_once_with(wallet_id)
 
     @mock.patch("aries_cloudagent.askar.store.AskarOpenStore")
-    async def test_remove_profile_not_removed_if_wallet_type_not_askar_profile(self, AskarOpenStore):
+    async def test_remove_profile_not_removed_if_wallet_type_not_askar_profile(
+        self, AskarOpenStore
+    ):
         openStore = AskarOpenStore
-        context = InjectionContext() 
-        context.settings = {
-            "multitenant.wallet_type": "basic"
-        }
-        askar_profile = AskarProfile(
-            openStore,
-            context
-        )
-        
+        context = InjectionContext()
+        context.settings = {"multitenant.wallet_type": "basic"}
+        askar_profile = AskarProfile(openStore, context)
+
         await askar_profile.remove()
-        
+
         openStore.store.remove_profile.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_profile_manager_transaction(self):
 
-        with mock.patch(
-            "aries_cloudagent.askar.profile.AskarProfile"
-        ) as AskarProfile:
+        with mock.patch("aries_cloudagent.askar.profile.AskarProfile") as AskarProfile:
             askar_profile = AskarProfile(None, True)
             askar_profile_transaction = mock.MagicMock()
             askar_profile.store.transaction.return_value = askar_profile_transaction
@@ -77,9 +69,7 @@ class TestProfile(AsyncTestCase):
     @pytest.mark.asyncio
     async def test_profile_manager_store(self):
 
-        with mock.patch(
-            "aries_cloudagent.askar.profile.AskarProfile"
-        ) as AskarProfile:
+        with mock.patch("aries_cloudagent.askar.profile.AskarProfile") as AskarProfile:
             askar_profile = AskarProfile(None, False)
             askar_profile_session = mock.MagicMock()
             askar_profile.store.session.return_value = askar_profile_session

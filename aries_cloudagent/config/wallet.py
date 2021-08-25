@@ -17,8 +17,13 @@ from .injection_context import InjectionContext
 LOGGER = logging.getLogger(__name__)
 
 CFG_MAP = {
-    "key", "key_derivation_method", "rekey", "name",
-    "storage_config", "storage_creds", "storage_type"
+    "key",
+    "key_derivation_method",
+    "rekey",
+    "name",
+    "storage_config",
+    "storage_creds",
+    "storage_type",
 }
 
 

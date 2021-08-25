@@ -62,7 +62,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
                 "mediation.clear": None,
                 "auto_provision": True,
             }
-            context.settings = (context.settings.extend(sub_wallet_settings))
+            context.settings = context.settings.extend(sub_wallet_settings)
 
             profile, _ = await wallet_config(context, provision=False)
             self._instances[multitenant_wallet_name] = profile
@@ -77,10 +77,8 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
             base_context, wallet_record
         )
 
-        profile_context.settings = (
-            profile_context.settings
-            .extend(wallet_record.settings)
-            .extend(extra_settings)
-        )
+        profile_context.settings = profile_context.settings.extend(
+            wallet_record.settings
+        ).extend(extra_settings)
 
         return AskarProfile(multitenant_wallet.opened, profile_context)

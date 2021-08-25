@@ -180,7 +180,7 @@ class TestArgParse(AsyncTestCase):
                 "--jwt-secret",
                 "secret",
                 "--multitenancy-config",
-                "{\"wallet_type\":\"askar\",\"wallet_name\":\"test\"}",
+                '{"wallet_type":"askar","wallet_name":"test"}',
             ]
         )
 
@@ -202,7 +202,7 @@ class TestArgParse(AsyncTestCase):
             [
                 "--multitenant",
                 "--multitenancy-config",
-                "{\"wallet_type\":\"askar\",\"wallet_name\":\"test\"}",
+                '{"wallet_type":"askar","wallet_name":"test"}',
             ]
         )
 
@@ -320,7 +320,6 @@ class TestArgParse(AsyncTestCase):
 
         assert settings.get("wallet.key_derivation_method") == key_derivation_method
 
-
     async def test_wallet_key_value_parsing(self):
         key_value = "some_key_value"
         parser = argparse.create_argument_parser()
@@ -337,4 +336,3 @@ class TestArgParse(AsyncTestCase):
         settings = group.get_settings(result)
 
         assert settings.get("wallet.key") == key_value
-
