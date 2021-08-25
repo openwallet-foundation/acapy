@@ -33,6 +33,14 @@ aries\_cloudagent.protocols.issue\_credential.v2\_0.handlers.cred\_offer\_handle
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.protocols.issue\_credential.v2\_0.handlers.cred\_problem\_report\_handler module
+--------------------------------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.issue_credential.v2_0.handlers.cred_problem_report_handler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.protocols.issue\_credential.v2\_0.handlers.cred\_proposal\_handler module
 -------------------------------------------------------------------------------------------
 

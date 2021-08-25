@@ -72,3 +72,11 @@ aries\_cloudagent.protocols.coordinate\_mediation.v1\_0.messages.mediate\_reques
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.protocols.coordinate\_mediation.v1\_0.messages.problem\_report module
+---------------------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.coordinate_mediation.v1_0.messages.problem_report
+   :members:
+   :undoc-members:
+   :show-inheritance:

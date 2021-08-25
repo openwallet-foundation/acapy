@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest import TestCase
 
 from marshmallow.utils import INCLUDE
@@ -149,17 +149,29 @@ class TestVerifiableCredential(TestCase):
         with self.assertRaises(Exception):
             credential.issuer = {"not-id": "not-id"}
 
-        date = datetime.now()
+        date = datetime.now(timezone.utc)
         credential.issuance_date = date
         assert credential.issuance_date == date.isoformat()
         credential.issuance_date = date.isoformat()
         assert credential.issuance_date == date.isoformat()
+        date = datetime(2019, 12, 11, 3, 50, 55, 0)
+        credential.issuance_date = date
+        assert (
+            credential.issuance_date
+            == datetime(2019, 12, 11, 3, 50, 55, 0, timezone.utc).isoformat()
+        )
 
-        date = datetime.now()
+        date = datetime.now(timezone.utc)
         credential.expiration_date = date
         assert credential.expiration_date == date.isoformat()
         credential.expiration_date = date.isoformat()
         assert credential.expiration_date == date.isoformat()
+        date = datetime(2019, 12, 11, 3, 50, 55, 0)
+        credential.expiration_date = date
+        assert (
+            credential.expiration_date
+            == datetime(2019, 12, 11, 3, 50, 55, 0, timezone.utc).isoformat()
+        )
 
         assert not credential.credential_subject
         assert not credential.credential_subject_ids

@@ -49,6 +49,14 @@ aries\_cloudagent.protocols.issue\_credential.v2\_0.messages.cred\_offer module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.protocols.issue\_credential.v2\_0.messages.cred\_problem\_report module
+-----------------------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.issue_credential.v2_0.messages.cred_problem_report
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.protocols.issue\_credential.v2\_0.messages.cred\_proposal module
 ----------------------------------------------------------------------------------
 

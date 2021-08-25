@@ -112,4 +112,4 @@ class DocumentLoader:
 
 DocumentLoaderMethod = Callable[[str, dict], dict]
 
-__all__ = [DocumentLoaderMethod, DocumentLoader]
+__all__ = ["DocumentLoaderMethod", "DocumentLoader"]
