@@ -463,7 +463,6 @@ class TestValid(TestCase):
             "",
             "/path/only",
             "https://1.2.3.4?query=true&url=false",
-            "http://no_tld/bad",
             "no-proto:8080/my/path",
             "smtp:8080/my/path#fragment",
         ]
