@@ -137,7 +137,7 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
 @response_schema(TxnOrSchemaSendResultSchema(), 200, description="")
 async def schemas_send_schema(request: web.BaseRequest):
     """
-    Request handler for sending a credential offer.
+    Request handler for creating a schema.
 
     Args:
         request: aiohttp request object
@@ -292,6 +292,43 @@ async def schemas_get_schema(request: web.BaseRequest):
     return web.json_response({"schema": schema})
 
 
+@docs(tags=["schema"], summary="Writes a schema non-secret record to the wallet")
+@match_info_schema(SchemaIdMatchInfoSchema())
+@response_schema(SchemaGetResultSchema(), 200, description="")
+async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
+    """
+    Request handler for fixing a schema's wallet non-secrets records.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The schema details.
+
+    """
+    context: AdminRequestContext = request["context"]
+
+    schema_id = request.match_info["schema_id"]
+
+    ledger = context.inject(BaseLedger, required=False)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
+
+    async with ledger:
+        try:
+            schema = await ledger.get_schema(schema_id)
+            schema_id_parts = schema_id.split(":")
+            issuer_did = schema_id_parts[0]
+            await ledger.add_schema_non_secrets_record(schema_id, issuer_did)
+        except LedgerError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({"schema": schema})
+
+
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
@@ -299,6 +336,10 @@ async def register(app: web.Application):
             web.post("/schemas", schemas_send_schema),
             web.get("/schemas/created", schemas_created, allow_head=False),
             web.get("/schemas/{schema_id}", schemas_get_schema, allow_head=False),
+            web.post(
+                "/schemas/{schema_id}/write_record",
+                schemas_fix_schema_wallet_record
+            ),
         ]
     )
 
