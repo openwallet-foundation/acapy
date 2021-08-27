@@ -337,8 +337,7 @@ async def register(app: web.Application):
             web.get("/schemas/created", schemas_created, allow_head=False),
             web.get("/schemas/{schema_id}", schemas_get_schema, allow_head=False),
             web.post(
-                "/schemas/{schema_id}/write_record",
-                schemas_fix_schema_wallet_record
+                "/schemas/{schema_id}/write_record", schemas_fix_schema_wallet_record
             ),
         ]
     )
