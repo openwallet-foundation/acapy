@@ -303,7 +303,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
         Write the wallet non-secrets record for cred def (already written to the ledger).
 
-        Note that the cred def private key signing informtaiotn must already exist in the
+        Note that the cred def private key signing informtion must already exist in the
         wallet.
 
         Args:

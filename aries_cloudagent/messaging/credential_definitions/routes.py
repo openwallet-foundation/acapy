@@ -369,6 +369,9 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
     """
     context: AdminRequestContext = request["context"]
 
+    session = await context.session()
+    storage = session.inject(BaseStorage)
+
     cred_def_id = request.match_info["cred_def_id"]
 
     ledger = context.inject(BaseLedger, required=False)
@@ -384,8 +387,17 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
         schema_seq_no = cred_def_id_parts[3]
         schema_response = await ledger.get_schema(schema_seq_no)
         schema_id = schema_response["id"]
-        issuer_did = cred_def_id_parts[0]
-        await ledger.add_cred_def_non_secrets_record(schema_id, issuer_did, cred_def_id)
+        iss_did = cred_def_id_parts[0]
+
+        # check if the record exists, if not add it
+        found = await storage.find_all_records(
+            type_filter=CRED_DEF_SENT_RECORD_TYPE,
+            tag_query={
+                "cred_def_id": cred_def_id,
+            },
+        )
+        if 0 == len(found):
+            await ledger.add_cred_def_non_secrets_record(schema_id, iss_did, cred_def_id)
 
     return web.json_response({"credential_definition": cred_def})
 

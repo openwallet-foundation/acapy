@@ -308,6 +308,9 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
+    session = await context.session()
+    storage = session.inject(BaseStorage)
+
     schema_id = request.match_info["schema_id"]
 
     ledger = context.inject(BaseLedger, required=False)
@@ -322,7 +325,16 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
             schema = await ledger.get_schema(schema_id)
             schema_id_parts = schema_id.split(":")
             issuer_did = schema_id_parts[0]
-            await ledger.add_schema_non_secrets_record(schema_id, issuer_did)
+
+            # check if the record exists, if not add it
+            found = await storage.find_all_records(
+                type_filter=SCHEMA_SENT_RECORD_TYPE,
+                tag_query={
+                    "schema_id": schema_id,
+                },
+            )
+            if 0 == len(found):
+                await ledger.add_schema_non_secrets_record(schema_id, issuer_did)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
