@@ -397,7 +397,9 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
             },
         )
         if 0 == len(found):
-            await ledger.add_cred_def_non_secrets_record(schema_id, iss_did, cred_def_id)
+            await ledger.add_cred_def_non_secrets_record(
+                schema_id, iss_did, cred_def_id
+            )
 
     return web.json_response({"credential_definition": cred_def})
 
