@@ -114,15 +114,15 @@ class AdminRequestContext:
     def _test_session(self) -> ProfileSession:
         session = self.profile.session(self._context)
 
-        def _inject(base_cls, required=True):
+        def _inject(base_cls):
             if session._active and base_cls in self.session_inject:
                 ret = self.session_inject[base_cls]
-                if ret is None and required:
+                if ret is None:
                     raise InjectionError(
                         "No instance provided for class: {}".format(base_cls.__name__)
                     )
                 return ret
-            return session._context.injector.inject(base_cls, required=required)
+            return session._context.injector.inject(base_cls)
 
         setattr(session, "inject", _inject)
         return session
