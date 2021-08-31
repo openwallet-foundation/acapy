@@ -638,7 +638,7 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
     EXAMPLE = "https://myhost:8021"
     PATTERN = (
         r"^[A-Za-z0-9\.\-\+]+:"  # scheme
-        r"//([A-Za-z0-9][.A-Za-z0-9-]+[A-Za-z0-9])+"  # host
+        r"//([A-Za-z0-9][.A-Za-z0-9-_]+[A-Za-z0-9])+"  # host
         r"(:[1-9][0-9]*)?"  # port
         r"(/[^?&#]+)?$"  # path
     )
