@@ -45,7 +45,7 @@ async def jws_sign(session, verify_data, verkey):
 
     jws_to_sign = create_jws(encoded_header, verify_data)
 
-    wallet = session.inject(BaseWallet, required=True)
+    wallet = session.inject(BaseWallet)
     signature = await wallet.sign_message(jws_to_sign, verkey)
 
     encoded_signature = bytes_to_b64(signature, urlsafe=True, pad=False)
@@ -74,7 +74,7 @@ async def jws_verify(session, verify_data, signature, public_key):
 
     jws_to_verify = create_jws(encoded_header, verify_data)
 
-    wallet = session.inject(BaseWallet, required=True)
+    wallet = session.inject(BaseWallet)
     verified = await wallet.verify_message(
         jws_to_verify, decoded_signature, public_key, KeyType.ED25519
     )
@@ -85,7 +85,7 @@ async def jws_verify(session, verify_data, signature, public_key):
 async def sign_credential(session, credential, signature_options, verkey):
     """Sign Credential."""
 
-    document_loader = session.profile.inject(DocumentLoader, required=False)
+    document_loader = session.profile.inject_or(DocumentLoader)
     framed, verify_data_hex_string = create_verify_data(
         credential,
         signature_options,
@@ -99,7 +99,7 @@ async def sign_credential(session, credential, signature_options, verkey):
 async def verify_credential(session, doc, verkey):
     """Verify credential."""
 
-    document_loader = session.profile.inject(DocumentLoader, required=False)
+    document_loader = session.profile.inject_or(DocumentLoader)
     framed, verify_data_hex_string = create_verify_data(
         doc,
         doc["proof"],

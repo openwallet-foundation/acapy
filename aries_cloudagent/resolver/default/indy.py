@@ -41,7 +41,7 @@ class IndyDIDResolver(BaseDIDResolver):
 
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""
-        ledger = profile.inject(BaseLedger, required=False)
+        ledger = profile.inject_or(BaseLedger)
         if not ledger:
             raise NoIndyLedger("No Indy ledger instance is configured.")
 

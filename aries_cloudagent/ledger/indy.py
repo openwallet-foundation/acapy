@@ -56,7 +56,7 @@ class IndySdkLedgerPoolProvider(BaseProvider):
             LOGGER.warning("Note: setting ledger to read-only mode")
 
         genesis_transactions = settings.get("ledger.genesis_transactions")
-        cache = injector.inject(BaseCache, required=False)
+        cache = injector.inject_or(BaseCache)
 
         ledger_pool = IndySdkLedgerPool(
             pool_name,

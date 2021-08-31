@@ -273,7 +273,7 @@ class CredentialManager:
 
         credential_offer = None
         cache_key = f"credential_offer::{cred_def_id}"
-        cache = self._profile.inject(BaseCache, required=False)
+        cache = self._profile.inject_or(BaseCache)
         if cache:
             async with cache.acquire(cache_key) as entry:
                 if entry.result:
@@ -419,7 +419,7 @@ class CredentialManager:
                 f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
             )
             cred_req_result = None
-            cache = self._profile.inject(BaseCache, required=False)
+            cache = self._profile.inject_or(BaseCache)
             if cache:
                 async with cache.acquire(cache_key) as entry:
                     if entry.result:
@@ -826,7 +826,7 @@ class CredentialManager:
         except StorageError as err:
             LOGGER.exception(err)  # holder still owes an ack: carry on
 
-        responder = self._profile.inject(BaseResponder, required=False)
+        responder = self._profile.inject_or(BaseResponder)
         if responder:
             await responder.send_reply(
                 credential_ack_message,

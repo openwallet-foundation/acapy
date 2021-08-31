@@ -63,7 +63,7 @@ async def ledger_config(
 
     session = await profile.session()
 
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = session.inject_or(BaseLedger)
     if not ledger:
         LOGGER.info("Ledger instance not provided")
         return False

@@ -43,7 +43,7 @@ class TestInjector(AsyncTestCase):
 
     def test_inject_simple(self):
         """Test a basic injection."""
-        assert self.test_instance.inject(str, required=False) is None
+        assert self.test_instance.inject_or(str) is None
         with self.assertRaises(InjectionError):
             self.test_instance.inject(str)
         with self.assertRaises(ValueError):
@@ -75,7 +75,7 @@ class TestInjector(AsyncTestCase):
         self.test_instance.bind_provider(str, MockProvider(None))
         with self.assertRaises(InjectionError):
             self.test_instance.inject(str)
-        self.test_instance.inject(str, required=False)
+        self.test_instance.inject_or(str)
         self.test_instance.bind_provider(str, MockProvider(1))
         self.test_instance.clear_binding(str)
         assert self.test_instance.get_provider(str) is None
@@ -139,3 +139,9 @@ class TestInjector(AsyncTestCase):
         i1 = self.test_instance.inject(MockInstance)
         i2 = self.test_instance.inject(MockInstance)
         assert i1 is i2
+
+    def test_falsey_still_returns(self):
+        """Test the injector still returns falsey values."""
+        self.test_instance.bind_instance(dict, dict())
+        assert self.test_instance.inject_or(dict) is not None
+        assert self.test_instance.inject(dict) is not None

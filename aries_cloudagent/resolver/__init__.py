@@ -12,7 +12,7 @@ LOGGER = logging.getLogger(__name__)
 
 async def setup(context: InjectionContext):
     """Set up default resolvers."""
-    registry = context.inject(DIDResolverRegistry, required=False)
+    registry = context.inject_or(DIDResolverRegistry)
     if not registry:
         LOGGER.warning("No DID Resolver Registry instance found in context")
         return

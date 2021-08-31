@@ -649,7 +649,7 @@ class V20CredManager:
         except StorageError as err:
             LOGGER.exception(err)  # holder still owes an ack: carry on
 
-        responder = self._profile.inject(BaseResponder, required=False)
+        responder = self._profile.inject_or(BaseResponder)
         if responder:
             await responder.send_reply(
                 cred_ack_message,

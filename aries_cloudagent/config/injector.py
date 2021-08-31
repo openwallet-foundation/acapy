@@ -51,19 +51,19 @@ class Injector(BaseInjector):
         """Find the provider associated with a class binding."""
         return self._providers.get(base_cls)
 
-    def inject(
+    def inject_or(
         self,
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
-        *,
-        required: bool = True,
+        default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
         """
-        Get the provided instance of a given class identifier.
+        Get the provided instance of a given class identifier or default if not found.
 
         Args:
-            cls: The base class to retrieve an instance of
-            params: An optional dict providing configuration to the provider
+            base_cls: The base class to retrieve an instance of
+            settings: An optional dict providing configuration to the provider
+            default: default return value if no instance is found
 
         Returns:
             An instance of the base class, or None
@@ -80,16 +80,36 @@ class Injector(BaseInjector):
             result = provider.provide(ext_settings, self)
         else:
             result = None
-        if result is None:
-            if required:
-                raise InjectionError(
-                    "No instance provided for class: {}".format(base_cls.__name__)
-                )
-        elif not isinstance(result, base_cls) and self.enforce_typing:
+
+        if result and not isinstance(result, base_cls) and self.enforce_typing:
             raise InjectionError(
                 "Provided instance does not implement the base class: {}".format(
                     base_cls.__name__
                 )
+            )
+
+        return result if result is not None else default
+
+    def inject(
+        self,
+        base_cls: Type[InjectType],
+        settings: Mapping[str, object] = None,
+    ) -> InjectType:
+        """
+        Get the provided instance of a given class identifier.
+
+        Args:
+            cls: The base class to retrieve an instance of
+            params: An optional dict providing configuration to the provider
+
+        Returns:
+            An instance of the base class, or None
+
+        """
+        result = self.inject_or(base_cls, settings)
+        if result is None:
+            raise InjectionError(
+                "No instance provided for class: {}".format(base_cls.__name__)
             )
         return result
 

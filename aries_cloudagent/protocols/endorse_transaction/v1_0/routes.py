@@ -1,6 +1,7 @@
 """Endorse Transaction handling admin routes."""
 
 import json
+from typing import Optional
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -292,7 +293,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
     session = await context.session()
 
-    wallet: BaseWallet = session.inject(BaseWallet, required=False)
+    wallet: BaseWallet = session.inject_or(BaseWallet)
 
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
@@ -337,7 +338,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
     transaction_mgr = TransactionManager(session)
     transaction_json = transaction.messages_attach[0]["data"]["json"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger = context.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -394,7 +395,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
     session = await context.session()
 
-    wallet: BaseWallet = session.inject(BaseWallet, required=False)
+    wallet: Optional[BaseWallet] = session.inject_or(BaseWallet)
 
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")

@@ -188,7 +188,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             )
         endorser_did = endorser_info["endorser_did"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger = context.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -337,7 +337,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger = context.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):

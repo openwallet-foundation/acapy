@@ -176,7 +176,7 @@ class BaseRecord(BaseModel):
         """
         if not cache_key:
             return
-        cache = session.inject(BaseCache, required=False)
+        cache = session.inject_or(BaseCache)
         if cache:
             return await cache.get(cache_key)
 
@@ -196,7 +196,7 @@ class BaseRecord(BaseModel):
 
         if not cache_key:
             return
-        cache = session.inject(BaseCache, required=False)
+        cache = session.inject_or(BaseCache)
         if cache:
             await cache.set(cache_key, value, ttl or cls.DEFAULT_CACHE_TTL)
 
@@ -212,7 +212,7 @@ class BaseRecord(BaseModel):
 
         if not cache_key:
             return
-        cache = session.inject(BaseCache, required=False)
+        cache = session.inject_or(BaseCache)
         if cache:
             await cache.clear(cache_key)
 

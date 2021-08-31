@@ -132,7 +132,7 @@ class ConnectionManager(BaseConnectionManager):
         image_url = self._session.context.settings.get("image_url")
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject_or(MultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
 
         if not my_label:
@@ -246,7 +246,7 @@ class ConnectionManager(BaseConnectionManager):
             )
 
             if keylist_updates:
-                responder = self._session.inject(BaseResponder, required=False)
+                responder = self._session.inject_or(BaseResponder)
                 await responder.send(
                     keylist_updates, connection_id=mediation_record.connection_id
                 )
@@ -336,7 +336,7 @@ class ConnectionManager(BaseConnectionManager):
 
         if connection.accept == ConnRecord.ACCEPT_AUTO:
             request = await self.create_request(connection, mediation_id=mediation_id)
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self._session.inject_or(BaseResponder)
             if responder:
                 await responder.send(request, connection_id=connection.connection_id)
                 # refetch connection for accurate state
@@ -377,7 +377,7 @@ class ConnectionManager(BaseConnectionManager):
             or_default=True,
         )
 
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject_or(MultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
         base_mediation_record = None
 
@@ -437,7 +437,7 @@ class ConnectionManager(BaseConnectionManager):
         # Notify mediator of keylist changes
         if keylist_updates and mediation_record:
             # send a update keylist message with new recipient keys.
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self._session.inject_or(BaseResponder)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
@@ -474,7 +474,7 @@ class ConnectionManager(BaseConnectionManager):
         my_info = None
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject_or(MultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
         wallet = self._session.inject(BaseWallet)
 
@@ -602,14 +602,14 @@ class ConnectionManager(BaseConnectionManager):
         # Send keylist updates to mediator
         mediation_record = await mediation_record_if_id(self._session, mediation_id)
         if keylist_updates and mediation_record:
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self._session.inject_or(BaseResponder)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
 
         if connection.accept == ConnRecord.ACCEPT_AUTO:
             response = await self.create_response(connection, mediation_id=mediation_id)
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self._session.inject_or(BaseResponder)
             if responder:
                 await responder.send_reply(
                     response, connection_id=connection.connection_id
@@ -651,7 +651,7 @@ class ConnectionManager(BaseConnectionManager):
         mediation_record = await mediation_record_if_id(self._session, mediation_id)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject_or(MultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
         base_mediation_record = None
 
@@ -722,7 +722,7 @@ class ConnectionManager(BaseConnectionManager):
 
         # Update mediator if necessary
         if keylist_updates and mediation_record:
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self._session.inject_or(BaseResponder)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
@@ -881,7 +881,7 @@ class ConnectionManager(BaseConnectionManager):
         wallet = self._session.inject(BaseWallet)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
+        multitenant_mgr = self._session.inject_or(MultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
         base_mediation_record = None
 
@@ -1008,7 +1008,7 @@ class ConnectionManager(BaseConnectionManager):
                 f"connection_by_verkey::{receipt.sender_verkey}"
                 f"::{receipt.recipient_verkey}"
             )
-            cache = self._session.inject(BaseCache, required=False)
+            cache = self._session.inject_or(BaseCache)
             if cache:
                 async with cache.acquire(cache_key) as entry:
                     if entry.result:
@@ -1092,7 +1092,7 @@ class ConnectionManager(BaseConnectionManager):
         """
         if not connection_id:
             connection_id = connection.connection_id
-        cache = self._session.inject(BaseCache, required=False)
+        cache = self._session.inject_or(BaseCache)
         cache_key = f"connection_target::{connection_id}"
         if cache:
             async with cache.acquire(cache_key) as entry:

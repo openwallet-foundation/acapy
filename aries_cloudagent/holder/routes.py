@@ -207,7 +207,7 @@ async def credentials_revoked(request: web.BaseRequest):
     fro = request.query.get("from")
     to = request.query.get("to")
 
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = session.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):

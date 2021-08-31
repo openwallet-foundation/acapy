@@ -34,14 +34,14 @@ class TestProfileSession(AsyncTestCase):
             await session.rollback()
         with self.assertRaises(ProfileSessionInactiveError):
             session.inject(dict)
-        assert profile.inject(dict, required=False) is None
+        assert profile.inject_or(dict) is None
 
         await session.__aenter__()
 
         self.assertEqual(session.active, True)
         session.context.injector.bind_instance(dict, dict())
-        assert session.inject(dict, required=False) is not None
-        assert profile.inject(dict, required=False) is None
+        assert session.inject_or(dict) is not None
+        assert profile.inject_or(dict) is None
 
         await session.__aexit__(None, None, None)
 
