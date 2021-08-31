@@ -124,7 +124,16 @@ class AdminRequestContext:
                 return ret
             return session._context.injector.inject(base_cls)
 
+        def _inject_or(base_cls, default=None):
+            if session._active and base_cls in self.session_inject:
+                ret = self.session_inject[base_cls]
+                if ret is None:
+                    ret = default
+                return ret
+            return session._context.injector.inject_or(base_cls, default)
+
         setattr(session, "inject", _inject)
+        setattr(session, "inject_or", _inject_or)
         return session
 
     def __repr__(self) -> str:

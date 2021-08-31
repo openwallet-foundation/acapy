@@ -88,7 +88,7 @@ class Injector(BaseInjector):
                 )
             )
 
-        return result or default
+        return result if result is not None else default
 
     def inject(
         self,
