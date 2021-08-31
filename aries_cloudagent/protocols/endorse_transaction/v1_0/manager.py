@@ -5,7 +5,6 @@ import logging
 import uuid
 
 from asyncio import shield
-from time import time
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
@@ -13,9 +12,6 @@ from ....core.profile import ProfileSession
 from ....indy.issuer import IndyIssuerError
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
-from ....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ....messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
-from ....storage.base import StorageRecord
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 
@@ -688,24 +684,11 @@ class TransactionManager:
             raise TransactionManagerError(reason)
 
         # write the wallet non-secrets record
-        # TODO refactor this code (duplicated from ledger.indy.py)
         if ledger_response["result"]["txn"]["type"] == "101":
             # schema transaction
             schema_id = ledger_response["result"]["txnMetadata"]["txnId"]
-            schema_id_parts = schema_id.split(":")
             public_did = ledger_response["result"]["txn"]["metadata"]["from"]
-            schema_tags = {
-                "schema_id": schema_id,
-                "schema_issuer_did": public_did,
-                "schema_name": schema_id_parts[-2],
-                "schema_version": schema_id_parts[-1],
-                "epoch": str(int(time())),
-            }
-            record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
-            # TODO refactor this code?
-            async with ledger:
-                storage = ledger.get_indy_storage()
-                await storage.add_record(record)
+            await ledger.add_schema_non_secrets_record(schema_id, public_did)
 
         elif ledger_response["result"]["txn"]["type"] == "102":
             # cred def transaction
@@ -717,25 +700,11 @@ class TransactionManager:
                     raise TransactionManagerError(err.roll_up) from err
 
             schema_id = schema_response["id"]
-            schema_id_parts = schema_id.split(":")
             public_did = ledger_response["result"]["txn"]["metadata"]["from"]
             credential_definition_id = ledger_response["result"]["txnMetadata"]["txnId"]
-            cred_def_tags = {
-                "schema_id": schema_id,
-                "schema_issuer_did": schema_id_parts[0],
-                "schema_name": schema_id_parts[-2],
-                "schema_version": schema_id_parts[-1],
-                "issuer_did": public_did,
-                "cred_def_id": credential_definition_id,
-                "epoch": str(int(time())),
-            }
-            record = StorageRecord(
-                CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
+            await ledger.add_cred_def_non_secrets_record(
+                schema_id, public_did, credential_definition_id
             )
-            # TODO refactor this code?
-            async with ledger:
-                storage = ledger.get_indy_storage()
-                await storage.add_record(record)
 
         else:
             # TODO unknown ledger transaction type, just ignore for now ...
