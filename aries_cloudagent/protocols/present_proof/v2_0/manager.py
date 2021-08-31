@@ -376,7 +376,7 @@ class V20PresManager:
             pres_ex_record: presentation exchange record with thread id
 
         """
-        responder = self._profile.inject(BaseResponder, required=False)
+        responder = self._profile.inject_or(BaseResponder)
 
         if responder:
             pres_ack_message = V20PresAck()

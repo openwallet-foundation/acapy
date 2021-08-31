@@ -85,7 +85,7 @@ async def jws_verify(session, verify_data, signature, public_key):
 async def sign_credential(session, credential, signature_options, verkey):
     """Sign Credential."""
 
-    document_loader = session.profile.inject(DocumentLoader, required=False)
+    document_loader = session.profile.inject_or(DocumentLoader)
     framed, verify_data_hex_string = create_verify_data(
         credential,
         signature_options,
@@ -99,7 +99,7 @@ async def sign_credential(session, credential, signature_options, verkey):
 async def verify_credential(session, doc, verkey):
     """Verify credential."""
 
-    document_loader = session.profile.inject(DocumentLoader, required=False)
+    document_loader = session.profile.inject_or(DocumentLoader)
     framed, verify_data_hex_string = create_verify_data(
         doc,
         doc["proof"],

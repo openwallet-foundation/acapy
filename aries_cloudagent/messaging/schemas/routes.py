@@ -186,7 +186,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             )
         endorser_did = endorser_info["endorser_did"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger = context.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -276,7 +276,7 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     schema_id = request.match_info["schema_id"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger = context.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):

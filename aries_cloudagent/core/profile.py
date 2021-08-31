@@ -120,7 +120,7 @@ class Profile(ABC):
 
     async def notify(self, topic: str, payload: Any):
         """Signal an event."""
-        event_bus = self.inject(EventBus, required=False)
+        event_bus = self.inject_or(EventBus)
         if event_bus:
             await event_bus.notify(self, Event(topic, payload))
 

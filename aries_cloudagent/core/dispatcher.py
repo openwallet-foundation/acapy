@@ -57,7 +57,7 @@ class Dispatcher:
 
     async def setup(self):
         """Perform async instance setup."""
-        self.collector = self.profile.inject(Collector, required=False)
+        self.collector = self.profile.inject_or(Collector)
         max_active = int(os.getenv("DISPATCHER_MAX_ACTIVE", 50))
         self.task_queue = TaskQueue(
             max_active=max_active, timed=bool(self.collector), trace_fn=self.log_task

@@ -67,7 +67,7 @@ class AskarProfile(Profile):
         if read_only:
             LOGGER.error("Note: setting ledger to read-only mode")
         genesis_transactions = self.settings.get("ledger.genesis_transactions")
-        cache = self.context.injector.inject(BaseCache, required=False)
+        cache = self.context.injector.inject_or(BaseCache)
         self.ledger_pool = IndyVdrLedgerPool(
             pool_name,
             keepalive=keepalive,

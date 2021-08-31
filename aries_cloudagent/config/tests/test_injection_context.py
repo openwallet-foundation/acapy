@@ -53,7 +53,7 @@ class TestInjectionContext(AsyncTestCase):
 
     async def test_inject_simple(self):
         """Test a basic injection."""
-        assert self.test_instance.inject(str, required=False) is None
+        assert self.test_instance.inject_or(str) is None
         with self.assertRaises(InjectionError):
             self.test_instance.inject(str)
         self.test_instance.injector.bind_instance(str, self.test_value)
@@ -65,10 +65,10 @@ class TestInjectionContext(AsyncTestCase):
     async def test_inject_scope(self):
         """Test a scoped injection."""
         context = self.test_instance.start_scope(self.test_scope)
-        assert context.inject(str, required=False) is None
+        assert context.inject_or(str) is None
         context.injector.bind_instance(str, self.test_value)
         assert context.inject(str) is self.test_value
-        assert self.test_instance.inject(str, required=False) is None
+        assert self.test_instance.inject_or(str) is None
         root = context.injector_for_scope(context.ROOT_SCOPE)
-        assert root.inject(str, required=False) is None
-        assert self.test_instance.inject(str, required=False) is None
+        assert root.inject_or(str) is None
+        assert self.test_instance.inject_or(str) is None
