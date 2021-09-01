@@ -356,6 +356,7 @@ class TestAskarStorage(test_in_memory_storage.TestInMemoryStorage):
 class TestAskarStorageSearchSession(AsyncTestCase):
     @pytest.mark.asyncio
     async def test_askar_storage_search_session(self):
+        profile = "profileId"
 
         with async_mock.patch(
             "aries_cloudagent.storage.askar.AskarProfile"
@@ -363,7 +364,7 @@ class TestAskarStorageSearchSession(AsyncTestCase):
             askar_profile = AskarProfile(None, True)
             askar_profile_scan = async_mock.MagicMock()
             askar_profile.store.scan.return_value = askar_profile_scan
-            askar_profile.settings.get.return_value = "walletId"
+            askar_profile.settings.get.return_value = profile
 
             storageSearchSession = test_module.AskarStorageSearchSession(
                 askar_profile, "filter", "tagQuery"
@@ -371,7 +372,7 @@ class TestAskarStorageSearchSession(AsyncTestCase):
             await storageSearchSession._open()
 
             assert storageSearchSession._scan == askar_profile_scan
-            askar_profile.settings.get.assert_called_once_with("wallet.id")
+            askar_profile.settings.get.assert_called_once_with("wallet.askar_profile")
             askar_profile.store.scan.assert_called_once_with(
-                "filter", "tagQuery", profile="walletId"
+                "filter", "tagQuery", profile=profile
             )

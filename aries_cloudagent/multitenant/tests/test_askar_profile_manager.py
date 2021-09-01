@@ -104,10 +104,17 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
                 assert (
                     sub_wallet_profile_context.settings.get("mediation.clear") == True
                 )
-                assert sub_wallet_profile_context.settings.get("wallet.id") == "test"
+                assert (
+                    sub_wallet_profile_context.settings.get("wallet.id")
+                    == wallet_record.wallet_id
+                )
                 assert (
                     sub_wallet_profile_context.settings.get("wallet.name")
                     == "test_name"
+                )
+                assert (
+                    sub_wallet_profile_context.settings.get("wallet.askar_profile")
+                    == wallet_record.wallet_id
                 )
 
     async def test_get_wallet_profile_should_create_profile(self):

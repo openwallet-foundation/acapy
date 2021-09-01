@@ -73,9 +73,10 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         if provision:
             await multitenant_wallet.store.create_profile(wallet_record.wallet_id)
 
-        extra_settings["admin.webhook_urls"] = self.get_webhook_urls(
-            base_context, wallet_record
-        )
+        extra_settings = {
+            "admin.webhook_urls": self.get_webhook_urls(base_context, wallet_record),
+            "wallet.askar_profile": wallet_record.wallet_id,
+        }
 
         profile_context.settings = profile_context.settings.extend(
             wallet_record.settings
