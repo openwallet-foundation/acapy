@@ -227,7 +227,7 @@ async def invitation_receive(request: web.BaseRequest):
     except (DIDXManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(result)
+    return web.json_response(result.serialize())
 
 
 async def register(app: web.Application):

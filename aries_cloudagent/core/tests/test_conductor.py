@@ -775,7 +775,6 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         )
         conn_record.accept = ConnRecord.ACCEPT_MANUAL
         await conn_record.save(await conductor.root_profile.session())
-        conn_record_dict = conn_record.serialize()
         with async_mock.patch.object(
             test_module.InvitationMessage, "from_url"
         ) as mock_from_url, async_mock.patch.object(
@@ -784,7 +783,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     receive_invitation=async_mock.CoroutineMock(
-                        return_value=conn_record_dict
+                        return_value=conn_record
                     )
                 )
             ),
