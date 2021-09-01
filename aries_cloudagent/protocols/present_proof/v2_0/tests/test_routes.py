@@ -2082,59 +2082,6 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_verify_presentation(self.request)
             assert "no such record" in str(context.exception)
 
-    async def test_present_proof_verify_presentation_not_found(self):
-        self.request.match_info = {"pres_ex_id": "dummy"}
-
-        with async_mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, async_mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
-            mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
-                state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
-                serialize=async_mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
-            )
-            mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_px_rec_inst
-            )
-
-            mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
-            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
-                side_effect=StorageNotFoundError()
-            )
-
-            with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.present_proof_verify_presentation(self.request)
-
-    async def test_present_proof_verify_presentation_not_ready(self):
-        self.request.match_info = {"pres_ex_id": "dummy"}
-
-        with async_mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, async_mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
-            mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
-                state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
-                serialize=async_mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
-            )
-            mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_px_rec_inst
-            )
-            mock_conn_rec_inst = async_mock.MagicMock(is_ready=False)
-            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_conn_rec_inst
-            )
-
-            with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.present_proof_verify_presentation(self.request)
-
     async def test_present_proof_verify_presentation_bad_state(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
