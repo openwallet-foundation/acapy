@@ -54,10 +54,6 @@ class AskarProfile(Profile):
         """Accessor for the opened Store instance."""
         return self.opened.store
 
-    def opened(self) -> AskarOpenStore:
-        """Accessor for the askar open store instance."""
-        return self.opened
-
     async def remove(self):
         """Remove the profile."""
         if self.settings.get("multitenant.wallet_type") == "askar-profile":
