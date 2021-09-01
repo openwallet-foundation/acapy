@@ -122,7 +122,7 @@ class Conductor:
         self.dispatcher = Dispatcher(self.root_profile)
         await self.dispatcher.setup()
 
-        wire_format = context.inject(BaseWireFormat, required=False)
+        wire_format = context.inject_or(BaseWireFormat)
         if wire_format and hasattr(wire_format, "task_queue"):
             wire_format.task_queue = self.dispatcher.task_queue
 
@@ -161,7 +161,7 @@ class Conductor:
                 raise
 
         # Fetch stats collector, if any
-        collector = context.inject(Collector, required=False)
+        collector = context.inject_or(Collector)
         if collector:
             # add stats to our own methods
             collector.wrap(
@@ -360,7 +360,7 @@ class Conductor:
             shutdown.run(self.outbound_transport_manager.stop())
 
         # close multitenant profiles
-        multitenant_mgr = self.context.inject(BaseMultitenantManager, required=False)
+        multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             for profile in multitenant_mgr._instances.values():
                 shutdown.run(profile.close())

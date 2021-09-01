@@ -139,7 +139,7 @@ class OutOfBandManager(BaseConnectionManager):
         wallet = self._session.inject(BaseWallet)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(BaseMultitenantManager, required=False)
+        multitenant_mgr = self._session.inject_or(BaseMultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
 
         accept = bool(
@@ -315,7 +315,7 @@ class OutOfBandManager(BaseConnectionManager):
                 )
 
                 if keylist_updates:
-                    responder = self._session.inject(BaseResponder, required=False)
+                    responder = self._session.inject_or(BaseResponder)
                     await responder.send(
                         keylist_updates, connection_id=mediation_record.connection_id
                     )
@@ -707,7 +707,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                 ),
             )
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self._session.inject_or(BaseResponder)
             if responder:
                 await responder.send(
                     message=presentation_message,
@@ -768,7 +768,7 @@ class OutOfBandManager(BaseConnectionManager):
                     f", pres_ex_record: {pres_ex_record.pres_ex_id}"
                 ),
             )
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self._session.inject_or(BaseResponder)
             if responder:
                 await responder.send(
                     message=pres_msg,
@@ -812,7 +812,7 @@ class OutOfBandManager(BaseConnectionManager):
                     cred_ex_record=cred_ex_record,
                     holder_did=conn_rec.my_did,
                 )
-                responder = self._session.inject(BaseResponder, required=False)
+                responder = self._session.inject_or(BaseResponder)
                 if responder:
                     await responder.send(
                         message=cred_request_message,
@@ -856,7 +856,7 @@ class OutOfBandManager(BaseConnectionManager):
                     cred_ex_record=cred_ex_record,
                     holder_did=conn_rec.my_did,
                 )
-                responder = self._session.inject(BaseResponder, required=False)
+                responder = self._session.inject_or(BaseResponder)
                 if responder:
                     await responder.send(
                         message=cred_request_message,
@@ -971,7 +971,7 @@ class OutOfBandManager(BaseConnectionManager):
             connection_targets = await self.fetch_connection_targets(
                 connection=conn_record
             )
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self._session.inject_or(BaseResponder)
             if responder:
                 await responder.send(
                     message=reuse_msg,
@@ -1021,7 +1021,7 @@ class OutOfBandManager(BaseConnectionManager):
             conn_record = await self.find_existing_connection(
                 tag_filter=tag_filter, post_filter=post_filter
             )
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self._session.inject_or(BaseResponder)
             if conn_record is not None:
                 # For ConnRecords created using did-exchange
                 reuse_accept_msg = HandshakeReuseAccept()

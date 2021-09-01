@@ -108,7 +108,7 @@ class PackWireFormat(BaseWireFormat):
         receipt: MessageReceipt,
     ):
         """Look up the wallet instance and perform the message unpack."""
-        wallet = session.inject(BaseWallet, required=False)
+        wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise WireFormatParseError("Wallet not defined in profile session")
 
@@ -170,7 +170,7 @@ class PackWireFormat(BaseWireFormat):
         if not sender_key or not recipient_keys:
             raise WireFormatEncodeError("Cannot pack message without associated keys")
 
-        wallet = session.inject(BaseWallet, required=False)
+        wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise WireFormatEncodeError("No wallet instance")
 

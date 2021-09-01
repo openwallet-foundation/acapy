@@ -170,7 +170,7 @@ async def register_ledger_nym(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = session.inject_or(BaseLedger)
     if not ledger:
         reason = "No Indy ledger available"
         if not session.settings.get_value("wallet.type"):
@@ -226,7 +226,7 @@ async def get_nym_role(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = session.inject_or(BaseLedger)
     if not ledger:
         reason = "No Indy ledger available"
         if not session.settings.get_value("wallet.type"):
@@ -260,7 +260,7 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = session.inject_or(BaseLedger)
     if not ledger:
         reason = "No Indy ledger available"
         if not session.settings.get_value("wallet.type"):
@@ -290,7 +290,7 @@ async def get_did_verkey(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = session.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not session.settings.get_value("wallet.type"):
@@ -327,7 +327,7 @@ async def get_did_endpoint(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = session.inject_or(BaseLedger)
     if not ledger:
         reason = "No Indy ledger available"
         if not session.settings.get_value("wallet.type"):
@@ -366,7 +366,7 @@ async def ledger_get_taa(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = session.inject_or(BaseLedger)
     if not ledger:
         reason = "No Indy ledger available"
         if not session.settings.get_value("wallet.type"):
@@ -407,7 +407,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject(BaseLedger, required=False)
+    ledger = session.inject_or(BaseLedger)
     if not ledger:
         reason = "No Indy ledger available"
         if not session.settings.get_value("wallet.type"):

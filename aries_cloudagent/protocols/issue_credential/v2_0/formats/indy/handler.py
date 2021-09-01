@@ -185,7 +185,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         issuer = self.profile.inject(IndyIssuer)
         ledger = self.profile.inject(BaseLedger)
-        cache = self.profile.inject(BaseCache, required=False)
+        cache = self.profile.inject_or(BaseCache)
 
         cred_proposal_message = cred_ex_record.cred_proposal
 
@@ -267,7 +267,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         cache_key = f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
         cred_req_result = None
-        cache = self.profile.inject(BaseCache, required=False)
+        cache = self.profile.inject_or(BaseCache)
         if cache:
             async with cache.acquire(cache_key) as entry:
                 if entry.result:

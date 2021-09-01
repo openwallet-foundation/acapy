@@ -2,7 +2,6 @@
 
 import json
 
-from datetime import datetime
 import re
 
 from base58 import alphabet
@@ -17,6 +16,8 @@ from ..revocation.models.revocation_registry import RevocationRegistry
 from ..wallet.did_posture import DIDPosture as DIDPostureEnum
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
+
+EXAMPLE_TIMESTAMP = 1640995199  # 2021-12-31 23:59:59Z
 
 
 class StrOrDictField(Field):
@@ -81,7 +82,7 @@ class UriOrDictField(StrOrDictField):
 class IntEpoch(Range):
     """Validate value against (integer) epoch format."""
 
-    EXAMPLE = int(datetime.now().timestamp())
+    EXAMPLE = EXAMPLE_TIMESTAMP
 
     def __init__(self):
         """Initializer."""
@@ -436,7 +437,7 @@ class IndyPredicate(OneOf):
 class IndyISO8601DateTime(Regexp):
     """Validate value against ISO 8601 datetime format, indy profile."""
 
-    EXAMPLE = epoch_to_str(int(datetime.now().timestamp()))
+    EXAMPLE = epoch_to_str(EXAMPLE_TIMESTAMP)
     PATTERN = (
         r"^\d{4}-\d\d-\d\d[T ]\d\d:\d\d"
         r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z|)$"
@@ -638,7 +639,7 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
     EXAMPLE = "https://myhost:8021"
     PATTERN = (
         r"^[A-Za-z0-9\.\-\+]+:"  # scheme
-        r"//([A-Za-z0-9][.A-Za-z0-9-]+[A-Za-z0-9])+"  # host
+        r"//([A-Za-z0-9][.A-Za-z0-9-_]+[A-Za-z0-9])+"  # host
         r"(:[1-9][0-9]*)?"  # port
         r"(/[^?&#]+)?$"  # path
     )

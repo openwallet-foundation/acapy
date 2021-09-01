@@ -33,9 +33,7 @@ class MediationGrantHandler(BaseHandler):
             await mgr.request_granted(record, context.message)
 
             # Multitenancy setup
-            multitenant_mgr = context.profile.inject(
-                BaseMultitenantManager, required=False
-            )
+            multitenant_mgr = context.profile.inject_or(BaseMultitenantManager)
             wallet_id = context.profile.settings.get("wallet.id")
 
             if multitenant_mgr and wallet_id:

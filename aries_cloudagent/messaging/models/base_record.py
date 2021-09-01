@@ -6,7 +6,7 @@ import sys
 import uuid
 
 from datetime import datetime
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Type, TypeVar, Union
 
 from marshmallow import fields
 
@@ -22,6 +22,9 @@ from ..valid import INDY_ISO8601_DATETIME
 from .base import BaseModel, BaseModelSchema
 
 LOGGER = logging.getLogger(__name__)
+
+
+RecordType = TypeVar("RecordType", bound="BaseRecord")
 
 
 def match_post_filter(
@@ -173,7 +176,7 @@ class BaseRecord(BaseModel):
         """
         if not cache_key:
             return
-        cache = session.inject(BaseCache, required=False)
+        cache = session.inject_or(BaseCache)
         if cache:
             return await cache.get(cache_key)
 
@@ -193,7 +196,7 @@ class BaseRecord(BaseModel):
 
         if not cache_key:
             return
-        cache = session.inject(BaseCache, required=False)
+        cache = session.inject_or(BaseCache)
         if cache:
             await cache.set(cache_key, value, ttl or cls.DEFAULT_CACHE_TTL)
 
@@ -209,14 +212,14 @@ class BaseRecord(BaseModel):
 
         if not cache_key:
             return
-        cache = session.inject(BaseCache, required=False)
+        cache = session.inject_or(BaseCache)
         if cache:
             await cache.clear(cache_key)
 
     @classmethod
     async def retrieve_by_id(
-        cls, session: ProfileSession, record_id: str
-    ) -> "BaseRecord":
+        cls: Type[RecordType], session: ProfileSession, record_id: str
+    ) -> RecordType:
         """
         Retrieve a stored record by ID.
 
@@ -234,8 +237,11 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def retrieve_by_tag_filter(
-        cls, session: ProfileSession, tag_filter: dict, post_filter: dict = None
-    ) -> "BaseRecord":
+        cls: Type[RecordType],
+        session: ProfileSession,
+        tag_filter: dict,
+        post_filter: dict = None,
+    ) -> RecordType:
         """
         Retrieve a record by tag filter.
 
@@ -275,14 +281,14 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def query(
-        cls,
+        cls: Type[RecordType],
         session: ProfileSession,
         tag_filter: dict = None,
         *,
         post_filter_positive: dict = None,
         post_filter_negative: dict = None,
         alt: bool = False,
-    ) -> Sequence["BaseRecord"]:
+    ) -> Sequence[RecordType]:
         """
         Query stored records.
 

@@ -188,7 +188,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             )
         endorser_did = endorser_info["endorser_did"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger = context.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -337,6 +337,43 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     cred_def_id = request.match_info["cred_def_id"]
 
+    ledger = context.inject_or(BaseLedger)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise web.HTTPForbidden(reason=reason)
+
+    async with ledger:
+        cred_def = await ledger.get_credential_definition(cred_def_id)
+
+    return web.json_response({"credential_definition": cred_def})
+
+
+@docs(
+    tags=["credential-definition"],
+    summary="Writes a credential definition non-secret record to the wallet",
+)
+@match_info_schema(CredDefIdMatchInfoSchema())
+@response_schema(CredentialDefinitionGetResultSchema(), 200, description="")
+async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseRequest):
+    """
+    Request handler for fixing a credential definition wallet non-secret record.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The credential definition details.
+
+    """
+    context: AdminRequestContext = request["context"]
+
+    session = await context.session()
+    storage = session.inject(BaseStorage)
+
+    cred_def_id = request.match_info["cred_def_id"]
+
     ledger = context.inject(BaseLedger, required=False)
     if not ledger:
         reason = "No ledger available"
@@ -346,6 +383,23 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     async with ledger:
         cred_def = await ledger.get_credential_definition(cred_def_id)
+        cred_def_id_parts = cred_def_id.split(":")
+        schema_seq_no = cred_def_id_parts[3]
+        schema_response = await ledger.get_schema(schema_seq_no)
+        schema_id = schema_response["id"]
+        iss_did = cred_def_id_parts[0]
+
+        # check if the record exists, if not add it
+        found = await storage.find_all_records(
+            type_filter=CRED_DEF_SENT_RECORD_TYPE,
+            tag_query={
+                "cred_def_id": cred_def_id,
+            },
+        )
+        if 0 == len(found):
+            await ledger.add_cred_def_non_secrets_record(
+                schema_id, iss_did, cred_def_id
+            )
 
     return web.json_response({"credential_definition": cred_def})
 
@@ -367,6 +421,10 @@ async def register(app: web.Application):
                 "/credential-definitions/{cred_def_id}",
                 credential_definitions_get_credential_definition,
                 allow_head=False,
+            ),
+            web.post(
+                "/credential-definitions/{cred_def_id}/write_record",
+                credential_definitions_fix_cred_def_wallet_record,
             ),
         ]
     )

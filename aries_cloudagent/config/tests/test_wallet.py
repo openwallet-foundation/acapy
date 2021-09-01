@@ -37,8 +37,8 @@ class TestWalletConfig(AsyncTestCase):
             transaction=async_mock.CoroutineMock(return_value=self.session),
         )
 
-        def _inject(cls, required=True):
-            return self.injector.inject(cls, required=required)
+        def _inject(cls):
+            return self.injector.inject(cls)
 
         self.session.inject = _inject
         self.context = InjectionContext()

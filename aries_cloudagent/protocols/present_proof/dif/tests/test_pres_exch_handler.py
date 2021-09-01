@@ -76,7 +76,7 @@ def profile():
 @pytest.fixture(scope="class")
 async def setup_tuple(profile):
     async with profile.session() as session:
-        wallet = session.inject(BaseWallet, required=False)
+        wallet = session.inject_or(BaseWallet)
         await wallet.create_local_did(
             method=DIDMethod.SOV, key_type=KeyType.ED25519, did="WgWxqztrNooG92RXvxSTWv"
         )
