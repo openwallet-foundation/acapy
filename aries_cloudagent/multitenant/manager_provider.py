@@ -6,8 +6,7 @@ from ..config.provider import BaseProvider
 from ..config.settings import BaseSettings
 from ..config.injector import BaseInjector
 from ..config.base import InjectionError
-from .manager import MultitenantManager
-from .askar_profile_manager import AskarProfileMultitenantManager
+from ..utils.classloader import ClassLoader, ClassNotFoundError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -19,9 +18,13 @@ class MultitenantManagerProvider(BaseProvider):
     Decides which manager to use based on the settings.
     """
 
+    askar_profile_manager_path = (
+        'aries_cloudagent.multitenant.'
+        'askar_profile_manager.AskarProfileMultitenantManager'
+    )
     MANAGER_TYPES = {
-        "basic": MultitenantManager,
-        "askar-profile": AskarProfileMultitenantManager,
+        "basic": "aries_cloudagent.multitenant.manager.MultitenantManager",
+        "askar-profile": askar_profile_manager_path,
     }
 
     def __init__(self, root_profile):
@@ -37,13 +40,17 @@ class MultitenantManagerProvider(BaseProvider):
             multitenant_wallet_type, default="basic"
         ).lower()
 
-        if manager_type not in self.MANAGER_TYPES:
-            raise InjectionError(f"Unknown manager type: {manager_type}")
+        manager_class = self.MANAGER_TYPES.get(manager_type, manager_type)
 
-        if manager_type not in self._inst:
+        if manager_class not in self._inst:
             LOGGER.info("Create multitenant manager: %s", manager_type)
-            manager_class = self.MANAGER_TYPES.get(manager_type)
+            try:
+                self._inst[manager_class] = ClassLoader.load_class(manager_class)(
+                    self.root_profile
+                )
+            except ClassNotFoundError as err:
+                raise InjectionError(
+                    f"Unknown multitenant manager type: {manager_type}"
+                ) from err
 
-            self._inst[manager_type] = manager_class(self.root_profile)
-
-        return self._inst[manager_type]
+        return self._inst[manager_class]
