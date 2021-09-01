@@ -1093,16 +1093,6 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
                 )
             )
 
-        connection_id = pres_ex_record.connection_id
-
-        try:
-            conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    if not conn_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
-
     pres_manager = V20PresManager(context.profile)
     try:
         pres_ex_record = await pres_manager.verify_pres(pres_ex_record)
