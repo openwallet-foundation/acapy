@@ -19,8 +19,8 @@ class MultitenantManagerProvider(BaseProvider):
     """
 
     askar_profile_manager_path = (
-        'aries_cloudagent.multitenant.'
-        'askar_profile_manager.AskarProfileMultitenantManager'
+        "aries_cloudagent.multitenant."
+        "askar_profile_manager.AskarProfileMultitenantManager"
     )
     MANAGER_TYPES = {
         "basic": "aries_cloudagent.multitenant.manager.MultitenantManager",
