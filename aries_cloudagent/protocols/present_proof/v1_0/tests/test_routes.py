@@ -1283,6 +1283,22 @@ class TestProofRoutes(AsyncTestCase):
                 )
                 mock_response.assert_called_once_with({"thread_id": "sample-thread-id"})
 
+    async def test_presentation_exchange_verify_presentation_px_rec_not_found(self):
+        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.match_info = {"pres_ex_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module.V10PresentationExchange,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve:
+            mock_retrieve.side_effect = StorageNotFoundError("no such record")
+            with self.assertRaises(test_module.web.HTTPNotFound) as context:
+                await test_module.presentation_exchange_verify_presentation(
+                    self.request
+                )
+            assert "no such record" in str(context.exception)
+
     async def test_presentation_exchange_verify_presentation_bad_state(self):
         self.request.json = async_mock.CoroutineMock()
         self.request.match_info = {"pres_ex_id": "dummy"}
