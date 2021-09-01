@@ -817,16 +817,6 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
                 )
             )
 
-        connection_id = pres_ex_record.connection_id
-
-        try:
-            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    if not connection_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
-
     presentation_manager = PresentationManager(context.profile)
     try:
         pres_ex_record = await presentation_manager.verify_presentation(pres_ex_record)
