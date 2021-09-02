@@ -57,7 +57,7 @@ class AskarProfile(Profile):
     async def remove(self):
         """Remove the profile."""
         if self.settings.get("multitenant.wallet_type") == "askar-profile":
-            await self.store.remove_profile(self.settings.get("wallet.id"))
+            await self.store.remove_profile(self.settings.get("wallet.askar_profile"))
 
     def init_ledger_pool(self):
         """Initialize the ledger pool."""

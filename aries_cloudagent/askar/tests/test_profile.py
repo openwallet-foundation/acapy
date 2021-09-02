@@ -24,10 +24,10 @@ class TestProfile(AsyncTestCase):
     async def test_remove_success(self, AskarOpenStore):
         openStore = AskarOpenStore
         context = InjectionContext()
-        wallet_id = "wallet_id"
+        profile_id = "profile_id"
         context.settings = {
             "multitenant.wallet_type": "askar-profile",
-            "wallet.id": wallet_id,
+            "wallet.askar_profile": profile_id,
         }
         askar_profile = AskarProfile(openStore, context)
         remove_profile_stub = asyncio.Future()
@@ -36,7 +36,7 @@ class TestProfile(AsyncTestCase):
 
         await askar_profile.remove()
 
-        openStore.store.remove_profile.assert_called_once_with(wallet_id)
+        openStore.store.remove_profile.assert_called_once_with(profile_id)
 
     @mock.patch("aries_cloudagent.askar.store.AskarOpenStore")
     async def test_remove_profile_not_removed_if_wallet_type_not_askar_profile(
