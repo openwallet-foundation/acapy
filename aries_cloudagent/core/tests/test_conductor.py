@@ -735,105 +735,6 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             assert "http://localhost?oob=" in value
             assert "http://localhost?c_i=" in value
 
-    async def test_mediator_invitation_0160(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        builder.update_settings({"mediation.invite": "test-invite"})
-        builder.update_settings({"mediation.connections_invite": True})
-        conductor = test_module.Conductor(builder)
-
-        await conductor.setup()
-
-        mock_conn_record = async_mock.MagicMock()
-
-        with async_mock.patch.object(
-            test_module.ConnectionInvitation, "from_url"
-        ) as mock_from_url, async_mock.patch.object(
-            test_module,
-            "ConnectionManager",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(
-                    receive_invitation=async_mock.CoroutineMock(
-                        return_value=mock_conn_record
-                    )
-                )
-            ),
-        ) as mock_mgr, async_mock.patch.object(
-            mock_conn_record, "metadata_set", async_mock.CoroutineMock()
-        ), async_mock.patch.object(
-            test_module,
-            "LOGGER",
-            async_mock.MagicMock(
-                exception=async_mock.MagicMock(
-                    side_effect=Exception("This method should not have been called")
-                )
-            ),
-        ):
-            await conductor.start()
-            await conductor.stop()
-            mock_from_url.assert_called_once_with("test-invite")
-            mock_mgr.return_value.receive_invitation.assert_called_once()
-
-    async def test_mediator_invitation_0434(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        builder.update_settings({"mediation.invite": "test-invite"})
-        conductor = test_module.Conductor(builder)
-
-        await conductor.setup()
-
-        conn_record = ConnRecord(
-            invitation_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
-            their_label="Hello",
-            their_role=ConnRecord.Role.RESPONDER.rfc160,
-            alias="Bob",
-        )
-        conn_record.accept = ConnRecord.ACCEPT_MANUAL
-        await conn_record.save(await conductor.root_profile.session())
-        with async_mock.patch.object(
-            test_module.InvitationMessage, "from_url"
-        ) as mock_from_url, async_mock.patch.object(
-            test_module,
-            "OutOfBandManager",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(
-                    receive_invitation=async_mock.CoroutineMock(
-                        return_value=conn_record
-                    )
-                )
-            ),
-        ) as mock_mgr, async_mock.patch.object(
-            test_module,
-            "LOGGER",
-            async_mock.MagicMock(
-                exception=async_mock.MagicMock(
-                    side_effect=Exception("This method should not have been called")
-                )
-            ),
-        ):
-            await conductor.start()
-            await conductor.stop()
-            mock_from_url.assert_called_once_with("test-invite")
-            mock_mgr.return_value.receive_invitation.assert_called_once()
-
-    async def test_mediator_invitation_x(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        builder.update_settings({"mediation.invite": "test-invite"})
-        builder.update_settings({"mediation.connections_invite": True})
-        conductor = test_module.Conductor(builder)
-
-        await conductor.setup()
-
-        with async_mock.patch.object(
-            test_module.ConnectionInvitation,
-            "from_url",
-            async_mock.MagicMock(side_effect=Exception()),
-        ) as mock_from_url, async_mock.patch.object(
-            test_module, "LOGGER"
-        ) as mock_logger:
-            await conductor.start()
-            await conductor.stop()
-            mock_from_url.assert_called_once_with("test-invite")
-            mock_logger.exception.assert_called_once()
-
     async def test_clear_default_mediator(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings({"mediation.clear": True})
@@ -958,3 +859,108 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             multitenant_mgr._instances["test1"].close.assert_called_once_with()
             multitenant_mgr._instances["test2"].close.assert_called_once_with()
+
+
+class TestConductorMediationSetup(AsyncTestCase, Config):
+    """
+    Test related with setting up mediation from given arguments or stored invitation.
+    """
+
+    async def test_mediator_invitation_0160(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"mediation.invite": "test-invite"})
+        builder.update_settings({"mediation.connections_invite": True})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        mock_conn_record = async_mock.MagicMock()
+
+        with async_mock.patch.object(
+            test_module.ConnectionInvitation, "from_url"
+        ) as mock_from_url, async_mock.patch.object(
+            test_module,
+            "ConnectionManager",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    receive_invitation=async_mock.CoroutineMock(
+                        return_value=mock_conn_record
+                    )
+                )
+            ),
+        ) as mock_mgr, async_mock.patch.object(
+            mock_conn_record, "metadata_set", async_mock.CoroutineMock()
+        ), async_mock.patch.object(
+            test_module,
+            "LOGGER",
+            async_mock.MagicMock(
+                exception=async_mock.MagicMock(
+                    side_effect=Exception("This method should not have been called")
+                )
+            ),
+        ):
+            await conductor.start()
+            await conductor.stop()
+            mock_from_url.assert_called_once_with("test-invite")
+            mock_mgr.return_value.receive_invitation.assert_called_once()
+
+    async def test_mediator_invitation_0434(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"mediation.invite": "test-invite"})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        conn_record = ConnRecord(
+            invitation_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+            their_label="Hello",
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            alias="Bob",
+        )
+        conn_record.accept = ConnRecord.ACCEPT_MANUAL
+        await conn_record.save(await conductor.root_profile.session())
+        with async_mock.patch.object(
+            test_module.InvitationMessage, "from_url"
+        ) as mock_from_url, async_mock.patch.object(
+            test_module,
+            "OutOfBandManager",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    receive_invitation=async_mock.CoroutineMock(
+                        return_value=conn_record
+                    )
+                )
+            ),
+        ) as mock_mgr, async_mock.patch.object(
+            test_module,
+            "LOGGER",
+            async_mock.MagicMock(
+                exception=async_mock.MagicMock(
+                    side_effect=Exception("This method should not have been called")
+                )
+            ),
+        ):
+            await conductor.start()
+            await conductor.stop()
+            mock_from_url.assert_called_once_with("test-invite")
+            mock_mgr.return_value.receive_invitation.assert_called_once()
+
+    async def test_mediator_invitation_x(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"mediation.invite": "test-invite"})
+        builder.update_settings({"mediation.connections_invite": True})
+        conductor = test_module.Conductor(builder)
+
+        await conductor.setup()
+
+        with async_mock.patch.object(
+            test_module.ConnectionInvitation,
+            "from_url",
+            async_mock.MagicMock(side_effect=Exception()),
+        ) as mock_from_url, async_mock.patch.object(
+            test_module, "LOGGER"
+        ) as mock_logger:
+            await conductor.start()
+            await conductor.stop()
+            mock_from_url.assert_called_once_with("test-invite")
+            mock_logger.exception.assert_called_once()
