@@ -1,9 +1,9 @@
 """Handler for mediate-grant message."""
 
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
+from .....multitenant.base import BaseMultitenantManager
 from .....storage.error import StorageNotFoundError
 
 from ..manager import MediationManager

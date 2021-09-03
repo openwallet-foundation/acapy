@@ -1,6 +1,5 @@
 """Classes to manage connections."""
 
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import asyncio
 import json
 import logging
@@ -17,6 +16,7 @@ from ....indy.holder import IndyHolder
 from ....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
+from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet

@@ -1,19 +1,22 @@
 """Command line option parsing."""
 
 import abc
+import json
+
 from functools import reduce
 from itertools import chain
 from os import environ
+from typing import Type
 
 import deepmerge
 import yaml
-import json
+
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
-from typing import Type
+
+from ..utils.tracing import trace_event
 
 from .error import ArgsParseError
 from .util import BoundedInt, ByteSize
-from ..utils.tracing import trace_event
 
 CAT_PROVISION = "general"
 CAT_START = "start"

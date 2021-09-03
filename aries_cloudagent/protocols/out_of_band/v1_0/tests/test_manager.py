@@ -1,5 +1,5 @@
 """Test OOB Manager."""
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
+
 import asyncio
 import json
 
@@ -22,6 +22,7 @@ from .....indy.models.pres_preview import (
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.util import str_to_epoch
+from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
