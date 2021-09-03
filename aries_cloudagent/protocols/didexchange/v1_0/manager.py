@@ -1,6 +1,5 @@
 """Classes to manage connection establishment under RFC 23 (DID exchange)."""
 
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import json
 import logging
 
@@ -12,6 +11,7 @@ from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
+from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet

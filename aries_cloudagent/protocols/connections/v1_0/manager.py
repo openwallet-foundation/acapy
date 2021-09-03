@@ -1,6 +1,5 @@
 """Classes to manage connections."""
 
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import logging
 
 from typing import Coroutine, Sequence, Tuple
@@ -14,6 +13,7 @@ from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.responder import BaseResponder
+from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet

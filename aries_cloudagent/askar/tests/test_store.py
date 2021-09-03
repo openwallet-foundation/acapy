@@ -1,5 +1,6 @@
-from aries_cloudagent.core.error import ProfileError
 from asynctest import TestCase as AsyncTestCase
+
+from ...core.error import ProfileError
 
 from ..store import AskarStoreConfig
 

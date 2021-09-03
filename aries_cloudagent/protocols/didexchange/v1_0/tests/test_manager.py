@@ -1,4 +1,3 @@
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import json
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
@@ -17,6 +16,7 @@ from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
