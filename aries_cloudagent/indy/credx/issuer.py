@@ -28,6 +28,8 @@ from ..issuer import (
     DEFAULT_CRED_DEF_TAG,
     DEFAULT_SIGNATURE_TYPE,
 )
+from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -317,6 +319,20 @@ class IndyCredxIssuer(IndyIssuer):
                 rev_info["curr_id"] = rev_reg_index
                 await txn.handle.replace(
                     CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
+                )
+
+                issuer_cr_rec = IssuerCredRevRecord(
+                    state=IssuerCredRevRecord.STATE_ISSUED,
+                    cred_ex_id=cred_ex_id,
+                    rev_reg_id=revoc_reg_id,
+                    cred_rev_id=rev_reg_index,
+                )
+                await issuer_cr_rec.save(
+                    txn,
+                    reason=(
+                        "Created issuer cred rev record for "
+                        f"rev reg id {revoc_reg_id}, {rev_reg_index}"
+                    ),
                 )
                 await txn.commit()
             except AskarError as err:
