@@ -38,10 +38,6 @@ class BaseOutboundQueue(ABC):
         """Stop the queue."""
 
     @abstractmethod
-    async def push(self, key: bytes, message: bytes):
-        """Push a ``message`` to queue on ``key``."""
-
-    @abstractmethod
     async def enqueue_message(
         self,
         payload: Union[str, bytes],

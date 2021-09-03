@@ -853,7 +853,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             conn_rec = await self.manager.receive_invitation(
                 mock_oob_invi, use_existing_connection=True
             )
-            assert ConnRecord.deserialize(conn_rec)
+            assert conn_rec is not None
 
     async def test_dif_req_v2_attach_pres_existing_conn_auto_present_pres_msg_with_nonce(
         self,
@@ -1019,7 +1019,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             conn_rec = await self.manager.receive_invitation(
                 mock_oob_invi, use_existing_connection=True
             )
-            assert ConnRecord.deserialize(conn_rec)
+            assert conn_rec is not None
 
     async def test_create_invitation_public_x_no_public_invites(self):
         self.session.context.update_settings({"public_invites": False})
@@ -1186,7 +1186,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
             invi_msg = invite.invitation
             invitee_record = await self.manager.receive_invitation(
-                invi_msg=invi_msg,
+                invitation=invi_msg,
                 mediation_id=mediation_record._id,
             )
             mock_didx_recv_invi.assert_called_once_with(
@@ -1301,14 +1301,14 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         )
 
         result = await self.manager.receive_invitation(
-            invi_msg=oob_invi_rec.invitation,
+            invitation=oob_invi_rec.invitation,
             use_existing_connection=True,
             auto_accept=True,
         )
-        connection_id = UUID(result.get("connection_id"), version=4)
+        connection_id = UUID(result.connection_id, version=4)
         assert (
-            connection_id.hex == result.get("connection_id").replace("-", "")
-            and len(result.get("connection_id")) > 5
+            connection_id.hex == result.connection_id.replace("-", "")
+            and len(result.connection_id) > 5
         )
 
     async def test_receive_invitation_services_with_neither_service_blocks_nor_dids(
@@ -1398,10 +1398,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             with self.assertRaises(OutOfBandManagerError) as context:
                 result = await self.manager.receive_invitation(mock_oob_invi)
-                connection_id = UUID(result.get("connection_id"), version=4)
+                connection_id = UUID(result.connection_id, version=4)
                 assert (
-                    connection_id.hex == result.get("connection_id")
-                    and len(result.get("connection_id")) > 5
+                    connection_id.hex == result.connection_id
+                    and len(result.connection_id) > 5
                 )
             assert "requests~attach is not properly formatted" in str(context.exception)
 
@@ -2017,9 +2017,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 is None
             )
-            assert (
-                result.get("connection_id") == retrieved_conn_records[0].connection_id
-            )
+            assert result.connection_id == retrieved_conn_records[0].connection_id
 
     async def test_existing_conn_record_public_did_not_accepted(self):
         self.session.context.update_settings({"public_invites": True})
@@ -2118,9 +2116,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 == "not_accepted"
             )
-            assert (
-                result.get("connection_id") != retrieved_conn_records[0].connection_id
-            )
+            assert result.connection_id != retrieved_conn_records[0].connection_id
 
     async def test_existing_conn_record_public_did_inverse_cases(self):
         self.session.context.update_settings({"public_invites": True})
@@ -2135,11 +2131,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         await test_exist_conn.save(self.session)
         await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
         await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
-        receipt = MessageReceipt(
-            recipient_did=TestConfig.test_did,
-            recipient_did_public=False,
-            sender_did=TestConfig.test_target_did,
-        )
 
         with async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
@@ -2181,9 +2172,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 },
                 alt=True,
             )
-            assert (
-                result.get("connection_id") != retrieved_conn_records[0].connection_id
-            )
+            assert result.connection_id != retrieved_conn_records[0].connection_id
 
     async def test_existing_conn_record_public_did_timeout(self):
         self.session.context.update_settings({"public_invites": True})
@@ -2476,7 +2465,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             conn_rec = await self.manager.receive_invitation(
                 mock_oob_invi, use_existing_connection=True
             )
-            assert ConnRecord.deserialize(conn_rec)
+            assert conn_rec is not None
 
     async def test_req_v1_attach_pres_catch_value_error(self):
         self.session.context.update_settings({"public_invites": True})
@@ -2781,7 +2770,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             conn_rec = await self.manager.receive_invitation(
                 mock_oob_invi, use_existing_connection=True
             )
-            assert ConnRecord.deserialize(conn_rec)
+            assert conn_rec is not None
 
     async def test_req_v2_attach_pres_catch_value_error(self):
         self.session.context.update_settings({"public_invites": True})
@@ -2990,7 +2979,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             conn_rec = await self.manager.receive_invitation(
                 mock_oob_invi, use_existing_connection=True
             )
-            assert ConnRecord.deserialize(conn_rec)
+            assert conn_rec is not None
 
     async def test_req_attach_cred_offer_v1_no_issue(self):
         self.session.context.update_settings({"public_invites": True})
@@ -3173,7 +3162,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             conn_rec = await self.manager.receive_invitation(
                 mock_oob_invi, use_existing_connection=True
             )
-            assert ConnRecord.deserialize(conn_rec)
+            assert conn_rec is not None
 
     async def test_req_attach_cred_offer_v2_no_issue(self):
         self.session.context.update_settings({"public_invites": True})
@@ -3383,11 +3372,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         await test_exist_conn.metadata_set(self.session, "reuse_msg_state", "initial")
         await test_exist_conn.metadata_set(self.session, "reuse_msg_id", "test_123")
 
-        receipt = MessageReceipt(
-            recipient_did=TestConfig.test_did,
-            recipient_did_public=False,
-            sender_did=TestConfig.test_target_did,
-        )
         req_attach = deepcopy(TestConfig.req_attach_v1)
         del req_attach["data"]["json"]
         req_attach["data"]["json"] = TestConfig.CRED_OFFER_V1.serialize()
@@ -3397,7 +3381,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             DIDXManager,
             "receive_invitation",
             autospec=True,
-        ) as didx_mgr_receive_invitation, async_mock.patch.object(
+        ), async_mock.patch.object(
             V10CredManager,
             "receive_offer",
             autospec=True,
@@ -3408,7 +3392,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             OutOfBandManager,
             "fetch_connection_targets",
             autospec=True,
-        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+        ), async_mock.patch.object(
             OutOfBandManager,
             "find_existing_connection",
             autospec=True,
@@ -3416,7 +3400,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             OutOfBandManager,
             "check_reuse_msg_state",
             autospec=True,
-        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+        ), async_mock.patch.object(
             OutOfBandManager,
             "conn_rec_is_active",
             autospec=True,
@@ -3424,19 +3408,19 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             OutOfBandManager,
             "create_handshake_reuse_message",
             autospec=True,
-        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+        ), async_mock.patch.object(
             OutOfBandManager,
             "receive_reuse_message",
             autospec=True,
-        ) as oob_mgr_receive_reuse_msg, async_mock.patch.object(
+        ), async_mock.patch.object(
             OutOfBandManager,
             "receive_reuse_accepted_message",
             autospec=True,
-        ) as oob_mgr_receive_accept_msg, async_mock.patch.object(
+        ), async_mock.patch.object(
             OutOfBandManager,
             "receive_problem_report",
             autospec=True,
-        ) as oob_mgr_receive_problem_report, async_mock.patch.object(
+        ), async_mock.patch.object(
             V10CredManager,
             "create_request",
             autospec=True,
@@ -3459,7 +3443,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 mock_oob_invi, use_existing_connection=True
             )
             mock_logger_warning.assert_called_once()
-            assert ConnRecord.deserialize(conn_rec)
+            assert conn_rec is not None
 
     async def test_request_attach_cred_offer_v2_check_conn_rec_active_timeout(self):
         self.session.context.update_settings({"public_invites": True})
@@ -3553,4 +3537,4 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 mock_oob_invi, use_existing_connection=True
             )
             mock_logger_warning.assert_called_once()
-            assert ConnRecord.deserialize(conn_rec)
+            assert conn_rec is not None
