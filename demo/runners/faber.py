@@ -570,7 +570,7 @@ async def main(args):
                     url = (
                         faber_agent.agent.webhook_url + "/pres_req/" + pres_req_id + "/"
                     )
-                    # TODO handle connectionless PR
+                    log_msg(f"Proof request url: {url}")
                     qr = QRCode(border=1)
                     qr.add_data(url)
                     log_msg(
@@ -611,7 +611,7 @@ async def main(args):
                     url = (
                         faber_agent.agent.webhook_url + "/pres_req/" + pres_req_id + "/"
                     )
-                    # TODO handle connectionless PR
+                    log_msg(f"Proof request url: {url}")
                     qr = QRCode(border=1)
                     qr.add_data(url)
                     log_msg(
