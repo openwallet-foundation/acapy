@@ -1,4 +1,3 @@
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 from unittest.mock import call
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
@@ -15,6 +14,7 @@ from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Ser
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....messaging.responder import BaseResponder, MockResponder
+from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.routing.v1_0.manager import RoutingManager
 from .....resolver.did_resolver import DIDResolver

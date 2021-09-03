@@ -1,4 +1,3 @@
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import asyncio
 import pytest
 
@@ -7,6 +6,7 @@ from asynctest import TestCase, mock as async_mock
 from ....admin.server import AdminResponder
 from ....core.in_memory import InMemoryProfile
 from ....messaging.responder import BaseResponder
+from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 
 from ...error import WireFormatError

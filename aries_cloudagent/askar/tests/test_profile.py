@@ -3,12 +3,10 @@ import pytest
 
 from asynctest import TestCase as AsyncTestCase, mock
 
-from aries_cloudagent.askar.profile import AskarProfile
-from aries_cloudagent.config.injection_context import InjectionContext
+from ...askar.profile import AskarProfile
+from ...config.injection_context import InjectionContext
 
 from .. import profile as test_module
-from ...core.profile import Profile, ProfileSession
-from ...core.in_memory import InMemoryProfile
 
 
 class TestProfile(AsyncTestCase):

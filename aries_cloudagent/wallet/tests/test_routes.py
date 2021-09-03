@@ -1,12 +1,13 @@
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from aiohttp.web import HTTPForbidden
 
 from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
+from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from ...wallet.key_type import KeyType
 from ...wallet.did_method import DIDMethod
+
 from .. import routes as test_module
 from ..base import BaseWallet
 from ..did_info import DIDInfo
