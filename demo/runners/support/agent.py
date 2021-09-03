@@ -648,7 +648,7 @@ class DemoAgent:
         objJsonB64 = base64.b64encode(objJsonStr.encode("ascii"))
         service_url = self.webhook_url
         redirect_url = service_url + "/?m=" + objJsonB64.decode("ascii")
-        print("Redirecting to:", redirect_url)
+        log_msg(f"Redirecting to: {redirect_url}")
         raise web.HTTPFound(redirect_url)
 
     async def handle_webhook(self, topic: str, payload, headers: dict):
