@@ -6,6 +6,7 @@ import sys
 import time
 
 from aiohttp import ClientError
+from qrcode import QRCode
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -162,7 +163,7 @@ class FaberAgent(AriesAgent):
             raise Exception(f"Error invalid AIP level: {self.aip}")
 
     def generate_proof_request_web_request(
-        self, aip, cred_type, revocation, exchange_tracing
+        self, aip, cred_type, revocation, exchange_tracing, connectionless=False
     ):
         if aip == 10:
             req_attrs = [
@@ -219,10 +220,11 @@ class FaberAgent(AriesAgent):
                 indy_proof_request["non_revoked"] = {"to": int(time.time())}
 
             proof_request_web_request = {
-                "connection_id": self.connection_id,
                 "proof_request": indy_proof_request,
                 "trace": exchange_tracing,
             }
+            if not connectionless:
+                proof_request_web_request["connection_id"] = self.connection_id
             return proof_request_web_request
 
         elif aip == 20:
@@ -282,16 +284,16 @@ class FaberAgent(AriesAgent):
                     indy_proof_request["non_revoked"] = {"to": int(time.time())}
 
                 proof_request_web_request = {
-                    "connection_id": self.connection_id,
                     "presentation_request": {"indy": indy_proof_request},
                     "trace": exchange_tracing,
                 }
+                if not connectionless:
+                    proof_request_web_request["connection_id"] = self.connection_id
                 return proof_request_web_request
 
             elif cred_type == CRED_FORMAT_JSON_LD:
                 proof_request_web_request = {
                     "comment": "test proof request for json-ld",
-                    "connection_id": self.connection_id,
                     "presentation_request": {
                         "dif": {
                             "options": {
@@ -346,6 +348,8 @@ class FaberAgent(AriesAgent):
                         }
                     },
                 }
+                if not connectionless:
+                    proof_request_web_request["connection_id"] = self.connection_id
                 return proof_request_web_request
 
             else:
@@ -550,16 +554,70 @@ async def main(args):
             elif option == "2a":
                 log_status("#20 Request * Connectionless * proof of degree from alice")
                 if faber_agent.aip == 10:
-                    pass
+                    proof_request_web_request = (
+                        faber_agent.agent.generate_proof_request_web_request(
+                            faber_agent.aip,
+                            faber_agent.cred_type,
+                            faber_agent.revocation,
+                            exchange_tracing,
+                            connectionless=True,
+                        )
+                    )
+                    proof_request = await faber_agent.agent.admin_POST(
+                        "/present-proof/create-request", proof_request_web_request
+                    )
+                    pres_req_id = proof_request["presentation_exchange_id"]
+                    url = (
+                        faber_agent.agent.webhook_url + "/pres_req/" + pres_req_id + "/"
+                    )
+                    # TODO handle connectionless PR
+                    qr = QRCode(border=1)
+                    qr.add_data(url)
+                    log_msg(
+                        "Use the following JSON to accept the proof request from another demo agent."
+                    )
+                    qr.print_ascii(invert=True)
+
                 elif faber_agent.aip == 20:
                     if faber_agent.cred_type == CRED_FORMAT_INDY:
-                        pass
+                        proof_request_web_request = (
+                            faber_agent.agent.generate_proof_request_web_request(
+                                faber_agent.aip,
+                                faber_agent.cred_type,
+                                faber_agent.revocation,
+                                exchange_tracing,
+                                connectionless=True,
+                            )
+                        )
                     elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
-                        pass
+                        proof_request_web_request = (
+                            faber_agent.agent.generate_proof_request_web_request(
+                                faber_agent.aip,
+                                faber_agent.cred_type,
+                                faber_agent.revocation,
+                                exchange_tracing,
+                                connectionless=True,
+                            )
+                        )
                     else:
                         raise Exception(
                             "Error invalid credential type:" + faber_agent.cred_type
                         )
+
+                    proof_request = await faber_agent.agent.admin_POST(
+                        "/present-proof-2.0/create-request", proof_request_web_request
+                    )
+                    pres_req_id = proof_request["pres_ex_id"]
+                    url = (
+                        faber_agent.agent.webhook_url + "/pres_req/" + pres_req_id + "/"
+                    )
+                    # TODO handle connectionless PR
+                    qr = QRCode(border=1)
+                    qr.add_data(url)
+                    log_msg(
+                        "Use the following JSON to accept the proof request from another demo agent."
+                    )
+                    qr.print_ascii(invert=True)
                 else:
                     raise Exception(f"Error invalid AIP level: {faber_agent.aip}")
 

@@ -8,6 +8,7 @@ import random
 import subprocess
 import sys
 from timeit import default_timer
+import base64
 
 from aiohttp import (
     web,
@@ -599,7 +600,16 @@ class DemoAgent:
                 f"http://{self.external_host}:{str(webhook_port)}/webhooks"
             )
         app = web.Application()
-        app.add_routes([web.post("/webhooks/topic/{topic}/", self._receive_webhook)])
+        app.add_routes(
+            [
+                web.post("/webhooks/topic/{topic}/", self._receive_webhook),
+                # route for fetching proof request for connectionless requests
+                web.get(
+                    "/webhooks/pres_req/{pres_req_id}/",
+                    self._send_connectionless_proof_req,
+                ),
+            ]
+        )
         runner = web.AppRunner(app)
         await runner.setup()
         self.webhook_site = web.TCPSite(runner, "0.0.0.0", webhook_port)
@@ -610,6 +620,36 @@ class DemoAgent:
         payload = await request.json()
         await self.handle_webhook(topic, payload, request.headers)
         return web.Response(status=200)
+
+    async def service_decorator(self):
+        # add a service decorator
+        did_url = "/wallet/did/public"
+        agent_public_did = await self.admin_GET(did_url)
+        endpoint_url = (
+            "/wallet/get-did-endpoint" + "?did=" + agent_public_did["result"]["did"]
+        )
+        agent_endpoint = await self.admin_GET(endpoint_url)
+        decorator = {
+            "recipientKeys": [agent_public_did["result"]["verkey"]],
+            # "routingKeys": [agent_public_did["result"]["verkey"]],
+            "serviceEndpoint": agent_endpoint["endpoint"],
+        }
+        return decorator
+
+    async def _send_connectionless_proof_req(self, request: ClientRequest):
+        pres_req_id = request.match_info["pres_req_id"]
+        url = "/present-proof/records/" + pres_req_id
+        proof_exch = await self.admin_GET(url)
+        if not proof_exch:
+            return web.Response(status=404)
+        proof_reg_txn = proof_exch["presentation_request_dict"]
+        proof_reg_txn["~service"] = await self.service_decorator()
+        objJsonStr = json.dumps(proof_reg_txn)
+        objJsonB64 = base64.b64encode(objJsonStr.encode("ascii"))
+        service_url = self.webhook_url
+        redirect_url = service_url + "/?m=" + objJsonB64.decode("ascii")
+        print("Redirecting to:", redirect_url)
+        raise web.HTTPFound(redirect_url)
 
     async def handle_webhook(self, topic: str, payload, headers: dict):
         if topic != "webhook":  # would recurse
