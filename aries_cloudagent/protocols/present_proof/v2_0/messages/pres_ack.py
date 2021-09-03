@@ -2,14 +2,14 @@
 
 from marshmallow import EXCLUDE
 
-from .....messaging.ack.message import Ack, AckSchema
+from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
 
 from ..message_types import PRES_20_ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.pres_ack_handler.V20PresAckHandler"
 
 
-class V20PresAck(Ack):
+class V20PresAck(V10Ack):
     """Base class representing an explicit ack message for present-proof protocol."""
 
     class Meta:
@@ -30,7 +30,7 @@ class V20PresAck(Ack):
         super().__init__(status, **kwargs)
 
 
-class V20PresAckSchema(AckSchema):
+class V20PresAckSchema(V10AckSchema):
     """Schema for V20PresAck class."""
 
     class Meta:
