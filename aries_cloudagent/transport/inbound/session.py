@@ -1,5 +1,6 @@
 """Inbound connection handling classes."""
 
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import asyncio
 import logging
 from typing import Callable, Sequence, Union
@@ -7,7 +8,6 @@ from typing import Callable, Sequence, Union
 from ...admin.server import AdminResponder
 from ...core.profile import Profile
 from ...messaging.responder import BaseResponder
-from ...multitenant.manager import MultitenantManager
 
 from ..error import WireFormatError
 from ..outbound.message import OutboundMessage
@@ -159,7 +159,7 @@ class InboundSession:
 
     async def handle_relay_context(self, payload_enc: Union[str, bytes]):
         """Update the session profile based on the recipients of an incoming message."""
-        multitenant_mgr = self.profile.context.inject(MultitenantManager)
+        multitenant_mgr = self.profile.context.inject(BaseMultitenantManager)
 
         try:
             [wallet] = await multitenant_mgr.get_wallets_by_message(

@@ -21,7 +21,7 @@ from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
 from ...resolver.did_resolver import DIDResolver, DIDResolverRegistry
-from ...multitenant.manager import MultitenantManager
+from ...multitenant.base import BaseMultitenantManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.base import OutboundDeliveryError
@@ -934,8 +934,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         ) as mock_logger:
 
             await conductor.setup()
-
-            multitenant_mgr = conductor.context.inject(MultitenantManager)
+            multitenant_mgr = conductor.context.inject(BaseMultitenantManager)
 
             multitenant_mgr._instances = {
                 "test1": async_mock.MagicMock(close=async_mock.CoroutineMock()),

@@ -7,6 +7,7 @@ from os import environ
 
 import deepmerge
 import yaml
+import json
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 from typing import Type
 
@@ -1311,6 +1312,17 @@ class WalletGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--wallet-key-derivation-method",
+            type=str,
+            metavar="<key-derivation-method>",
+            env_var="ACAPY_WALLET_KEY_DERIVATION_METHOD",
+            help=(
+                "Specifies the key derivation method used for wallet encryption."
+                "If RAW key derivation method is used, also --wallet-key parameter"
+                " is expected."
+            ),
+        )
+        parser.add_argument(
             "--wallet-storage-creds",
             type=str,
             metavar="<storage-creds>",
@@ -1363,6 +1375,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.storage_type"] = args.wallet_storage_type
         if args.wallet_type:
             settings["wallet.type"] = args.wallet_type
+        if args.wallet_key_derivation_method:
+            settings["wallet.key_derivation_method"] = args.wallet_key_derivation_method
         if args.wallet_storage_config:
             settings["wallet.storage_config"] = args.wallet_storage_config
         if args.wallet_storage_creds:
@@ -1423,6 +1437,18 @@ class MultitenantGroup(ArgumentGroup):
             env_var="ACAPY_MULTITENANT_ADMIN",
             help="Specify whether to enable the multitenant admin api.",
         )
+        parser.add_argument(
+            "--multitenancy-config",
+            type=str,
+            metavar="<multitenancy-config>",
+            env_var="ACAPY_MULTITENANCY_CONFIGURATION",
+            help=(
+                'Specify multitenancy configuration ("wallet_type" and "wallet_name"). '
+                'For example: "{"wallet_type":"askar-profile","wallet_name":'
+                '"askar-profile-name"}"'
+                '"wallet_name" is only used when "wallet_type" is "askar-profile"'
+            ),
+        )
 
     def get_settings(self, args: Namespace):
         """Extract multitenant settings."""
@@ -1439,4 +1465,18 @@ class MultitenantGroup(ArgumentGroup):
 
             if args.multitenant_admin:
                 settings["multitenant.admin_enabled"] = True
+
+            if args.multitenancy_config:
+                multitenancyConfig = json.loads(args.multitenancy_config)
+
+                if multitenancyConfig.get("wallet_type"):
+                    settings["multitenant.wallet_type"] = multitenancyConfig.get(
+                        "wallet_type"
+                    )
+
+                if multitenancyConfig.get("wallet_name"):
+                    settings["multitenant.wallet_name"] = multitenancyConfig.get(
+                        "wallet_name"
+                    )
+
         return settings
