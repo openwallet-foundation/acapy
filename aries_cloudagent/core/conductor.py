@@ -22,7 +22,8 @@ from ..config.wallet import wallet_config
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
-from ..multitenant.manager import MultitenantManager
+from ..multitenant.base import BaseMultitenantManager
+from ..multitenant.manager_provider import MultitenantManagerProvider
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
     ConnectionManagerError,
@@ -126,8 +127,9 @@ class Conductor:
 
         # Bind manager for multitenancy related tasks
         if context.settings.get("multitenant.enabled"):
-            multitenant_mgr = MultitenantManager(self.root_profile)
-            context.injector.bind_instance(MultitenantManager, multitenant_mgr)
+            context.injector.bind_provider(
+                BaseMultitenantManager, MultitenantManagerProvider(self.root_profile)
+            )
 
         # Bind default PyLD document loader
         context.injector.bind_instance(
@@ -350,7 +352,7 @@ class Conductor:
             shutdown.run(self.outbound_transport_manager.stop())
 
         # close multitenant profiles
-        multitenant_mgr = self.context.inject_or(MultitenantManager)
+        multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             for profile in multitenant_mgr._instances.values():
                 shutdown.run(profile.close())

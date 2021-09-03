@@ -1,5 +1,6 @@
 """Wallet admin routes."""
 
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -23,7 +24,6 @@ from ..messaging.valid import (
     ENDPOINT_TYPE,
     INDY_RAW_PUBLIC_KEY,
 )
-from ..multitenant.manager import MultitenantManager
 from .key_type import KeyType
 from .did_method import DIDMethod
 from .base import BaseWallet
@@ -385,7 +385,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     # Multitenancy setup
-    multitenant_mgr = session.inject_or(MultitenantManager)
+    multitenant_mgr = session.inject_or(BaseMultitenantManager)
     wallet_id = session.settings.get("wallet.id")
 
     try:

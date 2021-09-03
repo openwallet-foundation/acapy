@@ -1,3 +1,4 @@
+from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import asyncio
 import pytest
 
@@ -120,7 +121,7 @@ class TestInboundSession(TestCase):
             return_value=self.profile
         )
         self.profile.context.injector.bind_instance(
-            MultitenantManager, self.multitenant_mgr
+            BaseMultitenantManager, self.multitenant_mgr
         )
         self.profile.context.update_settings({"multitenant.enabled": True})
         self.base_responder = async_mock.MagicMock(AdminResponder, autospec=True)
@@ -153,7 +154,7 @@ class TestInboundSession(TestCase):
             return_value=self.profile
         )
         self.profile.context.injector.bind_instance(
-            MultitenantManager, self.multitenant_mgr
+            BaseMultitenantManager, self.multitenant_mgr
         )
         self.profile.context.update_settings({"multitenant.enabled": True})
 

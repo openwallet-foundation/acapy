@@ -167,6 +167,48 @@ class TestArgParse(AsyncTestCase):
         )
         # no asserts, just testing that the parser doesn't fail
 
+    async def test_multitenancy_settings(self):
+        """Test required argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.MultitenantGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--multitenant",
+                "--jwt-secret",
+                "secret",
+                "--multitenancy-config",
+                '{"wallet_type":"askar","wallet_name":"test"}',
+            ]
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("multitenant.enabled") == True
+        assert settings.get("multitenant.jwt_secret") == "secret"
+        assert settings.get("multitenant.wallet_type") == "askar"
+        assert settings.get("multitenant.wallet_name") == "test"
+
+    async def test_error_raised_when_multitenancy_used_and_no_jwt_provided(self):
+        """Test that error is raised if no jwt_secret is provided with multitenancy."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.MultitenantGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--multitenant",
+                "--multitenancy-config",
+                '{"wallet_type":"askar","wallet_name":"test"}',
+            ]
+        )
+
+        with self.assertRaises(argparse.ArgsParseError):
+            settings = group.get_settings(result)
+
     def test_bytesize(self):
         bs = ByteSize()
         with self.assertRaises(ArgumentTypeError):
@@ -260,3 +302,37 @@ class TestArgParse(AsyncTestCase):
         assert settings["plugin_config"]["x"]["y"]["z"] == "value"
         assert settings["plugin_config"]["a_dict"] == {"key": "value"}
         assert settings["plugin_config"]["a_list"] == ["one", "two"]
+
+    async def test_wallet_key_derivation_method_value_parsing(self):
+        key_derivation_method = "key_derivation_method"
+        parser = argparse.create_argument_parser()
+        group = argparse.WalletGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--wallet-key-derivation-method",
+                key_derivation_method,
+            ]
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("wallet.key_derivation_method") == key_derivation_method
+
+    async def test_wallet_key_value_parsing(self):
+        key_value = "some_key_value"
+        parser = argparse.create_argument_parser()
+        group = argparse.WalletGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--wallet-key",
+                key_value,
+            ]
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("wallet.key") == key_value
