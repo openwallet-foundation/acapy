@@ -1,6 +1,5 @@
 """Inbound connection handling classes."""
 
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 import asyncio
 import logging
 from typing import Callable, Sequence, Union
@@ -8,6 +7,7 @@ from typing import Callable, Sequence, Union
 from ...admin.server import AdminResponder
 from ...core.profile import Profile
 from ...messaging.responder import BaseResponder
+from ...multitenant.base import BaseMultitenantManager
 
 from ..error import WireFormatError
 from ..outbound.message import OutboundMessage

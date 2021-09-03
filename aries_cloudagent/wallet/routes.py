@@ -1,6 +1,5 @@
 """Wallet admin routes."""
 
-from aries_cloudagent.multitenant.base import BaseMultitenantManager
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -24,12 +23,14 @@ from ..messaging.valid import (
     ENDPOINT_TYPE,
     INDY_RAW_PUBLIC_KEY,
 )
-from .key_type import KeyType
-from .did_method import DIDMethod
+from ..multitenant.base import BaseMultitenantManager
+
 from .base import BaseWallet
 from .did_info import DIDInfo
 from .did_posture import DIDPosture
+from .did_method import DIDMethod
 from .error import WalletError, WalletNotFoundError
+from .key_type import KeyType
 
 
 class WalletModuleResponseSchema(OpenAPISchema):
