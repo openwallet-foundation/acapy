@@ -31,8 +31,10 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
+from ..protocols.coordinate_mediation.mediation_invite_store import MediationInviteStore
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
+from ..storage.base import BaseStorage
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -315,26 +317,41 @@ class Conductor:
                 )
 
                 async with self.root_profile.session() as session:
-                    mgr = (
-                        ConnectionManager(session)
-                        if mediation_connections_invite
-                        else OutOfBandManager(session)
+                    invite_store = MediationInviteStore(
+                        session.context.inject(BaseStorage)
+                    )
+                    default_invite_record = (
+                        await invite_store.retrieve_and_update_mediation_record(
+                            mediation_invitation
+                        )
                     )
 
-                    conn_record = await mgr.receive_invitation(
-                        invitation=invitation_handler.from_url(mediation_invitation),
-                        auto_accept=True,
-                    )
+                    if not default_invite_record.used:
+                        mgr = (
+                            ConnectionManager(session)
+                            if mediation_connections_invite
+                            else OutOfBandManager(session)
+                        )
 
-                    await conn_record.metadata_set(
-                        session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
-                    )
-                    await conn_record.metadata_set(
-                        session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
-                    )
-                    print("Attempting to connect to mediator...")
-                    del mgr
-            except Exception:
+                        conn_record = await mgr.receive_invitation(
+                            invitation=invitation_handler.from_url(
+                                default_invite_record.invite
+                            ),
+                            auto_accept=True,
+                        )
+                        await invite_store.mark_default_invite_as_used()
+
+                        await conn_record.metadata_set(
+                            session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
+                        )
+                        await conn_record.metadata_set(
+                            session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
+                        )
+
+                        print("Attempting to connect to mediator...")
+                        del mgr
+            except Exception as e:
+                print(e)
                 LOGGER.exception("Error accepting mediation invitation")
 
     async def stop(self, timeout=1.0):
