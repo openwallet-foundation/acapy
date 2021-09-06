@@ -10,6 +10,11 @@ from ..config.base import BaseError
 from ..config.ledger import get_genesis_transactions, ledger_config
 from ..config.util import common_config
 from ..config.wallet import wallet_config
+from ..protocols.coordinate_mediation.mediation_invite_store import (
+    MediationInviteStore,
+    MediationInviteRecord,
+)
+from ..storage.base import BaseStorage
 
 from . import PROG
 
@@ -34,6 +39,14 @@ async def provision(settings: dict):
         await get_genesis_transactions(context.settings)
 
         root_profile, public_did = await wallet_config(context, provision=True)
+
+        # store mediator invite url if provided
+        mediation_invite = settings.get("mediation.invite", None)
+        if mediation_invite:
+            async with root_profile.session() as session:
+                await MediationInviteStore(session.context.inject(BaseStorage)).store(
+                    MediationInviteRecord.unused(mediation_invite)
+                )
 
         if await ledger_config(root_profile, public_did and public_did.did, True):
             print("Ledger configured")
