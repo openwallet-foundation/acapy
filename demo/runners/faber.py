@@ -568,10 +568,10 @@ async def main(args):
                     )
                     pres_req_id = proof_request["presentation_exchange_id"]
                     url = (
-                        "https://"
-                        + os.getenv("DOCKERHOST")
-                        + ":"
-                        + str(faber_agent.agent.admin_port + 1)
+                        "http://"
+                        + os.getenv("DOCKERHOST").replace(
+                            "{PORT}", str(faber_agent.agent.admin_port + 1)
+                        )
                         + "/webhooks/pres_req/"
                         + pres_req_id
                         + "/"
