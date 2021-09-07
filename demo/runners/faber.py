@@ -568,7 +568,13 @@ async def main(args):
                     )
                     pres_req_id = proof_request["presentation_exchange_id"]
                     url = (
-                        faber_agent.agent.webhook_url + "/pres_req/" + pres_req_id + "/"
+                        "https://"
+                        + os.getenv("DOCKERHOST")
+                        + ":"
+                        + str(faber_agent.agent.admin_port + 1)
+                        + "/webhooks/pres_req/"
+                        + pres_req_id
+                        + "/"
                     )
                     log_msg(f"Proof request url: {url}")
                     qr = QRCode(border=1)
