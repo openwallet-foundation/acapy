@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import time
+import datetime
 
 from aiohttp import ClientError
 from qrcode import QRCode
@@ -69,13 +70,17 @@ class FaberAgent(AriesAgent):
         return self._connection_ready.done() and self._connection_ready.result()
 
     def generate_credential_offer(self, aip, cred_type, cred_def_id, exchange_tracing):
+        age = 24
+        d = datetime.date.today()
+        birth_date = datetime.date(d.year - age, d.month, d.day)
+        birth_date_format = "%Y%m%d"
         if aip == 10:
             # define attributes to send for credential
             self.cred_attrs[cred_def_id] = {
                 "name": "Alice Smith",
                 "date": "2018-05-28",
                 "degree": "Maths",
-                "age": "24",
+                "birthdate_dateint": birth_date.strftime(birth_date_format),
                 "timestamp": str(int(time.time())),
             }
 
@@ -102,7 +107,7 @@ class FaberAgent(AriesAgent):
                     "name": "Alice Smith",
                     "date": "2018-05-28",
                     "degree": "Maths",
-                    "age": "24",
+                    "birthdate_dateint": birth_date.strftime(birth_date_format),
                     "timestamp": str(int(time.time())),
                 }
 
@@ -164,6 +169,10 @@ class FaberAgent(AriesAgent):
     def generate_proof_request_web_request(
         self, aip, cred_type, revocation, exchange_tracing, connectionless=False
     ):
+        age = 18
+        d = datetime.date.today()
+        birth_date = datetime.date(d.year - age, d.month, d.day)
+        birth_date_format = "%Y%m%d"
         if aip == 10:
             req_attrs = [
                 {
@@ -198,9 +207,9 @@ class FaberAgent(AriesAgent):
             req_preds = [
                 # test zero-knowledge proofs
                 {
-                    "name": "age",
-                    "p_type": ">=",
-                    "p_value": 18,
+                    "name": "birthdate_dateint",
+                    "p_type": "<=",
+                    "p_value": int(birth_date.strftime(birth_date_format)),
                     "restrictions": [{"schema_name": "degree schema"}],
                 }
             ]
@@ -261,9 +270,9 @@ class FaberAgent(AriesAgent):
                 req_preds = [
                     # test zero-knowledge proofs
                     {
-                        "name": "age",
-                        "p_type": ">=",
-                        "p_value": 18,
+                        "name": "birthdate_dateint",
+                        "p_type": "<=",
+                        "p_value": int(birth_date.strftime(birth_date_format)),
                         "restrictions": [{"schema_name": "degree schema"}],
                     }
                 ]
@@ -387,7 +396,13 @@ async def main(args):
         if faber_agent.cred_type == CRED_FORMAT_INDY:
             faber_agent.public_did = True
             faber_schema_name = "degree schema"
-            faber_schema_attrs = ["name", "date", "degree", "age", "timestamp"]
+            faber_schema_attrs = [
+                "name",
+                "date",
+                "degree",
+                "birthdate_dateint",
+                "timestamp",
+            ]
             await faber_agent.initialize(
                 the_agent=agent,
                 schema_name=faber_schema_name,
