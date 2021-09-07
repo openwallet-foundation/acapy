@@ -142,7 +142,6 @@ class FaberAgent(AriesAgent):
                                 "issuanceDate": "2020-01-01T12:00:00Z",
                                 "credentialSubject": {
                                     "type": ["PermanentResident"],
-                                    # "id": "<TODO need did:key of holder>",
                                     "givenName": "ALICE",
                                     "familyName": "SMITH",
                                     "gender": "Female",
@@ -580,7 +579,7 @@ async def main(args):
                     qr = QRCode(border=1)
                     qr.add_data(url)
                     log_msg(
-                        "Use the following JSON to accept the proof request from another demo agent."
+                        "Scan the following QR code to accept the proof request from a mobile agent."
                     )
                     qr.print_ascii(invert=True)
 
@@ -615,13 +614,19 @@ async def main(args):
                     )
                     pres_req_id = proof_request["pres_ex_id"]
                     url = (
-                        faber_agent.agent.webhook_url + "/pres_req/" + pres_req_id + "/"
+                        "http://"
+                        + os.getenv("DOCKERHOST").replace(
+                            "{PORT}", str(faber_agent.agent.admin_port + 1)
+                        )
+                        + "/webhooks/pres_req/"
+                        + pres_req_id
+                        + "/"
                     )
                     log_msg(f"Proof request url: {url}")
                     qr = QRCode(border=1)
                     qr.add_data(url)
                     log_msg(
-                        "Use the following JSON to accept the proof request from another demo agent."
+                        "Scan the following QR code to accept the proof request from a mobile agent."
                     )
                     qr.print_ascii(invert=True)
                 else:
