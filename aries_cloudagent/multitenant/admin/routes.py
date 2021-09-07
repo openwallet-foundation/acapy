@@ -1,6 +1,5 @@
 """Multitenant admin routes."""
 
-from marshmallow import fields, validate, validates_schema, ValidationError
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
@@ -9,17 +8,20 @@ from aiohttp_apispec import (
     response_schema,
     querystring_schema,
 )
+from marshmallow import fields, validate, validates_schema, ValidationError
 
 from ...admin.request_context import AdminRequestContext
 from ...messaging.valid import JSONWebToken, UUIDFour
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
+from ...multitenant.base import BaseMultitenantManager
 from ...storage.error import StorageError, StorageNotFoundError
 from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ...wallet.error import WalletSettingsError
+
 from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
-from ..manager import MultitenantManager
+
 from ..error import WalletKeyMissingError
 
 
@@ -306,7 +308,7 @@ async def wallet_create(request: web.BaseRequest):
 
     async with context.session() as session:
         try:
-            multitenant_mgr = session.inject(MultitenantManager)
+            multitenant_mgr = session.inject(BaseMultitenantManager)
 
             wallet_record = await multitenant_mgr.create_wallet(
                 settings, key_management_mode
@@ -368,7 +370,7 @@ async def wallet_update(request: web.BaseRequest):
 
     async with context.session() as session:
         try:
-            multitenant_mgr = session.inject(MultitenantManager)
+            multitenant_mgr = session.inject(BaseMultitenantManager)
             wallet_record = await multitenant_mgr.update_wallet(wallet_id, settings)
             result = format_wallet_record(wallet_record)
         except StorageNotFoundError as err:
@@ -400,7 +402,7 @@ async def wallet_create_token(request: web.BaseRequest):
 
     async with context.session() as session:
         try:
-            multitenant_mgr = session.inject(MultitenantManager)
+            multitenant_mgr = session.inject(BaseMultitenantManager)
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
             if (not wallet_record.requires_external_key) and wallet_key:
@@ -444,7 +446,7 @@ async def wallet_remove(request: web.BaseRequest):
 
     async with context.session() as session:
         try:
-            multitenant_mgr = session.inject(MultitenantManager)
+            multitenant_mgr = session.inject(BaseMultitenantManager)
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
             if (not wallet_record.requires_external_key) and wallet_key:

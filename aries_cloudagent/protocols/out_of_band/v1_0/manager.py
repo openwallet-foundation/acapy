@@ -16,7 +16,7 @@ from ....indy.holder import IndyHolder
 from ....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....multitenant.manager import MultitenantManager
+from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -139,7 +139,7 @@ class OutOfBandManager(BaseConnectionManager):
         wallet = self._session.inject(BaseWallet)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject_or(MultitenantManager)
+        multitenant_mgr = self._session.inject_or(BaseMultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
 
         accept = bool(
@@ -363,17 +363,17 @@ class OutOfBandManager(BaseConnectionManager):
 
     async def receive_invitation(
         self,
-        invi_msg: InvitationMessage,
+        invitation: InvitationMessage,
         use_existing_connection: bool = True,
         auto_accept: bool = None,
         alias: str = None,
         mediation_id: str = None,
-    ) -> dict:
+    ) -> ConnRecord:
         """
         Receive an out of band invitation message.
 
         Args:
-            invi_msg: invitation message
+            invitation: invitation message
             use_existing_connection: whether to use existing connection if possible
             auto_accept: whether to accept the invitation automatically
             alias: Alias for connection record
@@ -390,15 +390,15 @@ class OutOfBandManager(BaseConnectionManager):
                 mediation_id = None
 
         # There must be exactly 1 service entry
-        if len(invi_msg.services) != 1:
+        if len(invitation.services) != 1:
             raise OutOfBandManagerError("service array must have exactly one element")
 
-        if not (invi_msg.requests_attach or invi_msg.handshake_protocols):
+        if not (invitation.requests_attach or invitation.handshake_protocols):
             raise OutOfBandManagerError(
                 "Invitation must specify handshake_protocols, requests_attach, or both"
             )
         # Get the single service item
-        oob_service_item = invi_msg.services[0]
+        oob_service_item = invitation.services[0]
         if isinstance(oob_service_item, ServiceMessage):
             service = oob_service_item
             public_did = None
@@ -437,7 +437,7 @@ class OutOfBandManager(BaseConnectionManager):
             for hsp in dict.fromkeys(
                 [
                     DIDCommPrefix.unqualify(proto)
-                    for proto in invi_msg.handshake_protocols
+                    for proto in invitation.handshake_protocols
                 ]
             )
         ]
@@ -454,7 +454,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
         if conn_rec is not None:
             num_included_protocols = len(unq_handshake_protos)
-            num_included_req_attachments = len(invi_msg.requests_attach)
+            num_included_req_attachments = len(invitation.requests_attach)
             # With handshake protocol, request attachment; use existing connection
             if (
                 num_included_protocols >= 1
@@ -462,7 +462,7 @@ class OutOfBandManager(BaseConnectionManager):
                 and use_existing_connection
             ):
                 await self.create_handshake_reuse_message(
-                    invi_msg=invi_msg,
+                    invi_msg=invitation,
                     conn_record=conn_rec,
                 )
                 try:
@@ -526,7 +526,7 @@ class OutOfBandManager(BaseConnectionManager):
                 if proto is HSProto.RFC23:
                     didx_mgr = DIDXManager(self._session)
                     conn_rec = await didx_mgr.receive_invitation(
-                        invitation=invi_msg,
+                        invitation=invitation,
                         their_public_did=public_did,
                         auto_accept=auto_accept,
                         alias=alias,
@@ -543,9 +543,9 @@ class OutOfBandManager(BaseConnectionManager):
                     ] or []
                     connection_invitation = ConnectionInvitation.deserialize(
                         {
-                            "@id": invi_msg._id,
+                            "@id": invitation._id,
                             "@type": DIDCommPrefix.qualify_current(proto.name),
-                            "label": invi_msg.label,
+                            "label": invitation.label,
                             "recipientKeys": service.recipient_keys,
                             "serviceEndpoint": service.service_endpoint,
                             "routingKeys": service.routing_keys,
@@ -563,8 +563,8 @@ class OutOfBandManager(BaseConnectionManager):
                     break
 
         # Request Attach
-        if len(invi_msg.requests_attach) >= 1 and conn_rec is not None:
-            req_attach = invi_msg.requests_attach[0]
+        if len(invitation.requests_attach) >= 1 and conn_rec is not None:
+            req_attach = invitation.requests_attach[0]
             if isinstance(req_attach, AttachDecorator):
                 if req_attach.data is not None:
                     unq_req_attach_type = DIDCommPrefix.unqualify(
@@ -575,14 +575,14 @@ class OutOfBandManager(BaseConnectionManager):
                             req_attach=req_attach,
                             service=service,
                             conn_rec=conn_rec,
-                            trace=(invi_msg._trace is not None),
+                            trace=(invitation._trace is not None),
                         )
                     elif unq_req_attach_type == PRES_20_REQUEST:
                         await self._process_pres_request_v2(
                             req_attach=req_attach,
                             service=service,
                             conn_rec=conn_rec,
-                            trace=(invi_msg._trace is not None),
+                            trace=(invitation._trace is not None),
                         )
                     elif unq_req_attach_type == CREDENTIAL_OFFER:
                         if auto_accept or self._session.settings.get(
@@ -597,12 +597,12 @@ class OutOfBandManager(BaseConnectionManager):
                                 LOGGER.warning(
                                     "Connection not ready to receive credential, "
                                     f"For connection_id:{conn_rec.connection_id} and "
-                                    f"invitation_msg_id {invi_msg._id}",
+                                    f"invitation_msg_id {invitation._id}",
                                 )
                         await self._process_cred_offer_v1(
                             req_attach=req_attach,
                             conn_rec=conn_rec,
-                            trace=(invi_msg._trace is not None),
+                            trace=(invitation._trace is not None),
                         )
                     elif unq_req_attach_type == CRED_20_OFFER:
                         if auto_accept or self._session.settings.get(
@@ -617,12 +617,12 @@ class OutOfBandManager(BaseConnectionManager):
                                 LOGGER.warning(
                                     "Connection not ready to receive credential, "
                                     f"For connection_id:{conn_rec.connection_id} and "
-                                    f"invitation_msg_id {invi_msg._id}",
+                                    f"invitation_msg_id {invitation._id}",
                                 )
                         await self._process_cred_offer_v2(
                             req_attach=req_attach,
                             conn_rec=conn_rec,
-                            trace=(invi_msg._trace is not None),
+                            trace=(invitation._trace is not None),
                         )
                     else:
                         raise OutOfBandManagerError(
@@ -636,7 +636,7 @@ class OutOfBandManager(BaseConnectionManager):
             else:
                 raise OutOfBandManagerError("requests~attach is not properly formatted")
 
-        return conn_rec.serialize()
+        return conn_rec
 
     async def _process_pres_request_v1(
         self,

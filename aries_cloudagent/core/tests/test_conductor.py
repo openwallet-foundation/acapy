@@ -21,7 +21,7 @@ from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
 from ...resolver.did_resolver import DIDResolver, DIDResolverRegistry
-from ...multitenant.manager import MultitenantManager
+from ...multitenant.base import BaseMultitenantManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.base import OutboundDeliveryError
@@ -775,7 +775,6 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         )
         conn_record.accept = ConnRecord.ACCEPT_MANUAL
         await conn_record.save(await conductor.root_profile.session())
-        conn_record_dict = conn_record.serialize()
         with async_mock.patch.object(
             test_module.InvitationMessage, "from_url"
         ) as mock_from_url, async_mock.patch.object(
@@ -784,7 +783,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     receive_invitation=async_mock.CoroutineMock(
-                        return_value=conn_record_dict
+                        return_value=conn_record
                     )
                 )
             ),
@@ -935,8 +934,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         ) as mock_logger:
 
             await conductor.setup()
-
-            multitenant_mgr = conductor.context.inject(MultitenantManager)
+            multitenant_mgr = conductor.context.inject(BaseMultitenantManager)
 
             multitenant_mgr._instances = {
                 "test1": async_mock.MagicMock(close=async_mock.CoroutineMock()),

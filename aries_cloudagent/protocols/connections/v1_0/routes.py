@@ -155,7 +155,7 @@ class ConnectionStaticResultSchema(OpenAPISchema):
     """Result schema for new static connection."""
 
     my_did = fields.Str(description="Local DID", required=True, **INDY_DID)
-    mv_verkey = fields.Str(
+    my_verkey = fields.Str(
         description="My verification key", required=True, **INDY_RAW_PUBLIC_KEY
     )
     my_endpoint = fields.Str(description="My URL endpoint", required=True, **ENDPOINT)
