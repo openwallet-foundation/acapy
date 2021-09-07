@@ -502,8 +502,8 @@ Finally, we need put into the JSON the data values for the `credential_preview` 
         "value": "Maths"
       },
       {
-        "name": "age",
-        "value": "24"
+        "name": "birthdate_dateint",
+        "value": "19640101"
       }
 ```
 
@@ -640,9 +640,9 @@ From the Faber browser tab, get ready to execute the **`POST /present-proof/send
       },
       "requested_predicates": {
         "0_age_GE_uuid": {
-          "name": "age",
-          "p_type": ">=",
-          "p_value": 18,
+          "name": "birthdate_dateint",
+          "p_type": "<=",
+          "p_value": 20030101,
           "restrictions": [
             {
               "cred_def_id": "SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema"
