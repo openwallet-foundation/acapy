@@ -325,7 +325,7 @@ class IndyCredxIssuer(IndyIssuer):
                     state=IssuerCredRevRecord.STATE_ISSUED,
                     cred_ex_id=cred_ex_id,
                     rev_reg_id=revoc_reg_id,
-                    cred_rev_id=rev_reg_index,
+                    cred_rev_id=str(rev_reg_index),
                 )
                 await issuer_cr_rec.save(
                     txn,
