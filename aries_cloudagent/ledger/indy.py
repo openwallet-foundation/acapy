@@ -1026,7 +1026,7 @@ class IndySdkLedger(BaseLedger):
         txn_data_data = txn_resp_data["txn"]["data"]
         role_token = Role.get(txn_data_data.get("role")).token()
         alias = txn_data_data.get("alias")
-        await self.register_nym(public_did, verkey, role_token, alias)
+        await self.register_nym(public_did, verkey, alias=alias, role=role_token)
 
         # update wallet
         await self.wallet.rotate_did_keypair_apply(public_did)
