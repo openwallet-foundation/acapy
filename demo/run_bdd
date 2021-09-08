@@ -206,7 +206,7 @@ if ! [ -z "$TAILS_NETWORK" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e TAILS_NETWORK=${TAILS_NETWORK}"
   DOCKER_ENV="${DOCKER_ENV} -e TAILS_NGROK_NAME=ngrok-tails-server"
 fi
-# e.g. PUBLIC_TAILS_URL=https://tails.vonx.io
+# e.g. PUBLIC_TAILS_URL=https://tails-test.vonx.io
 if ! [ -z "$PUBLIC_TAILS_URL" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e PUBLIC_TAILS_URL=${PUBLIC_TAILS_URL}"
 fi
