@@ -130,7 +130,7 @@ class DemoAgent:
         revocation: bool = False,
         multitenant: bool = False,
         mediation: bool = False,
-        aip: int = 10,
+        aip: int = 20,
         arg_file: str = None,
         extra_args=None,
         **params,
@@ -275,6 +275,8 @@ class DemoAgent:
             "--preserve-exchange-records",
             "--auto-provision",
         ]
+        if self.aip == 20:
+            result.append("--emit-new-didcomm-prefix")
         if self.multitenant:
             result.extend(
                 [

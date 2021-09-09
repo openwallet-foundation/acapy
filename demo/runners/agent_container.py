@@ -53,6 +53,7 @@ class AriesAgent(DemoAgent):
         prefix: str = "Aries",
         no_auto: bool = False,
         seed: str = None,
+        aip: int = 20,
         **kwargs,
     ):
         super().__init__(
@@ -61,6 +62,7 @@ class AriesAgent(DemoAgent):
             admin_port,
             prefix=prefix,
             seed=seed,
+            aip=aip,
             extra_args=(
                 []
                 if no_auto
@@ -973,13 +975,13 @@ def arg_parser(ident: str = None, port: int = 8020):
             metavar=("<cred-type>"),
             help="Credential type (indy, json-ld)",
         )
-        parser.add_argument(
-            "--aip",
-            type=str,
-            default=20,
-            metavar=("<api>"),
-            help="API level (10 or 20 (default))",
-        )
+    parser.add_argument(
+        "--aip",
+        type=str,
+        default=20,
+        metavar=("<api>"),
+        help="API level (10 or 20 (default))",
+    )
     parser.add_argument(
         "--timing", action="store_true", help="Enable timing information"
     )
@@ -1085,7 +1087,7 @@ async def create_agent_with_args(args, ident: str = None):
         multitenant=args.multitenant,
         mediation=args.mediation,
         cred_type=cred_type,
-        use_did_exchange=args.did_exchange if "did_exchange" in args else False,
+        use_did_exchange=args.did_exchange if ("did_exchange" in args) else (aip == 20),
         wallet_type=arg_file_dict.get("wallet-type") or args.wallet_type,
         public_did=public_did,
         seed="random" if public_did else None,
@@ -1145,6 +1147,7 @@ async def test_main(
             wallet_type=wallet_type,
             public_did=False,
             seed=None,
+            aip=aip,
         )
 
         # start the agents - faber gets a public DID and schema/cred def

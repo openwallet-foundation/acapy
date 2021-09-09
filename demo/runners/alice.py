@@ -34,6 +34,7 @@ class AliceAgent(AriesAgent):
         http_port: int,
         admin_port: int,
         no_auto: bool = False,
+        aip: int = 20,
         **kwargs,
     ):
         super().__init__(
@@ -43,6 +44,7 @@ class AliceAgent(AriesAgent):
             prefix="Alice",
             no_auto=no_auto,
             seed=None,
+            aip=aip,
             **kwargs,
         )
         self.connection_id = None
@@ -137,6 +139,7 @@ async def main(args):
             multitenant=alice_agent.multitenant,
             mediation=alice_agent.mediation,
             wallet_type=alice_agent.wallet_type,
+            aip=alice_agent.aip,
         )
 
         await alice_agent.initialize(the_agent=agent)
