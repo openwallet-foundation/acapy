@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import Awaitable, Callable
 
+from ...core.profile import Profile
 from ..error import TransportError
 from ..wire_format import BaseWireFormat
-
 from .session import InboundSession
 
 
@@ -20,6 +20,7 @@ class BaseInboundTransport(ABC):
         *,
         max_message_size: int = 0,
         wire_format: BaseWireFormat = None,
+        root_profile: Profile = None,
     ):
         """
         Initialize the inbound transport instance.
@@ -33,6 +34,7 @@ class BaseInboundTransport(ABC):
         self._max_message_size = max_message_size
         self._scheme = scheme
         self.wire_format: BaseWireFormat = wire_format
+        self.root_profile: Profile = root_profile
 
     @property
     def max_message_size(self):
