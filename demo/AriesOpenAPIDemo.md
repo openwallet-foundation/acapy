@@ -657,7 +657,7 @@ From the Faber browser tab, get ready to execute the **`POST /present-proof/send
 }
 ```
 
-(Note that the birthdate requested above is used as an "age proof", the calculation is something like `now() - years(18)`, and the presented birthdate must be on or before thsi date.  You can see the calculation in action in the `faber.py` demo code.)
+(Note that the birthdate requested above is used as an "age proof", the calculation is something like `now() - years(18)`, and the presented birthdate must be on or before this date.  You can see the calculation in action in the `faber.py` demo code.)
 
 Notice that the proof request is using a predicate to check if Alice is older than 18 without asking for her age. Not sure what this has to do with her education level! Click `Execute` and cross your fingers. If the request fails check your JSON!
 
