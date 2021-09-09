@@ -13,7 +13,7 @@ inputs:
   IN_PUBLIC_TAILS_URL:
     description: "URL to the tails server"
     required: false
-    default: "https://tails.vonx.io"
+    default: "https://tails-test.vonx.io"
 runs:
   using: "composite"
   steps:
