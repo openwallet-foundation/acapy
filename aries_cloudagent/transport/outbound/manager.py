@@ -260,7 +260,6 @@ class OutboundTransportManager:
         self.outbound_new.append(queued)
         self.process_queued()
 
-
     async def encode_outbound_message(
         self, profile: Profile, outbound: OutboundMessage, target: ConnectionTarget
     ):
