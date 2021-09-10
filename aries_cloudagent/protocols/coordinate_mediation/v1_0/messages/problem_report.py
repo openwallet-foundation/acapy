@@ -1,5 +1,7 @@
 """Represents a coordinate-mediation problem report message."""
 
+import logging
+
 from enum import Enum
 
 from marshmallow import EXCLUDE, ValidationError, validates_schema
@@ -11,6 +13,8 @@ from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers" ".problem_report_handler.CMProblemReportHandler"
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ProblemReportReason(Enum):
@@ -51,6 +55,18 @@ class CMProblemReportSchema(ProblemReportSchema):
         if data.get("description", {}).get("code", "") not in [
             prr.value for prr in ProblemReportReason
         ]:
+            if (
+                data.get("description")
+                and data.get("description").get("code")
+                and len(data.get("description").keys()) >= 2
+            ):
+                locales = list(data.get("description").keys())
+                locales.remove("code")
+                LOGGER.warning(
+                    "Unexpected error code received.\n"
+                    f"Code: {data.get('description').get('code')}, "
+                    f"Description: {data.get('description').get(locales[0])}"
+                )
             raise ValidationError(
                 "Value for description.code must be one of "
                 f"{[prr.value for prr in ProblemReportReason]}"
