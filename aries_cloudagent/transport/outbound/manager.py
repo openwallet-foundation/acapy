@@ -264,7 +264,7 @@ class OutboundTransportManager:
         self, profile: Profile, outbound: OutboundMessage, target: ConnectionTarget
     ):
         """
-        Encodes outbound messages.
+        Encode outbound message for the target.
 
         Args:
             profile: The active profile for the request
