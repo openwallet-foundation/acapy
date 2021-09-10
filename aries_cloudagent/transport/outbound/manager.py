@@ -260,6 +260,24 @@ class OutboundTransportManager:
         self.outbound_new.append(queued)
         self.process_queued()
 
+    async def encode_message_external_queue(self, profile: Profile, outbound: OutboundMessage, target: ConnectionTarget):
+        """
+        Encodes outbound message for the external queue.
+        Args:
+            profile: The active profile for the request
+            outbound: The outbound message to deliver
+            target: The outbound message target
+        """
+
+        outbound_message = QueuedOutboundMessage(profile, outbound, target, None)
+
+        if outbound_message.message and outbound_message.message.enc_payload:
+            outbound_message.payload = outbound_message.message.enc_payload
+        else:
+            await self.perform_encode(outbound_message, None)
+
+        return outbound_message
+
     def enqueue_webhook(
         self,
         topic: str,
@@ -415,16 +433,17 @@ class OutboundTransportManager:
 
     def encode_queued_message(self, queued: QueuedOutboundMessage) -> asyncio.Task:
         """Kick off encoding of a queued message."""
+        transport = self.get_transport_instance(queued.transport_id)
+
         queued.task = self.task_queue.run(
-            self.perform_encode(queued),
+            self.perform_encode(queued, transport.wire_format),
             lambda completed: self.finished_encode(queued, completed),
         )
         return queued.task
 
-    async def perform_encode(self, queued: QueuedOutboundMessage):
+    async def perform_encode(self, queued: QueuedOutboundMessage, wire_format: BaseWireFormat):
         """Perform message encoding."""
-        transport = self.get_transport_instance(queued.transport_id)
-        wire_format = transport.wire_format or self.context.inject(BaseWireFormat)
+        wire_format = wire_format or self.context.inject(BaseWireFormat)
         session = await queued.profile.session()
         queued.payload = await wire_format.encode_message(
             session,
