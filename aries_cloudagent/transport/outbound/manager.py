@@ -264,7 +264,8 @@ class OutboundTransportManager:
         self, profile: Profile, outbound: OutboundMessage, target: ConnectionTarget
     ):
         """
-        Encodes outbound message for the external queue.
+        Encodes outbound messages.
+
         Args:
             profile: The active profile for the request
             outbound: The outbound message to deliver
