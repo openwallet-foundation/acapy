@@ -5,10 +5,8 @@ import logging
 from aiohttp import web
 
 from ...messaging.error import MessageParseError
-
 from ..error import WireFormatParseError
 from ..wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
-
 from .base import BaseInboundTransport, InboundTransportSetupError
 
 LOGGER = logging.getLogger(__name__)
