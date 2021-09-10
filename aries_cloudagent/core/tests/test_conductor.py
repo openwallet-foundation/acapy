@@ -418,12 +418,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
     async def test_handle_outbound_queue(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
+        encoded_outbound_message_mock = async_mock.MagicMock(payload="message_payload")
 
         payload = "{}"
         message = OutboundMessage(
             payload=payload,
             connection_id="dummy-conn-id",
-            target=async_mock.MagicMock(),
+            target=async_mock.MagicMock(endpoint="endpoint"),
             reply_to_verkey=TestDIDs.test_verkey,
         )
 
@@ -431,8 +432,20 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         conductor.outbound_queue = async_mock.MagicMock(
             enqueue_message=async_mock.CoroutineMock()
         )
+        conductor.outbound_transport_manager = async_mock.MagicMock(
+            encode_outbound_message=async_mock.CoroutineMock(
+                return_value=encoded_outbound_message_mock
+            )
+        )
 
         await conductor.queue_outbound(conductor.root_profile, message)
+
+        conductor.outbound_transport_manager.encode_outbound_message.assert_called_once_with(
+            conductor.root_profile, message, message.target
+        )
+        conductor.outbound_queue.enqueue_message.assert_called_once_with(
+            encoded_outbound_message_mock.payload, message.target.endpoint
+        )
 
     async def test_handle_not_returned_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
