@@ -960,6 +960,12 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             mock_mgr.return_value.receive_invitation.assert_called_once()
 
     async def test_mediation_invitation_should_use_stored_invitation(self):
+        """
+        Conductor should store the mediation invite if it differs from the stored one or
+        if the stored one was not used yet.
+
+        Using a mediation invitation should clear the previously set default mediator.
+        """
         # given
         invite_string = "test-invite"
 
@@ -973,6 +979,9 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
         connection_manager_mock = async_mock.MagicMock(
             receive_invitation=async_mock.CoroutineMock(return_value=mock_conn_record)
         )
+        mock_mediation_manager = async_mock.MagicMock(
+            clear_default_mediator=async_mock.CoroutineMock()
+        )
 
         # when
         with async_mock.patch.object(
@@ -983,6 +992,8 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             test_module, "ConnectionManager", return_value=connection_manager_mock
         ), async_mock.patch.object(
             mock_conn_record, "metadata_set", async_mock.CoroutineMock()
+        ), async_mock.patch.object(
+            test_module, 'MediationManager', return_value=mock_mediation_manager
         ):
             await conductor.start()
             await conductor.stop()
@@ -993,8 +1004,9 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             )
             connection_manager_mock.receive_invitation.assert_called_once()
             mock_connection_from_url.assert_called_with(invite_string)
+            mock_mediation_manager.clear_default_mediator.assert_called_once()
 
-    async def test_mediation_invitation_should_not_establish_new_connection_for_used_invitation(
+    async def test_mediation_invitation_should_not_create_connection_for_old_invitation(
         self,
     ):
         # given
