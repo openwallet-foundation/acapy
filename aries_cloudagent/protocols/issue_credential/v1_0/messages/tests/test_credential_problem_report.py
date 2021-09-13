@@ -91,15 +91,20 @@ class TestCredentialProblemReport(TestCase):
         with pytest.raises(BaseModelError):
             CredentialProblemReport.deserialize(data)
 
+    def test_validate_x(self):
+        """Exercise validation requirements."""
+        schema = CredentialProblemReportSchema()
+        with pytest.raises(ValidationError):
+            schema.validate_fields({})
+
     def test_validate_and_logger(self):
         """Capture ValidationError and Logs."""
-        self._caplog.set_level(logging.WARNING)
         data = CredentialProblemReport(
             description={
                 "en": "oh no",
                 "code": "invalid_code",
             },
         ).serialize()
-        with pytest.raises(ValidationError):
-            CredentialProblemReportSchema().validate_fields(data)
+        self._caplog.set_level(logging.WARNING)
+        CredentialProblemReportSchema().validate_fields(data)
         assert "Unexpected error code received" in self._caplog.text

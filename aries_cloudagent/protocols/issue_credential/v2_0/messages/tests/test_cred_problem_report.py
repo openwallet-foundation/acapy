@@ -93,13 +93,18 @@ class TestCredProblemReport(TestCase):
 
     def test_validate_and_logger(self):
         """Capture ValidationError and Logs."""
-        self._caplog.set_level(logging.WARNING)
         data = V20CredProblemReport(
             description={
                 "en": "Insufficient credit",
                 "code": "invalid_code",
             },
         ).serialize()
-        with pytest.raises(ValidationError):
-            V20CredProblemReportSchema().validate_fields(data)
+        self._caplog.set_level(logging.WARNING)
+        V20CredProblemReportSchema().validate_fields(data)
         assert "Unexpected error code received" in self._caplog.text
+
+    def test_validate_x(self):
+        """Exercise validation requirements."""
+        schema = V20CredProblemReportSchema()
+        with pytest.raises(ValidationError):
+            schema.validate_fields({})

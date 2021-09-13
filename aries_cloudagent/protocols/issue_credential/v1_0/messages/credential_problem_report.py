@@ -57,23 +57,16 @@ class CredentialProblemReportSchema(ProblemReportSchema):
             data: The data to validate
 
         """
-        if (
+        if not data.get("description", {}).get("code", ""):
+            raise ValidationError("Value for description.code must be present")
+        elif (
             data.get("description", {}).get("code", "")
             != ProblemReportReason.ISSUANCE_ABANDONED.value
         ):
-            if (
-                data.get("description")
-                and data.get("description").get("code")
-                and len(data.get("description").keys()) >= 2
-            ):
-                locales = list(data.get("description").keys())
-                locales.remove("code")
-                LOGGER.warning(
-                    "Unexpected error code received.\n"
-                    f"Code: {data.get('description').get('code')}, "
-                    f"Description: {data.get('description').get(locales[0])}"
-                )
-            raise ValidationError(
-                "Value for description.code must be "
-                f"{ProblemReportReason.ISSUANCE_ABANDONED.value}"
+            locales = list(data.get("description").keys())
+            locales.remove("code")
+            LOGGER.warning(
+                "Unexpected error code received.\n"
+                f"Code: {data.get('description').get('code')}, "
+                f"Description: {data.get('description').get(locales[0])}"
             )

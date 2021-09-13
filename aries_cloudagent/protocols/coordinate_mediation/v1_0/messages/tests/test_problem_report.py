@@ -47,13 +47,12 @@ class TestCMProblemReportMessage(TestCase):
 
     def test_validate_and_logger(self):
         """Capture ValidationError and Logs."""
-        self._caplog.set_level(logging.WARNING)
         data = CMProblemReport(
             description={
                 "en": "Insufficient credit",
                 "code": "invalid_code",
             },
         ).serialize()
-        with pytest.raises(ValidationError):
-            CMProblemReportSchema().validate_fields(data)
+        self._caplog.set_level(logging.WARNING)
+        CMProblemReportSchema().validate_fields(data)
         assert "Unexpected error code received" in self._caplog.text
