@@ -1,3 +1,4 @@
+import logging
 import pytest
 
 from unittest import mock, TestCase
@@ -8,7 +9,12 @@ from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CREDENTIAL_PROBLEM_REPORT, PROTOCOL_PACKAGE
 
-from ..credential_problem_report import CredentialProblemReport, ProblemReportReason
+from ..credential_problem_report import (
+    CredentialProblemReport,
+    CredentialProblemReportSchema,
+    ProblemReportReason,
+    ValidationError,
+)
 
 
 class TestCredentialProblemReport(TestCase):
@@ -24,6 +30,10 @@ class TestCredentialProblemReport(TestCase):
             }
         )
         assert prob._type == DIDCommPrefix.qualify_current(CREDENTIAL_PROBLEM_REPORT)
+
+    @pytest.fixture(autouse=True)
+    def inject_fixtures(self, caplog):
+        self._caplog = caplog
 
     @mock.patch(
         f"{PROTOCOL_PACKAGE}.messages.credential_problem_report."
@@ -80,3 +90,21 @@ class TestCredentialProblemReport(TestCase):
         data = prob.serialize()
         with pytest.raises(BaseModelError):
             CredentialProblemReport.deserialize(data)
+
+    def test_validate_x(self):
+        """Exercise validation requirements."""
+        schema = CredentialProblemReportSchema()
+        with pytest.raises(ValidationError):
+            schema.validate_fields({})
+
+    def test_validate_and_logger(self):
+        """Capture ValidationError and Logs."""
+        data = CredentialProblemReport(
+            description={
+                "en": "oh no",
+                "code": "invalid_code",
+            },
+        ).serialize()
+        self._caplog.set_level(logging.WARNING)
+        CredentialProblemReportSchema().validate_fields(data)
+        assert "Unexpected error code received" in self._caplog.text

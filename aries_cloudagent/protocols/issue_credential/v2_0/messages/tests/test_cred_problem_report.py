@@ -1,3 +1,4 @@
+import logging
 import pytest
 
 from unittest import mock, TestCase
@@ -8,11 +9,20 @@ from .....didcomm_prefix import DIDCommPrefix
 
 from ...message_types import CRED_20_PROBLEM_REPORT, PROTOCOL_PACKAGE
 
-from ..cred_problem_report import V20CredProblemReport, ProblemReportReason
+from ..cred_problem_report import (
+    V20CredProblemReport,
+    V20CredProblemReportSchema,
+    ProblemReportReason,
+    ValidationError,
+)
 
 
 class TestCredProblemReport(TestCase):
     """Problem report tests."""
+
+    @pytest.fixture(autouse=True)
+    def inject_fixtures(self, caplog):
+        self._caplog = caplog
 
     def test_init_type(self):
         """Test initializer."""
@@ -80,3 +90,21 @@ class TestCredProblemReport(TestCase):
         data = prob.serialize()
         with pytest.raises(BaseModelError):
             V20CredProblemReport.deserialize(data)
+
+    def test_validate_and_logger(self):
+        """Capture ValidationError and Logs."""
+        data = V20CredProblemReport(
+            description={
+                "en": "Insufficient credit",
+                "code": "invalid_code",
+            },
+        ).serialize()
+        self._caplog.set_level(logging.WARNING)
+        V20CredProblemReportSchema().validate_fields(data)
+        assert "Unexpected error code received" in self._caplog.text
+
+    def test_validate_x(self):
+        """Exercise validation requirements."""
+        schema = V20CredProblemReportSchema()
+        with pytest.raises(ValidationError):
+            schema.validate_fields({})
