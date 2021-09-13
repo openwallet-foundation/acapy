@@ -62,7 +62,6 @@ class TestOOBProblemReportMessage(TestCase):
 
     def test_validate_and_logger(self):
         """Capture ValidationError and Logs."""
-        self._caplog.set_level(logging.WARNING)
         data = OOBProblemReport(
             description={
                 "en": "Insufficient credit",
@@ -71,6 +70,6 @@ class TestOOBProblemReportMessage(TestCase):
         )
         data.assign_thread_id(thid="test_thid", pthid="test_pthid")
         data = data.serialize()
-        with pytest.raises(ValidationError):
-            OOBProblemReportSchema().validate_fields(data)
+        self._caplog.set_level(logging.WARNING)
+        OOBProblemReportSchema().validate_fields(data)
         assert "Unexpected error code received" in self._caplog.text
