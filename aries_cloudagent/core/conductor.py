@@ -329,6 +329,10 @@ class Conductor:
                     )
 
                     if not default_invite_record.used:
+                        # clear previous mediator configuration before establishing a
+                        # new one
+                        await MediationManager(session.profile).clear_default_mediator()
+
                         mgr = (
                             ConnectionManager(session)
                             if mediation_connections_invite
