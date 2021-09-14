@@ -16,10 +16,10 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: acapy
-      - name: run-von-network
-        uses: ./acapy/actions/run-von-network
-      - name: run-indy-tails-server
-        uses: ./acapy/actions/run-indy-tails-server
+      #- name: run-von-network
+      #  uses: ./acapy/actions/run-von-network
+      #- name: run-indy-tails-server
+      #  uses: ./acapy/actions/run-indy-tails-server
       - name: run-integration-tests
         uses: ./acapy/actions/run-integration-tests
         # to run with a specific set of tests include the following parameter:

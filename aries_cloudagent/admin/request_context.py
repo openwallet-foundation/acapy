@@ -61,7 +61,7 @@ class AdminRequestContext:
         self,
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
-    ) -> Optional[InjectType]:
+    ) -> InjectType:
         """
         Get the provided instance of a given class identifier.
 

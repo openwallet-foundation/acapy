@@ -16,7 +16,7 @@ from ....indy.holder import IndyHolder
 from ....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....multitenant.manager import MultitenantManager
+from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -139,7 +139,7 @@ class OutOfBandManager(BaseConnectionManager):
         wallet = self._session.inject(BaseWallet)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject_or(MultitenantManager)
+        multitenant_mgr = self._session.inject_or(BaseMultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
 
         accept = bool(

@@ -1,4 +1,5 @@
 """Test OOB Manager."""
+
 import asyncio
 import json
 
@@ -21,6 +22,7 @@ from .....indy.models.pres_preview import (
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.util import str_to_epoch
+from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
@@ -362,11 +364,11 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.session.context.injector.bind_instance(BaseResponder, self.responder)
         self.mt_mgr = async_mock.MagicMock()
         self.mt_mgr = async_mock.create_autospec(MultitenantManager)
-        self.session.context.injector.bind_instance(MultitenantManager, self.mt_mgr)
+        self.session.context.injector.bind_instance(BaseMultitenantManager, self.mt_mgr)
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.session.context.injector.bind_instance(
-            MultitenantManager, self.multitenant_mgr
+            BaseMultitenantManager, self.multitenant_mgr
         )
 
         self.manager = OutOfBandManager(self.session)

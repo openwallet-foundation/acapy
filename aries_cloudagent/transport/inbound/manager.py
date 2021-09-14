@@ -99,6 +99,7 @@ class InboundTransportManager:
                 config.port,
                 self.create_session,
                 max_message_size=self.max_message_size,
+                root_profile=self.profile,
             ),
             imported_class.__qualname__,
         )

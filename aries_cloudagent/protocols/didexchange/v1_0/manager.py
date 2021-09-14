@@ -11,6 +11,7 @@ from ....core.error import BaseError
 from ....core.profile import ProfileSession
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
+from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -19,7 +20,6 @@ from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
 from ....wallet.did_posture import DIDPosture
 from ....did.did_key import DIDKey
-from ....multitenant.manager import MultitenantManager
 
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...out_of_band.v1_0.messages.invitation import (
@@ -246,7 +246,7 @@ class DIDXManager(BaseConnectionManager):
         base_mediation_record = None
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject_or(MultitenantManager)
+        multitenant_mgr = self._session.inject_or(BaseMultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
         if multitenant_mgr and wallet_id:
             base_mediation_record = await multitenant_mgr.get_default_mediator()
@@ -357,7 +357,7 @@ class DIDXManager(BaseConnectionManager):
         wallet = self._session.inject(BaseWallet)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject_or(MultitenantManager)
+        multitenant_mgr = self._session.inject_or(BaseMultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
 
         # Determine what key will need to sign the response
@@ -568,7 +568,7 @@ class DIDXManager(BaseConnectionManager):
         base_mediation_record = None
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject_or(MultitenantManager)
+        multitenant_mgr = self._session.inject_or(BaseMultitenantManager)
         wallet_id = self._session.settings.get("wallet.id")
         if multitenant_mgr and wallet_id:
             base_mediation_record = await multitenant_mgr.get_default_mediator()

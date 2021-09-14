@@ -14,6 +14,7 @@ from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Ser
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....messaging.responder import BaseResponder, MockResponder
+from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.routing.v1_0.manager import RoutingManager
 from .....resolver.did_resolver import DIDResolver
@@ -83,7 +84,7 @@ class TestConnectionManager(AsyncTestCase):
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.session.context.injector.bind_instance(
-            MultitenantManager, self.multitenant_mgr
+            BaseMultitenantManager, self.multitenant_mgr
         )
 
         self.test_mediator_routing_keys = [

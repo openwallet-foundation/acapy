@@ -197,8 +197,8 @@ class TestAdminServer(AsyncTestCase):
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         profile = InMemoryProfile.test_profile()
         context.injector.bind_instance(
-            test_module.MultitenantManager,
-            test_module.MultitenantManager(profile),
+            test_module.BaseMultitenantManager,
+            test_module.BaseMultitenantManager(profile),
         )
         await DefaultContextBuilder().load_plugins(context)
         server = self.get_admin_server(

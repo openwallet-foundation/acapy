@@ -26,7 +26,7 @@ from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
-from ..multitenant.manager import MultitenantManager, MultitenantManagerError
+from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
@@ -251,7 +251,7 @@ class AdminServer(BaseAdminServer):
         self.webhook_router = webhook_router
         self.websocket_queues = {}
         self.site = None
-        self.multitenant_manager = context.inject_or(MultitenantManager)
+        self.multitenant_manager = context.inject_or(BaseMultitenantManager)
 
         self.server_paths = []
 

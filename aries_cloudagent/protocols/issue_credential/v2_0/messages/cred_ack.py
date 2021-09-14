@@ -2,14 +2,14 @@
 
 from marshmallow import EXCLUDE
 
-from .....messaging.ack.message import Ack, AckSchema
+from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
 
 from ..message_types import CRED_20_ACK, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.cred_ack_handler.V20CredAckHandler"
 
 
-class V20CredAck(Ack):
+class V20CredAck(V10Ack):
     """Credential ack."""
 
     class Meta:
@@ -24,7 +24,7 @@ class V20CredAck(Ack):
         super().__init__(**kwargs)
 
 
-class V20CredAckSchema(AckSchema):
+class V20CredAckSchema(V10AckSchema):
     """Credential ack schema."""
 
     class Meta:

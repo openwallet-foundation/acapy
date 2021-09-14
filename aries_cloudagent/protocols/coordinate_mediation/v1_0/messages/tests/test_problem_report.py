@@ -1,4 +1,5 @@
 """Test Problem Report Message."""
+import logging
 import pytest
 
 from unittest import mock, TestCase
@@ -24,6 +25,10 @@ class TestCMProblemReportMessage(TestCase):
             }
         )
 
+    @pytest.fixture(autouse=True)
+    def inject_fixtures(self, caplog):
+        self._caplog = caplog
+
     def test_make_model(self):
         """Make problem report model."""
         data = self.problem_report.serialize()
@@ -39,3 +44,15 @@ class TestCMProblemReportMessage(TestCase):
         schema = CMProblemReportSchema()
         with pytest.raises(ValidationError):
             schema.validate_fields({})
+
+    def test_validate_and_logger(self):
+        """Capture ValidationError and Logs."""
+        data = CMProblemReport(
+            description={
+                "en": "Insufficient credit",
+                "code": "invalid_code",
+            },
+        ).serialize()
+        self._caplog.set_level(logging.WARNING)
+        CMProblemReportSchema().validate_fields(data)
+        assert "Unexpected error code received" in self._caplog.text

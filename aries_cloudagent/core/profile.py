@@ -78,7 +78,7 @@ class Profile(ABC):
         self,
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
-    ) -> Optional[InjectType]:
+    ) -> InjectType:
         """
         Get the provided instance of a given class identifier.
 
@@ -255,7 +255,7 @@ class ProfileSession(ABC):
         self,
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
-    ) -> Optional[InjectType]:
+    ) -> InjectType:
         """
         Get the provided instance of a given class identifier.
 

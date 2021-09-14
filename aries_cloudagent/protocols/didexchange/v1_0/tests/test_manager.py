@@ -16,6 +16,7 @@ from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.decorators.attach_decorator import AttachDecorator
+from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
@@ -103,7 +104,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.session.context.injector.bind_instance(
-            MultitenantManager, self.multitenant_mgr
+            BaseMultitenantManager, self.multitenant_mgr
         )
 
         self.manager = DIDXManager(self.session)

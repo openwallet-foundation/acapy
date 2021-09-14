@@ -23,13 +23,14 @@ from ..messaging.valid import (
     ENDPOINT_TYPE,
     INDY_RAW_PUBLIC_KEY,
 )
-from ..multitenant.manager import MultitenantManager
-from .key_type import KeyType
-from .did_method import DIDMethod
+from ..multitenant.base import BaseMultitenantManager
+
 from .base import BaseWallet
 from .did_info import DIDInfo
 from .did_posture import DIDPosture
+from .did_method import DIDMethod
 from .error import WalletError, WalletNotFoundError
+from .key_type import KeyType
 
 
 class WalletModuleResponseSchema(OpenAPISchema):
@@ -385,7 +386,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     # Multitenancy setup
-    multitenant_mgr = session.inject_or(MultitenantManager)
+    multitenant_mgr = session.inject_or(BaseMultitenantManager)
     wallet_id = session.settings.get("wallet.id")
 
     try:
