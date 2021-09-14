@@ -1005,7 +1005,7 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
         ), async_mock.patch.object(
             mock_conn_record, "metadata_set", async_mock.CoroutineMock()
         ), async_mock.patch.object(
-            test_module, 'MediationManager', return_value=mock_mediation_manager
+            test_module, "MediationManager", return_value=mock_mediation_manager
         ):
             await conductor.start()
             await conductor.stop()
