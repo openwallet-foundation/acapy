@@ -627,13 +627,6 @@ class AgentContainer:
         log_msg("Admin URL is at:", self.agent.admin_url)
         log_msg("Endpoint URL is at:", self.agent.endpoint)
 
-        if self.public_did and self.cred_type == CRED_FORMAT_JSON_LD:
-            # create did of appropriate type
-            data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
-            new_did = await self.agent.admin_POST("/wallet/did/create", data=data)
-            self.agent.did = new_did["result"]["did"]
-            log_msg("Created DID key")
-
         if self.mediation:
             self.mediator_agent = await start_mediator_agent(
                 self.start_port + 4, self.genesis_txns
@@ -656,6 +649,13 @@ class AgentContainer:
             # we need to pre-connect the agent to its mediator
             if not await connect_wallet_to_mediator(self.agent, self.mediator_agent):
                 raise Exception("Mediation setup FAILED :-(")
+
+        if self.public_did and self.cred_type == CRED_FORMAT_JSON_LD:
+            # create did of appropriate type
+            data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
+            new_did = await self.agent.admin_POST("/wallet/did/create", data=data)
+            self.agent.did = new_did["result"]["did"]
+            log_msg("Created DID key")
 
         if schema_name and schema_attrs:
             # Create a schema/cred def
@@ -1090,7 +1090,7 @@ async def create_agent_with_args(args, ident: str = None):
         use_did_exchange=args.did_exchange if ("did_exchange" in args) else (aip == 20),
         wallet_type=arg_file_dict.get("wallet-type") or args.wallet_type,
         public_did=public_did,
-        seed="random" if public_did else None,
+        seed="faber_12345678901234567890123456" if public_did else None,
         arg_file=arg_file,
         aip=aip,
     )
@@ -1130,7 +1130,7 @@ async def test_main(
             use_did_exchange=use_did_exchange,
             wallet_type=wallet_type,
             public_did=True,
-            seed="random",
+            seed="faber_12345678901234567890123456",
             cred_type=cred_type,
             aip=aip,
         )
