@@ -1090,7 +1090,7 @@ async def create_agent_with_args(args, ident: str = None):
         use_did_exchange=args.did_exchange if ("did_exchange" in args) else (aip == 20),
         wallet_type=arg_file_dict.get("wallet-type") or args.wallet_type,
         public_did=public_did,
-        seed="faber_12345678901234567890123456" if public_did else None,
+        seed="random" if public_did else None,
         arg_file=arg_file,
         aip=aip,
     )
@@ -1130,7 +1130,7 @@ async def test_main(
             use_did_exchange=use_did_exchange,
             wallet_type=wallet_type,
             public_did=True,
-            seed="faber_12345678901234567890123456",
+            seed="random",
             cred_type=cred_type,
             aip=aip,
         )
