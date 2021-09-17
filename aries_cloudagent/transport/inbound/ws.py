@@ -2,16 +2,20 @@
 
 import asyncio
 import logging
+import os
 
-from aiohttp import web, WSMessage, WSMsgType
+from aiohttp import WSMessage, WSMsgType, web
 
 from ...messaging.error import MessageParseError
-
 from ..error import WireFormatParseError
-
 from .base import BaseInboundTransport, InboundTransportSetupError
 
+
 LOGGER = logging.getLogger(__name__)
+
+
+WS_HEARTBEAT_INT = int(os.environ.get("ACAPY_WS_HEARTBEAT_INTERVAL", "3"))
+WS_TIMEOUT_INT = int(os.environ.get("ACAPY_WS_TIMEOUT_INTERVAL", "15"))
 
 
 class WsTransport(BaseInboundTransport):
@@ -83,7 +87,9 @@ class WsTransport(BaseInboundTransport):
 
         """
 
-        ws = web.WebSocketResponse()
+        ws = web.WebSocketResponse(
+            autoping=True, heartbeat=WS_HEARTBEAT_INT, receive_timeout=WS_TIMEOUT_INT
+        )
         await ws.prepare(request)
         loop = asyncio.get_event_loop()
 
@@ -114,6 +120,13 @@ class WsTransport(BaseInboundTransport):
                         LOGGER.error(
                             "Websocket connection closed with exception: %s",
                             ws.exception(),
+                        )
+                    else:
+                        LOGGER.error(
+                            "Unexpected Websocket message type received: %s: %s, %s",
+                            msg.type,
+                            msg.data,
+                            msg.extra,
                         )
                     if not ws.closed:
                         inbound = loop.create_task(ws.receive())
