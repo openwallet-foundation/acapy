@@ -52,7 +52,7 @@ class TestMediationInviteStore(AsyncTestCase):
         self.storage = async_mock.MagicMock(spec=BaseStorage)
         self.mediation_invite_store = MediationInviteStore(self.storage)
 
-    async def test_retrieve_update_should_create_record_to_store_mediation_invite_when_no_record_exists(
+    async def test_store_create_record_to_store_mediation_invite_when_no_record_exists(
         self,
     ):
         # given
@@ -62,10 +62,8 @@ class TestMediationInviteStore(AsyncTestCase):
         expected_updated_record = MediationInviteRecord.unused(mediation_invite_url)
 
         # when
-        stored_invite = (
-            await self.mediation_invite_store.retrieve_and_update_mediation_record(
-                mediation_invite_url
-            )
+        stored_invite = await self.mediation_invite_store.store(
+            MediationInviteRecord.unused(mediation_invite_url)
         )
 
         # then
@@ -74,7 +72,7 @@ class TestMediationInviteStore(AsyncTestCase):
         )
         assert stored_invite == expected_updated_record
 
-    async def test_retrieve_update_should_update_record_when_a_mediation_invite_record_exists(
+    async def test_store_should_update_record_when_a_mediation_invite_record_exists(
         self,
     ):
         # given
@@ -85,10 +83,8 @@ class TestMediationInviteStore(AsyncTestCase):
         expected_updated_record = MediationInviteRecord.unused(mediation_invite_url)
 
         # when
-        stored_invite = (
-            await self.mediation_invite_store.retrieve_and_update_mediation_record(
-                mediation_invite_url
-            )
+        stored_invite = await self.mediation_invite_store.store(
+            MediationInviteRecord.unused(mediation_invite_url)
         )
 
         # then
@@ -118,3 +114,48 @@ class TestMediationInviteStore(AsyncTestCase):
         # when - then
         with self.assertRaises(NoDefaultMediationInviteException):
             await self.mediation_invite_store.mark_default_invite_as_used()
+
+    async def test_get_mediation_invite_record_returns_none_when_no_invite_available(
+        self,
+    ):
+        # given
+        self.storage.get_record.side_effect = StorageNotFoundError
+
+        # when
+        invite = await self.mediation_invite_store.get_mediation_invite_record(None)
+
+        # then
+        assert invite is None
+
+    async def test_get_mediation_invite_returns_stored_record_when_no_invite_provided(
+        self,
+    ):
+        # given
+        stored_record = _storage_record_for(
+            "somepla.ce:4242/alongandunreadablebase64payload"
+        )
+        expected_invite = MediationInviteRecord.from_json(stored_record.value)
+        self.storage.get_record.return_value = stored_record
+
+        # when
+        invite = await self.mediation_invite_store.get_mediation_invite_record(None)
+
+        # then
+        assert invite == expected_invite
+
+    async def test_get_mediation_invite_stores_and_returns_provided_invite_if_none_stored(
+        self,
+    ):
+        # given
+        expected_invite = MediationInviteRecord.unused(
+            "somepla.ce:4242/alongandunreadablebase64payload"
+        )
+        self.storage.get_record.return_value = None
+
+        # when
+        invite = await self.mediation_invite_store.get_mediation_invite_record(
+            expected_invite.invite
+        )
+
+        # then
+        assert invite == expected_invite
