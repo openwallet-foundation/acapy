@@ -20,6 +20,7 @@ from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
 from ...protocols.coordinate_mediation.mediation_invite_store import (
     MediationInviteRecord,
+    MediationInviteStore,
 )
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
@@ -865,25 +866,24 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             multitenant_mgr._instances["test2"].close.assert_called_once_with()
 
 
+def get_invite_store_mock(
+    invite_string: str, invite_already_used: bool = False
+) -> async_mock.MagicMock:
+    unused_invite = MediationInviteRecord(invite_string, invite_already_used)
+    used_invite = MediationInviteRecord(invite_string, used=True)
+
+    return async_mock.MagicMock(
+        get_mediation_invite_record=async_mock.CoroutineMock(
+            return_value=unused_invite
+        ),
+        mark_default_invite_as_used=async_mock.CoroutineMock(return_value=used_invite),
+    )
+
+
 class TestConductorMediationSetup(AsyncTestCase, Config):
     """
     Test related with setting up mediation from given arguments or stored invitation.
     """
-
-    def __get_invite_store_mock(
-        self, invite_string: str, invite_already_used: bool = False
-    ) -> async_mock.MagicMock:
-        unused_invite = MediationInviteRecord(invite_string, invite_already_used)
-        used_invite = MediationInviteRecord(invite_string, used=True)
-
-        return async_mock.MagicMock(
-            retrieve_and_update_mediation_record=async_mock.CoroutineMock(
-                return_value=unused_invite
-            ),
-            mark_default_invite_as_used=async_mock.CoroutineMock(
-                return_value=used_invite
-            ),
-        )
 
     def __get_mediator_config(
         self, invite_string: str, connections_invite: bool = False
@@ -895,7 +895,13 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
 
         return builder
 
-    async def test_mediator_invitation_0160(self):
+    @asynctest.patch.object(
+        test_module,
+        "MediationInviteStore",
+        return_value=get_invite_store_mock("test-invite"),
+    )
+    @asynctest.patch.object(test_module.ConnectionInvitation, "from_url")
+    async def test_mediator_invitation_0160(self, mock_from_url, _):
         conductor = test_module.Conductor(
             self.__get_mediator_config("test-invite", True)
         )
@@ -904,8 +910,6 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
         mock_conn_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
-            test_module.ConnectionInvitation, "from_url"
-        ) as mock_from_url, async_mock.patch.object(
             test_module,
             "ConnectionManager",
             async_mock.MagicMock(
@@ -917,21 +921,19 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             ),
         ) as mock_mgr, async_mock.patch.object(
             mock_conn_record, "metadata_set", async_mock.CoroutineMock()
-        ), async_mock.patch.object(
-            test_module,
-            "LOGGER",
-            async_mock.MagicMock(
-                exception=async_mock.MagicMock(
-                    side_effect=Exception("This method should not have been called")
-                )
-            ),
         ):
             await conductor.start()
             await conductor.stop()
             mock_from_url.assert_called_once_with("test-invite")
             mock_mgr.return_value.receive_invitation.assert_called_once()
 
-    async def test_mediator_invitation_0434(self):
+    @asynctest.patch.object(
+        test_module,
+        "MediationInviteStore",
+        return_value=get_invite_store_mock("test-invite"),
+    )
+    @asynctest.patch.object(test_module.InvitationMessage, "from_url")
+    async def test_mediator_invitation_0434(self, mock_from_url, _):
         conductor = test_module.Conductor(
             self.__get_mediator_config("test-invite", False)
         )
@@ -946,8 +948,6 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
         conn_record.accept = ConnRecord.ACCEPT_MANUAL
         await conn_record.save(await conductor.root_profile.session())
         with async_mock.patch.object(
-            test_module.InvitationMessage, "from_url"
-        ) as mock_from_url, async_mock.patch.object(
             test_module,
             "OutOfBandManager",
             async_mock.MagicMock(
@@ -957,21 +957,17 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
                     )
                 )
             ),
-        ) as mock_mgr, async_mock.patch.object(
-            test_module,
-            "LOGGER",
-            async_mock.MagicMock(
-                exception=async_mock.MagicMock(
-                    side_effect=Exception("This method should not have been called")
-                )
-            ),
-        ):
+        ) as mock_mgr:
             await conductor.start()
             await conductor.stop()
             mock_from_url.assert_called_once_with("test-invite")
             mock_mgr.return_value.receive_invitation.assert_called_once()
 
-    async def test_mediation_invitation_should_use_stored_invitation(self):
+    @asynctest.patch.object(test_module, "MediationInviteStore")
+    @asynctest.patch.object(test_module.ConnectionInvitation, "from_url")
+    async def test_mediation_invitation_should_use_stored_invitation(
+        self, patched_from_url, patched_invite_store
+    ):
         """
         Conductor should store the mediation invite if it differs from the stored one or
         if the stored one was not used yet.
@@ -986,8 +982,9 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
         )
         await conductor.setup()
         mock_conn_record = async_mock.MagicMock()
+        mocked_store = get_invite_store_mock(invite_string)
+        patched_invite_store.return_value = mocked_store
 
-        invite_store_mock = self.__get_invite_store_mock(invite_string)
         connection_manager_mock = async_mock.MagicMock(
             receive_invitation=async_mock.CoroutineMock(return_value=mock_conn_record)
         )
@@ -997,10 +994,6 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
 
         # when
         with async_mock.patch.object(
-            test_module, "MediationInviteStore", return_value=invite_store_mock
-        ), async_mock.patch.object(
-            test_module.ConnectionInvitation, "from_url"
-        ) as mock_connection_from_url, async_mock.patch.object(
             test_module, "ConnectionManager", return_value=connection_manager_mock
         ), async_mock.patch.object(
             mock_conn_record, "metadata_set", async_mock.CoroutineMock()
@@ -1011,15 +1004,16 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             await conductor.stop()
 
             # then
-            invite_store_mock.retrieve_and_update_mediation_record.assert_called_with(
-                invite_string
-            )
+            mocked_store.get_mediation_invite_record.assert_called_with(invite_string)
+
             connection_manager_mock.receive_invitation.assert_called_once()
-            mock_connection_from_url.assert_called_with(invite_string)
+            patched_from_url.assert_called_with(invite_string)
             mock_mediation_manager.clear_default_mediator.assert_called_once()
 
+    @asynctest.patch.object(test_module, "MediationInviteStore")
+    @asynctest.patch.object(test_module, "ConnectionManager")
     async def test_mediation_invitation_should_not_create_connection_for_old_invitation(
-        self,
+        self, patched_connection_manager, patched_invite_store
     ):
         # given
         invite_string = "test-invite"
@@ -1029,27 +1023,28 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
         )
         await conductor.setup()
 
-        invite_store_mock = self.__get_invite_store_mock(invite_string, True)
+        invite_store_mock = get_invite_store_mock(invite_string, True)
+        patched_invite_store.return_value = invite_store_mock
+
         connection_manager_mock = async_mock.MagicMock(
             receive_invitation=async_mock.CoroutineMock()
         )
+        patched_connection_manager.return_value = connection_manager_mock
 
         # when
-        with async_mock.patch.object(
-            test_module, "MediationInviteStore", return_value=invite_store_mock
-        ), async_mock.patch.object(
-            test_module, "ConnectionManager", return_value=connection_manager_mock
-        ):
-            await conductor.start()
-            await conductor.stop()
+        await conductor.start()
+        await conductor.stop()
 
-            # then
-            invite_store_mock.retrieve_and_update_mediation_record.assert_called_with(
-                invite_string
-            )
-            connection_manager_mock.receive_invitation.assert_not_called()
+        # then
+        invite_store_mock.get_mediation_invite_record.assert_called_with(invite_string)
+        connection_manager_mock.receive_invitation.assert_not_called()
 
-    async def test_mediator_invitation_x(self):
+    @asynctest.patch.object(
+        test_module,
+        "MediationInviteStore",
+        return_value=get_invite_store_mock("test-invite"),
+    )
+    async def test_mediator_invitation_x(self, _):
         conductor = test_module.Conductor(
             self.__get_mediator_config("test-invite", True)
         )

@@ -101,13 +101,13 @@ class MediationInviteStore:
             else None
         )
 
-    async def retrieve_and_update_mediation_record(
+    async def __update_mediation_record(
         self, provided_mediation_invitation: str
     ) -> MediationInviteRecord:
         """
-        Retrieve stored mediation invite and optionally updates it.
+        Update the stored invitation when a new invitation is provided.
 
-        Stored value is updated if `provided_mediation_invitation` has changed.
+        Stored value is only updated if `provided_mediation_invitation` has changed.
         Updated record is marked as unused.
 
         :param provided_mediation_invitation: mediation invite provided by user
@@ -139,3 +139,32 @@ class MediationInviteStore:
         await self.store(updated_record)
 
         return updated_record
+
+    async def get_mediation_invite_record(
+        self, provided_mediation_invitation: Optional[str]
+    ) -> Optional[MediationInviteRecord]:
+        """
+        Provide the MediationInviteRecord to use/that was used for mediation.
+
+        Returned record may have been used already.
+
+        Stored record is updated if `provided_mediation_invitation` has changed.
+        Updated record is marked as unused.
+
+        :param provided_mediation_invitation: mediation invite provided by user
+        :return: mediation invite to use/that was used to connect to the mediator. None if
+        no invitation was provided/provisioned.
+        """
+
+        stored_invite = await self.__retrieve()
+
+        if stored_invite is None and provided_mediation_invitation is None:
+            return None
+        elif stored_invite is None and provided_mediation_invitation is not None:
+            return await self.store(
+                MediationInviteRecord.unused(provided_mediation_invitation)
+            )
+        elif stored_invite is not None and provided_mediation_invitation is None:
+            return stored_invite
+        elif stored_invite is not None and provided_mediation_invitation is not None:
+            return await self.__update_mediation_record(provided_mediation_invitation)
