@@ -74,7 +74,7 @@ class OutOfBandManager(BaseConnectionManager):
             session: The profile session for this out of band manager
         """
         self._session = session
-        super().__init__(self._session)
+        super().__init__(self._session.profile)
 
     @property
     def session(self) -> ProfileSession:
