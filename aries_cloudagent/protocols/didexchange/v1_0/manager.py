@@ -50,7 +50,7 @@ class DIDXManager(BaseConnectionManager):
         """
         self._session = session
         self._logger = logging.getLogger(__name__)
-        super().__init__(self._session)
+        super().__init__(self._session.profile)
 
     @property
     def session(self) -> ProfileSession:
