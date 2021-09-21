@@ -8,7 +8,7 @@ from ....connections.models.diddoc import DIDDoc
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
-from ....core.profile import ProfileSession
+from ....core.profile import ProfileSession, Profile
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
@@ -41,19 +41,19 @@ class DIDXManagerError(BaseError):
 class DIDXManager(BaseConnectionManager):
     """Class for managing connections under RFC 23 (DID exchange)."""
 
-    def __init__(self, session: ProfileSession):
+    def __init__(self, profile: Profile):
         """
         Initialize a DIDXManager.
 
         Args:
-            session: The profile session for this did exchange manager
+            profile: The profile for this did exchange manager
         """
-        self._session = session
+        self._profile = profile
         self._logger = logging.getLogger(__name__)
-        super().__init__(self._session.profile)
+        super().__init__(self._profile)
 
     @property
-    def session(self) -> ProfileSession:
+    def profile(self) -> Profile:
         """
         Accessor for the current profile session.
 
@@ -61,7 +61,7 @@ class DIDXManager(BaseConnectionManager):
             The profile session for this did exchange manager
 
         """
-        return self._session
+        return self._profile
 
     async def receive_invitation(
         self,
@@ -104,7 +104,7 @@ class DIDXManager(BaseConnectionManager):
                 auto_accept
                 or (
                     auto_accept is None
-                    and self._session.settings.get("debug.auto_accept_invites")
+                    and self.profile.settings.get("debug.auto_accept_invites")
                 )
             )
             else ConnRecord.ACCEPT_MANUAL
@@ -128,21 +128,22 @@ class DIDXManager(BaseConnectionManager):
             connection_protocol=DIDX_PROTO,
         )
 
-        await conn_rec.save(
-            self._session,
-            reason="Created new connection record from invitation",
-            log_params={
-                "invitation": invitation,
-                "their_role": ConnRecord.Role.RESPONDER.rfc23,
-            },
-        )
+        async with self.profile.session() as session:
+            await conn_rec.save(
+                session,
+                reason="Created new connection record from invitation",
+                log_params={
+                    "invitation": invitation,
+                    "their_role": ConnRecord.Role.RESPONDER.rfc23,
+                },
+            )
 
-        # Save the invitation for later processing
-        await conn_rec.attach_invitation(self._session, invitation)
+            # Save the invitation for later processing
+            await conn_rec.attach_invitation(session, invitation)
 
         if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
             request = await self.create_request(conn_rec, mediation_id=mediation_id)
-            responder = self._session.inject_or(BaseResponder)
+            responder = self.profile.inject_or(BaseResponder)
             if responder:
                 await responder.send_reply(
                     request,
@@ -150,12 +151,14 @@ class DIDXManager(BaseConnectionManager):
                 )
 
                 conn_rec.state = ConnRecord.State.REQUEST.rfc23
-                await conn_rec.save(self._session, reason="Sent connection request")
+                async with self.profile.session() as session:
+                    await conn_rec.save(session, reason="Sent connection request")
         else:
             self._logger.debug("Connection invitation will await acceptance")
 
         return conn_rec
 
+# TODO: from here!!
     async def create_request_implicit(
         self,
         their_public_did: str,
