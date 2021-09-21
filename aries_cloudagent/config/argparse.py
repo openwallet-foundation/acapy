@@ -1147,25 +1147,18 @@ class TransportGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_START)
-class MediationGroup(ArgumentGroup):
-    """Mediation settings."""
+@group(CAT_START, CAT_PROVISION)
+class MediationInviteGroup(ArgumentGroup):
+    """
+    Mediation invitation settings.
 
-    GROUP_NAME = "Mediation"
+    These can be provided at provision- and start-time.
+    """
+
+    GROUP_NAME = "Mediation invitation"
 
     def add_arguments(self, parser: ArgumentParser):
-        """Add mediation command line arguments to the parser."""
-        parser.add_argument(
-            "--open-mediation",
-            action="store_true",
-            env_var="ACAPY_MEDIATION_OPEN",
-            help=(
-                "Enables didcomm mediation. After establishing a connection, "
-                "if enabled, an agent may request message mediation, which will "
-                "allow the mediator to forward messages on behalf of the recipient. "
-                "See aries-rfc:0211."
-            ),
-        )
+        """Add mediation invitation command line arguments to the parser."""
         parser.add_argument(
             "--mediator-invitation",
             type=str,
@@ -1186,6 +1179,38 @@ class MediationGroup(ArgumentGroup):
                 "Default: false."
             ),
         )
+
+    def get_settings(self, args: Namespace):
+        """Extract mediation invitation settings."""
+        settings = {}
+        if args.mediator_invitation:
+            settings["mediation.invite"] = args.mediator_invitation
+        if args.mediator_connections_invite:
+            settings["mediation.connections_invite"] = True
+
+        return settings
+
+
+@group(CAT_START)
+class MediationGroup(ArgumentGroup):
+    """Mediation settings."""
+
+    GROUP_NAME = "Mediation"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add mediation command line arguments to the parser."""
+        parser.add_argument(
+            "--open-mediation",
+            action="store_true",
+            env_var="ACAPY_MEDIATION_OPEN",
+            help=(
+                "Enables didcomm mediation. After establishing a connection, "
+                "if enabled, an agent may request message mediation, which will "
+                "allow the mediator to forward messages on behalf of the recipient. "
+                "See aries-rfc:0211."
+            ),
+        )
+
         parser.add_argument(
             "--default-mediator-id",
             type=str,
@@ -1205,14 +1230,10 @@ class MediationGroup(ArgumentGroup):
         settings = {}
         if args.open_mediation:
             settings["mediation.open"] = True
-        if args.mediator_invitation:
-            settings["mediation.invite"] = args.mediator_invitation
         if args.default_mediator_id:
             settings["mediation.default_id"] = args.default_mediator_id
         if args.clear_default_mediator:
             settings["mediation.clear"] = True
-        if args.mediator_connections_invite:
-            settings["mediation.connections_invite"] = True
 
         if args.clear_default_mediator and args.default_mediator_id:
             raise ArgsParseError(

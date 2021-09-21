@@ -273,6 +273,8 @@ class AdminServer(BaseAdminServer):
                     "/api/docs/swagger.json",
                     "/favicon.ico",
                     "/ws",  # ws handler checks authentication
+                    "/status/live",
+                    "/status/ready",
                 ]
                 or path.startswith("/static/swagger/")
             )
@@ -567,6 +569,8 @@ class AdminServer(BaseAdminServer):
         """
         config = {
             k: self.context.settings[k]
+            if (isinstance(self.context.settings[k], (str, int)))
+            else self.context.settings[k].copy()
             for k in self.context.settings
             if k
             not in [
