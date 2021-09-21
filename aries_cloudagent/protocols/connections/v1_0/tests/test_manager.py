@@ -81,6 +81,7 @@ class TestConnectionManager(AsyncTestCase):
             bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
         )
         self.context = self.session.context
+        self.profile_context = self.session.profile.context
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.session.context.injector.bind_instance(
@@ -2117,7 +2118,7 @@ class TestConnectionManager(AsyncTestCase):
         assert await self.manager.fetch_connection_targets(mock_conn) is None
 
     async def test_fetch_connection_targets_conn_invitation_did_no_resolver(self):
-        self.session.profile.context.injector.bind_instance(
+        self.profile_context.injector.bind_instance(
             DIDResolver, DIDResolver(DIDResolverRegistry())
         )
         await self.session.wallet.create_local_did(
@@ -2163,7 +2164,7 @@ class TestConnectionManager(AsyncTestCase):
             return_value=self.test_endpoint
         )
         self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-        self.session.profile.context.injector.bind_instance(DIDResolver, self.resolver)
+        self.profile_context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
             method=DIDMethod.SOV,
@@ -2231,7 +2232,7 @@ class TestConnectionManager(AsyncTestCase):
             return_value=self.test_endpoint
         )
         self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-        self.session.profile.context.injector.bind_instance(DIDResolver, self.resolver)
+        self.profile_context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
             method=DIDMethod.SOV,
@@ -2295,7 +2296,7 @@ class TestConnectionManager(AsyncTestCase):
             return_value=self.test_endpoint
         )
         self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-        self.session.profile.context.injector.bind_instance(DIDResolver, self.resolver)
+        self.profile_context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
             method=DIDMethod.SOV,
@@ -2335,7 +2336,7 @@ class TestConnectionManager(AsyncTestCase):
             return_value=self.test_endpoint
         )
         self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-        self.session.profile.context.injector.bind_instance(DIDResolver, self.resolver)
+        self.profile_context.injector.bind_instance(DIDResolver, self.resolver)
 
         await self.session.wallet.create_local_did(
             method=DIDMethod.SOV,
@@ -2381,7 +2382,7 @@ class TestConnectionManager(AsyncTestCase):
             return_value=self.test_endpoint
         )
         self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-        self.session.profile.context.injector.bind_instance(DIDResolver, self.resolver)
+        self.profile_context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
             method=DIDMethod.SOV,
@@ -2410,7 +2411,7 @@ class TestConnectionManager(AsyncTestCase):
             await self.manager.fetch_connection_targets(mock_conn)
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_no_resolver(self):
-        self.session.profile.context.injector.bind_instance(
+        self.profile_context.injector.bind_instance(
             DIDResolver, DIDResolver(DIDResolverRegistry())
         )
 
@@ -2450,7 +2451,7 @@ class TestConnectionManager(AsyncTestCase):
 
         self.resolver = async_mock.MagicMock()
         self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
-        self.session.profile.context.injector.bind_instance(DIDResolver, self.resolver)
+        self.profile_context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
             method=DIDMethod.SOV,
@@ -2492,7 +2493,7 @@ class TestConnectionManager(AsyncTestCase):
         self.resolver.get_key_for_did = async_mock.CoroutineMock(
             return_value=self.test_target_verkey
         )
-        self.session.profile.context.injector.bind_instance(DIDResolver, self.resolver)
+        self.profile_context.injector.bind_instance(DIDResolver, self.resolver)
 
         local_did = await self.session.wallet.create_local_did(
             method=DIDMethod.SOV,
