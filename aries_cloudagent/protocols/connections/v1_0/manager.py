@@ -124,7 +124,7 @@ class ConnectionManager(BaseConnectionManager):
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await mediation_record_if_id(
-            self._session,
+            self._session.profile,
             mediation_id,
             or_default=True,
         )
@@ -372,7 +372,7 @@ class ConnectionManager(BaseConnectionManager):
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await mediation_record_if_id(
-            self._session,
+            self._session.profile,
             mediation_id,
             or_default=True,
         )
@@ -600,7 +600,7 @@ class ConnectionManager(BaseConnectionManager):
         await connection.attach_request(self._session, request)
 
         # Send keylist updates to mediator
-        mediation_record = await mediation_record_if_id(self._session, mediation_id)
+        mediation_record = await mediation_record_if_id(self._session.profile, mediation_id)
         if keylist_updates and mediation_record:
             responder = self._session.inject_or(BaseResponder)
             await responder.send(
@@ -648,7 +648,7 @@ class ConnectionManager(BaseConnectionManager):
         )
 
         keylist_updates = None
-        mediation_record = await mediation_record_if_id(self._session, mediation_id)
+        mediation_record = await mediation_record_if_id(self._session.profile, mediation_id)
 
         # Multitenancy setup
         multitenant_mgr = self._session.inject_or(BaseMultitenantManager)
