@@ -349,11 +349,11 @@ async def connections_list(request: web.BaseRequest):
     if request.query.get("connection_protocol"):
         post_filter["connection_protocol"] = request.query["connection_protocol"]
 
-    session = await context.session()
     try:
-        records = await ConnRecord.query(
-            session, tag_filter, post_filter_positive=post_filter, alt=True
-        )
+        async with context.session() as session:
+            records = await ConnRecord.query(
+                session, tag_filter, post_filter_positive=post_filter, alt=True
+            )
         results = [record.serialize() for record in records]
         results.sort(key=connection_sort_key)
     except (StorageError, BaseModelError) as err:
@@ -378,10 +378,10 @@ async def connections_retrieve(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    session = await context.session()
 
     try:
-        record = await ConnRecord.retrieve_by_id(session, connection_id)
+        async with context.session() as session:
+            record = await ConnRecord.retrieve_by_id(session, connection_id)
         result = record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
