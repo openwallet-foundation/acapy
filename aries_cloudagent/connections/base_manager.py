@@ -294,10 +294,6 @@ class BaseConnectionManager:
         if not connection.my_did:
             self._logger.debug("No local DID associated with connection")
             return None
-
-        async with self._profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            my_info = await wallet.get_local_did(connection.my_did)
         results = None
 
         if (
@@ -355,6 +351,11 @@ class BaseConnectionManager:
                         recipient_keys,
                         routing_keys,
                     ) = await self.resolve_invitation(did)
+
+            async with self._profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.get_local_did(connection.my_did)
+
             results = [
                 ConnectionTarget(
                     did=connection.their_did,
@@ -371,6 +372,11 @@ class BaseConnectionManager:
                 return None
 
             did_doc, _ = await self.fetch_did_document(connection.their_did)
+
+            async with self._profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.get_local_did(connection.my_did)
+
             results = self.diddoc_connection_targets(
                 did_doc, my_info.verkey, connection.their_label
             )
