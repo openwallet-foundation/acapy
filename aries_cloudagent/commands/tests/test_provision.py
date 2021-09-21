@@ -4,8 +4,10 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.base import ConfigError
 from ...config.error import ArgsParseError
-from ...core.profile import Profile
 from .. import provision as test_module
+from ...protocols.coordinate_mediation.mediation_invite_store import (
+    MediationInviteRecord,
+)
 
 
 class TestProvision(AsyncTestCase):
@@ -68,3 +70,18 @@ class TestProvision(AsyncTestCase):
         ) as mock_execute:
             test_module.main()
             mock_execute.assert_called_once
+
+    async def test_provision_should_store_provided_mediation_invite(self):
+        # given
+        mediation_invite = "test-invite"
+
+        with async_mock.patch.object(
+            test_module.MediationInviteStore, "store"
+        ) as invite_store:
+            # when
+            await test_module.provision({"mediation.invite": mediation_invite})
+
+            # then
+            invite_store.assert_called_with(
+                MediationInviteRecord(mediation_invite, False)
+            )
