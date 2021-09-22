@@ -543,7 +543,9 @@ class ConnectionManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await new_connection.save(
                         session,
-                        reason="Received connection request from multi-use invitation DID",
+                        reason=(
+                            "Received connection request from multi-use invitation DID"
+                        ),
                     )
 
                 # Transfer metadata from multi-use to new connection

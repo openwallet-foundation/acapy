@@ -12,7 +12,7 @@ from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.in_memory import InMemoryProfile
-from .....core.profile import Profile
+from .....core.profile import ProfileSession
 from .....did.did_key import DIDKey
 from .....indy.holder import IndyHolder
 from .....indy.models.pres_preview import (
@@ -33,9 +33,6 @@ from .....protocols.didexchange.v1_0.manager import DIDXManager
 from .....protocols.issue_credential.v1_0.manager import (
     CredentialManager as V10CredManager,
 )
-from .....protocols.issue_credential.v1_0.messages.credential_proposal import (
-    CredentialProposal,
-)
 from .....protocols.issue_credential.v1_0.messages.credential_offer import (
     CredentialOffer as V10CredOffer,
 )
@@ -43,21 +40,12 @@ from .....protocols.issue_credential.v1_0.messages.inner.credential_preview impo
     CredentialPreview as V10CredentialPreview,
     CredAttrSpec as V10CredAttrSpec,
 )
-from .....protocols.issue_credential.v1_0.message_types import (
-    CREDENTIAL_OFFER,
-    ATTACH_DECO_IDS as V10_CRED_ATTACH_FORMAT,
-)
 from .....protocols.issue_credential.v1_0.tests import (
-    CRED_DEF_ID,
     INDY_OFFER,
     INDY_CRED_REQ,
-    SCHEMA_ID,
 )
 from .....protocols.issue_credential.v2_0.manager import V20CredManager
 from .....protocols.issue_credential.v2_0.messages.cred_format import V20CredFormat
-from .....protocols.issue_credential.v2_0.messages.cred_offer import (
-    V20CredOffer,
-)
 from .....protocols.issue_credential.v2_0.messages.inner.cred_preview import (
     V20CredPreview,
     V20CredAttrSpec,
@@ -74,9 +62,6 @@ from .....protocols.present_proof.v1_0.message_types import (
     ATTACH_DECO_IDS as V10_PRES_ATTACH_FORMAT,
 )
 from .....protocols.present_proof.v1_0.messages.presentation import Presentation
-from .....protocols.present_proof.v1_0.messages.presentation_proposal import (
-    PresentationProposal,
-)
 from .....protocols.present_proof.v1_0.messages.presentation_request import (
     PresentationRequest,
 )
