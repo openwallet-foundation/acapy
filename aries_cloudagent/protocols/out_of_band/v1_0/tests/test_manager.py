@@ -363,7 +363,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             }
         )
         self.session = self.profile.session()
-        self.session._active = True 
+        self.session._active = True
 
         self.profile.context.injector.bind_instance(BaseResponder, self.responder)
         self.mt_mgr = async_mock.MagicMock()

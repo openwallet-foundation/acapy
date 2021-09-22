@@ -571,15 +571,14 @@ class OutOfBandManager(BaseConnectionManager):
                             "routingKeys": service.routing_keys,
                         }
                     )
-                    async with self.profile.session() as session:
-                        conn_mgr = ConnectionManager(session)
-                        conn_rec = await conn_mgr.receive_invitation(
-                            invitation=connection_invitation,
-                            their_public_did=public_did,
-                            auto_accept=auto_accept,
-                            alias=alias,
-                            mediation_id=mediation_id,
-                        )
+                    conn_mgr = ConnectionManager(self.profile)
+                    conn_rec = await conn_mgr.receive_invitation(
+                        invitation=connection_invitation,
+                        their_public_did=public_did,
+                        auto_accept=auto_accept,
+                        alias=alias,
+                        mediation_id=mediation_id,
+                    )
                 if conn_rec is not None:
                     break
 
