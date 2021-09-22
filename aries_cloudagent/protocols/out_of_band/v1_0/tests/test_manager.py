@@ -429,7 +429,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             ]
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
-        print("222")
         mock_conn_rec = async_mock.MagicMock()
 
         mediation_record = MediationRecord(
@@ -460,7 +459,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_get_default_mediator.assert_not_called()
 
     async def test_create_invitation_multitenant_local(self):
-        print("333")
         self.profile.context.update_settings(
             {
                 "multitenant.enabled": True,
@@ -560,7 +558,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert isinstance(invi_rec, InvitationRecord)
 
     async def test_create_invitation_attachment_v1_0_cred_offer_no_handshake(self):
-        print("5555555")
         self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
@@ -591,7 +588,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert not invi_rec._invitation.ser["handshake_protocols"]
 
     async def test_create_invitation_attachment_v2_0_cred_offer(self):
-        print("5555555")
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -661,7 +657,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert mock_retrieve_pxid.call_args[0][1] == "dummy-id"
 
     async def test_create_invitation_attachment_present_proof_v2_0(self):
-        print("5555555")
         self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
@@ -704,7 +699,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_dif_req_v2_attach_pres_existing_conn_auto_present_pres_msg_with_challenge(
         self,
     ):
-        print("5555555")
         self.profile.context.update_settings({"public_invites": True})
         self.profile.context.update_settings(
             {"debug.auto_respond_presentation_request": True}
@@ -870,7 +864,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_dif_req_v2_attach_pres_existing_conn_auto_present_pres_msg_with_nonce(
         self,
     ):
-        print("5555555")
         self.profile.context.update_settings({"public_invites": True})
         self.profile.context.update_settings(
             {"debug.auto_respond_presentation_request": True}
@@ -1475,7 +1468,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert conn_record is None
 
     async def test_check_reuse_msg_state(self):
-        print("kljasdkjhas")
         await self.test_conn_rec.save(self.session)
         await self.test_conn_rec.metadata_set(
             self.session, "reuse_msg_state", "accepted"

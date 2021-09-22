@@ -74,7 +74,6 @@ class OutOfBandManager(BaseConnectionManager):
             profile: The profile for this out of band manager
         """
         self._profile = profile
-        print(profile)
         super().__init__(self._profile)
 
     @property
@@ -942,7 +941,6 @@ class OutOfBandManager(BaseConnectionManager):
         """
         received = False
         while not received:
-            print("aaa")
             msg_state = None
             async with self.profile.session() as session:
                 msg_state = await conn_rec.metadata_get(session, "reuse_msg_state")
