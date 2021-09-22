@@ -49,6 +49,11 @@ class InMemoryProfile(Profile):
             ),
         )
 
+    def _init_context(self):
+        """Initialize the session context."""
+        self._context.injector.bind_instance(BaseStorage, STORAGE_CLASS(self))
+        self._context.injector.bind_instance(BaseWallet, WALLET_CLASS(self))
+
     def session(self, context: InjectionContext = None) -> "ProfileSession":
         """Start a new interactive session with no transaction support requested."""
         return InMemoryProfileSession(self, context=context)
@@ -71,6 +76,7 @@ class InMemoryProfile(Profile):
             context=InjectionContext(enforce_typing=False, settings=settings),
             name=InMemoryProfile.TEST_PROFILE_NAME,
         )
+        profile._init_context()
         if bind:
             for k, v in bind.items():
                 if v:

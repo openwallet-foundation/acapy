@@ -27,8 +27,8 @@ class DIDXResponseHandler(BaseHandler):
         self._logger.debug(f"DIDXResponseHandler called with context {context}")
         assert isinstance(context.message, DIDXResponse)
 
-        session = await context.session()
-        mgr = DIDXManager(session)
+        profile = context.profile
+        mgr = DIDXManager(profile)
         try:
             conn_rec = await mgr.accept_response(
                 context.message, context.message_receipt

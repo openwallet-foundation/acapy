@@ -12,6 +12,7 @@ from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.in_memory import InMemoryProfile
+from .....core.profile import Profile
 from .....did.did_key import DIDKey
 from .....indy.holder import IndyHolder
 from .....indy.models.pres_preview import (
@@ -352,7 +353,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.responder = MockResponder()
         self.responder.send = async_mock.CoroutineMock()
 
-        self.session = InMemoryProfile.test_session(
+        self.profile = InMemoryProfile.test_profile(
             {
                 "default_endpoint": TestConfig.test_endpoint,
                 "default_label": "This guy",
@@ -361,18 +362,20 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "debug.auto_accept_requests": True,
             }
         )
-        self.session.context.injector.bind_instance(BaseResponder, self.responder)
+        self.session = self.profile.session()
+        self.session._active = True 
+
+        self.profile.context.injector.bind_instance(BaseResponder, self.responder)
         self.mt_mgr = async_mock.MagicMock()
         self.mt_mgr = async_mock.create_autospec(MultitenantManager)
-        self.session.context.injector.bind_instance(BaseMultitenantManager, self.mt_mgr)
+        self.profile.context.injector.bind_instance(BaseMultitenantManager, self.mt_mgr)
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
-        self.session.context.injector.bind_instance(
+        self.profile.context.injector.bind_instance(
             BaseMultitenantManager, self.multitenant_mgr
         )
-
-        self.manager = OutOfBandManager(self.session)
-        assert self.manager.session
+        self.manager = OutOfBandManager(self.profile)
+        assert self.manager.profile
         self.manager.resolve_invitation = async_mock.CoroutineMock()
         self.manager.resolve_invitation.return_value = (
             TestConfig.test_endpoint,
@@ -395,7 +398,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.test_mediator_endpoint = "http://mediator.example.com"
 
     async def test_create_invitation_handshake_succeeds(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
 
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
@@ -426,6 +429,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             ]
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
+        print("222")
         mock_conn_rec = async_mock.MagicMock()
 
         mediation_record = MediationRecord(
@@ -456,7 +460,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_get_default_mediator.assert_not_called()
 
     async def test_create_invitation_multitenant_local(self):
-        self.session.context.update_settings(
+        print("333")
+        self.profile.context.update_settings(
             {
                 "multitenant.enabled": True,
                 "wallet.id": "test_wallet",
@@ -485,7 +490,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_create_invitation_multitenant_public(self):
-        self.session.context.update_settings(
+        self.profile.context.update_settings(
             {
                 "multitenant.enabled": True,
                 "wallet.id": "test_wallet",
@@ -526,7 +531,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert "Invitation must include" in str(context.exception)
 
     async def test_create_invitation_attachment_v1_0_cred_offer(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -555,7 +560,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert isinstance(invi_rec, InvitationRecord)
 
     async def test_create_invitation_attachment_v1_0_cred_offer_no_handshake(self):
-        self.session.context.update_settings({"public_invites": True})
+        print("5555555")
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -585,6 +591,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert not invi_rec._invitation.ser["handshake_protocols"]
 
     async def test_create_invitation_attachment_v2_0_cred_offer(self):
+        print("5555555")
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -622,7 +629,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert invi_rec._invitation.ser["requests~attach"]
 
     async def test_create_invitation_attachment_present_proof_v1_0(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -649,10 +656,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert invi_rec._invitation.ser["requests~attach"]
-            mock_retrieve_pxid.assert_called_once_with(self.manager.session, "dummy-id")
+            mock_retrieve_pxid.assert_called_once()
+            assert isinstance(mock_retrieve_pxid.call_args[0][0], ProfileSession)
+            assert mock_retrieve_pxid.call_args[0][1] == "dummy-id"
 
     async def test_create_invitation_attachment_present_proof_v2_0(self):
-        self.session.context.update_settings({"public_invites": True})
+        print("5555555")
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did, async_mock.patch.object(
@@ -684,18 +694,19 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert invi_rec._invitation.ser["requests~attach"]
-            mock_retrieve_pxid_1.assert_called_once_with(
-                self.manager.session, "dummy-id"
-            )
-            mock_retrieve_pxid_2.assert_called_once_with(
-                self.manager.session, "dummy-id"
-            )
+            mock_retrieve_pxid_1.assert_called_once()
+            assert isinstance(mock_retrieve_pxid_1.call_args[0][0], ProfileSession)
+            assert mock_retrieve_pxid_1.call_args[0][1] == "dummy-id"
+            mock_retrieve_pxid_2.assert_called_once()
+            assert isinstance(mock_retrieve_pxid_2.call_args[0][0], ProfileSession)
+            assert mock_retrieve_pxid_2.call_args[0][1] == "dummy-id"
 
     async def test_dif_req_v2_attach_pres_existing_conn_auto_present_pres_msg_with_challenge(
         self,
     ):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        print("5555555")
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_presentation_request": True}
         )
         test_exist_conn = ConnRecord(
@@ -807,7 +818,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     ],
                 ),
             )
-            self.session.context.injector.bind_instance(
+            self.profile.context.injector.bind_instance(
                 VCHolder,
                 async_mock.MagicMock(
                     search_credentials=async_mock.MagicMock(
@@ -859,8 +870,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_dif_req_v2_attach_pres_existing_conn_auto_present_pres_msg_with_nonce(
         self,
     ):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        print("5555555")
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_presentation_request": True}
         )
         test_exist_conn = ConnRecord(
@@ -973,7 +985,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     ],
                 ),
             )
-            self.session.context.injector.bind_instance(
+            self.profile.context.injector.bind_instance(
                 VCHolder,
                 async_mock.MagicMock(
                     search_credentials=async_mock.MagicMock(
@@ -1023,7 +1035,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert conn_rec is not None
 
     async def test_create_invitation_public_x_no_public_invites(self):
-        self.session.context.update_settings({"public_invites": False})
+        self.profile.context.update_settings({"public_invites": False})
 
         with self.assertRaises(OutOfBandManagerError) as context:
             await self.manager.create_invitation(
@@ -1035,7 +1047,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert "Public invitations are not enabled" in str(context.exception)
 
     async def test_create_invitation_public_x_multi_use(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
 
         with self.assertRaises(OutOfBandManagerError) as context:
             await self.manager.create_invitation(
@@ -1047,7 +1059,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert "Cannot create public invitation with" in str(context.exception)
 
     async def test_create_invitation_public_x_no_public_did(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
 
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
@@ -1065,7 +1077,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_create_invitation_attachment_x(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
@@ -1087,7 +1099,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Unknown attachment type" in str(context.exception)
 
     async def test_create_invitation_peer_did(self):
-        self.session.context.update_settings(
+        self.profile.context.update_settings(
             {
                 "multitenant.enabled": True,
                 "wallet.id": "my-wallet",
@@ -1147,7 +1159,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert await record.metadata_get_all(self.session) == {"hello": "world"}
 
     async def test_create_invitation_x_public_metadata(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
@@ -1168,7 +1180,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Cannot store metadata on public" in str(context.exception)
 
     async def test_receive_invitation_with_valid_mediation(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
             state=MediationRecord.STATE_GRANTED,
@@ -1199,7 +1211,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_receive_invitation_with_invalid_mediation(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             DIDXManager,
             "receive_invitation",
@@ -1224,7 +1236,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_receive_invitation_didx_services_with_service_block(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "DIDXManager", autospec=True
         ) as didx_mgr_cls, async_mock.patch.object(
@@ -1252,7 +1264,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             await self.manager.receive_invitation(mock_oob_invi)
 
     async def test_receive_invitation_connection_mock(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as conn_mgr_cls, async_mock.patch.object(
@@ -1293,7 +1305,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert result == self.test_conn_rec.serialize()
 
     async def test_receive_invitation_connection(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         oob_invi_rec = await self.manager.create_invitation(
             auto_accept=True,
             public=False,
@@ -1315,7 +1327,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
     async def test_receive_invitation_services_with_neither_service_blocks_nor_dids(
         self,
     ):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "InvitationMessage", async_mock.MagicMock()
         ) as invi_msg_cls:
@@ -1327,7 +1339,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(mock_invi_msg)
 
     async def test_receive_invitation_services_with_service_did(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "DIDXManager", autospec=True
         ) as didx_mgr_cls, async_mock.patch.object(
@@ -1349,7 +1361,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert invi_rec._invitation.ser["services"]
 
     async def test_receive_invitation_attachment_x(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
@@ -1371,7 +1383,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "requests~attach is not properly formatted" in str(context.exception)
 
     async def test_receive_invitation_req_pres_v1_0_attachment_x(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
@@ -1407,7 +1419,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "requests~attach is not properly formatted" in str(context.exception)
 
     async def test_receive_invitation_invalid_request_type_x(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
         ) as didx_mgr_receive_invitation, async_mock.patch(
@@ -1463,6 +1475,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert conn_record is None
 
     async def test_check_reuse_msg_state(self):
+        print("kljasdkjhas")
         await self.test_conn_rec.save(self.session)
         await self.test_conn_rec.metadata_set(
             self.session, "reuse_msg_state", "accepted"
@@ -1470,7 +1483,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert await self.manager.check_reuse_msg_state(self.test_conn_rec) is None
 
     async def test_create_handshake_reuse_msg(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         await self.test_conn_rec.save(self.session)
         with async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
@@ -1503,7 +1516,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_create_handshake_reuse_msg_catch_exception(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         await self.test_conn_rec.save(self.session)
         with async_mock.patch.object(
             DIDXManager, "receive_invitation", autospec=True
@@ -1526,7 +1539,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_receive_reuse_message_existing_found(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1577,7 +1590,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_receive_reuse_message_existing_not_found(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1619,7 +1632,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert len(self.responder.messages) == 0
 
     async def test_receive_reuse_message_storage_not_found(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1654,7 +1667,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_receive_reuse_message_problem_report_logic(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1680,7 +1693,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             await self.manager.receive_reuse_message(reuse_msg, receipt)
 
     async def test_receive_reuse_accepted(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1715,7 +1728,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_receive_reuse_accepted(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1750,7 +1763,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_receive_reuse_accepted_invalid_conn(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1781,7 +1794,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Error processing reuse accepted message" in str(context.exception)
 
     async def test_receive_reuse_accepted_message_catch_exception(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1809,7 +1822,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Error processing reuse accepted message" in str(context.exception)
 
     async def test_problem_report_received_not_active(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1849,7 +1862,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_problem_report_received_not_exists(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1889,7 +1902,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_problem_report_received_invalid_conn(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         receipt = MessageReceipt(
             recipient_did=TestConfig.test_did,
             recipient_did_public=False,
@@ -1926,7 +1939,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Error processing problem report message" in str(context.exception)
 
     async def test_existing_conn_record_public_did(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
@@ -2021,7 +2034,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert result.connection_id == retrieved_conn_records[0].connection_id
 
     async def test_existing_conn_record_public_did_not_accepted(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
             their_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
@@ -2120,7 +2133,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert result.connection_id != retrieved_conn_records[0].connection_id
 
     async def test_existing_conn_record_public_did_inverse_cases(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
@@ -2176,7 +2189,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert result.connection_id != retrieved_conn_records[0].connection_id
 
     async def test_existing_conn_record_public_did_timeout(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
@@ -2234,7 +2247,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert retrieved_conn_records[0].state == ConnRecord.State.ABANDONED.rfc160
 
     async def test_existing_conn_record_public_did_timeout_no_handshake_protocol(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
@@ -2279,7 +2292,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "No existing connection exists and " in str(context.exception)
 
     async def test_req_v1_attach_presentation_existing_conn_no_auto_present(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
@@ -2354,8 +2367,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Configuration sets auto_present false" in str(context.exception)
 
     async def test_req_v1_attach_presentation_existing_conn_auto_present_pres_msg(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_presentation_request": True}
         )
         test_exist_conn = ConnRecord(
@@ -2452,7 +2465,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     json.dumps(TestConfig.cred_req_meta),
                 )
             )
-            self.session.context.injector.bind_instance(IndyHolder, holder)
+            self.profile.context.injector.bind_instance(IndyHolder, holder)
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
@@ -2469,8 +2482,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert conn_rec is not None
 
     async def test_req_v1_attach_pres_catch_value_error(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_presentation_request": True}
         )
         test_exist_conn = ConnRecord(
@@ -2552,7 +2565,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     json.dumps(TestConfig.cred_req_meta),
                 )
             )
-            self.session.context.injector.bind_instance(IndyHolder, holder)
+            self.profile.context.injector.bind_instance(IndyHolder, holder)
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
@@ -2569,7 +2582,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Cannot auto-respond" in str(context.exception)
 
     async def test_req_v2_attach_presentation_existing_conn_no_auto_present(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         test_exist_conn = ConnRecord(
             my_did=TestConfig.test_did,
             their_did=TestConfig.test_target_did,
@@ -2647,8 +2660,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
     async def test_req_v2_attach_presentation_existing_conn_auto_present_pres_msg(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_presentation_request": True}
         )
         test_exist_conn = ConnRecord(
@@ -2757,7 +2770,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     json.dumps(TestConfig.cred_req_meta),
                 )
             )
-            self.session.context.injector.bind_instance(IndyHolder, holder)
+            self.profile.context.injector.bind_instance(IndyHolder, holder)
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
@@ -2774,8 +2787,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert conn_rec is not None
 
     async def test_req_v2_attach_pres_catch_value_error(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_presentation_request": False}
         )
         test_exist_conn = ConnRecord(
@@ -2873,7 +2886,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     json.dumps(TestConfig.cred_req_meta),
                 )
             )
-            self.session.context.injector.bind_instance(IndyHolder, holder)
+            self.profile.context.injector.bind_instance(IndyHolder, holder)
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
@@ -2890,8 +2903,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "cannot respond automatically" in str(context.exception)
 
     async def test_req_attach_cred_offer_v1(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_credential_offer": True}
         )
         test_exist_conn = ConnRecord(
@@ -2983,8 +2996,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert conn_rec is not None
 
     async def test_req_attach_cred_offer_v1_no_issue(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_credential_offer": False}
         )
         test_exist_conn = ConnRecord(
@@ -3072,8 +3085,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Configuration sets auto_offer false" in str(context.exception)
 
     async def test_req_attach_cred_offer_v2(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_credential_offer": True}
         )
         test_exist_conn = ConnRecord(
@@ -3166,8 +3179,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert conn_rec is not None
 
     async def test_req_attach_cred_offer_v2_no_issue(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_credential_offer": False}
         )
         test_exist_conn = ConnRecord(
@@ -3255,8 +3268,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert "Configuration sets auto_offer false" in str(context.exception)
 
     async def test_catch_unsupported_request_attach(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_credential_offer": False}
         )
         test_exist_conn = ConnRecord(
@@ -3358,8 +3371,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert conn_rec.state == "active"
 
     async def test_request_attach_cred_offer_v1_check_conn_rec_active_timeout(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_credential_offer": True}
         )
         test_exist_conn = ConnRecord(
@@ -3447,8 +3460,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert conn_rec is not None
 
     async def test_request_attach_cred_offer_v2_check_conn_rec_active_timeout(self):
-        self.session.context.update_settings({"public_invites": True})
-        self.session.context.update_settings(
+        self.profile.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings(
             {"debug.auto_respond_credential_offer": True}
         )
         test_exist_conn = ConnRecord(
