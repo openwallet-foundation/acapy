@@ -37,3 +37,7 @@ class EndorsedTransactionResponseHandler(BaseHandler):
             await mgr.receive_endorse_response(context.message)
         except TransactionManagerError:
             self._logger.exception("Error receiving endorsed transaction response")
+
+        # Automatically write transaction if flag is set
+        if context.settings.get("endorser.auto_write"):
+            pass

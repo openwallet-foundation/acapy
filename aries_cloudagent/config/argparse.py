@@ -1542,9 +1542,7 @@ class EndorsementGroup(ArgumentGroup):
             help=(
                 "For transaction Authors, specify the the public DID of the Endorser "
                 "agent who will be endorsing transactions.  Note this requires that "
-                "the connection be made using the Endorser's public DID. "
-                "(Note that 'endorser-public-did' and 'endorser-alias' are mutually "
-                "exclusive.)"
+                "the connection be made using the Endorser's public DID."
             ),
         )
         parser.add_argument(
@@ -1554,10 +1552,16 @@ class EndorsementGroup(ArgumentGroup):
             env_var="ACAPY_ENDORSER_ALIAS",
             help=(
                 "For transaction Authors, specify the the alias of the Endorser "
-                "connection that will be used to endorse transactions. "
-                "(Note that 'endorser-public-did' and 'endorser-alias' are mutually "
-                "exclusive.)"
+                "connection that will be used to endorse transactions."
             ),
+        )
+        parser.add_argument(
+            "--auto-request-endorsement",
+            action="store_true",
+            env_var="ACAPY_AUTO_REQUEST_ENDORSEMENT",
+            help="For Authors, specify whether to automatically request "
+            "endorsement for all transactions. (If not specified, the controller "
+            " must invoke the request endorse operation for each transaction.)",
         )
         parser.add_argument(
             "--auto-endorse-transactions",
@@ -1567,6 +1571,14 @@ class EndorsementGroup(ArgumentGroup):
             "received endorsement requests. (If not specified, the controller "
             " must invoke the endorsement operation for each transaction.)",
         )
+        parser.add_argument(
+            "--auto-write-transactions",
+            action="store_true",
+            env_var="ACAPY_AUTO_WRITE_TRANSACTIONS",
+            help="For Authors, specify whether to automatically write any "
+            "endorsed transactions. (If not specified, the controller "
+            " must invoke the write transaction operation for each transaction.)",
+        )
 
     def get_settings(self, args: Namespace):
         """Extract endorser settings."""
@@ -1574,6 +1586,7 @@ class EndorsementGroup(ArgumentGroup):
         settings["endorser.author"] = False
         settings["endorser.endorser"] = False
         settings["endorser.auto_endorse"] = False
+        settings["endorser.auto_write"] = False
 
         if args.endorser_protocol_role:
             if args.endorser_protocol_role == ENDORSER_AUTHOR:
@@ -1599,19 +1612,34 @@ class EndorsementGroup(ArgumentGroup):
                     "Authors"
                 )
 
-        if args.endorser_public_did and args.endorser_alias:
-            raise ArgsParseError(
-                "Parameters --endorser-public-did and --endorser-alias should not both "
-                "be set"
-            )
+        if args.auto_request_endorsement:
+            if settings["endorser.author"]:
+                settings["endorser.auto_request"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-request-endorsement should only be set for "
+                    "transaction Authors"
+                )
 
         if args.auto_endorse_transactions:
             if settings["endorser.endorser"]:
                 settings["endorser.auto_endorse"] = True
             else:
+                pass
                 raise ArgsParseError(
                     "Parameter --auto-endorser-transactions should only be set for "
                     "transaction Endorsers"
+                )
+
+        if args.auto_write_transactions:
+            if settings["endorser.author"]:
+                settings["endorser.auto_write"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-write-transactions should only be set for "
+                    "transaction Authors"
                 )
 
         return settings

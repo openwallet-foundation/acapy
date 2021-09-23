@@ -12,8 +12,9 @@ from ....core.profile import ProfileSession
 from ....indy.issuer import IndyIssuerError
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
-from ....storage.error import StorageNotFoundError
+from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
+from ....wallet.base import BaseWallet
 
 from .messages.cancel_transaction import CancelTransaction
 from .messages.endorsed_transaction_response import EndorsedTransactionResponse
@@ -194,10 +195,6 @@ class TransactionManager:
         self,
         transaction: TransactionRecord,
         state: str,
-        endorser_did: str,
-        endorser_verkey: str,
-        endorsed_msg: str = None,
-        signature: str = None,
     ):
         """
         Create a response to endorse a transaction.
@@ -221,12 +218,36 @@ class TransactionManager:
             )
 
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
+        transaction_json = transaction.messages_attach[0]["data"]["json"]
 
-        # don't modify the transaction payload?
-        if endorsed_msg:
-            # need to return the endorsed msg or else the ledger will reject the
-            # eventual transaction write
-            transaction.messages_attach[0]["data"]["json"] = endorsed_msg
+        profile_session = await self.session
+        async with profile_session as session:
+            wallet: BaseWallet = session.inject_or(BaseWallet)
+
+            if not wallet:
+                raise StorageError("No wallet available")
+
+            endorser_did_info = await wallet.get_public_did()
+            if not endorser_did_info:
+                raise StorageError(
+                    "Transaction cannot be endorsed as there is no Public DID in wallet"
+                )
+            endorser_did = endorser_did_info.did
+            endorser_verkey = endorser_did_info.verkey
+
+        ledger = self._session.context.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No ledger available"
+            if not self._session.context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise LedgerError(reason=reason)
+
+        async with ledger:
+            endorsed_msg = await shield(ledger.txn_endorse(transaction_json))
+
+        # need to return the endorsed msg or else the ledger will reject the
+        # eventual transaction write
+        transaction.messages_attach[0]["data"]["json"] = endorsed_msg
 
         signature_response = {
             "message_id": transaction.messages_attach[0]["@id"],
@@ -234,7 +255,7 @@ class TransactionManager:
             "method": TransactionRecord.ADD_SIGNATURE,
             "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
             "signature_type": TransactionRecord.SIGNATURE_TYPE,
-            "signature": {endorser_did: signature or endorser_verkey},
+            "signature": {endorser_did: endorsed_msg or endorser_verkey},
         }
 
         transaction.signature_response.clear()
@@ -242,7 +263,6 @@ class TransactionManager:
 
         transaction.state = state
 
-        profile_session = await self.session
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Created an endorsed response")
 
