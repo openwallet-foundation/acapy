@@ -2775,4 +2775,6 @@ class TestConnectionManager(AsyncTestCase):
                 "dummy", self.test_verkey, ConnRecord.ROUTING_STATE_ACTIVE
             )
             mock_conn_rec_query.return_value[1].save.assert_called_once()
-            assert isinstance(mock_conn_rec_query.return_value[1].save.call_args[0][0], ProfileSession)
+            assert isinstance(
+                mock_conn_rec_query.return_value[1].save.call_args[0][0], ProfileSession
+            )
