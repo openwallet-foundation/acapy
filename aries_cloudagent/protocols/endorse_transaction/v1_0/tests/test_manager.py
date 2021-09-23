@@ -127,7 +127,9 @@ class TestTransactionManager(AsyncTestCase):
         self.test_refuser_did = "AGDEjaMunDtFtBVrn1qPKQ"
 
         self.ledger = async_mock.create_autospec(BaseLedger)
-        self.ledger.txn_endorse = async_mock.CoroutineMock(return_value=self.test_endorsed_message)
+        self.ledger.txn_endorse = async_mock.CoroutineMock(
+            return_value=self.test_endorsed_message
+        )
         self.session.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.manager = TransactionManager(self.session)
