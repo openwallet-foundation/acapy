@@ -54,6 +54,7 @@ class AriesAgent(DemoAgent):
         no_auto: bool = False,
         seed: str = None,
         aip: int = 20,
+        endorser_role: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -63,6 +64,7 @@ class AriesAgent(DemoAgent):
             prefix=prefix,
             seed=seed,
             aip=aip,
+            endorser_role=endorser_role,
             extra_args=(
                 []
                 if no_auto
@@ -109,12 +111,30 @@ class AriesAgent(DemoAgent):
 
         if conn_id == self.connection_id:
             # inviter or invitee:
-            if (
-                message["rfc23_state"] in ["completed", "response-sent"]
-                and not self._connection_ready.done()
-            ):
-                self.log("Connected")
-                self._connection_ready.set_result(True)
+            if message["rfc23_state"] in ["completed", "response-sent"]:
+                if not self._connection_ready.done():
+                    self.log("Connected")
+                    self._connection_ready.set_result(True)
+
+                # setup endorser properties
+                self.log("Check for endorser role ...")
+                if self.endorser_role:
+                    if self.endorser_role == "author":
+                        connection_job_role = "TRANSACTION_AUTHOR"
+                        # short pause here to avoid race condition (both agents updating the connection role)
+                        await asyncio.sleep(2.0)
+                    elif self.endorser_role == "endorser":
+                        connection_job_role = "TRANSACTION_ENDORSER"
+                    else:
+                        connection_job_role = "None"
+
+                    self.log(
+                        f"Updating endorser role for connection: {self.connection_id}, {connection_job_role}"
+                    )
+                    await self.admin_POST(
+                        "/transactions/" + self.connection_id + "/set-endorser-role",
+                        params={"transaction_my_job": connection_job_role},
+                    )
 
     async def handle_issue_credential(self, message):
         state = message["state"]
@@ -558,6 +578,7 @@ class AgentContainer:
         seed: str = "random",
         aip: int = 20,
         arg_file: str = None,
+        endorser_role: str = None,
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -576,6 +597,12 @@ class AgentContainer:
         self.seed = seed
         self.aip = aip
         self.arg_file = arg_file
+        self.endorser_role = endorser_role
+        if endorser_role:
+            # endorsers and authors need public DIDs (assume cred_type is Indy)
+            if endorser_role == "author" or endorser_role == "endorser":
+                self.public_did = True
+                self.cred_type = CRED_FORMAT_INDY
 
         self.exchange_tracing = False
 
@@ -611,6 +638,7 @@ class AgentContainer:
                 seed=self.seed,
                 aip=self.aip,
                 arg_file=self.arg_file,
+                endorser_role=self.endorser_role,
             )
         else:
             self.agent = the_agent
@@ -618,7 +646,7 @@ class AgentContainer:
         await self.agent.listen_webhooks(self.start_port + 2)
 
         if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
-            await self.agent.register_did(cred_type=self.cred_type)
+            await self.agent.register_did(cred_type=CRED_FORMAT_INDY)
             log_msg("Created public DID")
 
         with log_timer("Startup duration:"):
@@ -998,6 +1026,21 @@ def arg_parser(ident: str = None, port: int = 8020):
         help="Set the agent wallet type",
     )
     parser.add_argument(
+        "--endorser-role",
+        type=str.lower,
+        choices=["author", "endorser", "none"],
+        metavar="<endorser-role>",
+        help=(
+            "Specify the role ('author' or 'endorser') which this agent will "
+            "participate. Authors will request transaction endorement from an "
+            "Endorser. Endorsers will endorse transactions from Authors, and "
+            "may write their own  transactions to the ledger. If no role "
+            "(or 'none') is specified then the endorsement protocol will not "
+            " be used and this agent will write transactions to the ledger "
+            "directly."
+        ),
+    )
+    parser.add_argument(
         "--arg-file",
         type=str,
         metavar="<arg-file>",
@@ -1093,6 +1136,7 @@ async def create_agent_with_args(args, ident: str = None):
         seed="random" if public_did else None,
         arg_file=arg_file,
         aip=aip,
+        endorser_role=args.endorser_role,
     )
 
     return agent
