@@ -153,7 +153,7 @@ async def main(args):
                 endorser_did = await prompt("Enter Endorser's DID: ")
                 await alice_agent.agent.admin_POST(
                     f"/transactions/{alice_agent.agent.connection_id}/set-endorser-info",
-                    params={"endorser_did": endorser_did},
+                    params={"endorser_did": endorser_did, "endorser_name": "endorser"},
                 )
 
             elif option in "wW" and alice_agent.multitenant:
