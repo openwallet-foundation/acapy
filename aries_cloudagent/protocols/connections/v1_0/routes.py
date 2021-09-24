@@ -407,9 +407,9 @@ async def connections_endpoints(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    session = await context.session()
 
-    connection_mgr = ConnectionManager(session)
+    profile = context.profile
+    connection_mgr = ConnectionManager(profile)
     try:
         endpoints = await connection_mgr.get_endpoints(connection_id)
     except StorageNotFoundError as err:
@@ -504,10 +504,10 @@ async def connections_create_invitation(request: web.BaseRequest):
         raise web.HTTPForbidden(
             reason="Configuration does not include public invitations"
         )
-    session = await context.session()
-    base_url = session.settings.get("invite_base_url")
+    profile = context.profile
+    base_url = profile.settings.get("invite_base_url")
 
-    connection_mgr = ConnectionManager(session)
+    connection_mgr = ConnectionManager(profile)
     try:
         (connection, invitation) = await connection_mgr.create_invitation(
             my_label=my_label,
@@ -559,8 +559,8 @@ async def connections_receive_invitation(request: web.BaseRequest):
         raise web.HTTPForbidden(
             reason="Configuration does not allow receipt of invitations"
         )
-    session = await context.session()
-    connection_mgr = ConnectionManager(session)
+    profile = context.profile
+    connection_mgr = ConnectionManager(profile)
     invitation_json = await request.json()
 
     try:
@@ -599,11 +599,12 @@ async def connections_accept_invitation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
-    session = await context.session()
+    profile = context.profile
 
     try:
-        connection = await ConnRecord.retrieve_by_id(session, connection_id)
-        connection_mgr = ConnectionManager(session)
+        async with profile.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        connection_mgr = ConnectionManager(profile)
         my_label = request.query.get("my_label")
         my_endpoint = request.query.get("my_endpoint")
         mediation_id = request.query.get("mediation_id")
@@ -682,11 +683,13 @@ async def connections_establish_inbound(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     outbound_handler = request["outbound_message_router"]
     inbound_connection_id = request.match_info["ref_id"]
-    session = await context.session()
+
+    profile = context.profile
 
     try:
-        connection = await ConnRecord.retrieve_by_id(session, connection_id)
-        connection_mgr = ConnectionManager(session)
+        async with profile.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        connection_mgr = ConnectionManager(profile)
         await connection_mgr.establish_inbound(
             connection, inbound_connection_id, outbound_handler
         )
@@ -739,9 +742,9 @@ async def connections_create_static(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
-    session = await context.session()
 
-    connection_mgr = ConnectionManager(session)
+    profile = context.profile
+    connection_mgr = ConnectionManager(profile)
     try:
         (
             my_info,

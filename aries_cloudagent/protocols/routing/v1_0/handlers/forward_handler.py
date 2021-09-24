@@ -39,11 +39,10 @@ class ForwardHandler(BaseHandler):
             return
 
         # load connection
-        async with context.session() as session:
-            connection_mgr = ConnectionManager(session)
-            connection_targets = await connection_mgr.get_connection_targets(
-                connection_id=recipient.connection_id
-            )
+        connection_mgr = ConnectionManager(context.profile)
+        connection_targets = await connection_mgr.get_connection_targets(
+            connection_id=recipient.connection_id
+        )
         # TODO: validate that there is 1 target, with 1 verkey. warn otherwise
         connection_verkey = connection_targets[0].recipient_keys[0]
 
