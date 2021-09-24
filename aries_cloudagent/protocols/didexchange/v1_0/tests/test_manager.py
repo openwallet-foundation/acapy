@@ -76,7 +76,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def setUp(self):
         self.responder = MockResponder()
 
-        self.session = InMemoryProfile.test_session(
+        self.profile = InMemoryProfile.test_profile(
             {
                 "default_endpoint": "http://aries.ca/endpoint",
                 "default_label": "This guy",
@@ -88,7 +88,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             },
             bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
         )
-        self.context = self.session.context
+        self.context = self.profile.context
+
+        self.session = self.profile.session()
+        self.session._active = True
 
         self.did_info = await self.session.wallet.create_local_did(
             method=DIDMethod.SOV,
@@ -100,16 +103,16 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
             return_value=TestConfig.test_endpoint
         )
-        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
-        self.session.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             BaseMultitenantManager, self.multitenant_mgr
         )
 
-        self.manager = DIDXManager(self.session)
-        assert self.manager.session
-        self.oob_manager = OutOfBandManager(self.session)
+        self.manager = DIDXManager(self.profile)
+        assert self.manager.profile
+        self.oob_manager = OutOfBandManager(self.profile)
         self.test_mediator_routing_keys = [
             DIDKey.from_public_key_b58(
                 "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR", KeyType.ED25519
@@ -136,7 +139,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             await self.manager.verify_diddoc(self.session.wallet, did_doc_attach)
 
     async def test_receive_invitation(self):
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
             state=MediationRecord.STATE_GRANTED,
@@ -456,7 +459,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         )
 
         STATE_REQUEST = ConnRecord.State.REQUEST
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         ACCEPT_AUTO = ConnRecord.ACCEPT_AUTO
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
@@ -748,7 +751,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             did=TestConfig.test_did,
         )
 
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         mock_conn_rec_state_request = ConnRecord.State.REQUEST
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
@@ -806,7 +809,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             did=TestConfig.test_did,
         )
 
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         mock_conn_rec_state_request = ConnRecord.State.REQUEST
         with async_mock.patch.object(
             test_module, "DIDPosture", autospec=True
@@ -849,7 +852,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             did=TestConfig.test_did,
         )
 
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         mock_conn_rec_state_request = ConnRecord.State.REQUEST
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
@@ -908,7 +911,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             did=TestConfig.test_did,
         )
 
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         mock_conn_rec_state_request = ConnRecord.State.REQUEST
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
@@ -966,7 +969,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             did=TestConfig.test_did,
         )
 
-        self.session.context.update_settings({"public_invites": False})
+        self.profile.context.update_settings({"public_invites": False})
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
         ) as mock_conn_rec_cls, async_mock.patch.object(
@@ -1014,7 +1017,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             did=TestConfig.test_did,
         )
 
-        self.session.context.update_settings(
+        self.profile.context.update_settings(
             {"public_invites": True, "debug.auto_accept_requests": False}
         )
         mock_conn_rec_state_request = ConnRecord.State.REQUEST
@@ -1102,7 +1105,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             did=TestConfig.test_did,
         )
 
-        self.session.context.update_settings({"public_invites": True})
+        self.profile.context.update_settings({"public_invites": True})
         with async_mock.patch.object(
             test_module, "ConnRecord", async_mock.MagicMock()
         ) as mock_conn_rec_cls, async_mock.patch.object(
@@ -1487,7 +1490,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             connection_id="dummy", state=ConnRecord.State.REQUEST.rfc23
         )
 
-        self.manager.session.context.update_settings(
+        self.manager.profile.context.update_settings(
             {
                 "multitenant.enabled": True,
                 "wallet.id": "test_wallet",

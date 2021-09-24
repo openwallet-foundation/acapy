@@ -8,7 +8,7 @@ from ....connections.models.diddoc import DIDDoc
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
-from ....core.profile import ProfileSession, Profile
+from ....core.profile import Profile
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
@@ -303,7 +303,9 @@ class DIDXManager(BaseConnectionManager):
             qualified_did = f"did:sov:{conn_rec.their_public_did}"
         pthid = conn_rec.invitation_msg_id or qualified_did
         attach = AttachDecorator.data_base64(did_doc.serialize())
-        await attach.data.sign(my_info.verkey, wallet)
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            await attach.data.sign(my_info.verkey, wallet)
         if not my_label:
             my_label = self.profile.settings.get("default_label")
         request = DIDXRequest(
@@ -364,17 +366,16 @@ class DIDXManager(BaseConnectionManager):
         conn_rec = None
         connection_key = None
         my_info = None
-        wallet = self._session.inject(BaseWallet)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject_or(BaseMultitenantManager)
-        wallet_id = self._session.settings.get("wallet.id")
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        wallet_id = self.profile.settings.get("wallet.id")
 
         # Determine what key will need to sign the response
         if recipient_verkey:  # peer DID
             connection_key = recipient_verkey
         else:
-            if not self._session.settings.get("public_invites"):
+            if not self.profile.settings.get("public_invites"):
                 raise DIDXManagerError(
                     "Public invitations are not enabled: connection request refused"
                 )
@@ -428,7 +429,9 @@ class DIDXManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await new_conn_rec.save(
                         session,
-                        reason="Received connection request from multi-use invitation DID",
+                        reason=(
+                            "Received connection request from multi-use invitation DID"
+                        ),
                     )
 
                 # Transfer metadata from multi-use to new connection
@@ -455,8 +458,10 @@ class DIDXManager(BaseConnectionManager):
                 "DID Doc attachment missing or has no data: "
                 "cannot connect to public DID"
             )
-        if not await request.did_doc_attach.data.verify(wallet):
-            raise DIDXManagerError("DID Doc signature failed verification")
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            if not await request.did_doc_attach.data.verify(wallet):
+                raise DIDXManagerError("DID Doc signature failed verification")
         conn_did_doc = DIDDoc.from_json(request.did_doc_attach.data.signed.decode())
         if request.did != conn_did_doc.did:
             raise DIDXManagerError(
@@ -485,10 +490,12 @@ class DIDXManager(BaseConnectionManager):
                 )
         else:
             # request is against implicit invitation on public DID
-            my_info = await wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
-            )
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.create_local_did(
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
 
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
@@ -637,7 +644,9 @@ class DIDXManager(BaseConnectionManager):
             ),
         )
         attach = AttachDecorator.data_base64(did_doc.serialize())
-        await attach.data.sign(conn_rec.invitation_key, wallet)
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            await attach.data.sign(conn_rec.invitation_key, wallet)
         response = DIDXResponse(did=my_info.did, did_doc_attach=attach)
         # Assign thread information
         response.assign_thread_from(request)
