@@ -26,13 +26,14 @@ class ConnectionRequestHandler(BaseHandler):
         self._logger.debug(f"ConnectionRequestHandler called with context {context}")
         assert isinstance(context.message, ConnectionRequest)
 
-        session = await context.session()
-        mgr = ConnectionManager(session)
+        profile = context.profile
+        mgr = ConnectionManager(profile)
 
         if context.connection_record:
-            mediation_metadata = await context.connection_record.metadata_get(
-                session, "mediation", {}
-            )
+            async with profile.session() as session:
+                mediation_metadata = await context.connection_record.metadata_get(
+                    session, "mediation", {}
+                )
         else:
             mediation_metadata = {}
 
