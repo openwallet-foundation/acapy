@@ -361,6 +361,7 @@ class DemoAgent:
                         ("--endorser-protocol-role", "author"),
                         ("--auto-request-endorsement",),
                         ("--auto-write-transactions",),
+                        ("--endorser-alias", "endorser"),
                     ]
                 )
             elif self.endorser_role == "endorser":
@@ -1053,13 +1054,21 @@ class DemoAgent:
         return invi_rec
 
     async def receive_invite(self, invite, auto_accept: bool = True):
+        if self.endorser_role and self.endorser_role == "author":
+            params = {"alias": "endorser"}
+        else:
+            params = None
         if "/out-of-band/" in invite.get("@type", ""):
             connection = await self.admin_POST(
-                "/out-of-band/receive-invitation", invite
+                "/out-of-band/receive-invitation",
+                invite,
+                params=params,
             )
         else:
             connection = await self.admin_POST(
-                "/connections/receive-invitation", invite
+                "/connections/receive-invitation",
+                invite,
+                params=params,
             )
 
         self.connection_id = connection["connection_id"]

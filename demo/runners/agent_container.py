@@ -125,6 +125,8 @@ class AriesAgent(DemoAgent):
                         await asyncio.sleep(2.0)
                     elif self.endorser_role == "endorser":
                         connection_job_role = "TRANSACTION_ENDORSER"
+                        # short pause here to avoid race condition (both agents updating the connection role)
+                        await asyncio.sleep(1.0)
                     else:
                         connection_job_role = "None"
 
