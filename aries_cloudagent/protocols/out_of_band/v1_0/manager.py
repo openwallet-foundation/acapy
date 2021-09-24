@@ -10,7 +10,7 @@ from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
-from ....core.profile import ProfileSession
+from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....indy.holder import IndyHolder
 from ....indy.models.xform import indy_proof_req_preview2indy_requested_creds
@@ -66,26 +66,27 @@ class OutOfBandManagerNotImplementedError(BaseError):
 class OutOfBandManager(BaseConnectionManager):
     """Class for managing out of band messages."""
 
-    def __init__(self, session: ProfileSession):
+    def __init__(self, profile: Profile):
         """
         Initialize a OutOfBandManager.
 
         Args:
-            session: The profile session for this out of band manager
+            profile: The profile for this out of band manager
         """
-        self._session = session
-        super().__init__(self._session.profile)
+        self._profile = profile
+        print(profile)
+        super().__init__(self._profile)
 
     @property
-    def session(self) -> ProfileSession:
+    def profile(self) -> Profile:
         """
-        Accessor for the current profile session.
+        Accessor for the current profile.
 
         Returns:
-            The profile session for this connection manager
+            The profile for this connection manager
 
         """
-        return self._session
+        return self._profile
 
     async def create_invitation(
         self,
@@ -122,9 +123,9 @@ class OutOfBandManager(BaseConnectionManager):
             Invitation record
 
         """
-        mediation_mgr = MediationManager(self._session.profile)
+        mediation_mgr = MediationManager(self.profile)
         mediation_record = await mediation_record_if_id(
-            self._session,
+            self.profile,
             mediation_id,
             or_default=True,
         )
@@ -136,17 +137,15 @@ class OutOfBandManager(BaseConnectionManager):
                 "request attachments, or both"
             )
 
-        wallet = self._session.inject(BaseWallet)
-
         # Multitenancy setup
-        multitenant_mgr = self._session.inject_or(BaseMultitenantManager)
-        wallet_id = self._session.settings.get("wallet.id")
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        wallet_id = self.profile.settings.get("wallet.id")
 
         accept = bool(
             auto_accept
             or (
                 auto_accept is None
-                and self._session.settings.get("debug.auto_accept_requests")
+                and self.profile.settings.get("debug.auto_accept_requests")
             )
         )
         if public:
@@ -166,20 +165,22 @@ class OutOfBandManager(BaseConnectionManager):
 
             if a_type == "credential-offer":
                 try:
-                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                        self._session,
-                        a_id,
-                    )
+                    async with self.profile.session() as session:
+                        cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
+                            session,
+                            a_id,
+                        )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
                             cred_ex_rec.credential_offer_dict.serialize()
                         )
                     )
                 except StorageNotFoundError:
-                    cred_ex_rec = await V20CredExRecord.retrieve_by_id(
-                        self._session,
-                        a_id,
-                    )
+                    async with self.profile.session() as session:
+                        cred_ex_rec = await V20CredExRecord.retrieve_by_id(
+                            session,
+                            a_id,
+                        )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
                             cred_ex_rec.cred_offer.serialize()
@@ -187,20 +188,22 @@ class OutOfBandManager(BaseConnectionManager):
                     )
             elif a_type == "present-proof":
                 try:
-                    pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
-                        self._session,
-                        a_id,
-                    )
+                    async with self.profile.session() as session:
+                        pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
+                            session,
+                            a_id,
+                        )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
                             pres_ex_rec.presentation_request_dict.serialize()
                         )
                     )
                 except StorageNotFoundError:
-                    pres_ex_rec = await V20PresExRecord.retrieve_by_id(
-                        self._session,
-                        a_id,
-                    )
+                    async with self.profile.session() as session:
+                        pres_ex_rec = await V20PresExRecord.retrieve_by_id(
+                            session,
+                            a_id,
+                        )
                     message_attachments.append(
                         InvitationMessage.wrap_message(
                             pres_ex_rec.pres_request.serialize()
@@ -217,17 +220,19 @@ class OutOfBandManager(BaseConnectionManager):
         )
 
         if public:
-            if not self._session.settings.get("public_invites"):
+            if not self.profile.settings.get("public_invites"):
                 raise OutOfBandManagerError("Public invitations are not enabled")
 
-            public_did = await wallet.get_public_did()
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                public_did = await wallet.get_public_did()
             if not public_did:
                 raise OutOfBandManagerError(
                     "Cannot create public invitation with no public DID"
                 )
 
             invi_msg = InvitationMessage(  # create invitation message
-                label=my_label or self._session.settings.get("default_label"),
+                label=my_label or self.profile.settings.get("default_label"),
                 handshake_protocols=handshake_protocols,
                 requests_attach=message_attachments,
                 services=[f"did:sov:{public_did.did}"],
@@ -249,8 +254,9 @@ class OutOfBandManager(BaseConnectionManager):
                 connection_protocol=connection_protocol,
             )
 
-            await conn_rec.save(self._session, reason="Created new invitation")
-            await conn_rec.attach_invitation(self._session, invi_msg)
+            async with self.profile.session() as session:
+                await conn_rec.save(session, reason="Created new invitation")
+                await conn_rec.attach_invitation(session, invi_msg)
 
             if multitenant_mgr and wallet_id:  # add mapping for multitenant relay
                 await multitenant_mgr.add_key(
@@ -265,10 +271,13 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
             if not my_endpoint:
-                my_endpoint = self._session.settings.get("default_endpoint")
+                my_endpoint = self.profile.settings.get("default_endpoint")
 
             # Create and store new invitation key
-            connection_key = await wallet.create_signing_key(KeyType.ED25519)
+
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                connection_key = await wallet.create_signing_key(KeyType.ED25519)
             keylist_updates = await mediation_mgr.add_key(
                 connection_key.verkey, keylist_updates
             )
@@ -289,7 +298,9 @@ class OutOfBandManager(BaseConnectionManager):
                 connection_protocol=connection_protocol,
                 invitation_msg_id=invi_msg._id,
             )
-            await conn_rec.save(self._session, reason="Created new connection")
+
+            async with self.profile.session() as session:
+                await conn_rec.save(session, reason="Created new connection")
 
             routing_keys = []
             # The base wallet can act as a mediator for all tenants
@@ -310,12 +321,14 @@ class OutOfBandManager(BaseConnectionManager):
                 my_endpoint = mediation_record.endpoint
 
                 # Save that this invitation was created with mediation
-                await conn_rec.metadata_set(
-                    self._session, "mediation", {"id": mediation_id}
-                )
+
+                async with self.profile.session() as session:
+                    await conn_rec.metadata_set(
+                        session, "mediation", {"id": mediation_id}
+                    )
 
                 if keylist_updates:
-                    responder = self._session.inject_or(BaseResponder)
+                    responder = self.profile.inject_or(BaseResponder)
                     await responder.send(
                         keylist_updates, connection_id=mediation_record.connection_id
                     )
@@ -329,7 +342,7 @@ class OutOfBandManager(BaseConnectionManager):
             # Note: Need to split this into two stages to support inbound routing
             # of invitations
             # Would want to reuse create_did_document and convert the result
-            invi_msg.label = my_label or self._session.settings.get("default_label")
+            invi_msg.label = my_label or self.profile.settings.get("default_label")
             invi_msg.handshake_protocols = handshake_protocols
             invi_msg.requests_attach = message_attachments
             invi_msg.services = [
@@ -348,11 +361,14 @@ class OutOfBandManager(BaseConnectionManager):
             invi_url = invi_msg.to_url()
 
             # Update connection record
-            await conn_rec.attach_invitation(self._session, invi_msg)
+
+            async with self.profile.session() as session:
+                await conn_rec.attach_invitation(session, invi_msg)
 
             if metadata:
-                for key, value in metadata.items():
-                    await conn_rec.metadata_set(self._session, key, value)
+                async with self.profile.session() as session:
+                    for key, value in metadata.items():
+                        await conn_rec.metadata_set(session, key, value)
 
         return InvitationRecord(  # for return via admin API, not storage
             state=InvitationRecord.STATE_INITIAL,
@@ -385,7 +401,7 @@ class OutOfBandManager(BaseConnectionManager):
         """
         if mediation_id:
             try:
-                await mediation_record_if_id(self._session, mediation_id)
+                await mediation_record_if_id(self.profile, mediation_id)
             except StorageNotFoundError:
                 mediation_id = None
 
@@ -472,29 +488,34 @@ class OutOfBandManager(BaseConnectionManager):
                         ),
                         15,
                     )
-                    await conn_rec.metadata_delete(
-                        session=self._session, key="reuse_msg_id"
-                    )
-                    if (
-                        await conn_rec.metadata_get(self._session, "reuse_msg_state")
-                        == "not_accepted"
-                    ):
+                    async with self.profile.session() as session:
+                        await conn_rec.metadata_delete(
+                            session=session, key="reuse_msg_id"
+                        )
+
+                        msg_state = await conn_rec.metadata_get(
+                            session, "reuse_msg_state"
+                        )
+
+                    if msg_state == "not_accepted":
                         conn_rec = None
                     else:
-                        await conn_rec.metadata_delete(
-                            session=self._session, key="reuse_msg_state"
-                        )
+                        async with self.profile.session() as session:
+                            await conn_rec.metadata_delete(
+                                session=session, key="reuse_msg_state"
+                            )
                 except asyncio.TimeoutError:
                     # If no reuse_accepted or problem_report message was received within
                     # the 15s timeout then a new connection to be created
-                    await conn_rec.metadata_delete(
-                        session=self._session, key="reuse_msg_id"
-                    )
-                    await conn_rec.metadata_delete(
-                        session=self._session, key="reuse_msg_state"
-                    )
-                    conn_rec.state = ConnRecord.State.ABANDONED.rfc160
-                    await conn_rec.save(self._session, reason="Sent connection request")
+                    async with self.profile.session() as session:
+                        await conn_rec.metadata_delete(
+                            session=session, key="reuse_msg_id"
+                        )
+                        await conn_rec.metadata_delete(
+                            session=session, key="reuse_msg_state"
+                        )
+                        conn_rec.state = ConnRecord.State.ABANDONED.rfc160
+                        await conn_rec.save(session, reason="Sent connection request")
                     conn_rec = None
             # Inverse of the following cases
             # Handshake_Protocol not included
@@ -524,7 +545,7 @@ class OutOfBandManager(BaseConnectionManager):
             # Create a new connection
             for proto in unq_handshake_protos:
                 if proto is HSProto.RFC23:
-                    didx_mgr = DIDXManager(self._session)
+                    didx_mgr = DIDXManager(self.profile)
                     conn_rec = await didx_mgr.receive_invitation(
                         invitation=invitation,
                         their_public_did=public_did,
@@ -551,14 +572,15 @@ class OutOfBandManager(BaseConnectionManager):
                             "routingKeys": service.routing_keys,
                         }
                     )
-                    conn_mgr = ConnectionManager(self._session)
-                    conn_rec = await conn_mgr.receive_invitation(
-                        invitation=connection_invitation,
-                        their_public_did=public_did,
-                        auto_accept=auto_accept,
-                        alias=alias,
-                        mediation_id=mediation_id,
-                    )
+                    async with self.profile.session() as session:
+                        conn_mgr = ConnectionManager(session)
+                        conn_rec = await conn_mgr.receive_invitation(
+                            invitation=connection_invitation,
+                            their_public_did=public_did,
+                            auto_accept=auto_accept,
+                            alias=alias,
+                            mediation_id=mediation_id,
+                        )
                 if conn_rec is not None:
                     break
 
@@ -585,7 +607,7 @@ class OutOfBandManager(BaseConnectionManager):
                             trace=(invitation._trace is not None),
                         )
                     elif unq_req_attach_type == CREDENTIAL_OFFER:
-                        if auto_accept or self._session.settings.get(
+                        if auto_accept or self.profile.settings.get(
                             "debug.auto_accept_invites"
                         ):
                             try:
@@ -605,7 +627,7 @@ class OutOfBandManager(BaseConnectionManager):
                             trace=(invitation._trace is not None),
                         )
                     elif unq_req_attach_type == CRED_20_OFFER:
-                        if auto_accept or self._session.settings.get(
+                        if auto_accept or self.profile.settings.get(
                             "debug.auto_accept_invites"
                         ):
                             try:
@@ -654,7 +676,7 @@ class OutOfBandManager(BaseConnectionManager):
             conn_rec: connection record
             trace: trace setting for presentation exchange record
         """
-        pres_mgr = PresentationManager(self._session.profile)
+        pres_mgr = PresentationManager(self.profile)
         pres_request_msg = req_attach.content
         indy_proof_request = json.loads(
             b64_to_bytes(
@@ -674,7 +696,7 @@ class OutOfBandManager(BaseConnectionManager):
             role=V10PresentationExchange.ROLE_PROVER,
             presentation_request=indy_proof_request,
             presentation_request_dict=pres_request_msg,
-            auto_present=self._session.context.settings.get(
+            auto_present=self.profile.context.settings.get(
                 "debug.auto_respond_presentation_request"
             ),
             trace=trace,
@@ -683,11 +705,12 @@ class OutOfBandManager(BaseConnectionManager):
         pres_ex_record = await pres_mgr.receive_request(pres_ex_record)
         if pres_ex_record.auto_present:
             try:
-                req_creds = await indy_proof_req_preview2indy_requested_creds(
-                    indy_proof_req=indy_proof_request,
-                    preview=None,
-                    holder=self._session.inject(IndyHolder),
-                )
+                async with self.profile.session() as session:
+                    req_creds = await indy_proof_req_preview2indy_requested_creds(
+                        indy_proof_req=indy_proof_request,
+                        preview=None,
+                        holder=session.inject(IndyHolder),
+                    )
             except ValueError as err:
                 LOGGER.exception(
                     "Unable to auto-respond to presentation request "
@@ -707,7 +730,7 @@ class OutOfBandManager(BaseConnectionManager):
                     )
                 ),
             )
-            responder = self._session.inject_or(BaseResponder)
+            responder = self.profile.inject_or(BaseResponder)
             if responder:
                 await responder.send(
                     message=presentation_message,
@@ -739,7 +762,7 @@ class OutOfBandManager(BaseConnectionManager):
             conn_rec: connection record
             trace: trace setting for presentation exchange record
         """
-        pres_mgr = V20PresManager(self._session.profile)
+        pres_mgr = V20PresManager(self.profile)
         pres_request_msg = req_attach.content
         oob_invi_service = service.serialize()
         pres_request_msg["~service"] = {
@@ -753,7 +776,7 @@ class OutOfBandManager(BaseConnectionManager):
             initiator=V20PresExRecord.INITIATOR_EXTERNAL,
             role=V20PresExRecord.ROLE_PROVER,
             pres_request=pres_request_msg,
-            auto_present=self._session.context.settings.get(
+            auto_present=self.profile.context.settings.get(
                 "debug.auto_respond_presentation_request"
             ),
             trace=trace,
@@ -768,7 +791,7 @@ class OutOfBandManager(BaseConnectionManager):
                     f", pres_ex_record: {pres_ex_record.pres_ex_id}"
                 ),
             )
-            responder = self._session.inject_or(BaseResponder)
+            responder = self.profile.inject_or(BaseResponder)
             if responder:
                 await responder.send(
                     message=pres_msg,
@@ -798,21 +821,21 @@ class OutOfBandManager(BaseConnectionManager):
             service: service message from invitation
             conn_rec: connection record
         """
-        cred_mgr = V10CredManager(self._session.profile)
+        cred_mgr = V10CredManager(self.profile)
         cred_offer_msg = req_attach.content
         cred_offer = V10CredOffer.deserialize(cred_offer_msg)
-        cred_offer.assign_trace_decorator(self._session.profile.settings, trace)
+        cred_offer.assign_trace_decorator(self.profile.settings, trace)
         # receive credential offer
         cred_ex_record = await cred_mgr.receive_offer(
             message=cred_offer, connection_id=conn_rec.connection_id
         )
-        if self._session.context.settings.get("debug.auto_respond_credential_offer"):
+        if self.profile.context.settings.get("debug.auto_respond_credential_offer"):
             if conn_rec.is_ready:
                 (_, cred_request_message) = await cred_mgr.create_request(
                     cred_ex_record=cred_ex_record,
                     holder_did=conn_rec.my_did,
                 )
-                responder = self._session.inject_or(BaseResponder)
+                responder = self.profile.inject_or(BaseResponder)
                 if responder:
                     await responder.send(
                         message=cred_request_message,
@@ -842,21 +865,21 @@ class OutOfBandManager(BaseConnectionManager):
             service: service message from invitation
             conn_rec: connection record
         """
-        cred_mgr = V20CredManager(self._session.profile)
+        cred_mgr = V20CredManager(self.profile)
         cred_offer_msg = req_attach.content
         cred_offer = V20CredOffer.deserialize(cred_offer_msg)
-        cred_offer.assign_trace_decorator(self._session.profile.settings, trace)
+        cred_offer.assign_trace_decorator(self.profile.settings, trace)
 
         cred_ex_record = await cred_mgr.receive_offer(
             cred_offer_message=cred_offer, connection_id=conn_rec.connection_id
         )
-        if self._session.context.settings.get("debug.auto_respond_credential_offer"):
+        if self.profile.context.settings.get("debug.auto_respond_credential_offer"):
             if conn_rec.is_ready:
                 (_, cred_request_message) = await cred_mgr.create_request(
                     cred_ex_record=cred_ex_record,
                     holder_did=conn_rec.my_did,
                 )
-                responder = self._session.inject_or(BaseResponder)
+                responder = self.profile.inject_or(BaseResponder)
                 if responder:
                     await responder.send(
                         message=cred_request_message,
@@ -889,12 +912,13 @@ class OutOfBandManager(BaseConnectionManager):
             ConnRecord or None
 
         """
-        conn_records = await ConnRecord.query(
-            self._session,
-            tag_filter=tag_filter,
-            post_filter_positive=post_filter,
-            alt=True,
-        )
+        async with self.profile.session() as session:
+            conn_records = await ConnRecord.query(
+                session,
+                tag_filter=tag_filter,
+                post_filter_positive=post_filter,
+                alt=True,
+            )
         if not conn_records:
             return None
         else:
@@ -918,10 +942,11 @@ class OutOfBandManager(BaseConnectionManager):
         """
         received = False
         while not received:
-            if (
-                not await conn_rec.metadata_get(self._session, "reuse_msg_state")
-                == "initial"
-            ):
+            print("aaa")
+            msg_state = None
+            async with self.profile.session() as session:
+                msg_state = await conn_rec.metadata_get(session, "reuse_msg_state")
+            if msg_state != "initial":
                 received = True
         return
 
@@ -937,9 +962,10 @@ class OutOfBandManager(BaseConnectionManager):
 
         """
         while True:
-            conn_rec = await ConnRecord.retrieve_by_id(self._session, conn_rec_id)
-            if conn_rec.is_ready:
-                return conn_rec
+            async with self.profile.session() as session:
+                conn_rec = await ConnRecord.retrieve_by_id(session, conn_rec_id)
+                if conn_rec.is_ready:
+                    return conn_rec
             asyncio.sleep(0.5)
 
     async def create_handshake_reuse_message(
@@ -971,18 +997,19 @@ class OutOfBandManager(BaseConnectionManager):
             connection_targets = await self.fetch_connection_targets(
                 connection=conn_record
             )
-            responder = self._session.inject_or(BaseResponder)
+            responder = self.profile.inject_or(BaseResponder)
             if responder:
                 await responder.send(
                     message=reuse_msg,
                     target_list=connection_targets,
                 )
-                await conn_record.metadata_set(
-                    session=self._session, key="reuse_msg_id", value=reuse_msg._id
-                )
-                await conn_record.metadata_set(
-                    session=self._session, key="reuse_msg_state", value="initial"
-                )
+                async with self.profile.session() as session:
+                    await conn_record.metadata_set(
+                        session=session, key="reuse_msg_id", value=reuse_msg._id
+                    )
+                    await conn_record.metadata_set(
+                        session=session, key="reuse_msg_state", value="initial"
+                    )
         except Exception as err:
             raise OutOfBandManagerError(
                 f"Error on creating and sending a handshake reuse message: {err}"
@@ -1021,7 +1048,7 @@ class OutOfBandManager(BaseConnectionManager):
             conn_record = await self.find_existing_connection(
                 tag_filter=tag_filter, post_filter=post_filter
             )
-            responder = self._session.inject_or(BaseResponder)
+            responder = self.profile.inject_or(BaseResponder)
             if conn_record is not None:
                 # For ConnRecords created using did-exchange
                 reuse_accept_msg = HandshakeReuseAccept()
@@ -1098,13 +1125,14 @@ class OutOfBandManager(BaseConnectionManager):
         try:
             invi_msg_id = reuse_accepted_msg._thread.pthid
             thread_reuse_msg_id = reuse_accepted_msg._thread.thid
-            conn_reuse_msg_id = await conn_record.metadata_get(
-                session=self._session, key="reuse_msg_id"
-            )
-            assert thread_reuse_msg_id == conn_reuse_msg_id
-            await conn_record.metadata_set(
-                session=self._session, key="reuse_msg_state", value="accepted"
-            )
+            async with self.profile.session() as session:
+                conn_reuse_msg_id = await conn_record.metadata_get(
+                    session=session, key="reuse_msg_id"
+                )
+                assert thread_reuse_msg_id == conn_reuse_msg_id
+                await conn_record.metadata_set(
+                    session=session, key="reuse_msg_state", value="accepted"
+                )
         except Exception as e:
             raise OutOfBandManagerError(
                 (
@@ -1141,13 +1169,14 @@ class OutOfBandManager(BaseConnectionManager):
         try:
             invi_msg_id = problem_report._thread.pthid
             thread_reuse_msg_id = problem_report._thread.thid
-            conn_reuse_msg_id = await conn_record.metadata_get(
-                session=self._session, key="reuse_msg_id"
-            )
-            assert thread_reuse_msg_id == conn_reuse_msg_id
-            await conn_record.metadata_set(
-                session=self._session, key="reuse_msg_state", value="not_accepted"
-            )
+            async with self.profile.session() as session:
+                conn_reuse_msg_id = await conn_record.metadata_get(
+                    session=session, key="reuse_msg_id"
+                )
+                assert thread_reuse_msg_id == conn_reuse_msg_id
+                await conn_record.metadata_set(
+                    session=session, key="reuse_msg_state", value="not_accepted"
+                )
         except Exception as e:
             raise OutOfBandManagerError(
                 (

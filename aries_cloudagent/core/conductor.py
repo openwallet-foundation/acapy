@@ -266,22 +266,21 @@ class Conductor:
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                async with self.root_profile.session() as session:
-                    mgr = OutOfBandManager(session)
-                    invi_rec = await mgr.create_invitation(
-                        my_label=context.settings.get("debug.invite_label"),
-                        public=context.settings.get("debug.invite_public", False),
-                        multi_use=context.settings.get("debug.invite_multi_use", False),
-                        hs_protos=[HSProto.RFC23],
-                        metadata=json.loads(
-                            context.settings.get("debug.invite_metadata_json", "{}")
-                        ),
-                    )
-                    base_url = context.settings.get("invite_base_url")
-                    invite_url = invi_rec.invitation.to_url(base_url)
-                    print("Invitation URL:")
-                    print(invite_url, flush=True)
-                    del mgr
+                mgr = OutOfBandManager(self.root_profile)
+                invi_rec = await mgr.create_invitation(
+                    my_label=context.settings.get("debug.invite_label"),
+                    public=context.settings.get("debug.invite_public", False),
+                    multi_use=context.settings.get("debug.invite_multi_use", False),
+                    hs_protos=[HSProto.RFC23],
+                    metadata=json.loads(
+                        context.settings.get("debug.invite_metadata_json", "{}")
+                    ),
+                )
+                base_url = context.settings.get("invite_base_url")
+                invite_url = invi_rec.invitation.to_url(base_url)
+                print("Invitation URL:")
+                print(invite_url, flush=True)
+                del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
 
