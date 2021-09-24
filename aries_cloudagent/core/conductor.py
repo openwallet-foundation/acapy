@@ -304,6 +304,7 @@ class Conductor:
 
         # mediation connection establishment
         provided_invite: str = context.settings.get("mediation.invite")
+
         async with self.root_profile.session() as session:
             try:
                 invite_store = MediationInviteStore(session.context.inject(BaseStorage))
@@ -314,35 +315,36 @@ class Conductor:
                 LOGGER.exception("Error retrieving mediator invitation")
                 mediation_invite_record = None
 
-            # Accept mediation invitation if one was specified or stored
-            if mediation_invite_record is not None:
-                try:
-                    mediation_connections_invite = context.settings.get(
-                        "mediation.connections_invite", False
-                    )
-                    invitation_handler = (
-                        ConnectionInvitation
+        # Accept mediation invitation if one was specified or stored
+        if mediation_invite_record is not None:
+            try:
+                mediation_connections_invite = context.settings.get(
+                    "mediation.connections_invite", False
+                )
+                invitation_handler = (
+                    ConnectionInvitation
+                    if mediation_connections_invite
+                    else InvitationMessage
+                )
+
+                if not mediation_invite_record.used:
+                    # clear previous mediator configuration before establishing a
+                    # new one
+                    await MediationManager(self.root_profile).clear_default_mediator()
+
+                    mgr = (
+                        ConnectionManager(self.root_profile)
                         if mediation_connections_invite
-                        else InvitationMessage
+                        else OutOfBandManager(self.root_profile)
                     )
 
-                    if not mediation_invite_record.used:
-                        # clear previous mediator configuration before establishing a
-                        # new one
-                        await MediationManager(session.profile).clear_default_mediator()
-
-                        mgr = (
-                            ConnectionManager(session)
-                            if mediation_connections_invite
-                            else OutOfBandManager(session)
-                        )
-
-                        conn_record = await mgr.receive_invitation(
-                            invitation=invitation_handler.from_url(
-                                mediation_invite_record.invite
-                            ),
-                            auto_accept=True,
-                        )
+                    conn_record = await mgr.receive_invitation(
+                        invitation=invitation_handler.from_url(
+                            mediation_invite_record.invite
+                        ),
+                        auto_accept=True,
+                    )
+                    async with self.root_profile.session() as session:
                         await (
                             MediationInviteStore(
                                 session.context.inject(BaseStorage)
@@ -356,10 +358,10 @@ class Conductor:
                             session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
                         )
 
-                        print("Attempting to connect to mediator...")
-                        del mgr
-                except Exception:
-                    LOGGER.exception("Error accepting mediation invitation")
+                    print("Attempting to connect to mediator...")
+                    del mgr
+            except Exception:
+                LOGGER.exception("Error accepting mediation invitation")
 
     async def stop(self, timeout=1.0):
         """Stop the agent."""
