@@ -368,6 +368,29 @@ async def publish_revocations(request: web.BaseRequest):
     endorser_did = None
     connection_id = request.query.get("conn_id")
 
+    # check if we need to endorse
+    if context.settings.get_value("endorser.author"):
+        # authors cannot write to the ledger
+        write_ledger = False
+        create_transaction_for_endorser = True
+        if not connection_id:
+            # author has not provided a connection id, so determine which to use
+            endorser_alias = context.settings.get_value("endorser.endorser_alias")
+            if not endorser_alias:
+                raise web.HTTPBadRequest(reason="No endorser conenction specified")
+            try:
+                async with context.session() as session:
+                    connection_records = await ConnRecord.retrieve_by_alias(
+                        session, endorser_alias
+                    )
+                    connection_id = connection_records[0].connection_id
+            except StorageNotFoundError as err:
+                raise web.HTTPNotFound(reason=err.roll_up) from err
+            except BaseModelError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+            except Exception as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     rev_manager = RevocationManager(context.profile)
 
     if not write_ledger:
@@ -757,8 +780,30 @@ async def send_rev_reg_def(request: web.BaseRequest):
     endorser_did = None
     connection_id = request.query.get("conn_id")
 
-    if not write_ledger:
+    # check if we need to endorse
+    if context.settings.get_value("endorser.author"):
+        # authors cannot write to the ledger
+        write_ledger = False
+        create_transaction_for_endorser = True
+        if not connection_id:
+            # author has not provided a connection id, so determine which to use
+            endorser_alias = context.settings.get_value("endorser.endorser_alias")
+            if not endorser_alias:
+                raise web.HTTPBadRequest(reason="No endorser conenction specified")
+            try:
+                async with context.session() as session:
+                    connection_records = await ConnRecord.retrieve_by_alias(
+                        session, endorser_alias
+                    )
+                    connection_id = connection_records[0].connection_id
+            except StorageNotFoundError as err:
+                raise web.HTTPNotFound(reason=err.roll_up) from err
+            except BaseModelError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+            except Exception as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    if not write_ledger:
         try:
             async with context.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
@@ -843,8 +888,30 @@ async def send_rev_reg_entry(request: web.BaseRequest):
     connection_id = request.query.get("conn_id")
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    if not write_ledger:
+    # check if we need to endorse
+    if context.settings.get_value("endorser.author"):
+        # authors cannot write to the ledger
+        write_ledger = False
+        create_transaction_for_endorser = True
+        if not connection_id:
+            # author has not provided a connection id, so determine which to use
+            endorser_alias = context.settings.get_value("endorser.endorser_alias")
+            if not endorser_alias:
+                raise web.HTTPBadRequest(reason="No endorser conenction specified")
+            try:
+                async with context.session() as session:
+                    connection_records = await ConnRecord.retrieve_by_alias(
+                        session, endorser_alias
+                    )
+                    connection_id = connection_records[0].connection_id
+            except StorageNotFoundError as err:
+                raise web.HTTPNotFound(reason=err.roll_up) from err
+            except BaseModelError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+            except Exception as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    if not write_ledger:
         try:
             async with context.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(

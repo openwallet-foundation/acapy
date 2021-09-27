@@ -320,6 +320,7 @@ class TransactionManager:
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Received an endorsed response")
 
+        # this scenario is where the author has asked the endorser to write the ledger
         if transaction.endorser_write_txn:
             await self.store_record_in_wallet(response.ledger_response)
 
@@ -364,6 +365,8 @@ class TransactionManager:
         async with profile_session.profile.session() as session:
             await transaction.save(session, reason="Completed transaction")
 
+        # this scenario is where the endorser is writing the transaction
+        # (called from self.create_endorse_response())
         if transaction.endorser_write_txn:
             return ledger_response
 
@@ -383,6 +386,7 @@ class TransactionManager:
                 " in connection metadata for this connection record"
             )
         if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
+            # the author write the endorsed transaction to the ledger
             await self.store_record_in_wallet(ledger_response)
             transaction_acknowledgement_message = TransactionAcknowledgement(
                 thread_id=transaction._id
@@ -443,6 +447,10 @@ class TransactionManager:
             )
         if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
             await self.store_record_in_wallet(response.ledger_response)
+
+        # for a credential definition, see if we need to initiate the revocation registry
+        if response.ledger_response["result"]["txn"]["type"] == "102":
+            credential_definition_id = response.ledger_response["result"]["txnMetadata"]["txnId"]
 
         return transaction
 
