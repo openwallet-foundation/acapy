@@ -32,7 +32,10 @@ from ..messaging.valid import (
     WHOLE_NUM,
     UUIDFour,
 )
-from ..protocols.endorse_transaction.v1_0.manager import TransactionManager
+from ..protocols.endorse_transaction.v1_0.manager import (
+    TransactionManager,
+    TransactionManagerError,
+)
 from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
@@ -359,6 +362,7 @@ async def publish_revocations(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
     body = await request.json()
     rrid2crid = body.get("rrid2crid")
     create_transaction_for_endorser = json.loads(
@@ -441,6 +445,20 @@ async def publish_revocations(request: web.BaseRequest):
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if context.settings.get_value("endorser.auto_request"):
+            try:
+                transaction, transaction_request = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+            await outbound_handler(transaction_request, connection_id=connection_id)
 
         return web.json_response({"txn": transaction.serialize()})
 
@@ -762,7 +780,7 @@ async def upload_tails_file(request: web.BaseRequest):
 @response_schema(TxnOrRevRegResultSchema(), 200, description="")
 async def send_rev_reg_def(request: web.BaseRequest):
     """
-    Request handler to send revocation registry definition by reg reg id to ledger.
+    Request handler to send revocation registry definition by rev reg id to ledger.
 
     Args:
         request: aiohttp request object
@@ -772,6 +790,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
     rev_reg_id = request.match_info["rev_reg_id"]
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
@@ -857,6 +876,20 @@ async def send_rev_reg_def(request: web.BaseRequest):
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+        # if auto-request, send the request to the endorser
+        if context.settings.get_value("endorser.auto_request"):
+            try:
+                transaction, transaction_request = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+            await outbound_handler(transaction_request, connection_id=connection_id)
+
         return web.json_response({"txn": transaction.serialize()})
 
 
@@ -880,6 +913,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
@@ -965,6 +999,20 @@ async def send_rev_reg_entry(request: web.BaseRequest):
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if context.settings.get_value("endorser.auto_request"):
+            try:
+                transaction, transaction_request = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+            await outbound_handler(transaction_request, connection_id=connection_id)
 
         return web.json_response({"txn": transaction.serialize()})
 
