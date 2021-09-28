@@ -989,15 +989,16 @@ def arg_parser(ident: str = None, port: int = 8020):
             action="store_true",
             help="Use DID-Exchange protocol for connections",
         )
-        parser.add_argument(
-            "--revocation", action="store_true", help="Enable credential revocation"
-        )
-        parser.add_argument(
-            "--tails-server-base-url",
-            type=str,
-            metavar=("<tails-server-base-url>"),
-            help="Tails server base url",
-        )
+    parser.add_argument(
+        "--revocation", action="store_true", help="Enable credential revocation"
+    )
+    parser.add_argument(
+        "--tails-server-base-url",
+        type=str,
+        metavar=("<tails-server-base-url>"),
+        help="Tails server base url",
+    )
+    if (not ident) or (ident != "alice"):
         parser.add_argument(
             "--cred-type",
             type=str,
