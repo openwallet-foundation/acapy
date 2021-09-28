@@ -448,9 +448,12 @@ class TransactionManager:
         if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
             await self.store_record_in_wallet(response.ledger_response)
 
+        # TODO
         # for a credential definition, see if we need to initiate the revocation registry
-        if response.ledger_response["result"]["txn"]["type"] == "102":
-            credential_definition_id = response.ledger_response["result"]["txnMetadata"]["txnId"]
+        # if response.ledger_response["result"]["txn"]["type"] == "102":
+        #    credential_definition_id = response.ledger_response["result"][
+        #        "txnMetadata"
+        #    ]["txnId"]
 
         return transaction
 
