@@ -801,7 +801,7 @@ class TransactionManager:
 
                 await registry_record.set_tails_file_public_uri(
                     self.session.profile,
-                    f"{tails_base_url}/{registry_record.revoc_reg_id}"
+                    f"{tails_base_url}/{registry_record.revoc_reg_id}",
                 )
                 rev_reg_resp = await registry_record.send_def(
                     self.session.profile,
