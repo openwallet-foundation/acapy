@@ -81,7 +81,7 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def create_offer(
-        self, cred_ex_record: V20CredExRecord, offer_data: Mapping = None
+        self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
         """Create format specific credential offer attachment data."""
 
