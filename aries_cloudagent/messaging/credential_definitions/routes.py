@@ -253,9 +253,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 cred_def_id,
                 max_cred_num=rev_reg_size,
             )
-
         except RevocationNotSupportedError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
+
         await shield(registry_record.generate_registry(profile))
         try:
             await registry_record.set_tails_file_public_uri(

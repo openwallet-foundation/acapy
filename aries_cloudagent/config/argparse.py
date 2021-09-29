@@ -1579,6 +1579,15 @@ class EndorsementGroup(ArgumentGroup):
             "endorsed transactions. (If not specified, the controller "
             " must invoke the write transaction operation for each transaction.)",
         )
+        parser.add_argument(
+            "--auto-create-revocation-transactions",
+            action="store_true",
+            env_var="ACAPY_CREATE_REVOCATION_TRANSACTIONS",
+            help="For Authors, specify whether to automatically create"
+            " transactions for a cred def's revocation registry. (If not specified,"
+            " the controller must invoke the endpoints required to create the"
+            " revocation registry and assign to the cred def.)",
+        )
 
     def get_settings(self, args: Namespace):
         """Extract endorser settings."""
@@ -1587,6 +1596,7 @@ class EndorsementGroup(ArgumentGroup):
         settings["endorser.endorser"] = False
         settings["endorser.auto_endorse"] = False
         settings["endorser.auto_write"] = False
+        settings["endorser.auto_create_rev_reg"] = False
 
         if args.endorser_protocol_role:
             if args.endorser_protocol_role == ENDORSER_AUTHOR:
@@ -1640,6 +1650,16 @@ class EndorsementGroup(ArgumentGroup):
                 raise ArgsParseError(
                     "Parameter --auto-write-transactions should only be set for "
                     "transaction Authors"
+                )
+
+        if args.auto_create_revocation_transactions:
+            if settings["endorser.author"]:
+                settings["endorser.auto_create_rev_reg"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-create-revocation-transactions should only be set "
+                    "for transaction Authors"
                 )
 
         return settings
