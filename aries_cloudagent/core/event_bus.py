@@ -2,7 +2,6 @@
 
 import asyncio
 from contextlib import contextmanager
-from itertools import chain
 import logging
 from typing import (
     Any,
@@ -11,6 +10,8 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Match,
+    NamedTuple,
     Optional,
     Pattern,
     TYPE_CHECKING,
@@ -50,6 +51,24 @@ class Event:
         """Return debug representation."""
         return "<Event topic={}, payload={}>".format(self._topic, self._payload)
 
+    def with_metadata(self, metadata: "EventMetadata") -> "EventWithMetadata":
+        return EventWithMetadata(self.topic, self.payload, metadata)
+
+
+class EventMetadata(NamedTuple):
+    pattern: Pattern
+    match: Match[str]
+
+
+class EventWithMetadata(Event):
+    def __init__(self, topic: str, payload: Any, metadata: EventMetadata):
+        super().__init__(topic, payload)
+        self._metadata = metadata
+
+    @property
+    def metadata(self) -> EventMetadata:
+        return self._metadata
+
 
 class EventBus:
     """A simple event bus implementation."""
@@ -71,17 +90,19 @@ class EventBus:
         # TODO log errors but otherwise ignore?
 
         LOGGER.debug("Notifying subscribers: %s", event)
-        matched = [
-            processor
-            for pattern, processor in self.topic_patterns_to_subscribers.items()
-            if pattern.match(event.topic)
-        ]
+        for pattern, processors in self.topic_patterns_to_subscribers.items():
+            match = pattern.match(event.topic)
 
-        for processor in chain(*matched):
-            try:
-                await processor(profile, event)
-            except Exception:
-                LOGGER.exception("Error occurred while processing event")
+            if not match:
+                continue
+
+            for processor in processors:
+                try:
+                    await processor(
+                        profile, event.with_metadata(EventMetadata(pattern, match))
+                    )
+                except Exception:
+                    LOGGER.exception("Error occurred while processing event")
 
     def subscribe(self, pattern: Pattern, processor: Callable):
         """Subscribe to an event.
