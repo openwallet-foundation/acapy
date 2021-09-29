@@ -179,15 +179,13 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """
 
     async def create_offer(
-        self, cred_ex_record: V20CredExRecord, offer_data: V20CredProposal = None
+        self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
 
         issuer = self.profile.inject(IndyIssuer)
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
-
-        cred_proposal_message = cred_ex_record.cred_proposal
 
         cred_def_id = await self._match_sent_cred_def_id(
             cred_proposal_message.attachment(IndyCredFormatHandler.format)

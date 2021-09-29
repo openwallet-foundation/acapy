@@ -384,10 +384,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof credential proposal."""
 
     async def create_offer(
-        self, cred_ex_record: V20CredExRecord, offer_data: V20CredProposal = None
+        self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
         """Create linked data proof credential offer."""
-        if not cred_ex_record.cred_proposal:
+        if not cred_proposal_message:
             raise V20CredFormatError(
                 "Cannot create linked data proof offer without proposal data"
             )
@@ -395,9 +395,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         # Parse offer data which is either a proposal or an offer.
         # Data is stored in proposal if we received a proposal
         # but also when we create an offer (manager does some weird stuff)
-        credential_offer = offer_data if offer_data else cred_ex_record.cred_proposal
-
-        offer_data = credential_offer.attachment(LDProofCredFormatHandler.format)
+        offer_data = cred_proposal_message.attachment(LDProofCredFormatHandler.format)
         detail = LDProofVCDetail.deserialize(offer_data)
         detail = await self._prepare_detail(detail)
 

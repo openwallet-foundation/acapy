@@ -358,7 +358,9 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cx_rec == cx_rec
             mock_save.assert_called_once()
 
-            mock_handler.return_value.create_offer.assert_called_once_with(cx_rec, cx_rec.cred_proposal)
+            mock_handler.return_value.create_offer.assert_called_once_with(
+                cx_rec.cred_proposal
+            )
 
             assert cx_rec.cred_ex_id == ret_cx_rec._id  # cover property
             assert cx_rec.thread_id == ret_offer._thread_id
@@ -431,7 +433,7 @@ class TestV20CredManager(AsyncTestCase):
             mock_save.assert_called_once()
 
             mock_handler.return_value.create_offer.assert_called_once_with(
-                cx_rec, cred_proposal
+                cred_proposal
             )
 
             assert cx_rec.thread_id == ret_offer._thread_id

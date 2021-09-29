@@ -227,7 +227,7 @@ class V20CredManager:
             if cred_format:
                 formats.append(
                     await cred_format.handler(self.profile).create_offer(
-                        cred_ex_record, cred_proposal_message
+                        cred_proposal_message
                     )
                 )
 

@@ -364,12 +364,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             ],
         )
 
-        cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=cred_proposal.serialize(),
-        )
-
         cred_def_record = StorageRecord(
             CRED_DEF_SENT_RECORD_TYPE,
             CRED_DEF_ID,
@@ -389,7 +383,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             return_value=json.dumps(INDY_OFFER)
         )
 
-        (cred_format, attachment) = await self.handler.create_offer(cred_ex_record)
+        (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
         self.issuer.create_credential_offer.assert_called_once_with(CRED_DEF_ID)
 
@@ -403,7 +397,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         assert attachment.data.base64
 
         self.issuer.create_credential_offer.reset_mock()
-        (cred_format, attachment) = await self.handler.create_offer(cred_ex_record)
+        (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
         self.issuer.create_credential_offer.assert_not_called()
 
     async def test_create_offer_no_cache(self):
@@ -432,12 +426,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             ],
         )
 
-        cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=cred_proposal.serialize(),
-        )
-
         cred_def_record = StorageRecord(
             CRED_DEF_SENT_RECORD_TYPE,
             CRED_DEF_ID,
@@ -461,7 +449,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             return_value=json.dumps(INDY_OFFER)
         )
 
-        (cred_format, attachment) = await self.handler.create_offer(cred_ex_record)
+        (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
         self.issuer.create_credential_offer.assert_called_once_with(CRED_DEF_ID)
 
@@ -500,12 +488,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             ],
         )
 
-        cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=cred_proposal.serialize(),
-        )
-
         cred_def_record = StorageRecord(
             CRED_DEF_SENT_RECORD_TYPE,
             CRED_DEF_ID,
@@ -526,7 +508,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         with self.assertRaises(V20CredFormatError):
-            await self.handler.create_offer(cred_ex_record)
+            await self.handler.create_offer(cred_proposal)
 
     async def test_create_offer_no_matching_sent_cred_def(self):
         cred_proposal = V20CredProposal(
@@ -541,18 +523,12 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             filters_attach=[AttachDecorator.data_base64({}, ident="0")],
         )
 
-        cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=cred_proposal.serialize(),
-        )
-
         self.issuer.create_credential_offer = async_mock.CoroutineMock(
             return_value=json.dumps(INDY_OFFER)
         )
 
         with self.assertRaises(V20CredFormatError) as context:
-            await self.handler.create_offer(cred_ex_record)
+            await self.handler.create_offer(cred_proposal)
         assert "Issuer has no operable cred def" in str(context.exception)
 
     async def test_receive_offer(self):
