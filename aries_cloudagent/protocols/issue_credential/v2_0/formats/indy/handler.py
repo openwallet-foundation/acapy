@@ -179,7 +179,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """
 
     async def create_offer(
-        self, cred_ex_record: V20CredExRecord, offer_data: Mapping = None
+        self, cred_ex_record: V20CredExRecord, offer_data: V20CredProposal = None
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
 
