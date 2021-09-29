@@ -361,6 +361,7 @@ class DemoAgent:
                         ("--endorser-protocol-role", "author"),
                         ("--auto-request-endorsement",),
                         ("--auto-write-transactions",),
+                        ("--auto-create-revocation-transactions",),
                         ("--endorser-alias", "endorser"),
                     ]
                 )
