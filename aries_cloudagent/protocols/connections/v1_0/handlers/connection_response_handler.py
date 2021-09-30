@@ -26,8 +26,8 @@ class ConnectionResponseHandler(BaseHandler):
         self._logger.debug(f"ConnectionResponseHandler called with context {context}")
         assert isinstance(context.message, ConnectionResponse)
 
-        session = await context.session()
-        mgr = ConnectionManager(session)
+        profile = context.profile
+        mgr = ConnectionManager(profile)
         try:
             connection = await mgr.accept_response(
                 context.message, context.message_receipt

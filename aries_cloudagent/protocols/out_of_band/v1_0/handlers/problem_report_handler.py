@@ -28,8 +28,8 @@ class OOBProblemReportMessageHandler(BaseHandler):
         )
         assert isinstance(context.message, OOBProblemReport)
 
-        session = await context.session()
-        mgr = OutOfBandManager(session)
+        profile = context.profile
+        mgr = OutOfBandManager(profile)
         try:
             await mgr.receive_problem_report(
                 problem_report=context.message,
