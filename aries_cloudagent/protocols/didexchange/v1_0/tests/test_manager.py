@@ -74,55 +74,54 @@ class TestConfig:
 
 class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def setUp(self):
-        async with self._profile.session() as session:
-            self.responder = MockResponder()
+        self.responder = MockResponder()
 
-            self.profile = InMemoryProfile.test_profile(
-                {
-                    "default_endpoint": "http://aries.ca/endpoint",
-                    "default_label": "This guy",
-                    "additional_endpoints": ["http://aries.ca/another-endpoint"],
-                    "debug.auto_accept_invites": True,
-                    "debug.auto_accept_requests": True,
-                    "multitenant.enabled": True,
-                    "wallet.id": True,
-                },
-                bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
-            )
-            self.context = self.profile.context
-
+        self.profile = InMemoryProfile.test_profile(
+            {
+                "default_endpoint": "http://aries.ca/endpoint",
+                "default_label": "This guy",
+                "additional_endpoints": ["http://aries.ca/another-endpoint"],
+                "debug.auto_accept_invites": True,
+                "debug.auto_accept_requests": True,
+                "multitenant.enabled": True,
+                "wallet.id": True,
+            },
+            bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
+        )
+        self.context = self.profile.context
+        async with self.profile.session() as session:
             self.did_info = await session.wallet.create_local_did(
                 method=DIDMethod.SOV,
                 key_type=KeyType.ED25519,
             )
 
-            self.ledger = async_mock.create_autospec(BaseLedger)
-            self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-            self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
-                return_value=TestConfig.test_endpoint
-            )
-            self.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.ledger = async_mock.create_autospec(BaseLedger)
+        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
+        self.ledger.get_endpoint_for_did = async_mock.CoroutineMock(
+            return_value=TestConfig.test_endpoint
+        )
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-            self.multitenant_mgr = async_mock.MagicMock(
-                MultitenantManager, autospec=True
-            )
-            self.context.injector.bind_instance(
-                BaseMultitenantManager, self.multitenant_mgr
-            )
+        self.multitenant_mgr = async_mock.MagicMock(
+            MultitenantManager, autospec=True
+        )
+        self.context.injector.bind_instance(
+            BaseMultitenantManager, self.multitenant_mgr
+        )
 
-            self.manager = DIDXManager(self.profile)
-            assert self.manager.profile
-            self.oob_manager = OutOfBandManager(self.profile)
-            self.test_mediator_routing_keys = [
-                DIDKey.from_public_key_b58(
-                    "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR", KeyType.ED25519
-                ).did
-            ]
-            self.test_mediator_conn_id = "mediator-conn-id"
-            self.test_mediator_endpoint = "http://mediator.example.com"
+        self.manager = DIDXManager(self.profile)
+        assert self.manager.profile
+        self.oob_manager = OutOfBandManager(self.profile)
+        self.test_mediator_routing_keys = [
+            DIDKey.from_public_key_b58(
+                "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR", KeyType.ED25519
+            ).did
+        ]
+        self.test_mediator_conn_id = "mediator-conn-id"
+        self.test_mediator_endpoint = "http://mediator.example.com"
 
     async def test_verify_diddoc(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             did_doc = self.make_did_doc(
                 TestConfig.test_target_did,
                 TestConfig.test_target_verkey,
@@ -140,7 +139,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 await self.manager.verify_diddoc(session.wallet, did_doc_attach)
 
     async def test_receive_invitation(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             self.profile.context.update_settings({"public_invites": True})
             mediation_record = MediationRecord(
                 role=MediationRecord.ROLE_CLIENT,
@@ -171,7 +170,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert invitee_record.state == ConnRecord.State.REQUEST.rfc23
 
     async def test_receive_invitation_no_auto_accept(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mediation_record = MediationRecord(
                 role=MediationRecord.ROLE_CLIENT,
                 state=MediationRecord.STATE_GRANTED,
@@ -213,7 +212,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_invitation(x_invite)
 
     async def test_create_request_implicit(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mediation_record = MediationRecord(
                 role=MediationRecord.ROLE_CLIENT,
                 state=MediationRecord.STATE_GRANTED,
@@ -242,7 +241,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert conn_rec
 
     async def test_create_request_implicit_use_public_did(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mediation_record = MediationRecord(
                 role=MediationRecord.ROLE_CLIENT,
                 state=MediationRecord.STATE_GRANTED,
@@ -352,7 +351,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
     async def test_create_request_mediation_id(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mediation_record = MediationRecord(
                 role=MediationRecord.ROLE_CLIENT,
                 state=MediationRecord.STATE_GRANTED,
@@ -434,7 +433,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert didx_req
 
     async def test_receive_request_explicit_public_did(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=async_mock.MagicMock(
@@ -548,7 +547,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert "connection_id" in target
 
     async def test_receive_request_invi_not_found(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=None,
@@ -581,7 +580,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "No explicit invitation found" in str(context.exception)
 
     async def test_receive_request_with_mediator_without_multi_use_multitenant(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             multiuse_info = await session.wallet.create_local_did(
                 method=DIDMethod.SOV,
                 key_type=KeyType.ED25519,
@@ -672,7 +671,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def test_receive_request_with_mediator_without_multi_use_multitenant_mismatch(
         self,
     ):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             multiuse_info = await session.wallet.create_local_did(
                 method=DIDMethod.SOV,
                 key_type=KeyType.ED25519,
@@ -754,7 +753,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     assert "does not match" in str(context.exception)
 
     async def test_receive_request_public_did_no_did_doc_attachment(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=None,
@@ -808,7 +807,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_receive_request_public_did_x_not_public(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=async_mock.MagicMock(
@@ -852,7 +851,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "is not public" in str(context.exception)
 
     async def test_receive_request_public_did_x_wrong_did(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=async_mock.MagicMock(
@@ -917,7 +916,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "does not match" in str(context.exception)
 
     async def test_receive_request_public_did_x_did_doc_attach_bad_sig(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=async_mock.MagicMock(
@@ -973,7 +972,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "DID Doc signature failed" in str(context.exception)
 
     async def test_receive_request_public_did_no_public_invites(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=async_mock.MagicMock(
@@ -1022,7 +1021,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 assert "Public invitations are not enabled" in str(context.exception)
 
     async def test_receive_request_public_did_no_auto_accept(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=async_mock.MagicMock(
@@ -1096,7 +1095,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert not messages
 
     async def test_receive_request_peer_did(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=async_mock.MagicMock(
@@ -1184,7 +1183,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert not self.responder.messages
 
     async def test_receive_request_multiuse_multitenant(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             multiuse_info = await session.wallet.create_local_did(
                 method=DIDMethod.SOV,
                 key_type=KeyType.ED25519,
@@ -1257,7 +1256,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_receive_request_implicit_multitenant(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             new_info = await session.wallet.create_local_did(
                 method=DIDMethod.SOV,
                 key_type=KeyType.ED25519,
@@ -1348,7 +1347,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
 
     async def test_receive_request_peer_did_not_found_x(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
                 did=TestConfig.test_did,
                 did_doc_attach=async_mock.MagicMock(
@@ -1416,7 +1415,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             await self.manager.create_response(conn_rec, "http://10.20.30.40:5060/")
 
     async def test_create_response_mediation_id(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mediation_record = MediationRecord(
                 role=MediationRecord.ROLE_CLIENT,
                 state=MediationRecord.STATE_GRANTED,
@@ -1475,7 +1474,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert add.recipient_key
 
     async def test_create_response_mediation_id_invalid_conn_state(self):
-        async with self._profile.session() as session:
+        async with self.profile.session() as session:
             mediation_record = MediationRecord(
                 role=MediationRecord.ROLE_CLIENT,
                 state=MediationRecord.STATE_GRANTED,
