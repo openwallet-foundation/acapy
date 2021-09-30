@@ -103,7 +103,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
             self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-            self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
+            self.multitenant_mgr = async_mock.MagicMock(
+                MultitenantManager, autospec=True
+            )
             self.context.injector.bind_instance(
                 BaseMultitenantManager, self.multitenant_mgr
             )
@@ -483,7 +485,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 mock_create_did_doc.return_value = async_mock.MagicMock(
                     serialize=async_mock.MagicMock(return_value={})
                 )
-                mock_mediation_mgr_prep_req.return_value = (mediation_record, mock_request)
+                mock_mediation_mgr_prep_req.return_value = (
+                    mediation_record,
+                    mock_request,
+                )
 
                 mock_conn_record = async_mock.MagicMock(
                     accept=ACCEPT_AUTO,
@@ -604,7 +609,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value=json.dumps(did_doc_dict))
+                        decode=async_mock.MagicMock(
+                            return_value=json.dumps(did_doc_dict)
+                        )
                     ),
                 )
             )
@@ -692,7 +699,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 data=async_mock.MagicMock(
                     verify=async_mock.CoroutineMock(return_value=True),
                     signed=async_mock.MagicMock(
-                        decode=async_mock.MagicMock(return_value=json.dumps(did_doc_dict))
+                        decode=async_mock.MagicMock(
+                            return_value=json.dumps(did_doc_dict)
+                        )
                     ),
                 )
             )
@@ -794,7 +803,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                         auto_accept_implicit=None,
                         mediation_id=None,
                     )
-                assert "DID Doc attachment missing or has no data" in str(context.exception)
+                assert "DID Doc attachment missing or has no data" in str(
+                    context.exception
+                )
 
     async def test_receive_request_public_did_x_not_public(self):
         async with self._profile.session() as session:
@@ -884,7 +895,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
                     return_value=mock_conn_record
                 )
-                mock_did_doc_from_json.return_value = async_mock.MagicMock(did="wrong-did")
+                mock_did_doc_from_json.return_value = async_mock.MagicMock(
+                    did="wrong-did"
+                )
 
                 mock_did_posture.get = async_mock.MagicMock(
                     return_value=test_module.DIDPosture.PUBLIC
@@ -1108,7 +1121,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 save=async_mock.CoroutineMock(),
                 attach_request=async_mock.CoroutineMock(),
                 accept=ConnRecord.ACCEPT_MANUAL,
-                metadata_get_all=async_mock.CoroutineMock(return_value={"test": "value"}),
+                metadata_get_all=async_mock.CoroutineMock(
+                    return_value={"test": "value"}
+                ),
             )
             mock_conn_rec_state_request = ConnRecord.State.REQUEST
 
@@ -1487,8 +1502,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             )
 
             await record.save(session)
-            await record.attach_invitation(
-                session, invi)
+            await record.attach_invitation(session, invi)
 
             with async_mock.patch.object(
                 ConnRecord, "log_state", autospec=True
