@@ -23,12 +23,14 @@ class DIDXRequestHandler(BaseHandler):
         self._logger.debug(f"DIDXRequestHandler called with context {context}")
         assert isinstance(context.message, DIDXRequest)
 
-        session = await context.session()
-        mgr = DIDXManager(session)
+        profile = context.profile
+        mgr = DIDXManager(profile)
+
         if context.connection_record:
-            mediation_metadata = await context.connection_record.metadata_get(
-                session, "mediation", {}
-            )
+            async with profile.session() as session:
+                mediation_metadata = await context.connection_record.metadata_get(
+                    session, "mediation", {}
+                )
         else:
             mediation_metadata = {}
         try:
