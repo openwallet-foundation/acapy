@@ -230,21 +230,20 @@ class Conductor:
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
-            async with self.root_profile.session() as session:
-                mgr = ConnectionManager(session)
-                their_endpoint = context.settings["debug.test_suite_endpoint"]
-                test_conn = await mgr.create_static_connection(
-                    my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
-                    their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
-                    their_endpoint=their_endpoint,
-                    alias="test-suite",
-                )
-                print("Created static connection for test suite")
-                print(" - My DID:", test_conn.my_did)
-                print(" - Their DID:", test_conn.their_did)
-                print(" - Their endpoint:", their_endpoint)
-                print()
-                del mgr
+            mgr = ConnectionManager(self.root_profile)
+            their_endpoint = context.settings["debug.test_suite_endpoint"]
+            test_conn = await mgr.create_static_connection(
+                my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
+                their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
+                their_endpoint=their_endpoint,
+                alias="test-suite",
+            )
+            print("Created static connection for test suite")
+            print(" - My DID:", test_conn.my_did)
+            print(" - Their DID:", test_conn.their_did)
+            print(" - Their endpoint:", their_endpoint)
+            print()
+            del mgr
 
         # Clear default mediator
         if context.settings.get("mediation.clear"):
@@ -266,47 +265,46 @@ class Conductor:
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                async with self.root_profile.session() as session:
-                    mgr = OutOfBandManager(session)
-                    invi_rec = await mgr.create_invitation(
-                        my_label=context.settings.get("debug.invite_label"),
-                        public=context.settings.get("debug.invite_public", False),
-                        multi_use=context.settings.get("debug.invite_multi_use", False),
-                        hs_protos=[HSProto.RFC23],
-                        metadata=json.loads(
-                            context.settings.get("debug.invite_metadata_json", "{}")
-                        ),
-                    )
-                    base_url = context.settings.get("invite_base_url")
-                    invite_url = invi_rec.invitation.to_url(base_url)
-                    print("Invitation URL:")
-                    print(invite_url, flush=True)
-                    del mgr
+                mgr = OutOfBandManager(self.root_profile)
+                invi_rec = await mgr.create_invitation(
+                    my_label=context.settings.get("debug.invite_label"),
+                    public=context.settings.get("debug.invite_public", False),
+                    multi_use=context.settings.get("debug.invite_multi_use", False),
+                    hs_protos=[HSProto.RFC23],
+                    metadata=json.loads(
+                        context.settings.get("debug.invite_metadata_json", "{}")
+                    ),
+                )
+                base_url = context.settings.get("invite_base_url")
+                invite_url = invi_rec.invitation.to_url(base_url)
+                print("Invitation URL:")
+                print(invite_url, flush=True)
+                del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
 
         # Print connections protocol invitation to the terminal
         if context.settings.get("debug.print_connections_invitation"):
             try:
-                async with self.root_profile.session() as session:
-                    mgr = ConnectionManager(session)
-                    _record, invite = await mgr.create_invitation(
-                        my_label=context.settings.get("debug.invite_label"),
-                        public=context.settings.get("debug.invite_public", False),
-                        multi_use=context.settings.get("debug.invite_multi_use", False),
-                        metadata=json.loads(
-                            context.settings.get("debug.invite_metadata_json", "{}")
-                        ),
-                    )
-                    base_url = context.settings.get("invite_base_url")
-                    print("Invitation URL (Connections protocol):")
-                    print(invite.to_url(base_url), flush=True)
-                    del mgr
+                mgr = ConnectionManager(self.root_profile)
+                _record, invite = await mgr.create_invitation(
+                    my_label=context.settings.get("debug.invite_label"),
+                    public=context.settings.get("debug.invite_public", False),
+                    multi_use=context.settings.get("debug.invite_multi_use", False),
+                    metadata=json.loads(
+                        context.settings.get("debug.invite_metadata_json", "{}")
+                    ),
+                )
+                base_url = context.settings.get("invite_base_url")
+                print("Invitation URL (Connections protocol):")
+                print(invite.to_url(base_url), flush=True)
+                del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
 
         # mediation connection establishment
         provided_invite: str = context.settings.get("mediation.invite")
+
         async with self.root_profile.session() as session:
             try:
                 invite_store = MediationInviteStore(session.context.inject(BaseStorage))
@@ -317,35 +315,36 @@ class Conductor:
                 LOGGER.exception("Error retrieving mediator invitation")
                 mediation_invite_record = None
 
-            # Accept mediation invitation if one was specified or stored
-            if mediation_invite_record is not None:
-                try:
-                    mediation_connections_invite = context.settings.get(
-                        "mediation.connections_invite", False
-                    )
-                    invitation_handler = (
-                        ConnectionInvitation
+        # Accept mediation invitation if one was specified or stored
+        if mediation_invite_record is not None:
+            try:
+                mediation_connections_invite = context.settings.get(
+                    "mediation.connections_invite", False
+                )
+                invitation_handler = (
+                    ConnectionInvitation
+                    if mediation_connections_invite
+                    else InvitationMessage
+                )
+
+                if not mediation_invite_record.used:
+                    # clear previous mediator configuration before establishing a
+                    # new one
+                    await MediationManager(self.root_profile).clear_default_mediator()
+
+                    mgr = (
+                        ConnectionManager(self.root_profile)
                         if mediation_connections_invite
-                        else InvitationMessage
+                        else OutOfBandManager(self.root_profile)
                     )
 
-                    if not mediation_invite_record.used:
-                        # clear previous mediator configuration before establishing a
-                        # new one
-                        await MediationManager(session.profile).clear_default_mediator()
-
-                        mgr = (
-                            ConnectionManager(session)
-                            if mediation_connections_invite
-                            else OutOfBandManager(session)
-                        )
-
-                        conn_record = await mgr.receive_invitation(
-                            invitation=invitation_handler.from_url(
-                                mediation_invite_record.invite
-                            ),
-                            auto_accept=True,
-                        )
+                    conn_record = await mgr.receive_invitation(
+                        invitation=invitation_handler.from_url(
+                            mediation_invite_record.invite
+                        ),
+                        auto_accept=True,
+                    )
+                    async with self.root_profile.session() as session:
                         await (
                             MediationInviteStore(
                                 session.context.inject(BaseStorage)
@@ -359,10 +358,10 @@ class Conductor:
                             session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
                         )
 
-                        print("Attempting to connect to mediator...")
-                        del mgr
-                except Exception:
-                    LOGGER.exception("Error accepting mediation invitation")
+                    print("Attempting to connect to mediator...")
+                    del mgr
+            except Exception:
+                LOGGER.exception("Error accepting mediation invitation")
 
     async def stop(self, timeout=1.0):
         """Stop the agent."""
@@ -517,25 +516,22 @@ class Conductor:
         """
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
-            async with profile.session() as session:
-                conn_mgr = ConnectionManager(session)
-                try:
-                    outbound.target_list = await self.dispatcher.run_task(
-                        conn_mgr.get_connection_targets(
-                            connection_id=outbound.connection_id
-                        )
+            conn_mgr = ConnectionManager(profile)
+            try:
+                outbound.target_list = await self.dispatcher.run_task(
+                    conn_mgr.get_connection_targets(
+                        connection_id=outbound.connection_id
                     )
-                except ConnectionManagerError:
-                    LOGGER.exception(
-                        "Error preparing outbound message for transmission"
-                    )
-                    return
-                except (LedgerConfigError, LedgerTransactionError) as e:
-                    LOGGER.error("Shutdown on ledger error %s", str(e))
-                    if self.admin_server:
-                        self.admin_server.notify_fatal_error()
-                    raise
-                del conn_mgr
+                )
+            except ConnectionManagerError:
+                LOGGER.exception("Error preparing outbound message for transmission")
+                return
+            except (LedgerConfigError, LedgerTransactionError) as e:
+                LOGGER.error("Shutdown on ledger error %s", str(e))
+                if self.admin_server:
+                    self.admin_server.notify_fatal_error()
+                raise
+            del conn_mgr
         # If ``self.outbound_queue`` is specified (usually set via
         # outbound queue `-oq` commandline option), use that external
         # queue. Else save the message to an internal queue. This

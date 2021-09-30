@@ -159,8 +159,9 @@ async def invitation_create(request: web.BaseRequest):
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    session = await context.session()
-    oob_mgr = OutOfBandManager(session)
+
+    profile = context.profile
+    oob_mgr = OutOfBandManager(profile)
     try:
         invi_rec = await oob_mgr.create_invitation(
             my_label=my_label,
@@ -206,8 +207,8 @@ async def invitation_receive(request: web.BaseRequest):
             reason="Configuration does not allow receipt of invitations"
         )
 
-    session = await context.session()
-    oob_mgr = OutOfBandManager(session)
+    profile = context.profile
+    oob_mgr = OutOfBandManager(profile)
 
     body = await request.json()
     auto_accept = json.loads(request.query.get("auto_accept", "null"))

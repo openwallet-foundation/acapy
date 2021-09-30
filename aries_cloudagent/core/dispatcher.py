@@ -173,12 +173,11 @@ class Dispatcher:
 
         context.injector.bind_instance(BaseResponder, responder)
 
-        async with profile.session(context._context) as session:
-            connection_mgr = ConnectionManager(session)
-            connection = await connection_mgr.find_inbound_connection(
-                inbound_message.receipt
-            )
-            del connection_mgr
+        connection_mgr = ConnectionManager(profile)
+        connection = await connection_mgr.find_inbound_connection(
+            inbound_message.receipt
+        )
+        del connection_mgr
         if connection:
             inbound_message.connection_id = connection.connection_id
 
