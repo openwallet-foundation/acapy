@@ -76,8 +76,12 @@ class TestV20CredRoutes(AsyncTestCase):
         schema.validate_fields(
             {"filter_": {"indy": {"issuer_did": TEST_DID}}, "counter_preview": {}}
         )
+        schema.validate_fields(
+            {"filter_": {"ld_proof": {"issuer_did": TEST_DID}}, "counter_preview": {}}
+        )
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"filter_": {"indy": {"issuer_did": TEST_DID}}})
+            schema.validate_fields({"filter_": {"ld_proof": {"issuer_did": TEST_DID}}})
             schema.validate_fields({"counter_preview": {}})
 
     async def test_credential_exchange_list(self):
