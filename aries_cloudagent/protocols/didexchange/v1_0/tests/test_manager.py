@@ -102,9 +102,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        self.multitenant_mgr = async_mock.MagicMock(
-            MultitenantManager, autospec=True
-        )
+        self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.context.injector.bind_instance(
             BaseMultitenantManager, self.multitenant_mgr
         )
