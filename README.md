@@ -20,6 +20,8 @@ ACA-Py supports "multi-tenant" scenarios. In these scenarios, one (scalable) ins
 
 Startup options allow the use of an ACA-Py as an Aries [mediator](https://github.com/hyperledger/aries-rfcs/tree/master/concepts/0046-mediators-and-relays#summary) using core Aries protocols to coordinate its mediation role. Such an ACA-Py instance receives, stores and forwards messages to Aries  agents that (for example) lack an addressable endpoint on the Internet such as a mobile wallet. A live instance of a public mediator based on ACA-Py is available [here](https://indicio-tech.github.io/mediator/) from Indicio Technologies. Learn more about deploying a mediator [here](./Mediation.md).
 
+ACA-Py supports a Transaction Endorsement protocol, for agents that don't have write access to the ledger.  Endorser support is documented [here](Endorser.md).
+
 ACA-Py supports deployments in scaled environments such as in Kubernetes environments where ACA-Py and its storage components can be horizontally scaled as needed to handle the load.
 
 ## Example Uses
