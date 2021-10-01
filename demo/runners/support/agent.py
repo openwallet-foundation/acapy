@@ -132,6 +132,7 @@ class DemoAgent:
         mediation: bool = False,
         aip: int = 20,
         arg_file: str = None,
+        endorser_role: str = None,
         extra_args=None,
         **params,
     ):
@@ -148,6 +149,7 @@ class DemoAgent:
         self.timing_log = timing_log
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.tails_server_base_url = tails_server_base_url
+        self.endorser_role = endorser_role
         self.extra_args = extra_args
         self.trace_enabled = TRACE_ENABLED
         self.trace_target = TRACE_TARGET
@@ -177,6 +179,8 @@ class DemoAgent:
         self.proc = None
         self.client_session: ClientSession = ClientSession()
 
+        if self.endorser_role and not seed:
+            seed = "random"
         rand_name = str(random.randint(100_000, 999_999))
         self.seed = (
             ("my_seed_000000000000000000000000" + rand_name)[-32:]
@@ -350,6 +354,28 @@ class DemoAgent:
                 )
             )
 
+        if self.endorser_role:
+            if self.endorser_role == "author":
+                result.extend(
+                    [
+                        ("--endorser-protocol-role", "author"),
+                        ("--auto-request-endorsement",),
+                        ("--auto-write-transactions",),
+                        ("--auto-create-revocation-transactions",),
+                        ("--endorser-alias", "endorser"),
+                    ]
+                )
+            elif self.endorser_role == "endorser":
+                result.extend(
+                    [
+                        (
+                            "--endorser-protocol-role",
+                            "endorser",
+                        ),
+                        ("--auto-endorse-transactions",),
+                    ]
+                )
+
         if self.extra_args:
             result.extend(self.extra_args)
 
@@ -376,7 +402,13 @@ class DemoAgent:
                 ledger_url = LEDGER_URL
             if not ledger_url:
                 ledger_url = f"http://{self.external_host}:9000"
-            data = {"alias": alias or self.ident, "role": role}
+            data = {"alias": alias or self.ident}
+            if self.endorser_role:
+                if self.endorser_role == "endorser":
+                    role = "ENDORSER"
+                else:
+                    role = ""
+            data["role"] = role
             if did and verkey:
                 data["did"] = did
                 data["verkey"] = verkey
@@ -387,7 +419,7 @@ class DemoAgent:
             ) as resp:
                 if resp.status != 200:
                     raise Exception(
-                        f"Error registering DID, response code {resp.status}"
+                        f"Error registering DID {data}, response code {resp.status}"
                     )
                 nym_info = await resp.json()
                 self.did = nym_info["did"]
@@ -467,7 +499,8 @@ class DemoAgent:
                 new_did = await self.admin_POST("/wallet/did/create")
                 self.did = new_did["result"]["did"]
                 await self.register_did(
-                    did=new_did["result"]["did"], verkey=new_did["result"]["verkey"]
+                    did=new_did["result"]["did"],
+                    verkey=new_did["result"]["verkey"],
                 )
                 await self.admin_POST("/wallet/did/public?did=" + self.did)
             elif cred_type == CRED_FORMAT_JSON_LD:
@@ -1022,13 +1055,21 @@ class DemoAgent:
         return invi_rec
 
     async def receive_invite(self, invite, auto_accept: bool = True):
+        if self.endorser_role and self.endorser_role == "author":
+            params = {"alias": "endorser"}
+        else:
+            params = None
         if "/out-of-band/" in invite.get("@type", ""):
             connection = await self.admin_POST(
-                "/out-of-band/receive-invitation", invite
+                "/out-of-band/receive-invitation",
+                invite,
+                params=params,
             )
         else:
             connection = await self.admin_POST(
-                "/connections/receive-invitation", invite
+                "/connections/receive-invitation",
+                invite,
+                params=params,
             )
 
         self.connection_id = connection["connection_id"]

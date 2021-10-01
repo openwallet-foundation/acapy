@@ -335,6 +335,19 @@ class ConnRecord(BaseRecord):
         tag_filter = {"request_id": request_id}
         return await cls.retrieve_by_tag_filter(session, tag_filter)
 
+    @classmethod
+    async def retrieve_by_alias(
+        cls, session: ProfileSession, alias: str
+    ) -> "ConnRecord":
+        """Retrieve a connection record from an alias.
+
+        Args:
+            session: The active profile session
+            alias: The alias of the connection
+        """
+        post_filter = {"alias": alias}
+        return await cls.query(session, post_filter_positive=post_filter)
+
     async def attach_invitation(
         self,
         session: ProfileSession,

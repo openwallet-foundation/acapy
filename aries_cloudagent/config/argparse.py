@@ -21,6 +21,10 @@ from .util import BoundedInt, ByteSize
 CAT_PROVISION = "general"
 CAT_START = "start"
 
+ENDORSER_AUTHOR = "author"
+ENDORSER_ENDORSER = "endorser"
+ENDORSER_NONE = "none"
+
 
 class ArgumentGroup(abc.ABC):
     """A class representing a group of related command line arguments."""
@@ -1502,5 +1506,160 @@ class MultitenantGroup(ArgumentGroup):
                     settings["multitenant.wallet_name"] = multitenancyConfig.get(
                         "wallet_name"
                     )
+
+        return settings
+
+
+@group(CAT_START)
+class EndorsementGroup(ArgumentGroup):
+    """Endorsement settings."""
+
+    GROUP_NAME = "Endorsement"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add endorsement-specific command line arguments to the parser."""
+        parser.add_argument(
+            "--endorser-protocol-role",
+            type=str.lower,
+            choices=[ENDORSER_AUTHOR, ENDORSER_ENDORSER, ENDORSER_NONE],
+            metavar="<endorser-role>",
+            env_var="ACAPY_ENDORSER_ROLE",
+            help=(
+                "Specify the role ('author' or 'endorser') which this agent will "
+                "participate. Authors will request transaction endorement from an "
+                "Endorser. Endorsers will endorse transactions from Authors, and "
+                "may write their own  transactions to the ledger. If no role "
+                "(or 'none') is specified then the endorsement protocol will not "
+                " be used and this agent will write transactions to the ledger "
+                "directly."
+            ),
+        )
+        parser.add_argument(
+            "--endorser-public-did",
+            type=str,
+            metavar="<endorser-public-did>",
+            env_var="ACAPY_ENDORSER_PUBLIC_DID",
+            help=(
+                "For transaction Authors, specify the the public DID of the Endorser "
+                "agent who will be endorsing transactions.  Note this requires that "
+                "the connection be made using the Endorser's public DID."
+            ),
+        )
+        parser.add_argument(
+            "--endorser-alias",
+            type=str,
+            metavar="<endorser-alias>",
+            env_var="ACAPY_ENDORSER_ALIAS",
+            help=(
+                "For transaction Authors, specify the the alias of the Endorser "
+                "connection that will be used to endorse transactions."
+            ),
+        )
+        parser.add_argument(
+            "--auto-request-endorsement",
+            action="store_true",
+            env_var="ACAPY_AUTO_REQUEST_ENDORSEMENT",
+            help="For Authors, specify whether to automatically request "
+            "endorsement for all transactions. (If not specified, the controller "
+            " must invoke the request endorse operation for each transaction.)",
+        )
+        parser.add_argument(
+            "--auto-endorse-transactions",
+            action="store_true",
+            env_var="ACAPY_AUTO_ENDORSE_TRANSACTIONS",
+            help="For Endorsers, specify whether to automatically endorse any "
+            "received endorsement requests. (If not specified, the controller "
+            " must invoke the endorsement operation for each transaction.)",
+        )
+        parser.add_argument(
+            "--auto-write-transactions",
+            action="store_true",
+            env_var="ACAPY_AUTO_WRITE_TRANSACTIONS",
+            help="For Authors, specify whether to automatically write any "
+            "endorsed transactions. (If not specified, the controller "
+            " must invoke the write transaction operation for each transaction.)",
+        )
+        parser.add_argument(
+            "--auto-create-revocation-transactions",
+            action="store_true",
+            env_var="ACAPY_CREATE_REVOCATION_TRANSACTIONS",
+            help="For Authors, specify whether to automatically create"
+            " transactions for a cred def's revocation registry. (If not specified,"
+            " the controller must invoke the endpoints required to create the"
+            " revocation registry and assign to the cred def.)",
+        )
+
+    def get_settings(self, args: Namespace):
+        """Extract endorser settings."""
+        settings = {}
+        settings["endorser.author"] = False
+        settings["endorser.endorser"] = False
+        settings["endorser.auto_endorse"] = False
+        settings["endorser.auto_write"] = False
+        settings["endorser.auto_create_rev_reg"] = False
+
+        if args.endorser_protocol_role:
+            if args.endorser_protocol_role == ENDORSER_AUTHOR:
+                settings["endorser.author"] = True
+            elif args.endorser_protocol_role == ENDORSER_ENDORSER:
+                settings["endorser.endorser"] = True
+
+        if args.endorser_public_did:
+            if settings["endorser.author"]:
+                settings["endorser.endorser_public_did"] = args.endorser_public_did
+            else:
+                raise ArgsParseError(
+                    "Parameter --endorser-public-did should only be set for transaction "
+                    "Authors"
+                )
+
+        if args.endorser_alias:
+            if settings["endorser.author"]:
+                settings["endorser.endorser_alias"] = args.endorser_alias
+            else:
+                raise ArgsParseError(
+                    "Parameter --endorser-alias should only be set for transaction "
+                    "Authors"
+                )
+
+        if args.auto_request_endorsement:
+            if settings["endorser.author"]:
+                settings["endorser.auto_request"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-request-endorsement should only be set for "
+                    "transaction Authors"
+                )
+
+        if args.auto_endorse_transactions:
+            if settings["endorser.endorser"]:
+                settings["endorser.auto_endorse"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-endorser-transactions should only be set for "
+                    "transaction Endorsers"
+                )
+
+        if args.auto_write_transactions:
+            if settings["endorser.author"]:
+                settings["endorser.auto_write"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-write-transactions should only be set for "
+                    "transaction Authors"
+                )
+
+        if args.auto_create_revocation_transactions:
+            if settings["endorser.author"]:
+                settings["endorser.auto_create_rev_reg"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-create-revocation-transactions should only be set "
+                    "for transaction Authors"
+                )
 
         return settings
