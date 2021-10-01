@@ -1354,8 +1354,11 @@ class DIFPresExchHandler:
                     split_field_path = field_path.split(".")
                     key = ".".join(split_field_path[:-1])
                     value = split_field_path[-1]
+                    additional_attrs = self.get_dict_keys_from_path(
+                        cred_dict, key.split(".")
+                    )
                     nested_field_paths = self.build_nested_paths_dict(
-                        key, value, nested_field_paths
+                        key, value, nested_field_paths, additional_attrs
                     )
                     to_remove_from_field_paths.add(field_path)
             for to_remove_path in to_remove_from_field_paths:
@@ -1375,6 +1378,19 @@ class DIFPresExchHandler:
                         return False
         return True
 
+    def get_dict_keys_from_path(self, derived_cred_dict: dict, path: str) -> list:
+        """Return list of keys as additional_attrs to build nested_field_paths."""
+        if path:
+            return self.get_dict_keys_from_path(derived_cred_dict[path[0]], path[1:])
+        else:
+            additional_attrs = []
+            mandatory_paths = ["@id", "id", "type"]
+            keys = derived_cred_dict.keys()
+            for key in keys:
+                if key in mandatory_paths:
+                    additional_attrs.append(key)
+            return additional_attrs
+
     def nested_get(self, input_dict: dict, nested_key: Sequence[str]) -> dict:
         """Return internal dict from nested input_dict given list of nested_key."""
         internal_dict_value = input_dict
@@ -1383,13 +1399,20 @@ class DIFPresExchHandler:
         return internal_dict_value
 
     def build_nested_paths_dict(
-        self, key: str, value: str, nested_field_paths: dict
+        self,
+        key: str,
+        value: str,
+        nested_field_paths: dict,
+        additional_attrs: list = None,
     ) -> dict:
         """Build and return nested_field_paths dict."""
         if key in nested_field_paths.keys():
             nested_field_paths[key].add(value)
         else:
             nested_field_paths[key] = {value}
+        if additional_attrs and len(additional_attrs) > 0:
+            for attr in additional_attrs:
+                nested_field_paths[key].add(attr)
         split_key = key.split(".")
         if len(split_key) > 1:
             nested_field_paths.update(
