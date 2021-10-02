@@ -23,6 +23,7 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Mediation](#mediation)
   - [Multi-tenancy](#multi-tenancy)
   - [DID Exchange](#did-exchange)
+  - [Endorser](#endorser)
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
 - [OpenAPI (Swagger) Demo](#openapi-swagger-demo)
 - [Performance Demo](#performance-demo)
@@ -239,6 +240,10 @@ You can enable DID Exchange using the `--did-exchange` parameter for the `alice`
 This will use the new DID Exchange protocol when establishing connections between the agents, rather than the older Connection protocol.  There is no other affect on the operation of the agents.
 
 Note that you can't (currently) use the DID Exchange protocol to connect with any of the available mobile agents.
+
+### Endorser
+
+This is described in [Endorser.md](Endorser.md)
 
 ### Mediation
 

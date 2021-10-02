@@ -191,6 +191,29 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("multitenant.wallet_type") == "askar"
         assert settings.get("multitenant.wallet_name") == "test"
 
+    async def test_endorser_settings(self):
+        """Test required argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.EndorsementGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--endorser-protocol-role",
+                argparse.ENDORSER_AUTHOR,
+                "--endorser-public-did",
+                "did:sov:12345",
+            ]
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("endorser.author") == True
+        assert settings.get("endorser.endorser") == False
+        assert settings.get("endorser.endorser_public_did") == "did:sov:12345"
+        assert settings.get("endorser.auto_endorse") == False
+
     async def test_error_raised_when_multitenancy_used_and_no_jwt_provided(self):
         """Test that error is raised if no jwt_secret is provided with multitenancy."""
 
