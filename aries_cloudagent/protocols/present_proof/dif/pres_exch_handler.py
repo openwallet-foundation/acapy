@@ -1250,7 +1250,7 @@ class DIFPresExchHandler:
     async def merge(
         self,
         dict_descriptor_creds: dict,
-    ) -> (Sequence[VCRecord], Sequence[InputDescriptorMapping]):
+    ) -> Tuple[Sequence[VCRecord], Sequence[InputDescriptorMapping]]:
         """
         Return applicable credentials and descriptor_map for attachment.
 
@@ -1324,6 +1324,15 @@ class DIFPresExchHandler:
                         f"apply to the enclosed credential in {desc_map_item_path}"
                     )
 
+    def get_field_updated_path(self, field: DIFField) -> DIFField:
+        """Update DIFField path to remove any [*] in case of limit_disclosure."""
+        given_paths = field.paths
+        updated_paths = []
+        for path in given_paths:
+            updated_paths.append(re.sub(r"\[\d+\]", "", path))
+        field.paths = updated_paths
+        return field
+
     async def apply_constraint_received_cred(
         self, constraint: Constraints, cred_dict: dict
     ) -> bool:
@@ -1331,12 +1340,15 @@ class DIFPresExchHandler:
         fields = constraint._fields
         field_paths = []
         credential = self.create_vcrecord(cred_dict)
+        is_limit_disclosure = constraint.limit_disclosure == "required"
         for field in fields:
+            if is_limit_disclosure:
+                field = self.get_field_updated_path(field)
             field_paths = field_paths + field.paths
             if not await self.filter_by_field(field, credential):
                 return False
         # Selective Disclosure check
-        if constraint.limit_disclosure == "required":
+        if is_limit_disclosure:
             field_paths = set([path.replace("$.", "") for path in field_paths])
             mandatory_paths = {
                 "@context",
@@ -1354,11 +1366,8 @@ class DIFPresExchHandler:
                     split_field_path = field_path.split(".")
                     key = ".".join(split_field_path[:-1])
                     value = split_field_path[-1]
-                    additional_attrs = self.get_dict_keys_from_path(
-                        cred_dict, key.split(".")
-                    )
                     nested_field_paths = self.build_nested_paths_dict(
-                        key, value, nested_field_paths, additional_attrs
+                        key, value, nested_field_paths, cred_dict
                     )
                     to_remove_from_field_paths.add(field_path)
             for to_remove_path in to_remove_from_field_paths:
@@ -1384,7 +1393,7 @@ class DIFPresExchHandler:
             return self.get_dict_keys_from_path(derived_cred_dict[path[0]], path[1:])
         else:
             additional_attrs = []
-            mandatory_paths = ["@id", "id", "type"]
+            mandatory_paths = ["@id", "@type"]
             keys = derived_cred_dict.keys()
             for key in keys:
                 if key in mandatory_paths:
@@ -1403,21 +1412,25 @@ class DIFPresExchHandler:
         key: str,
         value: str,
         nested_field_paths: dict,
-        additional_attrs: list = None,
+        cred_dict: dict,
     ) -> dict:
         """Build and return nested_field_paths dict."""
         if key in nested_field_paths.keys():
             nested_field_paths[key].add(value)
         else:
             nested_field_paths[key] = {value}
-        if additional_attrs and len(additional_attrs) > 0:
+        additional_attrs = self.get_dict_keys_from_path(cred_dict, key.split("."))
+        if len(additional_attrs) > 0:
             for attr in additional_attrs:
                 nested_field_paths[key].add(attr)
         split_key = key.split(".")
         if len(split_key) > 1:
             nested_field_paths.update(
                 self.build_nested_paths_dict(
-                    ".".join(split_key[:-1]), split_key[-1], nested_field_paths
+                    ".".join(split_key[:-1]),
+                    split_key[-1],
+                    nested_field_paths,
+                    cred_dict,
                 )
             )
         return nested_field_paths
