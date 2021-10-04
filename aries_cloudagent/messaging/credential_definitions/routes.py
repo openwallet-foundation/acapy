@@ -302,7 +302,17 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         transaction_mgr = TransactionManager(session)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=cred_def["signed_txn"], connection_id=connection_id
+                messages_attach=cred_def["signed_txn"],
+                connection_id=connection_id,
+                meta_data={
+                    "context": {
+                        "schema_id": schema_id,
+                        "support_revocation": support_revocation,
+                        "tag": tag,
+                        "rev_reg_size": rev_reg_size,
+                    },
+                    "post_process": {"topic": "CRED_DEF"},
+                },
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err

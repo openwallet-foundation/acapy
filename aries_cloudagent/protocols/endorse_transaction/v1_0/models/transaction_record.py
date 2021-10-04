@@ -211,6 +211,15 @@ class TransactionRecordSchema(BaseExchangeSchema):
         ),
         required=False,
     )
+    meta_data = fields.List(
+        fields.Dict(
+            example={
+                "context": {"param1": "param1_value", "param2": "param2_value"},
+                "post_process": [{"topic": "topic_value", "other": "other_value"}],
+            }
+        ),
+        required=False,
+    )
     thread_id = fields.Str(
         required=False, description="Thread Identifier", example=UUIDFour.EXAMPLE
     )

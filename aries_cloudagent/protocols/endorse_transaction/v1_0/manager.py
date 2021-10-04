@@ -47,6 +47,7 @@ class TransactionManager:
             session: The Profile Session for this transaction manager
         """
         self._session = session
+        self._profile = session.profile
         self._logger = logging.getLogger(__name__)
 
     @property
@@ -60,7 +61,9 @@ class TransactionManager:
         """
         return self._session
 
-    async def create_record(self, messages_attach: str, connection_id: str):
+    async def create_record(
+        self, messages_attach: str, connection_id: str, meta_data: dict = None
+    ):
         """
         Create a new Transaction Record.
 
@@ -90,6 +93,10 @@ class TransactionManager:
 
         transaction.messages_attach.clear()
         transaction.messages_attach.append(messages_attach_dict)
+
+        if meta_data:
+            transaction.meta_data = meta_data
+
         transaction.state = TransactionRecord.STATE_TRANSACTION_CREATED
         transaction.connection_id = connection_id
 
@@ -728,6 +735,13 @@ class TransactionManager:
             # schema transaction
             schema_id = ledger_response["result"]["txnMetadata"]["txnId"]
             public_did = ledger_response["result"]["txn"]["metadata"]["from"]
+
+            # TODO refactor this code
+            # Notify event
+            print("Notify event:", "acapy::SCHEMA::" + schema_id, ledger_response)
+            await self._profile.notify(
+                "acapy::SCHEMA::" + schema_id, {"schema_txn": ledger_response["result"]}
+            )
             await ledger.add_schema_non_secrets_record(schema_id, public_did)
 
         elif ledger_response["result"]["txn"]["type"] == "102":

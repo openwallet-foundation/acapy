@@ -1,6 +1,7 @@
 """Credential schema admin routes."""
 
 import json
+import re
 
 from asyncio import shield
 
@@ -17,6 +18,8 @@ from marshmallow import fields
 from marshmallow.validate import Regexp
 
 from ...admin.request_context import AdminRequestContext
+from ...core.event_bus import Event, EventBus
+from ...core.profile import Profile
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.schema import SchemaSchema
 from ...ledger.base import BaseLedger
@@ -225,6 +228,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         try:
             # if create_transaction_for_endorser, then the returned "schema_def"
             # is actually the signed transaction
+            print("Create/sign and/or write schema ledger transaction")
             schema_id, schema_def = await shield(
                 ledger.create_and_send_schema(
                     issuer,
@@ -239,14 +243,29 @@ async def schemas_send_schema(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not create_transaction_for_endorser:
+        # Notify event
+        print("Notify event:", "acapy::SCHEMA::" + schema_id, schema_def)
+        await context.profile.notify(
+            "acapy::SCHEMA::" + schema_id, {"schema_def": schema_def}
+        )
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
+
     else:
         session = await context.session()
 
         transaction_mgr = TransactionManager(session)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=schema_def["signed_txn"], connection_id=connection_id
+                messages_attach=schema_def["signed_txn"],
+                connection_id=connection_id,
+                meta_data={
+                    "context": {
+                        "schema_name": schema_name,
+                        "schema_version": schema_version,
+                        "attributes": attributes,
+                    },
+                    "post_process": {"topic": "SCHEMA"},
+                },
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -382,6 +401,20 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
     return web.json_response({"schema": schema})
 
 
+EVENT_LISTENER_PATTERN = re.compile("^acapy::SCHEMA::(.*)?$")
+
+
+def register_events(event_bus: EventBus):
+    """Subscribe to any events we need to support."""
+    print("Register events for schema ...")
+    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_schema_event)
+
+
+async def on_schema_event(profile: Profile, event: Event):
+    """Handle any events we need to support."""
+    print(f">>>> Handle event: {event}")
+
+
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
@@ -394,6 +427,8 @@ async def register(app: web.Application):
             ),
         ]
     )
+
+    # setup a listener for events
 
 
 def post_process_routes(app: web.Application):
