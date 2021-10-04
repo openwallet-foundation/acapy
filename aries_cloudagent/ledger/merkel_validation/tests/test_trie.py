@@ -27,12 +27,8 @@ from test_data import (
     GET_NYM_REPLY,
     GET_SCHEMA_REPLY_A,
     GET_SCHEMA_REPLY_B,
-    NYM_REPLY,
-    ATTRIB_REPLY,
-    SCHEMA_REPLY,
-    CLAIM_DEF_REPLY,
-    REVOC_REG_DEF_REPLY,
-    REVOC_REG_REPLY,
+    RAW_HEX_LEAF,
+    SHA256_AUDIT_PATH,
 )
 
 
@@ -128,76 +124,19 @@ class TestMPTStateProofValidation(TestCase):
         )
 
 class TestMerkleRootHashValidation(TestCase):
-    async def test_validate_nym(self):
-        (
-            tree_size,
-            leaf_index,
-            decoded_audit_path,
-            expected_root_hash,
-        ) = extract_params_write_request(NYM_REPLY)
-        value = prepare_for_state_write(NYM_REPLY)
-        merkle_verifier = MerkleVerifier(TreeHasher())
-        calc_root_hash = await merkle_verifier.calculate_root_hash(
-            value,
-            leaf_index,
-            decoded_audit_path[:],
-            tree_size,
+    
+    async def test_verify_leaf_inclusion_x(self):
+        merkle_verifier = MerkleVerifier(HexTreeHasher())
+        leaf_index = 848049
+        tree_size = 3630887
+        expected_root_hash = (
+            b"78316a05c9bcf14a3a4548f5b854a9adfcd46a4c034401b3ce7eb7ac2f1d0ecb"
         )
-        assert calc_root_hash == expected_root_hash
-
-    async def test_validate_attrib(self):
-        (
-            tree_size,
+        assert await merkle_verifier.verify_leaf_inclusion(
+            RAW_HEX_LEAF,
             leaf_index,
-            decoded_audit_path,
+            SHA256_AUDIT_PATH[:],
+            tree_size,
             expected_root_hash,
-        ) = extract_params_write_request(ATTRIB_REPLY)
-        key, value = prepare_for_state_write(ATTRIB_REPLY)
-        merkle_verifier = MerkleVerifier(TreeHasher())
-        calc_root_hash = await merkle_verifier.calculate_root_hash(
-            value,
-            leaf_index,
-            decoded_audit_path[:],
-            tree_size,
         )
-        assert calc_root_hash == expected_root_hash
 
-    async def test_validate_schema(self):
-        (
-            tree_size,
-            leaf_index,
-            decoded_audit_path,
-            expected_root_hash,
-        ) = extract_params_write_request(SCHEMA_REPLY)
-        key, value = prepare_for_state_write(SCHEMA_REPLY)
-        merkle_verifier = MerkleVerifier(TreeHasher())
-        calc_root_hash = await merkle_verifier.calculate_root_hash(
-            value,
-            leaf_index,
-            decoded_audit_path[:],
-            tree_size,
-        )
-        assert calc_root_hash == expected_root_hash
-
-    async def test_validate_claim_def(self):
-        (
-            tree_size,
-            leaf_index,
-            decoded_audit_path,
-            expected_root_hash,
-        ) = extract_params_write_request(CLAIM_DEF_REPLY)
-        key, value = prepare_for_state_write(CLAIM_DEF_REPLY)
-        merkle_verifier = MerkleVerifier(TreeHasher())
-        calc_root_hash = await merkle_verifier.calculate_root_hash(
-            value,
-            leaf_index,
-            decoded_audit_path[:],
-            tree_size,
-        )
-        assert calc_root_hash == expected_root_hash
-
-    async def test_validate_revoc_reg_def(self):
-        pass
-
-    async def test_validate_revoc_reg(self):
-        pass

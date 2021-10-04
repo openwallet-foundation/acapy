@@ -4,6 +4,7 @@ from collections import OrderedDict
 import logging
 import re
 import sys
+from typing import Dict, Tuple, List
 
 import markdown
 import prompt_toolkit
@@ -54,6 +55,36 @@ async def get_genesis_transactions(settings: Settings) -> str:
         if txns:
             settings["ledger.genesis_transactions"] = txns
     return txns
+
+
+async def load_multiple_genesis_transactions_from_config(settings: Settings):
+    """Fetch genesis transactions for multiple ledger configuration."""
+
+    ledger_config_list = settings.get("ledger.ledger_config_list")
+    ledger_txns_list = []
+    for config in ledger_config_list:
+        if "genesis_url" in config:
+            txns = await fetch_genesis_transactions(config.get("genesis_url"))
+        elif "genesis_file" in config:
+            try:
+                genesis_path = config.get("genesis_file")
+                LOGGER.info(
+                    "Reading ledger genesis transactions from: %s", genesis_path
+                )
+                with open(genesis_path, "r") as genesis_file:
+                    txns = genesis_file.read()
+            except IOError as e:
+                raise ConfigError("Error reading ledger genesis transactions") from e
+        else:
+            txns = config.get("genesis_transactions")
+        ledger_txns_list.append(
+            {
+                "id": config.get("id"),
+                "is_production": config.get("is_production"),
+                "genesis_transactions": txns,
+            }
+        )
+    settings["ledger.ledger_config_list"] = ledger_txns_list
 
 
 async def ledger_config(

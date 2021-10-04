@@ -57,6 +57,13 @@ class TestCrypto(TestCase):
                 test_module.decode_pack_message(b"encrypted", lambda x: b"recip_secret")
             assert "Sender public key not provided" in str(excinfo.value)
 
+    def test_did_is_self_certified(self):
+        did = "Av63wJYM7xYR4AiygYq4c3"
+        verkey = "6QSduYdf8Bi6t8PfNm5vNomGWDtXhmMmTRzaciudBXYJ"
+        assert test_module.did_is_self_certified(did, verkey)
+        did = "V4SGRU86Z58d6TV7PBUe6f"
+        assert not test_module.did_is_self_certified(did, verkey)
+
     def test_decode_pack_message_outer_x(self):
         with pytest.raises(ValueError) as excinfo:
             test_module.decode_pack_message_outer(json.dumps({"invalid": "content"}))

@@ -14,13 +14,28 @@ import logging
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
+from ..askar.profile import AskarProfile
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
-from ..config.ledger import get_genesis_transactions, ledger_config
+from ..config.provider import ClassProvider
+from ..config.ledger import (
+    get_genesis_transactions,
+    ledger_config,
+    load_multiple_genesis_transactions_from_config,
+)
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
+from ..indy.sdk.profile import IndySdkProfile
+from ..indy.verifier import IndyVerifier
+from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
+from ..ledger.indy import IndySdkLedger
+from ..ledger.indy_vdr import IndyVdrLedger
+from ..ledger.multiple_ledger.base_manager import (
+    BaseMultipleLedgerManager,
+    MultipleLedgerManagerError,
+)
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager
 from ..multitenant.manager_provider import MultitenantManagerProvider
@@ -92,11 +107,50 @@ class Conductor:
         context = await self.context_builder.build_context()
 
         # Fetch genesis transactions if necessary
-        await get_genesis_transactions(context.settings)
+        if context.settings.get("ledger.ledger_config_list"):
+            await load_multiple_genesis_transactions_from_config(context.settings)
+        else:
+            await get_genesis_transactions(context.settings)
 
         # Configure the root profile
         self.root_profile, self.setup_public_did = await wallet_config(context)
         context = self.root_profile.context
+
+        # Multiledger Setup
+        if (
+            context.settings.get("ledger.ledger_config_list")
+            and len(context.settings.get("ledger.ledger_config_list")) > 0
+        ):
+            multi_ledger_manager = MultitenantManagerProvider(self.root_profile)
+            ledger = await multi_ledger_manager.get_write_ledger()
+            context.injector.bind_provider(
+                BaseMultipleLedgerManager, multi_ledger_manager
+            )
+            if isinstance(self.root_profile, AskarProfile) and isinstance(
+                ledger, IndyVdrLedger
+            ):
+                context.injector.bind_provider(BaseLedger, ledger)
+                context.injector.bind_provider(
+                    IndyVerifier,
+                    ClassProvider(
+                        "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                        self.root_profile,
+                    ),
+                )
+            elif isinstance(self.root_profile, IndySdkProfile) and isinstance(
+                ledger, IndySdkLedger
+            ):
+                context.injector.bind_instance(BaseLedger, ledger)
+                context.injector.bind_provider(
+                    IndyVerifier,
+                    ClassProvider(
+                        "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                        ledger,
+                    ),
+                )
+            else:
+                raise MultipleLedgerManagerError()
+
 
         # Configure the ledger
         if not await ledger_config(

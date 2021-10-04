@@ -1,5 +1,7 @@
 """Cryptography functions used by BasicWallet."""
 
+import re
+
 from collections import OrderedDict
 from typing import Callable, Optional, Sequence, Tuple, Union, List
 
@@ -78,6 +80,24 @@ def seed_to_did(seed: str) -> str:
     verkey, _ = create_ed25519_keypair(seed)
     did = bytes_to_b58(verkey[:16])
     return did
+
+
+def did_is_self_certified(did: str, verkey: str) -> bool:
+    """
+    Check if the DID is self certified.
+
+    Args:
+        did: DID string
+        verkey: VERKEY string
+    """
+    ABBREVIATED_VERKEY_REGEX = "^~[1-9A-HJ-NP-Za-km-z]{21,22}$"
+    if re.search(ABBREVIATED_VERKEY_REGEX, verkey):
+        return True
+    verkey_bytes = b58_to_bytes(verkey)
+    did_from_verkey = bytes_to_b58(verkey_bytes[:16])
+    if did == did_from_verkey:
+        return True
+    return False
 
 
 def sign_pk_from_sk(secret: bytes) -> bytes:
