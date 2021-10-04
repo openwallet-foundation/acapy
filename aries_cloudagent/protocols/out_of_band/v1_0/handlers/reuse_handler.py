@@ -24,8 +24,8 @@ class HandshakeReuseMessageHandler(BaseHandler):
         )
         assert isinstance(context.message, HandshakeReuse)
 
-        session = await context.session()
-        mgr = OutOfBandManager(session)
+        profile = context.profile
+        mgr = OutOfBandManager(profile)
         try:
             await mgr.receive_reuse_message(context.message, context.message_receipt)
         except OutOfBandManagerError as e:
