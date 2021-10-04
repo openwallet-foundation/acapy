@@ -7,6 +7,7 @@ from typing import Union
 from ...core.profile import Profile
 from ...utils.stats import Collector
 
+from ...core.profile import Profile
 from ..error import TransportError
 from ..wire_format import BaseWireFormat
 
@@ -14,10 +15,13 @@ from ..wire_format import BaseWireFormat
 class BaseOutboundTransport(ABC):
     """Base outbound transport class."""
 
-    def __init__(self, wire_format: BaseWireFormat = None) -> None:
+    def __init__(
+        self, wire_format: BaseWireFormat = None, root_profile: Profile = None
+    ) -> None:
         """Initialize a `BaseOutboundTransport` instance."""
         self._collector = None
         self._wire_format = wire_format
+        self.root_profile: Profile = root_profile
 
     @property
     def collector(self) -> Collector:
