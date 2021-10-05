@@ -52,6 +52,7 @@ from .test_data import (
     is_holder_pd_multiple_fields_excluded,
     is_holder_pd_multiple_fields_included,
     TEST_CRED_DICT,
+    TEST_CRED_WILDCARD,
 )
 
 
@@ -638,6 +639,27 @@ class TestPresExchHandler:
         test_cred = cred_list[2].cred_value
         tmp_reveal_doc = dif_pres_exch_handler.reveal_doc(
             credential_dict=test_cred, constraints=test_constraint
+        )
+        assert tmp_reveal_doc
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_reveal_doc_wildcard(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Observation[*].effectiveDateTime"],
+                    "id": "Observation_effectiveDateTime",
+                    "purpose": "Време узимања узорка",
+                }
+            ],
+        }
+
+        test_constraint = Constraints.deserialize(test_constraint)
+        tmp_reveal_doc = dif_pres_exch_handler.reveal_doc(
+            credential_dict=TEST_CRED_WILDCARD, constraints=test_constraint
         )
         assert tmp_reveal_doc
 
@@ -3347,10 +3369,11 @@ class TestPresExchHandler:
         original_field = DIFField.deserialize(
             {"path": ["$.credentialSubject.Patient.address[0].city"], "purpose": "Test"}
         )
-        field_a, field_b = dif_pres_exch_handler.get_field_updated_path(original_field)
-        assert field_a == original_field
-        assert "$.credentialSubject.Patient.address.city" in field_b.paths
-        assert "$.credentialSubject.Patient.address[0].city" not in field_b.paths
+        return_field = dif_pres_exch_handler.get_field_updated_path(
+            deepcopy(original_field)
+        )
+        assert "$.credentialSubject.Patient.address.city" in return_field.paths
+        assert "$.credentialSubject.Patient.address[0].city" not in return_field.paths
         original_field = DIFField.deserialize(
             {
                 "path": [
@@ -3360,11 +3383,12 @@ class TestPresExchHandler:
                 "purpose": "Test",
             }
         )
-        field_a, field_b = dif_pres_exch_handler.get_field_updated_path(original_field)
-        assert field_a == original_field
-        assert "$.credentialSubject.Patient.address[0].city" not in field_b.paths
-        assert "$.credentialSubject.Patient.address.city" in field_b.paths
-        assert "$.credentialSubject.Patient.birthDate" in field_b.paths
+        return_field = dif_pres_exch_handler.get_field_updated_path(
+            deepcopy(original_field)
+        )
+        assert "$.credentialSubject.Patient.address[0].city" not in return_field.paths
+        assert "$.credentialSubject.Patient.address.city" in return_field.paths
+        assert "$.credentialSubject.Patient.birthDate" in return_field.paths
 
     def test_get_dict_keys_from_path(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(

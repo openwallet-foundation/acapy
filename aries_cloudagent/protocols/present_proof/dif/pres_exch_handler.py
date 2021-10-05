@@ -515,6 +515,8 @@ class DIFPresExchHandler:
         unflatten_dict = {}
         for field in constraints._fields:
             for path in field.paths:
+                if "[*]" in path:
+                    path = path.replace("[*]", "[0]")
                 jsonpath = parse(path)
                 match = jsonpath.find(credential_dict)
                 if len(match) == 0:
@@ -1328,15 +1330,14 @@ class DIFPresExchHandler:
                         f"apply to the enclosed credential in {desc_map_item_path}"
                     )
 
-    def get_field_updated_path(self, field: DIFField) -> Tuple[DIFField, DIFField]:
+    def get_field_updated_path(self, field: DIFField) -> DIFField:
         """Update DIFField path to remove any [*] in case of limit_disclosure."""
-        new_field = deepcopy(field)
         given_paths = field.paths
         new_paths = []
         for path in given_paths:
             new_paths.append(re.sub(r"\[(\W+)\]|\[(\d+)\]", "", path))
-        new_field.paths = new_paths
-        return (field, new_field)
+        field.paths = new_paths
+        return field
 
     async def apply_constraint_received_cred(
         self, constraint: Constraints, cred_dict: dict
@@ -1348,7 +1349,8 @@ class DIFPresExchHandler:
         is_limit_disclosure = constraint.limit_disclosure == "required"
         for field in fields:
             if is_limit_disclosure:
-                field, new_field = self.get_field_updated_path(field)
+                new_field = deepcopy(field)
+                new_field = self.get_field_updated_path(new_field)
                 original_field_filter = await self.filter_by_field(field, credential)
                 new_field_filter = await self.filter_by_field(new_field, credential)
                 if not original_field_filter and not new_field_filter:
