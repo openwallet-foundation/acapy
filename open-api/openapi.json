@@ -6044,6 +6044,29 @@
           },
           "description" : "Mapping of input_descriptor id to list of stored W3C credential record_id",
           "properties" : { }
+        },
+        "reveal_doc" : {
+          "type" : "object",
+          "example" : {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/security/bbs/v1"
+            ],
+            "type": ["VerifiableCredential", "LabReport"],
+            "@explicit": true,
+            "@requireAll": true,
+            "issuanceDate": {},
+            "issuer": {},
+            "credentialSubject": {
+                "Observation": [
+                    {"effectiveDateTime": {}, "@explicit": true, "@requireAll": true}
+                ],
+                "@explicit": true,
+                "@requireAll": true
+            }
+          },
+          "description" : "reveal doc [JSON-LD frame] dict used to derive the credential when selective disclosure is required",
+          "properties" : { }
         }
       }
     },

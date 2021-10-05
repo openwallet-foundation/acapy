@@ -164,6 +164,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         )
         pres_definition = None
         limit_record_ids = None
+        reveal_doc_frame = None
         challenge = None
         domain = None
         if request_data != {} and DIFPresFormatHandler.format.api in request_data:
@@ -173,6 +174,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             pres_definition = pres_spec_payload.get("presentation_definition")
             issuer_id = pres_spec_payload.get("issuer_id")
             limit_record_ids = pres_spec_payload.get("record_ids")
+            reveal_doc_frame = pres_spec_payload.get("reveal_doc")
         if not pres_definition:
             if "options" in proof_request:
                 challenge = proof_request.get("options").get("challenge")
@@ -303,7 +305,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             raise V20PresFormatHandlerError(err)
 
         dif_handler = DIFPresExchHandler(
-            self._profile, pres_signing_did=issuer_id, proof_type=dif_handler_proof_type
+            self._profile,
+            pres_signing_did=issuer_id,
+            proof_type=dif_handler_proof_type,
+            reveal_doc=reveal_doc_frame,
         )
 
         pres = await dif_handler.create_vp(

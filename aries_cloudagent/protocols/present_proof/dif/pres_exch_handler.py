@@ -92,6 +92,7 @@ class DIFPresExchHandler:
         profile: Profile,
         pres_signing_did: str = None,
         proof_type: str = None,
+        reveal_doc: dict = None,
     ):
         """Initialize PresExchange Handler."""
         super().__init__()
@@ -102,6 +103,7 @@ class DIFPresExchHandler:
         else:
             self.proof_type = proof_type
         self.is_holder = False
+        self.reveal_doc_frame = reveal_doc
 
     async def _get_issue_suite(
         self,
@@ -504,50 +506,53 @@ class DIFPresExchHandler:
 
     def reveal_doc(self, credential_dict: dict, constraints: Constraints):
         """Generate reveal_doc dict for deriving credential."""
-        derived = {
-            "@context": credential_dict.get("@context"),
-            "type": credential_dict.get("type"),
-            "@explicit": True,
-            "@requireAll": True,
-            "issuanceDate": {},
-            "issuer": {},
-        }
-        unflatten_dict = {}
-        for field in constraints._fields:
-            for path in field.paths:
-                if "[*]" in path:
-                    path = path.replace("[*]", "[0]")
-                jsonpath = parse(path)
-                match = jsonpath.find(credential_dict)
-                if len(match) == 0:
-                    continue
-                for match_item in match:
-                    full_path = str(match_item.full_path)
-                    if bool(re.search(pattern=r"\[[0-9]+\]", string=full_path)):
-                        full_path = full_path.replace(".[", "[")
-                    unflatten_dict[full_path] = {}
-                    explicit_key_path = None
-                    key_list = full_path.split(".")[:-1]
-                    for key in key_list:
-                        if not explicit_key_path:
-                            explicit_key_path = key
-                        else:
-                            explicit_key_path = explicit_key_path + "." + key
-                        unflatten_dict[explicit_key_path + ".@explicit"] = True
-                        unflatten_dict[explicit_key_path + ".@requireAll"] = True
-        derived = self.new_credential_builder(derived, unflatten_dict)
-        # Fix issue related to credentialSubject type property
-        if "credentialSubject" in derived.keys():
-            if "type" in credential_dict.get("credentialSubject"):
-                derived["credentialSubject"]["type"] = credential_dict.get(
-                    "credentialSubject"
-                ).get("type")
-        if "credentialSubject" not in derived.keys():
-            if isinstance(credential_dict.get("credentialSubject"), list):
-                derived["credentialSubject"] = []
-            elif isinstance(credential_dict.get("credentialSubject"), dict):
-                derived["credentialSubject"] = {}
-        return derived
+        if not self.reveal_doc_frame:
+            derived = {
+                "@context": credential_dict.get("@context"),
+                "type": credential_dict.get("type"),
+                "@explicit": True,
+                "@requireAll": True,
+                "issuanceDate": {},
+                "issuer": {},
+            }
+            unflatten_dict = {}
+            for field in constraints._fields:
+                for path in field.paths:
+                    if "[*]" in path:
+                        path = path.replace("[*]", "[0]")
+                    jsonpath = parse(path)
+                    match = jsonpath.find(credential_dict)
+                    if len(match) == 0:
+                        continue
+                    for match_item in match:
+                        full_path = str(match_item.full_path)
+                        if bool(re.search(pattern=r"\[[0-9]+\]", string=full_path)):
+                            full_path = full_path.replace(".[", "[")
+                        unflatten_dict[full_path] = {}
+                        explicit_key_path = None
+                        key_list = full_path.split(".")[:-1]
+                        for key in key_list:
+                            if not explicit_key_path:
+                                explicit_key_path = key
+                            else:
+                                explicit_key_path = explicit_key_path + "." + key
+                            unflatten_dict[explicit_key_path + ".@explicit"] = True
+                            unflatten_dict[explicit_key_path + ".@requireAll"] = True
+            derived = self.new_credential_builder(derived, unflatten_dict)
+            # Fix issue related to credentialSubject type property
+            if "credentialSubject" in derived.keys():
+                if "type" in credential_dict.get("credentialSubject"):
+                    derived["credentialSubject"]["type"] = credential_dict.get(
+                        "credentialSubject"
+                    ).get("type")
+            if "credentialSubject" not in derived.keys():
+                if isinstance(credential_dict.get("credentialSubject"), list):
+                    derived["credentialSubject"] = []
+                elif isinstance(credential_dict.get("credentialSubject"), dict):
+                    derived["credentialSubject"] = {}
+            return derived
+        else:
+            return self.reveal_doc_frame
 
     def new_credential_builder(
         self, new_credential: dict, unflatten_dict: dict

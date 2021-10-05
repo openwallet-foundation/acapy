@@ -498,6 +498,59 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
+    async def test_reveal_doc_with_frame_provided(self, profile):
+        reveal_doc_frame = {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "type": ["VerifiableCredential", "LabReport"],
+            "@explicit": True,
+            "@requireAll": True,
+            "issuanceDate": {},
+            "issuer": {},
+            "credentialSubject": {
+                "Observation": [
+                    {"effectiveDateTime": {}, "@explicit": True, "@requireAll": True}
+                ],
+                "@explicit": True,
+                "@requireAll": True,
+            },
+        }
+        dif_pres_exch_handler = DIFPresExchHandler(profile, reveal_doc=reveal_doc_frame)
+        test_constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.givenName"],
+                    "filter": {"type": "string", "const": "JOHN"},
+                },
+                {
+                    "path": ["$.credentialSubject.familyName"],
+                    "filter": {"type": "string", "const": "SMITH"},
+                },
+                {
+                    "path": ["$.credentialSubject.type"],
+                    "filter": {
+                        "type": "string",
+                        "enum": ["PermanentResident", "Person"],
+                    },
+                },
+                {
+                    "path": ["$.credentialSubject.gender"],
+                    "filter": {"type": "string", "const": "Male"},
+                },
+            ],
+        }
+
+        test_constraint = Constraints.deserialize(test_constraint)
+        tmp_reveal_doc = dif_pres_exch_handler.reveal_doc(
+            credential_dict=BBS_SIGNED_VC_MATTR, constraints=test_constraint
+        )
+        assert tmp_reveal_doc == reveal_doc_frame
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_reveal_doc_a(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         test_constraint = {
