@@ -549,7 +549,10 @@ class DIFPresExchHandler:
                 if isinstance(credential_dict.get("credentialSubject"), list):
                     derived["credentialSubject"] = []
                 elif isinstance(credential_dict.get("credentialSubject"), dict):
-                    derived["credentialSubject"] = {}
+                    derived["credentialSubject"] = {
+                        "@explicit": True,
+                        "@requireAll": True,
+                    }
             return derived
         else:
             return self.reveal_doc_frame
