@@ -1,5 +1,7 @@
 """Schema utilities."""
 
+import re
+
 from marshmallow import fields
 
 from ..models.openapi import OpenAPISchema
@@ -31,3 +33,6 @@ class SchemaQueryStringSchema(OpenAPISchema):
 
 SCHEMA_TAGS = [tag for tag in vars(SchemaQueryStringSchema).get("_declared_fields", [])]
 SCHEMA_SENT_RECORD_TYPE = "schema_sent"
+
+SCHEMA_EVENT_PREFIX = "acapy::SCHEMA::"
+EVENT_LISTENER_PATTERN = re.compile(f"^{SCHEMA_EVENT_PREFIX}(.*)?$")

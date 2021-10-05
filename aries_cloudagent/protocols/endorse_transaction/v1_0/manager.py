@@ -9,13 +9,22 @@ from asyncio import shield
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
+from ....indy.sdk.profile import IndySdkProfile
 from ....indy.issuer import IndyIssuerError
 from ....indy.util import tails_path
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
+from ....messaging.credential_definitions.util import CRED_DEF_EVENT_PREFIX
 from ....messaging.responder import BaseResponder
+from ....messaging.schemas.util import SCHEMA_EVENT_PREFIX
 from ....revocation.error import RevocationError, RevocationNotSupportedError
 from ....revocation.indy import IndyRevocation
+from ....revocation.util import (
+    REVOCATION_EVENT_PREFIX,
+    REVOCATION_REG_EVENT,
+    REVOCATION_ENTRY_EVENT,
+)
+from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
 from ....tails.base import BaseTailsServer
 from ....transport.inbound.receipt import MessageReceipt
@@ -339,8 +348,8 @@ class TransactionManager:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
-            await self.store_record_in_wallet(
-                response.ledger_response, connection_record
+            await self.endorsed_txn_post_processing(
+                transaction, response.ledger_response, connection_record
             )
 
         return transaction
@@ -405,7 +414,9 @@ class TransactionManager:
             )
         if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
             # the author write the endorsed transaction to the ledger
-            await self.store_record_in_wallet(ledger_response, connection_record)
+            await self.endorsed_txn_post_processing(
+                transaction, ledger_response, connection_record
+            )
             transaction_acknowledgement_message = TransactionAcknowledgement(
                 thread_id=transaction._id
             )
@@ -465,8 +476,8 @@ class TransactionManager:
             )
         if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
             # store the related non-secrets record in our wallet
-            await self.store_record_in_wallet(
-                response.ledger_response, connection_record
+            await self.endorsed_txn_post_processing(
+                transaction, response.ledger_response, connection_record
             )
 
         return transaction
@@ -712,8 +723,11 @@ class TransactionManager:
             self._session, key="transaction_jobs", value=value
         )
 
-    async def store_record_in_wallet(
-        self, ledger_response: dict = None, connection_record: ConnRecord = None
+    async def endorsed_txn_post_processing(
+        self,
+        transaction: TransactionRecord,
+        ledger_response: dict = None,
+        connection_record: ConnRecord = None,
     ):
         """
         Store record in wallet.
@@ -731,18 +745,24 @@ class TransactionManager:
             raise TransactionManagerError(reason)
 
         # write the wallet non-secrets record
+        meta_data = transaction.meta_data
         if ledger_response["result"]["txn"]["type"] == "101":
             # schema transaction
             schema_id = ledger_response["result"]["txnMetadata"]["txnId"]
             public_did = ledger_response["result"]["txn"]["metadata"]["from"]
+            meta_data["context"]["schema_id"] = schema_id
+            meta_data["context"]["public_did"] = public_did
 
-            # TODO refactor this code
-            # Notify event
-            print("Notify event:", "acapy::SCHEMA::" + schema_id, ledger_response)
-            await self._profile.notify(
-                "acapy::SCHEMA::" + schema_id, {"schema_txn": ledger_response["result"]}
+            # Notify schema ledger write event
+            print(
+                "Notify event:",
+                SCHEMA_EVENT_PREFIX + schema_id,
+                meta_data,
             )
-            await ledger.add_schema_non_secrets_record(schema_id, public_did)
+            await self._profile.notify(
+                SCHEMA_EVENT_PREFIX + schema_id,
+                meta_data,
+            )
 
         elif ledger_response["result"]["txn"]["type"] == "102":
             # cred def transaction
@@ -754,10 +774,20 @@ class TransactionManager:
                     raise TransactionManagerError(err.roll_up) from err
 
             schema_id = schema_response["id"]
-            public_did = ledger_response["result"]["txn"]["metadata"]["from"]
-            credential_definition_id = ledger_response["result"]["txnMetadata"]["txnId"]
-            await ledger.add_cred_def_non_secrets_record(
-                schema_id, public_did, credential_definition_id
+            issuer_did = ledger_response["result"]["txn"]["metadata"]["from"]
+            cred_def_id = ledger_response["result"]["txnMetadata"]["txnId"]
+            meta_data["context"]["schema_id"] = schema_id
+            meta_data["context"]["cred_def_id"] = cred_def_id
+            meta_data["context"]["issuer_did"] = issuer_did
+            # Notify event
+            print(
+                "Notify event:",
+                CRED_DEF_EVENT_PREFIX + cred_def_id,
+                meta_data,
+            )
+            await self._profile.notify(
+                CRED_DEF_EVENT_PREFIX + cred_def_id,
+                meta_data,
             )
 
         else:

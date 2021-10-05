@@ -17,6 +17,8 @@ from marshmallow.exceptions import ValidationError
 
 from ..admin.request_context import AdminRequestContext
 from ..connections.models.conn_record import ConnRecord
+from ..core.event_bus import Event, EventBus
+from ..core.profile import Profile
 from ..indy.issuer import IndyIssuerError
 from ..indy.util import tails_path
 from ..ledger.error import LedgerError
@@ -51,6 +53,12 @@ from .models.issuer_cred_rev_record import (
     IssuerCredRevRecordSchema,
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
+from .util import (
+    REVOCATION_EVENT_PREFIX,
+    EVENT_LISTENER_PATTERN,
+    REVOCATION_REG_EVENT,
+    REVOCATION_ENTRY_EVENT,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -1086,6 +1094,17 @@ async def set_rev_reg_state(request: web.BaseRequest):
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
     return web.json_response({"result": rev_reg.serialize()})
+
+
+def register_events(event_bus: EventBus):
+    """Subscribe to any events we need to support."""
+    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_revocation_event)
+
+
+async def on_revocation_event(profile: Profile, event: Event):
+    """Handle any events we need to support."""
+    print(f">>>> Handle revocation event: {event}")
+    pass
 
 
 async def register(app: web.Application):

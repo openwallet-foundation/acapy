@@ -1,6 +1,7 @@
 """Credential definition admin routes."""
 
 import json
+from time import time
 
 from asyncio import ensure_future, shield
 
@@ -16,7 +17,9 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
-from ...indy.issuer import IndyIssuer
+from ...core.event_bus import Event, EventBus
+from ...core.profile import Profile
+from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
@@ -29,7 +32,11 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
 )
 from ...revocation.error import RevocationError, RevocationNotSupportedError
 from ...revocation.indy import IndyRevocation
-from ...storage.base import BaseStorage
+from ...revocation.util import (
+    REVOCATION_EVENT_PREFIX,
+    REVOCATION_REG_EVENT,
+)
+from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 from ...tails.base import BaseTailsServer
 
@@ -37,7 +44,13 @@ from ..models.openapi import OpenAPISchema
 from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID
 
 
-from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
+from .util import (
+    CredDefQueryStringSchema,
+    CRED_DEF_TAGS,
+    CRED_DEF_SENT_RECORD_TYPE,
+    CRED_DEF_EVENT_PREFIX,
+    EVENT_LISTENER_PATTERN,
+)
 
 
 from ..valid import UUIDFour
@@ -237,8 +250,36 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 )
             )
 
-    except LedgerError as e:
+    except (IndyIssuerError, LedgerError) as e:
         raise web.HTTPBadRequest(reason=e.message) from e
+
+    meta_data = {
+        "context": {
+            "schema_id": schema_id,
+            "support_revocation": support_revocation,
+            "novel": novel,
+            "tag": tag,
+            "rev_reg_size": rev_reg_size,
+        },
+        "post_process": {"topic": "CRED_DEF"},
+    }
+
+    if not create_transaction_for_endorser:
+        # Notify event
+        issuer_did = cred_def_id.split(":")[0]
+        meta_data["context"]["schema_id"] = schema_id
+        meta_data["context"]["cred_def_id"] = cred_def_id
+        meta_data["context"]["issuer_did"] = issuer_did
+        meta_data["context"]["auto_create_rev_reg"] = True
+        print(
+            "Notify event:",
+            CRED_DEF_EVENT_PREFIX + cred_def_id,
+            meta_data,
+        )
+        await context.profile.notify(
+            CRED_DEF_EVENT_PREFIX + cred_def_id,
+            meta_data,
+        )
 
     # If revocation is requested and cred def is novel, create revocation registry
     if support_revocation and novel and write_ledger:
@@ -298,21 +339,16 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     else:
         session = await context.session()
+        meta_data["context"][
+            "auto_create_rev_reg"
+        ] = session.context.settings.get_value("endorser.auto_create_rev_reg")
 
         transaction_mgr = TransactionManager(session)
         try:
             transaction = await transaction_mgr.create_record(
                 messages_attach=cred_def["signed_txn"],
                 connection_id=connection_id,
-                meta_data={
-                    "context": {
-                        "schema_id": schema_id,
-                        "support_revocation": support_revocation,
-                        "tag": tag,
-                        "rev_reg_size": rev_reg_size,
-                    },
-                    "post_process": {"topic": "CRED_DEF"},
-                },
+                meta_data=meta_data,
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -449,10 +485,79 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
         )
         if 0 == len(found):
             await ledger.add_cred_def_non_secrets_record(
-                schema_id, iss_did, cred_def_id
+                session.profile, schema_id, iss_did, cred_def_id
             )
 
     return web.json_response({"credential_definition": cred_def})
+
+
+def register_events(event_bus: EventBus):
+    """Subscribe to any events we need to support."""
+    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_cred_def_event)
+
+
+async def on_cred_def_event(profile: Profile, event: Event):
+    """Handle any events we need to support."""
+    print(f">>>> Handle event: {event}")
+    schema_id = event.payload["context"]["schema_id"]
+    cred_def_id = event.payload["context"]["cred_def_id"]
+    issuer_did = event.payload["context"]["issuer_did"]
+    if "cred_def" in event.payload:
+        pass
+    else:
+        pass
+    await add_cred_def_non_secrets_record(profile, schema_id, issuer_did, cred_def_id)
+
+    # check if we need to kick off the revocation registry setup
+    support_revocation = event.payload["context"]["support_revocation"]
+    novel = event.payload["context"]["novel"]
+    auto_create_rev_reg = event.payload["context"]["auto_create_rev_reg"]
+    if support_revocation and novel and auto_create_rev_reg:
+        print("TODO kick off revocation ...")
+        event_id = REVOCATION_EVENT_PREFIX + REVOCATION_REG_EVENT + "::" + cred_def_id
+        meta_data = {"context": event.payload["context"]}
+        print(
+            "Notify event:",
+            event_id,
+            meta_data,
+        )
+        await profile.notify(
+            event_id,
+            meta_data,
+        )
+
+
+async def add_cred_def_non_secrets_record(
+    profile: Profile, schema_id: str, issuer_did: str, credential_definition_id: str
+):
+    """
+    Write the wallet non-secrets record for cred def (already written to the ledger).
+
+    Note that the cred def private key signing informtion must already exist in the
+    wallet.
+
+    Args:
+        schema_id: The schema id (or stringified sequence number)
+        issuer_did: The DID of the issuer
+        credential_definition_id: The credential definition id
+
+    """
+    schema_id_parts = schema_id.split(":")
+    cred_def_tags = {
+        "schema_id": schema_id,
+        "schema_issuer_did": schema_id_parts[0],
+        "schema_name": schema_id_parts[-2],
+        "schema_version": schema_id_parts[-1],
+        "issuer_did": issuer_did,
+        "cred_def_id": credential_definition_id,
+        "epoch": str(int(time())),
+    }
+    record = StorageRecord(
+        CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
+    )
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        await storage.add_record(record)
 
 
 async def register(app: web.Application):

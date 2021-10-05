@@ -1,7 +1,7 @@
 """Credential schema admin routes."""
 
 import json
-import re
+from time import time
 
 from asyncio import shield
 
@@ -31,13 +31,19 @@ from ...protocols.endorse_transaction.v1_0.manager import (
 from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
-from ...storage.base import BaseStorage
+from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 
 from ..models.openapi import OpenAPISchema
 from ..valid import B58, INDY_SCHEMA_ID, INDY_VERSION
 
-from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
+from .util import (
+    SchemaQueryStringSchema,
+    SCHEMA_SENT_RECORD_TYPE,
+    SCHEMA_TAGS,
+    SCHEMA_EVENT_PREFIX,
+    EVENT_LISTENER_PATTERN,
+)
 
 
 from ..valid import UUIDFour
@@ -242,11 +248,26 @@ async def schemas_send_schema(request: web.BaseRequest):
         except (IndyIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    meta_data = {
+        "context": {
+            "schema_id": schema_id,
+            "schema_name": schema_name,
+            "schema_version": schema_version,
+            "attributes": attributes,
+        },
+        "post_process": {"topic": "SCHEMA"},
+    }
+
     if not create_transaction_for_endorser:
         # Notify event
-        print("Notify event:", "acapy::SCHEMA::" + schema_id, schema_def)
+        print(
+            "Notify event:",
+            SCHEMA_EVENT_PREFIX + schema_id,
+            meta_data["context"],
+        )
         await context.profile.notify(
-            "acapy::SCHEMA::" + schema_id, {"schema_def": schema_def}
+            SCHEMA_EVENT_PREFIX + schema_id,
+            {"context": meta_data["context"]},
         )
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
 
@@ -258,14 +279,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             transaction = await transaction_mgr.create_record(
                 messages_attach=schema_def["signed_txn"],
                 connection_id=connection_id,
-                meta_data={
-                    "context": {
-                        "schema_name": schema_name,
-                        "schema_version": schema_version,
-                        "attributes": attributes,
-                    },
-                    "post_process": {"topic": "SCHEMA"},
-                },
+                meta_data=meta_data,
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -383,8 +397,6 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
     async with ledger:
         try:
             schema = await ledger.get_schema(schema_id)
-            schema_id_parts = schema_id.split(":")
-            issuer_did = schema_id_parts[0]
 
             # check if the record exists, if not add it
             found = await storage.find_all_records(
@@ -394,25 +406,46 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
                 },
             )
             if 0 == len(found):
-                await ledger.add_schema_non_secrets_record(schema_id, issuer_did)
+                await add_schema_non_secrets_record(session.profile, schema_id)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"schema": schema})
 
 
-EVENT_LISTENER_PATTERN = re.compile("^acapy::SCHEMA::(.*)?$")
-
-
 def register_events(event_bus: EventBus):
     """Subscribe to any events we need to support."""
-    print("Register events for schema ...")
     event_bus.subscribe(EVENT_LISTENER_PATTERN, on_schema_event)
 
 
 async def on_schema_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
     print(f">>>> Handle event: {event}")
+    schema_id = event.payload["context"]["schema_id"]
+    await add_schema_non_secrets_record(profile, schema_id)
+
+
+async def add_schema_non_secrets_record(profile: Profile, schema_id: str):
+    """
+    Write the wallet non-secrets record for a schema (already written to the ledger).
+
+    Args:
+        profile: the current profile (used to determine storage)
+        schema_id: The schema id (or stringified sequence number)
+
+    """
+    schema_id_parts = schema_id.split(":")
+    schema_tags = {
+        "schema_id": schema_id,
+        "schema_issuer_did": schema_id_parts[0],
+        "schema_name": schema_id_parts[-2],
+        "schema_version": schema_id_parts[-1],
+        "epoch": str(int(time())),
+    }
+    record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        await storage.add_record(record)
 
 
 async def register(app: web.Application):
