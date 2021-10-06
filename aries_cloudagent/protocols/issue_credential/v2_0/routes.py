@@ -445,7 +445,7 @@ async def credential_exchange_list(request: web.BaseRequest):
 
         results = []
         for cxr in cred_ex_records:
-            result = await _get_result_with_details(context.profile, cxr)
+            result = await _get_result_with_details(profile, cxr)
             results.append(result)
 
     except (StorageError, BaseModelError) as err:
@@ -621,8 +621,8 @@ async def credential_exchange_send(request: web.BaseRequest):
         )
         async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-            if not conn_record.is_ready:
-                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+        if not conn_record.is_ready:
+            raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
         # TODO: why do we create a proposal and then use that to create an offer.
         # Seems easier to just pass the proposal data to the format specific handler
@@ -725,8 +725,8 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
         )
         async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-            if not conn_record.is_ready:
-                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+        if not conn_record.is_ready:
+            raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
         cred_manager = V20CredManager(profile)
         cred_ex_record = await cred_manager.create_proposal(
@@ -923,8 +923,8 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     try:
         async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-            if not conn_record.is_ready:
-                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+        if not conn_record.is_ready:
+            raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
         cred_ex_record, cred_offer_message = await _create_free_offer(
             profile=profile,
@@ -1221,10 +1221,11 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
             except StorageNotFoundError as err:
                 raise web.HTTPNotFound(reason=err.roll_up) from err
 
-            connection_id = cred_ex_record.connection_id
+        connection_id = cred_ex_record.connection_id
+        async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-            if not conn_record.is_ready:
-                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+        if not conn_record.is_ready:
+            raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
         cred_manager = V20CredManager(profile)
         cred_ex_record, cred_request_message = await cred_manager.create_request(
