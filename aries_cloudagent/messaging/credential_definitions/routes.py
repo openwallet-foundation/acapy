@@ -260,8 +260,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             "novel": novel,
             "tag": tag,
             "rev_reg_size": rev_reg_size,
-        },
-        "post_process": {"topic": "CRED_DEF"},
+        }
     }
 
     if not create_transaction_for_endorser:
@@ -515,7 +514,7 @@ async def on_cred_def_event(profile: Profile, event: Event):
     if support_revocation and novel and auto_create_rev_reg:
         print("TODO kick off revocation ...")
         event_id = REVOCATION_EVENT_PREFIX + REVOCATION_REG_EVENT + "::" + cred_def_id
-        meta_data = {"context": event.payload["context"]}
+        meta_data = event.payload
         print(
             "Notify event:",
             event_id,

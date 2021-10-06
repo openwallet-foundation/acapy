@@ -254,8 +254,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             "schema_name": schema_name,
             "schema_version": schema_version,
             "attributes": attributes,
-        },
-        "post_process": {"topic": "SCHEMA"},
+        }
     }
 
     if not create_transaction_for_endorser:
@@ -263,11 +262,11 @@ async def schemas_send_schema(request: web.BaseRequest):
         print(
             "Notify event:",
             SCHEMA_EVENT_PREFIX + schema_id,
-            meta_data["context"],
+            meta_data,
         )
         await context.profile.notify(
             SCHEMA_EVENT_PREFIX + schema_id,
-            {"context": meta_data["context"]},
+            meta_data,
         )
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
 

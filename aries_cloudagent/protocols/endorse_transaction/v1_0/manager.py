@@ -23,6 +23,7 @@ from ....revocation.util import (
     REVOCATION_EVENT_PREFIX,
     REVOCATION_REG_EVENT,
     REVOCATION_ENTRY_EVENT,
+    REVOCATION_TAILS_EVENT,
 )
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
@@ -744,8 +745,13 @@ class TransactionManager:
                 reason += ": missing wallet-type?"
             raise TransactionManagerError(reason)
 
-        # write the wallet non-secrets record
+        # setup meta_data to pass to future events, if necessary
         meta_data = transaction.meta_data
+        meta_data["endorser"] = {
+            "connection_id": transaction.connection_id,
+        }
+
+        # write the wallet non-secrets record
         if ledger_response["result"]["txn"]["type"] == "101":
             # schema transaction
             schema_id = ledger_response["result"]["txnMetadata"]["txnId"]
@@ -774,11 +780,12 @@ class TransactionManager:
                     raise TransactionManagerError(err.roll_up) from err
 
             schema_id = schema_response["id"]
-            issuer_did = ledger_response["result"]["txn"]["metadata"]["from"]
             cred_def_id = ledger_response["result"]["txnMetadata"]["txnId"]
+            issuer_did = ledger_response["result"]["txn"]["metadata"]["from"]
             meta_data["context"]["schema_id"] = schema_id
             meta_data["context"]["cred_def_id"] = cred_def_id
             meta_data["context"]["issuer_did"] = issuer_did
+
             # Notify event
             print(
                 "Notify event:",
@@ -790,206 +797,40 @@ class TransactionManager:
                 meta_data,
             )
 
+        elif ledger_response["result"]["txn"]["type"] == "113":
+            # revocation registry transaction
+            rev_reg_id = ledger_response["result"]["txnMetadata"]["txnId"]
+            meta_data["context"]["rev_reg_id"] = rev_reg_id
+
+            # Notify event
+            event_id = REVOCATION_EVENT_PREFIX + REVOCATION_ENTRY_EVENT + "::" + rev_reg_id
+            print(
+                "Notify event:",
+                event_id,
+                meta_data,
+            )
+            await self._profile.notify(
+                event_id,
+                meta_data,
+            )
+
+        elif ledger_response["result"]["txn"]["type"] == "114":
+            # revocation registry transaction
+            rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
+            meta_data["context"]["rev_reg_id"] = rev_reg_id
+
+            # Notify event
+            event_id = REVOCATION_EVENT_PREFIX + REVOCATION_TAILS_EVENT + "::" + rev_reg_id
+            print(
+                "Notify event:",
+                event_id,
+                meta_data,
+            )
+            await self._profile.notify(
+                event_id,
+                meta_data,
+            )
+
         else:
             # TODO unknown ledger transaction type, just ignore for now ...
             pass
-
-        # if we are setup as "author" role and configured for auto-revocation-setup,
-        # then automate subsequent transactions
-        if not self._session.context.settings.get_value("endorser.auto_create_rev_reg"):
-            return
-
-        # for a schema, we don't need to do anything
-        if ledger_response["result"]["txn"]["type"] == "101":
-            # no-op
-            pass
-
-        # for a cred def, see if we need to initiate the revocation registry
-        elif (
-            ledger_response["result"]["txn"]["type"] == "102"
-            and "revocation" in ledger_response["result"]["txn"]["data"]["data"]
-        ):
-            endorser_info = await connection_record.metadata_get(
-                self.session, "endorser_info"
-            )
-            if not endorser_info:
-                raise TransactionManagerError(
-                    reason="Endorser Info is not set up in "
-                    "connection metadata for this connection record"
-                )
-            if "endorser_did" not in endorser_info.keys():
-                raise TransactionManagerError(
-                    reason=' "endorser_did" is not set in "endorser_info"'
-                    " in connection metadata for this connection record"
-                )
-            endorser_did = endorser_info["endorser_did"]
-
-            cred_def_id = ledger_response["result"]["txnMetadata"]["txnId"]
-            profile = self._session.context
-            try:
-                tails_base_url = profile.settings.get("tails_server_base_url")
-                if not tails_base_url:
-                    raise TransactionManagerError(
-                        reason="tails_server_base_url not configured"
-                    )
-
-                # Create registry
-                revoc = IndyRevocation(self.session.profile)
-                registry_record = await revoc.init_issuer_registry(
-                    cred_def_id,
-                    # TODO just use the default registry size for now
-                    # max_cred_num=rev_reg_size,
-                )
-
-                await shield(registry_record.generate_registry(self.session.profile))
-
-                await registry_record.set_tails_file_public_uri(
-                    self.session.profile,
-                    f"{tails_base_url}/{registry_record.revoc_reg_id}",
-                )
-                rev_reg_resp = await registry_record.send_def(
-                    self.session.profile,
-                    write_ledger=False,
-                    endorser_did=endorser_did,
-                )
-            except RevocationError as e:
-                raise TransactionManagerError(reason=e.message) from e
-            except RevocationNotSupportedError as e:
-                raise TransactionManagerError(reason=e.message) from e
-
-            try:
-                revo_transaction = await self.create_record(
-                    messages_attach=rev_reg_resp["result"],
-                    connection_id=connection_record.connection_id,
-                )
-            except StorageError as err:
-                raise TransactionManagerError(reason=err.roll_up) from err
-
-            # if auto-request, send the request to the endorser
-            if profile.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        revo_transaction,
-                        revo_transaction_request,
-                    ) = await self.create_request(
-                        transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise TransactionManagerError(reason=err.roll_up) from err
-
-                responder = self._session.inject_or(BaseResponder)
-                if responder:
-                    await responder.send(
-                        revo_transaction_request,
-                        connection_id=connection_record.connection_id,
-                    )
-                else:
-                    self._logger.warning(
-                        "Configuration has no BaseResponder: cannot update "
-                        "revocation on cred def %s",
-                        cred_def_id,
-                    )
-
-        # for a revocation definition, initiate the revocation entry/accumulator
-        elif ledger_response["result"]["txn"]["type"] == "113":
-            endorser_info = await connection_record.metadata_get(
-                self.session, "endorser_info"
-            )
-            if not endorser_info:
-                raise TransactionManagerError(
-                    reason="Endorser Info is not set up in "
-                    "connection metadata for this connection record"
-                )
-            if "endorser_did" not in endorser_info.keys():
-                raise TransactionManagerError(
-                    reason=' "endorser_did" is not set in "endorser_info"'
-                    " in connection metadata for this connection record"
-                )
-            endorser_did = endorser_info["endorser_did"]
-
-            rev_reg_id = ledger_response["result"]["txnMetadata"]["txnId"]
-            profile = self._session.context
-            try:
-                tails_base_url = profile.settings.get("tails_server_base_url")
-                if not tails_base_url:
-                    raise TransactionManagerError(
-                        reason="tails_server_base_url not configured"
-                    )
-
-                revoc = IndyRevocation(self.session.profile)
-                registry_record = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-                rev_entry_resp = await registry_record.send_entry(
-                    self.session.profile,
-                    write_ledger=False,
-                    endorser_did=endorser_did,
-                )
-            except RevocationError as e:
-                raise TransactionManagerError(reason=e.message) from e
-            except RevocationNotSupportedError as e:
-                raise TransactionManagerError(reason=e.message) from e
-
-            try:
-                revo_transaction = await self.create_record(
-                    messages_attach=rev_entry_resp["result"],
-                    connection_id=connection_record.connection_id,
-                )
-            except StorageError as err:
-                raise TransactionManagerError(reason=err.roll_up) from err
-
-            # if auto-request, send the request to the endorser
-            if profile.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        revo_transaction,
-                        revo_transaction_request,
-                    ) = await self.create_request(
-                        transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise TransactionManagerError(reason=err.roll_up) from err
-
-                responder = self._session.inject_or(BaseResponder)
-                if responder:
-                    await responder.send(
-                        revo_transaction_request,
-                        connection_id=connection_record.connection_id,
-                    )
-                else:
-                    self._logger.warning(
-                        "Configuration has no BaseResponder: cannot update "
-                        "revocation on cred def %s",
-                        cred_def_id,
-                    )
-
-        # for a revocation entry/accumulator, upload the tails file
-        elif ledger_response["result"]["txn"]["type"] == "114":
-            profile = self._session.context
-            tails_base_url = profile.settings.get("tails_server_base_url")
-            if not tails_base_url:
-                raise TransactionManagerError(
-                    reason="tails_server_base_url not configured"
-                )
-            tails_server = profile.inject(BaseTailsServer)
-            revoc_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
-            tails_local_path = tails_path(revoc_reg_id)
-            (upload_success, reason) = await tails_server.upload_tails_file(
-                self.session.profile,
-                revoc_reg_id,
-                tails_local_path,
-                interval=0.8,
-                backoff=-0.5,
-                max_attempts=5,  # heuristic: respect HTTP timeout
-            )
-            if not upload_success:
-                raise TransactionManagerError(
-                    reason=(
-                        f"Tails file for rev reg {revoc_reg_id} "
-                        f"failed to upload: {reason}"
-                    )
-                )

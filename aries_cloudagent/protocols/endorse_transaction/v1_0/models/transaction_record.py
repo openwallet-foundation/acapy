@@ -66,7 +66,7 @@ class TransactionRecord(BaseExchangeRecord):
         connection_id: str = None,
         state: str = None,
         endorser_write_txn: bool = None,
-        meta_data: dict = {},
+        meta_data: dict = {"context": {}},
         **kwargs,
     ):
         """Initialize a new TransactionRecord."""
