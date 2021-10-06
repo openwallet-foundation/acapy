@@ -7,7 +7,6 @@ from typing import Union
 from ...core.profile import Profile
 from ...utils.stats import Collector
 
-from ...core.profile import Profile
 from ..error import TransportError
 from ..wire_format import BaseWireFormat
 
@@ -21,7 +20,7 @@ class BaseOutboundTransport(ABC):
         """Initialize a `BaseOutboundTransport` instance."""
         self._collector = None
         self._wire_format = wire_format
-        self.root_profile: Profile = root_profile
+        self.root_profile = root_profile
 
     @property
     def collector(self) -> Collector:
