@@ -1123,7 +1123,9 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
     if "endorser" in event.payload:
         # TODO error handling - for now just let exceptions get raised
         async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, event.payload["endorser"]["connection_id"])
+            connection = await ConnRecord.retrieve_by_id(
+                session, event.payload["endorser"]["connection_id"]
+            )
             endorser_info = await connection.metadata_get(session, "endorser_info")
         endorser_did = endorser_info["endorser_did"]
         write_ledger = False
@@ -1138,9 +1140,7 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
     try:
         tails_base_url = profile.settings.get("tails_server_base_url")
         if not tails_base_url:
-            raise RevocationError(
-                reason="tails_server_base_url not configured"
-            )
+            raise RevocationError(reason="tails_server_base_url not configured")
 
         # Create registry
         revoc = IndyRevocation(profile)
@@ -1212,7 +1212,9 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
     if "endorser" in event.payload:
         # TODO error handling - for now just let exceptions get raised
         async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, event.payload["endorser"]["connection_id"])
+            connection = await ConnRecord.retrieve_by_id(
+                session, event.payload["endorser"]["connection_id"]
+            )
             endorser_info = await connection.metadata_get(session, "endorser_info")
         endorser_did = endorser_info["endorser_did"]
         write_ledger = False
@@ -1226,9 +1228,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
     try:
         tails_base_url = profile.settings.get("tails_server_base_url")
         if not tails_base_url:
-            raise RevocationError(
-                reason="tails_server_base_url not configured"
-            )
+            raise RevocationError(reason="tails_server_base_url not configured")
 
         revoc = IndyRevocation(profile)
         registry_record = await revoc.get_issuer_rev_reg_record(rev_reg_id)
@@ -1289,9 +1289,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
 async def on_revocation_tails_file_event(profile: Profile, event: Event):
     tails_base_url = profile.settings.get("tails_server_base_url")
     if not tails_base_url:
-        raise RevocationError(
-            reason="tails_server_base_url not configured"
-        )
+        raise RevocationError(reason="tails_server_base_url not configured")
 
     tails_server = profile.inject(BaseTailsServer)
     revoc_reg_id = event.payload["context"]["rev_reg_id"]
@@ -1307,8 +1305,7 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
     if not upload_success:
         raise RevocationError(
             reason=(
-                f"Tails file for rev reg {revoc_reg_id} "
-                f"failed to upload: {reason}"
+                f"Tails file for rev reg {revoc_reg_id} " f"failed to upload: {reason}"
             )
         )
 

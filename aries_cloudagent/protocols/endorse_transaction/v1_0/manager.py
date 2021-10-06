@@ -803,7 +803,9 @@ class TransactionManager:
             meta_data["context"]["rev_reg_id"] = rev_reg_id
 
             # Notify event
-            event_id = REVOCATION_EVENT_PREFIX + REVOCATION_ENTRY_EVENT + "::" + rev_reg_id
+            event_id = (
+                REVOCATION_EVENT_PREFIX + REVOCATION_ENTRY_EVENT + "::" + rev_reg_id
+            )
             print(
                 "Notify event:",
                 event_id,
@@ -820,7 +822,9 @@ class TransactionManager:
             meta_data["context"]["rev_reg_id"] = rev_reg_id
 
             # Notify event
-            event_id = REVOCATION_EVENT_PREFIX + REVOCATION_TAILS_EVENT + "::" + rev_reg_id
+            event_id = (
+                REVOCATION_EVENT_PREFIX + REVOCATION_TAILS_EVENT + "::" + rev_reg_id
+            )
             print(
                 "Notify event:",
                 event_id,
