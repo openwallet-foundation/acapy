@@ -3,7 +3,8 @@
 import json
 from time import time
 
-from asyncio import ensure_future, shield
+# from asyncio import ensure_future, shield
+from asyncio import shield
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -30,15 +31,17 @@ from ...protocols.endorse_transaction.v1_0.manager import (
 from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
-from ...revocation.error import RevocationError, RevocationNotSupportedError
-from ...revocation.indy import IndyRevocation
+
+# from ...revocation.error import RevocationError, RevocationNotSupportedError
+# from ...revocation.indy import IndyRevocation
 from ...revocation.util import (
     REVOCATION_EVENT_PREFIX,
     REVOCATION_REG_EVENT,
 )
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
-from ...tails.base import BaseTailsServer
+
+# from ...tails.base import BaseTailsServer
 
 from ..models.openapi import OpenAPISchema
 from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID
@@ -280,7 +283,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             meta_data,
         )
 
+        return web.json_response({"credential_definition_id": cred_def_id})
+
     # If revocation is requested and cred def is novel, create revocation registry
+    """ TODO delete this code - move to event handling
     if support_revocation and novel and write_ledger:
         profile = context.profile
         tails_base_url = profile.settings.get("tails_server_base_url")
@@ -332,9 +338,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
         except RevocationError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
+    """
 
     if not create_transaction_for_endorser:
-        return web.json_response({"credential_definition_id": cred_def_id})
+        pass
 
     else:
         session = await context.session()
@@ -510,11 +517,11 @@ async def on_cred_def_event(profile: Profile, event: Event):
     # check if we need to kick off the revocation registry setup
     support_revocation = event.payload["context"]["support_revocation"]
     novel = event.payload["context"]["novel"]
-    auto_create_rev_reg = event.payload["context"]["auto_create_rev_reg"]
+    meta_data = event.payload
+    auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
     if support_revocation and novel and auto_create_rev_reg:
         print("TODO kick off revocation ...")
         event_id = REVOCATION_EVENT_PREFIX + REVOCATION_REG_EVENT + "::" + cred_def_id
-        meta_data = event.payload
         print(
             "Notify event:",
             event_id,

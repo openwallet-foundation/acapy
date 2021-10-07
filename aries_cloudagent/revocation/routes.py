@@ -1118,7 +1118,7 @@ async def on_revocation_event(profile: Profile, event: Event):
 
 
 async def on_revocation_registry_event(profile: Profile, event: Event):
-    """Handle revocation registry event"""
+    """Handle revocation registry event."""
     print(f">>>> Handle revocation registry event: {event}")
     if "endorser" in event.payload:
         # TODO error handling - for now just let exceptions get raised
@@ -1166,13 +1166,35 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
     except RevocationNotSupportedError as e:
         raise RevocationNotSupportedError(reason=e.message) from e
 
-    if create_transaction_for_endorser:
+    if not create_transaction_for_endorser:
+        meta_data = event.payload
+        rev_reg_id = registry_record.revoc_reg_id
+        meta_data["context"]["rev_reg_id"] = rev_reg_id
+        auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
+
+        # Notify event
+        if auto_create_rev_reg:
+            event_id = (
+                REVOCATION_EVENT_PREFIX + REVOCATION_ENTRY_EVENT + "::" + rev_reg_id
+            )
+            print(
+                "Notify event:",
+                event_id,
+                meta_data,
+            )
+            await profile.notify(
+                event_id,
+                meta_data,
+            )
+
+    else:
         async with profile.session() as session:
             transaction_manager = TransactionManager(session)
             try:
                 revo_transaction = await transaction_manager.create_record(
                     messages_attach=rev_reg_resp["result"],
                     connection_id=connection.connection_id,
+                    meta_data=event.payload,
                 )
             except StorageError as err:
                 raise TransactionManagerError(reason=err.roll_up) from err
@@ -1207,7 +1229,7 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
 
 
 async def on_revocation_entry_event(profile: Profile, event: Event):
-    """Handle revocation entry event"""
+    """Handle revocation entry event."""
     print(f">>>> Handle revocation entry event: {event}")
     if "endorser" in event.payload:
         # TODO error handling - for now just let exceptions get raised
@@ -1243,8 +1265,23 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
         raise RevocationError(reason=e.message) from e
 
     if not create_transaction_for_endorser:
-        # TODO kick off next step
-        pass
+        meta_data = event.payload
+        auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
+
+        # Notify event
+        if auto_create_rev_reg:
+            event_id = (
+                REVOCATION_EVENT_PREFIX + REVOCATION_TAILS_EVENT + "::" + rev_reg_id
+            )
+            print(
+                "Notify event:",
+                event_id,
+                meta_data,
+            )
+            await profile.notify(
+                event_id,
+                meta_data,
+            )
 
     else:
         async with profile.session() as session:
@@ -1253,6 +1290,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
                 revo_transaction = await transaction_manager.create_record(
                     messages_attach=rev_entry_resp["result"],
                     connection_id=connection.connection_id,
+                    meta_data=event.payload,
                 )
             except StorageError as err:
                 raise RevocationError(reason=err.roll_up) from err
@@ -1282,11 +1320,12 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
                     LOGGER.warning(
                         "Configuration has no BaseResponder: cannot update "
                         "revocation on cred def %s",
-                        cred_def_id,
+                        event.payload["endorser"]["cred_def_id"],
                     )
 
 
 async def on_revocation_tails_file_event(profile: Profile, event: Event):
+    """Handle revocation tails file event."""
     tails_base_url = profile.settings.get("tails_server_base_url")
     if not tails_base_url:
         raise RevocationError(reason="tails_server_base_url not configured")

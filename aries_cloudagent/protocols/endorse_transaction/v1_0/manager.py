@@ -9,25 +9,17 @@ from asyncio import shield
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import ProfileSession
-from ....indy.sdk.profile import IndySdkProfile
 from ....indy.issuer import IndyIssuerError
-from ....indy.util import tails_path
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_EVENT_PREFIX
-from ....messaging.responder import BaseResponder
 from ....messaging.schemas.util import SCHEMA_EVENT_PREFIX
-from ....revocation.error import RevocationError, RevocationNotSupportedError
-from ....revocation.indy import IndyRevocation
 from ....revocation.util import (
     REVOCATION_EVENT_PREFIX,
-    REVOCATION_REG_EVENT,
     REVOCATION_ENTRY_EVENT,
     REVOCATION_TAILS_EVENT,
 )
-from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
-from ....tails.base import BaseTailsServer
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 
@@ -801,39 +793,43 @@ class TransactionManager:
             # revocation registry transaction
             rev_reg_id = ledger_response["result"]["txnMetadata"]["txnId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
+            auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
 
             # Notify event
-            event_id = (
-                REVOCATION_EVENT_PREFIX + REVOCATION_ENTRY_EVENT + "::" + rev_reg_id
-            )
-            print(
-                "Notify event:",
-                event_id,
-                meta_data,
-            )
-            await self._profile.notify(
-                event_id,
-                meta_data,
-            )
+            if auto_create_rev_reg:
+                event_id = (
+                    REVOCATION_EVENT_PREFIX + REVOCATION_ENTRY_EVENT + "::" + rev_reg_id
+                )
+                print(
+                    "Notify event:",
+                    event_id,
+                    meta_data,
+                )
+                await self._profile.notify(
+                    event_id,
+                    meta_data,
+                )
 
         elif ledger_response["result"]["txn"]["type"] == "114":
             # revocation registry transaction
             rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
+            auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
 
             # Notify event
-            event_id = (
-                REVOCATION_EVENT_PREFIX + REVOCATION_TAILS_EVENT + "::" + rev_reg_id
-            )
-            print(
-                "Notify event:",
-                event_id,
-                meta_data,
-            )
-            await self._profile.notify(
-                event_id,
-                meta_data,
-            )
+            if auto_create_rev_reg:
+                event_id = (
+                    REVOCATION_EVENT_PREFIX + REVOCATION_TAILS_EVENT + "::" + rev_reg_id
+                )
+                print(
+                    "Notify event:",
+                    event_id,
+                    meta_data,
+                )
+                await self._profile.notify(
+                    event_id,
+                    meta_data,
+                )
 
         else:
             # TODO unknown ledger transaction type, just ignore for now ...

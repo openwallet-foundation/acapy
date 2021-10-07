@@ -5,12 +5,9 @@ import re
 from abc import ABC, abstractmethod, ABCMeta
 from enum import Enum
 from hashlib import sha256
-from time import time
 from typing import Sequence, Tuple, Union
 
 from ..indy.issuer import IndyIssuer
-from ..storage.base import StorageRecord
-from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
 
