@@ -371,8 +371,7 @@ async def wallet_update(request: web.BaseRequest):
 
     try:
         multitenant_mgr = context.profile.inject(BaseMultitenantManager)
-        async with context.session() as session:
-            wallet_record = await multitenant_mgr.update_wallet(wallet_id, settings)
+        wallet_record = await multitenant_mgr.update_wallet(wallet_id, settings)
 
         result = format_wallet_record(wallet_record)
     except StorageNotFoundError as err:
