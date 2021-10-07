@@ -447,8 +447,8 @@ async def wallet_remove(request: web.BaseRequest):
         wallet_key = body.get("wallet_key")
 
     try:
+        multitenant_mgr = context.profile.inject(BaseMultitenantManager)
         async with context.session() as session:
-            multitenant_mgr = session.inject(BaseMultitenantManager)
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
         if (not wallet_record.requires_external_key) and wallet_key:

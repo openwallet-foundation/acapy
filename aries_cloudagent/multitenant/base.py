@@ -199,10 +199,10 @@ class BaseMultitenantManager:
             wallet = session.inject(BaseWallet)
             public_did_info = await wallet.get_public_did()
 
-            if public_did_info:
-                await self.add_key(
-                    wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
-                )
+        if public_did_info:
+            await self.add_key(
+                wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
+            )
 
         return wallet_record
 
@@ -384,15 +384,15 @@ class BaseMultitenantManager:
         async with self._profile.session() as session:
             wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
 
-            if wallet.requires_external_key:
-                if not wallet_key:
-                    raise WalletKeyMissingError()
+        if wallet.requires_external_key:
+            if not wallet_key:
+                raise WalletKeyMissingError()
 
-                extra_settings["wallet.key"] = wallet_key
+            extra_settings["wallet.key"] = wallet_key
 
-            profile = await self.get_wallet_profile(context, wallet, extra_settings)
+        profile = await self.get_wallet_profile(context, wallet, extra_settings)
 
-            return profile
+        return profile
 
     async def _get_wallet_by_key(self, recipient_key: str) -> Optional[WalletRecord]:
         """Get the wallet record associated with the recipient key.
