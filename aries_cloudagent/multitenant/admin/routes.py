@@ -309,8 +309,7 @@ async def wallet_create(request: web.BaseRequest):
         settings["image_url"] = image_url
 
     try:
-        async with context.session() as session:
-            multitenant_mgr = session.inject(BaseMultitenantManager)
+        multitenant_mgr = context.profile.inject(BaseMultitenantManager)
 
         wallet_record = await multitenant_mgr.create_wallet(
             settings, key_management_mode
@@ -370,15 +369,16 @@ async def wallet_update(request: web.BaseRequest):
     if image_url is not None:
         settings["image_url"] = image_url
 
-    async with context.session() as session:
-        try:
-            multitenant_mgr = session.inject(BaseMultitenantManager)
+    try:
+        multitenant_mgr = context.profile.inject(BaseMultitenantManager)
+        async with context.session() as session:
             wallet_record = await multitenant_mgr.update_wallet(wallet_id, settings)
-            result = format_wallet_record(wallet_record)
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except WalletSettingsError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        result = format_wallet_record(wallet_record)
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletSettingsError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result)
 
@@ -403,8 +403,8 @@ async def wallet_create_token(request: web.BaseRequest):
         wallet_key = body.get("wallet_key")
 
     try:
+        multitenant_mgr = context.profile.inject(BaseMultitenantManager)
         async with context.session() as session:
-            multitenant_mgr = session.inject(BaseMultitenantManager)
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
         if (not wallet_record.requires_external_key) and wallet_key:
