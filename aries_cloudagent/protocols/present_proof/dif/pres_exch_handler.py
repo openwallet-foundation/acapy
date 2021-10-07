@@ -11,7 +11,6 @@ returns VerifiablePresentation
 import pytz
 import re
 
-from copy import deepcopy
 from datetime import datetime
 from dateutil.parser import parse as dateutil_parser
 from dateutil.parser import ParserError
@@ -1330,15 +1329,6 @@ class DIFPresExchHandler:
                         f"apply to the enclosed credential in {desc_map_item_path}"
                     )
 
-    def get_field_updated_path(self, field: DIFField) -> DIFField:
-        """Update DIFField path to remove any [*] in case of limit_disclosure."""
-        given_paths = field.paths
-        new_paths = []
-        for path in given_paths:
-            new_paths.append(re.sub(r"\[(\W+)\]|\[(\d+)\]", "", path))
-        field.paths = new_paths
-        return field
-
     async def apply_constraint_received_cred(
         self, constraint: Constraints, cred_dict: dict
     ) -> bool:
@@ -1349,17 +1339,9 @@ class DIFPresExchHandler:
         is_limit_disclosure = constraint.limit_disclosure == "required"
         for field in fields:
             if is_limit_disclosure:
-                new_field = deepcopy(field)
-                new_field = self.get_field_updated_path(new_field)
-                original_field_filter = await self.filter_by_field(field, credential)
-                new_field_filter = await self.filter_by_field(new_field, credential)
-                if not original_field_filter and not new_field_filter:
-                    return False
-                elif not original_field_filter and new_field_filter:
-                    field = new_field
-            else:
-                if not await self.filter_by_field(field, credential):
-                    return False
+                field = await self.get_updated_field(field, cred_dict)
+            if not await self.filter_by_field(field, credential):
+                return False
             field_paths = field_paths + field.paths
         # Selective Disclosure check
         if is_limit_disclosure:
@@ -1379,7 +1361,6 @@ class DIFPresExchHandler:
                 if field_path.count(".") >= 1:
                     split_field_path = field_path.split(".")
                     key = ".".join(split_field_path[:-1])
-                    key = re.sub(r"\[(\W+)\]|\[(\d+)\]", "", key)
                     value = split_field_path[-1]
                     nested_field_paths = self.build_nested_paths_dict(
                         key, value, nested_field_paths, cred_dict
@@ -1395,8 +1376,7 @@ class DIFPresExchHandler:
                     return False
             for nested_attr_key in nested_field_paths:
                 nested_attr_values = nested_field_paths[nested_attr_key]
-                split_nested_attr_key = nested_attr_key.split(".")
-                extracted = self.nested_get(cred_dict, split_nested_attr_key)
+                extracted = self.nested_get(cred_dict, nested_attr_key)
                 if isinstance(extracted, dict):
                     if not self.check_attr_in_extracted_dict(
                         extracted, nested_attr_values
@@ -1419,13 +1399,11 @@ class DIFPresExchHandler:
                 return False
         return True
 
-    def get_dict_keys_from_path(self, derived_cred_dict: dict, path: str) -> list:
-        """Return list of keys as additional_attrs to build nested_field_paths."""
+    def get_dict_keys_from_path(self, derived_cred_dict: dict, path: str) -> List:
+        """Return additional_attrs to build nested_field_paths."""
         additional_attrs = []
         mandatory_paths = ["@id", "@type"]
-        jsonpath = parse(path)
-        match = jsonpath.find(derived_cred_dict)
-        match_item = match[0].value
+        match_item = self.nested_get(derived_cred_dict, path)
         if isinstance(match_item, dict):
             for key in match_item.keys():
                 if key in mandatory_paths:
@@ -1436,14 +1414,45 @@ class DIFPresExchHandler:
                     additional_attrs.append(key)
         return additional_attrs
 
-    def nested_get(
-        self, input_dict: dict, nested_key: Sequence[str]
-    ) -> Union[Dict, List]:
+    async def get_updated_field(self, field: DIFField, cred: dict) -> DIFField:
+        """Return field with updated json path, if necessary."""
+        new_paths = []
+        for path in field.paths:
+            new_paths.append(await self.get_updated_path(cred, path))
+        field.paths = new_paths
+        return field
+
+    async def get_updated_path(self, cred_dict: dict, json_path: str) -> str:
+        """Return updated json path, if necessary."""
+
+        def update_path_recursive_call(path: str, level: int = 0):
+            path_split_array = path.split(".", level)
+            to_check = path_split_array[-1]
+            if "." not in to_check:
+                return path
+            split_by_index = re.split(r"\[(\d+)\]", to_check, 1)
+            if len(split_by_index) > 1:
+                jsonpath = parse(split_by_index[0])
+                match = jsonpath.find(cred_dict)
+                if len(match) > 0:
+                    if isinstance(match[0].value, dict):
+                        new_path = split_by_index[0] + split_by_index[2]
+                        return update_path_recursive_call(new_path, level + 1)
+            return update_path_recursive_call(path, level + 1)
+
+        return update_path_recursive_call(json_path)
+
+    def nested_get(self, input_dict: dict, path: str) -> Union[Dict, List]:
         """Return dict or list from nested dict given list of nested_key."""
-        internal_value = input_dict
-        for k in nested_key:
-            internal_value = internal_value.get(k, None)
-        return internal_value
+        jsonpath = parse(path)
+        match = jsonpath.find(input_dict)
+        if len(match) > 1:
+            return_list = []
+            for match_item in match:
+                return_list.append(match_item.value)
+            return return_list
+        else:
+            return match[0].value
 
     def build_nested_paths_dict(
         self,
@@ -1453,11 +1462,12 @@ class DIFPresExchHandler:
         cred_dict: dict,
     ) -> dict:
         """Build and return nested_field_paths dict."""
+        additional_attrs = self.get_dict_keys_from_path(cred_dict, key)
+        value = re.sub(r"\[(\W+)\]|\[(\d+)\]", "", value)
         if key in nested_field_paths.keys():
             nested_field_paths[key].add(value)
         else:
             nested_field_paths[key] = {value}
-        additional_attrs = self.get_dict_keys_from_path(cred_dict, key)
         if len(additional_attrs) > 0:
             for attr in additional_attrs:
                 nested_field_paths[key].add(attr)
