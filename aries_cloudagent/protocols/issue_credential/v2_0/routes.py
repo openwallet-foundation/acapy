@@ -1219,9 +1219,9 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
             except StorageNotFoundError as err:
                 raise web.HTTPNotFound(reason=err.roll_up) from err
 
-        connection_id = cred_ex_record.connection_id
-        async with profile.session() as session:
+            connection_id = cred_ex_record.connection_id
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
+
         if not conn_record.is_ready:
             raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
