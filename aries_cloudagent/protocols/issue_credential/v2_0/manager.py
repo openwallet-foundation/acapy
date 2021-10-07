@@ -311,6 +311,7 @@ class V20CredManager:
             cred_ex_record.cred_offer = cred_offer_message
             cred_ex_record.state = V20CredExRecord.STATE_OFFER_RECEIVED
 
+        async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential offer")
 
         return cred_ex_record
@@ -446,6 +447,7 @@ class V20CredManager:
             cred_ex_record.cred_request = cred_request_message
             cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED
 
+        async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential request")
 
         return cred_ex_record
@@ -581,6 +583,7 @@ class V20CredManager:
             cred_ex_record.cred_issue = cred_issue_message
             cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
 
+        async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential issue")
         return cred_ex_record
 

@@ -1117,9 +1117,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
             async with profile.session() as session:
                 conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
             if not conn_record.is_ready:
-                raise web.HTTPForbidden(
-                    reason=f"Connection {connection_id} not ready"
-                )
+                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
         except StorageNotFoundError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
