@@ -254,7 +254,8 @@ async def schemas_send_schema(request: web.BaseRequest):
             "schema_name": schema_name,
             "schema_version": schema_version,
             "attributes": attributes,
-        }
+        },
+        "processing": {},
     }
 
     if not create_transaction_for_endorser:

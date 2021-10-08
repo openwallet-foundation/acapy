@@ -3,7 +3,6 @@
 import json
 import logging
 import uuid
-from asyncio import shield
 from functools import total_ordering
 from os.path import join
 from shutil import move
@@ -30,7 +29,6 @@ from ...messaging.valid import (
     INDY_REV_REG_ID,
     UUIDFour,
 )
-from ...tails.base import BaseTailsServer
 from ..error import RevocationError
 from .revocation_registry import RevocationRegistry
 
@@ -223,35 +221,6 @@ class IssuerRevRegRecord(BaseRecord):
         self.revoc_reg_def = self._revoc_reg_def.de  # ... and pick up change via setter
         async with profile.session() as session:
             await self.save(session, reason="Set tails file public URI")
-
-    async def stage_pending_registry(self, profile: Profile, max_attempts: int = 5):
-        """Prepare registry definition for future use."""
-        await shield(self.generate_registry(profile))
-        tails_base_url = profile.settings.get("tails_server_base_url")
-        await self.set_tails_file_public_uri(
-            profile,
-            f"{tails_base_url}/{self.revoc_reg_id}",
-        )
-        await self.send_def(profile)
-        await self.send_entry(profile)
-
-        tails_server = profile.inject(BaseTailsServer)
-        (upload_success, reason) = await tails_server.upload_tails_file(
-            profile.context,
-            self.revoc_reg_id,
-            self.tails_local_path,
-            interval=0.25,
-            backoff=-0.5,
-            max_attempts=max_attempts,
-        )
-        if not upload_success:
-            LOGGER.error(
-                "Tails file for rev reg %s failed to upload: %s",
-                self.revoc_reg_id,
-                reason,
-            )
-
-        LOGGER.info("Staged pending registry %s", self.revoc_reg_id)
 
     async def send_def(
         self,

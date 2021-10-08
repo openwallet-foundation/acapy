@@ -1170,7 +1170,7 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
         meta_data = event.payload
         rev_reg_id = registry_record.revoc_reg_id
         meta_data["context"]["rev_reg_id"] = rev_reg_id
-        auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
+        auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
 
         # Notify event
         if auto_create_rev_reg:
@@ -1266,7 +1266,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
 
     if not create_transaction_for_endorser:
         meta_data = event.payload
-        auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
+        auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
 
         # Notify event
         if auto_create_rev_reg:
@@ -1346,6 +1346,28 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
             reason=(
                 f"Tails file for rev reg {revoc_reg_id} " f"failed to upload: {reason}"
             )
+        )
+
+    # create a "pending" registry if one is requested
+    create_pending_rev_reg = event.payload["processing"].get(
+        "create_pending_rev_reg", False
+    )
+    if create_pending_rev_reg:
+        meta_data = event.payload
+        del meta_data["context"]["rev_reg_id"]
+        del meta_data["processing"]["create_pending_rev_reg"]
+        cred_def_id = meta_data["context"]["cred_def_id"]
+
+        print(">>> kick off revocation ...")
+        event_id = REVOCATION_EVENT_PREFIX + REVOCATION_REG_EVENT + "::" + cred_def_id
+        print(
+            "Notify event:",
+            event_id,
+            meta_data,
+        )
+        await profile.notify(
+            event_id,
+            meta_data,
         )
 
 

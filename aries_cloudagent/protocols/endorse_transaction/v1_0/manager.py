@@ -793,7 +793,9 @@ class TransactionManager:
             # revocation registry transaction
             rev_reg_id = ledger_response["result"]["txnMetadata"]["txnId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
-            auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
+            auto_create_rev_reg = meta_data["processing"].get(
+                "auto_create_rev_reg", False
+            )
 
             # Notify event
             if auto_create_rev_reg:
@@ -814,7 +816,9 @@ class TransactionManager:
             # revocation registry transaction
             rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
-            auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
+            auto_create_rev_reg = meta_data["processing"].get(
+                "auto_create_rev_reg", False
+            )
 
             # Notify event
             if auto_create_rev_reg:

@@ -263,7 +263,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             "novel": novel,
             "tag": tag,
             "rev_reg_size": rev_reg_size,
-        }
+        },
+        "processing": {
+            "create_pending_rev_reg": True,
+        },
     }
 
     if not create_transaction_for_endorser:
@@ -272,7 +275,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         meta_data["context"]["schema_id"] = schema_id
         meta_data["context"]["cred_def_id"] = cred_def_id
         meta_data["context"]["issuer_did"] = issuer_did
-        meta_data["context"]["auto_create_rev_reg"] = True
+        meta_data["processing"]["auto_create_rev_reg"] = True
         print(
             "Notify event:",
             CRED_DEF_EVENT_PREFIX + cred_def_id,
@@ -285,67 +288,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
         return web.json_response({"credential_definition_id": cred_def_id})
 
-    # If revocation is requested and cred def is novel, create revocation registry
-    """ TODO delete this code - move to event handling
-    if support_revocation and novel and write_ledger:
-        profile = context.profile
-        tails_base_url = profile.settings.get("tails_server_base_url")
-        if not tails_base_url:
-            raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
-        try:
-            # Create registry
-            revoc = IndyRevocation(profile)
-            registry_record = await revoc.init_issuer_registry(
-                cred_def_id,
-                max_cred_num=rev_reg_size,
-            )
-        except RevocationNotSupportedError as e:
-            raise web.HTTPBadRequest(reason=e.message) from e
-
-        await shield(registry_record.generate_registry(profile))
-        try:
-            await registry_record.set_tails_file_public_uri(
-                profile, f"{tails_base_url}/{registry_record.revoc_reg_id}"
-            )
-            await registry_record.send_def(profile)
-            await registry_record.send_entry(profile)
-
-            # stage pending registry independent of whether tails server is OK
-            pending_registry_record = await revoc.init_issuer_registry(
-                registry_record.cred_def_id,
-                max_cred_num=registry_record.max_cred_num,
-            )
-            ensure_future(
-                pending_registry_record.stage_pending_registry(profile, max_attempts=16)
-            )
-
-            tails_server = profile.inject(BaseTailsServer)
-            (upload_success, reason) = await tails_server.upload_tails_file(
-                profile,
-                registry_record.revoc_reg_id,
-                registry_record.tails_local_path,
-                interval=0.8,
-                backoff=-0.5,
-                max_attempts=5,  # heuristic: respect HTTP timeout
-            )
-            if not upload_success:
-                raise web.HTTPInternalServerError(
-                    reason=(
-                        f"Tails file for rev reg {registry_record.revoc_reg_id} "
-                        f"failed to upload: {reason}"
-                    )
-                )
-
-        except RevocationError as e:
-            raise web.HTTPBadRequest(reason=e.message) from e
-    """
-
-    if not create_transaction_for_endorser:
-        pass
-
     else:
         session = await context.session()
-        meta_data["context"][
+        meta_data["processing"][
             "auto_create_rev_reg"
         ] = session.context.settings.get_value("endorser.auto_create_rev_reg")
 
@@ -518,9 +463,9 @@ async def on_cred_def_event(profile: Profile, event: Event):
     support_revocation = event.payload["context"]["support_revocation"]
     novel = event.payload["context"]["novel"]
     meta_data = event.payload
-    auto_create_rev_reg = meta_data["context"].get("auto_create_rev_reg", False)
+    auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
     if support_revocation and novel and auto_create_rev_reg:
-        print("TODO kick off revocation ...")
+        print(">>> kick off revocation ...")
         event_id = REVOCATION_EVENT_PREFIX + REVOCATION_REG_EVENT + "::" + cred_def_id
         print(
             "Notify event:",

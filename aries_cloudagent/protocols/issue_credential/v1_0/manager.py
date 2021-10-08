@@ -20,6 +20,10 @@ from ....messaging.responder import BaseResponder
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
+from ....revocation.util import (
+    REVOCATION_EVENT_PREFIX,
+    REVOCATION_REG_EVENT,
+)
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
 
@@ -570,21 +574,40 @@ class CredentialManager:
                                     cred_ex_record.credential_definition_id,
                                 )
                             )  # prefer to reuse prior rev reg size
-                        for _ in range(2):
-                            pending_rev_reg_rec = await revoc.init_issuer_registry(
-                                cred_ex_record.credential_definition_id,
-                                max_cred_num=(
+                        cred_def_id = cred_ex_record.credential_definition_id
+                        meta_data = {
+                            "context": {
+                                "schema_id": schema_id,
+                                "cred_def_id": cred_def_id,
+                                "support_revocation": True,
+                                "rev_reg_size": (
                                     old_rev_reg_recs[0].max_cred_num
                                     if old_rev_reg_recs
                                     else None
                                 ),
+                            },
+                            "processing": {
+                                "auto_create_rev_reg": True,
+                            },
+                        }
+                        print(">>> kick off revocation ...")
+                        event_id = (
+                            REVOCATION_EVENT_PREFIX
+                            + REVOCATION_REG_EVENT
+                            + "::"
+                            + cred_def_id
+                        )
+                        for _ in range(2):
+                            print(
+                                "Notify event:",
+                                event_id,
+                                meta_data,
                             )
-                            asyncio.ensure_future(
-                                pending_rev_reg_rec.stage_pending_registry(
-                                    self._profile,
-                                    max_attempts=3,  # fail both in < 2s at worst
-                                )
+                            await self._profile.notify(
+                                event_id,
+                                meta_data,
                             )
+
                     if retries > 0:
                         LOGGER.info(
                             "Waiting 2s on posted rev reg for cred def %s, retrying",
@@ -632,16 +655,33 @@ class CredentialManager:
                         )
 
                     # Send next 1 rev reg, publish tails file in background
-                    revoc = IndyRevocation(self._profile)
-                    pending_rev_reg_rec = await revoc.init_issuer_registry(
-                        active_rev_reg_rec.cred_def_id,
-                        max_cred_num=active_rev_reg_rec.max_cred_num,
+                    cred_def_id = cred_ex_record.credential_definition_id
+                    meta_data = {
+                        "context": {
+                            "schema_id": schema_id,
+                            "cred_def_id": cred_def_id,
+                            "support_revocation": True,
+                            "rev_reg_size": active_rev_reg_rec.max_cred_num,
+                        },
+                        "processing": {
+                            "auto_create_rev_reg": True,
+                        },
+                    }
+                    print(">>> kick off revocation ...")
+                    event_id = (
+                        REVOCATION_EVENT_PREFIX
+                        + REVOCATION_REG_EVENT
+                        + "::"
+                        + cred_def_id
                     )
-                    asyncio.ensure_future(
-                        pending_rev_reg_rec.stage_pending_registry(
-                            self._profile,
-                            max_attempts=16,
-                        )
+                    print(
+                        "Notify event:",
+                        event_id,
+                        meta_data,
+                    )
+                    await self._profile.notify(
+                        event_id,
+                        meta_data,
                     )
 
             except IndyIssuerRevocationRegistryFullError:
