@@ -259,6 +259,7 @@ async def delete_mediation_request(request: web.BaseRequest):
 async def request_mediation(request: web.BaseRequest):
     """Request mediation from connection."""
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_message_router = request["outbound_message_router"]
 
     conn_id = request.match_info["conn_id"]
@@ -268,19 +269,20 @@ async def request_mediation(request: web.BaseRequest):
     recipient_terms = body.get("recipient_terms")
 
     try:
-        async with context.session() as session:
+        async with profile.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, conn_id)
 
-            if not connection_record.is_ready:
-                raise web.HTTPBadRequest(reason="requested connection is not ready")
+        if not connection_record.is_ready:
+            raise web.HTTPBadRequest(reason="requested connection is not ready")
 
+        async with profile.session() as session:
             if await MediationRecord.exists_for_connection_id(session, conn_id):
                 raise web.HTTPBadRequest(
                     reason=f"MediationRecord already exists for connection {conn_id}"
                 )
 
         mediation_record, mediation_request = await MediationManager(
-            context.profile
+            profile
         ).prepare_request(
             connection_id=conn_id,
             mediator_terms=mediator_terms,
@@ -387,6 +389,7 @@ async def get_keylist(request: web.BaseRequest):
 async def send_keylist_query(request: web.BaseRequest):
     """Send keylist query to mediator."""
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     mediation_id = request.match_info["mediation_id"]
@@ -398,9 +401,9 @@ async def send_keylist_query(request: web.BaseRequest):
     paginate_offset = request.query.get("paginate_offset")
 
     try:
-        async with context.session() as session:
+        async with profile.session() as session:
             record = await MediationRecord.retrieve_by_id(session, mediation_id)
-        mediation_manager = MediationManager(context.profile)
+        mediation_manager = MediationManager(profile)
         keylist_query_request = await mediation_manager.prepare_keylist_query(
             filter_=filter_,
             paginate_limit=paginate_limit,
@@ -422,6 +425,7 @@ async def send_keylist_query(request: web.BaseRequest):
 async def send_keylist_update(request: web.BaseRequest):
     """Send keylist update to mediator."""
     context: AdminRequestContext = request["context"]
+    profile = context.profile
 
     outbound_handler = request["outbound_message_router"]
 
@@ -433,7 +437,7 @@ async def send_keylist_update(request: web.BaseRequest):
     if not updates:
         raise web.HTTPBadRequest(reason="Updates cannot be empty.")
 
-    mediation_mgr = MediationManager(context.profile)
+    mediation_mgr = MediationManager(profile)
     keylist_updates = None
     for update in updates:
         if update.get("action") == KeylistUpdateRule.RULE_ADD:
@@ -448,7 +452,7 @@ async def send_keylist_update(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason="Invalid action for keylist update.")
 
     try:
-        async with context.session() as session:
+        async with profile.session() as session:
             record = await MediationRecord.retrieve_by_id(session, mediation_id)
         if record.state != MediationRecord.STATE_GRANTED:
             raise web.HTTPBadRequest(reason=("mediation is not granted."))
