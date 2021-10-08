@@ -293,9 +293,7 @@ class V20CredManager:
                 thread_id=cred_offer_message._thread_id,
                 initiator=V20CredExRecord.INITIATOR_EXTERNAL,
                 role=V20CredExRecord.ROLE_HOLDER,
-                auto_remove=not self._profile.settings.get(
-                    "preserve_exchange_records"
-                ),
+                auto_remove=not self._profile.settings.get("preserve_exchange_records"),
                 trace=(cred_offer_message._trace is not None),
             )
 

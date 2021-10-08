@@ -401,8 +401,9 @@ async def wallet_create_token(request: web.BaseRequest):
         body = await request.json()
         wallet_key = body.get("wallet_key")
 
+    profile = context.profile
     try:
-        multitenant_mgr = context.profile.inject(BaseMultitenantManager)
+        multitenant_mgr = profile.inject(BaseMultitenantManager)
         async with context.session() as session:
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
@@ -445,8 +446,9 @@ async def wallet_remove(request: web.BaseRequest):
         body = await request.json()
         wallet_key = body.get("wallet_key")
 
+    profile = context.profile
     try:
-        multitenant_mgr = context.profile.inject(BaseMultitenantManager)
+        multitenant_mgr = profile.inject(BaseMultitenantManager)
         async with context.session() as session:
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
