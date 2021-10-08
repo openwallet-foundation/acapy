@@ -260,20 +260,20 @@ class BaseMultitenantManager:
                 await WalletRecord.retrieve_by_id(session, wallet_id),
             )
 
-            wallet_key = wallet_key or wallet.wallet_key
-            if wallet.requires_external_key and not wallet_key:
-                raise WalletKeyMissingError("Missing key to open wallet")
+        wallet_key = wallet_key or wallet.wallet_key
+        if wallet.requires_external_key and not wallet_key:
+            raise WalletKeyMissingError("Missing key to open wallet")
 
-            profile = await self.get_wallet_profile(
-                self._profile.context,
-                wallet,
-                {"wallet.key": wallet_key},
-            )
+        profile = await self.get_wallet_profile(
+            self._profile.context,
+            wallet,
+            {"wallet.key": wallet_key},
+        )
 
-            del self._instances[wallet_id]
-            await profile.remove()
+        del self._instances[wallet_id]
+        await profile.remove()
 
-            # Remove all routing records associated with wallet
+        # Remove all routing records associated with wallet
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             await storage.delete_all_records(
