@@ -56,10 +56,12 @@ class MediationGrantHandler(BaseHandler):
 
             # Set to default if metadata set on connection to do so
             async with profile.session() as session:
-                if await context.connection_record.metadata_get(
+                metadataRecord  = await context.connection_record.metadata_get(
                     session, MediationManager.SET_TO_DEFAULT_ON_GRANTED
-                ):
-                    await mgr.set_default_mediator(record)
+                )
+            
+            if (metadataRecord):
+                await mgr.set_default_mediator(record)
 
         except StorageNotFoundError as err:
             raise HandlerException(
