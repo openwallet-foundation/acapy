@@ -404,7 +404,7 @@ async def wallet_create_token(request: web.BaseRequest):
     profile = context.profile
     try:
         multitenant_mgr = profile.inject(BaseMultitenantManager)
-        async with context.session() as session:
+        async with profile.session() as session:
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
         if (not wallet_record.requires_external_key) and wallet_key:
@@ -449,7 +449,7 @@ async def wallet_remove(request: web.BaseRequest):
     profile = context.profile
     try:
         multitenant_mgr = profile.inject(BaseMultitenantManager)
-        async with context.session() as session:
+        async with profile.session() as session:
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
 
         if (not wallet_record.requires_external_key) and wallet_key:
