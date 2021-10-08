@@ -274,6 +274,7 @@ class BaseMultitenantManager:
             await profile.remove()
 
             # Remove all routing records associated with wallet
+        async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             await storage.delete_all_records(
                 RouteRecord.RECORD_TYPE, {"wallet_id": wallet.wallet_id}
