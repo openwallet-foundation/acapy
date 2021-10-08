@@ -20,8 +20,7 @@ class TestMultitenantRoutes(AsyncTestCase):
             return_value=self.mock_multitenant_mgr
         )
 
-        self.session_inject = {BaseMultitenantManager: self.mock_multitenant_mgr}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.context = AdminRequestContext.test_context()
         self.context.profile.context.injector.bind_instance(
             BaseMultitenantManager, self.mock_multitenant_mgr
         )
@@ -533,7 +532,9 @@ class TestMultitenantRoutes(AsyncTestCase):
 
             await test_module.wallet_remove(self.request)
 
-            self.mock_multitenant_mgr.remove_wallet.assert_called_once_with("dummy", None)
+            self.mock_multitenant_mgr.remove_wallet.assert_called_once_with(
+                "dummy", None
+            )
             mock_response.assert_called_once_with({})
 
     async def test_wallet_remove_unmanaged(self):
