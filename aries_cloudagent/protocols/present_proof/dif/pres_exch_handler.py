@@ -58,6 +58,8 @@ PRESENTATION_SUBMISSION_JSONLD_CONTEXT = (
     "https://identity.foundation/presentation-exchange/submission/v1"
 )
 PRESENTATION_SUBMISSION_JSONLD_TYPE = "PresentationSubmission"
+PYTZ_TIMEZONE_PATTERN = re.compile(r"(([a-zA-Z]+)(?:\/)([a-zA-Z]+))")
+LIST_INDEX_PATTERN = re.compile(r"\[(\W+)\]|\[(\d+)\]")
 
 
 class DIFPresExchError(BaseError):
@@ -517,15 +519,14 @@ class DIFPresExchHandler:
             unflatten_dict = {}
             for field in constraints._fields:
                 for path in field.paths:
-                    if "[*]" in path:
-                        path = path.replace("[*]", "[0]")
                     jsonpath = parse(path)
                     match = jsonpath.find(credential_dict)
                     if len(match) == 0:
                         continue
                     for match_item in match:
                         full_path = str(match_item.full_path)
-                        if bool(re.search(pattern=r"\[[0-9]+\]", string=full_path)):
+                        if bool(LIST_INDEX_PATTERN.search(full_path)):
+                            full_path = re.sub(r"\[(\W+)\]|\[(\d+)\]", "[0]", full_path)
                             full_path = full_path.replace(".[", "[")
                         unflatten_dict[full_path] = {}
                         explicit_key_path = None
@@ -599,6 +600,16 @@ class DIFPresExchHandler:
                     return True
         return False
 
+    def string_to_timezone_aware_datetime(
+        self, datetime_str: str
+    ) -> Optional[datetime]:
+        """Convert string with PYTZ timezone to datetime for comparison."""
+        if PYTZ_TIMEZONE_PATTERN.search(datetime_str):
+            result = PYTZ_TIMEZONE_PATTERN.search(datetime_str).group(1)
+            datetime_str = datetime_str.replace(result, "")
+            return dateutil_parser(datetime_str).replace(tzinfo=pytz.timezone(result))
+        return None
+
     def validate_patch(self, to_check: any, _filter: Filter) -> bool:
         """
         Apply filter on match_value.
@@ -623,7 +634,14 @@ class DIFPresExchHandler:
                     if isinstance(to_check, str):
                         if _filter.fmt == "date" or _filter.fmt == "date-time":
                             try:
-                                to_compare_date = dateutil_parser(to_check)
+                                to_compare_date = (
+                                    self.string_to_timezone_aware_datetime(to_check)
+                                )
+                                if not to_compare_date:
+                                    utc = pytz.UTC
+                                    to_compare_date = dateutil_parser(to_check).replace(
+                                        tzinfo=utc
+                                    )
                                 if isinstance(to_compare_date, datetime):
                                     return True
                             except (ParserError, TypeError):
@@ -749,10 +767,16 @@ class DIFPresExchHandler:
             if _filter.fmt:
                 utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
-                    to_compare_date = dateutil_parser(_filter.exclusive_min).replace(
-                        tzinfo=utc
+                    to_compare_date = self.string_to_timezone_aware_datetime(
+                        _filter.exclusive_min
                     )
-                    given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                    if not to_compare_date:
+                        to_compare_date = dateutil_parser(
+                            _filter.exclusive_min
+                        ).replace(tzinfo=utc)
+                    given_date = self.string_to_timezone_aware_datetime(str(val))
+                    if not given_date:
+                        given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
                     return given_date > to_compare_date
             else:
                 if self.is_numeric(val):
@@ -778,10 +802,16 @@ class DIFPresExchHandler:
             if _filter.fmt:
                 utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
-                    to_compare_date = dateutil_parser(_filter.exclusive_max).replace(
-                        tzinfo=utc
+                    to_compare_date = self.string_to_timezone_aware_datetime(
+                        _filter.exclusive_max
                     )
-                    given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                    if not to_compare_date:
+                        to_compare_date = dateutil_parser(
+                            _filter.exclusive_max
+                        ).replace(tzinfo=utc)
+                    given_date = self.string_to_timezone_aware_datetime(str(val))
+                    if not given_date:
+                        given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
                     return given_date < to_compare_date
             else:
                 if self.is_numeric(val):
@@ -807,10 +837,16 @@ class DIFPresExchHandler:
             if _filter.fmt:
                 utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
-                    to_compare_date = dateutil_parser(_filter.maximum).replace(
-                        tzinfo=utc
+                    to_compare_date = self.string_to_timezone_aware_datetime(
+                        _filter.maximum
                     )
-                    given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                    if not to_compare_date:
+                        to_compare_date = dateutil_parser(_filter.maximum).replace(
+                            tzinfo=utc
+                        )
+                    given_date = self.string_to_timezone_aware_datetime(str(val))
+                    if not given_date:
+                        given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
                     return given_date <= to_compare_date
             else:
                 if self.is_numeric(val):
@@ -836,10 +872,16 @@ class DIFPresExchHandler:
             if _filter.fmt:
                 utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
-                    to_compare_date = dateutil_parser(_filter.minimum).replace(
-                        tzinfo=utc
+                    to_compare_date = self.string_to_timezone_aware_datetime(
+                        _filter.minimum
                     )
-                    given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                    if not to_compare_date:
+                        to_compare_date = dateutil_parser(_filter.minimum).replace(
+                            tzinfo=utc
+                        )
+                    given_date = self.string_to_timezone_aware_datetime(str(val))
+                    if not given_date:
+                        given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
                     return given_date >= to_compare_date
             else:
                 if self.is_numeric(val):

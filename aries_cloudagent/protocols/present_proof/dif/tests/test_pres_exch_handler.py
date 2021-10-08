@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import pytest
 
 from asynctest import mock as async_mock
@@ -3551,3 +3552,19 @@ class TestPresExchHandler:
             }
         )
         assert not await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+
+    def test_string_to_timezone_aware_datetime(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        test_datetime_str = "2021-09-28T16:09:00EUROPE/BELGRADE"
+        assert isinstance(
+            dif_pres_exch_handler.string_to_timezone_aware_datetime(test_datetime_str),
+            datetime,
+        )
+        assert (
+            dif_pres_exch_handler.string_to_timezone_aware_datetime(
+                "2020-09-28T11:00:00+00:00"
+            )
+            is None
+        )

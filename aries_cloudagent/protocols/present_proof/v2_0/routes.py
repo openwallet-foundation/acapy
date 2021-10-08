@@ -496,6 +496,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 "presentation_definition"
             ).get("input_descriptors")
             claim_fmt = dif_pres_request.get("presentation_definition").get("format")
+            if claim_fmt and len(claim_fmt.keys()) > 0:
+                claim_fmt = ClaimFormat.deserialize(claim_fmt)
             input_descriptors = []
             for input_desc_dict in input_descriptors_list:
                 input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
@@ -519,7 +521,6 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                 if claim_fmt:
-                    claim_fmt = ClaimFormat.deserialize(claim_fmt)
                     if claim_fmt.ldp_vp:
                         if "proof_type" in claim_fmt.ldp_vp:
                             proof_types = claim_fmt.ldp_vp.get("proof_type")
