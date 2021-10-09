@@ -1,3 +1,38 @@
+# 0.7.2
+
+## October 10, 2021
+
+- Making Endorser handling simpler for the controller by building it into ACA-Py
+  - Endorser protocol configuration, automation and demo integration [#1422](https://github.com/hyperledger/aries-cloudagent-python/pull/1422)
+- Improve cloud native deployments/scaling
+  - unprotect liveness and readiness endpoints [#1416](https://github.com/hyperledger/aries-cloudagent-python/pull/1416)
+  - Open askar sessions only on demand - Connections [#1424](https://github.com/hyperledger/aries-cloudagent-python/pull/1424)
+  - Make mediation invitation parameter idempotent [#1413](https://github.com/hyperledger/aries-cloudagent-python/pull/1413)
+- General cleanups and improvements to existing features
+  - Encode DIDComm messages before sent to the queue [#1408](https://github.com/hyperledger/aries-cloudagent-python/pull/1408)
+  - Add Event bus Metadata [#1429](https://github.com/hyperledger/aries-cloudagent-python/pull/1429)
+  - Log warning when unsupported problem report code is received [#1409](https://github.com/hyperledger/aries-cloudagent-python/pull/1409)
+  - Add support for custom offers from the proposal [#1426](https://github.com/hyperledger/aries-cloudagent-python/pull/1426)
+  - Make requested attributes and predicates required on indy proof request [#1411](https://github.com/hyperledger/aries-cloudagent-python/pull/1411)
+  - feature/inbound-transport-profile [#1407](https://github.com/hyperledger/aries-cloudagent-python/pull/1407)
+  - Import cleanups [#1393](https://github.com/hyperledger/aries-cloudagent-python/pull/1393)
+  - Add no-op handler for generic ack message (RFC 0015) [#1390](https://github.com/hyperledger/aries-cloudagent-python/pull/1390)
+  - Align OutOfBandManager.receive_invitation with other connection managers [#1382](https://github.com/hyperledger/aries-cloudagent-python/pull/1382)
+- Bug fixes
+  - When fetching the admin config, don't overwrite webhook settings [#1420](https://github.com/hyperledger/aries-cloudagent-python/pull/1420)
+  - fix: return type of inject [#1392](https://github.com/hyperledger/aries-cloudagent-python/pull/1392)
+  - fix: typo in connection static result schema [#1389](https://github.com/hyperledger/aries-cloudagent-python/pull/1389)
+  - fix: don't require push on outbound queue implementations [#1387](https://github.com/hyperledger/aries-cloudagent-python/pull/1387)
+  - Remove connection check on proof verify [#1383](https://github.com/hyperledger/aries-cloudagent-python/pull/1383)
+- Updates/Fixes to the Alice/Faber demo and integration tests
+  - Fix aip 20 behaviour and other cleanup [#1406](https://github.com/hyperledger/aries-cloudagent-python/pull/1406)
+  - Fix issue with startup sequence for faber agent [#1415](https://github.com/hyperledger/aries-cloudagent-python/pull/1415)
+  - Connectionless proof demo [#1395](https://github.com/hyperledger/aries-cloudagent-python/pull/1395)
+  - Typos in the demo's README.md [#1405](https://github.com/hyperledger/aries-cloudagent-python/pull/1405)
+  - Run integration tests using external ledger and tails server [#1400](https://github.com/hyperledger/aries-cloudagent-python/pull/1400)
+- Chores
+  - Update CONTRIBUTING.md [#1428](https://github.com/hyperledger/aries-cloudagent-python/pull/1428)
+
 # 0.7.1
 
 ## August 31, 2021
