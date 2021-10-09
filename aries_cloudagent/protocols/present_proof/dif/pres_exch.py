@@ -146,7 +146,7 @@ class SubmissionRequirementsSchema(BaseModelSchema):
     _from = fields.Str(description="From", required=False, data_key="from")
     # Self References
     from_nested = fields.List(
-        fields.Nested(lambda: SubmissionRequirementsSchema(exclude=("from_nested",))),
+        fields.Nested(lambda: SubmissionRequirementsSchema()),
         required=False,
     )
 

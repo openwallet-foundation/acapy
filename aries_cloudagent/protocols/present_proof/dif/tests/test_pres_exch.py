@@ -105,6 +105,53 @@ class TestPresExchSchemas(TestCase):
         ).serialize()
         assert expected_result == actual_result
 
+    def test_submission_requirements_from_nested_of_nested(self):
+        nested_submission_req_json = """
+            {
+                "name": "Лабораторијски резултати",
+                "purpose": "Morbilli virus критеријум",
+                "rule": "pick",
+                "count": 1,
+                "from_nested": [
+                    {
+                        "name": "Лични подаци",
+                        "purpose": "Морамо идентификовати субјекта акредитива",
+                        "rule": "pick",
+                        "count": 1,
+                        "from": "Patient"
+                    },
+                    {
+                        "name": "Лабораторијски резултати",
+                        "purpose": "Morbilli virus критеријум",
+                        "rule": "pick",
+                        "count": 1,
+                        "from_nested": [
+                            {
+                                "name": "Негативан тест у последња 24 сата",
+                                "purpose": "Незаразност",
+                                "rule": "pick",
+                                "count": 1,
+                                "from": "PCR"
+                            },
+                            {
+                                "name": "Тест атнитела",
+                                "purpose": "Имуност",
+                                "rule": "pick",
+                                "count": 1,
+                                "from": "IgG"
+                            }
+                        ]
+                    }
+                ]
+            }
+        """
+        expected_result = json.loads(nested_submission_req_json)
+        assert SubmissionRequirements.deserialize(nested_submission_req_json)
+        actual_result = (
+            SubmissionRequirements.deserialize(nested_submission_req_json)
+        ).serialize()
+        assert expected_result == actual_result
+
     def test_submission_requirements_from_missing(self):
         test_json = """
             {
