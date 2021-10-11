@@ -2,8 +2,9 @@
 
 from marshmallow import EXCLUDE, fields
 
-from .....messaging.ack.message import Ack, AckSchema
 from .....messaging.valid import UUIDFour
+
+from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
 
 from ..message_types import TRANSACTION_ACKNOWLEDGEMENT, PROTOCOL_PACKAGE
 
@@ -13,7 +14,7 @@ HANDLER_CLASS = (
 )
 
 
-class TransactionAcknowledgement(Ack):
+class TransactionAcknowledgement(V10Ack):
     """Class representing a transaction acknowledgement message."""
 
     class Meta:
@@ -41,7 +42,7 @@ class TransactionAcknowledgement(Ack):
         self.ledger_response = ledger_response
 
 
-class TransactionAcknowledgementSchema(AckSchema):
+class TransactionAcknowledgementSchema(V10AckSchema):
     """Transaction Acknowledgement schema class."""
 
     class Meta:

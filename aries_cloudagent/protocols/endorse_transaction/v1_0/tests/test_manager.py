@@ -11,6 +11,10 @@ from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
+from .....wallet.base import BaseWallet
+from .....wallet.did_info import DIDInfo
+from .....wallet.did_method import DIDMethod
+from .....wallet.key_type import KeyType
 
 from ..manager import TransactionManager, TransactionManagerError
 from ..messages.messages_attach import MessagesAttach
@@ -29,7 +33,23 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 
 class TestTransactionManager(AsyncTestCase):
     async def setUp(self):
-        self.session = InMemoryProfile.test_session()
+        self.wallet = async_mock.MagicMock(
+            get_public_did=async_mock.CoroutineMock(
+                return_value=DIDInfo(
+                    "DJGEjaMunDtFtBVrn1qJMT",
+                    "verkey",
+                    {"meta": "data"},
+                    method=DIDMethod.SOV,
+                    key_type=KeyType.ED25519,
+                )
+            )
+        )
+        self.session = InMemoryProfile.test_session(bind={BaseWallet: self.wallet})
+        self.profile = self.session.profile
+        self.context = self.profile.context
+        setattr(
+            self.profile, "session", async_mock.MagicMock(return_value=self.session)
+        )
 
         sigs = [
             (
@@ -107,6 +127,9 @@ class TestTransactionManager(AsyncTestCase):
         self.test_refuser_did = "AGDEjaMunDtFtBVrn1qPKQ"
 
         self.ledger = async_mock.create_autospec(BaseLedger)
+        self.ledger.txn_endorse = async_mock.CoroutineMock(
+            return_value=self.test_endorsed_message
+        )
         self.session.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.manager = TransactionManager(self.session)
@@ -261,10 +284,6 @@ class TestTransactionManager(AsyncTestCase):
             await self.manager.create_endorse_response(
                 transaction=transaction_record,
                 state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
-                endorser_did=self.test_endorser_did,
-                endorser_verkey=self.test_endorser_verkey,
-                endorsed_msg=self.test_endorsed_message,
-                signature=self.test_signature,
             )
 
     async def test_create_endorse_response(self):
@@ -284,10 +303,6 @@ class TestTransactionManager(AsyncTestCase):
             ) = await self.manager.create_endorse_response(
                 transaction_record,
                 state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
-                endorser_did=self.test_endorser_did,
-                endorser_verkey=self.test_endorser_verkey,
-                endorsed_msg=self.test_endorsed_message,
-                signature=self.test_signature,
             )
             save_record.assert_called_once()
 

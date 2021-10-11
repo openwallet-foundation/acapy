@@ -8,6 +8,7 @@ import random
 import subprocess
 import sys
 from timeit import default_timer
+import base64
 
 from aiohttp import (
     web,
@@ -129,8 +130,9 @@ class DemoAgent:
         revocation: bool = False,
         multitenant: bool = False,
         mediation: bool = False,
-        aip: int = 10,
+        aip: int = 20,
         arg_file: str = None,
+        endorser_role: str = None,
         extra_args=None,
         **params,
     ):
@@ -147,6 +149,7 @@ class DemoAgent:
         self.timing_log = timing_log
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.tails_server_base_url = tails_server_base_url
+        self.endorser_role = endorser_role
         self.extra_args = extra_args
         self.trace_enabled = TRACE_ENABLED
         self.trace_target = TRACE_TARGET
@@ -176,6 +179,8 @@ class DemoAgent:
         self.proc = None
         self.client_session: ClientSession = ClientSession()
 
+        if self.endorser_role and not seed:
+            seed = "random"
         rand_name = str(random.randint(100_000, 999_999))
         self.seed = (
             ("my_seed_000000000000000000000000" + rand_name)[-32:]
@@ -274,6 +279,8 @@ class DemoAgent:
             "--preserve-exchange-records",
             "--auto-provision",
         ]
+        if self.aip == 20:
+            result.append("--emit-new-didcomm-prefix")
         if self.multitenant:
             result.extend(
                 [
@@ -347,6 +354,28 @@ class DemoAgent:
                 )
             )
 
+        if self.endorser_role:
+            if self.endorser_role == "author":
+                result.extend(
+                    [
+                        ("--endorser-protocol-role", "author"),
+                        ("--auto-request-endorsement",),
+                        ("--auto-write-transactions",),
+                        ("--auto-create-revocation-transactions",),
+                        ("--endorser-alias", "endorser"),
+                    ]
+                )
+            elif self.endorser_role == "endorser":
+                result.extend(
+                    [
+                        (
+                            "--endorser-protocol-role",
+                            "endorser",
+                        ),
+                        ("--auto-endorse-transactions",),
+                    ]
+                )
+
         if self.extra_args:
             result.extend(self.extra_args)
 
@@ -373,7 +402,13 @@ class DemoAgent:
                 ledger_url = LEDGER_URL
             if not ledger_url:
                 ledger_url = f"http://{self.external_host}:9000"
-            data = {"alias": alias or self.ident, "role": role}
+            data = {"alias": alias or self.ident}
+            if self.endorser_role:
+                if self.endorser_role == "endorser":
+                    role = "ENDORSER"
+                else:
+                    role = ""
+            data["role"] = role
             if did and verkey:
                 data["did"] = did
                 data["verkey"] = verkey
@@ -384,7 +419,7 @@ class DemoAgent:
             ) as resp:
                 if resp.status != 200:
                     raise Exception(
-                        f"Error registering DID, response code {resp.status}"
+                        f"Error registering DID {data}, response code {resp.status}"
                     )
                 nym_info = await resp.json()
                 self.did = nym_info["did"]
@@ -464,7 +499,8 @@ class DemoAgent:
                 new_did = await self.admin_POST("/wallet/did/create")
                 self.did = new_did["result"]["did"]
                 await self.register_did(
-                    did=new_did["result"]["did"], verkey=new_did["result"]["verkey"]
+                    did=new_did["result"]["did"],
+                    verkey=new_did["result"]["verkey"],
                 )
                 await self.admin_POST("/wallet/did/public?did=" + self.did)
             elif cred_type == CRED_FORMAT_JSON_LD:
@@ -599,7 +635,16 @@ class DemoAgent:
                 f"http://{self.external_host}:{str(webhook_port)}/webhooks"
             )
         app = web.Application()
-        app.add_routes([web.post("/webhooks/topic/{topic}/", self._receive_webhook)])
+        app.add_routes(
+            [
+                web.post("/webhooks/topic/{topic}/", self._receive_webhook),
+                # route for fetching proof request for connectionless requests
+                web.get(
+                    "/webhooks/pres_req/{pres_req_id}/",
+                    self._send_connectionless_proof_req,
+                ),
+            ]
+        )
         runner = web.AppRunner(app)
         await runner.setup()
         self.webhook_site = web.TCPSite(runner, "0.0.0.0", webhook_port)
@@ -610,6 +655,36 @@ class DemoAgent:
         payload = await request.json()
         await self.handle_webhook(topic, payload, request.headers)
         return web.Response(status=200)
+
+    async def service_decorator(self):
+        # add a service decorator
+        did_url = "/wallet/did/public"
+        agent_public_did = await self.admin_GET(did_url)
+        endpoint_url = (
+            "/wallet/get-did-endpoint" + "?did=" + agent_public_did["result"]["did"]
+        )
+        agent_endpoint = await self.admin_GET(endpoint_url)
+        decorator = {
+            "recipientKeys": [agent_public_did["result"]["verkey"]],
+            # "routingKeys": [agent_public_did["result"]["verkey"]],
+            "serviceEndpoint": agent_endpoint["endpoint"],
+        }
+        return decorator
+
+    async def _send_connectionless_proof_req(self, request: ClientRequest):
+        pres_req_id = request.match_info["pres_req_id"]
+        url = "/present-proof/records/" + pres_req_id
+        proof_exch = await self.admin_GET(url)
+        if not proof_exch:
+            return web.Response(status=404)
+        proof_reg_txn = proof_exch["presentation_request_dict"]
+        proof_reg_txn["~service"] = await self.service_decorator()
+        objJsonStr = json.dumps(proof_reg_txn)
+        objJsonB64 = base64.b64encode(objJsonStr.encode("ascii"))
+        service_url = self.webhook_url
+        redirect_url = service_url + "/?m=" + objJsonB64.decode("ascii")
+        log_msg(f"Redirecting to: {redirect_url}")
+        raise web.HTTPFound(redirect_url)
 
     async def handle_webhook(self, topic: str, payload, headers: dict):
         if topic != "webhook":  # would recurse
@@ -980,13 +1055,21 @@ class DemoAgent:
         return invi_rec
 
     async def receive_invite(self, invite, auto_accept: bool = True):
+        if self.endorser_role and self.endorser_role == "author":
+            params = {"alias": "endorser"}
+        else:
+            params = None
         if "/out-of-band/" in invite.get("@type", ""):
             connection = await self.admin_POST(
-                "/out-of-band/receive-invitation", invite
+                "/out-of-band/receive-invitation",
+                invite,
+                params=params,
             )
         else:
             connection = await self.admin_POST(
-                "/connections/receive-invitation", invite
+                "/connections/receive-invitation",
+                invite,
+                params=params,
             )
 
         self.connection_id = connection["connection_id"]

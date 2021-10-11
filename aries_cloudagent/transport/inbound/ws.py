@@ -3,12 +3,10 @@
 import asyncio
 import logging
 
-from aiohttp import web, WSMessage, WSMsgType
+from aiohttp import WSMessage, WSMsgType, web
 
 from ...messaging.error import MessageParseError
-
 from ..error import WireFormatParseError
-
 from .base import BaseInboundTransport, InboundTransportSetupError
 
 LOGGER = logging.getLogger(__name__)

@@ -1,9 +1,8 @@
-import json
-
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
+from .....connections.models.conn_record import ConnRecord
 
 from .. import routes as test_module
 
@@ -86,20 +85,23 @@ class TestOutOfBandRoutes(AsyncTestCase):
 
     async def test_invitation_receive(self):
         self.request.json = async_mock.CoroutineMock()
+        expected_connection_record = ConnRecord(connection_id="some-id")
 
         with async_mock.patch.object(
             test_module, "OutOfBandManager", autospec=True
         ) as mock_oob_mgr, async_mock.patch.object(
             test_module.InvitationMessage, "deserialize", async_mock.Mock()
-        ) as mock_invi_deser, async_mock.patch.object(
+        ), async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
             mock_oob_mgr.return_value.receive_invitation = async_mock.CoroutineMock(
-                return_value={"abc": "123"}
+                return_value=expected_connection_record
             )
 
-            result = await test_module.invitation_receive(self.request)
-            mock_json_response.assert_called_once_with({"abc": "123"})
+            await test_module.invitation_receive(self.request)
+            mock_json_response.assert_called_once_with(
+                expected_connection_record.serialize()
+            )
 
     async def test_invitation_receive_forbidden_x(self):
         self.context.update_settings({"admin.no_receive_invites": True})
