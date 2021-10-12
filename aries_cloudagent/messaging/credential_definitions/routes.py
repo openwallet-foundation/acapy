@@ -34,10 +34,7 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
 
 # from ...revocation.error import RevocationError, RevocationNotSupportedError
 # from ...revocation.indy import IndyRevocation
-from ...revocation.util import (
-    REVOCATION_EVENT_PREFIX,
-    REVOCATION_REG_EVENT,
-)
+from ...revocation.util import notify_revocation_reg_event
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 
@@ -51,8 +48,8 @@ from .util import (
     CredDefQueryStringSchema,
     CRED_DEF_TAGS,
     CRED_DEF_SENT_RECORD_TYPE,
-    CRED_DEF_EVENT_PREFIX,
     EVENT_LISTENER_PATTERN,
+    notify_cred_def_event,
 )
 
 
@@ -276,15 +273,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         meta_data["context"]["cred_def_id"] = cred_def_id
         meta_data["context"]["issuer_did"] = issuer_did
         meta_data["processing"]["auto_create_rev_reg"] = True
-        print(
-            "Notify event:",
-            CRED_DEF_EVENT_PREFIX + cred_def_id,
-            meta_data,
-        )
-        await context.profile.notify(
-            CRED_DEF_EVENT_PREFIX + cred_def_id,
-            meta_data,
-        )
+        await notify_cred_def_event(context.profile, cred_def_id, meta_data)
 
         return web.json_response({"credential_definition_id": cred_def_id})
 
@@ -449,32 +438,35 @@ def register_events(event_bus: EventBus):
 
 async def on_cred_def_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
-    print(f">>>> Handle event: {event}")
     schema_id = event.payload["context"]["schema_id"]
     cred_def_id = event.payload["context"]["cred_def_id"]
     issuer_did = event.payload["context"]["issuer_did"]
-    if "cred_def" in event.payload:
-        pass
-    else:
-        pass
     await add_cred_def_non_secrets_record(profile, schema_id, issuer_did, cred_def_id)
 
     # check if we need to kick off the revocation registry setup
-    support_revocation = event.payload["context"]["support_revocation"]
-    novel = event.payload["context"]["novel"]
     meta_data = event.payload
+    support_revocation = meta_data["context"]["support_revocation"]
+    novel = meta_data["context"]["novel"]
+    rev_reg_size = (
+        meta_data["context"].get("rev_reg_size", None) if support_revocation else None
+    )
     auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
+    create_pending_rev_reg = meta_data["processing"].get(
+        "create_pending_rev_reg", False
+    )
+    endorser_connection_id = (
+        meta_data["endorser"].get("connection_id", None)
+        if "endorser" in meta_data
+        else None
+    )
     if support_revocation and novel and auto_create_rev_reg:
-        print(">>> kick off revocation ...")
-        event_id = REVOCATION_EVENT_PREFIX + REVOCATION_REG_EVENT + "::" + cred_def_id
-        print(
-            "Notify event:",
-            event_id,
-            meta_data,
-        )
-        await profile.notify(
-            event_id,
-            meta_data,
+        await notify_revocation_reg_event(
+            profile,
+            cred_def_id,
+            rev_reg_size,
+            auto_create_rev_reg=auto_create_rev_reg,
+            create_pending_rev_reg=create_pending_rev_reg,
+            endorser_connection_id=endorser_connection_id,
         )
 
 

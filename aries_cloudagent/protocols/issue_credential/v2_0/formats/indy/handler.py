@@ -22,10 +22,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ......revocation.models.revocation_registry import RevocationRegistry
 from ......revocation.indy import IndyRevocation
-from ......revocation.util import (
-    REVOCATION_EVENT_PREFIX,
-    REVOCATION_REG_EVENT,
-)
+from ......revocation.util import notify_revocation_reg_event
 from ......storage.base import BaseStorage
 from ......storage.error import StorageNotFoundError
 
@@ -350,37 +347,15 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                                 cred_def_id,
                             )
                         )  # prefer to reuse prior rev reg size
-                    meta_data = {
-                        "context": {
-                            "schema_id": schema_id,
-                            "cred_def_id": cred_def_id,
-                            "support_revocation": True,
-                            "rev_reg_size": (
-                                old_rev_reg_recs[0].max_cred_num
-                                if old_rev_reg_recs
-                                else None
-                            ),
-                        },
-                        "processing": {
-                            "auto_create_rev_reg": True,
-                        },
-                    }
-                    print(">>> kick off revocation ...")
-                    event_id = (
-                        REVOCATION_EVENT_PREFIX
-                        + REVOCATION_REG_EVENT
-                        + "::"
-                        + cred_def_id
+                    rev_reg_size = (
+                        old_rev_reg_recs[0].max_cred_num if old_rev_reg_recs else None
                     )
                     for _ in range(2):
-                        print(
-                            "Notify event:",
-                            event_id,
-                            meta_data,
-                        )
-                        await self._profile.notify(
-                            event_id,
-                            meta_data,
+                        await notify_revocation_reg_event(
+                            self.profile,
+                            cred_def_id,
+                            rev_reg_size,
+                            auto_create_rev_reg=True,
                         )
 
                 if retries > 0:
@@ -429,29 +404,9 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     )
 
                 # Send next 1 rev reg, publish tails file in background
-                meta_data = {
-                    "context": {
-                        "schema_id": schema_id,
-                        "cred_def_id": cred_def_id,
-                        "support_revocation": True,
-                        "rev_reg_size": active_rev_reg_rec.max_cred_num,
-                    },
-                    "processing": {
-                        "auto_create_rev_reg": True,
-                    },
-                }
-                print(">>> kick off revocation ...")
-                event_id = (
-                    REVOCATION_EVENT_PREFIX + REVOCATION_REG_EVENT + "::" + cred_def_id
-                )
-                print(
-                    "Notify event:",
-                    event_id,
-                    meta_data,
-                )
-                await self._profile.notify(
-                    event_id,
-                    meta_data,
+                rev_reg_size = active_rev_reg_rec.max_cred_num
+                await notify_revocation_reg_event(
+                    self.profile, cred_def_id, rev_reg_size, auto_create_rev_reg=True
                 )
 
             async with self.profile.session() as session:

@@ -12,12 +12,11 @@ from ....core.profile import ProfileSession
 from ....indy.issuer import IndyIssuerError
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
-from ....messaging.credential_definitions.util import CRED_DEF_EVENT_PREFIX
-from ....messaging.schemas.util import SCHEMA_EVENT_PREFIX
+from ....messaging.credential_definitions.util import notify_cred_def_event
+from ....messaging.schemas.util import notify_schema_event
 from ....revocation.util import (
-    REVOCATION_EVENT_PREFIX,
-    REVOCATION_ENTRY_EVENT,
-    REVOCATION_TAILS_EVENT,
+    notify_revocation_entry_event,
+    notify_revocation_tails_file_event,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
@@ -752,15 +751,7 @@ class TransactionManager:
             meta_data["context"]["public_did"] = public_did
 
             # Notify schema ledger write event
-            print(
-                "Notify event:",
-                SCHEMA_EVENT_PREFIX + schema_id,
-                meta_data,
-            )
-            await self._profile.notify(
-                SCHEMA_EVENT_PREFIX + schema_id,
-                meta_data,
-            )
+            await notify_schema_event(self._profile, schema_id, meta_data)
 
         elif ledger_response["result"]["txn"]["type"] == "102":
             # cred def transaction
@@ -779,15 +770,7 @@ class TransactionManager:
             meta_data["context"]["issuer_did"] = issuer_did
 
             # Notify event
-            print(
-                "Notify event:",
-                CRED_DEF_EVENT_PREFIX + cred_def_id,
-                meta_data,
-            )
-            await self._profile.notify(
-                CRED_DEF_EVENT_PREFIX + cred_def_id,
-                meta_data,
-            )
+            await notify_cred_def_event(self._profile, cred_def_id, meta_data)
 
         elif ledger_response["result"]["txn"]["type"] == "113":
             # revocation registry transaction
@@ -799,17 +782,8 @@ class TransactionManager:
 
             # Notify event
             if auto_create_rev_reg:
-                event_id = (
-                    REVOCATION_EVENT_PREFIX + REVOCATION_ENTRY_EVENT + "::" + rev_reg_id
-                )
-                print(
-                    "Notify event:",
-                    event_id,
-                    meta_data,
-                )
-                await self._profile.notify(
-                    event_id,
-                    meta_data,
+                await notify_revocation_entry_event(
+                    self._profile, rev_reg_id, meta_data
                 )
 
         elif ledger_response["result"]["txn"]["type"] == "114":
@@ -822,17 +796,8 @@ class TransactionManager:
 
             # Notify event
             if auto_create_rev_reg:
-                event_id = (
-                    REVOCATION_EVENT_PREFIX + REVOCATION_TAILS_EVENT + "::" + rev_reg_id
-                )
-                print(
-                    "Notify event:",
-                    event_id,
-                    meta_data,
-                )
-                await self._profile.notify(
-                    event_id,
-                    meta_data,
+                await notify_revocation_tails_file_event(
+                    self._profile, rev_reg_id, meta_data
                 )
 
         else:

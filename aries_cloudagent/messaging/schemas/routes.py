@@ -41,8 +41,8 @@ from .util import (
     SchemaQueryStringSchema,
     SCHEMA_SENT_RECORD_TYPE,
     SCHEMA_TAGS,
-    SCHEMA_EVENT_PREFIX,
     EVENT_LISTENER_PATTERN,
+    notify_schema_event,
 )
 
 
@@ -234,7 +234,6 @@ async def schemas_send_schema(request: web.BaseRequest):
         try:
             # if create_transaction_for_endorser, then the returned "schema_def"
             # is actually the signed transaction
-            print("Create/sign and/or write schema ledger transaction")
             schema_id, schema_def = await shield(
                 ledger.create_and_send_schema(
                     issuer,
@@ -260,15 +259,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 
     if not create_transaction_for_endorser:
         # Notify event
-        print(
-            "Notify event:",
-            SCHEMA_EVENT_PREFIX + schema_id,
-            meta_data,
-        )
-        await context.profile.notify(
-            SCHEMA_EVENT_PREFIX + schema_id,
-            meta_data,
-        )
+        await notify_schema_event(context.profile, schema_id, meta_data)
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
 
     else:
@@ -420,7 +411,6 @@ def register_events(event_bus: EventBus):
 
 async def on_schema_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
-    print(f">>>> Handle event: {event}")
     schema_id = event.payload["context"]["schema_id"]
     await add_schema_non_secrets_record(profile, schema_id)
 
@@ -460,8 +450,6 @@ async def register(app: web.Application):
             ),
         ]
     )
-
-    # setup a listener for events
 
 
 def post_process_routes(app: web.Application):

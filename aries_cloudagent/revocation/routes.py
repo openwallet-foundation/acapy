@@ -55,11 +55,13 @@ from .models.issuer_cred_rev_record import (
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .util import (
-    REVOCATION_EVENT_PREFIX,
     EVENT_LISTENER_PATTERN,
     REVOCATION_REG_EVENT,
     REVOCATION_ENTRY_EVENT,
     REVOCATION_TAILS_EVENT,
+    notify_revocation_reg_event,
+    notify_revocation_entry_event,
+    notify_revocation_tails_file_event,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -1119,7 +1121,6 @@ async def on_revocation_event(profile: Profile, event: Event):
 
 async def on_revocation_registry_event(profile: Profile, event: Event):
     """Handle revocation registry event."""
-    print(f">>>> Handle revocation registry event: {event}")
     if "endorser" in event.payload:
         # TODO error handling - for now just let exceptions get raised
         async with profile.session() as session:
@@ -1174,18 +1175,7 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
 
         # Notify event
         if auto_create_rev_reg:
-            event_id = (
-                REVOCATION_EVENT_PREFIX + REVOCATION_ENTRY_EVENT + "::" + rev_reg_id
-            )
-            print(
-                "Notify event:",
-                event_id,
-                meta_data,
-            )
-            await profile.notify(
-                event_id,
-                meta_data,
-            )
+            await notify_revocation_entry_event(profile, rev_reg_id, meta_data)
 
     else:
         async with profile.session() as session:
@@ -1230,7 +1220,6 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
 
 async def on_revocation_entry_event(profile: Profile, event: Event):
     """Handle revocation entry event."""
-    print(f">>>> Handle revocation entry event: {event}")
     if "endorser" in event.payload:
         # TODO error handling - for now just let exceptions get raised
         async with profile.session() as session:
@@ -1270,18 +1259,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
 
         # Notify event
         if auto_create_rev_reg:
-            event_id = (
-                REVOCATION_EVENT_PREFIX + REVOCATION_TAILS_EVENT + "::" + rev_reg_id
-            )
-            print(
-                "Notify event:",
-                event_id,
-                meta_data,
-            )
-            await profile.notify(
-                event_id,
-                meta_data,
-            )
+            await notify_revocation_tails_file_event(profile, rev_reg_id, meta_data)
 
     else:
         async with profile.session() as session:
@@ -1357,17 +1335,20 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
         del meta_data["context"]["rev_reg_id"]
         del meta_data["processing"]["create_pending_rev_reg"]
         cred_def_id = meta_data["context"]["cred_def_id"]
-
-        print(">>> kick off revocation ...")
-        event_id = REVOCATION_EVENT_PREFIX + REVOCATION_REG_EVENT + "::" + cred_def_id
-        print(
-            "Notify event:",
-            event_id,
-            meta_data,
+        rev_reg_size = meta_data["context"].get("meta_data", None)
+        auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
+        endorser_connection_id = (
+            meta_data["endorser"].get("connection_id", None)
+            if "endorser" in meta_data
+            else None
         )
-        await profile.notify(
-            event_id,
-            meta_data,
+
+        await notify_revocation_reg_event(
+            profile,
+            cred_def_id,
+            rev_reg_size,
+            auto_create_rev_reg=auto_create_rev_reg,
+            endorser_connection_id=endorser_connection_id,
         )
 
 
