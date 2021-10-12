@@ -1335,7 +1335,7 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
         del meta_data["context"]["rev_reg_id"]
         del meta_data["processing"]["create_pending_rev_reg"]
         cred_def_id = meta_data["context"]["cred_def_id"]
-        rev_reg_size = meta_data["context"].get("meta_data", None)
+        rev_reg_size = meta_data["context"].get("rev_reg_size", None)
         auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
         endorser_connection_id = (
             meta_data["endorser"].get("connection_id", None)

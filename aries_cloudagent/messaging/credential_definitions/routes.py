@@ -32,13 +32,9 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 
-# from ...revocation.error import RevocationError, RevocationNotSupportedError
-# from ...revocation.indy import IndyRevocation
 from ...revocation.util import notify_revocation_reg_event
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
-
-# from ...tails.base import BaseTailsServer
 
 from ..models.openapi import OpenAPISchema
 from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID

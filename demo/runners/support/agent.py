@@ -242,7 +242,13 @@ class DemoAgent:
             schema_id = schema_response["schema_id"]
         else:
             # need to wait for the endorser process
-            schema_response = await self.admin_GET("/schemas/created")
+            schema_response = {"schema_ids": []}
+            attempts = 3
+            while 0 < attempts and 0 == len(schema_response["schema_ids"]):
+                schema_response = await self.admin_GET("/schemas/created")
+                if 0 == len(schema_response["schema_ids"]):
+                    await asyncio.sleep(1.0)
+                    attempts = attempts - 1
             schema_id = schema_response["schema_ids"][0]
         log_msg("Schema ID:", schema_id)
 
@@ -271,9 +277,15 @@ class DemoAgent:
             ]
         else:
             # need to wait for the endorser process
-            credential_definition_response = await self.admin_GET(
-                "/credential-definitions/created"
-            )
+            credential_definition_response = {"credential_definition_ids": []}
+            attempts = 3
+            while 0 < attempts and 0 == len(credential_definition_response["credential_definition_ids"]):
+                credential_definition_response = await self.admin_GET(
+                    "/credential-definitions/created"
+                )
+                if 0 == len(credential_definition_response["credential_definition_ids"]):
+                    await asyncio.sleep(1.0)
+                    attempts = attempts - 1
             credential_definition_id = credential_definition_response[
                 "credential_definition_ids"
             ][0]
