@@ -42,6 +42,10 @@ from ..protocols.endorse_transaction.v1_0.manager import (
 from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
+from ..protocols.endorse_transaction.v1_0.util import (
+    is_author_role,
+    get_endorser_connection_id,
+)
 from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from ..tails.base import BaseTailsServer
@@ -359,8 +363,6 @@ async def revoke(request: web.BaseRequest):
 
 @docs(tags=["revocation"], summary="Publish pending revocations to ledger")
 @request_schema(PublishRevocationsSchema())
-@querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
-@querystring_schema(RevRegConnIdMatchInfoSchema())
 @response_schema(TxnOrPublishRevocationsResultSchema(), 200, description="")
 async def publish_revocations(request: web.BaseRequest):
     """
@@ -374,105 +376,19 @@ async def publish_revocations(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    outbound_handler = request["outbound_message_router"]
     body = await request.json()
     rrid2crid = body.get("rrid2crid")
-    create_transaction_for_endorser = json.loads(
-        request.query.get("create_transaction_for_endorser", "false")
-    )
-    write_ledger = not create_transaction_for_endorser
-    endorser_did = None
-    connection_id = request.query.get("conn_id")
-
-    # check if we need to endorse
-    if context.settings.get_value("endorser.author"):
-        # authors cannot write to the ledger
-        write_ledger = False
-        create_transaction_for_endorser = True
-        if not connection_id:
-            # author has not provided a connection id, so determine which to use
-            endorser_alias = context.settings.get_value("endorser.endorser_alias")
-            if not endorser_alias:
-                raise web.HTTPBadRequest(reason="No endorser conenction specified")
-            try:
-                async with context.session() as session:
-                    connection_records = await ConnRecord.retrieve_by_alias(
-                        session, endorser_alias
-                    )
-                    connection_id = connection_records[0].connection_id
-            except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-            except BaseModelError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-            except Exception as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     rev_manager = RevocationManager(context.profile)
-
-    if not write_ledger:
-
-        try:
-            async with context.session() as session:
-                connection_record = await ConnRecord.retrieve_by_id(
-                    session, connection_id
-                )
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except BaseModelError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        session = await context.session()
-        endorser_info = await connection_record.metadata_get(session, "endorser_info")
-        if not endorser_info:
-            raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
-            )
-        if "endorser_did" not in endorser_info.keys():
-            raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
-            )
-        endorser_did = endorser_info["endorser_did"]
 
     try:
         rev_reg_resp = await rev_manager.publish_pending_revocations(
             rrid2crid,
-            write_ledger=write_ledger,
-            endorser_did=endorser_did,
         )
     except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    if not create_transaction_for_endorser:
-        return web.json_response({"rrid2crid": rev_reg_resp})
-
-    else:
-        session = await context.session()
-
-        transaction_mgr = TransactionManager(session)
-        try:
-            transaction = await transaction_mgr.create_record(
-                messages_attach=rev_reg_resp["result"], connection_id=connection_id
-            )
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        # if auto-request, send the request to the endorser
-        if context.settings.get_value("endorser.auto_request"):
-            try:
-                transaction, transaction_request = await transaction_mgr.create_request(
-                    transaction=transaction,
-                    # TODO see if we need to parameterize these params
-                    # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
-                )
-            except (StorageError, TransactionManagerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-            await outbound_handler(transaction_request, connection_id=connection_id)
-
-        return web.json_response({"txn": transaction.serialize()})
+    return web.json_response({"rrid2crid": rev_reg_resp})
 
 
 @docs(tags=["revocation"], summary="Clear pending revocations")
@@ -812,27 +728,15 @@ async def send_rev_reg_def(request: web.BaseRequest):
     connection_id = request.query.get("conn_id")
 
     # check if we need to endorse
-    if context.settings.get_value("endorser.author"):
+    if is_author_role(context.profile):
         # authors cannot write to the ledger
         write_ledger = False
         create_transaction_for_endorser = True
         if not connection_id:
             # author has not provided a connection id, so determine which to use
-            endorser_alias = context.settings.get_value("endorser.endorser_alias")
-            if not endorser_alias:
-                raise web.HTTPBadRequest(reason="No endorser conenction specified")
-            try:
-                async with context.session() as session:
-                    connection_records = await ConnRecord.retrieve_by_alias(
-                        session, endorser_alias
-                    )
-                    connection_id = connection_records[0].connection_id
-            except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-            except BaseModelError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-            except Exception as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
+            connection_id = await get_endorser_connection_id(context.profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
 
     if not write_ledger:
         try:
@@ -935,27 +839,15 @@ async def send_rev_reg_entry(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
 
     # check if we need to endorse
-    if context.settings.get_value("endorser.author"):
+    if is_author_role(context.profile):
         # authors cannot write to the ledger
         write_ledger = False
         create_transaction_for_endorser = True
         if not connection_id:
             # author has not provided a connection id, so determine which to use
-            endorser_alias = context.settings.get_value("endorser.endorser_alias")
-            if not endorser_alias:
-                raise web.HTTPBadRequest(reason="No endorser conenction specified")
-            try:
-                async with context.session() as session:
-                    connection_records = await ConnRecord.retrieve_by_alias(
-                        session, endorser_alias
-                    )
-                    connection_id = connection_records[0].connection_id
-            except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-            except BaseModelError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-            except Exception as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
+            connection_id = await get_endorser_connection_id(context.profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
 
     if not write_ledger:
         try:

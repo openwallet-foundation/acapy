@@ -31,6 +31,10 @@ from ...protocols.endorse_transaction.v1_0.manager import (
 from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
+from ...protocols.endorse_transaction.v1_0.util import (
+    is_author_role,
+    get_endorser_connection_id,
+)
 
 from ...revocation.util import notify_revocation_reg_event
 from ...storage.base import BaseStorage, StorageRecord
@@ -177,27 +181,15 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     rev_reg_size = body.get("revocation_registry_size")
 
     # check if we need to endorse
-    if context.settings.get_value("endorser.author"):
+    if is_author_role(context.profile):
         # authors cannot write to the ledger
         write_ledger = False
         create_transaction_for_endorser = True
         if not connection_id:
             # author has not provided a connection id, so determine which to use
-            endorser_alias = context.settings.get_value("endorser.endorser_alias")
-            if not endorser_alias:
-                raise web.HTTPBadRequest(reason="No endorser conenction specified")
-            try:
-                async with context.session() as session:
-                    connection_records = await ConnRecord.retrieve_by_alias(
-                        session, endorser_alias
-                    )
-                    connection_id = connection_records[0].connection_id
-            except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-            except BaseModelError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-            except Exception as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
+            connection_id = await get_endorser_connection_id(context.profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
 
     if not write_ledger:
         try:

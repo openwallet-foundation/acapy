@@ -279,11 +279,15 @@ class DemoAgent:
             # need to wait for the endorser process
             credential_definition_response = {"credential_definition_ids": []}
             attempts = 3
-            while 0 < attempts and 0 == len(credential_definition_response["credential_definition_ids"]):
+            while 0 < attempts and 0 == len(
+                credential_definition_response["credential_definition_ids"]
+            ):
                 credential_definition_response = await self.admin_GET(
                     "/credential-definitions/created"
                 )
-                if 0 == len(credential_definition_response["credential_definition_ids"]):
+                if 0 == len(
+                    credential_definition_response["credential_definition_ids"]
+                ):
                     await asyncio.sleep(1.0)
                     attempts = attempts - 1
             credential_definition_id = credential_definition_response[
