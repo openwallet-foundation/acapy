@@ -1,5 +1,7 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
+from aries_cloudagent.vc.ld_proofs.error import LinkedDataProofException
+from ......vc.ld_proofs.check import get_properties_without_context
 import logging
 
 from typing import Mapping
@@ -398,6 +400,18 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         offer_data = cred_proposal_message.attachment(LDProofCredFormatHandler.format)
         detail = LDProofVCDetail.deserialize(offer_data)
         detail = await self._prepare_detail(detail)
+
+        document_loader = self.profile.inject(DocumentLoader)
+        missing_properties = get_properties_without_context(
+            detail.credential.serialize(),
+            document_loader
+        )
+
+        if len(missing_properties) > 0:
+            raise LinkedDataProofException(
+                f"{len(missing_properties)} attributes dropped. "
+                f"Provide definitions in context to correct. {missing_properties}"
+            )
 
         # Make sure we can issue with the did and proof type
         await self._assert_can_issue_with_id_and_proof_type(
