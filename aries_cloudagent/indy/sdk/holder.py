@@ -246,7 +246,7 @@ class IndySdkHolder(IndyHolder):
                     # must move database cursor manually
                     if start > 0:
                         await fetch(reft, start)
-                    credentials = await fetch(reft, count - len(creds_dict))
+                    credentials = await fetch(reft, count)
 
                     for cred in credentials:
                         cred_id = cred["cred_info"]["referent"]
@@ -255,8 +255,6 @@ class IndySdkHolder(IndyHolder):
                             creds_dict[cred_id] = cred
                         else:
                             creds_dict[cred_id]["presentation_referents"].add(reft)
-                    if len(creds_dict) >= count:
-                        break
             finally:
                 # Always close
                 await indy.anoncreds.prover_close_credentials_search_for_proof_req(
