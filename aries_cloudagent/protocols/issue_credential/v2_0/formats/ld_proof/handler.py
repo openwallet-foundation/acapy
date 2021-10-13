@@ -1,6 +1,6 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
-from aries_cloudagent.vc.ld_proofs.error import LinkedDataProofException
+from ......vc.ld_proofs.error import LinkedDataProofException
 from ......vc.ld_proofs.check import get_properties_without_context
 import logging
 

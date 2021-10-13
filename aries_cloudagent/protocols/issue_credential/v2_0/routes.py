@@ -1,6 +1,6 @@
 """Credential exchange admin routes."""
 
-from aries_cloudagent.vc.ld_proofs.error import LinkedDataProofException
+from ....vc.ld_proofs.error import LinkedDataProofException
 from json.decoder import JSONDecodeError
 from typing import Mapping
 
