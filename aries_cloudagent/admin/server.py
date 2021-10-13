@@ -304,7 +304,13 @@ class AdminServer(BaseAdminServer):
                 authorization_header = request.headers.get("Authorization")
                 path = request.path
 
-                is_multitenancy_path = path.startswith("/multitenancy")
+                is_multitenancy_path = (
+                    path.startswith("/multitenancy")
+                    or path.startswith("/connections")
+                    or path.startswith("/out-of-band")
+                    or path.startswith("/didexchange")
+                    or path.startswith("/mediation")
+                )
                 is_server_path = path in self.server_paths or path == "/features"
 
                 # subwallets are not allowed to access multitenancy routes
