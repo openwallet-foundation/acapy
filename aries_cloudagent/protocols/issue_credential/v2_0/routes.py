@@ -1,5 +1,6 @@
 """Credential exchange admin routes."""
 
+from aries_cloudagent.vc.ld_proofs.error import LinkedDataProofException
 from json.decoder import JSONDecodeError
 from typing import Mapping
 
@@ -1053,6 +1054,8 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             cred_ex_record,
             outbound_handler,
         )
+    except LinkedDataProofException as err:
+        raise web.HTTPBadRequest(reason=err) from err
 
     await outbound_handler(cred_offer_message, connection_id=connection_id)
 
