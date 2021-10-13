@@ -4,7 +4,7 @@ from collections import OrderedDict
 import logging
 import re
 import sys
-from typing import Dict, Tuple, List
+import uuid
 
 import markdown
 import prompt_toolkit
@@ -79,8 +79,8 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings):
             txns = config.get("genesis_transactions")
         ledger_txns_list.append(
             {
-                "id": config.get("id"),
-                "is_production": config.get("is_production"),
+                "id": config.get("id") or str(uuid.uuid4()),
+                "is_production": config.get("is_production") or True,
                 "genesis_transactions": txns,
             }
         )

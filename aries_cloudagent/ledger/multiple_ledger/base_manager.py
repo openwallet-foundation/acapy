@@ -3,8 +3,6 @@ from typing import TypeVar, List, Optional
 
 from ...core.error import BaseError
 from ...core.profile import Profile
-from ..indy import IndySdkLedger
-from ..indy_vdr import IndyVdrLedger
 
 T = TypeVar('T')
 
