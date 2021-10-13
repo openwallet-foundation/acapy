@@ -1,5 +1,5 @@
 from copy import deepcopy
-from aries_cloudagent.vc.ld_proofs.error import LinkedDataProofException
+from .......vc.ld_proofs.error import LinkedDataProofException
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from unittest.mock import patch
