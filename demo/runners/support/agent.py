@@ -877,28 +877,50 @@ class DemoAgent:
             raise
 
     async def admin_PATCH(
-        self, path, data=None, text=False, params=None
+        self, path, data=None, text=False, params=None, headers=None
     ) -> ClientResponse:
         try:
-            return await self.admin_request("PATCH", path, data, text, params)
+            if self.multitenant:
+                if not headers:
+                    headers = {}
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
+            return await self.admin_request(
+                "PATCH", path, data, text, params, headers=headers
+            )
         except ClientError as e:
             self.log(f"Error during PATCH {path}: {str(e)}")
             raise
 
     async def admin_PUT(
-        self, path, data=None, text=False, params=None
+        self, path, data=None, text=False, params=None, headers=None
     ) -> ClientResponse:
         try:
-            return await self.admin_request("PUT", path, data, text, params)
+            if self.multitenant:
+                if not headers:
+                    headers = {}
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
+            return await self.admin_request(
+                "PUT", path, data, text, params, headers=headers
+            )
         except ClientError as e:
             self.log(f"Error during PUT {path}: {str(e)}")
             raise
 
-    async def admin_GET_FILE(self, path, params=None) -> bytes:
+    async def admin_GET_FILE(self, path, params=None, headers=None) -> bytes:
         try:
+            if self.multitenant:
+                if not headers:
+                    headers = {}
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
             params = {k: v for (k, v) in (params or {}).items() if v is not None}
             resp = await self.client_session.request(
-                "GET", self.admin_url + path, params=params
+                "GET", self.admin_url + path, params=params, headers=headers
             )
             resp.raise_for_status()
             return await resp.read()
@@ -908,6 +930,12 @@ class DemoAgent:
 
     async def admin_PUT_FILE(self, files, url, params=None, headers=None) -> bytes:
         try:
+            if self.multitenant:
+                if not headers:
+                    headers = {}
+                headers["Authorization"] = (
+                    "Bearer " + self.managed_wallet_params["token"]
+                )
             params = {k: v for (k, v) in (params or {}).items() if v is not None}
             resp = await self.client_session.request(
                 "PUT", url, params=params, data=files, headers=headers
