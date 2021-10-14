@@ -304,18 +304,22 @@ class AdminServer(BaseAdminServer):
                 authorization_header = request.headers.get("Authorization")
                 path = request.path
 
-                is_multitenancy_path = (
-                    path.startswith("/multitenancy")
-                    or path.startswith("/connections")
-                    or path.startswith("/out-of-band")
-                    or path.startswith("/didexchange")
-                    or path.startswith("/mediation")
-                )
+                is_multitenancy_path = path.startswith("/multitenancy")
                 is_server_path = path in self.server_paths or path == "/features"
 
                 # subwallets are not allowed to access multitenancy routes
                 if authorization_header and is_multitenancy_path:
                     raise web.HTTPUnauthorized()
+
+                base_limited_access_path = (
+                    path.startswith("/connections/receive-invitation")
+                    or path.startswith("/out-of-band/receive-invitation")
+                    or path.startswith("/mediation/requests/")
+                    or (
+                        path.startswith("/mediation/")
+                        and path.endswith("/default-mediator")
+                    )
+                )
 
                 # base wallet is not allowed to perform ssi related actions.
                 # Only multitenancy and general server actions
@@ -324,6 +328,7 @@ class AdminServer(BaseAdminServer):
                     and not is_multitenancy_path
                     and not is_server_path
                     and not is_unprotected_path(path)
+                    and not base_limited_access_path
                 ):
                     raise web.HTTPUnauthorized()
 
