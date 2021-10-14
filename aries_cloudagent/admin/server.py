@@ -34,6 +34,7 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..messaging.valid import UUIDFour
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -312,12 +313,15 @@ class AdminServer(BaseAdminServer):
                     raise web.HTTPUnauthorized()
 
                 base_limited_access_path = (
-                    path.startswith("/connections/receive-invitation")
+                    re.match(
+                        f"^/connections/(?:receive-invitation|{UUIDFour.PATTERN})", path
+                    )
                     or path.startswith("/out-of-band/receive-invitation")
                     or path.startswith("/mediation/requests/")
-                    or (
-                        path.startswith("/mediation/")
-                        and path.endswith("/default-mediator")
+                    or re.match(
+                        f"/mediation/(?:request/{UUIDFour.PATTERN}|"
+                        f"{UUIDFour.PATTERN}/default-mediator)",
+                        path,
                     )
                 )
 
