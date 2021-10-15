@@ -397,16 +397,16 @@ async def main(args):
             endorser_role=faber_agent.endorser_role,
         )
 
+        faber_schema_name = "degree schema"
+        faber_schema_attrs = [
+            "name",
+            "date",
+            "degree",
+            "birthdate_dateint",
+            "timestamp",
+        ]
         if faber_agent.cred_type == CRED_FORMAT_INDY:
             faber_agent.public_did = True
-            faber_schema_name = "degree schema"
-            faber_schema_attrs = [
-                "name",
-                "date",
-                "degree",
-                "birthdate_dateint",
-                "timestamp",
-            ]
             await faber_agent.initialize(
                 the_agent=agent,
                 schema_name=faber_schema_name,
@@ -474,6 +474,7 @@ async def main(args):
                         target_wallet_name,
                         public_did=True,
                         mediator_agent=faber_agent.mediator_agent,
+                        cred_type=faber_agent.cred_type,
                     )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets
