@@ -123,7 +123,7 @@ class Conductor:
             and len(context.settings.get("ledger.ledger_config_list")) > 0
         ):
             multi_ledger_manager = MultitenantManagerProvider(self.root_profile)
-            ledger = await multi_ledger_manager.get_write_ledger()
+            ledger = await multi_ledger_manager.get_write_ledger()[1]
             context.injector.bind_provider(
                 BaseMultipleLedgerManager, multi_ledger_manager
             )

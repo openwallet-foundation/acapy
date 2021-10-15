@@ -18,7 +18,16 @@ from ..storage.error import StorageError
 from ..wallet.error import WalletError, WalletNotFoundError
 
 from .base import BaseLedger, Role as LedgerRole
+from .multiple_ledger.base_manager import (
+    BaseMultipleLedgerManager,
+    MultipleLedgerManagerError,
+)
 from .multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
+from .multiple_ledger.ledger_config_schema import (
+    LedgerConfigListSchema,
+    MultipleLedgerModuleResultSchema,
+    WriteLedgerRequestSchema,
+)
 from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 
@@ -469,6 +478,129 @@ async def ledger_accept_taa(request: web.BaseRequest):
     return web.json_response({})
 
 
+@docs(tags=["ledger"], summary="Fetch the current write ledger")
+@response_schema(WriteLedgerRequestSchema, 200, description="")
+async def get_write_ledger(request: web.BaseRequest):
+    """
+    Request handler for fetching the currently set write ledger.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The write ledger identifier
+
+    """
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+    if not multiledger_mgr:
+        reason = "Multiple ledger support not enabled"
+        raise web.HTTPForbidden(reason=reason)
+    ledger_id = await multiledger_mgr.get_write_ledger()[0]
+    return web.json_response({"ledger_id": ledger_id})
+
+
+@docs(
+    tags=["ledger"], summary="Reset write ledger to default based on the configuration."
+)
+@response_schema(WriteLedgerRequestSchema(), 200, description="")
+async def reset_write_ledger(request: web.BaseRequest):
+    """
+    Request handler reset the write ledger to default.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Default write ledger identifier
+    """
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+    if not multiledger_mgr:
+        reason = "Multiple ledger support not enabled"
+        raise web.HTTPForbidden(reason=reason)
+    ledger_id = await multiledger_mgr.reset_write_ledger()[0]
+    return web.json_response({"ledger_id": ledger_id})
+
+
+@docs(
+    tags=["ledger"], summary="Set a write ledger, if multiple ledgers are configured."
+)
+@querystring_schema(WriteLedgerRequestSchema)
+@response_schema(MultipleLedgerModuleResultSchema, 200, description="")
+async def set_write_ledger(request: web.BaseRequest):
+    """
+    Request handler for accepting the current transaction author agreement.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+    if not multiledger_mgr:
+        reason = "Multiple ledger support not enabled"
+        raise web.HTTPForbidden(reason=reason)
+    ledger_id = request.query.get("ledger_id")
+    try:
+        await multiledger_mgr.set_write_ledger(ledger_id)
+    except MultipleLedgerManagerError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response({})
+
+
+@docs(
+    tags=["ledger"], summary="Fetch the multiple ledger configuration currently in use"
+)
+@response_schema(LedgerConfigListSchema, 200, description="")
+async def get_ledger_config(request: web.BaseRequest):
+    """
+    Request handler for fetching the ledger configuration list in use.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Ledger configuration list
+
+    """
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+    if not multiledger_mgr:
+        reason = "Multiple ledger support not enabled"
+        raise web.HTTPForbidden(reason=reason)
+    ledger_config_list = session.settings.get_value("ledger.ledger_config_list")
+    return web.json_response({"ledger_config_list": ledger_config_list})
+
+
+@docs(tags=["ledger"], summary="Update configuration for multiple ledger support")
+@request_schema(LedgerConfigListSchema)
+@response_schema(MultipleLedgerModuleResultSchema, 200, description="")
+async def update_ledger_config(request: web.BaseRequest):
+    """
+    Request handler for updating configuration for multiple ledgers.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    session = await context.session()
+    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+    if not multiledger_mgr:
+        reason = "Multiple ledger support not enabled"
+        raise web.HTTPForbidden(reason=reason)
+    ledger_config_input = await request.json()
+    await multiledger_mgr.update_ledger_config(
+        ledger_config_input.get("ledger_config_list")
+    )
+    return web.json_response({})
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -481,6 +613,13 @@ async def register(app: web.Application):
             web.get("/ledger/did-endpoint", get_did_endpoint, allow_head=False),
             web.get("/ledger/taa", ledger_get_taa, allow_head=False),
             web.post("/ledger/taa/accept", ledger_accept_taa),
+            web.get(
+                "/ledger/multiple/get-write-ledger", get_write_ledger, allow_head=False
+            ),
+            web.post("/ledger/multiple/set-write-ledger", set_write_ledger),
+            web.post("/ledger/multiple/reset-write-ledger", reset_write_ledger),
+            web.get("/ledger/multiple/config", get_ledger_config, allow_head=False),
+            web.post("/ledger/multiple/update-config", update_ledger_config),
         ]
     )
 

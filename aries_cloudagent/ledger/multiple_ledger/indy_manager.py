@@ -50,28 +50,26 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         self.production_ledgers = production_ledgers
         self.non_production_ledgers = non_production_ledgers
         self.cache = profile.inject_or(BaseCache)
-        self.write_ledger = None
+        self.write_ledger_info = None
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
 
-    async def get_write_ledger(self) -> IndySdkLedger:
+    async def get_write_ledger(self) -> Tuple[str, IndySdkLedger]:
         """Return the write IndySdkLedger instance."""
-        if not self.write_ledger:
+        if not self.write_ledger_info:
             if len(self.production_ledgers) > 0:
-                return list(self.production_ledgers.items())[0][1]
+                ledger_info = list(self.production_ledgers.items())
+                self.write_ledger_info = (ledger_info[0][0], ledger_info[0][1])
             elif len(self.non_production_ledgers) > 0:
-                return list(self.non_production_ledgers.items())[0][1]
-        else:
-            return self.write_ledger
+                ledger_info = list(self.non_production_ledgers.items())
+                self.write_ledger_info = (ledger_info[0][0], ledger_info[0][1])
+        return self.write_ledger_info
 
-    async def set_write_ledger(self, ledger_id: str) -> IndySdkLedger:
+    async def set_write_ledger(self, ledger_id: str):
         """Set a IndySdkLedger as the write ledger.
 
         Args:
             ledger_id: The identifier for the configured ledger
-
-        Returns:
-            IndySdkLedger: IndySdkLedger to submit write requests
 
         """
         ledger = None
@@ -82,7 +80,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
 
         if ledger:
             await self.update_profile_context(ledger)
-            return ledger
+            self.write_ledger_info = (ledger_id, ledger)
         else:
             raise MultipleLedgerManagerError(
                 f"ledger {ledger_id} not found in configured production"
@@ -100,12 +98,12 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
             ),
         )
 
-    async def reset_write_ledger(self) -> IndySdkLedger:
+    async def reset_write_ledger(self) -> Tuple[str, IndySdkLedger]:
         """Reset set write ledger, if any, to default."""
-        self.write_ledger = None
-        ledger = self.get_write_ledger()
+        self.write_ledger_info = None
+        ledger_id, ledger = self.get_write_ledger()
         await self.update_profile_context(ledger)
-        return ledger
+        return (ledger_id, ledger)
 
     async def update_ledger_config(self, ledger_config_list: List):
         """
@@ -118,6 +116,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
             ledger_config_list: provided config list
 
         """
+        self.profile.settings["ledger.ledger_config_list"] = ledger_config_list
         production_ledgers = OrderedDict()
         non_production_ledgers = OrderedDict()
         for config in ledger_config_list:

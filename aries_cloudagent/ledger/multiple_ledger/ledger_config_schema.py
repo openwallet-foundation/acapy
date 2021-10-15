@@ -9,7 +9,6 @@ from marshmallow import (
 
 from ...messaging.models.base import BaseModelSchema, BaseModel
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import UUID4
 
 
 class LedgerConfigInstance(BaseModel):
@@ -49,7 +48,6 @@ class LedgerConfigInstanceSchema(BaseModelSchema):
     id = fields.Str(
         description="ledger_id",
         required=False,
-        **UUID4,
     )
     is_production = fields.Bool(description="is_production", required=False)
     genesis_transactions = fields.Str(
@@ -72,6 +70,17 @@ class LedgerConfigListSchema(OpenAPISchema):
     ledger_config_list = fields.List(
         fields.Nested(
             LedgerConfigInstanceSchema(),
-            required=False,
-        )
+            required=True,
+        ),
+        required=True,
     )
+
+
+class WriteLedgerRequestSchema(OpenAPISchema):
+    """Schema for setting/getting ledger_id for the write ledger."""
+
+    ledger_id = fields.Str()
+
+
+class MultipleLedgerModuleResultSchema(OpenAPISchema):
+    """Schema for the multiple ledger modules endpoint."""
