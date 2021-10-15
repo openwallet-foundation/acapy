@@ -298,7 +298,6 @@ async def credentials_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
     start = request.query.get("start")
     count = request.query.get("count")
 
@@ -310,11 +309,12 @@ async def credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder = session.inject(IndyHolder)
-    try:
-        credentials = await holder.get_credentials(start, count, wql)
-    except IndyHolderError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    async with context.profile.session() as session:
+        holder = session.inject(IndyHolder)
+        try:
+            credentials = await holder.get_credentials(start, count, wql)
+        except IndyHolderError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": credentials})
 

@@ -255,9 +255,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
 
     else:
-        session = await context.session()
-
-        transaction_mgr = TransactionManager(session)
+        transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
                 messages_attach=schema_def["signed_txn"],

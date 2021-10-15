@@ -782,9 +782,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
         return web.json_response({"result": rev_reg.serialize()})
 
     else:
-        session = await context.session()
-
-        transaction_mgr = TransactionManager(session)
+        transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
                 messages_attach=rev_reg_resp["result"], connection_id=connection_id
@@ -894,9 +892,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         return web.json_response({"result": rev_reg.serialize()})
 
     else:
-        session = await context.session()
-
-        transaction_mgr = TransactionManager(session)
+        transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
                 messages_attach=rev_entry_resp["result"], connection_id=connection_id
@@ -1070,32 +1066,32 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
             await notify_revocation_entry_event(profile, rev_reg_id, meta_data)
 
     else:
-        async with profile.session() as session:
-            transaction_manager = TransactionManager(session)
+        transaction_manager = TransactionManager(profile)
+        try:
+            revo_transaction = await transaction_manager.create_record(
+                messages_attach=rev_reg_resp["result"],
+                connection_id=connection.connection_id,
+                meta_data=event.payload,
+            )
+        except StorageError as err:
+            raise TransactionManagerError(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if profile.settings.get_value("endorser.auto_request"):
             try:
-                revo_transaction = await transaction_manager.create_record(
-                    messages_attach=rev_reg_resp["result"],
-                    connection_id=connection.connection_id,
-                    meta_data=event.payload,
+                (
+                    revo_transaction,
+                    revo_transaction_request,
+                ) = await transaction_manager.create_request(
+                    transaction=revo_transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
                 )
-            except StorageError as err:
+            except (StorageError, TransactionManagerError) as err:
                 raise TransactionManagerError(reason=err.roll_up) from err
 
-            # if auto-request, send the request to the endorser
-            if profile.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        revo_transaction,
-                        revo_transaction_request,
-                    ) = await transaction_manager.create_request(
-                        transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise TransactionManagerError(reason=err.roll_up) from err
-
+            async with profile.session() as session:
                 responder = session.inject_or(BaseResponder)
                 if responder:
                     await responder.send(
@@ -1154,32 +1150,32 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
             await notify_revocation_tails_file_event(profile, rev_reg_id, meta_data)
 
     else:
-        async with profile.session() as session:
-            transaction_manager = TransactionManager(session)
+        transaction_manager = TransactionManager(profile)
+        try:
+            revo_transaction = await transaction_manager.create_record(
+                messages_attach=rev_entry_resp["result"],
+                connection_id=connection.connection_id,
+                meta_data=event.payload,
+            )
+        except StorageError as err:
+            raise RevocationError(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if profile.settings.get_value("endorser.auto_request"):
             try:
-                revo_transaction = await transaction_manager.create_record(
-                    messages_attach=rev_entry_resp["result"],
-                    connection_id=connection.connection_id,
-                    meta_data=event.payload,
+                (
+                    revo_transaction,
+                    revo_transaction_request,
+                ) = await transaction_manager.create_request(
+                    transaction=revo_transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
                 )
-            except StorageError as err:
+            except (StorageError, TransactionManagerError) as err:
                 raise RevocationError(reason=err.roll_up) from err
 
-            # if auto-request, send the request to the endorser
-            if profile.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        revo_transaction,
-                        revo_transaction_request,
-                    ) = await transaction_manager.create_request(
-                        transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise RevocationError(reason=err.roll_up) from err
-
+            async with profile.session() as session:
                 responder = session.inject_or(BaseResponder)
                 if responder:
                     await responder.send(
