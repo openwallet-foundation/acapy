@@ -53,7 +53,12 @@ def step_impl(context, n):
         if agent_params and 0 < len(agent_params):
             in_args.extend(agent_params.split(" "))
         if extra_args and extra_args.get("wallet-type"):
-            in_args.extend(["--wallet-type", extra_args.get("wallet-type"),])
+            in_args.extend(
+                [
+                    "--wallet-type",
+                    extra_args.get("wallet-type"),
+                ]
+            )
 
         context.active_agents[agent_name] = {
             "name": agent_name,

@@ -1356,8 +1356,5 @@ class IndyVdrLedger(BaseLedger):
             request_json, sign=sign, taa_accept=taa_accept, sign_did=sign_did
         )
         # match the format returned by indy sdk
-        sdk_resp = {
-            "op": "REPLY",
-            "result": resp
-        }
+        sdk_resp = {"op": "REPLY", "result": resp}
         return json.dumps(sdk_resp)
