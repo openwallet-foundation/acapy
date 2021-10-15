@@ -23,9 +23,10 @@ class MediationDenyHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Received mediation deny from inactive connection")
 
-        mgr = MediationManager(context.profile)
+        profile = context.profile
+        mgr = MediationManager(profile)
         try:
-            async with context.session() as session:
+            async with profile.session() as session:
                 record = await MediationRecord.retrieve_by_connection_id(
                     session, context.connection_record.connection_id
                 )
