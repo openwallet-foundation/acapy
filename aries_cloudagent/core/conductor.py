@@ -36,6 +36,7 @@ from ..ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
 )
+from ..ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager
 from ..multitenant.manager_provider import MultitenantManagerProvider
@@ -145,12 +146,17 @@ class Conductor:
                     IndyVerifier,
                     ClassProvider(
                         "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                        ledger,
+                        self.root_profile,
                     ),
                 )
             else:
-                raise MultipleLedgerManagerError()
-
+                raise MultipleLedgerManagerError(
+                    "Multiledger is supported only for Indy SDK or Askar "
+                    "[Indy VDR] profile"
+                )
+        context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(self.root_profile)
+        )
 
         # Configure the ledger
         if not await ledger_config(

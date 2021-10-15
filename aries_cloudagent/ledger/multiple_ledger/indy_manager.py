@@ -13,7 +13,6 @@ from ...config.provider import ClassProvider
 from ...indy.verifier import IndyVerifier
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
-from ...wallet.base import BaseWallet
 from ...wallet.crypto import did_is_self_certified
 
 from ..indy import IndySdkLedger, IndySdkLedgerPool
@@ -26,7 +25,7 @@ from ..merkel_validation.trie import SubTrie
 from .base_manager import BaseMultipleLedgerManager, MultipleLedgerManagerError
 
 LOGGER = logging.getLogger(__name__)
- 
+
 
 class MultiIndyLedgerManager(BaseMultipleLedgerManager):
     """Multiple Indy SDK Ledger Manager."""
@@ -36,7 +35,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         profile: Profile,
         production_ledgers: OrderedDict = OrderedDict(),
         non_production_ledgers: OrderedDict = OrderedDict(),
-        cache_ttl: int = 600,
+        cache_ttl: int = None,
     ):
         """Initialize MultiIndyLedgerManager.
 
@@ -97,7 +96,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
             IndyVerifier,
             ClassProvider(
                 "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                ledger,
+                self.profile,
             ),
         )
 
@@ -121,33 +120,31 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         """
         production_ledgers = OrderedDict()
         non_production_ledgers = OrderedDict()
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            for config in ledger_config_list:
-                pool_name = config.get("pool_name", "default")
-                keepalive = int(config.get("keepalive", 5))
-                read_only = bool(config.get("read_only", False))
-                socks_proxy = config.get("socks_proxy")
-                genesis_transactions = config.get("genesis_transactions")
-                cache = self.profile.inject_or(BaseCache)
-                ledger_id = config.get("id")
-                ledger_is_production = config.get("is_production")
-                ledger_pool = IndySdkLedgerPool(
-                    pool_name,
-                    keepalive=keepalive,
-                    cache=cache,
-                    genesis_transactions=genesis_transactions,
-                    read_only=read_only,
-                    socks_proxy=socks_proxy,
-                )
-                ledger_instance = IndySdkLedger(
-                    pool=ledger_pool,
-                    wallet=wallet,
-                )
-                if ledger_is_production:
-                    production_ledgers[ledger_id] = ledger_instance
-                else:
-                    non_production_ledgers[ledger_id] = ledger_instance
+        for config in ledger_config_list:
+            pool_name = config.get("pool_name", "default")
+            keepalive = int(config.get("keepalive", 5))
+            read_only = bool(config.get("read_only", False))
+            socks_proxy = config.get("socks_proxy")
+            genesis_transactions = config.get("genesis_transactions")
+            cache = self.profile.inject_or(BaseCache)
+            ledger_id = config.get("id")
+            ledger_is_production = config.get("is_production")
+            ledger_pool = IndySdkLedgerPool(
+                pool_name,
+                keepalive=keepalive,
+                cache=cache,
+                genesis_transactions=genesis_transactions,
+                read_only=read_only,
+                socks_proxy=socks_proxy,
+            )
+            ledger_instance = IndySdkLedger(
+                pool=ledger_pool,
+                profile=self.profile,
+            )
+            if ledger_is_production:
+                production_ledgers[ledger_id] = ledger_instance
+            else:
+                non_production_ledgers[ledger_id] = ledger_instance
         self.production_ledgers = production_ledgers
         self.non_production_ledgers = non_production_ledgers
 

@@ -2,8 +2,8 @@ from typing import List
 
 from .hasher import TreeHasher
 
-class MerkleVerifier(object):
 
+class MerkleVerifier(object):
     def __init__(self, hasher=TreeHasher()):
         self.hasher = hasher
 
@@ -33,4 +33,3 @@ class MerkleVerifier(object):
 
     def lsb(self, x):
         return x & 1
-

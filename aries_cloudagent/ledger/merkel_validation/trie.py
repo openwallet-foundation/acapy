@@ -75,7 +75,11 @@ class SubTrie:
                             return True
                     # leaf or extension node
                     if await SubTrie._get_node_type(decoded_node) == NODE_TYPE_LEAF:
-                        print(rlp_decode(decoded_node[1])[0].decode("utf-8") + " == " + json.dumps(expected_value))
+                        print(
+                            rlp_decode(decoded_node[1])[0].decode("utf-8")
+                            + " == "
+                            + json.dumps(expected_value)
+                        )
                         if (
                             json.loads(rlp_decode(decoded_node[1])[0].decode("utf-8"))
                         ) == expected_value:

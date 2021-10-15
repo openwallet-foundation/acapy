@@ -35,7 +35,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         profile: Profile,
         production_ledgers: OrderedDict = OrderedDict(),
         non_production_ledgers: OrderedDict = OrderedDict(),
-        cache_ttl: int = 600,
+        cache_ttl: int = None,
     ):
         """Initialize MultiIndyLedgerManager.
 

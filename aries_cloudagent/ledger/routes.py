@@ -18,6 +18,7 @@ from ..storage.error import StorageError
 from ..wallet.error import WalletError, WalletNotFoundError
 
 from .base import BaseLedger, Role as LedgerRole
+from .multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 
@@ -226,16 +227,24 @@ async def get_nym_role(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject_or(BaseLedger)
+
+    did = request.query.get("did")
+    if not did:
+        raise web.HTTPBadRequest(reason="Request query must include DID")
+
+    ledger_id = None
+    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(did)
+    if isinstance(ledger_info, tuple):
+        ledger_id = ledger_info[0]
+        ledger = ledger_info[1]
+    else:
+        ledger = ledger_info
     if not ledger:
         reason = "No Indy ledger available"
         if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
-
-    did = request.query.get("did")
-    if not did:
-        raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with ledger:
         try:
@@ -246,7 +255,10 @@ async def get_nym_role(request: web.BaseRequest):
             raise web.HTTPNotFound(reason=err.roll_up)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up)
-    return web.json_response({"role": role.name})
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "role": role.name})
+    else:
+        return web.json_response({"role": role.name})
 
 
 @docs(tags=["ledger"], summary="Rotate key pair for public DID.")
@@ -290,16 +302,24 @@ async def get_did_verkey(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject_or(BaseLedger)
+
+    did = request.query.get("did")
+    if not did:
+        raise web.HTTPBadRequest(reason="Request query must include DID")
+
+    ledger_id = None
+    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(did)
+    if isinstance(ledger_info, tuple):
+        ledger_id = ledger_info[0]
+        ledger = ledger_info[1]
+    else:
+        ledger = ledger_info
     if not ledger:
         reason = "No ledger available"
         if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
-
-    did = request.query.get("did")
-    if not did:
-        raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with ledger:
         try:
@@ -308,8 +328,10 @@ async def get_did_verkey(request: web.BaseRequest):
                 raise web.HTTPNotFound(reason=f"DID {did} is not on the ledger")
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({"verkey": result})
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "verkey": result})
+    else:
+        return web.json_response({"verkey": result})
 
 
 @docs(
@@ -327,28 +349,37 @@ async def get_did_endpoint(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    ledger = session.inject_or(BaseLedger)
+
+    did = request.query.get("did")
+    if not did:
+        raise web.HTTPBadRequest(reason="Request query must include DID")
+
+    ledger_id = None
+    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(did)
+    if isinstance(ledger_info, tuple):
+        ledger_id = ledger_info[0]
+        ledger = ledger_info[1]
+    else:
+        ledger = ledger_info
     if not ledger:
         reason = "No Indy ledger available"
         if not session.settings.get_value("wallet.type"):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
-
-    did = request.query.get("did")
     endpoint_type = EndpointType.get(
         request.query.get("endpoint_type", EndpointType.ENDPOINT.w3c)
     )
-
-    if not did:
-        raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with ledger:
         try:
             r = await ledger.get_endpoint_for_did(did, endpoint_type)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({"endpoint": r})
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "endpoint": r})
+    else:
+        return web.json_response({"endpoint": r})
 
 
 @docs(tags=["ledger"], summary="Fetch the current transaction author agreement, if any")

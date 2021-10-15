@@ -81,7 +81,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                         )
                         ledger_instance = IndySdkLedger(
                             pool=ledger_pool,
-                            wallet=self._ref,
+                            profile=self.root_profile,
                         )
                         if ledger_is_production:
                             indy_sdk_production_ledgers[ledger_id] = ledger_instance

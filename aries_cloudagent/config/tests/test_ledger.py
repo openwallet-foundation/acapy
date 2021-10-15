@@ -392,7 +392,9 @@ class TestLedgerConfig(AsyncTestCase):
         ) as mock_open:
             mock_open.side_effect = IOError("no read permission")
             with self.assertRaises(test_module.ConfigError):
-                await test_module.load_multiple_genesis_transactions_from_config(settings)
+                await test_module.load_multiple_genesis_transactions_from_config(
+                    settings
+                )
 
     @async_mock.patch("sys.stdout")
     async def test_ledger_accept_taa_not_tty(self, mock_stdout):

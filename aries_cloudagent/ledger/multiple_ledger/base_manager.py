@@ -4,7 +4,7 @@ from typing import TypeVar, List, Optional
 from ...core.error import BaseError
 from ...core.profile import Profile
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class MultipleLedgerManagerError(BaseError):
@@ -42,3 +42,7 @@ class BaseMultipleLedgerManager(ABC):
     @abstractmethod
     async def get_ledger_instance_by_did(self, did: str) -> Optional[T]:
         """Return ledger_instance with DID, if present."""
+
+    def extract_did_from_identifier(self, identifier: str) -> str:
+        """Return did from record identifier (REV_REG_ID, CRED_DEF_ID, SCHEMA_ID)."""
+        return identifier.split(":")[0]

@@ -21,6 +21,9 @@ from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.schema import SchemaSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
+from ...ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 from ...protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
@@ -317,7 +320,14 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     schema_id = request.match_info["schema_id"]
 
-    ledger = context.inject_or(BaseLedger)
+    ledger_id = None
+    ledger_exec_inst = context.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(schema_id)
+    if isinstance(ledger_info, tuple):
+        ledger_id = ledger_info[0]
+        ledger = ledger_info[1]
+    else:
+        ledger = ledger_info
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -329,8 +339,10 @@ async def schemas_get_schema(request: web.BaseRequest):
             schema = await ledger.get_schema(schema_id)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({"schema": schema})
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "schema": schema})
+    else:
+        return web.json_response({"schema": schema})
 
 
 @docs(tags=["schema"], summary="Writes a schema non-secret record to the wallet")
@@ -354,7 +366,14 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
 
     schema_id = request.match_info["schema_id"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger_id = None
+    ledger_exec_inst = context.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(schema_id)
+    if isinstance(ledger_info, tuple):
+        ledger_id = ledger_info[0]
+        ledger = ledger_info[1]
+    else:
+        ledger = ledger_info
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -378,8 +397,10 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
                 await ledger.add_schema_non_secrets_record(schema_id, issuer_did)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({"schema": schema})
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "schema": schema})
+    else:
+        return web.json_response({"schema": schema})
 
 
 async def register(app: web.Application):

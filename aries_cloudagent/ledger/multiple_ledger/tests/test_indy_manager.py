@@ -16,7 +16,7 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
         self.responder = async_mock.CoroutineMock(send=async_mock.CoroutineMock())
         self.context.injector.bind_instance(BaseResponder, self.responder)
         self.production_ledger = OrderedDict()
-        self.non_production_ledger =  OrderedDict()
+        self.non_production_ledger = OrderedDict()
         self.manager = MultiIndyLedgerManager(self.profile)
 
     async def test_get_wallet_profile_returns_from_cache(self):

@@ -123,8 +123,8 @@ class TestMPTStateProofValidation(TestCase):
             expected_value=expected_values[1],
         )
 
+
 class TestMerkleRootHashValidation(TestCase):
-    
     async def test_verify_leaf_inclusion_x(self):
         merkle_verifier = MerkleVerifier(HexTreeHasher())
         leaf_index = 848049
@@ -139,4 +139,3 @@ class TestMerkleRootHashValidation(TestCase):
             tree_size,
             expected_root_hash,
         )
-
