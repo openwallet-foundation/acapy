@@ -1352,6 +1352,12 @@ class IndyVdrLedger(BaseLedger):
         sign_did: DIDInfo = sentinel,
     ) -> str:
         """Write the provided (signed and possibly endorsed) transaction to the ledger."""
-        return await self._submit(
+        resp = await self._submit(
             request_json, sign=sign, taa_accept=taa_accept, sign_did=sign_did
         )
+        # match the format returned by indy sdk
+        sdk_resp = {
+            "op": "REPLY",
+            "result": resp
+        }
+        return json.dumps(sdk_resp)
