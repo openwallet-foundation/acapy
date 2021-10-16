@@ -15,7 +15,7 @@ from ...utils.classloader import ClassLoader, ClassNotFoundError
 from ..indy import IndySdkLedgerPool, IndySdkLedger
 from ..indy_vdr import IndyVdrLedgerPool, IndyVdrLedger
 
-from .indy_manager import MultiLedgerError
+from .base_manager import MultipleLedgerManagerError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
         elif isinstance(self.root_profile, AskarProfile):
             manager_type = "askar-profile"
         else:
-            raise MultiLedgerError(
+            raise MultipleLedgerManagerError(
                 "MultiIndyLedgerManagerProvider expects an IndySDKProfile [indy] "
                 " or AskarProfile [indy_vdr] as root_profile"
             )

@@ -6,8 +6,8 @@ from ....config.injection_context import InjectionContext
 from ....core.in_memory import InMemoryProfile
 from ....indy.sdk.wallet_setup import IndyOpenWallet, IndyWalletConfig
 
+from ..base_manager import MultipleLedgerManagerError
 from ..manager_provider import MultiIndyLedgerManagerProvider
-from ..indy_manager import MultiLedgerError
 
 LEDGER_CONFIG = [
     {
@@ -77,7 +77,7 @@ class TestMultiIndyLedgerManagerProvider(AsyncTestCase):
         provider = MultiIndyLedgerManagerProvider(profile)
         context = InjectionContext()
         context.settings["ledger.ledger_config_list"] = LEDGER_CONFIG
-        with self.assertRaises(MultiLedgerError):
+        with self.assertRaises(MultipleLedgerManagerError):
             provider.provide(context.settings, context.injector)
 
     async def test_provide_indy_manager(self):

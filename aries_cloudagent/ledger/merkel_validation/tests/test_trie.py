@@ -12,7 +12,7 @@ from ..hasher import TreeHasher, HexTreeHasher
 from ..trie import SubTrie
 from ..merkel_verifier import MerkleVerifier
 
-from test_data import (
+from .test_data import (
     GET_REVOC_REG_REPLY_A,
     GET_REVOC_REG_REPLY_B,
     GET_ATTRIB_REPLY,
