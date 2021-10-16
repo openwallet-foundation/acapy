@@ -1,3 +1,4 @@
+"""Utilities for Processing Replies to Domain Read Requests."""
 import base58
 import base64
 import hashlib
@@ -5,10 +6,6 @@ import json
 
 from binascii import hexlify
 from copy import deepcopy
-from rlp import (
-    encode as rlp_encode,
-    decode as rlp_decode,
-)
 
 from .utils import audit_path_length
 from .constants import (
@@ -51,9 +48,7 @@ from .constants import (
     ATTR_NAMES,
     FROM,
     METADATA,
-    ORIGIN,
     REF,
-    IDENTIFIER,
     CRED_DEF_ID,
     REVOC_DEF_TYPE,
     REVOC_DEF_TYPE_ID,
@@ -67,6 +62,7 @@ from .constants import (
 
 
 def _extract_attr_typed_value(txn_data):
+    """Check for 'raw', 'enc', 'hash' in ATTR & GET_ATTR, return it's name and value."""
     existing_keys = [key for key in ALL_ATR_KEYS if key in txn_data]
     if len(existing_keys) == 0:
         raise ValueError(
@@ -81,8 +77,8 @@ def _extract_attr_typed_value(txn_data):
 
 
 def parse_attr_txn(txn_data):
+    """Process txn_data and parse attr_txn based on attr_type."""
     attr_type, attr = _extract_attr_typed_value(txn_data)
-
     if attr_type == "raw":
         data = json.loads(attr)
         re_raw = json.dumps(data)
@@ -95,10 +91,12 @@ def parse_attr_txn(txn_data):
 
 
 def encode_state_value(value, seqNo, txnTime):
+    """Return encoded state value."""
     return json.dumps({LAST_SEQ_NO: seqNo, LAST_UPDATE_TIME: txnTime, VAL: value})
 
 
 def decode_state_value(encoded_value):
+    """Return val, lsn, lut from encoded state value."""
     decoded = json.loads(encoded_value)
     value = decoded.get(VAL)
     last_seq_no = decoded.get(LAST_SEQ_NO)
@@ -107,6 +105,7 @@ def decode_state_value(encoded_value):
 
 
 def hash_of(text) -> str:
+    """Return 256 bit hexadecimal digest of text."""
     if not isinstance(text, (str, bytes)):
         text = json.dumps(text)
     if not isinstance(text, bytes):
@@ -115,6 +114,7 @@ def hash_of(text) -> str:
 
 
 def make_state_path_for_attr(did, attr_name, attr_is_hash=False) -> bytes:
+    """Return state_path for ATTR."""
     nameHash = (
         hashlib.sha256(attr_name.encode()).hexdigest()
         if not attr_is_hash
@@ -126,6 +126,7 @@ def make_state_path_for_attr(did, attr_name, attr_is_hash=False) -> bytes:
 
 
 def prepare_get_attr_for_state(reply):
+    """Return value for state from GET_ATTR."""
     result = reply.get(RESULT)
     attr_type, attr_key = _extract_attr_typed_value(result)
     data = result.get(DATA)
@@ -134,7 +135,7 @@ def prepare_get_attr_for_state(reply):
         result = result.copy()
         data = result.pop(DATA)
         result[attr_type] = data
-        attr_type, attr_key, value = parse_attr_txn(result)
+        attr_type, _, value = parse_attr_txn(result)
         hashed_value = hash_of(value) if value else ""
         seq_no = result.get(SEQ_NO)
         txn_time = result.get(TXN_TIME)
@@ -143,6 +144,7 @@ def prepare_get_attr_for_state(reply):
 
 
 def prepare_attr_for_state(txn, path_only=False):
+    """Return key, value pair for state from ATTR."""
     result = txn.get(RESULT)
     txn_data = result.get(TXN).get(DATA)
     nym = txn_data.get(DEST)
@@ -158,10 +160,12 @@ def prepare_attr_for_state(txn, path_only=False):
 
 
 def make_state_path_for_nym(did) -> bytes:
+    """Return state_path for NYM."""
     return hashlib.sha256(did.encode()).digest()
 
 
 def prepare_nym_for_state(txn):
+    """Return encoded state path from NYM."""
     result = txn.get(RESULT)
     txn_data = result.get(TXN).get(DATA)
     nym = txn_data.get(DEST)
@@ -170,6 +174,7 @@ def prepare_nym_for_state(txn):
 
 
 def prepare_get_nym_for_state(reply):
+    """Return value for state from GET_NYM."""
     result = reply.get(RESULT)
     data = result.get(DATA)
     value = None
@@ -180,6 +185,7 @@ def prepare_get_nym_for_state(reply):
 
 
 def prepare_get_schema_for_state(reply):
+    """Return value for state from GET_SCHEMA."""
     result = reply.get(RESULT)
     value_bytes = None
     attr_names = result.get(DATA).get(ATTR_NAMES)
@@ -192,6 +198,7 @@ def prepare_get_schema_for_state(reply):
 
 
 def make_state_path_for_schema(authors_did, schema_name, schema_version) -> bytes:
+    """Return state_path for SCHEMA."""
     return "{DID}:{MARKER}:{SCHEMA_NAME}:{SCHEMA_VERSION}".format(
         DID=authors_did,
         MARKER=MARKER_SCHEMA,
@@ -201,6 +208,7 @@ def make_state_path_for_schema(authors_did, schema_name, schema_version) -> byte
 
 
 def prepare_schema_for_state(txn, path_only=False):
+    """Return key-value pair for state from SCHEMA."""
     result = txn.get(RESULT)
     origin = result.get(TXN).get(METADATA).get(FROM)
     schema_name = result.get(TXN).get(DATA).get(DATA).get(NAME)
@@ -216,6 +224,7 @@ def prepare_schema_for_state(txn, path_only=False):
 
 
 def prepare_get_claim_def_for_state(reply):
+    """Return value for state from GET_CLAIM_DEF."""
     result = reply.get(RESULT)
     schema_seq_no = result.get(REF)
     if schema_seq_no is None:
@@ -230,6 +239,7 @@ def prepare_get_claim_def_for_state(reply):
 
 
 def make_state_path_for_claim_def(authors_did, schema_seq_no, signature_type, tag):
+    """Return state_path for CLAIM DEF."""
     return "{DID}:{MARKER}:{SIGNATURE_TYPE}:{SCHEMA_SEQ_NO}:{TAG}".format(
         DID=authors_did,
         MARKER=MARKER_CLAIM_DEF,
@@ -240,6 +250,7 @@ def make_state_path_for_claim_def(authors_did, schema_seq_no, signature_type, ta
 
 
 def prepare_claim_def_for_state(txn, path_only=False):
+    """Return key-value pair for state from CLAIM_DEF."""
     result = txn.get(RESULT)
     origin = result.get(TXN).get(METADATA).get(FROM)
     schema_seq_no = result.get(TXN).get(DATA).get(REF)
@@ -260,6 +271,7 @@ def prepare_claim_def_for_state(txn, path_only=False):
 
 
 def prepare_get_revoc_def_for_state(reply):
+    """Return value for state from GET_REVOC_DEF."""
     result = reply.get(RESULT)
     seq_no = result.get(SEQ_NO)
     txn_time = result.get(TXN_TIME)
@@ -270,6 +282,7 @@ def prepare_get_revoc_def_for_state(reply):
 def make_state_path_for_revoc_def(
     authors_did, cred_def_id, revoc_def_type, revoc_def_tag
 ) -> bytes:
+    """Return state_path for REVOC_DEF."""
     return "{DID}:{MARKER}:{CRED_DEF_ID}:{REVOC_DEF_TYPE}:{REVOC_DEF_TAG}".format(
         DID=authors_did,
         MARKER=MARKER_REVOC_DEF,
@@ -280,6 +293,7 @@ def make_state_path_for_revoc_def(
 
 
 def prepare_revoc_def_for_state(txn, path_only=False):
+    """Return key-value pair for state from REVOC_DEF."""
     result = txn.get(RESULT)
     author_did = result.get(TXN).get(METADATA).get(FROM, None)
     txn_data = result.get(TXN).get(DATA)
@@ -298,6 +312,7 @@ def prepare_revoc_def_for_state(txn, path_only=False):
 
 
 def prepare_get_revoc_reg_entry_for_state(reply):
+    """Return value for state from GET_REVOC_REG_ENTRY."""
     result = reply.get(RESULT)
     seq_no = result.get(SEQ_NO)
     txn_time = result.get(TXN_TIME)
@@ -306,14 +321,15 @@ def prepare_get_revoc_reg_entry_for_state(reply):
 
 
 def make_state_path_for_revoc_reg_entry(revoc_reg_def_id) -> bytes:
+    """Return state_path for REVOC_REG_ENTRY."""
     return "{MARKER}:{REVOC_REG_DEF_ID}".format(
         MARKER=MARKER_REVOC_REG_ENTRY, REVOC_REG_DEF_ID=revoc_reg_def_id
     ).encode()
 
 
 def prepare_get_revoc_reg_delta_for_state(reply):
+    """Return value for state from GET_REVOC_REG_DELTA."""
     result = reply.get(RESULT)
-
     if STATE_PROOF_FROM in result.get(DATA):
         accum_to_seq_no = result.get(DATA).get(VALUE).get(ACCUM_TO).get(SEQ_NO)
         accum_to_txn_time = result.get(DATA).get(VALUE).get(ACCUM_TO).get(TXN_TIME)
@@ -340,6 +356,7 @@ def prepare_get_revoc_reg_delta_for_state(reply):
 
 
 def prepare_revoc_reg_entry_for_state(txn, path_only=False):
+    """Return key-value pair for state from REVOC_REG_ENTRY."""
     result = txn.get(RESULT)
     txn_data = result.get(TXN).get(DATA)
     revoc_reg_def_id = txn_data.get(REVOC_DEF_TYPE_ID)
@@ -356,6 +373,7 @@ def prepare_revoc_reg_entry_for_state(txn, path_only=False):
 
 
 def prepare_get_revoc_reg_entry_accum_for_state(reply):
+    """Return value for state from GET_REVOC_REG_ENTRY_ACCUM."""
     result = reply.get(RESULT)
     seq_no = result.get(SEQ_NO)
     txn_time = result.get(TXN_TIME)
@@ -364,12 +382,14 @@ def prepare_get_revoc_reg_entry_accum_for_state(reply):
 
 
 def make_state_path_for_revoc_reg_entry_accum(revoc_reg_def_id) -> bytes:
+    """Return state_path for REVOC_REG_ENTRY_ACCUM."""
     return "{MARKER}:{REVOC_REG_DEF_ID}".format(
         MARKER=MARKER_REVOC_REG_ENTRY_ACCUM, REVOC_REG_DEF_ID=revoc_reg_def_id
     ).encode()
 
 
 def prepare_revoc_reg_entry_accum_for_state(txn):
+    """Return key-value pair for state from REVOC_REG_ENTRY_ACCUM."""
     result = txn.get(RESULT)
     txn_data = result.get(TXN).get(DATA)
     revoc_reg_def_id = txn_data.get(REVOC_DEF_TYPE_ID)
@@ -384,6 +404,7 @@ def prepare_revoc_reg_entry_accum_for_state(txn):
 
 
 def extract_params_write_request(data):
+    """Return tree_size, leaf_index, audit_path, expected_root_hash from reply."""
     tree_size = data.get(RESULT).get(TXN_METADATA).get(SEQ_NO)
     leaf_index = tree_size - 1
     audit_path = data.get(RESULT).get(AUDIT_PATH)
@@ -400,6 +421,7 @@ def extract_params_write_request(data):
 
 
 def get_proof_nodes(reply):
+    """Return proof_nodes from reply."""
     if reply.get(RESULT).get(
         "type"
     ) == GET_REVOC_REG_DELTA and STATE_PROOF_FROM in reply.get(RESULT).get(DATA):
@@ -416,11 +438,13 @@ def get_proof_nodes(reply):
 
 
 def get_root_hash(reply):
+    """Return base58 decoded root_hash from reply."""
     b58_encoded_root_hash = reply.get(RESULT).get(STATE_PROOF).get("root_hash")
     return base58.b58decode(b58_encoded_root_hash)
 
 
 def prepare_for_state_read(reply):
+    """Return state value from read requests reply."""
     request_type = reply.get(RESULT).get("type")
     if request_type == GET_ATTR:
         return prepare_get_attr_for_state(reply=reply)
@@ -440,11 +464,12 @@ def prepare_for_state_read(reply):
         else:
             return prepare_get_revoc_reg_entry_accum_for_state(reply=reply)
     raise ValueError(
-        "Cannot make state key for request of type {}".format(request_type)
+        "Cannot make state value for request of type {}".format(request_type)
     )
 
 
 def prepare_for_state_write(reply):
+    """Return state key, value pair from write requests reply."""
     request_type = reply.get(RESULT).get(TXN).get("type")
     if request_type == NYM:
         return prepare_nym_for_state(txn=reply)
@@ -459,5 +484,5 @@ def prepare_for_state_write(reply):
     if request_type == REVOC_REG_ENTRY:
         return prepare_revoc_reg_entry_for_state(txn=reply)
     raise ValueError(
-        "Cannot make state key for request of type {}".format(request_type)
+        "Cannot make state key-value pair for request of type {}".format(request_type)
     )

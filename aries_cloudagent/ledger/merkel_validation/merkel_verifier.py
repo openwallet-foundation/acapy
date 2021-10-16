@@ -1,10 +1,12 @@
-from typing import List
-
+"""Verify Leaf Inclusion."""
 from .hasher import TreeHasher
 
 
-class MerkleVerifier(object):
+class MerkleVerifier:
+    """Utility class for verifying leaf inclusion."""
+
     def __init__(self, hasher=TreeHasher()):
+        """Initialize MerkleVerifier."""
         self.hasher = hasher
 
     async def calculate_root_hash(
@@ -14,6 +16,18 @@ class MerkleVerifier(object):
         audit_path,
         tree_size,
     ):
+        """Calculate root hash, used to verify Merkel AuditPath.
+
+        Reference: section 2.1.1 of RFC6962.
+
+        Args:
+            leaf: Leaf data.
+            leaf_index: Index of the leaf in the tree.
+            audit_path: A list of SHA-256 hashes representing the Merkle audit
+            path.
+            tree_size: tree size
+
+        """
         leaf_hash = self.hasher.hash_leaf(leaf)
         if leaf_index >= tree_size or leaf_index < 0:
             return False
@@ -32,4 +46,5 @@ class MerkleVerifier(object):
         return r
 
     def lsb(self, x):
+        """Return Least Significant Bits."""
         return x & 1

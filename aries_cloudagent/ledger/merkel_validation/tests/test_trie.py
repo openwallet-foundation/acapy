@@ -132,10 +132,12 @@ class TestMerkleRootHashValidation(TestCase):
         expected_root_hash = (
             b"78316a05c9bcf14a3a4548f5b854a9adfcd46a4c034401b3ce7eb7ac2f1d0ecb"
         )
-        assert await merkle_verifier.verify_leaf_inclusion(
-            RAW_HEX_LEAF,
-            leaf_index,
-            SHA256_AUDIT_PATH[:],
-            tree_size,
-            expected_root_hash,
+        assert (
+            await merkle_verifier.calculate_root_hash(
+                RAW_HEX_LEAF,
+                leaf_index,
+                SHA256_AUDIT_PATH[:],
+                tree_size,
+            )
+            == expected_root_hash
         )

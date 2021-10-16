@@ -1,4 +1,4 @@
-"""."""
+"""Validates State Proof."""
 import json
 
 from collections import (
@@ -25,7 +25,7 @@ from .constants import (
 
 
 class SubTrie:
-    """."""
+    """Utility class for SubTrie and State Proof validation."""
 
     def __init__(self, root_hash=None):
         """MPT SubTrie dictionary like interface."""
@@ -58,13 +58,13 @@ class SubTrie:
 
     @staticmethod
     async def verify_spv_proof(expected_value, proof_nodes, serialized=True):
-        """."""
+        """Verify State Proof."""
         try:
             if serialized:
                 proof_nodes = rlp_decode(proof_nodes)
             new_trie = await SubTrie.get_new_trie_with_proof_nodes(proof_nodes)
             expected_value = json.loads(expected_value)
-            for hash_key, encoded_node in list(new_trie._subtrie.items()):
+            for encoded_node in list(new_trie._subtrie.values()):
                 try:
                     decoded_node = rlp_decode(encoded_node)
                     # branch node
@@ -75,11 +75,6 @@ class SubTrie:
                             return True
                     # leaf or extension node
                     if await SubTrie._get_node_type(decoded_node) == NODE_TYPE_LEAF:
-                        print(
-                            rlp_decode(decoded_node[1])[0].decode("utf-8")
-                            + " == "
-                            + json.dumps(expected_value)
-                        )
                         if (
                             json.loads(rlp_decode(decoded_node[1])[0].decode("utf-8"))
                         ) == expected_value:
@@ -87,15 +82,12 @@ class SubTrie:
                 except (DecodingError):
                     continue
             return False
-        except Exception as ex:
-            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-            message = template.format(type(ex).__name__, ex.args)
-            print(message)
+        except Exception:
             return False
 
     @staticmethod
     async def get_new_trie_with_proof_nodes(proof_nodes):
-        """."""
+        """Return SubTrie created from proof_nodes."""
         new_trie = SubTrie()
         for node in proof_nodes:
             R = rlp_encode(node)
