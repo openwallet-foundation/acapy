@@ -1,7 +1,6 @@
 """Endorse Transaction handling admin routes."""
 
 import json
-from typing import Optional
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -21,7 +20,6 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
-from ....wallet.base import BaseWallet
 
 from .manager import TransactionManager, TransactionManagerError
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
@@ -359,18 +357,6 @@ async def refuse_transaction_response(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
 
-    async with context.profile.session() as session:
-        wallet: Optional[BaseWallet] = session.inject_or(BaseWallet)
-
-        if not wallet:
-            raise web.HTTPForbidden(reason="No wallet available")
-        refuser_did_info = await wallet.get_public_did()
-        if not refuser_did_info:
-            raise web.HTTPForbidden(
-                reason="Transaction cannot be refused as there is no Public DID in wallet"
-            )
-        refuser_did = refuser_did_info.did
-
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
@@ -407,7 +393,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
         ) = await transaction_mgr.create_refuse_response(
             transaction=transaction,
             state=TransactionRecord.STATE_TRANSACTION_REFUSED,
-            refuser_did=refuser_did,
+            refuser_did=None,
         )
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

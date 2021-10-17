@@ -35,7 +35,8 @@ VC_RECORD = VCRecord(
 
 class TestHolderRoutes(AsyncTestCase):
     def setUp(self):
-        self.context = AdminRequestContext.test_context()
+        self.session_inject = {}
+        self.context = AdminRequestContext.test_context(self.session_inject)
 
         self.request_dict = {"context": self.context}
         self.request = async_mock.MagicMock(
@@ -195,7 +196,7 @@ class TestHolderRoutes(AsyncTestCase):
                 get_credentials=async_mock.CoroutineMock(
                     return_value=[{"hello": "world"}]
                 )
-            ),
+            )
         )
 
         with async_mock.patch.object(

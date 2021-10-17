@@ -33,18 +33,7 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 
 class TestTransactionManager(AsyncTestCase):
     async def setUp(self):
-        self.wallet = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "DJGEjaMunDtFtBVrn1qJMT",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
-                )
-            )
-        )
-        self.session = InMemoryProfile.test_session(bind={BaseWallet: self.wallet})
+        self.session = InMemoryProfile.test_session()
         self.profile = self.session.profile
         self.context = self.profile.context
         setattr(
@@ -132,9 +121,21 @@ class TestTransactionManager(AsyncTestCase):
         )
         self.session.context.injector.bind_instance(BaseLedger, self.ledger)
 
-        self.manager = TransactionManager(self.session)
+        self.wallet = async_mock.create_autospec(BaseWallet)
+        self.wallet.get_public_did = async_mock.CoroutineMock(
+            return_value=DIDInfo(
+                "DJGEjaMunDtFtBVrn1qJMT",
+                "verkey",
+                {"meta": "data"},
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
+            )
+        )
+        self.session.context.injector.bind_instance(BaseWallet, self.wallet)
 
-        assert self.manager.session
+        self.manager = TransactionManager(self.profile)
+
+        assert self.manager.profile
 
     async def test_transaction_jobs(self):
         author = TransactionJob.TRANSACTION_AUTHOR

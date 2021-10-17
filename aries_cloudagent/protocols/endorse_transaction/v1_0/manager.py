@@ -50,6 +50,17 @@ class TransactionManager:
         self._profile = profile
         self._logger = logging.getLogger(__name__)
 
+    @property
+    def profile(self) -> Profile:
+        """
+        Accessor for the current Profile.
+
+        Returns:
+            The Profile for this transaction manager
+
+        """
+        return self._profile
+
     async def create_record(
         self, messages_attach: str, connection_id: str, meta_data: dict = None
     ):
@@ -220,10 +231,8 @@ class TransactionManager:
 
         async with self._profile.session() as session:
             wallet: BaseWallet = session.inject_or(BaseWallet)
-
             if not wallet:
                 raise StorageError("No wallet available")
-
             endorser_did_info = await wallet.get_public_did()
             if not endorser_did_info:
                 raise StorageError(
@@ -357,7 +366,9 @@ class TransactionManager:
             async with ledger:
                 try:
                     ledger_response_json = await shield(
-                        ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
+                        ledger.txn_submit(
+                            ledger_transaction, sign=False, taa_accept=False
+                        )
                     )
                 except (IndyIssuerError, LedgerError) as err:
                     raise TransactionManagerError(err.roll_up) from err
@@ -692,7 +703,6 @@ class TransactionManager:
                 )
         except StorageNotFoundError as err:
             raise TransactionManagerError(err.roll_up) from err
-
 
     async def endorsed_txn_post_processing(
         self,

@@ -266,9 +266,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         return web.json_response({"credential_definition_id": cred_def_id})
 
     else:
-        meta_data["processing"][
-            "auto_create_rev_reg"
-        ] = context.settings.get_value("endorser.auto_create_rev_reg")
+        meta_data["processing"]["auto_create_rev_reg"] = context.settings.get_value(
+            "endorser.auto_create_rev_reg"
+        )
 
         transaction_mgr = TransactionManager(context.profile)
         try:
