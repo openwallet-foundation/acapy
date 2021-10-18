@@ -11,13 +11,11 @@ from aiohttp_apispec import (
     request_schema,
     match_info_schema,
 )
-from asyncio import shield
 from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.issuer import IndyIssuerError
-from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -291,20 +289,6 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-    session = await context.session()
-
-    wallet: BaseWallet = session.inject_or(BaseWallet)
-
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
-
-    endorser_did_info = await wallet.get_public_did()
-    if not endorser_did_info:
-        raise web.HTTPForbidden(
-            reason="Transaction cannot be endorsed as there is no Public DID in wallet"
-        )
-    endorser_did = endorser_did_info.did
-    endorser_verkey = endorser_did_info.verkey
 
     transaction_id = request.match_info["tran_id"]
     try:
@@ -336,23 +320,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
         )
 
     transaction_mgr = TransactionManager(session)
-    transaction_json = transaction.messages_attach[0]["data"]["json"]
-
-    ledger = context.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
-
-    async with ledger:
-        try:
-            endorsed_transaction_request = await shield(
-                ledger.txn_endorse(transaction_json)
-            )
-        except (IndyIssuerError, LedgerError) as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
+    print("Call TransactionManager.create_endorse_response() ...")
     try:
         (
             transaction,
@@ -360,12 +328,13 @@ async def endorse_transaction_response(request: web.BaseRequest):
         ) = await transaction_mgr.create_endorse_response(
             transaction=transaction,
             state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
-            endorser_did=endorser_did,
-            endorser_verkey=endorser_verkey,
-            endorsed_msg=endorsed_transaction_request,
-            signature=endorsed_transaction_request,
         )
+        print("Endorsed.")
+    except (IndyIssuerError, LedgerError) as err:
+        print("error:", err)
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
     except (StorageError, TransactionManagerError) as err:
+        print("error:", err)
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(

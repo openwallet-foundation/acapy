@@ -20,7 +20,10 @@ from ...indy.issuer import IndyIssuer
 from ...indy.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
-from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
+from ...protocols.endorse_transaction.v1_0.manager import (
+    TransactionManager,
+    TransactionManagerError,
+)
 from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
@@ -148,6 +151,8 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     """
     context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
+
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
@@ -162,8 +167,30 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
 
-    if not write_ledger:
+    # check if we need to endorse
+    if context.settings.get_value("endorser.author"):
+        # authors cannot write to the ledger
+        write_ledger = False
+        create_transaction_for_endorser = True
+        if not connection_id:
+            # author has not provided a connection id, so determine which to use
+            endorser_alias = context.settings.get_value("endorser.endorser_alias")
+            if not endorser_alias:
+                raise web.HTTPBadRequest(reason="No endorser conenction specified")
+            try:
+                async with context.session() as session:
+                    connection_records = await ConnRecord.retrieve_by_alias(
+                        session, endorser_alias
+                    )
+                    connection_id = connection_records[0].connection_id
+            except StorageNotFoundError as err:
+                raise web.HTTPNotFound(reason=err.roll_up) from err
+            except BaseModelError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+            except Exception as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    if not write_ledger:
         try:
             async with context.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
@@ -226,9 +253,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 cred_def_id,
                 max_cred_num=rev_reg_size,
             )
-
         except RevocationNotSupportedError as e:
             raise web.HTTPBadRequest(reason=e.message) from e
+
         await shield(registry_record.generate_registry(profile))
         try:
             await registry_record.set_tails_file_public_uri(
@@ -279,6 +306,20 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if context.settings.get_value("endorser.auto_request"):
+            try:
+                transaction, transaction_request = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+            await outbound_handler(transaction_request, connection_id=connection_id)
 
         return web.json_response({"txn": transaction.serialize()})
 

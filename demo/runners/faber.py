@@ -44,6 +44,7 @@ class FaberAgent(AriesAgent):
         http_port: int,
         admin_port: int,
         no_auto: bool = False,
+        endorser_role: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -52,6 +53,7 @@ class FaberAgent(AriesAgent):
             admin_port,
             prefix="Faber",
             no_auto=no_auto,
+            endorser_role=endorser_role,
             **kwargs,
         )
         self.connection_id = None
@@ -392,18 +394,19 @@ async def main(args):
             wallet_type=faber_agent.wallet_type,
             seed=faber_agent.seed,
             aip=faber_agent.aip,
+            endorser_role=faber_agent.endorser_role,
         )
 
+        faber_schema_name = "degree schema"
+        faber_schema_attrs = [
+            "name",
+            "date",
+            "degree",
+            "birthdate_dateint",
+            "timestamp",
+        ]
         if faber_agent.cred_type == CRED_FORMAT_INDY:
             faber_agent.public_did = True
-            faber_schema_name = "degree schema"
-            faber_schema_attrs = [
-                "name",
-                "date",
-                "degree",
-                "birthdate_dateint",
-                "timestamp",
-            ]
             await faber_agent.initialize(
                 the_agent=agent,
                 schema_name=faber_schema_name,
@@ -428,6 +431,8 @@ async def main(args):
         )
         if faber_agent.revocation:
             options += "    (5) Revoke Credential\n" "    (6) Publish Revocations\n"
+        if faber_agent.endorser_role and faber_agent.endorser_role == "author":
+            options += "    (D) Set Endorser's DID\n"
         if faber_agent.multitenant:
             options += "    (W) Create and/or Enable Wallet\n"
         options += "    (T) Toggle tracing on credential/proof exchange\n"
@@ -441,6 +446,13 @@ async def main(args):
 
             if option is None or option in "xX":
                 break
+
+            elif option in "dD" and faber_agent.endorser_role:
+                endorser_did = await prompt("Enter Endorser's DID: ")
+                await faber_agent.agent.admin_POST(
+                    f"/transactions/{faber_agent.agent.connection_id}/set-endorser-info",
+                    params={"endorser_did": endorser_did},
+                )
 
             elif option in "wW" and faber_agent.multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
@@ -459,6 +471,7 @@ async def main(args):
                         target_wallet_name,
                         public_did=True,
                         mediator_agent=faber_agent.mediator_agent,
+                        cred_type=faber_agent.cred_type,
                     )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets
