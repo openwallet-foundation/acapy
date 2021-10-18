@@ -826,13 +826,13 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_cx_rec = async_mock.MagicMock()
 
             exception_message = "ex"
-            mock_cred_mgr.return_value.create_offer.side_effect = LinkedDataProofException(
-                exception_message
+            mock_cred_mgr.return_value.create_offer.side_effect = (
+                LinkedDataProofException(exception_message)
             )
             with self.assertRaises(test_module.web.HTTPBadRequest) as error:
                 await test_module.credential_exchange_send_bound_offer(self.request)
 
-            assert(exception_message in str(error.exception))
+            assert exception_message in str(error.exception)
 
     async def test_credential_exchange_send_bound_offer_bad_cred_ex_id(self):
         self.request.json = async_mock.CoroutineMock(return_value={})
