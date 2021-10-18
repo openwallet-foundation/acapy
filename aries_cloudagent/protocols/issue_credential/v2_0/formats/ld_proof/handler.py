@@ -403,8 +403,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         document_loader = self.profile.inject(DocumentLoader)
         missing_properties = get_properties_without_context(
-            detail.credential.serialize(),
-            document_loader
+            detail.credential.serialize(), document_loader
         )
 
         if len(missing_properties) > 0:

@@ -409,9 +409,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             "_assert_can_issue_with_id_and_proof_type",
             async_mock.CoroutineMock(),
         ) as mock_can_issue, patch.object(
-            test_module,
-            "get_properties_without_context",
-            return_value=[]
+            test_module, "get_properties_without_context", return_value=[]
         ):
             (cred_format, attachment) = await self.handler.create_offer(
                 self.cred_proposal
@@ -450,11 +448,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
             async_mock.CoroutineMock(),
-        ), patch.object(
-            test_module,
-            "get_properties_without_context",
-            return_value=[]
-        ):
+        ), patch.object(test_module, "get_properties_without_context", return_value=[]):
             (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
         # assert BBS url added to context
@@ -468,7 +462,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         )
 
     async def test_create_offer_x_wrong_attributes(self):
-        missing_properties = ['foo']
+        missing_properties = ["foo"]
         with async_mock.patch.object(
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
@@ -476,16 +470,18 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         ), patch.object(
             test_module,
             "get_properties_without_context",
-            return_value=missing_properties
-        ), self.assertRaises(LinkedDataProofException) as context:
+            return_value=missing_properties,
+        ), self.assertRaises(
+            LinkedDataProofException
+        ) as context:
             await self.handler.create_offer(self.cred_proposal)
-        
+
         assert (
             f"{len(missing_properties)} attributes dropped. "
-            f"Provide definitions in context to correct. {missing_properties}" in str(
-                context.exception
-            )
+            f"Provide definitions in context to correct. {missing_properties}"
+            in str(context.exception)
         )
+
     async def test_receive_offer(self):
         cred_ex_record = async_mock.MagicMock()
         cred_offer_message = async_mock.MagicMock()
