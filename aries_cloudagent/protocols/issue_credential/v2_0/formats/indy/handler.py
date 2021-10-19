@@ -15,6 +15,8 @@ from ......indy.models.cred_request import IndyCredRequestSchema
 from ......indy.models.cred_abstract import IndyCredAbstractSchema
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    GET_SCHEMA,
     IndyLedgerRequestsExecutor,
 )
 from ......messaging.credential_definitions.util import (
@@ -199,7 +201,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             return json.loads(offer_json)
 
         ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(cred_def_id)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            cred_def_id,
+            txn_record_type=GET_CRED_DEF,
+        )
         if isinstance(ledger_info, tuple):
             ledger = ledger_info[1]
         else:
@@ -259,7 +264,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         async def _create():
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(cred_def_id)
+            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+                cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
             if isinstance(ledger_info, tuple):
                 ledger = ledger_info[1]
             else:
@@ -326,7 +334,10 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         rev_reg_id = None
         rev_reg = None
         ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(schema_id)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            schema_id,
+            txn_record_type=GET_SCHEMA,
+        )
         if isinstance(ledger_info, tuple):
             ledger = ledger_info[1]
         else:
@@ -481,7 +492,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         rev_reg_def = None
         ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
         ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-            cred["cred_def_id"]
+            cred["cred_def_id"],
+            txn_record_type=GET_CRED_DEF,
         )
         if isinstance(ledger_info, tuple):
             ledger = ledger_info[1]

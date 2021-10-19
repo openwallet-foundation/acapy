@@ -8,6 +8,7 @@ from marshmallow import EXCLUDE, fields
 
 from ...core.profile import Profile
 from ...ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
 )
 from ...messaging.models.base import BaseModel, BaseModelSchema
@@ -352,7 +353,8 @@ class IndyPresPreview(BaseModel):
                 if profile:
                     ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
                     ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                        cd_id
+                        cd_id,
+                        txn_record_type=GET_CRED_DEF,
                     )
                     if isinstance(ledger_info, tuple):
                         ledger = ledger_info[1]
@@ -412,7 +414,8 @@ class IndyPresPreview(BaseModel):
                 if profile:
                     ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
                     ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                        cd_id
+                        cd_id,
+                        txn_record_type=GET_CRED_DEF,
                     )
                     if isinstance(ledger_info, tuple):
                         ledger = ledger_info[1]

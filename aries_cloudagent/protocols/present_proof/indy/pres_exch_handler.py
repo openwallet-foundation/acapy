@@ -10,6 +10,8 @@ from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.xform import indy_proof_req2non_revoc_intervals
 from ....ledger.multiple_ledger.ledger_requests_executor import (
+    GET_SCHEMA,
+    GET_REVOC_REG_DELTA,
     IndyLedgerRequestsExecutor,
 )
 from ....revocation.models.revocation_registry import RevocationRegistry
@@ -92,7 +94,10 @@ class IndyPresExchHandler:
         for credential in credentials.values():
             schema_id = credential["schema_id"]
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(schema_id)
+            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+                schema_id,
+                txn_record_type=GET_SCHEMA,
+            )
             if isinstance(ledger_info, tuple):
                 ledger = ledger_info[1]
             else:
@@ -125,7 +130,10 @@ class IndyPresExchHandler:
                 continue
             rev_reg_id = credentials[credential_id]["rev_reg_id"]
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(rev_reg_id)
+            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+                rev_reg_id,
+                txn_record_type=GET_REVOC_REG_DELTA,
+            )
             if isinstance(ledger_info, tuple):
                 ledger = ledger_info[1]
             else:
@@ -220,7 +228,8 @@ class IndyPresExchHandler:
             cred_def_ids.append(identifier["cred_def_id"])
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
             ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                identifier["schema_id"]
+                identifier["schema_id"],
+                txn_record_type=GET_SCHEMA,
             )
             if isinstance(ledger_info, tuple):
                 ledger = ledger_info[1]

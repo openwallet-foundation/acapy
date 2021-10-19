@@ -12,6 +12,8 @@ from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ....ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    GET_SCHEMA,
     IndyLedgerRequestsExecutor,
 )
 from ....messaging.credential_definitions.util import (
@@ -262,7 +264,10 @@ class CredentialManager:
 
         # vet attributes
         ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(cred_def_id)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            cred_def_id,
+            txn_record_type=GET_CRED_DEF,
+        )
         if isinstance(ledger_info, tuple):
             ledger = ledger_info[1]
         else:
@@ -400,7 +405,8 @@ class CredentialManager:
         async def _create():
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
             ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                credential_definition_id
+                credential_definition_id,
+                txn_record_type=GET_CRED_DEF,
             )
             if isinstance(ledger_info, tuple):
                 ledger = ledger_info[1]
@@ -546,7 +552,10 @@ class CredentialManager:
             cred_offer_ser = cred_ex_record._credential_offer.ser
             cred_req_ser = cred_ex_record._credential_request.ser
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(schema_id)
+            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+                schema_id,
+                txn_record_type=GET_SCHEMA,
+            )
             if isinstance(ledger_info, tuple):
                 ledger = ledger_info[1]
             else:
@@ -762,7 +771,8 @@ class CredentialManager:
         revoc_reg_def = None
         ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
         ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-            raw_cred_serde.de.cred_def_id
+            raw_cred_serde.de.cred_def_id,
+            txn_record_type=GET_CRED_DEF,
         )
         if isinstance(ledger_info, tuple):
             ledger = ledger_info[1]

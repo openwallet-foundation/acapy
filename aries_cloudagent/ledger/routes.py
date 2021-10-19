@@ -22,7 +22,12 @@ from .multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
 )
-from .multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
+from .multiple_ledger.ledger_requests_executor import (
+    GET_NYM_ROLE,
+    GET_KEY_FOR_DID,
+    GET_ENDPOINT_FOR_DID,
+    IndyLedgerRequestsExecutor,
+)
 from .multiple_ledger.ledger_config_schema import (
     LedgerConfigListSchema,
     MultipleLedgerModuleResultSchema,
@@ -243,7 +248,10 @@ async def get_nym_role(request: web.BaseRequest):
 
     ledger_id = None
     ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(did)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        did,
+        txn_record_type=GET_NYM_ROLE,
+    )
     if isinstance(ledger_info, tuple):
         ledger_id = ledger_info[0]
         ledger = ledger_info[1]
@@ -318,7 +326,10 @@ async def get_did_verkey(request: web.BaseRequest):
 
     ledger_id = None
     ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(did)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        did,
+        txn_record_type=GET_KEY_FOR_DID,
+    )
     if isinstance(ledger_info, tuple):
         ledger_id = ledger_info[0]
         ledger = ledger_info[1]
@@ -365,7 +376,10 @@ async def get_did_endpoint(request: web.BaseRequest):
 
     ledger_id = None
     ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(did)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        did,
+        txn_record_type=GET_ENDPOINT_FOR_DID,
+    )
     if isinstance(ledger_info, tuple):
         ledger_id = ledger_info[0]
         ledger = ledger_info[1]
@@ -514,6 +528,7 @@ async def reset_write_ledger(request: web.BaseRequest):
 
     Returns:
         Default write ledger identifier
+
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()

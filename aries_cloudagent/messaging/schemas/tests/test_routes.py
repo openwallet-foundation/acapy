@@ -4,6 +4,9 @@ from asynctest import mock as async_mock
 from ....admin.request_context import AdminRequestContext
 from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
+from ....ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 from ....storage.base import BaseStorage
 
 from .. import routes as test_module
@@ -280,18 +283,27 @@ class TestSchemaRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({"schema_ids": [SCHEMA_ID]})
 
     async def test_get_schema(self):
+        self.session_inject[IndyLedgerRequestsExecutor] = async_mock.MagicMock(
+            get_ledger_for_identifier=async_mock.CoroutineMock(
+                return_value=("test_ledger_id", self.ledger)
+            )
+        )
         self.request.match_info = {"schema_id": SCHEMA_ID}
-
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.schemas_get_schema(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
-                {"schema": {"schema": "def", "signed_txn": "..."}}
+                {
+                    "ledger_id": "test_ledger_id",
+                    "schema": {"schema": "def", "signed_txn": "..."},
+                }
             )
 
     async def test_get_schema_on_seq_no(self):
+        self.session_inject[IndyLedgerRequestsExecutor] = async_mock.MagicMock(
+            get_ledger_for_identifier=async_mock.CoroutineMock(return_value=self.ledger)
+        )
         self.request.match_info = {"schema_id": "12345"}
-
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.schemas_get_schema(self.request)
             assert result == mock_response.return_value
@@ -300,6 +312,9 @@ class TestSchemaRoutes(AsyncTestCase):
             )
 
     async def test_get_schema_no_ledger(self):
+        self.session_inject[IndyLedgerRequestsExecutor] = async_mock.MagicMock(
+            get_ledger_for_identifier=async_mock.CoroutineMock(return_value=None)
+        )
         self.request.match_info = {"schema_id": SCHEMA_ID}
         self.ledger.get_schema = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")
@@ -310,6 +325,9 @@ class TestSchemaRoutes(AsyncTestCase):
             await test_module.schemas_get_schema(self.request)
 
     async def test_get_schema_x_ledger(self):
+        self.session_inject[IndyLedgerRequestsExecutor] = async_mock.MagicMock(
+            get_ledger_for_identifier=async_mock.CoroutineMock(return_value=self.ledger)
+        )
         self.request.match_info = {"schema_id": SCHEMA_ID}
         self.ledger.get_schema = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")

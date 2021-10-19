@@ -69,7 +69,6 @@ class TestArgParse(AsyncTestCase):
             [
                 "--genesis-transactions-list",
                 "./aries_cloudagent/config/tests/test-ledger-args.yaml",
-                "--allow-ledger-selection",
             ]
         )
 

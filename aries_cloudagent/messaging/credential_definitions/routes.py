@@ -21,6 +21,7 @@ from ...indy.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
 )
 from ...protocols.endorse_transaction.v1_0.manager import (
@@ -378,12 +379,15 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     """
     context: AdminRequestContext = request["context"]
-
+    session = await context.session()
     cred_def_id = request.match_info["cred_def_id"]
 
     ledger_id = None
-    ledger_exec_inst = context.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(cred_def_id)
+    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        cred_def_id,
+        txn_record_type=GET_CRED_DEF,
+    )
     if isinstance(ledger_info, tuple):
         ledger_id = ledger_info[0]
         ledger = ledger_info[1]
@@ -431,8 +435,11 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
     cred_def_id = request.match_info["cred_def_id"]
 
     ledger_id = None
-    ledger_exec_inst = context.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(cred_def_id)
+    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        cred_def_id,
+        txn_record_type=GET_CRED_DEF,
+    )
     if isinstance(ledger_info, tuple):
         ledger_id = ledger_info[0]
         ledger = ledger_info[1]

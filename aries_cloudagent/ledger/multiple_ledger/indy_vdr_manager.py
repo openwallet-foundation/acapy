@@ -150,7 +150,10 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         ledger_id: str,
         did: str,
     ) -> Optional[Tuple[str, IndyVdrLedger, bool]]:
-        """Call _get_ledger_by_did and return value or None.
+        """Build and submit GET_NYM request and process response.
+
+        Successful response return tuple with ledger_id, IndyVdrLedger instance
+        and is_self_certified bool flag. Unsuccessful response return None.
 
         Args:
             ledger_id: provided ledger_id to retrieve IndyVdrLedger instance
@@ -198,7 +201,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
             )
             return None
 
-    def get_ledger_by_did_callable(
+    def _get_ledger_by_did_callable(
         self,
         ledger_id: str,
         did: str,
@@ -208,11 +211,11 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         return loop.run_until_complete(self._get_ledger_by_did(ledger_id, did))
 
     async def lookup_did_in_configured_ledgers(
-        self, did: str
+        self, did: str, cache_did: bool = True
     ) -> Tuple[str, IndyVdrLedger]:
         """Lookup given DID in configured ledgers in parallel."""
         cache_key = f"did_ledger_id_resolver::{did}"
-        if self.cache and await self.cache.get(cache_key):
+        if cache_did and self.cache and await self.cache.get(cache_key):
             cached_ledger_id = await self.cache.get(cache_key)
             if cached_ledger_id in self.production_ledgers:
                 return (cached_ledger_id, self.production_ledgers.get(cached_ledger_id))
@@ -222,7 +225,10 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                     self.non_production_ledgers.get(cached_ledger_id),
                 )
             else:
-                raise MultipleLedgerManagerError()
+                raise MultipleLedgerManagerError(
+                    f"cached ledger_id {cached_ledger_id} not found in either "
+                    "production_ledgers or non_production_ledgers"
+                )
         applicable_prod_ledgers = {"self_certified": {}, "non_self_certified": {}}
         applicable_non_prod_ledgers = {"self_certified": {}, "non_self_certified": {}}
         ledger_ids = list(self.production_ledgers.keys()) + list(
@@ -230,7 +236,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         )
         coro_futures = {
             self.executor.submit(
-                self.get_ledger_by_did_callable, ledger_id, did
+                self._get_ledger_by_did_callable, ledger_id, did
             ): ledger_id
             for ledger_id in ledger_ids
         }
@@ -283,7 +289,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
             successful_ledger_inst = list(
                 applicable_prod_ledgers.get("self_certified").values()
             )[0]
-            if self.cache:
+            if cache_did and self.cache:
                 await self.cache.set(
                     cache_key, successful_ledger_inst[0], self.cache_ttl
                 )
@@ -292,7 +298,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
             successful_ledger_inst = list(
                 applicable_non_prod_ledgers.get("self_certified").values()
             )[0]
-            if self.cache:
+            if cache_did and self.cache:
                 await self.cache.set(
                     cache_key, successful_ledger_inst[0], self.cache_ttl
                 )
@@ -301,7 +307,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
             successful_ledger_inst = list(
                 applicable_prod_ledgers.get("non_self_certified").values()
             )[0]
-            if self.cache:
+            if cache_did and self.cache:
                 await self.cache.set(
                     cache_key, successful_ledger_inst[0], self.cache_ttl
                 )
@@ -310,7 +316,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
             successful_ledger_inst = list(
                 applicable_non_prod_ledgers.get("non_self_certified").values()
             )[0]
-            if self.cache:
+            if cache_did and self.cache:
                 await self.cache.set(
                     cache_key, successful_ledger_inst[0], self.cache_ttl
                 )

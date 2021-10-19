@@ -7,7 +7,10 @@ from time import time
 from typing import Mapping
 
 from ..core.profile import Profile
-from ..ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
+from ..ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    IndyLedgerRequestsExecutor,
+)
 from ..messaging.util import canon, encode
 
 from .models.xform import indy_proof_req2non_revoc_intervals
@@ -100,7 +103,8 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                 cred_def_id = ident["cred_def_id"]
                 ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
                 ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                    cred_def_id
+                    cred_def_id,
+                    txn_record_type=GET_CRED_DEF,
                 )
                 if isinstance(ledger_info, tuple):
                     ledger = ledger_info[1]

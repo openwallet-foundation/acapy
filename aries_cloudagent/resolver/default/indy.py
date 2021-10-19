@@ -13,6 +13,7 @@ from ...core.profile import Profile
 from ...ledger.endpoint_type import EndpointType
 from ...ledger.error import LedgerError
 from ...ledger.multiple_ledger.ledger_requests_executor import (
+    GET_KEY_FOR_DID,
     IndyLedgerRequestsExecutor,
 )
 from ...messaging.valid import IndyDID
@@ -44,7 +45,10 @@ class IndyDIDResolver(BaseDIDResolver):
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""
         ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(did)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            did,
+            txn_record_type=GET_KEY_FOR_DID,
+        )
         if isinstance(ledger_info, tuple):
             ledger = ledger_info[1]
         else:

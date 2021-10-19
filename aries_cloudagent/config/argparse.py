@@ -713,7 +713,8 @@ class LedgerGroup(ArgumentGroup):
             metavar="<genesis-transactions-list>",
             env_var="ACAPY_GENESIS_TRANSACTIONS_LIST",
             help=(
-                "Load YAML configuration for connecting to multiple HyperLedger Indy ledgers. "
+                "Load YAML configuration for connecting to multiple"
+                " HyperLedger Indy ledgers."
             ),
         )
 

@@ -2,9 +2,11 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from aries_cloudagent.indy.sdk.profile import IndySdkProfile
 
+from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
 from ....core.in_memory import InMemoryProfile
 from ....indy.sdk.wallet_setup import IndyOpenWallet, IndyWalletConfig
+from ....ledger.indy import IndySdkLedgerPool
 
 from ..base_manager import MultipleLedgerManagerError
 from ..manager_provider import MultiIndyLedgerManagerProvider
@@ -72,7 +74,7 @@ LEDGER_CONFIG = [
 
 
 class TestMultiIndyLedgerManagerProvider(AsyncTestCase):
-    async def test_provide_indy_vdr_manager(self):
+    async def test_provide_invalid_manager(self):
         profile = InMemoryProfile.test_profile()
         provider = MultiIndyLedgerManagerProvider(profile)
         context = InjectionContext()
@@ -81,7 +83,8 @@ class TestMultiIndyLedgerManagerProvider(AsyncTestCase):
             provider.provide(context.settings, context.injector)
 
     async def test_provide_indy_manager(self):
-        context = InjectionContext(settings={"ledger.read_only": True})
+        context = InjectionContext()
+        context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
         profile = IndySdkProfile(
             IndyOpenWallet(
                 config=IndyWalletConfig({"name": "test-profile"}),
@@ -91,11 +94,28 @@ class TestMultiIndyLedgerManagerProvider(AsyncTestCase):
             ),
             context,
         )
-        mock_wallet = async_mock.MagicMock()
-        provider = MultiIndyLedgerManagerProvider(profile, mock_wallet)
-        context = InjectionContext()
+        provider = MultiIndyLedgerManagerProvider(profile)
         context.settings["ledger.ledger_config_list"] = LEDGER_CONFIG
         self.assertEqual(
             provider.provide(context.settings, context.injector).__class__.__name__,
             "MultiIndyLedgerManager",
+        )
+
+    async def test_provide_askar_manager(self):
+        context = InjectionContext()
+        profile = await AskarProfileManager().provision(
+            context,
+            {
+                # "auto_recreate": True,
+                # "auto_remove": True,
+                "name": ":memory:",
+                "key": await AskarProfileManager.generate_store_key(),
+                "key_derivation_method": "RAW",  # much faster than using argon-hashed keys
+            },
+        )
+        provider = MultiIndyLedgerManagerProvider(profile)
+        context.settings["ledger.ledger_config_list"] = LEDGER_CONFIG
+        self.assertEqual(
+            provider.provide(context.settings, context.injector).__class__.__name__,
+            "MultiIndyVDRLedgerManager",
         )

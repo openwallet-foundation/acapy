@@ -63,7 +63,10 @@ class TestCrypto(TestCase):
         assert test_module.did_is_self_certified(did, verkey)
         verkey = "~PKAYz8Ev4yoQgr2LaMAWFx"
         assert test_module.did_is_self_certified(did, verkey)
-        did = "V4SGRU86Z58d6TV7PBUe6f"
+        verkey = "ABUF7uxYTxZ6qYdZ4G9e1Gi"
+        assert not test_module.did_is_self_certified(did, verkey)
+        did = "6YnVN5Qdb6mqimTIQcQmSXrHXKdTEdRn5YHZReezUTvta"
+        verkey = "6QSduYdf8Bi6t8PfNm5vNomGWDtXhmMmTRzaciudBXYJ"
         assert not test_module.did_is_self_certified(did, verkey)
 
     def test_decode_pack_message_outer_x(self):

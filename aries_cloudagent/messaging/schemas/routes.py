@@ -22,6 +22,7 @@ from ...indy.models.schema import SchemaSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...ledger.multiple_ledger.ledger_requests_executor import (
+    GET_SCHEMA,
     IndyLedgerRequestsExecutor,
 )
 from ...protocols.endorse_transaction.v1_0.manager import (
@@ -317,12 +318,15 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
+    session = await context.session()
     schema_id = request.match_info["schema_id"]
 
     ledger_id = None
-    ledger_exec_inst = context.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(schema_id)
+    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        schema_id,
+        txn_record_type=GET_SCHEMA,
+    )
     if isinstance(ledger_info, tuple):
         ledger_id = ledger_info[0]
         ledger = ledger_info[1]
@@ -367,8 +371,11 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
     schema_id = request.match_info["schema_id"]
 
     ledger_id = None
-    ledger_exec_inst = context.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(schema_id)
+    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        schema_id,
+        txn_record_type=GET_SCHEMA,
+    )
     if isinstance(ledger_info, tuple):
         ledger_id = ledger_info[0]
         ledger = ledger_info[1]

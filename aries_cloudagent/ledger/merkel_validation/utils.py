@@ -1,3 +1,4 @@
+"""Merkel Validation Utils."""
 from binascii import hexlify
 import hashlib
 
