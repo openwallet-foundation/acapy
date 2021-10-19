@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
@@ -43,9 +44,13 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 }
             )
         )
-        self.ledger.get_indy_storage = async_mock.MagicMock(
-            return_value=async_mock.MagicMock(add_record=async_mock.CoroutineMock())
+        future = asyncio.Future()
+        future.set_result(
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(add_record=async_mock.CoroutineMock())
+            )
         )
+        self.ledger.get_indy_storage = future
         self.ledger.get_schema = async_mock.CoroutineMock(
             return_value={"id": SCHEMA_ID, "...": "..."}
         )
