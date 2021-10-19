@@ -294,7 +294,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             "epoch": str(int(time())),
         }
         record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
-        storage = self.get_indy_storage()
+        storage = await self.get_indy_storage()
         await storage.add_record(record)
 
     async def add_cred_def_non_secrets_record(
@@ -325,7 +325,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         record = StorageRecord(
             CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
         )
-        storage = self.get_indy_storage()
+        storage = await self.get_indy_storage()
         await storage.add_record(record)
 
 

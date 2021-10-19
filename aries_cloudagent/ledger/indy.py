@@ -18,7 +18,8 @@ from ..config.base import BaseInjector, BaseProvider, BaseSettings
 from ..core.profile import Profile
 from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..indy.sdk.error import IndyErrorHandler
-from ..storage.base import BaseStorage, StorageRecord
+from ..storage.base import StorageRecord
+from ..storage.indy import IndySdkStorage
 from ..utils import sentinel
 from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
@@ -1083,6 +1084,12 @@ class IndySdkLedger(BaseLedger):
             "taa_required": taa_required,
         }
 
+    async def get_indy_storage(self) -> IndySdkStorage:
+        """Get an IndySdkStorage instance for the current wallet."""
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            return IndySdkStorage(wallet.opened)
+
     def taa_rough_timestamp(self) -> int:
         """Get a timestamp accurate to the day.
 
@@ -1108,10 +1115,10 @@ class IndySdkLedger(BaseLedger):
             json.dumps(acceptance),
             {"pool_name": self.pool.name},
         )
+        storage = await self.get_indy_storage()
+        await storage.add_record(record)
         async with self.profile.session() as session:
-            storage = session.inject(BaseStorage)
             wallet = session.inject(BaseWallet)
-            await storage.add_record(record)
             if self.pool.cache:
                 cache_key = (
                     TAA_ACCEPTED_RECORD_TYPE
@@ -1139,7 +1146,7 @@ class IndySdkLedger(BaseLedger):
             )
             acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
             if not acceptance:
-                storage = session.inject(BaseStorage)
+                storage = await self.get_indy_storage()
                 tag_filter = {"pool_name": self.pool.name}
                 found = await storage.find_all_records(
                     TAA_ACCEPTED_RECORD_TYPE, tag_filter
