@@ -196,7 +196,7 @@ class TestHolderRoutes(AsyncTestCase):
                 get_credentials=async_mock.CoroutineMock(
                     return_value=[{"hello": "world"}]
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(

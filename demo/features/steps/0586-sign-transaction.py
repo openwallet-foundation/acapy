@@ -481,7 +481,6 @@ def step_impl(context, holder_name, issuer_name):
         "/credentials",
         params={},
     )
-    print("cred_list:", cred_list)
     assert len(cred_list["results"]) == 1
     cred_id = cred_list["results"][0]["referent"]
 

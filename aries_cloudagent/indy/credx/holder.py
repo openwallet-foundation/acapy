@@ -252,7 +252,25 @@ class IndyCredxHolder(IndyHolder):
 
         """
 
-        pass  # Not used anywhere currently
+        # used in unit/integration tests
+        if 0 < len(wql):
+            raise IndyHolderError(
+                "credx holder crt_credentials() wql support not implemented"
+            )
+
+        ret = []
+        try:
+            async with self._profile.session() as session:
+                for cred in await session.handle.fetch_all(CATEGORY_CREDENTIAL):
+                    credential = Credential.load(cred.raw_value)
+                    # TODO need to determine the credential_id (or referent) for each returned credential
+                    cred_id = "TODO"
+                    cred_dict = _make_cred_info(cred_id, credential)
+                    ret.append(cred_dict)
+        except AskarError as err:
+            raise IndyHolderError("Error retrieving credential") from err
+
+        return ret
 
     async def get_credentials_for_presentation_request_by_referent(
         self,

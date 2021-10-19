@@ -29,7 +29,9 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
         self.profile_injector = self.profile.context.injector
         self.profile_session = InMemoryProfile.test_session()
         setattr(
-            self.profile, "session", async_mock.MagicMock(return_value=self.profile_session)
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile_session),
         )
 
         self.ledger = async_mock.create_autospec(BaseLedger)
@@ -930,7 +932,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         key_type=KeyType.ED25519,
                     )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
