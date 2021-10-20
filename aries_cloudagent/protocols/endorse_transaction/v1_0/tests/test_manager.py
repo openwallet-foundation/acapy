@@ -5,10 +5,12 @@ from aiohttp import web
 from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
 
+from .....admin.request_context import AdminRequestContext
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
+from .....core.profile import Profile
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....wallet.base import BaseWallet
@@ -113,22 +115,20 @@ class TestTransactionManager(AsyncTestCase):
             return_value=self.test_endorsed_message
         )
 
-        self.wallet = async_mock.create_autospec(BaseWallet)
-        self.wallet.get_public_did = async_mock.CoroutineMock(
-            return_value=DIDInfo(
-                "DJGEjaMunDtFtBVrn1qJMT",
-                "verkey",
-                {"meta": "data"},
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
-            )
-        )
+        self.context = AdminRequestContext.test_context()
+        self.profile = self.context.profile
+        injector = self.profile.context.injector
+        injector.bind_instance(BaseLedger, self.ledger)
 
-        self.profile = InMemoryProfile.test_profile(
-            bind={BaseLedger: self.ledger, BaseWallet: self.wallet}
-        )
-        self.context = self.profile.context
-        setattr(self.context, "profile", self.profile)
+        async with self.profile.session() as session:
+            self.wallet: BaseWallet = session.inject_or(BaseWallet)
+            await self.wallet.create_local_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+                did="DJGEjaMunDtFtBVrn1qJMT",
+                metadata={"meta": "data"},
+            )
+            await self.wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
 
         self.manager = TransactionManager(self.profile)
 
