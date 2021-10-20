@@ -230,7 +230,7 @@ class TransactionManager:
         transaction_json = transaction.messages_attach[0]["data"]["json"]
 
         async with self._profile.session() as session:
-            wallet: BaseWallet = session.inject_or(BaseWallet)
+            wallet: BaseWallet = self._profile.context.inject_or(BaseWallet)
             if not wallet:
                 raise StorageError("No wallet available")
             endorser_did_info = await wallet.get_public_did()

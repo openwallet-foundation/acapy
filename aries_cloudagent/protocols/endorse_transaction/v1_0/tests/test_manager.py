@@ -33,13 +33,6 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 
 class TestTransactionManager(AsyncTestCase):
     async def setUp(self):
-        self.session = InMemoryProfile.test_session()
-        self.profile = self.session.profile
-        self.context = self.profile.context
-        setattr(
-            self.profile, "session", async_mock.MagicMock(return_value=self.session)
-        )
-
         sigs = [
             (
                 "2iNTeFy44WK9zpsPfcwfu489aHWroYh3v8mme9tPyNKn"
@@ -119,7 +112,6 @@ class TestTransactionManager(AsyncTestCase):
         self.ledger.txn_endorse = async_mock.CoroutineMock(
             return_value=self.test_endorsed_message
         )
-        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
 
         self.wallet = async_mock.create_autospec(BaseWallet)
         self.wallet.get_public_did = async_mock.CoroutineMock(
@@ -131,7 +123,12 @@ class TestTransactionManager(AsyncTestCase):
                 key_type=KeyType.ED25519,
             )
         )
-        self.session.context.injector.bind_instance(BaseWallet, self.wallet)
+
+        self.profile = InMemoryProfile.test_profile(
+            bind={BaseLedger: self.ledger, BaseWallet: self.wallet}
+        )
+        self.context = self.profile.context
+        setattr(self.context, "profile", self.profile)
 
         self.manager = TransactionManager(self.profile)
 
@@ -169,13 +166,13 @@ class TestTransactionManager(AsyncTestCase):
             )
 
     async def test_txn_rec_retrieve_by_connection_and_thread_caching(self):
-        async with self.session.profile.session() as sesn:
+        async with self.profile.session() as sesn:
             sesn.context.injector.bind_instance(BaseCache, InMemoryCache())
             txn_rec = TransactionRecord(
                 connection_id="123",
                 thread_id="456",
             )
-            await txn_rec.save(self.session)
+            await txn_rec.save(sesn)
             await TransactionRecord.retrieve_by_connection_and_thread(
                 session=sesn,
                 connection_id="123",
