@@ -320,7 +320,6 @@ async def endorse_transaction_response(request: web.BaseRequest):
         )
 
     transaction_mgr = TransactionManager(session)
-    print("Call TransactionManager.create_endorse_response() ...")
     try:
         (
             transaction,
@@ -329,12 +328,9 @@ async def endorse_transaction_response(request: web.BaseRequest):
             transaction=transaction,
             state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
         )
-        print("Endorsed.")
     except (IndyIssuerError, LedgerError) as err:
-        print("error:", err)
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     except (StorageError, TransactionManagerError) as err:
-        print("error:", err)
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     await outbound_handler(

@@ -66,6 +66,7 @@ class TransactionRecord(BaseExchangeRecord):
         connection_id: str = None,
         state: str = None,
         endorser_write_txn: bool = None,
+        meta_data: dict = {"context": {}, "processing": {}},
         **kwargs,
     ):
         """Initialize a new TransactionRecord."""
@@ -81,6 +82,7 @@ class TransactionRecord(BaseExchangeRecord):
         self.thread_id = thread_id
         self.connection_id = connection_id
         self.endorser_write_txn = endorser_write_txn
+        self.meta_data = meta_data
 
     @property
     def transaction_id(self) -> str:
@@ -103,6 +105,7 @@ class TransactionRecord(BaseExchangeRecord):
                 "connection_id",
                 "state",
                 "endorser_write_txn",
+                "meta_data",
             )
         }
 
@@ -209,6 +212,13 @@ class TransactionRecordSchema(BaseExchangeSchema):
                 },
             }
         ),
+        required=False,
+    )
+    meta_data = fields.Dict(
+        example={
+            "context": {"param1": "param1_value", "param2": "param2_value"},
+            "post_process": [{"topic": "topic_value", "other": "other_value"}],
+        },
         required=False,
     )
     thread_id = fields.Str(
