@@ -154,6 +154,7 @@ class RevocationManager:
                         issuer_rr_rec.revoc_reg_id,
                         issuer_rr_rec.tails_local_path,
                         crids,
+                        transaction=txn,
                     )
                     issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
                     await issuer_rr_rec.send_entry(self._profile)
