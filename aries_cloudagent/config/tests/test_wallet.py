@@ -37,8 +37,8 @@ class TestWalletConfig(AsyncTestCase):
             transaction=async_mock.CoroutineMock(return_value=self.session),
         )
 
-        def _inject(cls, required=True):
-            return self.injector.inject(cls, required=required)
+        def _inject(cls):
+            return self.injector.inject(cls)
 
         self.session.inject = _inject
         self.context = InjectionContext()
@@ -238,3 +238,31 @@ class TestWalletConfig(AsyncTestCase):
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
             await test_module.wallet_config(self.context, provision=True)
+
+    async def test_wallet_config_for_key_derivation_method(self):
+        self.context.update_settings(
+            {
+                "wallet.key_derivation_method": "derivation_method",
+            }
+        )
+        mock_wallet = async_mock.MagicMock(
+            get_public_did=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            ),
+            set_public_did=async_mock.CoroutineMock(),
+            create_local_did=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
+            ),
+        )
+        self.injector.bind_instance(BaseWallet, mock_wallet)
+
+        with async_mock.patch.object(
+            MockManager, "provision", async_mock.CoroutineMock()
+        ) as mock_mgr_provision:
+            mock_mgr_provision.return_value = self.profile
+
+            await test_module.wallet_config(self.context, provision=True)
+
+            mock_mgr_provision.assert_called_once_with(
+                self.context, {"key_derivation_method": "derivation_method"}
+            )

@@ -426,7 +426,7 @@ class PresentationManager:
             presentation_exchange_record: presentation exchange record with thread id
 
         """
-        responder = self._profile.inject(BaseResponder, required=False)
+        responder = self._profile.inject_or(BaseResponder)
 
         if responder:
             presentation_ack_message = PresentationAck()

@@ -2,11 +2,11 @@
 
 from typing import List
 
-from .validation_result import DocumentVerificationResult
 from .document_loader import DocumentLoaderMethod
-from .ProofSet import ProofSet
+from .proof_set import ProofSet
 from .purposes import ProofPurpose
 from .suites import LinkedDataProof
+from .validation_result import DocumentVerificationResult
 
 
 async def sign(

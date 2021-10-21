@@ -17,8 +17,6 @@ from ..cache.base import BaseCache
 from ..config.base import BaseInjector, BaseProvider, BaseSettings
 from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..indy.sdk.error import IndyErrorHandler
-from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ..messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
 from ..utils import sentinel
@@ -58,7 +56,7 @@ class IndySdkLedgerPoolProvider(BaseProvider):
             LOGGER.warning("Note: setting ledger to read-only mode")
 
         genesis_transactions = settings.get("ledger.genesis_transactions")
-        cache = injector.inject(BaseCache, required=False)
+        cache = injector.inject_or(BaseCache)
 
         ledger_pool = IndySdkLedgerPool(
             pool_name,
@@ -502,20 +500,6 @@ class IndySdkLedger(BaseLedger):
                 else:
                     raise
 
-            # TODO refactor this code (duplicated in endorser transaction manager)
-            # Add non-secrets record
-            schema_id_parts = schema_id.split(":")
-            schema_tags = {
-                "schema_id": schema_id,
-                "schema_issuer_did": public_info.did,
-                "schema_name": schema_id_parts[-2],
-                "schema_version": schema_id_parts[-1],
-                "epoch": str(int(time())),
-            }
-            record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
-            storage = self.get_indy_storage()
-            await storage.add_record(record)
-
         return schema_id, schema_def
 
     async def check_existing_schema(
@@ -742,24 +726,6 @@ class IndySdkLedger(BaseLedger):
             )
             if not write_ledger:
                 return (credential_definition_id, {"signed_txn": resp}, novel)
-
-            # TODO refactor this code (duplicated in endorser transaction manager)
-            # Add non-secrets record
-            storage = self.get_indy_storage()
-            schema_id_parts = schema_id.split(":")
-            cred_def_tags = {
-                "schema_id": schema_id,
-                "schema_issuer_did": schema_id_parts[0],
-                "schema_name": schema_id_parts[-2],
-                "schema_version": schema_id_parts[-1],
-                "issuer_did": public_info.did,
-                "cred_def_id": credential_definition_id,
-                "epoch": str(int(time())),
-            }
-            record = StorageRecord(
-                CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
-            )
-            await storage.add_record(record)
 
         return (credential_definition_id, json.loads(credential_definition_json), novel)
 
@@ -1052,7 +1018,7 @@ class IndySdkLedger(BaseLedger):
         txn_data_data = txn_resp_data["txn"]["data"]
         role_token = Role.get(txn_data_data.get("role")).token()
         alias = txn_data_data.get("alias")
-        await self.register_nym(public_did, verkey, role_token, alias)
+        await self.register_nym(public_did, verkey, alias=alias, role=role_token)
 
         # update wallet
         await self.wallet.rotate_did_keypair_apply(public_did)

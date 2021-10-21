@@ -5,6 +5,7 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from ....config.injection_context import InjectionContext
 from ....connections.models.connection_target import ConnectionTarget
 from ....core.in_memory import InMemoryProfile
+from ...wire_format import BaseWireFormat
 
 from .. import manager as test_module
 from ..manager import (
@@ -316,3 +317,40 @@ class TestOutboundTransportManager(AsyncTestCase):
         ) as mock_process:
             mock_logger_enabled.return_value = True  # cover debug logging
             mgr.finished_deliver(mock_queued, mock_completed_x)
+
+    async def test_should_encode_outbound_message(self):
+        context = InjectionContext()
+        base_wire_format = BaseWireFormat()
+        encoded_msg = "encoded_message"
+        base_wire_format.encode_message = async_mock.CoroutineMock(
+            return_value=encoded_msg
+        )
+        context.injector.bind_instance(BaseWireFormat, base_wire_format)
+        profile = InMemoryProfile.test_session().profile
+        profile.session = async_mock.CoroutineMock(return_value=async_mock.MagicMock())
+        outbound = async_mock.MagicMock(payload="payload", enc_payload=None)
+        target = async_mock.MagicMock()
+
+        mgr = OutboundTransportManager(context)
+        result = await mgr.encode_outbound_message(profile, outbound, target)
+
+        assert result.payload == encoded_msg
+        base_wire_format.encode_message.assert_called_once_with(
+            await profile.session(),
+            outbound.payload,
+            target.recipient_keys,
+            target.routing_keys,
+            target.sender_key,
+        )
+
+    async def test_should_not_encode_already_packed_message(self):
+        context = InjectionContext()
+        profile = InMemoryProfile.test_session().profile
+        enc_payload = "enc_payload"
+        outbound = async_mock.MagicMock(enc_payload=enc_payload)
+        target = async_mock.MagicMock()
+
+        mgr = OutboundTransportManager(context)
+        result = await mgr.encode_outbound_message(profile, outbound, target)
+
+        assert result.payload == enc_payload

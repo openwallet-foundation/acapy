@@ -30,10 +30,10 @@ DOC_SIGNED = {
     "image": "https://manu.sporny.org/images/manu.png",
     "proof": {
         "proofPurpose": "assertionMethod",
-        "created": "2019-12-11T03:50:55",
+        "created": "2019-12-11T03:50:55+00:00",
         "type": "Ed25519Signature2018",
         "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..Q6amIrxGiSbM7Ce6DxlfwLCjVcYyclas8fMxaecspXFUcFW9DAAxKzgHx93FWktnlZjM_biitkMgZdStgvivAQ",
+        "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..FX3xSAN3BxpHnclqtiCKsHa3f6O1pi_fulEoCNs2YQplYBU7lYSdnIm1BoPo_YCw8AS25pOQo1ufW05mXJlxAw",
     },
 }
 
@@ -131,10 +131,10 @@ DOC_VERIFIED = DocumentVerificationResult(
         "image": "https://manu.sporny.org/images/manu.png",
         "proof": {
             "proofPurpose": "assertionMethod",
-            "created": "2019-12-11T03:50:55",
+            "created": "2019-12-11T03:50:55+00:00",
             "type": "Ed25519Signature2018",
             "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..Q6amIrxGiSbM7Ce6DxlfwLCjVcYyclas8fMxaecspXFUcFW9DAAxKzgHx93FWktnlZjM_biitkMgZdStgvivAQ",
+            "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..FX3xSAN3BxpHnclqtiCKsHa3f6O1pi_fulEoCNs2YQplYBU7lYSdnIm1BoPo_YCw8AS25pOQo1ufW05mXJlxAw",
         },
     },
     results=[
@@ -151,10 +151,10 @@ DOC_VERIFIED = DocumentVerificationResult(
                     },
                 ],
                 "proofPurpose": "assertionMethod",
-                "created": "2019-12-11T03:50:55",
+                "created": "2019-12-11T03:50:55+00:00",
                 "type": "Ed25519Signature2018",
                 "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-                "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..Q6amIrxGiSbM7Ce6DxlfwLCjVcYyclas8fMxaecspXFUcFW9DAAxKzgHx93FWktnlZjM_biitkMgZdStgvivAQ",
+                "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..FX3xSAN3BxpHnclqtiCKsHa3f6O1pi_fulEoCNs2YQplYBU7lYSdnIm1BoPo_YCw8AS25pOQo1ufW05mXJlxAw",
             },
             purpose_result=PurposeResult(
                 valid=True,

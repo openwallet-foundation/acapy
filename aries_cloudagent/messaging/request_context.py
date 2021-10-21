@@ -192,9 +192,7 @@ class RequestContext:
         self,
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
-        *,
-        required: bool = True
-    ) -> Optional[InjectType]:
+    ) -> InjectType:
         """
         Get the provided instance of a given class identifier.
 
@@ -206,7 +204,27 @@ class RequestContext:
             An instance of the base class, or None
 
         """
-        return self._context.inject(base_cls, settings, required=required)
+        return self._context.inject(base_cls, settings)
+
+    def inject_or(
+        self,
+        base_cls: Type[InjectType],
+        settings: Mapping[str, object] = None,
+        default: Optional[InjectType] = None,
+    ) -> Optional[InjectType]:
+        """
+        Get the provided instance of a given class identifier or default if not found.
+
+        Args:
+            base_cls: The base class to retrieve an instance of
+            settings: An optional dict providing configuration to the provider
+            default: default return value if no instance is found
+
+        Returns:
+            An instance of the base class, or None
+
+        """
+        return self._context.inject_or(base_cls, settings, default)
 
     def update_settings(self, settings: Mapping[str, object]):
         """Update the scope with additional settings."""

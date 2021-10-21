@@ -18,6 +18,7 @@ Subpackages
    aries_cloudagent.protocols.coordinate_mediation
    aries_cloudagent.protocols.didexchange
    aries_cloudagent.protocols.discovery
+   aries_cloudagent.protocols.endorse_transaction
    aries_cloudagent.protocols.introduction
    aries_cloudagent.protocols.issue_credential
    aries_cloudagent.protocols.out_of_band

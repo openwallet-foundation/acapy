@@ -1,5 +1,6 @@
 """Handler for incoming invitation messages."""
 
+from typing import Optional
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -22,8 +23,8 @@ class InvitationHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for invitation message")
 
-        service: BaseIntroductionService = context.inject(
-            BaseIntroductionService, required=False
+        service: Optional[BaseIntroductionService] = context.inject_or(
+            BaseIntroductionService
         )
         if service:
             await service.return_invitation(

@@ -227,11 +227,13 @@ class IndyProofRequestSchema(BaseModelSchema):
     )
     requested_attributes = fields.Dict(
         description="Requested attribute specifications of proof request",
+        required=True,
         keys=fields.Str(decription="Attribute referent", example="0_legalname_uuid"),
         values=fields.Nested(IndyProofReqAttrSpecSchema()),
     )
     requested_predicates = fields.Dict(
         description="Requested predicate specifications of proof request",
+        required=True,
         keys=fields.Str(description="Predicate referent", example="0_age_GE_uuid"),
         values=fields.Nested(IndyProofReqPredSpecSchema()),
     )

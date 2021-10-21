@@ -38,6 +38,14 @@ aries\_cloudagent.messaging.base\_handler module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.messaging.base\_message module
+------------------------------------------------
+
+.. automodule:: aries_cloudagent.messaging.base_message
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.messaging.error module
 ----------------------------------------
 

@@ -57,7 +57,7 @@ class Dispatcher:
 
     async def setup(self):
         """Perform async instance setup."""
-        self.collector = self.profile.inject(Collector, required=False)
+        self.collector = self.profile.inject_or(Collector)
         max_active = int(os.getenv("DISPATCHER_MAX_ACTIVE", 50))
         self.task_queue = TaskQueue(
             max_active=max_active, timed=bool(self.collector), trace_fn=self.log_task
@@ -173,12 +173,11 @@ class Dispatcher:
 
         context.injector.bind_instance(BaseResponder, responder)
 
-        async with profile.session(context._context) as session:
-            connection_mgr = ConnectionManager(session)
-            connection = await connection_mgr.find_inbound_connection(
-                inbound_message.receipt
-            )
-            del connection_mgr
+        connection_mgr = ConnectionManager(profile)
+        connection = await connection_mgr.find_inbound_connection(
+            inbound_message.receipt
+        )
+        del connection_mgr
         if connection:
             inbound_message.connection_id = connection.connection_id
 

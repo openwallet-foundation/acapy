@@ -30,8 +30,8 @@ class InvitationRequestHandler(BaseHandler):
 
         if context.settings.get("auto_accept_intro_invitation_requests"):
             # Create a new connection invitation and send it back in an IntroInvitation
-            session = await context.session()
-            connection_mgr = ConnectionManager(session)
+            profile = context.profile
+            connection_mgr = ConnectionManager(profile)
             _connection, invite = await connection_mgr.create_invitation()
             response = IntroInvitation(
                 invitation=invite, message=context.message.message

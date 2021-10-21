@@ -28,7 +28,7 @@ class DocumentLoader:
         """
         self.profile = profile
         self.resolver = profile.inject(DIDResolver)
-        self.cache = profile.inject(BaseCache, required=False)
+        self.cache = profile.inject_or(BaseCache)
         self.requests_loader = requests.requests_document_loader()
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self.cache_ttl = cache_ttl
@@ -112,4 +112,4 @@ class DocumentLoader:
 
 DocumentLoaderMethod = Callable[[str, dict], dict]
 
-__all__ = [DocumentLoaderMethod, DocumentLoader]
+__all__ = ["DocumentLoaderMethod", "DocumentLoader"]

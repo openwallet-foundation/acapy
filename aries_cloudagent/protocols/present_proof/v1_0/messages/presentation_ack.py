@@ -2,7 +2,7 @@
 
 from marshmallow import EXCLUDE
 
-from .....messaging.ack.message import Ack, AckSchema
+from ....notification.v1_0.messages.ack import V10Ack, V10AckSchema
 
 from ..message_types import PRESENTATION_ACK, PROTOCOL_PACKAGE
 
@@ -11,7 +11,7 @@ HANDLER_CLASS = (
 )
 
 
-class PresentationAck(Ack):
+class PresentationAck(V10Ack):
     """Base class representing an explicit ack message for present-proof protocol."""
 
     class Meta:
@@ -32,7 +32,7 @@ class PresentationAck(Ack):
         super().__init__(status, **kwargs)
 
 
-class PresentationAckSchema(AckSchema):
+class PresentationAckSchema(V10AckSchema):
     """Schema for PresentationAck class."""
 
     class Meta:

@@ -116,7 +116,14 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
 
             if timestamp > now + 300:  # allow 5 min for clock skew
                 raise ValueError(f"Timestamp {timestamp} is in the future")
-            if timestamp < rev_reg_defs[rev_reg_id]["txnTime"]:
+            reg_def = rev_reg_defs.get(rev_reg_id)
+            if not reg_def:
+                raise ValueError(f"Missing registry definition for '{rev_reg_id}'")
+            if "txnTime" not in reg_def:
+                raise ValueError(
+                    f"Missing txnTime for registry definition '{rev_reg_id}'"
+                )
+            if timestamp < reg_def["txnTime"]:
                 raise ValueError(
                     f"Timestamp {timestamp} predates rev reg {rev_reg_id} creation"
                 )
@@ -182,7 +189,9 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         for (uuid, req_pred) in pres_req["requested_predicates"].items():
             pred_spec = preds.get(uuid)
             if pred_spec is None or "sub_proof_index" not in pred_spec:
-                f"Presentation predicates mismatch requested predicate {uuid}"
+                raise ValueError(
+                    f"Presentation predicates mismatch requested predicate {uuid}"
+                )
             index = pred_spec["sub_proof_index"]
             timestamp = pres["identifiers"][index].get("timestamp")
             if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):

@@ -183,4 +183,4 @@ async def verify_presentation(
         return PresentationVerificationResult(verified=False, errors=[e])
 
 
-__all__ = [verify_presentation, verify_credential]
+__all__ = ["verify_presentation", "verify_credential"]

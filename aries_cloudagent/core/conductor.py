@@ -19,11 +19,11 @@ from ..config.injection_context import InjectionContext
 from ..config.ledger import get_genesis_transactions, ledger_config
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
-from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
-from ..multitenant.manager import MultitenantManager
+from ..multitenant.base import BaseMultitenantManager
+from ..multitenant.manager_provider import MultitenantManagerProvider
 from ..protocols.connections.v1_0.manager import (
     ConnectionManager,
     ConnectionManagerError,
@@ -32,8 +32,10 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
+from ..protocols.coordinate_mediation.mediation_invite_store import MediationInviteStore
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
+from ..storage.base import BaseStorage
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -121,14 +123,15 @@ class Conductor:
         self.dispatcher = Dispatcher(self.root_profile)
         await self.dispatcher.setup()
 
-        wire_format = context.inject(BaseWireFormat, required=False)
+        wire_format = context.inject_or(BaseWireFormat)
         if wire_format and hasattr(wire_format, "task_queue"):
             wire_format.task_queue = self.dispatcher.task_queue
 
         # Bind manager for multitenancy related tasks
         if context.settings.get("multitenant.enabled"):
-            multitenant_mgr = MultitenantManager(self.root_profile)
-            context.injector.bind_instance(MultitenantManager, multitenant_mgr)
+            context.injector.bind_provider(
+                BaseMultitenantManager, MultitenantManagerProvider(self.root_profile)
+            )
 
         # Bind default PyLD document loader
         context.injector.bind_instance(
@@ -159,7 +162,7 @@ class Conductor:
                 raise
 
         # Fetch stats collector, if any
-        collector = context.inject(Collector, required=False)
+        collector = context.inject_or(Collector)
         if collector:
             # add stats to our own methods
             collector.wrap(
@@ -227,21 +230,20 @@ class Conductor:
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
-            async with self.root_profile.session() as session:
-                mgr = ConnectionManager(session)
-                their_endpoint = context.settings["debug.test_suite_endpoint"]
-                test_conn = await mgr.create_static_connection(
-                    my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
-                    their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
-                    their_endpoint=their_endpoint,
-                    alias="test-suite",
-                )
-                print("Created static connection for test suite")
-                print(" - My DID:", test_conn.my_did)
-                print(" - Their DID:", test_conn.their_did)
-                print(" - Their endpoint:", their_endpoint)
-                print()
-                del mgr
+            mgr = ConnectionManager(self.root_profile)
+            their_endpoint = context.settings["debug.test_suite_endpoint"]
+            test_conn = await mgr.create_static_connection(
+                my_seed=hashlib.sha256(b"aries-protocol-test-subject").digest(),
+                their_seed=hashlib.sha256(b"aries-protocol-test-suite").digest(),
+                their_endpoint=their_endpoint,
+                alias="test-suite",
+            )
+            print("Created static connection for test suite")
+            print(" - My DID:", test_conn.my_did)
+            print(" - Their DID:", test_conn.their_did)
+            print(" - Their endpoint:", their_endpoint)
+            print()
+            del mgr
 
         # Clear default mediator
         if context.settings.get("mediation.clear"):
@@ -263,85 +265,101 @@ class Conductor:
         # Print an invitation to the terminal
         if context.settings.get("debug.print_invitation"):
             try:
-                async with self.root_profile.session() as session:
-                    mgr = OutOfBandManager(session)
-                    invi_rec = await mgr.create_invitation(
-                        my_label=context.settings.get("debug.invite_label"),
-                        public=context.settings.get("debug.invite_public", False),
-                        multi_use=context.settings.get("debug.invite_multi_use", False),
-                        hs_protos=[HSProto.RFC23],
-                        metadata=json.loads(
-                            context.settings.get("debug.invite_metadata_json", "{}")
-                        ),
-                    )
-                    base_url = context.settings.get("invite_base_url")
-                    invite_url = invi_rec.invitation.to_url(base_url)
-                    print("Invitation URL:")
-                    print(invite_url, flush=True)
-                    del mgr
+                mgr = OutOfBandManager(self.root_profile)
+                invi_rec = await mgr.create_invitation(
+                    my_label=context.settings.get("debug.invite_label"),
+                    public=context.settings.get("debug.invite_public", False),
+                    multi_use=context.settings.get("debug.invite_multi_use", False),
+                    hs_protos=[HSProto.RFC23],
+                    metadata=json.loads(
+                        context.settings.get("debug.invite_metadata_json", "{}")
+                    ),
+                )
+                base_url = context.settings.get("invite_base_url")
+                invite_url = invi_rec.invitation.to_url(base_url)
+                print("Invitation URL:")
+                print(invite_url, flush=True)
+                del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
 
         # Print connections protocol invitation to the terminal
         if context.settings.get("debug.print_connections_invitation"):
             try:
-                async with self.root_profile.session() as session:
-                    mgr = ConnectionManager(session)
-                    _record, invite = await mgr.create_invitation(
-                        my_label=context.settings.get("debug.invite_label"),
-                        public=context.settings.get("debug.invite_public", False),
-                        multi_use=context.settings.get("debug.invite_multi_use", False),
-                        metadata=json.loads(
-                            context.settings.get("debug.invite_metadata_json", "{}")
-                        ),
-                    )
-                    base_url = context.settings.get("invite_base_url")
-                    print("Invitation URL (Connections protocol):")
-                    print(invite.to_url(base_url), flush=True)
-                    del mgr
+                mgr = ConnectionManager(self.root_profile)
+                _record, invite = await mgr.create_invitation(
+                    my_label=context.settings.get("debug.invite_label"),
+                    public=context.settings.get("debug.invite_public", False),
+                    multi_use=context.settings.get("debug.invite_multi_use", False),
+                    metadata=json.loads(
+                        context.settings.get("debug.invite_metadata_json", "{}")
+                    ),
+                )
+                base_url = context.settings.get("invite_base_url")
+                print("Invitation URL (Connections protocol):")
+                print(invite.to_url(base_url), flush=True)
+                del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
 
-        # Accept mediation invitation if specified
-        mediation_invitation = context.settings.get("mediation.invite")
-        if mediation_invitation:
+        # mediation connection establishment
+        provided_invite: str = context.settings.get("mediation.invite")
+
+        async with self.root_profile.session() as session:
+            try:
+                invite_store = MediationInviteStore(session.context.inject(BaseStorage))
+                mediation_invite_record = (
+                    await invite_store.get_mediation_invite_record(provided_invite)
+                )
+            except Exception:
+                LOGGER.exception("Error retrieving mediator invitation")
+                mediation_invite_record = None
+
+        # Accept mediation invitation if one was specified or stored
+        if mediation_invite_record is not None:
             try:
                 mediation_connections_invite = context.settings.get(
                     "mediation.connections_invite", False
                 )
-                if mediation_connections_invite:
+                invitation_handler = (
+                    ConnectionInvitation
+                    if mediation_connections_invite
+                    else InvitationMessage
+                )
+
+                if not mediation_invite_record.used:
+                    # clear previous mediator configuration before establishing a
+                    # new one
+                    await MediationManager(self.root_profile).clear_default_mediator()
+
+                    mgr = (
+                        ConnectionManager(self.root_profile)
+                        if mediation_connections_invite
+                        else OutOfBandManager(self.root_profile)
+                    )
+
+                    conn_record = await mgr.receive_invitation(
+                        invitation=invitation_handler.from_url(
+                            mediation_invite_record.invite
+                        ),
+                        auto_accept=True,
+                    )
                     async with self.root_profile.session() as session:
-                        mgr = ConnectionManager(session)
-                        conn_record = await mgr.receive_invitation(
-                            invitation=ConnectionInvitation.from_url(
-                                mediation_invitation
-                            ),
-                            auto_accept=True,
+                        await (
+                            MediationInviteStore(
+                                session.context.inject(BaseStorage)
+                            ).mark_default_invite_as_used()
                         )
+
                         await conn_record.metadata_set(
                             session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
                         )
                         await conn_record.metadata_set(
                             session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
                         )
-                        print("Attempting to connect to mediator...")
-                        del mgr
-                else:
-                    async with self.root_profile.session() as session:
-                        mgr = OutOfBandManager(session)
-                        conn_record_dict = await mgr.receive_invitation(
-                            invi_msg=InvitationMessage.from_url(mediation_invitation),
-                            auto_accept=True,
-                        )
-                        conn_record = ConnRecord.deserialize(conn_record_dict)
-                        await conn_record.metadata_set(
-                            session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
-                        )
-                        await conn_record.metadata_set(
-                            session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
-                        )
-                        print("Attempting to connect to mediator...")
-                        del mgr
+
+                    print("Attempting to connect to mediator...")
+                    del mgr
             except Exception:
                 LOGGER.exception("Error accepting mediation invitation")
 
@@ -358,7 +376,7 @@ class Conductor:
             shutdown.run(self.outbound_transport_manager.stop())
 
         # close multitenant profiles
-        multitenant_mgr = self.context.inject(MultitenantManager, required=False)
+        multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             for profile in multitenant_mgr._instances.values():
                 shutdown.run(profile.close())
@@ -498,25 +516,22 @@ class Conductor:
         """
         # populate connection target(s)
         if not outbound.target and not outbound.target_list and outbound.connection_id:
-            async with profile.session() as session:
-                conn_mgr = ConnectionManager(session)
-                try:
-                    outbound.target_list = await self.dispatcher.run_task(
-                        conn_mgr.get_connection_targets(
-                            connection_id=outbound.connection_id
-                        )
+            conn_mgr = ConnectionManager(profile)
+            try:
+                outbound.target_list = await self.dispatcher.run_task(
+                    conn_mgr.get_connection_targets(
+                        connection_id=outbound.connection_id
                     )
-                except ConnectionManagerError:
-                    LOGGER.exception(
-                        "Error preparing outbound message for transmission"
-                    )
-                    return
-                except (LedgerConfigError, LedgerTransactionError) as e:
-                    LOGGER.error("Shutdown on ledger error %s", str(e))
-                    if self.admin_server:
-                        self.admin_server.notify_fatal_error()
-                    raise
-                del conn_mgr
+                )
+            except ConnectionManagerError:
+                LOGGER.exception("Error preparing outbound message for transmission")
+                return
+            except (LedgerConfigError, LedgerTransactionError) as e:
+                LOGGER.error("Shutdown on ledger error %s", str(e))
+                if self.admin_server:
+                    self.admin_server.notify_fatal_error()
+                raise
+            del conn_mgr
         # If ``self.outbound_queue`` is specified (usually set via
         # outbound queue `-oq` commandline option), use that external
         # queue. Else save the message to an internal queue. This
@@ -538,8 +553,13 @@ class Conductor:
                 [outbound.target] if outbound.target else (outbound.target_list or [])
             )
             for target in targets:
+                encoded_outbound_message = (
+                    await self.outbound_transport_manager.encode_outbound_message(
+                        profile, outbound, target
+                    )
+                )
                 await self.outbound_queue.enqueue_message(
-                    outbound.payload, target.endpoint
+                    encoded_outbound_message.payload, target.endpoint
                 )
 
             return OutboundSendStatus.SENT_TO_EXTERNAL_QUEUE

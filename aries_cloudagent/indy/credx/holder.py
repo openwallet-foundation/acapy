@@ -252,7 +252,19 @@ class IndyCredxHolder(IndyHolder):
 
         """
 
-        pass  # Not used anywhere currently
+        result = []
+
+        try:
+            rows = self._profile.store.scan(CATEGORY_CREDENTIAL, wql, start, count)
+            async for row in rows:
+                cred = Credential.load(row.raw_value)
+                result.append(_make_cred_info(row.name, cred))
+        except AskarError as err:
+            raise IndyHolderError("Error retrieving credentials") from err
+        except CredxError as err:
+            raise IndyHolderError("Error loading stored credential") from err
+
+        return result
 
     async def get_credentials_for_presentation_request_by_referent(
         self,
@@ -273,8 +285,6 @@ class IndyCredxHolder(IndyHolder):
             extra_query: wql query dict
 
         """
-
-        # FIXME not using extra_query
 
         if not referents:
             referents = (
@@ -308,6 +318,8 @@ class IndyCredxHolder(IndyHolder):
             if restr:
                 # FIXME check if restr is a list or dict? validate WQL format
                 tag_filter = {"$and": [tag_filter] + restr}
+            if extra_query:
+                tag_filter = {"$and": [tag_filter, extra_query]}
 
             rows = self._profile.store.scan(
                 CATEGORY_CREDENTIAL, tag_filter, start, count
@@ -369,8 +381,19 @@ class IndyCredxHolder(IndyHolder):
             credential_id: Credential id to check
 
         """
-        # FIXME
-        return False
+        cred = await self._get_credential(credential_id)
+        rev_reg_id = cred.rev_reg_id
+
+        if rev_reg_id:
+            cred_rev_id = cred.rev_reg_index
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                rev_reg_id,
+                fro,
+                to,
+            )
+            return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
+        else:
+            return False
 
     async def delete_credential(self, credential_id: str):
         """
@@ -460,7 +483,7 @@ class IndyCredxHolder(IndyHolder):
                 )
             return state
 
-        self_attest = requested_credentials.get("self_attested_attributes")
+        self_attest = requested_credentials.get("self_attested_attributes") or {}
         present_creds = PresentCredentials()
         req_attrs = requested_credentials.get("requested_attributes") or {}
         for reft, detail in req_attrs.items():

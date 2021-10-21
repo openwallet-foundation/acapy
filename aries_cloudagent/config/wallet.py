@@ -16,7 +16,15 @@ from .injection_context import InjectionContext
 
 LOGGER = logging.getLogger(__name__)
 
-CFG_MAP = {"key", "rekey", "name", "storage_config", "storage_creds", "storage_type"}
+CFG_MAP = {
+    "key",
+    "key_derivation_method",
+    "rekey",
+    "name",
+    "storage_config",
+    "storage_creds",
+    "storage_type",
+}
 
 
 async def wallet_config(

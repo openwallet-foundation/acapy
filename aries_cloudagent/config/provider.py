@@ -129,7 +129,7 @@ class StatsProvider(BaseProvider):
         """Provide the object instance given a config and injector."""
         instance = self._provider.provide(config, injector)
         if self._methods:
-            collector: Collector = injector.inject(Collector, required=False)
+            collector: Collector = injector.inject_or(Collector)
             if collector:
                 collector.wrap(
                     instance, self._methods, ignore_missing=self._ignore_missing

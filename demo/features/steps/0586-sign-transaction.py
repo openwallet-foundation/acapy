@@ -99,7 +99,11 @@ def step_impl(context, agent_name, schema_name):
     )
 
     # assert goodness
-    assert created_txn["txn"]["state"] == "transaction_created"
+    if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
+        assert created_txn["txn"]["state"] == "request_sent"
+    else:
+        assert created_txn["txn"]["state"] == "transaction_created"
+
     if not "txn_ids" in context:
         context.txn_ids = {}
     context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
@@ -175,7 +179,12 @@ def step_impl(context, agent_name, schema_name):
 
     schema_info = read_schema_data(schema_name)
 
-    schemas = agent_container_GET(agent["agent"], "/schemas/created")
+    schemas = {"schema_ids": []}
+    i = 5
+    while 0 == len(schemas["schema_ids"]) and i > 0:
+        async_sleep(1.0)
+        schemas = agent_container_GET(agent["agent"], "/schemas/created")
+        i = i - 1
     assert len(schemas["schema_ids"]) == 1
 
     schema_id = schemas["schema_ids"][0]
@@ -211,7 +220,10 @@ def step_impl(context, agent_name, schema_name):
     )
 
     # assert goodness
-    assert created_txn["txn"]["state"] == "transaction_created"
+    if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
+        assert created_txn["txn"]["state"] == "request_sent"
+    else:
+        assert created_txn["txn"]["state"] == "transaction_created"
     if not "txn_ids" in context:
         context.txn_ids = {}
     context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
@@ -228,7 +240,14 @@ def step_impl(context, agent_name, schema_name):
 
     schema_info = read_schema_data(schema_name)
 
-    cred_defs = agent_container_GET(agent["agent"], "/credential-definitions/created")
+    cred_defs = {"credential_definition_ids": []}
+    i = 5
+    while 0 == len(cred_defs["credential_definition_ids"]) and i > 0:
+        async_sleep(1.0)
+        cred_defs = agent_container_GET(
+            agent["agent"], "/credential-definitions/created"
+        )
+        i = i - 1
     assert len(cred_defs["credential_definition_ids"]) == 1
 
     cred_def_id = cred_defs["credential_definition_ids"][0]
@@ -293,13 +312,18 @@ def step_impl(context, agent_name, schema_name):
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
-    rev_regs = agent_container_GET(
-        agent["agent"],
-        "/revocation/registries/created",
-        params={
-            "cred_def_id": context.cred_def_id,
-        },
-    )
+    rev_regs = {"rev_reg_ids": []}
+    i = 5
+    while 0 == len(rev_regs["rev_reg_ids"]) and i > 0:
+        async_sleep(1.0)
+        rev_regs = agent_container_GET(
+            agent["agent"],
+            "/revocation/registries/created",
+            params={
+                "cred_def_id": context.cred_def_id,
+            },
+        )
+        i = i - 1
     assert len(rev_regs["rev_reg_ids"]) == 1
 
     rev_reg_id = rev_regs["rev_reg_ids"][0]
@@ -331,6 +355,19 @@ def step_impl(context, agent_name):
         data={},
         params={},
     )
+
+
+@when(
+    '"{agent_name}" has written the revocation registry entry transaction to the ledger'
+)
+@then(
+    '"{agent_name}" has written the revocation registry entry transaction to the ledger'
+)
+def step_impl(context, agent_name):
+    agent = context.active_agents[agent_name]
+
+    # TODO not sure what to check here, let's just do a short pause
+    async_sleep(2.0)
 
 
 @when(
@@ -415,7 +452,7 @@ def step_impl(context, agent_name):
     connection_id = agent["agent"].agent.connection_id
 
     # create rev_reg entry transaction
-    created_txn = agent_container_POST(
+    created_rev_reg = agent_container_POST(
         agent["agent"],
         f"/revocation/publish-revocations",
         data={
@@ -425,20 +462,18 @@ def step_impl(context, agent_name):
                 ]
             }
         },
-        params={
-            "conn_id": connection_id,
-            "create_transaction_for_endorser": "true",
-        },
     )
-    assert created_txn["txn"]["state"] == "transaction_created"
-    if not "txn_ids" in context:
-        context.txn_ids = {}
-    context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
+
+    # check that rev reg entry was written
+    assert "rrid2crid" in created_rev_reg
 
 
 @then('"{holder_name}" can verify the credential from "{issuer_name}" was revoked')
 def step_impl(context, holder_name, issuer_name):
     agent = context.active_agents[holder_name]
+
+    # sleep here to allow the auto-endorser process to complete
+    async_sleep(2.0)
 
     # fetch the credential - there only is one in the wallet
     cred_list = agent_container_GET(
