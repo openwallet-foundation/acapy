@@ -6,6 +6,7 @@ from types import ModuleType
 from typing import Sequence
 
 from ..config.injection_context import InjectionContext
+from ..core.event_bus import EventBus
 from ..utils.classloader import ClassLoader, ModuleLoadError
 
 from .error import ProtocolDefinitionValidationError
@@ -201,6 +202,9 @@ class PluginRegistry:
             else:
                 await self.load_protocols(context, plugin)
 
+        # register event handlers for each protocol, if providedf
+        self.register_protocol_events(context)
+
     async def load_protocol_version(
         self,
         context: InjectionContext,
@@ -279,6 +283,36 @@ class PluginRegistry:
                     continue
                 if mod and hasattr(mod, "register"):
                     await mod.register(app)
+
+    def register_protocol_events(self, context: InjectionContext):
+        """Call route register_events methods on the current context."""
+        event_bus = context.inject_or(EventBus)
+        if not event_bus:
+            LOGGER.error("No event bus in context")
+            return
+        for plugin in self._plugins.values():
+            definition = ClassLoader.load_module("definition", plugin.__name__)
+            if definition:
+                # Load plugin routes that are in a versioned package.
+                for plugin_version in definition.versions:
+                    try:
+                        mod = ClassLoader.load_module(
+                            f"{plugin.__name__}.{plugin_version['path']}.routes"
+                        )
+                    except ModuleLoadError as e:
+                        LOGGER.error("Error loading admin routes: %s", e)
+                        continue
+                    if mod and hasattr(mod, "register_events"):
+                        mod.register_events(event_bus)
+            else:
+                # Load plugin routes that aren't in a versioned package.
+                try:
+                    mod = ClassLoader.load_module(f"{plugin.__name__}.routes")
+                except ModuleLoadError as e:
+                    LOGGER.error("Error loading admin routes: %s", e)
+                    continue
+                if mod and hasattr(mod, "register_events"):
+                    mod.register_events(event_bus)
 
     def post_process_routes(self, app):
         """Call route binary file response OpenAPI fixups if applicable."""

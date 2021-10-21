@@ -500,9 +500,6 @@ class IndySdkLedger(BaseLedger):
                 else:
                     raise
 
-            # Add non-secrets record
-            await self.add_schema_non_secrets_record(schema_id, public_info.did)
-
         return schema_id, schema_def
 
     async def check_existing_schema(
@@ -729,11 +726,6 @@ class IndySdkLedger(BaseLedger):
             )
             if not write_ledger:
                 return (credential_definition_id, {"signed_txn": resp}, novel)
-
-            # Add non-secrets record
-            await self.add_cred_def_non_secrets_record(
-                schema_id, public_info.did, credential_definition_id
-            )
 
         return (credential_definition_id, json.loads(credential_definition_json), novel)
 
@@ -1026,7 +1018,7 @@ class IndySdkLedger(BaseLedger):
         txn_data_data = txn_resp_data["txn"]["data"]
         role_token = Role.get(txn_data_data.get("role")).token()
         alias = txn_data_data.get("alias")
-        await self.register_nym(public_did, verkey, role_token, alias)
+        await self.register_nym(public_did, verkey, alias=alias, role=role_token)
 
         # update wallet
         await self.wallet.rotate_did_keypair_apply(public_did)

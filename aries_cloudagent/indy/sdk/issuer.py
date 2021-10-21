@@ -263,7 +263,7 @@ class IndySdkIssuer(IndyIssuer):
 
     async def revoke_credentials(
         self, rev_reg_id: str, tails_file_path: str, cred_rev_ids: Sequence[str]
-    ) -> (str, Sequence[str]):
+    ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.
 

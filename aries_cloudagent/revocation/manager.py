@@ -108,8 +108,6 @@ class RevocationManager:
     async def publish_pending_revocations(
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,
-        write_ledger: bool = True,
-        endorser_did: str = None,
     ) -> Mapping[Text, Sequence[Text]]:
         """
         Publish pending revocations to the ledger.
@@ -131,9 +129,6 @@ class RevocationManager:
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
                     - no pending revocations from any other revocation registries.
-            write_ledger: wether to write the transaction to the ledger, or prepare a
-                transaction to be endorsed
-            endorser_did: the did of the endorser, if endorsing the transaction
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
@@ -161,12 +156,7 @@ class RevocationManager:
                     crids,
                 )
                 issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
-                send_entry_result = await issuer_rr_rec.send_entry(
-                    self._profile, write_ledger=write_ledger, endorser_did=endorser_did
-                )
-                if endorser_did and not write_ledger:
-                    return send_entry_result
-
+                await issuer_rr_rec.send_entry(self._profile)
                 published = [crid for crid in crids if crid not in failed_crids]
                 result[issuer_rr_rec.revoc_reg_id] = published
                 await issuer_rr_rec.clear_pending(txn, published)
