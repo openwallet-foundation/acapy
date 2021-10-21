@@ -55,7 +55,7 @@ class TestUtil(TestCase):
         tests = {
             datetime(
                 2019, 5, 17, 20, 51, 19, 519437, tzinfo=timezone.utc
-            ): "2019-05-17 20:51:19.519437Z",
+            ): "2019-05-17T20:51:19.519437Z",
             now: now,
         }
         for datetime_val, expected in tests.items():
