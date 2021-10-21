@@ -193,7 +193,7 @@ class TestAskarWallet(test_in_memory_wallet.TestInMemoryWallet):
     async def test_pack_message_x(self, wallet):
         with async_mock.patch.object(
             test_module,
-            "_pack_message",
+            "pack_message",
         ) as mock_pack:
             mock_pack.side_effect = AskarError(  # outlier
                 AskarErrorCode.BACKEND, {"message": "outlier"}
