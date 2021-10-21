@@ -325,13 +325,13 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def revoke(request: web.BaseRequest):
     """
-    Request handler for storing a credential request.
+    Request handler for storing a credential revocation.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The credential request details.
+        The credential revocation details.
 
     """
     context: AdminRequestContext = request["context"]
@@ -997,10 +997,13 @@ async def on_revocation_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
     event_topic_parts = event.topic.split("::")
     if event_topic_parts[2] == REVOCATION_REG_EVENT:
+        # create the revocation registry (ledger transaction may require endorsement)
         await on_revocation_registry_event(profile, event)
     elif event_topic_parts[2] == REVOCATION_ENTRY_EVENT:
+        # create the revocation entry (ledger transaction may require endorsement)
         await on_revocation_entry_event(profile, event)
     elif event_topic_parts[2] == REVOCATION_TAILS_EVENT:
+        # upload tails file
         await on_revocation_tails_file_event(profile, event)
     else:
         # TODO error handling
@@ -1215,6 +1218,9 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
         )
 
     # create a "pending" registry if one is requested
+    # (this is done automatically when creating a credential definition, so that when a
+    #   revocation registry fills up, we ca continue to issue credentials without a
+    #   delay)
     create_pending_rev_reg = event.payload["processing"].get(
         "create_pending_rev_reg", False
     )

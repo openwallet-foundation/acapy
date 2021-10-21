@@ -356,7 +356,7 @@ class TransactionManager:
         ledger_transaction = transaction.messages_attach[0]["data"]["json"]
 
         async with self._profile.session() as session:
-            ledger = session.inject(BaseLedger)
+            ledger = self._profile.inject(BaseLedger)
             if not ledger:
                 reason = "No ledger available"
                 if not session.context.settings.get_value("wallet.type"):
@@ -711,7 +711,7 @@ class TransactionManager:
         connection_record: ConnRecord = None,
     ):
         """
-        Store record in wallet.
+        Store record in wallet, and kick off any required post-processing.
 
         Args:
             transaction: The transaction from which the schema/cred_def
@@ -719,7 +719,7 @@ class TransactionManager:
         """
 
         async with self._profile.session() as session:
-            ledger = session.inject(BaseLedger)
+            ledger = self._profile.inject(BaseLedger)
             if not ledger:
                 reason = "No ledger available"
                 if not session.context.settings.get_value("wallet.type"):
@@ -770,21 +770,21 @@ class TransactionManager:
                 "auto_create_rev_reg", False
             )
 
-            # Notify event
+            # If "auto_processing" is enabled, also create the revocation entry record
             if auto_create_rev_reg:
                 await notify_revocation_entry_event(
                     self._profile, rev_reg_id, meta_data
                 )
 
         elif ledger_response["result"]["txn"]["type"] == "114":
-            # revocation registry transaction
+            # revocation entry transaction
             rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
             auto_create_rev_reg = meta_data["processing"].get(
                 "auto_create_rev_reg", False
             )
 
-            # Notify event
+            # If "auto_processing" is enabled, also upload tails file for this registry
             if auto_create_rev_reg:
                 await notify_revocation_tails_file_event(
                     self._profile, rev_reg_id, meta_data

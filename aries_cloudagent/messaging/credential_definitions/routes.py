@@ -428,6 +428,8 @@ async def on_cred_def_event(profile: Profile, event: Event):
     schema_id = event.payload["context"]["schema_id"]
     cred_def_id = event.payload["context"]["cred_def_id"]
     issuer_did = event.payload["context"]["issuer_did"]
+
+    # after the ledger record is written, write the wallet non-secrets record
     await add_cred_def_non_secrets_record(profile, schema_id, issuer_did, cred_def_id)
 
     # check if we need to kick off the revocation registry setup
@@ -447,6 +449,13 @@ async def on_cred_def_event(profile: Profile, event: Event):
         else None
     )
     if support_revocation and novel and auto_create_rev_reg:
+        # this kicks off the revocation registry creation process, which is 3 steps:
+        # 1 - create revocation registry (ledger transaction may require endorsement)
+        # 2 - create revocation entry (ledger transaction may require endorsement)
+        # 3 - upload tails file
+        # For a cred def we also automatically create a second "pending" revocation
+        # registry, so when the first one fills up we can continue to issue credentials
+        # without a delay
         await notify_revocation_reg_event(
             profile,
             cred_def_id,

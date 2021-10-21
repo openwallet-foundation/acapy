@@ -402,6 +402,8 @@ def register_events(event_bus: EventBus):
 async def on_schema_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
     schema_id = event.payload["context"]["schema_id"]
+
+    # after the ledger record is written, write the wallet non-secrets record
     await add_schema_non_secrets_record(profile, schema_id)
 
 

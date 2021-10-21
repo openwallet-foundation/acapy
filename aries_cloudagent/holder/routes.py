@@ -175,12 +175,11 @@ async def credentials_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    async with context.profile.session() as session:
-        holder = session.inject(IndyHolder)
-        try:
-            credential = await holder.get_credential(credential_id)
-        except WalletNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
+    holder = context.profile.inject(IndyHolder)
+    try:
+        credential = await holder.get_credential(credential_id)
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     credential_json = json.loads(credential)
     return web.json_response(credential_json)
@@ -271,12 +270,12 @@ async def credentials_remove(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    async with context.profile.session() as session:
-        holder = session.inject(IndyHolder)
-        try:
+    try:
+        async with context.profile.session() as session:
+            holder = session.inject(IndyHolder)
             await holder.delete_credential(credential_id)
-        except WalletNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
     return web.json_response({})
 
