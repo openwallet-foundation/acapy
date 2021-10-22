@@ -20,6 +20,7 @@ from ....messaging.responder import BaseResponder
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
+from ....revocation.util import notify_revocation_reg_event
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
 
@@ -570,21 +571,20 @@ class CredentialManager:
                                     cred_ex_record.credential_definition_id,
                                 )
                             )  # prefer to reuse prior rev reg size
+                        cred_def_id = cred_ex_record.credential_definition_id
+                        rev_reg_size = (
+                            old_rev_reg_recs[0].max_cred_num
+                            if old_rev_reg_recs
+                            else None
+                        )
                         for _ in range(2):
-                            pending_rev_reg_rec = await revoc.init_issuer_registry(
-                                cred_ex_record.credential_definition_id,
-                                max_cred_num=(
-                                    old_rev_reg_recs[0].max_cred_num
-                                    if old_rev_reg_recs
-                                    else None
-                                ),
+                            await notify_revocation_reg_event(
+                                self.profile,
+                                cred_def_id,
+                                rev_reg_size,
+                                auto_create_rev_reg=True,
                             )
-                            asyncio.ensure_future(
-                                pending_rev_reg_rec.stage_pending_registry(
-                                    self._profile,
-                                    max_attempts=3,  # fail both in < 2s at worst
-                                )
-                            )
+
                     if retries > 0:
                         LOGGER.info(
                             "Waiting 2s on posted rev reg for cred def %s, retrying",
@@ -632,16 +632,13 @@ class CredentialManager:
                         )
 
                     # Send next 1 rev reg, publish tails file in background
-                    revoc = IndyRevocation(self._profile)
-                    pending_rev_reg_rec = await revoc.init_issuer_registry(
-                        active_rev_reg_rec.cred_def_id,
-                        max_cred_num=active_rev_reg_rec.max_cred_num,
-                    )
-                    asyncio.ensure_future(
-                        pending_rev_reg_rec.stage_pending_registry(
-                            self._profile,
-                            max_attempts=16,
-                        )
+                    cred_def_id = cred_ex_record.credential_definition_id
+                    rev_reg_size = active_rev_reg_rec.max_cred_num
+                    await notify_revocation_reg_event(
+                        self.profile,
+                        cred_def_id,
+                        rev_reg_size,
+                        auto_create_rev_reg=True,
                     )
 
             except IndyIssuerRevocationRegistryFullError:
@@ -720,7 +717,7 @@ class CredentialManager:
 
     async def store_credential(
         self, cred_ex_record: V10CredentialExchange, credential_id: str = None
-    ) -> Tuple[V10CredentialExchange, CredentialAck]:
+    ) -> V10CredentialExchange:
         """
         Store a credential in holder wallet; send ack to issuer.
 

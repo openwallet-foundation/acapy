@@ -39,7 +39,8 @@ class V20CredOfferHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for credential offer")
 
-        cred_manager = V20CredManager(context.profile)
+        profile = context.profile
+        cred_manager = V20CredManager(profile)
         cred_ex_record = await cred_manager.receive_offer(
             context.message, context.connection_record.connection_id
         )  # mgr only finds, saves record: on exception, saving state null is hopeless
@@ -69,7 +70,7 @@ class V20CredOfferHandler(BaseHandler):
             ) as err:
                 self._logger.exception(err)
                 if cred_ex_record:
-                    async with context.session() as session:
+                    async with profile.session() as session:
                         await cred_ex_record.save_error_state(
                             session,
                             reason=err.roll_up,  # us: be specific

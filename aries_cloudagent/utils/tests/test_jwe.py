@@ -39,9 +39,12 @@ class TestJwe(TestCase):
         assert loaded.iv == IV
         assert loaded.tag == TAG
         assert loaded.aad == AAD
+        assert loaded.combined_aad == loaded.protected_bytes + b"." + b64url(
+            AAD
+        ).encode("utf-8")
         assert loaded.ciphertext == CIPHERTEXT
 
-        recips = list(loaded.recipients())
+        recips = list(loaded.recipients)
         assert len(recips) == 1
         assert recips[0].encrypted_key == ENC_KEY_1
         assert recips[0].header == {"alg": "MyAlg", "abc": "ABC", "def": "DEF"}
@@ -71,9 +74,12 @@ class TestJwe(TestCase):
         assert loaded.iv == IV
         assert loaded.tag == TAG
         assert loaded.aad == AAD
+        assert loaded.combined_aad == loaded.protected_bytes + b"." + b64url(
+            AAD
+        ).encode("utf-8")
         assert loaded.ciphertext == CIPHERTEXT
 
-        recips = list(loaded.recipients())
+        recips = list(loaded.recipients)
         assert len(recips) == 2
         assert recips[0].encrypted_key == ENC_KEY_1
         assert recips[0].header == {"alg": "MyAlg", "abc": "ABC", "def": "DEF"}
@@ -87,6 +93,8 @@ class TestJwe(TestCase):
             ciphertext=CIPHERTEXT,
             tag=TAG,
             aad=AAD,
+            with_protected_recipients=True,
+            with_flatten_recipients=True,
         )
         env.add_recipient(JweRecipient(encrypted_key=ENC_KEY_1, header={"def": "DEF"}))
         env.set_protected(PARAMS)
@@ -98,13 +106,18 @@ class TestJwe(TestCase):
         assert "encrypted_key" in prot
 
         assert loaded.protected == PARAMS
+        assert loaded.with_protected_recipients
+        assert loaded.with_flatten_recipients
         assert loaded.unprotected == UNPROTECTED
         assert loaded.iv == IV
         assert loaded.tag == TAG
         assert loaded.aad == AAD
+        assert loaded.combined_aad == loaded.protected_bytes + b"." + b64url(
+            AAD
+        ).encode("utf-8")
         assert loaded.ciphertext == CIPHERTEXT
 
-        recips = list(loaded.recipients())
+        recips = list(loaded.recipients)
         assert len(recips) == 1
         assert recips[0].encrypted_key == ENC_KEY_1
         assert recips[0].header == {"alg": "MyAlg", "abc": "ABC", "def": "DEF"}
@@ -116,6 +129,8 @@ class TestJwe(TestCase):
             ciphertext=CIPHERTEXT,
             tag=TAG,
             aad=AAD,
+            with_protected_recipients=True,
+            with_flatten_recipients=True,
         )
         env.add_recipient(JweRecipient(encrypted_key=ENC_KEY_1, header={"def": "DEF"}))
         env.add_recipient(JweRecipient(encrypted_key=ENC_KEY_2, header={"ghi": "GHI"}))
@@ -124,13 +139,18 @@ class TestJwe(TestCase):
         loaded = JweEnvelope.from_json(message)
 
         assert loaded.protected == PARAMS
+        assert loaded.with_protected_recipients
+        assert not loaded.with_flatten_recipients
         assert loaded.unprotected == UNPROTECTED
         assert loaded.iv == IV
         assert loaded.tag == TAG
         assert loaded.aad == AAD
+        assert loaded.combined_aad == loaded.protected_bytes + b"." + b64url(
+            AAD
+        ).encode("utf-8")
         assert loaded.ciphertext == CIPHERTEXT
 
-        recips = list(loaded.recipients())
+        recips = list(loaded.recipients)
         assert len(recips) == 2
         assert recips[0].encrypted_key == ENC_KEY_1
         assert recips[0].header == {"alg": "MyAlg", "abc": "ABC", "def": "DEF"}
