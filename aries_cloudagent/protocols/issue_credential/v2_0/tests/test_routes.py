@@ -1,3 +1,4 @@
+from .....vc.ld_proofs.error import LinkedDataProofException
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....admin.request_context import AdminRequestContext
@@ -801,6 +802,37 @@ class TestV20CredRoutes(AsyncTestCase):
             await test_module.credential_exchange_send_bound_offer(self.request)
 
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
+
+    async def test_credential_exchange_send_bound_offer_linked_data_error(self):
+        self.request.json = async_mock.CoroutineMock(return_value={})
+        self.request.match_info = {"cred_ex_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module, "V20CredExRecord", autospec=True
+        ) as mock_cx_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_cx_rec_cls.retrieve_by_id = async_mock.CoroutineMock()
+            mock_cx_rec_cls.retrieve_by_id.return_value.state = (
+                test_module.V20CredExRecord.STATE_PROPOSAL_RECEIVED
+            )
+
+            mock_cred_mgr.return_value.create_offer = async_mock.CoroutineMock()
+
+            mock_cx_rec = async_mock.MagicMock()
+
+            exception_message = "ex"
+            mock_cred_mgr.return_value.create_offer.side_effect = (
+                LinkedDataProofException(exception_message)
+            )
+            with self.assertRaises(test_module.web.HTTPBadRequest) as error:
+                await test_module.credential_exchange_send_bound_offer(self.request)
+
+            assert exception_message in str(error.exception)
 
     async def test_credential_exchange_send_bound_offer_bad_cred_ex_id(self):
         self.request.json = async_mock.CoroutineMock(return_value={})
