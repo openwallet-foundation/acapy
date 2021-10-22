@@ -128,19 +128,19 @@ done
 if [ "$AGENT" = "faber" ]; then
   AGENT_MODULE="faber"
   AGENT_PORT=8020
-  AGENT_PORT_RANGE=8020-8027
+  AGENT_PORT_RANGE=8020-8029
 elif [ "$AGENT" = "alice" ]; then
   AGENT_MODULE="alice"
   AGENT_PORT=8030
-  AGENT_PORT_RANGE=8030-8037
+  AGENT_PORT_RANGE=8030-8039
 elif [ "$AGENT" = "acme" ]; then
   AGENT_MODULE="acme"
   AGENT_PORT=8040
-  AGENT_PORT_RANGE=8040-8047
+  AGENT_PORT_RANGE=8040-8049
 elif [ "$AGENT" = "performance" ]; then
   AGENT_MODULE="performance"
   AGENT_PORT=8050
-  AGENT_PORT_RANGE=8050-8068
+  AGENT_PORT_RANGE=8050-8069
 else
   echo "Please specify which agent you want to run. Choose from 'faber', 'alice', 'acme', or 'performance'."
   exit 1

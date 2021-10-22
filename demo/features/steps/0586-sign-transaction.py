@@ -452,7 +452,7 @@ def step_impl(context, agent_name):
     connection_id = agent["agent"].agent.connection_id
 
     # create rev_reg entry transaction
-    created_txn = agent_container_POST(
+    created_rev_reg = agent_container_POST(
         agent["agent"],
         f"/revocation/publish-revocations",
         data={
@@ -462,19 +462,10 @@ def step_impl(context, agent_name):
                 ]
             }
         },
-        params={
-            "conn_id": connection_id,
-            "create_transaction_for_endorser": "true",
-        },
     )
 
-    if agent["agent"].endorser_role and agent["agent"].endorser_role == "author":
-        assert created_txn["txn"]["state"] == "request_sent"
-    else:
-        assert created_txn["txn"]["state"] == "transaction_created"
-    if not "txn_ids" in context:
-        context.txn_ids = {}
-    context.txn_ids["AUTHOR"] = created_txn["txn"]["transaction_id"]
+    # check that rev reg entry was written
+    assert "rrid2crid" in created_rev_reg
 
 
 @then('"{holder_name}" can verify the credential from "{issuer_name}" was revoked')
