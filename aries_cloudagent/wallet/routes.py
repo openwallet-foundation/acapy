@@ -379,56 +379,62 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
-    info: DIDInfo = None
     async with context.session() as session:
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
-        did = request.query.get("did")
-        if not did:
-            raise web.HTTPBadRequest(reason="Request query must include DID")
-        wallet_id = session.settings.get("wallet.id")
 
-        try:
-            ledger = session.inject_or(BaseLedger)
-            if not ledger:
-                reason = "No ledger available"
-                if not session.settings.get_value("wallet.type"):
-                    reason += ": missing wallet-type?"
-                raise web.HTTPForbidden(reason=reason)
+    did = request.query.get("did")
+    if not did:
+        raise web.HTTPBadRequest(reason="Request query must include DID")
+    wallet_id = context.settings.get("wallet.id")
 
-            async with ledger:
-                if not await ledger.get_key_for_did(did):
-                    raise web.HTTPNotFound(
-                        reason=f"DID {did} is not posted to the ledger"
-                    )
+    info: DIDInfo = None
+    try:
+        ledger = context.profile.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No ledger available"
+            if not context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
+        async with ledger:
+            if not await ledger.get_key_for_did(did):
+                raise web.HTTPNotFound(
+                    reason=f"DID {did} is not posted to the ledger"
+                )
+        async with context.session() as session:
+            wallet = session.inject_or(BaseWallet)
             did_info = await wallet.get_local_did(did)
+        info: DIDInfo = None
+        async with context.session() as session:
+            wallet = session.inject_or(BaseWallet)
             info = await wallet.set_public_did(did_info)
-            if info:
-                # Publish endpoint if necessary
-                endpoint = did_info.metadata.get("endpoint")
+        if info:
+            # Publish endpoint if necessary
+            endpoint = did_info.metadata.get("endpoint")
 
-                if not endpoint:
+            if not endpoint:
+                async with context.session() as session:
+                    wallet = session.inject_or(BaseWallet)
                     endpoint = session.settings.get("default_endpoint")
                     await wallet.set_did_endpoint(info.did, endpoint, ledger)
 
-                async with ledger:
-                    await ledger.update_endpoint_for_did(info.did, endpoint)
+            async with ledger:
+                await ledger.update_endpoint_for_did(info.did, endpoint)
 
-                # Multitenancy setup
-                multitenant_mgr = session.inject_or(BaseMultitenantManager)
-                # Add multitenant relay mapping so implicit invitations are still routed
-                if multitenant_mgr and wallet_id:
-                    await multitenant_mgr.add_key(
-                        wallet_id, info.verkey, skip_if_exists=True
-                    )
+            # Multitenancy setup
+            multitenant_mgr = context.profile.inject_or(BaseMultitenantManager)
+            # Add multitenant relay mapping so implicit invitations are still routed
+            if multitenant_mgr and wallet_id:
+                await multitenant_mgr.add_key(
+                    wallet_id, info.verkey, skip_if_exists=True
+                )
 
-        except WalletNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except (LedgerError, WalletError) as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (LedgerError, WalletError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"result": format_did_info(info)})
 
