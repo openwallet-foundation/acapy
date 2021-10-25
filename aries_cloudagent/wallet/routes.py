@@ -414,70 +414,74 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
 
-    outbound_handler = request["outbound_message_router"]
+        outbound_handler = request["outbound_message_router"]
 
-    create_transaction_for_endorser = json.loads(
-        request.query.get("create_transaction_for_endorser", "false")
-    )
-    write_ledger = not create_transaction_for_endorser
-    connection_id = request.query.get("conn_id")
-    attrib_def = None
-
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
-    did = request.query.get("did")
-    if not did:
-        raise web.HTTPBadRequest(reason="Request query must include DID")
-
-    info: DIDInfo = None
-    try:
-        info, attrib_def = await promote_wallet_public_did(
-            context.profile,
-            context,
-            context.session,
-            did,
-            write_ledger=write_ledger,
-            connection_id=connection_id,
+        create_transaction_for_endorser = json.loads(
+            request.query.get("create_transaction_for_endorser", "false")
         )
-    except LookupError as err:
-        raise web.HTTPNotFound(reason=str(err)) from err
-    except PermissionError as err:
-        raise web.HTTPForbidden(reason=str(err)) from err
-    except WalletNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (LedgerError, WalletError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+        write_ledger = not create_transaction_for_endorser
+        connection_id = request.query.get("conn_id")
+        attrib_def = None
 
-    if not create_transaction_for_endorser:
-        return web.json_response({"result": format_did_info(info)})
+        did = request.query.get("did")
+        if not did:
+            raise web.HTTPBadRequest(reason="Request query must include DID")
 
-    else:
-        transaction_mgr = TransactionManager(context.profile)
+        info: DIDInfo = None
         try:
-            transaction = await transaction_mgr.create_record(
-                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
+            info, attrib_def = await promote_wallet_public_did(
+                context.profile,
+                context,
+                context.session,
+                did,
+                write_ledger=write_ledger,
+                connection_id=connection_id,
             )
-        except StorageError as err:
+        except LookupError as err:
+            raise web.HTTPNotFound(reason=str(err)) from err
+        except PermissionError as err:
+            raise web.HTTPForbidden(reason=str(err)) from err
+        except WalletNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except (LedgerError, WalletError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        # if auto-request, send the request to the endorser
-        if context.settings.get_value("endorser.auto_request"):
+        if not create_transaction_for_endorser:
+            return web.json_response({"result": format_did_info(info)})
+
+        else:
+            transaction_mgr = TransactionManager(context.profile)
             try:
-                transaction, transaction_request = await transaction_mgr.create_request(
-                    transaction=transaction,
-                    # TODO see if we need to parameterize these params
-                    # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
+                transaction = await transaction_mgr.create_record(
+                    messages_attach=attrib_def["signed_txn"],
+                    connection_id=connection_id,
                 )
-            except (StorageError, TransactionManagerError) as err:
+            except StorageError as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-            await outbound_handler(transaction_request, connection_id=connection_id)
+            # if auto-request, send the request to the endorser
+            if context.settings.get_value("endorser.auto_request"):
+                try:
+                    (
+                        transaction,
+                        transaction_request,
+                    ) = await transaction_mgr.create_request(
+                        transaction=transaction,
+                        # TODO see if we need to parameterize these params
+                        # expires_time=expires_time,
+                        # endorser_write_txn=endorser_write_txn,
+                    )
+                except (StorageError, TransactionManagerError) as err:
+                    raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        return web.json_response({"txn": transaction.serialize()})
+                await outbound_handler(transaction_request, connection_id=connection_id)
+
+            return web.json_response({"txn": transaction.serialize()})
 
 
 async def promote_wallet_public_did(
