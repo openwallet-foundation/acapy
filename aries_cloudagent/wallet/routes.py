@@ -533,17 +533,24 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
-        try:
+    try:
+        did_info: DIDInfo = None
+        async with context.session() as session:
+            wallet = session.inject_or(BaseWallet)
             did_info = await wallet.get_local_did(did)
             if did_info.metadata.get("posted", False):
                 # call from ledger API instead to propagate through ledger NYM transaction
                 raise web.HTTPBadRequest(reason=f"DID {did} is posted to the ledger")
+        async with context.session() as session:
+            wallet = session.inject_or(BaseWallet)
             await wallet.rotate_did_keypair_start(did)  # do not take seed over the wire
+        async with context.session() as session:
+            wallet = session.inject_or(BaseWallet)
             await wallet.rotate_did_keypair_apply(did)
-        except WalletNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except WalletError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
 
