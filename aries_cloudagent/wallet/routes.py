@@ -281,9 +281,9 @@ async def wallet_did_list(request: web.BaseRequest):
                 and (not filter_key_type or info.key_type == filter_key_type)
             ]
 
-        results.sort(
-            key=lambda info: (DIDPosture.get(info["posture"]).ordinal, info["did"])
-        )
+    results.sort(
+        key=lambda info: (DIDPosture.get(info["posture"]).ordinal, info["did"])
+    )
 
     return web.json_response({"results": results})
 
@@ -403,12 +403,10 @@ async def wallet_set_public_did(request: web.BaseRequest):
                 raise web.HTTPNotFound(
                     reason=f"DID {did} is not posted to the ledger"
                 )
+        did_info: DIDInfo = None
         async with context.session() as session:
             wallet = session.inject_or(BaseWallet)
             did_info = await wallet.get_local_did(did)
-        info: DIDInfo = None
-        async with context.session() as session:
-            wallet = session.inject_or(BaseWallet)
             info = await wallet.set_public_did(did_info)
         if info:
             # Publish endpoint if necessary
