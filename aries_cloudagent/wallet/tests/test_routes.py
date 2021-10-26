@@ -53,6 +53,12 @@ class TestWalletRoutes(AsyncTestCase):
             await test_module.wallet_set_public_did(self.request)
 
         with self.assertRaises(HTTPForbidden):
+            self.request.json = async_mock.CoroutineMock(
+                return_value={
+                    "did": self.test_did,
+                    "endpoint": "https://my-endpoint.ca:8020",
+                }
+            )
             await test_module.wallet_set_did_endpoint(self.request)
 
         with self.assertRaises(HTTPForbidden):
