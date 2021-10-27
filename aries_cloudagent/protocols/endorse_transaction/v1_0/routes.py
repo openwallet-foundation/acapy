@@ -14,6 +14,9 @@ from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
+from ....core.event_bus import Event, EventBus
+from ....core.profile import Profile
+from ....core.util import STARTUP_EVENT_PATTERN, SHUTDOWN_EVENT_PATTERN
 from ....indy.issuer import IndyIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.models.base import BaseModelError
@@ -692,6 +695,22 @@ async def transaction_write(request: web.BaseRequest):
     )
 
     return web.json_response(tx_completed.serialize())
+
+
+def register_events(event_bus: EventBus):
+    """Subscribe to any events we need to support."""
+    event_bus.subscribe(STARTUP_EVENT_PATTERN, on_startup_event)
+    event_bus.subscribe(SHUTDOWN_EVENT_PATTERN, on_shutdown_event)
+
+
+async def on_startup_event(profile: Profile, event: Event):
+    """Handle any events we need to support."""
+    print(">>> Received STARTUP event")
+
+
+async def on_shutdown_event(profile: Profile, event: Event):
+    """Handle any events we need to support."""
+    print(">>> Received SHUTDOWN event")
 
 
 async def register(app: web.Application):
