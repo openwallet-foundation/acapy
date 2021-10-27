@@ -462,7 +462,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
             raise web.HTTPForbidden(reason="No wallet available")
 
         try:
-            ledger = session.inject_or(BaseLedger)
+            ledger = context.profile.inject_or(BaseLedger)
             await wallet.set_did_endpoint(did, endpoint, ledger, endpoint_type)
         except WalletNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -533,7 +533,6 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
             raise web.HTTPForbidden(reason="No wallet available")
         try:
             did_info: DIDInfo = None
-            wallet = session.inject_or(BaseWallet)
             did_info = await wallet.get_local_did(did)
             if did_info.metadata.get("posted", False):
                 # call from ledger API instead to propagate through ledger NYM transaction
