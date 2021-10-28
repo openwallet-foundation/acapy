@@ -1,7 +1,6 @@
 """Endorse Transaction handling admin routes."""
 
 import json
-from typing import Optional
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -21,7 +20,6 @@ from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
-from ....wallet.base import BaseWallet
 
 from .manager import TransactionManager, TransactionManagerError
 from .models.transaction_record import TransactionRecord, TransactionRecordSchema
@@ -210,7 +208,7 @@ async def transaction_create_request(request: web.BaseRequest):
     expires_time = body.get("expires_time")
 
     try:
-        async with profile.session() as session:
+        async with context.profile.session() as session:
             transaction_record = await TransactionRecord.retrieve_by_id(
                 session, transaction_id
             )
@@ -221,7 +219,8 @@ async def transaction_create_request(request: web.BaseRequest):
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    async with profile.session() as session:
+
+    async with context.profile.session() as session:
         jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
@@ -252,6 +251,7 @@ async def transaction_create_request(request: web.BaseRequest):
             reason="A request can only be created to a TRANSACTION_ENDORSER"
         )
 
+    transaction_mgr = TransactionManager(context.profile)
     try:
         async with profile.session() as session:
             transaction_mgr = TransactionManager(session)
@@ -297,7 +297,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
     transaction_id = request.match_info["tran_id"]
     try:
-        async with profile.session() as session:
+        async with context.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, transaction_id
             )
@@ -309,7 +309,8 @@ async def endorse_transaction_response(request: web.BaseRequest):
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    async with profile.session() as session:
+
+    async with context.profile.session() as session:
         jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
@@ -323,6 +324,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
             reason="Only a TRANSACTION_ENDORSER can endorse a transaction"
         )
 
+    transaction_mgr = TransactionManager(context.profile)
     try:
         async with profile.session() as session:
             transaction_mgr = TransactionManager(session)
@@ -363,21 +365,10 @@ async def refuse_transaction_response(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-    profile = context.profile
-    async with profile.session() as session:
-        wallet: Optional[BaseWallet] = session.inject_or(BaseWallet)
-        if not wallet:
-            raise web.HTTPForbidden(reason="No wallet available")
-    refuser_did_info = await wallet.get_public_did()
-    if not refuser_did_info:
-        raise web.HTTPForbidden(
-            reason="Transaction cannot be refused as there is no Public DID in wallet"
-        )
-    refuser_did = refuser_did_info.did
 
     transaction_id = request.match_info["tran_id"]
     try:
-        async with profile.session() as session:
+        async with context.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, transaction_id
             )
@@ -389,7 +380,7 @@ async def refuse_transaction_response(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    async with profile.session() as session:
+    async with context.profile.session() as session:
         jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
@@ -404,16 +395,15 @@ async def refuse_transaction_response(request: web.BaseRequest):
         )
 
     try:
-        async with profile.session() as session:
-            transaction_mgr = TransactionManager(session)
-            (
-                transaction,
-                refused_transaction_response,
-            ) = await transaction_mgr.create_refuse_response(
-                transaction=transaction,
-                state=TransactionRecord.STATE_TRANSACTION_REFUSED,
-                refuser_did=refuser_did,
-            )
+        transaction_mgr = TransactionManager(context.profile)
+        (
+            transaction,
+            refused_transaction_response,
+        ) = await transaction_mgr.create_refuse_response(
+            transaction=transaction,
+            state=TransactionRecord.STATE_TRANSACTION_REFUSED,
+            refuser_did=None,
+        )
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -445,7 +435,7 @@ async def cancel_transaction(request: web.BaseRequest):
     profile = context.profile
     transaction_id = request.match_info["tran_id"]
     try:
-        async with profile.session() as session:
+        async with context.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, transaction_id
             )
@@ -457,7 +447,7 @@ async def cancel_transaction(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    async with profile.session() as session:
+    async with context.profile.session() as session:
         jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
@@ -471,6 +461,7 @@ async def cancel_transaction(request: web.BaseRequest):
             reason="Only a TRANSACTION_AUTHOR can cancel a transaction"
         )
 
+    transaction_mgr = TransactionManager(context.profile)
     try:
         async with profile.session() as session:
             transaction_mgr = TransactionManager(session)
@@ -509,10 +500,9 @@ async def transaction_resend(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-    profile = context.profile
     transaction_id = request.match_info["tran_id"]
     try:
-        async with profile.session() as session:
+        async with context.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, transaction_id
             )
@@ -524,7 +514,7 @@ async def transaction_resend(request: web.BaseRequest):
     except BaseModelError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    async with profile.session() as session:
+    async with context.profile.session() as session:
         jobs = await connection_record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
@@ -539,15 +529,13 @@ async def transaction_resend(request: web.BaseRequest):
         )
 
     try:
-        async with profile.session() as session:
-            transaction_mgr = TransactionManager(session)
-            (
-                transaction,
-                resend_transaction_response,
-            ) = await transaction_mgr.transaction_resend(
-                transaction=transaction,
-                state=TransactionRecord.STATE_TRANSACTION_RESENT,
-            )
+        transaction_mgr = TransactionManager(context.profile)
+        (
+            transaction,
+            resend_transaction_response,
+        ) = await transaction_mgr.transaction_resend(
+            transaction=transaction, state=TransactionRecord.STATE_TRANSACTION_RESENT
+        )
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -579,20 +567,20 @@ async def set_endorser_role(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
     transaction_my_job = request.query.get("transaction_my_job")
-    profile = context.profile
 
-    try:
-        async with profile.session() as session:
+    async with context.profile.session() as session:
+        try:
             record = await ConnRecord.retrieve_by_id(session, connection_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except BaseModelError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-    async with profile.session() as session:
-        transaction_mgr = TransactionManager(session)
-        tx_job_to_send = await transaction_mgr.set_transaction_my_job(
-            record=record, transaction_my_job=transaction_my_job
-        )
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except BaseModelError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    transaction_mgr = TransactionManager(context.profile)
+    tx_job_to_send = await transaction_mgr.set_transaction_my_job(
+        record=record, transaction_my_job=transaction_my_job
+    )
+    async with context.profile.session() as session:
         jobs = await record.metadata_get(session, "transaction_jobs")
 
     await outbound_handler(tx_job_to_send, connection_id=connection_id)
@@ -620,16 +608,14 @@ async def set_endorser_info(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     endorser_did = request.query.get("endorser_did")
     endorser_name = request.query.get("endorser_name")
-    profile = context.profile
 
-    try:
-        async with profile.session() as session:
+    async with context.profile.session() as session:
+        try:
             record = await ConnRecord.retrieve_by_id(session, connection_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except BaseModelError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-    async with profile.session() as session:
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except BaseModelError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
         jobs = await record.metadata_get(session, "transaction_jobs")
     if not jobs:
         raise web.HTTPForbidden(
@@ -652,7 +638,7 @@ async def set_endorser_info(request: web.BaseRequest):
                 "to metadata of its connection record"
             )
         )
-    async with profile.session() as session:
+    async with context.profile.session() as session:
         value = await record.metadata_get(session, "endorser_info")
         if value:
             value["endorser_did"] = endorser_did
@@ -687,7 +673,7 @@ async def transaction_write(request: web.BaseRequest):
     profile = context.profile
     transaction_id = request.match_info["tran_id"]
     try:
-        async with profile.session() as session:
+        async with context.profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, transaction_id
             )
@@ -703,6 +689,7 @@ async def transaction_write(request: web.BaseRequest):
         )
 
     # update the final transaction status
+    transaction_mgr = TransactionManager(context.profile)
     try:
         async with profile.session() as session:
             transaction_mgr = TransactionManager(session)

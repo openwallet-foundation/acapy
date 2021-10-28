@@ -325,13 +325,13 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def revoke(request: web.BaseRequest):
     """
-    Request handler for storing a credential request.
+    Request handler for storing a credential revocation.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The credential request details.
+        The credential revocation details.
 
     """
     context: AdminRequestContext = request["context"]
@@ -785,6 +785,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
         return web.json_response({"result": rev_reg.serialize()})
 
     else:
+        transaction_mgr = TransactionManager(context.profile)
         try:
             async with profile.session() as session:
                 transaction_mgr = TransactionManager(session)
@@ -904,6 +905,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         return web.json_response({"result": rev_reg.serialize()})
 
     else:
+        transaction_mgr = TransactionManager(context.profile)
         try:
             async with profile.session() as session:
                 transaction_mgr = TransactionManager(session)
@@ -1017,10 +1019,13 @@ async def on_revocation_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
     event_topic_parts = event.topic.split("::")
     if event_topic_parts[2] == REVOCATION_REG_EVENT:
+        # create the revocation registry (ledger transaction may require endorsement)
         await on_revocation_registry_event(profile, event)
     elif event_topic_parts[2] == REVOCATION_ENTRY_EVENT:
+        # create the revocation entry (ledger transaction may require endorsement)
         await on_revocation_entry_event(profile, event)
     elif event_topic_parts[2] == REVOCATION_TAILS_EVENT:
+        # upload tails file
         await on_revocation_tails_file_event(profile, event)
     else:
         # TODO error handling
@@ -1086,32 +1091,32 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
             await notify_revocation_entry_event(profile, rev_reg_id, meta_data)
 
     else:
-        async with profile.session() as session:
-            transaction_manager = TransactionManager(session)
+        transaction_manager = TransactionManager(profile)
+        try:
+            revo_transaction = await transaction_manager.create_record(
+                messages_attach=rev_reg_resp["result"],
+                connection_id=connection.connection_id,
+                meta_data=event.payload,
+            )
+        except StorageError as err:
+            raise TransactionManagerError(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if profile.settings.get_value("endorser.auto_request"):
             try:
-                revo_transaction = await transaction_manager.create_record(
-                    messages_attach=rev_reg_resp["result"],
-                    connection_id=connection.connection_id,
-                    meta_data=event.payload,
+                (
+                    revo_transaction,
+                    revo_transaction_request,
+                ) = await transaction_manager.create_request(
+                    transaction=revo_transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
                 )
-            except StorageError as err:
+            except (StorageError, TransactionManagerError) as err:
                 raise TransactionManagerError(reason=err.roll_up) from err
 
-            # if auto-request, send the request to the endorser
-            if profile.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        revo_transaction,
-                        revo_transaction_request,
-                    ) = await transaction_manager.create_request(
-                        transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise TransactionManagerError(reason=err.roll_up) from err
-
+            async with profile.session() as session:
                 responder = session.inject_or(BaseResponder)
                 if responder:
                     await responder.send(
@@ -1170,32 +1175,32 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
             await notify_revocation_tails_file_event(profile, rev_reg_id, meta_data)
 
     else:
-        async with profile.session() as session:
-            transaction_manager = TransactionManager(session)
+        transaction_manager = TransactionManager(profile)
+        try:
+            revo_transaction = await transaction_manager.create_record(
+                messages_attach=rev_entry_resp["result"],
+                connection_id=connection.connection_id,
+                meta_data=event.payload,
+            )
+        except StorageError as err:
+            raise RevocationError(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if profile.settings.get_value("endorser.auto_request"):
             try:
-                revo_transaction = await transaction_manager.create_record(
-                    messages_attach=rev_entry_resp["result"],
-                    connection_id=connection.connection_id,
-                    meta_data=event.payload,
+                (
+                    revo_transaction,
+                    revo_transaction_request,
+                ) = await transaction_manager.create_request(
+                    transaction=revo_transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
                 )
-            except StorageError as err:
+            except (StorageError, TransactionManagerError) as err:
                 raise RevocationError(reason=err.roll_up) from err
 
-            # if auto-request, send the request to the endorser
-            if profile.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        revo_transaction,
-                        revo_transaction_request,
-                    ) = await transaction_manager.create_request(
-                        transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise RevocationError(reason=err.roll_up) from err
-
+            async with profile.session() as session:
                 responder = session.inject_or(BaseResponder)
                 if responder:
                     await responder.send(
@@ -1235,6 +1240,9 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
         )
 
     # create a "pending" registry if one is requested
+    # (this is done automatically when creating a credential definition, so that when a
+    #   revocation registry fills up, we ca continue to issue credentials without a
+    #   delay)
     create_pending_rev_reg = event.payload["processing"].get(
         "create_pending_rev_reg", False
     )

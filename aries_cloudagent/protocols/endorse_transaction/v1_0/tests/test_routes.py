@@ -30,6 +30,12 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
         setattr(self.context, "profile", self.profile)
         self.session = await self.profile.session()
         self.profile_injector = self.profile.context.injector
+        self.profile_session = InMemoryProfile.test_session()
+        setattr(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile_session),
+        )
 
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
@@ -864,32 +870,6 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             await test_module.refuse_transaction_response(self.request)
 
             mock_response.assert_called_once_with({"...": "..."})
-
-    async def test_refuse_transaction_response_no_wallet_x(self):
-        self.session.context.injector.clear_binding(BaseWallet)
-        with async_mock.patch.object(
-            self.context.profile,
-            "session",
-            async_mock.MagicMock(return_value=self.session),
-        ) as mock_session:
-            with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.refuse_transaction_response(self.request)
-
-    async def test_refuse_transaction_response_no_endorser_did_info_x(self):
-        self.request.match_info = {"tran_id": "dummy"}
-        self.session.context.injector.bind_instance(
-            BaseWallet,
-            async_mock.MagicMock(
-                get_public_did=async_mock.CoroutineMock(return_value=None)
-            ),
-        )
-        with async_mock.patch.object(
-            self.context.profile,
-            "session",
-            async_mock.MagicMock(return_value=self.session),
-        ) as mock_session:
-            with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.refuse_transaction_response(self.request)
 
     async def test_refuse_transaction_response_not_found_x(self):
         self.request.match_info = {"tran_id": "dummy"}

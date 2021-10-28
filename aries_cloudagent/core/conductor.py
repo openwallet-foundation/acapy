@@ -175,7 +175,7 @@ class Conductor:
 
         # Register all outbound transports
         self.outbound_transport_manager = OutboundTransportManager(
-            context, self.handle_not_delivered
+            self.root_profile, self.handle_not_delivered
         )
         await self.outbound_transport_manager.setup()
 

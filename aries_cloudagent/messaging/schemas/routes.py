@@ -262,8 +262,18 @@ async def schemas_send_schema(request: web.BaseRequest):
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
 
     else:
-        async with context.profile.session() as session:
-            transaction_mgr = TransactionManager(session)
+        transaction_mgr = TransactionManager(context.profile)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=schema_def["signed_txn"],
+                connection_id=connection_id,
+                meta_data=meta_data,
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if context.settings.get_value("endorser.auto_request"):
             try:
                 transaction = await transaction_mgr.create_record(
                     messages_attach=schema_def["signed_txn"],
@@ -438,6 +448,8 @@ def register_events(event_bus: EventBus):
 async def on_schema_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
     schema_id = event.payload["context"]["schema_id"]
+
+    # after the ledger record is written, write the wallet non-secrets record
     await add_schema_non_secrets_record(profile, schema_id)
 
 
