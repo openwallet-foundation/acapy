@@ -705,12 +705,14 @@ def register_events(event_bus: EventBus):
 
 async def on_startup_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
-    print(">>> Received STARTUP event")
+    print(">>> TODO Received STARTUP event")
+    pass
 
 
 async def on_shutdown_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
-    print(">>> Received SHUTDOWN event")
+    print(">>> TODO Received SHUTDOWN event")
+    pass
 
 
 async def register(app: web.Application):
