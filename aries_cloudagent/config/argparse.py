@@ -1536,14 +1536,24 @@ class EndorsementGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--endorser-invitation",
+            type=str,
+            metavar="<endorser-invitation>",
+            env_var="ACAPY_ENDORSER_INVITATION",
+            help=(
+                "For transaction Authors, specify the the invitation used to "
+                "connect to the Endorser agent who will be endorsing transactions. "
+                "Note this is a multi-use invitation created by the Endorser agent."
+            ),
+        )
+        parser.add_argument(
             "--endorser-public-did",
             type=str,
             metavar="<endorser-public-did>",
             env_var="ACAPY_ENDORSER_PUBLIC_DID",
             help=(
                 "For transaction Authors, specify the the public DID of the Endorser "
-                "agent who will be endorsing transactions.  Note this requires that "
-                "the connection be made using the Endorser's public DID."
+                "agent who will be endorsing transactions."
             ),
         )
         parser.add_argument(
@@ -1604,6 +1614,15 @@ class EndorsementGroup(ArgumentGroup):
                 settings["endorser.author"] = True
             elif args.endorser_protocol_role == ENDORSER_ENDORSER:
                 settings["endorser.endorser"] = True
+
+        if args.endorser_invitation:
+            if settings["endorser.author"]:
+                settings["endorser.endorser_invitation"] = args.endorser_invitation
+            else:
+                raise ArgsParseError(
+                    "Parameter --endorser-public-did should only be set for transaction "
+                    "Authors"
+                )
 
         if args.endorser_public_did:
             if settings["endorser.author"]:
