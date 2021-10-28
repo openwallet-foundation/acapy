@@ -27,7 +27,7 @@ class PresentationProposalHandler(BaseHandler):
 
         """
         r_time = get_timer()
-
+        profile = context.profile
         self._logger.debug(
             "PresentationProposalHandler called with context %s", context
         )
@@ -42,7 +42,7 @@ class PresentationProposalHandler(BaseHandler):
                 "No connection established for presentation proposal"
             )
 
-        presentation_manager = PresentationManager(context.profile)
+        presentation_manager = PresentationManager(profile)
         presentation_exchange_record = await presentation_manager.receive_proposal(
             context.message, context.connection_record
         )  # mgr only creates, saves record: on exception, saving state null is hopeless
@@ -69,7 +69,7 @@ class PresentationProposalHandler(BaseHandler):
             except (BaseModelError, LedgerError, StorageError) as err:
                 self._logger.exception(err)
                 if presentation_exchange_record:
-                    async with context.session() as session:
+                    async with profile.session() as session:
                         await presentation_exchange_record.save_error_state(
                             session,
                             reason=err.roll_up,  # us: be specific

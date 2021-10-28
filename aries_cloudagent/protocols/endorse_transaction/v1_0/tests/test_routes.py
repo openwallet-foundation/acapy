@@ -24,9 +24,11 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 
 
 class TestEndorseTransactionRoutes(AsyncTestCase):
-    def setUp(self):
-        self.session_inject = {}
+    async def setUp(self):
         self.profile = InMemoryProfile.test_profile()
+        self.context = self.profile.context
+        setattr(self.context, "profile", self.profile)
+        self.session = await self.profile.session()
         self.profile_injector = self.profile.context.injector
 
         self.ledger = async_mock.create_autospec(BaseLedger)
@@ -55,10 +57,6 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             return_value={"id": SCHEMA_ID, "...": "..."}
         )
         self.profile_injector.bind_instance(BaseLedger, self.ledger)
-
-        self.context = AdminRequestContext.test_context(
-            self.session_inject, profile=self.profile
-        )
 
         self.request_dict = {
             "context": self.context,
@@ -424,17 +422,19 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
     async def test_endorse_transaction_response(self):
         self.request.match_info = {"tran_id": "dummy"}
-
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
@@ -445,7 +445,11 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             test_module, "TransactionManager", async_mock.MagicMock()
         ) as mock_txn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response:
+        ) as mock_response, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_txn_mgr.return_value = async_mock.MagicMock(
                 create_endorse_response=async_mock.CoroutineMock(
                     return_value=(
@@ -474,37 +478,51 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
     # TODO code re-factored from routes.py to manager.py so tests must be moved
     async def skip_test_endorse_transaction_response_no_wallet_x(self):
-        self.session_inject[BaseWallet] = None
+        self.session.context.injector.clear_binding(BaseWallet)
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.endorse_transaction_response(self.request)
 
     async def skip_test_endorse_transaction_response_no_endorser_did_info_x(self):
         self.request.match_info = {"tran_id": "dummy"}
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(return_value=None)
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(return_value=None)
+            ),
         )
-
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.endorse_transaction_response(self.request)
+        with async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
+            with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.endorse_transaction_response(self.request)
 
     async def test_endorse_transaction_response_not_found_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        ) as mock_txn_rec_retrieve, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_txn_rec_retrieve.side_effect = test_module.StorageNotFoundError()
 
             with self.assertRaises(test_module.web.HTTPNotFound):
@@ -512,24 +530,30 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
 
     async def test_endorse_transaction_response_base_model_x(self):
         self.request.match_info = {"tran_id": "dummy"}
-
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        ) as mock_txn_rec_retrieve, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
             mock_txn_rec_retrieve.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(return_value={"...": "..."})
@@ -541,23 +565,30 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def test_endorse_transaction_response_no_jobs_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        ) as mock_txn_rec_retrieve, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(return_value=None)
             )
@@ -571,16 +602,19 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def skip_test_endorse_transaction_response_no_ledger_x(self):
         self.request.match_info = {"tran_id": "dummy"}
         self.context.injector.clear_binding(BaseLedger)
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
@@ -589,7 +623,11 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_txn_rec_retrieve, async_mock.patch.object(
             test_module, "TransactionManager", async_mock.MagicMock()
-        ) as mock_txn_mgr:
+        ) as mock_txn_mgr, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_txn_mgr.return_value = async_mock.MagicMock(
                 create_endorse_response=async_mock.CoroutineMock(
                     return_value=(
@@ -619,23 +657,30 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def test_endorse_transaction_response_wrong_my_job_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        ) as mock_txn_rec_retrieve, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
                     return_value={
@@ -655,16 +700,19 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def skip_test_endorse_transaction_response_ledger_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
         self.ledger.txn_endorse = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError()
@@ -676,7 +724,11 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_txn_rec_retrieve, async_mock.patch.object(
             test_module, "TransactionManager", async_mock.MagicMock()
-        ) as mock_txn_mgr:
+        ) as mock_txn_mgr, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_txn_mgr.return_value = async_mock.MagicMock(
                 create_endorse_response=async_mock.CoroutineMock(
                     return_value=(
@@ -706,16 +758,19 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def test_endorse_transaction_response_txn_mgr_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
@@ -726,7 +781,11 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             test_module, "TransactionManager", async_mock.MagicMock()
         ) as mock_txn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response:
+        ) as mock_response, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_txn_mgr.return_value = async_mock.MagicMock(
                 create_endorse_response=async_mock.CoroutineMock(
                     side_effect=test_module.TransactionManagerError()
@@ -751,16 +810,19 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def test_refuse_transaction_response(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
@@ -771,7 +833,11 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             test_module, "TransactionManager", async_mock.MagicMock()
         ) as mock_txn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response:
+        ) as mock_response, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_txn_mgr.return_value = async_mock.MagicMock(
                 create_refuse_response=async_mock.CoroutineMock(
                     return_value=(
@@ -800,37 +866,56 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({"...": "..."})
 
     async def test_refuse_transaction_response_no_wallet_x(self):
-        self.session_inject[BaseWallet] = None
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.refuse_transaction_response(self.request)
+        self.session.context.injector.clear_binding(BaseWallet)
+        with async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
+            with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.refuse_transaction_response(self.request)
 
     async def test_refuse_transaction_response_no_endorser_did_info_x(self):
         self.request.match_info = {"tran_id": "dummy"}
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(return_value=None)
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(return_value=None)
+            ),
         )
-
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.refuse_transaction_response(self.request)
+        with async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
+            with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.refuse_transaction_response(self.request)
 
     async def test_refuse_transaction_response_not_found_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        ) as mock_txn_rec_retrieve, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_txn_rec_retrieve.side_effect = test_module.StorageNotFoundError()
 
             with self.assertRaises(test_module.web.HTTPNotFound):
@@ -839,23 +924,30 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def test_refuse_transaction_response_conn_base_model_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        ) as mock_txn_rec_retrieve, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
             mock_txn_rec_retrieve.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(return_value={"...": "..."})
@@ -867,23 +959,30 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def test_refuse_transaction_response_no_jobs_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        ) as mock_txn_rec_retrieve, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(return_value=None)
             )
@@ -897,23 +996,30 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def test_refuse_transaction_response_wrong_my_job_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_txn_rec_retrieve:
+        ) as mock_txn_rec_retrieve, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
                     return_value={
@@ -933,16 +1039,19 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
     async def test_refuse_transaction_response_txn_mgr_x(self):
         self.request.match_info = {"tran_id": "dummy"}
 
-        self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"meta": "data"},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+        self.session.context.injector.bind_instance(
+            BaseWallet,
+            async_mock.MagicMock(
+                get_public_did=async_mock.CoroutineMock(
+                    return_value=DIDInfo(
+                        "did",
+                        "verkey",
+                        {"meta": "data"},
+                        method=DIDMethod.SOV,
+                        key_type=KeyType.ED25519,
+                    )
                 )
-            )
+            ),
         )
 
         with async_mock.patch.object(
@@ -953,7 +1062,11 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             test_module, "TransactionManager", async_mock.MagicMock()
         ) as mock_txn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
-        ) as mock_response:
+        ) as mock_response, async_mock.patch.object(
+            self.context.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.session),
+        ) as mock_session:
             mock_txn_mgr.return_value = async_mock.MagicMock(
                 create_refuse_response=async_mock.CoroutineMock(
                     side_effect=test_module.TransactionManagerError()

@@ -509,9 +509,6 @@ class IndySdkLedger(BaseLedger):
                 else:
                     raise
 
-            # Add non-secrets record
-            await self.add_schema_non_secrets_record(schema_id, public_info.did)
-
         return schema_id, schema_def
 
     async def check_existing_schema(
@@ -671,16 +668,16 @@ class IndySdkLedger(BaseLedger):
             ledger_cred_def = await self.fetch_credential_definition(
                 credential_definition_id
             )
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                if ledger_cred_def:
-                    LOGGER.warning(
-                        "Credential definition %s already exists on ledger %s",
-                        credential_definition_id,
-                        self.pool.name,
-                    )
+            if ledger_cred_def:
+                LOGGER.warning(
+                    "Credential definition %s already exists on ledger %s",
+                    credential_definition_id,
+                    self.pool.name,
+                )
 
-                    try:
+                try:
+                    async with self.profile.session() as session:
+                        wallet = session.inject(BaseWallet)
                         if not await issuer.credential_definition_in_wallet(
                             credential_definition_id
                         ):
@@ -689,12 +686,14 @@ class IndySdkLedger(BaseLedger):
                                 f"ledger {self.pool.name} but not in wallet "
                                 f"{wallet.opened.name}"
                             )
-                    except IndyIssuerError as err:
-                        raise LedgerError(err.message) from err
-                    credential_definition_json = json.dumps(ledger_cred_def)
-                    break
-                else:  # no such cred def on ledger
-                    try:
+                except IndyIssuerError as err:
+                    raise LedgerError(err.message) from err
+                credential_definition_json = json.dumps(ledger_cred_def)
+                break
+            else:  # no such cred def on ledger
+                try:
+                    async with self.profile.session() as session:
+                        wallet = session.inject(BaseWallet)
                         if await issuer.credential_definition_in_wallet(
                             credential_definition_id
                         ):
@@ -703,8 +702,8 @@ class IndySdkLedger(BaseLedger):
                                 f"wallet {wallet.opened.name} but not on ledger "
                                 f"{self.pool.name}"
                             )
-                    except IndyIssuerError as err:
-                        raise LedgerError(err.message) from err
+                except IndyIssuerError as err:
+                    raise LedgerError(err.message) from err
 
             # Cred def is neither on ledger nor in wallet: create and send it
             novel = True
@@ -740,11 +739,6 @@ class IndySdkLedger(BaseLedger):
             )
             if not write_ledger:
                 return (credential_definition_id, {"signed_txn": resp}, novel)
-
-            # Add non-secrets record
-            await self.add_cred_def_non_secrets_record(
-                schema_id, public_info.did, credential_definition_id
-            )
 
         return (credential_definition_id, json.loads(credential_definition_json), novel)
 
@@ -1144,23 +1138,21 @@ class IndySdkLedger(BaseLedger):
                 + self.pool.name
                 + "::"
             )
-            acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
-            if not acceptance:
-                storage = await self.get_indy_storage()
-                tag_filter = {"pool_name": self.pool.name}
-                found = await storage.find_all_records(
-                    TAA_ACCEPTED_RECORD_TYPE, tag_filter
+        acceptance = self.pool.cache and await self.pool.cache.get(cache_key)
+        if not acceptance:
+            storage = await self.get_indy_storage()
+            tag_filter = {"pool_name": self.pool.name}
+            found = await storage.find_all_records(TAA_ACCEPTED_RECORD_TYPE, tag_filter)
+            if found:
+                records = list(json.loads(record.value) for record in found)
+                records.sort(key=lambda v: v["time"], reverse=True)
+                acceptance = records[0]
+            else:
+                acceptance = {}
+            if self.pool.cache:
+                await self.pool.cache.set(
+                    cache_key, acceptance, self.pool.cache_duration
                 )
-                if found:
-                    records = list(json.loads(record.value) for record in found)
-                    records.sort(key=lambda v: v["time"], reverse=True)
-                    acceptance = records[0]
-                else:
-                    acceptance = {}
-                if self.pool.cache:
-                    await self.pool.cache.set(
-                        cache_key, acceptance, self.pool.cache_duration
-                    )
         return acceptance
 
     async def get_revoc_reg_def(self, revoc_reg_id: str) -> dict:

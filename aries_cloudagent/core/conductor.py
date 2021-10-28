@@ -365,15 +365,15 @@ class Conductor:
         # mediation connection establishment
         provided_invite: str = context.settings.get("mediation.invite")
 
-        async with self.root_profile.session() as session:
-            try:
+        try:
+            async with self.root_profile.session() as session:
                 invite_store = MediationInviteStore(session.context.inject(BaseStorage))
                 mediation_invite_record = (
                     await invite_store.get_mediation_invite_record(provided_invite)
                 )
-            except Exception:
-                LOGGER.exception("Error retrieving mediator invitation")
-                mediation_invite_record = None
+        except Exception:
+            LOGGER.exception("Error retrieving mediator invitation")
+            mediation_invite_record = None
 
         # Accept mediation invitation if one was specified or stored
         if mediation_invite_record is not None:

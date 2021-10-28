@@ -198,8 +198,8 @@ async def wallet_did_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
+    async with context.profile.session() as session:
+        wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     filter_did = request.query.get("did")
@@ -323,8 +323,8 @@ async def wallet_create_did(request: web.BaseRequest):
             )
         )
 
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
+    async with context.profile.session() as session:
+        wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     try:
@@ -350,8 +350,8 @@ async def wallet_get_public_did(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
+    async with context.profile.session() as session:
+        wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     try:
@@ -377,7 +377,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
+    session = await context.profile.session()
     wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
@@ -441,7 +441,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
+    session = await context.profile.session()
     wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
@@ -481,8 +481,8 @@ async def wallet_get_did_endpoint(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
+    async with context.profile.session() as session:
+        wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
@@ -514,8 +514,8 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
+    async with context.profile.session() as session:
+        wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")

@@ -1,6 +1,7 @@
 """Credential schema admin routes."""
 
 import json
+from time import time
 
 from asyncio import shield
 
@@ -17,6 +18,8 @@ from marshmallow import fields
 from marshmallow.validate import Regexp
 
 from ...admin.request_context import AdminRequestContext
+from ...core.event_bus import Event, EventBus
+from ...core.profile import Profile
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.schema import SchemaSchema
 from ...ledger.base import BaseLedger
@@ -32,13 +35,23 @@ from ...protocols.endorse_transaction.v1_0.manager import (
 from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
-from ...storage.base import BaseStorage
+from ...protocols.endorse_transaction.v1_0.util import (
+    is_author_role,
+    get_endorser_connection_id,
+)
+from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 
 from ..models.openapi import OpenAPISchema
 from ..valid import B58, INDY_SCHEMA_ID, INDY_VERSION
 
-from .util import SchemaQueryStringSchema, SCHEMA_SENT_RECORD_TYPE, SCHEMA_TAGS
+from .util import (
+    SchemaQueryStringSchema,
+    SCHEMA_SENT_RECORD_TYPE,
+    SCHEMA_TAGS,
+    EVENT_LISTENER_PATTERN,
+    notify_schema_event,
+)
 
 
 from ..valid import UUIDFour
@@ -154,6 +167,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     create_transaction_for_endorser = json.loads(
@@ -170,31 +184,19 @@ async def schemas_send_schema(request: web.BaseRequest):
     attributes = body.get("attributes")
 
     # check if we need to endorse
-    if context.settings.get_value("endorser.author"):
+    if is_author_role(context.profile):
         # authors cannot write to the ledger
         write_ledger = False
         create_transaction_for_endorser = True
         if not connection_id:
             # author has not provided a connection id, so determine which to use
-            endorser_alias = context.settings.get_value("endorser.endorser_alias")
-            if not endorser_alias:
-                raise web.HTTPBadRequest(reason="No endorser conenction specified")
-            try:
-                async with context.session() as session:
-                    connection_records = await ConnRecord.retrieve_by_alias(
-                        session, endorser_alias
-                    )
-                    connection_id = connection_records[0].connection_id
-            except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-            except BaseModelError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-            except Exception as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
+            connection_id = await get_endorser_connection_id(context.profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
 
     if not write_ledger:
         try:
-            async with context.session() as session:
+            async with profile.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
@@ -203,8 +205,10 @@ async def schemas_send_schema(request: web.BaseRequest):
         except BaseModelError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        session = await context.session()
-        endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        async with profile.session() as session:
+            endorser_info = await connection_record.metadata_get(
+                session, "endorser_info"
+            )
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason="Endorser Info is not set up in "
@@ -242,32 +246,49 @@ async def schemas_send_schema(request: web.BaseRequest):
         except (IndyIssuerError, LedgerError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
+    meta_data = {
+        "context": {
+            "schema_id": schema_id,
+            "schema_name": schema_name,
+            "schema_version": schema_version,
+            "attributes": attributes,
+        },
+        "processing": {},
+    }
+
     if not create_transaction_for_endorser:
+        # Notify event
+        await notify_schema_event(context.profile, schema_id, meta_data)
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
+
     else:
-        session = await context.session()
-
-        transaction_mgr = TransactionManager(session)
-        try:
-            transaction = await transaction_mgr.create_record(
-                messages_attach=schema_def["signed_txn"], connection_id=connection_id
-            )
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        # if auto-request, send the request to the endorser
-        if context.settings.get_value("endorser.auto_request"):
+        async with context.profile.session() as session:
+            transaction_mgr = TransactionManager(session)
             try:
-                transaction, transaction_request = await transaction_mgr.create_request(
-                    transaction=transaction,
-                    # TODO see if we need to parameterize these params
-                    # expires_time=expires_time,
-                    # endorser_write_txn=endorser_write_txn,
+                transaction = await transaction_mgr.create_record(
+                    messages_attach=schema_def["signed_txn"],
+                    connection_id=connection_id,
+                    meta_data=meta_data,
                 )
-            except (StorageError, TransactionManagerError) as err:
+            except StorageError as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-            await outbound_handler(transaction_request, connection_id=connection_id)
+            # if auto-request, send the request to the endorser
+            if context.settings.get_value("endorser.auto_request"):
+                try:
+                    (
+                        transaction,
+                        transaction_request,
+                    ) = await transaction_mgr.create_request(
+                        transaction=transaction,
+                        # TODO see if we need to parameterize these params
+                        # expires_time=expires_time,
+                        # endorser_write_txn=endorser_write_txn,
+                    )
+                except (StorageError, TransactionManagerError) as err:
+                    raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+                await outbound_handler(transaction_request, connection_id=connection_id)
 
         return web.json_response({"txn": transaction.serialize()})
 
@@ -318,11 +339,11 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
     schema_id = request.match_info["schema_id"]
 
     ledger_id = None
-    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
         schema_id,
         txn_record_type=GET_SCHEMA,
@@ -365,13 +386,14 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
-    session = await context.session()
-    storage = session.inject(BaseStorage)
+    profile = context.profile
 
     schema_id = request.match_info["schema_id"]
 
     ledger_id = None
-    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
         schema_id,
         txn_record_type=GET_SCHEMA,
@@ -390,8 +412,6 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
     async with ledger:
         try:
             schema = await ledger.get_schema(schema_id)
-            schema_id_parts = schema_id.split(":")
-            issuer_did = schema_id_parts[0]
 
             # check if the record exists, if not add it
             found = await storage.find_all_records(
@@ -401,13 +421,47 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
                 },
             )
             if 0 == len(found):
-                await ledger.add_schema_non_secrets_record(schema_id, issuer_did)
+                await add_schema_non_secrets_record(profile, schema_id)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
     if ledger_id:
         return web.json_response({"ledger_id": ledger_id, "schema": schema})
     else:
         return web.json_response({"schema": schema})
+
+
+def register_events(event_bus: EventBus):
+    """Subscribe to any events we need to support."""
+    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_schema_event)
+
+
+async def on_schema_event(profile: Profile, event: Event):
+    """Handle any events we need to support."""
+    schema_id = event.payload["context"]["schema_id"]
+    await add_schema_non_secrets_record(profile, schema_id)
+
+
+async def add_schema_non_secrets_record(profile: Profile, schema_id: str):
+    """
+    Write the wallet non-secrets record for a schema (already written to the ledger).
+
+    Args:
+        profile: the current profile (used to determine storage)
+        schema_id: The schema id (or stringified sequence number)
+
+    """
+    schema_id_parts = schema_id.split(":")
+    schema_tags = {
+        "schema_id": schema_id,
+        "schema_issuer_did": schema_id_parts[0],
+        "schema_name": schema_id_parts[-2],
+        "schema_version": schema_id_parts[-1],
+        "epoch": str(int(time())),
+    }
+    record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        await storage.add_record(record)
 
 
 async def register(app: web.Application):

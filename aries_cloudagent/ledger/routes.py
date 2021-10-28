@@ -184,13 +184,13 @@ async def register_ledger_nym(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger = session.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     verkey = request.query.get("verkey")
@@ -240,28 +240,28 @@ async def get_nym_role(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
 
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     ledger_id = None
-    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-        did,
-        txn_record_type=GET_NYM_ROLE,
-    )
-    if isinstance(ledger_info, tuple):
-        ledger_id = ledger_info[0]
-        ledger = ledger_info[1]
-    else:
-        ledger = ledger_info
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            did,
+            txn_record_type=GET_NYM_ROLE,
+        )
+        if isinstance(ledger_info, tuple):
+            ledger_id = ledger_info[0]
+            ledger = ledger_info[1]
+        else:
+            ledger = ledger_info
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     async with ledger:
         try:
@@ -288,13 +288,13 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger = session.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
     async with ledger:
         try:
             await ledger.rotate_public_did_keypair()  # do not take seed over the wire
@@ -318,28 +318,28 @@ async def get_did_verkey(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
 
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     ledger_id = None
-    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-        did,
-        txn_record_type=GET_KEY_FOR_DID,
-    )
-    if isinstance(ledger_info, tuple):
-        ledger_id = ledger_info[0]
-        ledger = ledger_info[1]
-    else:
-        ledger = ledger_info
-    if not ledger:
-        reason = "No ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            did,
+            txn_record_type=GET_KEY_FOR_DID,
+        )
+        if isinstance(ledger_info, tuple):
+            ledger_id = ledger_info[0]
+            ledger = ledger_info[1]
+        else:
+            ledger = ledger_info
+        if not ledger:
+            reason = "No ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     async with ledger:
         try:
@@ -368,28 +368,28 @@ async def get_did_endpoint(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
 
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     ledger_id = None
-    ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-        did,
-        txn_record_type=GET_ENDPOINT_FOR_DID,
-    )
-    if isinstance(ledger_info, tuple):
-        ledger_id = ledger_info[0]
-        ledger = ledger_info[1]
-    else:
-        ledger = ledger_info
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            did,
+            txn_record_type=GET_ENDPOINT_FOR_DID,
+        )
+        if isinstance(ledger_info, tuple):
+            ledger_id = ledger_info[0]
+            ledger = ledger_info[1]
+        else:
+            ledger = ledger_info
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
     endpoint_type = EndpointType.get(
         request.query.get("endpoint_type", EndpointType.ENDPOINT.w3c)
     )
@@ -419,13 +419,13 @@ async def ledger_get_taa(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger = session.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     async with ledger:
         try:
@@ -460,13 +460,13 @@ async def ledger_accept_taa(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger = session.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     accept_input = await request.json()
     async with ledger:
@@ -506,8 +506,8 @@ async def get_write_ledger(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+    async with context.profile.session() as session:
+        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
     if not multiledger_mgr:
         reason = "Multiple ledger support not enabled"
         raise web.HTTPForbidden(reason=reason)
@@ -531,8 +531,8 @@ async def reset_write_ledger(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+    async with context.profile.session() as session:
+        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
     if not multiledger_mgr:
         reason = "Multiple ledger support not enabled"
         raise web.HTTPForbidden(reason=reason)
@@ -554,8 +554,8 @@ async def set_write_ledger(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+    async with context.profile.session() as session:
+        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
     if not multiledger_mgr:
         reason = "Multiple ledger support not enabled"
         raise web.HTTPForbidden(reason=reason)
@@ -583,12 +583,12 @@ async def get_ledger_config(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
-    if not multiledger_mgr:
-        reason = "Multiple ledger support not enabled"
-        raise web.HTTPForbidden(reason=reason)
-    ledger_config_list = session.settings.get_value("ledger.ledger_config_list")
+    async with context.profile.session() as session:
+        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+        if not multiledger_mgr:
+            reason = "Multiple ledger support not enabled"
+            raise web.HTTPForbidden(reason=reason)
+        ledger_config_list = session.settings.get_value("ledger.ledger_config_list")
     return web.json_response({"ledger_config_list": ledger_config_list})
 
 
@@ -604,8 +604,8 @@ async def update_ledger_config(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+    async with context.profile.session() as session:
+        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
     if not multiledger_mgr:
         reason = "Multiple ledger support not enabled"
         raise web.HTTPForbidden(reason=reason)
