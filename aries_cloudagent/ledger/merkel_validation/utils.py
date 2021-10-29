@@ -32,32 +32,6 @@ def bin_to_nibbles(s):
     return [hti[c] for c in encode_hex(s)]
 
 
-def pack_nibbles(nibbles):
-    """Pack nibbles to binary.
-
-    Args:
-        nibbles: a nibbles sequence. may have a terminator
-
-    """
-
-    if nibbles[-1] == NIBBLE_TERMINATOR:
-        flags = 2
-        nibbles = nibbles[:-1]
-    else:
-        flags = 0
-
-    oddlen = len(nibbles) % 2
-    flags |= oddlen  # set lowest bit if odd number of nibbles
-    if oddlen:
-        nibbles = [flags] + nibbles
-    else:
-        nibbles = [flags, 0] + nibbles
-    o = b""
-    for i in range(0, len(nibbles), 2):
-        o += ascii_chr(16 * nibbles[i] + nibbles[i + 1])
-    return o
-
-
 def unpack_to_nibbles(bindata):
     """Unpack packed binary data to nibbles.
 

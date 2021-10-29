@@ -4,9 +4,7 @@ from asynctest import TestCase
 
 from ..domain_txn_handler import (
     prepare_for_state_read,
-    prepare_for_state_write,
     get_proof_nodes,
-    extract_params_write_request,
 )
 from ..hasher import TreeHasher, HexTreeHasher
 from ..trie import SubTrie
@@ -30,6 +28,21 @@ from .test_data import (
     RAW_HEX_LEAF,
     SHA256_AUDIT_PATH,
 )
+
+
+class TestSubTrie(TestCase):
+    def test_get_setter_root_hash(self):
+        test_trie = SubTrie()
+        test_trie.root_hash = 530343892119126197
+        assert test_trie.root_hash == 530343892119126197
+
+    def test_get_blank_node(self):
+        assert SubTrie._get_node_type(b"") == 0
+
+    async def test_verify_spv_proof_catch_exception(self):
+        assert not await SubTrie.verify_spv_proof(
+            expected_value="test", proof_nodes="test"
+        )
 
 
 class TestMPTStateProofValidation(TestCase):

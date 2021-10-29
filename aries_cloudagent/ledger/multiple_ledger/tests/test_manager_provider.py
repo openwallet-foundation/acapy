@@ -43,7 +43,7 @@ LEDGER_CONFIG = [
     },
     {
         "id": "sovrinTest",
-        "is_production": True,
+        "is_production": False,
         "genesis_transactions": {
             "reqSignature": {},
             "txn": {

@@ -394,7 +394,7 @@ def prepare_revoc_reg_entry_accum_for_state(txn):
     txn_data = result.get(TXN).get(DATA)
     revoc_reg_def_id = txn_data.get(REVOC_DEF_TYPE_ID)
     seq_no = result.get(TXN_METADATA).get(SEQ_NO)
-    txn_time = result.get(TXN_METADATA).get(SEQ_NO)
+    txn_time = result.get(TXN_METADATA).get(TXN_TIME)
     path = make_state_path_for_revoc_reg_entry_accum(revoc_reg_def_id=revoc_reg_def_id)
     txn_data = deepcopy(txn_data)
     txn_data[SEQ_NO] = seq_no
@@ -435,12 +435,6 @@ def get_proof_nodes(reply):
     else:
         b64_encoded_nodes = reply.get(RESULT).get(STATE_PROOF).get(PROOF_NODES)
         return base64.b64decode(b64_encoded_nodes)
-
-
-def get_root_hash(reply):
-    """Return base58 decoded root_hash from reply."""
-    b58_encoded_root_hash = reply.get(RESULT).get(STATE_PROOF).get("root_hash")
-    return base58.b58decode(b58_encoded_root_hash)
 
 
 def prepare_for_state_read(reply):

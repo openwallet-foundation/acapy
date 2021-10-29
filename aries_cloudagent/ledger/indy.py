@@ -7,7 +7,7 @@ import tempfile
 from datetime import date, datetime
 from os import path
 from time import time
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Optional
 
 import indy.ledger
 import indy.pool
@@ -996,6 +996,21 @@ class IndySdkLedger(BaseLedger):
             # remove any existing prefix
             nym = self.did_to_nym(nym)
             return f"did:sov:{nym}"
+
+    async def build_and_return_get_nym_request(
+        self, submitter_did: Optional[str], target_did: str
+    ) -> str:
+        """Build GET_NYM request and return request_json."""
+        with IndyErrorHandler("Exception building nym request", LedgerError):
+            request_json = await indy.ledger.build_get_nym_request(
+                submitter_did, target_did
+            )
+            return request_json
+
+    async def submit_get_nym_request(self, request_json: str) -> str:
+        """Submit GET_NYM request to ledger and return response_json."""
+        response_json = await self._submit(request_json)
+        return response_json
 
     async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
         """

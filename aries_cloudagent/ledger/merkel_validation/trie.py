@@ -46,7 +46,7 @@ class SubTrie:
         self._root_hash = root_hash
 
     @staticmethod
-    async def _get_node_type(node):
+    def _get_node_type(node):
         if node == BLANK_NODE:
             return NODE_TYPE_BLANK
         if len(node) == 2:
@@ -68,13 +68,13 @@ class SubTrie:
                 try:
                     decoded_node = rlp_decode(encoded_node)
                     # branch node
-                    if await SubTrie._get_node_type(decoded_node) == NODE_TYPE_BRANCH:
+                    if SubTrie._get_node_type(decoded_node) == NODE_TYPE_BRANCH:
                         if (
                             json.loads(rlp_decode(decoded_node[-1])[0].decode("utf-8"))
                         ) == expected_value:
                             return True
                     # leaf or extension node
-                    if await SubTrie._get_node_type(decoded_node) == NODE_TYPE_LEAF:
+                    if SubTrie._get_node_type(decoded_node) == NODE_TYPE_LEAF:
                         if (
                             json.loads(rlp_decode(decoded_node[1])[0].decode("utf-8"))
                         ) == expected_value:

@@ -18,8 +18,6 @@ class BaseMultipleLedgerManager(ABC):
 
     def __init__(self, profile: Profile):
         """Initialize Multiple Ledger Manager."""
-        super().__init__()
-        self._profile = profile
 
     @abstractmethod
     async def get_write_ledger(self) -> Tuple[str, T]:

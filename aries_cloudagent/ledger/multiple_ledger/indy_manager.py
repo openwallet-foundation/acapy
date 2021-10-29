@@ -49,7 +49,6 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         self.profile = profile
         self.production_ledgers = production_ledgers
         self.non_production_ledgers = non_production_ledgers
-        self.cache = profile.inject_or(BaseCache)
         self.write_ledger_info = None
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
@@ -101,7 +100,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
     async def reset_write_ledger(self) -> Tuple[str, IndySdkLedger]:
         """Reset set write ledger, if any, to default."""
         self.write_ledger_info = None
-        ledger_id, ledger = self.get_write_ledger()
+        ledger_id, ledger = await self.get_write_ledger()
         await self.update_profile_context(ledger)
         return (ledger_id, ledger)
 
@@ -172,9 +171,14 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
             else:
                 indy_sdk_ledger = self.non_production_ledgers.get(ledger_id)
             async with indy_sdk_ledger:
-                request = await indy_sdk_ledger.build_get_nym_request(None, did)
-                response = await asyncio.wait_for(indy_sdk_ledger._submit(request), 10)
-                data = json.loads(response["data"])
+                request = await indy_sdk_ledger.build_and_return_get_nym_request(
+                    None, did
+                )
+                response_json = await asyncio.wait_for(
+                    indy_sdk_ledger.submit_get_nym_request(request), 10
+                )
+                response = json.loads(response_json)
+                data = response.get("result").get("data")
                 if not data:
                     LOGGER.warning(f"Did {did} not posted to ledger {ledger_id}")
                     return None
@@ -216,8 +220,9 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         self, did: str, cache_did: bool = True
     ) -> Tuple[str, IndySdkLedger]:
         """Lookup given DID in configured ledgers in parallel."""
+        self.cache = self.profile.inject_or(BaseCache)
         cache_key = f"did_ledger_id_resolver::{did}"
-        if cache_did and self.cache and await self.cache.get(cache_key):
+        if bool(cache_did and self.cache and await self.cache.get(cache_key)):
             cached_ledger_id = await self.cache.get(cache_key)
             if cached_ledger_id in self.production_ledgers:
                 return (cached_ledger_id, self.production_ledgers.get(cached_ledger_id))
