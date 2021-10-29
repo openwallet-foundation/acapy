@@ -19,6 +19,17 @@ class RevokeHandler(BaseHandler):
             context.message.thread_id,
             context.message.comment,
         )
+        # Emit a webhook
+        if context.settings.get("revocation.monitor_notification"):
+            await context.profile.notify(
+                "acapy::webhook::revocation-notification",
+                {
+                    "thread_id": context.message.thread_id,
+                    "comment": context.message.comment,
+                },
+            )
+
+        # Emit an event
         await context.profile.notify(
             "acapy::revocation-notification::received",
             {

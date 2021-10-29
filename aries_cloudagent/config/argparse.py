@@ -638,6 +638,15 @@ class RevocationGroup(ArgumentGroup):
                 "revoking a credential it issued."
             ),
         )
+        parser.add_argument(
+            "--monitor-revocation-notification",
+            action="store_true",
+            env_var="ACAPY_NOTIFY_REVOCATION",
+            help=(
+                "Specifies that aca-py will emit webhooks on notification of "
+                "revocation received."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract revocation settings."""
@@ -649,6 +658,10 @@ class RevocationGroup(ArgumentGroup):
             settings["tails_server_upload_url"] = args.tails_server_upload_url
         if args.notify_revocation:
             settings["revocation.notify"] = args.notify_revocation
+        if args.monitor_revocation_notification:
+            settings[
+                "revocation.monitor_notification"
+            ] = args.monitor_revocation_notification
         return settings
 
 
