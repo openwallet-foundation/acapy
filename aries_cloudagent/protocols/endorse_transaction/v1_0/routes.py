@@ -202,7 +202,6 @@ async def transaction_create_request(request: web.BaseRequest):
     """
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
     transaction_id = request.query.get("tran_id")
     endorser_write_txn = json.loads(request.query.get("endorser_write_txn", "false"))
@@ -256,16 +255,14 @@ async def transaction_create_request(request: web.BaseRequest):
 
     transaction_mgr = TransactionManager(context.profile)
     try:
-        async with profile.session() as session:
-            transaction_mgr = TransactionManager(session)
-            (
-                transaction_record,
-                transaction_request,
-            ) = await transaction_mgr.create_request(
-                transaction=transaction_record,
-                expires_time=expires_time,
-                endorser_write_txn=endorser_write_txn,
-            )
+        (
+            transaction_record,
+            transaction_request,
+        ) = await transaction_mgr.create_request(
+            transaction=transaction_record,
+            expires_time=expires_time,
+            endorser_write_txn=endorser_write_txn,
+        )
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -295,7 +292,6 @@ async def endorse_transaction_response(request: web.BaseRequest):
     """
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     transaction_id = request.match_info["tran_id"]
@@ -329,15 +325,13 @@ async def endorse_transaction_response(request: web.BaseRequest):
 
     transaction_mgr = TransactionManager(context.profile)
     try:
-        async with profile.session() as session:
-            transaction_mgr = TransactionManager(session)
-            (
-                transaction,
-                endorsed_transaction_response,
-            ) = await transaction_mgr.create_endorse_response(
-                transaction=transaction,
-                state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
-            )
+        (
+            transaction,
+            endorsed_transaction_response,
+        ) = await transaction_mgr.create_endorse_response(
+            transaction=transaction,
+            state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
+        )
     except (IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     except (StorageError, TransactionManagerError) as err:
@@ -435,7 +429,6 @@ async def cancel_transaction(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-    profile = context.profile
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
@@ -466,15 +459,13 @@ async def cancel_transaction(request: web.BaseRequest):
 
     transaction_mgr = TransactionManager(context.profile)
     try:
-        async with profile.session() as session:
-            transaction_mgr = TransactionManager(session)
-            (
-                transaction,
-                cancelled_transaction_response,
-            ) = await transaction_mgr.cancel_transaction(
-                transaction=transaction,
-                state=TransactionRecord.STATE_TRANSACTION_CANCELLED,
-            )
+        (
+            transaction,
+            cancelled_transaction_response,
+        ) = await transaction_mgr.cancel_transaction(
+            transaction=transaction,
+            state=TransactionRecord.STATE_TRANSACTION_CANCELLED,
+        )
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -673,7 +664,6 @@ async def transaction_write(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-    profile = context.profile
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
@@ -694,12 +684,10 @@ async def transaction_write(request: web.BaseRequest):
     # update the final transaction status
     transaction_mgr = TransactionManager(context.profile)
     try:
-        async with profile.session() as session:
-            transaction_mgr = TransactionManager(session)
-            (
-                tx_completed,
-                transaction_acknowledgement_message,
-            ) = await transaction_mgr.complete_transaction(transaction=transaction)
+        (
+            tx_completed,
+            transaction_acknowledgement_message,
+        ) = await transaction_mgr.complete_transaction(transaction=transaction)
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

@@ -785,30 +785,26 @@ async def send_rev_reg_def(request: web.BaseRequest):
         return web.json_response({"result": rev_reg.serialize()})
 
     else:
-        transaction_mgr = TransactionManager(context.profile)
+        transaction_mgr = TransactionManager(profile)
         try:
-            async with profile.session() as session:
-                transaction_mgr = TransactionManager(session)
-                transaction = await transaction_mgr.create_record(
-                    messages_attach=rev_reg_resp["result"], connection_id=connection_id
-                )
+            transaction = await transaction_mgr.create_record(
+                messages_attach=rev_reg_resp["result"], connection_id=connection_id
+            )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         # if auto-request, send the request to the endorser
         if context.settings.get_value("endorser.auto_request"):
             try:
-                async with profile.session() as session:
-                    transaction_mgr = TransactionManager(session)
-                    (
-                        transaction,
-                        transaction_request,
-                    ) = await transaction_mgr.create_request(
-                        transaction=transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
+                (
+                    transaction,
+                    transaction_request,
+                ) = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -905,31 +901,27 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         return web.json_response({"result": rev_reg.serialize()})
 
     else:
-        transaction_mgr = TransactionManager(context.profile)
+        transaction_mgr = TransactionManager(profile)
         try:
-            async with profile.session() as session:
-                transaction_mgr = TransactionManager(session)
-                transaction = await transaction_mgr.create_record(
-                    messages_attach=rev_entry_resp["result"],
-                    connection_id=connection_id,
-                )
+            transaction = await transaction_mgr.create_record(
+                messages_attach=rev_entry_resp["result"],
+                connection_id=connection_id,
+            )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
         # if auto-request, send the request to the endorser
         if context.settings.get_value("endorser.auto_request"):
             try:
-                async with profile.session() as session:
-                    transaction_mgr = TransactionManager(session)
-                    (
-                        transaction,
-                        transaction_request,
-                    ) = await transaction_mgr.create_request(
-                        transaction=transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
+                (
+                    transaction,
+                    transaction_request,
+                ) = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
