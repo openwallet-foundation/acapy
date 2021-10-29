@@ -45,6 +45,8 @@ class IssuerCredRevRecord(BaseRecord):
         rev_reg_id: str = None,
         cred_rev_id: str = None,
         cred_def_id: str = None,  # Marshmallow formalism: leave None
+        thread_id: str = None,
+        connection_id: str = None,
         **kwargs,
     ):
         """Initialize a new IssuerCredRevRecord."""
@@ -53,11 +55,17 @@ class IssuerCredRevRecord(BaseRecord):
         self.rev_reg_id = rev_reg_id
         self.cred_rev_id = cred_rev_id
         self.cred_def_id = ":".join(rev_reg_id.split(":")[-7:-2])
+        self.thread_id = thread_id
+        self.connection_id = connection_id
 
     @property
     def record_id(self) -> str:
         """Accessor for the ID associated with this exchange."""
         return self._id
+
+    def record_value(self) -> dict:
+        """Return record values."""
+        return {"thread_id": self.thread_id, "connection_id": self.connection_id}
 
     @classmethod
     async def query_by_ids(
@@ -152,4 +160,16 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
         required=False,
         description="Credential revocation identifier",
         **INDY_CRED_REV_ID,
+    )
+    thread_id = fields.Str(
+        required=False,
+        description=(
+            "Thread ID of credential exchange resulting in this issued credential"
+        ),
+        example=UUIDFour.EXAMPLE,
+    )
+    connection_id = fields.Str(
+        required=False,
+        description="Connection ID of recipient of this credential",
+        example=UUIDFour.EXAMPLE,
     )

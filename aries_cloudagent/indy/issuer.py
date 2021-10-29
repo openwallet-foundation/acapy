@@ -126,6 +126,8 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         cred_ex_id: str,
         revoc_reg_id: str = None,
         tails_file_path: str = None,
+        thread_id: str = None,
+        connection_id: str = None,
     ) -> Tuple[str, str]:
         """
         Create a credential.

@@ -560,23 +560,6 @@ class GeneralGroup(ArgumentGroup):
             env_var="ACAPY_READ_ONLY_LEDGER",
             help="Sets ledger to read-only to prevent updates. Default: false.",
         )
-        parser.add_argument(
-            "--tails-server-base-url",
-            type=str,
-            metavar="<tails-server-base-url>",
-            env_var="ACAPY_TAILS_SERVER_BASE_URL",
-            help="Sets the base url of the tails server in use.",
-        )
-        parser.add_argument(
-            "--tails-server-upload-url",
-            type=str,
-            metavar="<tails-server-upload-url>",
-            env_var="ACAPY_TAILS_SERVER_UPLOAD_URL",
-            help=(
-                "Sets the base url of the tails server for upload, defaulting to the "
-                "tails server base url."
-            ),
-        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -618,6 +601,54 @@ class GeneralGroup(ArgumentGroup):
             settings["tails_server_upload_url"] = args.tails_server_base_url
         if args.tails_server_upload_url:
             settings["tails_server_upload_url"] = args.tails_server_upload_url
+        return settings
+
+
+@group(CAT_START, CAT_PROVISION)
+class RevocationGroup(ArgumentGroup):
+    """Revocation settings."""
+
+    GROUP_NAME = "Revocation"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add revocation arguments to the parser."""
+        parser.add_argument(
+            "--tails-server-base-url",
+            type=str,
+            metavar="<tails-server-base-url>",
+            env_var="ACAPY_TAILS_SERVER_BASE_URL",
+            help="Sets the base url of the tails server in use.",
+        )
+        parser.add_argument(
+            "--tails-server-upload-url",
+            type=str,
+            metavar="<tails-server-upload-url>",
+            env_var="ACAPY_TAILS_SERVER_UPLOAD_URL",
+            help=(
+                "Sets the base url of the tails server for upload, defaulting to the "
+                "tails server base url."
+            ),
+        )
+        parser.add_argument(
+            "--notify-revocation",
+            action="store_true",
+            env_var="ACAPY_NOTIFY_REVOCATION",
+            help=(
+                "Specifies that aca-py will notify credential recipients when "
+                "revoking a credential it issued."
+            ),
+        )
+
+    def get_settings(self, args: Namespace) -> dict:
+        """Extract revocation settings."""
+        settings = {}
+        if args.tails_server_base_url:
+            settings["tails_server_base_url"] = args.tails_server_base_url
+            settings["tails_server_upload_url"] = args.tails_server_base_url
+        if args.tails_server_upload_url:
+            settings["tails_server_upload_url"] = args.tails_server_upload_url
+        if args.notify_revocation:
+            settings["revocation.notify"] = args.notify_revocation
         return settings
 
 

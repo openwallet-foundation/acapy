@@ -11,6 +11,7 @@ from ..storage.error import StorageNotFoundError
 from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
+from .util import notifiy_issuer_credential_revoked_event
 
 
 class RevocationManagerError(BaseError):
@@ -100,6 +101,9 @@ class RevocationManager:
                 await issuer_rr_rec.send_entry(self._profile)
                 async with self._profile.session() as session:
                     await issuer_rr_rec.clear_pending(session)
+                await notifiy_issuer_credential_revoked_event(
+                    self._profile, cred_rev_id
+                )
 
         else:
             async with self._profile.session() as session:
@@ -162,6 +166,11 @@ class RevocationManager:
                     result[issuer_rr_rec.revoc_reg_id] = published
                     await issuer_rr_rec.clear_pending(txn, published)
                     await txn.commit()
+
+                    for crid in crids:
+                        await notifiy_issuer_credential_revoked_event(
+                            self._profile, crid
+                        )
 
         return result
 

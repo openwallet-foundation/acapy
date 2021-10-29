@@ -3,6 +3,7 @@
 import json
 import logging
 from asyncio import shield
+import re
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -59,7 +60,8 @@ from .models.issuer_cred_rev_record import (
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .util import (
-    EVENT_LISTENER_PATTERN,
+    ISSUER_REVOKE_EVENT,
+    REVOCATION_EVENT_PREFIX,
     REVOCATION_REG_EVENT,
     REVOCATION_ENTRY_EVENT,
     REVOCATION_TAILS_EVENT,
@@ -990,24 +992,31 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
 def register_events(event_bus: EventBus):
     """Subscribe to any events we need to support."""
-    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_revocation_event)
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_REG_EVENT}.*"),
+        on_revocation_registry_event,
+    )
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_ENTRY_EVENT}.*"),
+        on_revocation_entry_event,
+    )
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_TAILS_EVENT}.*"),
+        on_revocation_tails_file_event,
+    )
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{ISSUER_REVOKE_EVENT}.*"),
+        on_issuer_revoke_event,
+    )
 
 
-async def on_revocation_event(profile: Profile, event: Event):
-    """Handle any events we need to support."""
-    event_topic_parts = event.topic.split("::")
-    if event_topic_parts[2] == REVOCATION_REG_EVENT:
-        # create the revocation registry (ledger transaction may require endorsement)
-        await on_revocation_registry_event(profile, event)
-    elif event_topic_parts[2] == REVOCATION_ENTRY_EVENT:
-        # create the revocation entry (ledger transaction may require endorsement)
-        await on_revocation_entry_event(profile, event)
-    elif event_topic_parts[2] == REVOCATION_TAILS_EVENT:
-        # upload tails file
-        await on_revocation_tails_file_event(profile, event)
-    else:
-        # TODO error handling
-        pass
+async def on_issuer_revoke_event(profile: Profile, event: Event):
+    """Handle issuer revoke event."""
+    if not profile.settings.get("revocation.notify"):
+        return
+
+    # responder = profile.inject(BaseResponder)
+    LOGGER.debug("Sending notification of revocation to recipient: %s", event.payload)
 
 
 async def on_revocation_registry_event(profile: Profile, event: Event):
