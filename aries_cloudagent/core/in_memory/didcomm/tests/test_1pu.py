@@ -1,13 +1,11 @@
-# from derive1PU import *
-from ..derive1PU import *
-from ...wallet.util import *
-
-from ecdsa import ECDH, NIST256p
-import base64
 from binascii import unhexlify
 
+from .....wallet.util import b64_to_bytes
 
-def Test_Hex_Example():
+from ..derive_1pu import *
+
+
+def test_1pu_hex_example():
 
     # Previously randomly generated 3 sets of keys
     aliceSecretKey = "23832cbef38641b8754a35f1f79bbcbc248e09ac93b01c2eaf12474f2ac406b6"
@@ -27,11 +25,11 @@ def Test_Hex_Example():
     apv = "Bob"
     keydatalen = 32  # 32 bytes or 256 bit output key length
 
-    aliceKey = deriveSender1PU(
+    aliceKey = derive_sender_1pu(
         aliceEphemeralSecretKey, aliceSecretKey, bobPublicKey, alg, apu, apv, keydatalen
     )
     print("Alice 1PU key: ", aliceKey.hex())
-    bobKey = deriveReceiver1PU(
+    bobKey = derive_receiver_1pu(
         aliceEphemeralPublicKey, alicePublicKey, bobSecretKey, alg, apu, apv, keydatalen
     )
     print("Bob 1PU key: ", bobKey.hex())
@@ -42,7 +40,7 @@ def Test_Hex_Example():
 
 
 # Example key exchange in https://tools.ietf.org/id/draft-madden-jose-ecdh-1pu-03.html#rfc.appendix.A
-def Test_Appendix_Example():
+def test_1pu_appendix_example():
 
     # Convert the three JWK keys into hex encoded byte format
 
@@ -86,11 +84,11 @@ def Test_Appendix_Example():
     apv = "Bob"
     keydatalen = 32  # 32 bytes or 256 bit output key length
 
-    aliceKey = deriveSender1PU(
+    aliceKey = derive_sender_1pu(
         aliceEphemeralSecretKey, aliceSecretKey, bobPublicKey, alg, apu, apv, keydatalen
     )
     print("Alice 1PU key: ", aliceKey.hex())
-    bobKey = deriveReceiver1PU(
+    bobKey = derive_receiver_1pu(
         aliceEphemeralPublicKey, alicePublicKey, bobSecretKey, alg, apu, apv, keydatalen
     )
     print("Bob 1PU key: ", bobKey.hex())
@@ -109,8 +107,8 @@ def Test_Appendix_Example():
 
 def main():
 
-    Test_Hex_Example()
-    Test_Appendix_Example()
+    test_1pu_hex_example()
+    test_1pu_appendix_example()
 
 
 if __name__ == "__main__":

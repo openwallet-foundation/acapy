@@ -60,7 +60,7 @@ class TestCrypto(TestCase):
     def test_decode_pack_message_outer_x(self):
         with pytest.raises(ValueError) as excinfo:
             test_module.decode_pack_message_outer(json.dumps({"invalid": "content"}))
-        assert "Invalid packed message" == str(excinfo.value)
+        assert "Invalid packed message" in str(excinfo.value)
 
         recips = str_to_b64(
             json.dumps(
@@ -77,13 +77,13 @@ class TestCrypto(TestCase):
                 json.dumps(
                     {
                         "protected": recips,
-                        "iv": "00000000",
-                        "tag": "tag",
-                        "ciphertext": "secret",
+                        "iv": "MTIzNDU",
+                        "tag": "MTIzNDU",
+                        "ciphertext": "MTIzNDU",
                     }
                 )
             )
-        assert "Invalid packed message" == str(excinfo.value)
+        assert "Invalid packed message" in str(excinfo.value)
 
         recips = str_to_b64(
             json.dumps(
@@ -91,7 +91,7 @@ class TestCrypto(TestCase):
                     "enc": "xchacha20poly1305_ietf",
                     "typ": "JWM/1.0",
                     "alg": "Quadruple rot-13",
-                    "recipients": [],
+                    "recipients": [{"encrypted_key": "MTIzNDU"}],
                 }
             )
         )
@@ -100,9 +100,9 @@ class TestCrypto(TestCase):
                 json.dumps(
                     {
                         "protected": recips,
-                        "iv": "00000000",
-                        "tag": "tag",
-                        "ciphertext": "secret",
+                        "iv": "MTIzNDU",
+                        "tag": "MTIzNDU",
+                        "ciphertext": "MTIzNDU",
                     }
                 )
             )
@@ -115,7 +115,8 @@ class TestCrypto(TestCase):
 
         with pytest.raises(ValueError) as excinfo:
             test_module.extract_pack_recipients(
-                [JweRecipient(encrypted_key=b"0000", header={"kid": "4mZ5TYv4oN"})] * 2
+                [JweRecipient(encrypted_key=b"MTIzNDU", header={"kid": "4mZ5TYv4oN"})]
+                * 2
             )
         assert "Duplicate recipient key" in str(excinfo.value)
 
@@ -123,7 +124,7 @@ class TestCrypto(TestCase):
             test_module.extract_pack_recipients(
                 [
                     JweRecipient(
-                        encrypted_key=b"0000",
+                        encrypted_key=b"MTIzNDU",
                         header={"kid": "4mZ5TYv4oN", "sender": "4mZ5TYv4oN"},
                     )
                 ]
@@ -134,8 +135,8 @@ class TestCrypto(TestCase):
             test_module.extract_pack_recipients(
                 [
                     JweRecipient(
-                        encrypted_key=b"0000",
-                        header={"kid": "4mZ5TYv4oN", "iv": "00000000"},
+                        encrypted_key=b"MTIzNDU",
+                        header={"kid": "4mZ5TYv4oN", "iv": "MTIzNDU"},
                     )
                 ]
             )

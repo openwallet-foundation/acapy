@@ -8,6 +8,7 @@ import indy.anoncreds
 import indy.blob_storage
 from indy.error import AnoncredsRevocationRegistryFullError, IndyError, ErrorCode
 
+from ...core.profile import ProfileSession
 from ...indy.sdk.profile import IndySdkProfile
 from ...messaging.util import encode
 from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
@@ -262,8 +263,12 @@ class IndySdkIssuer(IndyIssuer):
         return (credential_json, cred_rev_id)
 
     async def revoke_credentials(
-        self, rev_reg_id: str, tails_file_path: str, cred_rev_ids: Sequence[str]
-    ) -> (str, Sequence[str]):
+        self,
+        rev_reg_id: str,
+        tails_file_path: str,
+        cred_rev_ids: Sequence[str],
+        transaction: ProfileSession = None,
+    ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.
 

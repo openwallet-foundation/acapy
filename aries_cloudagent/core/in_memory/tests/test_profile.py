@@ -1,7 +1,6 @@
 import pytest
-import time
 
-from ..in_memory import InMemoryProfile
+from ..profile import InMemoryProfile
 
 
 @pytest.fixture()

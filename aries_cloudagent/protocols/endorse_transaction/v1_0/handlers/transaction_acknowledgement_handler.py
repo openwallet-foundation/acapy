@@ -31,8 +31,7 @@ class TransactionAcknowledgementHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established")
 
-        profile_session = await context.session()
-        mgr = TransactionManager(profile_session)
+        mgr = TransactionManager(context.profile)
         try:
             await mgr.receive_transaction_acknowledgement(
                 context.message, context.connection_record.connection_id

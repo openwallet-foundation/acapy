@@ -208,26 +208,6 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         with self.assertRaises(RevocationError):
             await rec.set_tails_file_public_uri(self.profile, "dummy")
 
-    async def test_stage_pending_registry(self):
-        issuer = async_mock.MagicMock(IndyIssuer)
-        issuer.create_and_store_revocation_registry = async_mock.CoroutineMock(
-            return_value=(
-                REV_REG_ID,
-                json.dumps(REV_REG_DEF),
-                json.dumps(REV_REG_ENTRY),
-            )
-        )
-        self.profile.context.injector.bind_instance(IndyIssuer, issuer)
-        rec = IssuerRevRegRecord(
-            issuer_did=TEST_DID,
-            revoc_reg_id=REV_REG_ID,
-        )
-
-        with async_mock.patch.object(
-            test_module, "move", async_mock.MagicMock()
-        ) as mock_move:
-            await rec.stage_pending_registry(self.profile)
-
     async def test_send_rev_reg_undef(self):
         rec = IssuerRevRegRecord()
         with self.assertRaises(RevocationError):

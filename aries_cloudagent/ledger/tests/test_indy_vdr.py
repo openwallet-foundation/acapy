@@ -10,6 +10,7 @@ from ...indy.issuer import IndyIssuer
 from ...wallet.base import BaseWallet
 from ...wallet.key_type import KeyType
 from ...wallet.did_method import DIDMethod
+from ...wallet.did_info import DIDInfo
 
 from ..endpoint_type import EndpointType
 from ..indy_vdr import (
@@ -82,6 +83,33 @@ class TestIndyVdrLedger:
             ledger.pool_handle.submit_request.assert_not_awaited()
             result = await ledger._submit(test_msg)
             ledger.pool_handle.submit_request.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_fetch_txn_author_agreement(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        async with ledger:
+            with async_mock.patch.object(
+                ledger.pool_handle,
+                "submit_request",
+                async_mock.CoroutineMock(
+                    side_effect=[
+                        {"data": {"aml": ".."}},
+                        {"data": {"text": "text", "version": "1.0"}},
+                    ]
+                ),
+            ):
+                response = await ledger.fetch_txn_author_agreement()
+                assert response == {
+                    "aml_record": {"aml": ".."},
+                    "taa_record": {
+                        "text": "text",
+                        "version": "1.0",
+                        "digest": ledger.taa_digest("1.0", "text"),
+                    },
+                    "taa_required": True,
+                }
 
     @pytest.mark.asyncio
     async def test_submit_signed_taa_accept(
@@ -802,7 +830,7 @@ class TestIndyVdrLedger:
             assert result == {"result": {"status": "ok"}}
 
     @pytest.mark.asyncio
-    async def test_credential_definition_id2schema_id(self, ledger):
+    async def test_credential_definition_id2schema_id(self, ledger: IndyVdrLedger):
         S_ID = f"55GkHamhTU1ZbTbV2ab9DE:2:favourite_drink:1.0"
         SEQ_NO = "9999"
 
@@ -823,3 +851,22 @@ class TestIndyVdrLedger:
                     f"55GkHamhTU1ZbTbV2ab9DE:3:CL:{s_id_short}:tag"
                 )
                 assert s_id_long == s_id_short
+
+    @pytest.mark.asyncio
+    async def test_rotate_did_keypair(self, ledger: IndyVdrLedger):
+        wallet = (await ledger.profile.session()).wallet
+        public_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+
+        async with ledger:
+            with async_mock.patch.object(
+                ledger.pool_handle,
+                "submit_request",
+                async_mock.CoroutineMock(
+                    side_effect=[
+                        {"data": json.dumps({"seqNo": 1234})},
+                        {"data": {"txn": {"data": {"role": "101", "alias": "Billy"}}}},
+                        {"data": "ok"},
+                    ]
+                ),
+            ):
+                await ledger.rotate_public_did_keypair()

@@ -30,6 +30,14 @@ docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432
 ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
 ```
 
+To run the tests against the back-end `askar` libraries (as opposed to indy-sdk) run the following:
+
+```bash
+BDD_EXTRA_AGENT_ARGS="{\"wallet-type\":\"askar\"}" ./run_bdd
+```
+
+(Note that `wallet-type` is currently the only extra argument supported.)
+
 You can run individual tests by specifying the tag(s):
 
 ```bash

@@ -174,9 +174,8 @@ async def credentials_get(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
-    session = await context.session()
 
-    holder = session.inject(IndyHolder)
+    holder = context.profile.inject(IndyHolder)
     try:
         credential = await holder.get_credential(credential_id)
     except WalletNotFoundError as err:
@@ -202,31 +201,31 @@ async def credentials_revoked(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
     credential_id = request.match_info["credential_id"]
     fro = request.query.get("from")
     to = request.query.get("to")
 
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger = session.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No ledger available"
+            if not context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
-    async with ledger:
-        try:
-            holder = session.inject(IndyHolder)
-            revoked = await holder.credential_revoked(
-                ledger,
-                credential_id,
-                int(fro) if fro else None,
-                int(to) if to else None,
-            )
-        except WalletNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except LedgerError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+        async with ledger:
+            try:
+                holder = session.inject(IndyHolder)
+                revoked = await holder.credential_revoked(
+                    ledger,
+                    credential_id,
+                    int(fro) if fro else None,
+                    int(to) if to else None,
+                )
+            except WalletNotFoundError as err:
+                raise web.HTTPNotFound(reason=err.roll_up) from err
+            except LedgerError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"revoked": revoked})
 
@@ -246,11 +245,12 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
     credential_id = request.match_info["credential_id"]
 
-    holder = session.inject(IndyHolder)
-    return web.json_response({"results": await holder.get_mime_type(credential_id)})
+    async with context.profile.session() as session:
+        holder = session.inject(IndyHolder)
+        mime_types = await holder.get_mime_type(credential_id)
+    return web.json_response({"results": mime_types})
 
 
 @docs(tags=["credentials"], summary="Remove credential from wallet by id")
@@ -270,10 +270,10 @@ async def credentials_remove(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    session = await context.session()
-    holder = session.inject(IndyHolder)
     try:
-        await holder.delete_credential(credential_id)
+        async with context.profile.session() as session:
+            holder = session.inject(IndyHolder)
+            await holder.delete_credential(credential_id)
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -298,7 +298,6 @@ async def credentials_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
     start = request.query.get("start")
     count = request.query.get("count")
 
@@ -310,11 +309,12 @@ async def credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder = session.inject(IndyHolder)
-    try:
-        credentials = await holder.get_credentials(start, count, wql)
-    except IndyHolderError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    async with context.profile.session() as session:
+        holder = session.inject(IndyHolder)
+        try:
+            credentials = await holder.get_credentials(start, count, wql)
+        except IndyHolderError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": credentials})
 
@@ -339,14 +339,14 @@ async def w3c_cred_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    session = await context.session()
-    holder = session.inject(VCHolder)
-    try:
-        vc_record = await holder.retrieve_credential_by_id(credential_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except StorageError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    async with context.profile.session() as session:
+        holder = session.inject(VCHolder)
+        try:
+            vc_record = await holder.retrieve_credential_by_id(credential_id)
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(vc_record.serialize())
 
@@ -371,15 +371,15 @@ async def w3c_cred_remove(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    session = await context.session()
-    holder = session.inject(VCHolder)
-    try:
-        vc_record = await holder.retrieve_credential_by_id(credential_id)
-        await holder.delete_credential(vc_record)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except StorageError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    async with context.profile.session() as session:
+        holder = session.inject(VCHolder)
+        try:
+            vc_record = await holder.retrieve_credential_by_id(credential_id)
+            await holder.delete_credential(vc_record)
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
 
@@ -403,7 +403,6 @@ async def w3c_creds_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
     body = await request.json()
     contexts = body.get("contexts")
     types = body.get("types")
@@ -415,23 +414,24 @@ async def w3c_creds_list(request: web.BaseRequest):
     tag_query = body.get("tag_query")
     max_results = body.get("max_results")
 
-    holder = session.inject(VCHolder)
-    try:
-        search = holder.search_credentials(
-            contexts=contexts,
-            types=types,
-            schema_ids=schema_ids,
-            issuer_id=issuer_id,
-            subject_ids=subject_ids,
-            proof_types=proof_types,
-            given_id=given_id,
-            tag_query=tag_query,
-        )
-        records = await search.fetch(max_results)
-    except StorageNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except StorageError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    async with context.profile.session() as session:
+        holder = session.inject(VCHolder)
+        try:
+            search = holder.search_credentials(
+                contexts=contexts,
+                types=types,
+                schema_ids=schema_ids,
+                issuer_id=issuer_id,
+                subject_ids=subject_ids,
+                proof_types=proof_types,
+                given_id=given_id,
+                tag_query=tag_query,
+            )
+            records = await search.fetch(max_results)
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": [record.serialize() for record in records]})
 
