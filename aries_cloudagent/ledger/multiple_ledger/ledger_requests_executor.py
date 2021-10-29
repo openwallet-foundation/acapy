@@ -1,6 +1,7 @@
 """Ledger Request Executor."""
 from typing import Tuple, Union, Optional
 
+from ...config.base import InjectionError
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
 from ...ledger.indy import IndySdkLedger
@@ -64,7 +65,7 @@ class IndyLedgerRequestsExecutor:
                 return await multiledger_mgr.lookup_did_in_configured_ledgers(
                     extracted_did, cache_did=cache_did
                 )
-            except MultipleLedgerManagerError:
+            except (MultipleLedgerManagerError, InjectionError):
                 return self.profile.inject(BaseLedger)
         else:
             return self.profile.inject(BaseLedger)

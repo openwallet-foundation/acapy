@@ -507,11 +507,11 @@ async def get_write_ledger(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     async with context.profile.session() as session:
-        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
     if not multiledger_mgr:
         reason = "Multiple ledger support not enabled"
         raise web.HTTPForbidden(reason=reason)
-    ledger_id = await multiledger_mgr.get_write_ledger()[0]
+    ledger_id = (await multiledger_mgr.get_write_ledger())[0]
     return web.json_response({"ledger_id": ledger_id})
 
 
@@ -532,11 +532,11 @@ async def reset_write_ledger(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     async with context.profile.session() as session:
-        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
     if not multiledger_mgr:
         reason = "Multiple ledger support not enabled"
         raise web.HTTPForbidden(reason=reason)
-    ledger_id = await multiledger_mgr.reset_write_ledger()[0]
+    ledger_id = (await multiledger_mgr.reset_write_ledger())[0]
     return web.json_response({"ledger_id": ledger_id})
 
 
@@ -555,7 +555,7 @@ async def set_write_ledger(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     async with context.profile.session() as session:
-        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
     if not multiledger_mgr:
         reason = "Multiple ledger support not enabled"
         raise web.HTTPForbidden(reason=reason)
@@ -584,7 +584,7 @@ async def get_ledger_config(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     async with context.profile.session() as session:
-        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
         if not multiledger_mgr:
             reason = "Multiple ledger support not enabled"
             raise web.HTTPForbidden(reason=reason)
@@ -605,7 +605,7 @@ async def update_ledger_config(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     async with context.profile.session() as session:
-        multiledger_mgr = session.inject(BaseMultipleLedgerManager)
+        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
     if not multiledger_mgr:
         reason = "Multiple ledger support not enabled"
         raise web.HTTPForbidden(reason=reason)
