@@ -63,6 +63,7 @@ class IssuerCredRevRecord(BaseRecord):
         """Accessor for the ID associated with this exchange."""
         return self._id
 
+    @property
     def record_value(self) -> dict:
         """Return record values."""
         return {"thread_id": self.thread_id, "connection_id": self.connection_id}
