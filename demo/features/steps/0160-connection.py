@@ -10,6 +10,7 @@
 
 from behave import given, when, then
 import json
+import os
 
 from bdd_support.agent_backchannel_client import (
     create_agent_container_with_args,
@@ -23,12 +24,20 @@ from bdd_support.agent_backchannel_client import (
 from runners.agent_container import AgentContainer
 
 
+BDD_EXTRA_AGENT_ARGS = os.getenv("BDD_EXTRA_AGENT_ARGS")
+
+
 @given("{n} agents")
 @given(u"we have {n} agents")
 def step_impl(context, n):
     """Startup 'n' agents based on the options provided in the context table parameters."""
 
     start_port = 8020
+
+    extra_args = None
+    if BDD_EXTRA_AGENT_ARGS:
+        print("Got extra args:", BDD_EXTRA_AGENT_ARGS)
+        extra_args = json.loads(BDD_EXTRA_AGENT_ARGS)
 
     context.active_agents = {}
     for row in context.table:
@@ -43,6 +52,13 @@ def step_impl(context, n):
         ]
         if agent_params and 0 < len(agent_params):
             in_args.extend(agent_params.split(" "))
+        if extra_args and extra_args.get("wallet-type"):
+            in_args.extend(
+                [
+                    "--wallet-type",
+                    extra_args.get("wallet-type"),
+                ]
+            )
 
         context.active_agents[agent_name] = {
             "name": agent_name,

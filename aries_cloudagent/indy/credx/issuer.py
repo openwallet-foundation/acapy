@@ -20,6 +20,7 @@ from indy_credx import (
 )
 
 from ...askar.profile import AskarProfile
+from ...core.profile import ProfileSession
 
 from ..issuer import (
     IndyIssuer,
@@ -28,6 +29,8 @@ from ..issuer import (
     DEFAULT_CRED_DEF_TAG,
     DEFAULT_SIGNATURE_TYPE,
 )
+from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -318,6 +321,20 @@ class IndyCredxIssuer(IndyIssuer):
                 await txn.handle.replace(
                     CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
                 )
+
+                issuer_cr_rec = IssuerCredRevRecord(
+                    state=IssuerCredRevRecord.STATE_ISSUED,
+                    cred_ex_id=cred_ex_id,
+                    rev_reg_id=revoc_reg_id,
+                    cred_rev_id=str(rev_reg_index),
+                )
+                await issuer_cr_rec.save(
+                    txn,
+                    reason=(
+                        "Created issuer cred rev record for "
+                        f"rev reg id {revoc_reg_id}, {rev_reg_index}"
+                    ),
+                )
                 await txn.commit()
             except AskarError as err:
                 raise IndyIssuerError(
@@ -359,7 +376,11 @@ class IndyCredxIssuer(IndyIssuer):
         return credential.to_json(), credential_revocation_id
 
     async def revoke_credentials(
-        self, revoc_reg_id: str, tails_file_path: str, cred_revoc_ids: Sequence[str]
+        self,
+        revoc_reg_id: str,
+        tails_file_path: str,
+        cred_revoc_ids: Sequence[str],
+        transaction: ProfileSession = None,
     ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.
@@ -374,7 +395,7 @@ class IndyCredxIssuer(IndyIssuer):
 
         """
 
-        txn = await self._profile.transaction()
+        txn = transaction if transaction else await self._profile.transaction()
         try:
             rev_reg_def = await txn.handle.fetch(CATEGORY_REV_REG_DEF, revoc_reg_id)
             rev_reg = await txn.handle.fetch(
@@ -455,7 +476,8 @@ class IndyCredxIssuer(IndyIssuer):
                 await txn.handle.replace(
                     CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
                 )
-                await txn.commit()
+                if not transaction:
+                    await txn.commit()
             except AskarError as err:
                 raise IndyIssuerError("Error saving revocation registry") from err
         else:

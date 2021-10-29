@@ -55,7 +55,7 @@ class V20PresHandler(BaseHandler):
             except (BaseModelError, LedgerError, StorageError) as err:
                 self._logger.exception(err)
                 if pres_ex_record:
-                    async with context.session() as session:
+                    async with context.profile.session() as session:
                         await pres_ex_record.save_error_state(
                             session,
                             reason=err.roll_up,  # us: be specific

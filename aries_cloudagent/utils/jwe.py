@@ -1,9 +1,10 @@
 """JSON Web Encryption utilities."""
 
+import binascii
 import json
 
 from collections import OrderedDict
-from typing import Any, Iterable, List, Mapping, Optional, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 
 from marshmallow import fields, Schema, ValidationError
 
@@ -24,7 +25,10 @@ def b64url(value: Union[bytes, str]) -> str:
 
 def from_b64url(value: str) -> bytes:
     """Decode an unpadded base64-URL value."""
-    return b64_to_bytes(value, urlsafe=True)
+    try:
+        return b64_to_bytes(value, urlsafe=True)
+    except binascii.Error:
+        raise ValidationError("Error decoding base64 value")
 
 
 class B64Value(fields.Str):
@@ -47,6 +51,7 @@ class JweSchema(Schema):
 
     protected = fields.Str(required=True)
     unprotected = fields.Dict(required=False)
+    recipients = fields.List(fields.Dict(), required=False)
     ciphertext = B64Value(required=True)
     iv = B64Value(required=True)
     tag = B64Value(required=True)
@@ -98,6 +103,8 @@ class JweEnvelope:
         iv: bytes = None,
         tag: bytes = None,
         aad: bytes = None,
+        with_protected_recipients: bool = False,
+        with_flatten_recipients: bool = True,
     ):
         """Initialize a new JWE envelope instance."""
         self.protected = protected
@@ -107,6 +114,8 @@ class JweEnvelope:
         self.iv = iv
         self.tag = tag
         self.aad = aad
+        self.with_protected_recipients = with_protected_recipients
+        self.with_flatten_recipients = with_flatten_recipients
         self._recipients: List[JweRecipient] = []
 
     @classmethod
@@ -135,23 +144,41 @@ class JweEnvelope:
         if protected.keys() & unprotected.keys():
             raise ValidationError("Invalid JWE: duplicate header")
 
+        encrypted_key = protected.get(IDENT_ENC_KEY) or parsed.get(IDENT_ENC_KEY)
+        recipients = None
+        protected_recipients = False
+        flat_recipients = False
+
         if IDENT_RECIPIENTS in protected:
-            recips = [
-                JweRecipient.deserialize(recip)
-                for recip in protected.pop(IDENT_RECIPIENTS)
-            ]
-            if IDENT_ENC_KEY in protected or IDENT_HEADER in protected:
-                raise ValidationError("Invalid JWE: flattened form with recipients")
-        else:
-            if IDENT_ENC_KEY not in protected:
-                raise ValidationError("Invalid JWE: no recipients")
+            recipients = protected.pop(IDENT_RECIPIENTS)
+            if IDENT_RECIPIENTS in parsed:
+                raise ValidationError("Invalid JWE: duplicate recipients block")
+            protected_recipients = True
+        elif IDENT_RECIPIENTS in parsed:
+            recipients = parsed[IDENT_RECIPIENTS]
+
+        if IDENT_ENC_KEY in protected:
+            encrypted_key = from_b64url(protected.pop(IDENT_ENC_KEY))
             header = protected.pop(IDENT_HEADER) if IDENT_HEADER in protected else None
-            recips = [
+            protected_recipients = True
+        elif IDENT_ENC_KEY in parsed:
+            encrypted_key = parsed[IDENT_ENC_KEY]
+            header = parsed.get(IDENT_HEADER)
+
+        if recipients:
+            if encrypted_key:
+                raise ValidationError("Invalid JWE: flattened form with 'recipients'")
+            recipients = [JweRecipient.deserialize(recip) for recip in recipients]
+        elif encrypted_key:
+            recipients = [
                 JweRecipient(
-                    encrypted_key=from_b64url(protected.pop(IDENT_ENC_KEY)),
+                    encrypted_key=encrypted_key,
                     header=header,
                 )
             ]
+            flat_recipients = True
+        else:
+            raise ValidationError("Invalid JWE: no recipients")
 
         inst = cls(
             protected=protected,
@@ -161,9 +188,11 @@ class JweEnvelope:
             iv=parsed.get("iv"),
             tag=parsed["tag"],
             aad=parsed.get("aad"),
+            with_protected_recipients=protected_recipients,
+            with_flatten_recipients=flat_recipients,
         )
         all_h = protected.keys() | unprotected.keys()
-        for recip in recips:
+        for recip in recipients:
             if recip.header and recip.header.keys() & all_h:
                 raise ValidationError("Invalid JWE: duplicate header")
             inst.add_recipient(recip)
@@ -183,7 +212,16 @@ class JweEnvelope:
         env = OrderedDict()
         env["protected"] = self.protected_b64
         if self.unprotected:
-            env["unprotected"] = self.unprotected
+            env["unprotected"] = self.unprotected.copy()
+        if not self.with_protected_recipients:
+            recipients = self.recipients_json
+            if self.with_flatten_recipients and len(recipients) == 1:
+                for k in recipients[0]:
+                    env[k] = recipients[0][k]
+            elif recipients:
+                env[IDENT_RECIPIENTS] = recipients
+            else:
+                raise ValidationError("Missing message recipients")
         env["iv"] = b64url(self.iv)
         env["ciphertext"] = b64url(self.ciphertext)
         env["tag"] = b64url(self.tag)
@@ -199,20 +237,16 @@ class JweEnvelope:
         """Add a recipient to the JWE envelope."""
         self._recipients.append(recip)
 
-    def set_protected(self, protected: Mapping[str, Any], auto_flatten: bool = True):
-        """Set the protected headers of the JWE envelope.
-
-        This method must be called after adding the message recipients,
-        or with the recipients pre-encoded and added to the headers.
-        """
+    def set_protected(
+        self,
+        protected: Mapping[str, Any],
+    ):
+        """Set the protected headers of the JWE envelope."""
         protected = OrderedDict(protected.items())
-        have_recips = IDENT_RECIPIENTS in protected or IDENT_ENC_KEY in protected
-        if not have_recips:
-            recipients = [recip.serialize() for recip in self._recipients]
-            if auto_flatten and len(recipients) == 1:
-                protected[IDENT_ENC_KEY] = recipients[0]["encrypted_key"]
-                if "header" in recipients[0]:
-                    protected[IDENT_HEADER] = recipients[0]["header"]
+        if self.with_protected_recipients:
+            recipients = self.recipients_json
+            if self.with_flatten_recipients and len(recipients) == 1:
+                protected.update(recipients[0])
             elif recipients:
                 protected[IDENT_RECIPIENTS] = recipients
             else:
@@ -238,6 +272,7 @@ class JweEnvelope:
         self.tag = tag
         self.aad = aad
 
+    @property
     def recipients(self) -> Iterable[JweRecipient]:
         """Accessor for an iterator over the JWE recipients.
 
@@ -253,3 +288,32 @@ class JweEnvelope:
                 yield JweRecipient(encrypted_key=recip.encrypted_key, header=recip_h)
             else:
                 yield JweRecipient(encrypted_key=recip.encrypted_key, header=header)
+
+    @property
+    def recipients_json(self) -> List[Dict[str, Any]]:
+        """Encode the current recipients for JSON."""
+        return [recip.serialize() for recip in self._recipients]
+
+    @property
+    def recipient_key_ids(self) -> Iterable[JweRecipient]:
+        """Accessor for an iterator over the JWE recipient key identifiers."""
+        for recip in self._recipients:
+            if recip.header and "kid" in recip.header:
+                yield recip.header["kid"]
+
+    def get_recipient(self, kid: str) -> JweRecipient:
+        """Find a recipient by key ID."""
+        for recip in self._recipients:
+            if recip.header and recip.header.get("kid") == kid:
+                header = self.protected.copy()
+                header.update(self.unprotected)
+                header.update(recip.header)
+                return JweRecipient(encrypted_key=recip.encrypted_key, header=header)
+
+    @property
+    def combined_aad(self) -> bytes:
+        """Accessor for the additional authenticated data."""
+        aad = self.protected_bytes
+        if self.aad:
+            aad += b"." + b64url(self.aad).encode("utf-8")
+        return aad
