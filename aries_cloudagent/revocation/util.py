@@ -78,14 +78,17 @@ async def notify_revocation_tails_file_event(
     )
 
 
-async def notifiy_issuer_credential_revoked_event(
-    profile: Profile, cred_rev_id: str, cred_rev_record: IssuerCredRevRecord = None
+async def notify_issuer_credential_revoked_event(
+    profile: Profile,
+    rev_reg_id: str,
+    cred_rev_id: str,
+    cred_rev_record: IssuerCredRevRecord = None,
 ):
     """Send notification of credential revoked as issuer."""
     topic = f"{REVOCATION_EVENT_PREFIX}{ISSUER_REVOKE_EVENT}::{cred_rev_id}"
     if not cred_rev_record:
         async with profile.session() as session:
-            cred_rev_record = await IssuerCredRevRecord.retrieve_by_id(
-                session, cred_rev_id
+            cred_rev_record = await IssuerCredRevRecord.retrieve_by_ids(
+                session, rev_reg_id=rev_reg_id, cred_rev_id=cred_rev_id
             )
     await profile.notify(topic, cred_rev_record.serialize())
