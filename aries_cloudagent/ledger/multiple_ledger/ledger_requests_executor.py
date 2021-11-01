@@ -1,0 +1,71 @@
+"""Ledger Request Executor."""
+from typing import Tuple, Union, Optional
+
+from ...config.base import InjectionError
+from ...core.profile import Profile
+from ...ledger.base import BaseLedger
+from ...ledger.indy import IndySdkLedger
+from ...ledger.indy_vdr import IndyVdrLedger
+from ...ledger.multiple_ledger.base_manager import (
+    BaseMultipleLedgerManager,
+    MultipleLedgerManagerError,
+)
+
+(
+    GET_SCHEMA,
+    GET_CRED_DEF,
+    GET_REVOC_REG_DEF,
+    GET_REVOC_REG_ENTRY,
+    GET_KEY_FOR_DID,
+    GET_ALL_ENDPOINTS_FOR_DID,
+    GET_ENDPOINT_FOR_DID,
+    GET_NYM_ROLE,
+    GET_REVOC_REG_DELTA,
+) = tuple(range(9))
+
+
+class IndyLedgerRequestsExecutor:
+    """Executes Ledger Requests based on multiple ledger config, if set."""
+
+    def __init__(
+        self,
+        profile: Profile,
+    ):
+        """Initialize IndyLedgerRequestsExecutor.
+
+        Args:
+            profile: The active profile instance
+
+        """
+        self.profile = profile
+
+    async def get_ledger_for_identifier(
+        self, identifier: str, txn_record_type: int
+    ) -> Union[
+        Optional[IndyVdrLedger],
+        Optional[IndySdkLedger],
+        Tuple[str, IndyVdrLedger],
+        Tuple[str, IndySdkLedger],
+    ]:
+        """Return ledger info given the record identifier."""
+        # For seqNo
+        if identifier.isdigit():
+            return self.profile.inject(BaseLedger)
+        elif (
+            self.profile.settings.get("ledger.ledger_config_list")
+            and len(self.profile.settings.get("ledger.ledger_config_list")) > 0
+        ):
+            try:
+                multiledger_mgr = self.profile.inject(BaseMultipleLedgerManager)
+                extracted_did = multiledger_mgr.extract_did_from_identifier(identifier)
+                if txn_record_type in tuple(range(4)):
+                    cache_did = True
+                else:
+                    cache_did = False
+                return await multiledger_mgr.lookup_did_in_configured_ledgers(
+                    extracted_did, cache_did=cache_did
+                )
+            except (MultipleLedgerManagerError, InjectionError):
+                return self.profile.inject(BaseLedger)
+        else:
+            return self.profile.inject(BaseLedger)

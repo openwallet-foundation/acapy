@@ -6,7 +6,6 @@ import logging
 from indy_credx import CredxError, Presentation
 
 from ...core.profile import Profile
-from ...ledger.base import BaseLedger
 
 from ..verifier import IndyVerifier
 
@@ -24,7 +23,7 @@ class IndyCredxVerifier(IndyVerifier):
             profile: an active profile instance
 
         """
-        self.ledger = profile.inject(BaseLedger)
+        self.profile = profile
 
     async def verify_presentation(
         self,
@@ -49,7 +48,7 @@ class IndyCredxVerifier(IndyVerifier):
 
         try:
             self.non_revoc_intervals(pres_req, pres)
-            await self.check_timestamps(self.ledger, pres_req, pres, rev_reg_defs)
+            await self.check_timestamps(self.profile, pres_req, pres, rev_reg_defs)
             await self.pre_verify(pres_req, pres)
         except ValueError as err:
             LOGGER.error(

@@ -54,7 +54,8 @@ class IndySdkProfile(Profile):
             LOGGER.info("Ledger support is disabled")
             return
 
-        self.ledger_pool = self.context.inject(IndySdkLedgerPool, self.settings)
+        if not self.settings.get("ledger.genesis_transactions_list"):
+            self.ledger_pool = self.context.inject(IndySdkLedgerPool, self.settings)
 
     def bind_providers(self):
         """Initialize the profile-level instance providers."""
@@ -84,14 +85,14 @@ class IndySdkProfile(Profile):
         )
 
         if self.ledger_pool:
-            ledger = IndySdkLedger(self.ledger_pool, IndySdkWallet(self.opened))
-
-            injector.bind_instance(BaseLedger, ledger)
+            injector.bind_provider(
+                BaseLedger, ClassProvider(IndySdkLedger, self.ledger_pool, ref(self))
+            )
             injector.bind_provider(
                 IndyVerifier,
                 ClassProvider(
                     "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                    ledger,
+                    ref(self),
                 ),
             )
 

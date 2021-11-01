@@ -7,7 +7,6 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.verifier import IndyVerifier
-from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
@@ -137,7 +136,7 @@ class PresentationManager:
             name=name,
             version=version,
             nonce=nonce,
-            ledger=self._profile.inject(BaseLedger),
+            profile=self._profile,
         )
         presentation_request_message = PresentationRequest(
             comment=comment,

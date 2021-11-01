@@ -705,6 +705,18 @@ class LedgerGroup(ArgumentGroup):
                 "connect to the public (outside of corporate network) ledger pool"
             ),
         )
+        parser.add_argument(
+            "--genesis-transactions-list",
+            type=str,
+            required=False,
+            dest="genesis_transactions_list",
+            metavar="<genesis-transactions-list>",
+            env_var="ACAPY_GENESIS_TRANSACTIONS_LIST",
+            help=(
+                "Load YAML configuration for connecting to multiple"
+                " HyperLedger Indy ledgers."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
@@ -718,11 +730,19 @@ class LedgerGroup(ArgumentGroup):
                 settings["ledger.genesis_file"] = args.genesis_file
             elif args.genesis_transactions:
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
+            elif args.genesis_transactions_list:
+                with open(args.genesis_transactions_list, "r") as stream:
+                    txn_config_list = yaml.safe_load(stream)
+                    ledger_config_list = []
+                    for txn_config in txn_config_list:
+                        ledger_config_list.append(txn_config)
+                    settings["ledger.ledger_config_list"] = ledger_config_list
             else:
                 raise ArgsParseError(
-                    "One of --genesis-url --genesis-file or --genesis-transactions "
-                    "must be specified (unless --no-ledger is specified to "
-                    "explicitly configure aca-py to run with no ledger)."
+                    "One of --genesis-url --genesis-file, --genesis-transactions "
+                    "or --genesis-transactions-list must be specified (unless "
+                    "--no-ledger is specified to explicitly configure aca-py to"
+                    " run with no ledger)."
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name

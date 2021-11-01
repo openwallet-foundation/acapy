@@ -659,7 +659,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         V20CredFormatError,
     ) as err:
         if cred_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -747,7 +747,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
     except (BaseModelError, StorageError) as err:
         if cred_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,

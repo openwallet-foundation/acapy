@@ -6,6 +6,11 @@ from copy import deepcopy
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from indy.error import IndyError
 
+from ....core.in_memory import InMemoryProfile
+from ....ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
+
 from ..verifier import IndySdkVerifier
 
 
@@ -310,7 +315,12 @@ class TestIndySdkVerifier(AsyncTestCase):
                 }
             )
         )
-        self.verifier = IndySdkVerifier(self.ledger)
+        mock_profile = InMemoryProfile.test_profile()
+        context = mock_profile.context
+        context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
+        )
+        self.verifier = IndySdkVerifier(mock_profile)
         assert repr(self.verifier) == "<IndySdkVerifier>"
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
@@ -321,7 +331,10 @@ class TestIndySdkVerifier(AsyncTestCase):
             self.verifier, "pre_verify", async_mock.CoroutineMock()
         ) as mock_pre_verify, async_mock.patch.object(
             self.verifier, "non_revoc_intervals", async_mock.MagicMock()
-        ) as mock_non_revox:
+        ) as mock_non_revox, async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = self.ledger
             verified = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_PRED_NAMES,
                 INDY_PROOF_PRED_NAMES,
@@ -350,7 +363,10 @@ class TestIndySdkVerifier(AsyncTestCase):
             self.verifier, "pre_verify", async_mock.CoroutineMock()
         ) as mock_pre_verify, async_mock.patch.object(
             self.verifier, "non_revoc_intervals", async_mock.MagicMock()
-        ) as mock_non_revox:
+        ) as mock_non_revox, async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = ("test", self.ledger)
             verified = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_NAME,
@@ -373,15 +389,19 @@ class TestIndySdkVerifier(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr(self, mock_verify):
-        mock_verify.return_value = True
-        verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_NAME,
-            INDY_PROOF_NAME,
-            "schemas",
-            "credential_definitions",
-            REV_REG_DEFS,
-            "rev_reg_entries",
-        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = self.ledger
+            mock_verify.return_value = True
+            verified = await self.verifier.verify_presentation(
+                INDY_PROOF_REQ_NAME,
+                INDY_PROOF_NAME,
+                "schemas",
+                "credential_definitions",
+                REV_REG_DEFS,
+                "rev_reg_entries",
+            )
 
         mock_verify.assert_called_once_with(
             json.dumps(INDY_PROOF_REQ_NAME),
@@ -391,7 +411,6 @@ class TestIndySdkVerifier(AsyncTestCase):
             json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
-
         assert verified is True
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
@@ -400,15 +419,18 @@ class TestIndySdkVerifier(AsyncTestCase):
         INDY_PROOF_X["requested_proof"]["revealed_attrs"]["19_uuid"][
             "raw"
         ] = "Mock chicken"
-
-        verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_NAME,
-            INDY_PROOF_X,
-            "schemas",
-            "credential_definitions",
-            REV_REG_DEFS,
-            "rev_reg_entries",
-        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = ("test", self.ledger)
+            verified = await self.verifier.verify_presentation(
+                INDY_PROOF_REQ_NAME,
+                INDY_PROOF_X,
+                "schemas",
+                "credential_definitions",
+                REV_REG_DEFS,
+                "rev_reg_entries",
+            )
 
         mock_verify.assert_not_called()
 
@@ -420,15 +442,18 @@ class TestIndySdkVerifier(AsyncTestCase):
         INDY_PROOF_X["requested_proof"]["revealed_attrs"]["19_uuid"][
             "encoded"
         ] = "1234567890"
-
-        verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_NAME,
-            INDY_PROOF_X,
-            "schemas",
-            "credential_definitions",
-            REV_REG_DEFS,
-            "rev_reg_entries",
-        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = self.ledger
+            verified = await self.verifier.verify_presentation(
+                INDY_PROOF_REQ_NAME,
+                INDY_PROOF_X,
+                "schemas",
+                "credential_definitions",
+                REV_REG_DEFS,
+                "rev_reg_entries",
+            )
 
         mock_verify.assert_not_called()
 
@@ -436,15 +461,19 @@ class TestIndySdkVerifier(AsyncTestCase):
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names(self, mock_verify):
-        mock_verify.return_value = True
-        verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_PRED_NAMES,
-            INDY_PROOF_PRED_NAMES,
-            "schemas",
-            "credential_definitions",
-            REV_REG_DEFS,
-            "rev_reg_entries",
-        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = ("test", self.ledger)
+            mock_verify.return_value = True
+            verified = await self.verifier.verify_presentation(
+                INDY_PROOF_REQ_PRED_NAMES,
+                INDY_PROOF_PRED_NAMES,
+                "schemas",
+                "credential_definitions",
+                REV_REG_DEFS,
+                "rev_reg_entries",
+            )
 
         mock_verify.assert_called_once_with(
             json.dumps(INDY_PROOF_REQ_PRED_NAMES),
@@ -463,15 +492,18 @@ class TestIndySdkVerifier(AsyncTestCase):
         INDY_PROOF_X["proof"]["proofs"][0]["primary_proof"]["ge_proofs"][0][
             "predicate"
         ]["value"] = 0
-
-        verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_PRED_NAMES,
-            INDY_PROOF_X,
-            "schemas",
-            "credential_definitions",
-            REV_REG_DEFS,
-            "rev_reg_entries",
-        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = self.ledger
+            verified = await self.verifier.verify_presentation(
+                INDY_PROOF_REQ_PRED_NAMES,
+                INDY_PROOF_X,
+                "schemas",
+                "credential_definitions",
+                REV_REG_DEFS,
+                "rev_reg_entries",
+            )
 
         mock_verify.assert_not_called()
 
@@ -481,15 +513,18 @@ class TestIndySdkVerifier(AsyncTestCase):
     async def test_check_pred_names_tamper_pred_req_attr(self, mock_verify):
         INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
         INDY_PROOF_REQ_X["requested_predicates"]["18_busid_GE_uuid"]["name"] = "dummy"
-
-        verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_X,
-            INDY_PROOF_PRED_NAMES,
-            "schemas",
-            "credential_definitions",
-            REV_REG_DEFS,
-            "rev_reg_entries",
-        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = self.ledger
+            verified = await self.verifier.verify_presentation(
+                INDY_PROOF_REQ_X,
+                INDY_PROOF_PRED_NAMES,
+                "schemas",
+                "credential_definitions",
+                REV_REG_DEFS,
+                "rev_reg_entries",
+            )
 
         mock_verify.assert_not_called()
 
@@ -501,15 +536,18 @@ class TestIndySdkVerifier(AsyncTestCase):
         INDY_PROOF_X["requested_proof"]["revealed_attr_groups"][
             "x_uuid"
         ] = INDY_PROOF_X["requested_proof"]["revealed_attr_groups"].pop("18_uuid")
-
-        verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_PRED_NAMES,
-            INDY_PROOF_X,
-            "schemas",
-            "credential_definitions",
-            REV_REG_DEFS,
-            "rev_reg_entries",
-        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = ("test", self.ledger)
+            verified = await self.verifier.verify_presentation(
+                INDY_PROOF_REQ_PRED_NAMES,
+                INDY_PROOF_X,
+                "schemas",
+                "credential_definitions",
+                REV_REG_DEFS,
+                "rev_reg_entries",
+            )
 
         mock_verify.assert_not_called()
 
