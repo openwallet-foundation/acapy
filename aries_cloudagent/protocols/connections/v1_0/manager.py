@@ -630,21 +630,6 @@ class ConnectionManager(BaseConnectionManager):
                 keylist_updates, connection_id=mediation_record.connection_id
             )
 
-        if connection.accept == ConnRecord.ACCEPT_AUTO:
-            response = await self.create_response(connection, mediation_id=mediation_id)
-            responder = self.profile.inject_or(BaseResponder)
-            if responder:
-                await responder.send_reply(
-                    response, connection_id=connection.connection_id
-                )
-                async with self.profile.session() as session:
-                    # refetch connection for accurate state
-                    connection = await ConnRecord.retrieve_by_id(
-                        session, connection.connection_id
-                    )
-        else:
-            self._logger.debug("Connection request will await acceptance")
-
         return connection
 
     async def create_response(

@@ -5,6 +5,7 @@ from .....messaging.base_handler import (
     BaseResponder,
     RequestContext,
 )
+from .....connections.models.conn_record import ConnRecord
 
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_request import ConnectionRequest
@@ -38,11 +39,19 @@ class ConnectionRequestHandler(BaseHandler):
             mediation_metadata = {}
 
         try:
-            await mgr.receive_request(
+            connection = await mgr.receive_request(
                 context.message,
                 context.message_receipt,
                 mediation_id=mediation_metadata.get("id"),
             )
+
+            if connection.accept == ConnRecord.ACCEPT_AUTO:
+                response = await mgr.create_response(connection)
+                await responder.send_reply(
+                    response, connection_id=connection.connection_id
+                )
+            else:
+                self._logger.debug("Connection request will await acceptance")
         except ConnectionManagerError as e:
             self._logger.exception("Error receiving connection request")
             if e.error_code:
