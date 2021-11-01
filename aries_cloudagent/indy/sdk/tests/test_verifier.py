@@ -333,8 +333,12 @@ class TestIndySdkVerifier(AsyncTestCase):
             )
 
         INDY_PROOF_REQ_X["requested_attributes"]["18_uuid"]["non_revoked"]["from"] = 0
-        INDY_PROOF_REQ_X["requested_predicates"]["18_id_GE_uuid"]["non_revoked"]["from"] = 0
-        INDY_PROOF_REQ_X["requested_predicates"]["18_busid_GE_uuid"]["non_revoked"]["from"] = 0
+        INDY_PROOF_REQ_X["requested_predicates"]["18_id_GE_uuid"]["non_revoked"][
+            "from"
+        ] = 0
+        INDY_PROOF_REQ_X["requested_predicates"]["18_busid_GE_uuid"]["non_revoked"][
+            "from"
+        ] = 0
 
         mock_verify.assert_called_once_with(
             json.dumps(INDY_PROOF_REQ_X),
