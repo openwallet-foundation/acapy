@@ -358,7 +358,9 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cx_rec == cx_rec
             mock_save.assert_called_once()
 
-            mock_handler.return_value.create_offer.assert_called_once_with(cx_rec)
+            mock_handler.return_value.create_offer.assert_called_once_with(
+                cx_rec.cred_proposal
+            )
 
             assert cx_rec.cred_ex_id == ret_cx_rec._id  # cover property
             assert cx_rec.thread_id == ret_offer._thread_id
@@ -430,7 +432,9 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cx_rec == cx_rec
             mock_save.assert_called_once()
 
-            mock_handler.return_value.create_offer.assert_called_once_with(cx_rec)
+            mock_handler.return_value.create_offer.assert_called_once_with(
+                cred_proposal
+            )
 
             assert cx_rec.thread_id == ret_offer._thread_id
             assert cx_rec.role == V20CredExRecord.ROLE_ISSUER
@@ -796,6 +800,104 @@ class TestV20CredManager(AsyncTestCase):
 
             assert cx_rec.state == V20CredExRecord.STATE_REQUEST_RECEIVED
             assert cx_rec.cred_request.attachment() == INDY_CRED_REQ
+
+    async def test_receive_request_no_connection_cred_request(self):
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_OFFER_SENT,
+            thread_id="test_id",
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
+        ) as mock_retrieve, async_mock.patch.object(
+            V20CredExRecord, "retrieve_by_tag_filter", async_mock.CoroutineMock()
+        ) as mock_retrieve_tag_filter, async_mock.patch.object(
+            V20CredFormat.Format, "handler"
+        ) as mock_handler:
+            mock_retrieve.side_effect = (StorageNotFoundError(),)
+            mock_retrieve_tag_filter.return_value = stored_cx_rec
+            mock_handler.return_value.receive_request = async_mock.CoroutineMock()
+
+            cx_rec = await self.manager.receive_request(cred_request, "test_conn_id")
+
+            mock_retrieve.assert_called_once_with(
+                self.session, "test_conn_id", cred_request._thread_id
+            )
+            mock_retrieve_tag_filter.assert_called_once_with(
+                self.session,
+                {"thread_id": cred_request._thread_id},
+                {"connection_id": None},
+            )
+            mock_handler.return_value.receive_request.assert_called_once_with(
+                cx_rec, cred_request
+            )
+            mock_save.assert_called_once()
+            assert cx_rec.state == V20CredExRecord.STATE_REQUEST_RECEIVED
+            assert cx_rec.cred_request.attachment() == INDY_CRED_REQ
+            assert cx_rec.connection_id == "test_conn_id"
+
+    async def test_receive_request_no_cred_ex_with_offer_found(self):
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_OFFER_SENT,
+            thread_id="test_id",
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
+        ) as mock_retrieve, async_mock.patch.object(
+            V20CredExRecord, "retrieve_by_tag_filter", async_mock.CoroutineMock()
+        ) as mock_retrieve_tag_filter, async_mock.patch.object(
+            V20CredFormat.Format, "handler"
+        ) as mock_handler:
+            mock_retrieve.side_effect = (StorageNotFoundError(),)
+            mock_retrieve_tag_filter.side_effect = (StorageNotFoundError(),)
+            mock_handler.return_value.receive_request = async_mock.CoroutineMock()
+
+            cx_rec = await self.manager.receive_request(cred_request, "test_conn_id")
+
+            mock_retrieve.assert_called_once_with(
+                self.session, "test_conn_id", cred_request._thread_id
+            )
+            mock_retrieve_tag_filter.assert_called_once_with(
+                self.session,
+                {"thread_id": cred_request._thread_id},
+                {"connection_id": None},
+            )
+            mock_handler.return_value.receive_request.assert_called_once_with(
+                cx_rec, cred_request
+            )
 
     async def test_issue_credential(self):
         connection_id = "test_conn_id"
@@ -1265,26 +1367,6 @@ class TestV20CredManager(AsyncTestCase):
                 ),
             ]
             await self.manager.delete_cred_ex_record("dummy")
-
-    async def test_create_problem_report(self):
-        connection_id = "connection-id"
-        stored_exchange = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            conn_id=connection_id,
-            initiator=V20CredExRecord.INITIATOR_SELF,
-            role=V20CredExRecord.ROLE_ISSUER,
-            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
-            thread_id="dummy-thid",
-        )
-
-        with async_mock.patch.object(V20CredExRecord, "save", autospec=True) as save_ex:
-            report = await self.manager.create_problem_report(
-                stored_exchange,
-                "The front fell off",
-            )
-
-        assert stored_exchange.state is None
-        assert report._thread_id == stored_exchange.thread_id
 
     async def test_receive_problem_report(self):
         connection_id = "connection-id"

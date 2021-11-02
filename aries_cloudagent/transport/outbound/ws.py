@@ -15,9 +15,9 @@ class WsTransport(BaseOutboundTransport):
 
     schemes = ("ws", "wss")
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         """Initialize an `WsTransport` instance."""
-        super().__init__()
+        super().__init__(**kwargs)
         self.logger = logging.getLogger(__name__)
 
     async def start(self):
@@ -36,6 +36,7 @@ class WsTransport(BaseOutboundTransport):
         payload: Union[str, bytes],
         endpoint: str,
         metadata: dict = None,
+        api_key: str = None,
     ):
         """
         Handle message from queue.

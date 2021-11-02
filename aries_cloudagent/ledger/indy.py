@@ -4,32 +4,27 @@ import asyncio
 import json
 import logging
 import tempfile
-
-from datetime import datetime, date
-from hashlib import sha256
+from datetime import date, datetime
 from os import path
 from time import time
 from typing import Sequence, Tuple
 
 import indy.ledger
 import indy.pool
-from indy.error import IndyError, ErrorCode
+from indy.error import ErrorCode, IndyError
 
-from ..config.base import BaseInjector, BaseProvider, BaseSettings
 from ..cache.base import BaseCache
-from ..indy.issuer import IndyIssuer, IndyIssuerError, DEFAULT_CRED_DEF_TAG
+from ..config.base import BaseInjector, BaseProvider, BaseSettings
+from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..indy.sdk.error import IndyErrorHandler
-from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ..messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
+from ..wallet.did_posture import DIDPosture
 from ..wallet.error import WalletNotFoundError
 from ..wallet.indy import IndySdkWallet
 from ..wallet.util import full_verkey
-from ..wallet.did_posture import DIDPosture
-
 from .base import BaseLedger, Role
 from .endpoint_type import EndpointType
 from .error import (
@@ -55,12 +50,13 @@ class IndySdkLedgerPoolProvider(BaseProvider):
         pool_name = settings.get("ledger.pool_name", "default")
         keepalive = int(settings.get("ledger.keepalive", 5))
         read_only = bool(settings.get("ledger.read_only", False))
+        socks_proxy = settings.get("ledger.socks_proxy")
 
         if read_only:
             LOGGER.warning("Note: setting ledger to read-only mode")
 
         genesis_transactions = settings.get("ledger.genesis_transactions")
-        cache = injector.inject(BaseCache, required=False)
+        cache = injector.inject_or(BaseCache)
 
         ledger_pool = IndySdkLedgerPool(
             pool_name,
@@ -68,6 +64,7 @@ class IndySdkLedgerPoolProvider(BaseProvider):
             cache=cache,
             genesis_transactions=genesis_transactions,
             read_only=read_only,
+            socks_proxy=socks_proxy,
         )
 
         return ledger_pool
@@ -86,6 +83,7 @@ class IndySdkLedgerPool:
         cache_duration: int = 600,
         genesis_transactions: str = None,
         read_only: bool = False,
+        socks_proxy: str = None,
     ):
         """
         Initialize an IndySdkLedgerPool instance.
@@ -97,6 +95,7 @@ class IndySdkLedgerPool:
             cache_duration: The TTL for ledger cache entries
             genesis_transactions: The ledger genesis transaction as a string
             read_only: Prevent any ledger write operations
+            socks_proxy: Specifies socks proxy for ZMQ to connect to ledger pool
         """
         self.checked = checked
         self.opened = False
@@ -111,6 +110,7 @@ class IndySdkLedgerPool:
         self.name = name
         self.taa_cache = None
         self.read_only = read_only
+        self.socks_proxy = socks_proxy
 
     async def create_pool_config(
         self, genesis_transactions: str, recreate: bool = False
@@ -167,7 +167,11 @@ class IndySdkLedgerPool:
         with IndyErrorHandler(
             f"Exception opening pool ledger {self.name}", LedgerConfigError
         ):
-            self.handle = await indy.pool.open_pool_ledger(self.name, "{}")
+            pool_config = json.dumps({})
+            if self.socks_proxy is not None:
+                pool_config = json.dumps({"socks_proxy": self.socks_proxy})
+                LOGGER.debug("Open pool with config: %s", pool_config)
+            self.handle = await indy.pool.open_pool_ledger(self.name, pool_config)
         self.opened = True
 
     async def close(self):
@@ -496,20 +500,6 @@ class IndySdkLedger(BaseLedger):
                 else:
                     raise
 
-            # TODO refactor this code (duplicated in endorser transaction manager)
-            # Add non-secrets record
-            schema_id_parts = schema_id.split(":")
-            schema_tags = {
-                "schema_id": schema_id,
-                "schema_issuer_did": public_info.did,
-                "schema_name": schema_id_parts[-2],
-                "schema_version": schema_id_parts[-1],
-                "epoch": str(int(time())),
-            }
-            record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
-            storage = self.get_indy_storage()
-            await storage.add_record(record)
-
         return schema_id, schema_def
 
     async def check_existing_schema(
@@ -736,24 +726,6 @@ class IndySdkLedger(BaseLedger):
             )
             if not write_ledger:
                 return (credential_definition_id, {"signed_txn": resp}, novel)
-
-            # TODO refactor this code (duplicated in endorser transaction manager)
-            # Add non-secrets record
-            storage = self.get_indy_storage()
-            schema_id_parts = schema_id.split(":")
-            cred_def_tags = {
-                "schema_id": schema_id,
-                "schema_issuer_did": schema_id_parts[0],
-                "schema_name": schema_id_parts[-2],
-                "schema_version": schema_id_parts[-1],
-                "issuer_did": public_info.did,
-                "cred_def_id": credential_definition_id,
-                "epoch": str(int(time())),
-            }
-            record = StorageRecord(
-                CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
-            )
-            await storage.add_record(record)
 
         return (credential_definition_id, json.loads(credential_definition_json), novel)
 
@@ -1046,7 +1018,7 @@ class IndySdkLedger(BaseLedger):
         txn_data_data = txn_resp_data["txn"]["data"]
         role_token = Role.get(txn_data_data.get("role")).token()
         alias = txn_data_data.get("alias")
-        await self.register_nym(public_did, verkey, role_token, alias)
+        await self.register_nym(public_did, verkey, alias=alias, role=role_token)
 
         # update wallet
         await self.wallet.rotate_did_keypair_apply(public_did)
@@ -1095,13 +1067,6 @@ class IndySdkLedger(BaseLedger):
         Anything more accurate is a privacy concern.
         """
         return int(datetime.combine(date.today(), datetime.min.time()).timestamp())
-
-    def taa_digest(self, version: str, text: str):
-        """Generate the digest of a TAA record."""
-        if not version or not text:
-            raise ValueError("Bad input for TAA digest")
-        taa_plaintext = version + text
-        return sha256(taa_plaintext.encode("utf-8")).digest().hex()
 
     async def accept_txn_author_agreement(
         self, taa_record: dict, mechanism: str, accept_time: int = None
@@ -1211,7 +1176,7 @@ class IndySdkLedger(BaseLedger):
 
     async def get_revoc_reg_delta(
         self, revoc_reg_id: str, fro=0, to=None
-    ) -> (dict, int):
+    ) -> Tuple[dict, int]:
         """
         Look up a revocation registry delta by ID.
 
@@ -1247,7 +1212,13 @@ class IndySdkLedger(BaseLedger):
             assert found_id == revoc_reg_id
         return json.loads(found_delta_json), delta_timestamp
 
-    async def send_revoc_reg_def(self, revoc_reg_def: dict, issuer_did: str = None):
+    async def send_revoc_reg_def(
+        self,
+        revoc_reg_def: dict,
+        issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ):
         """Publish a revocation registry definition to the ledger."""
         # NOTE - issuer DID could be extracted from the revoc_reg_def ID
         if issuer_did:
@@ -1262,7 +1233,16 @@ class IndySdkLedger(BaseLedger):
             request_json = await indy.ledger.build_revoc_reg_def_request(
                 did_info.did, json.dumps(revoc_reg_def)
             )
-        await self._submit(request_json, True, True, did_info)
+
+        if endorser_did and not write_ledger:
+            request_json = await indy.ledger.append_request_endorser(
+                request_json, endorser_did
+            )
+        resp = await self._submit(
+            request_json, True, sign_did=did_info, write_ledger=write_ledger
+        )
+
+        return {"result": resp}
 
     async def send_revoc_reg_entry(
         self,
@@ -1270,6 +1250,8 @@ class IndySdkLedger(BaseLedger):
         revoc_def_type: str,
         revoc_reg_entry: dict,
         issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ):
         """Publish a revocation registry entry to the ledger."""
         if issuer_did:
@@ -1284,4 +1266,13 @@ class IndySdkLedger(BaseLedger):
             request_json = await indy.ledger.build_revoc_reg_entry_request(
                 did_info.did, revoc_reg_id, revoc_def_type, json.dumps(revoc_reg_entry)
             )
-        await self._submit(request_json, True, True, did_info)
+
+        if endorser_did and not write_ledger:
+            request_json = await indy.ledger.append_request_endorser(
+                request_json, endorser_did
+            )
+        resp = await self._submit(
+            request_json, True, sign_did=did_info, write_ledger=write_ledger
+        )
+
+        return {"result": resp}

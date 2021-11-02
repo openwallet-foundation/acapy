@@ -8,9 +8,10 @@ retrieving did's from different sources provided by the method type.
 from datetime import datetime
 from itertools import chain
 import logging
-from typing import Sequence, Tuple, Union
+from typing import Sequence, Tuple, Type, TypeVar, Union
 
-from pydid import DID, DIDDocument, DIDError, DIDUrl, Service, VerificationMethod
+from pydid import DID, DIDError, DIDUrl, Resource, NonconformantDocument
+from pydid.doc.doc import IDNotFoundError
 
 from ..core.profile import Profile
 from .base import (
@@ -26,6 +27,9 @@ from .did_resolver_registry import DIDResolverRegistry
 LOGGER = logging.getLogger(__name__)
 
 
+ResourceType = TypeVar("ResourceType", bound=Resource)
+
+
 class DIDResolver:
     """did resolver singleton."""
 
@@ -35,7 +39,7 @@ class DIDResolver:
 
     async def _resolve(
         self, profile: Profile, did: Union[str, DID]
-    ) -> Tuple[BaseDIDResolver, DIDDocument]:
+    ) -> Tuple[BaseDIDResolver, dict]:
         """Retrieve doc and return with resolver."""
         # TODO Cache results
         if isinstance(did, DID):
@@ -55,7 +59,7 @@ class DIDResolver:
 
         raise DIDNotFound(f"DID {did} could not be resolved")
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> DIDDocument:
+    async def resolve(self, profile: Profile, did: Union[str, DID]) -> dict:
         """Resolve a DID."""
         _, doc = await self._resolve(profile, did)
         return doc
@@ -99,15 +103,26 @@ class DIDResolver:
         return resolvers
 
     async def dereference(
-        self, profile: Profile, did_url: str
-    ) -> Union[Service, VerificationMethod]:
+        self, profile: Profile, did_url: str, *, cls: Type[ResourceType] = Resource
+    ) -> ResourceType:
         """Dereference a DID URL to its corresponding DID Doc object."""
         # TODO Use cached DID Docs when possible
         try:
             parsed = DIDUrl.parse(did_url)
-            doc = await self.resolve(profile, parsed.did)
-            return doc.dereference(parsed)
+            if not parsed.did:
+                raise ValueError("Invalid DID URL")
         except DIDError as err:
             raise ResolverError(
                 "Failed to parse DID URL from {}".format(did_url)
             ) from err
+
+        doc_dict = await self.resolve(profile, parsed.did)
+        # Use non-conformant doc as the "least common denominator"
+        try:
+            return NonconformantDocument.deserialize(doc_dict).dereference_as(
+                cls, parsed
+            )
+        except IDNotFoundError as error:
+            raise ResolverError(
+                "Failed to dereference DID URL: {}".format(error)
+            ) from error

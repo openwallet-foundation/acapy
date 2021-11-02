@@ -128,12 +128,6 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     )
 
 
-class InvitationReceiveRequestSchema(InvitationMessageSchema):
-    """Invitation request schema."""
-
-    services = fields.Field()
-
-
 @docs(
     tags=["out-of-band"],
     summary="Create a new connection invitation",
@@ -165,8 +159,9 @@ async def invitation_create(request: web.BaseRequest):
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
-    session = await context.session()
-    oob_mgr = OutOfBandManager(session)
+
+    profile = context.profile
+    oob_mgr = OutOfBandManager(profile)
     try:
         invi_rec = await oob_mgr.create_invitation(
             my_label=my_label,
@@ -192,7 +187,7 @@ async def invitation_create(request: web.BaseRequest):
     summary="Receive a new connection invitation",
 )
 @querystring_schema(InvitationReceiveQueryStringSchema())
-@request_schema(InvitationReceiveRequestSchema())
+@request_schema(InvitationMessageSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
 async def invitation_receive(request: web.BaseRequest):
     """
@@ -212,8 +207,8 @@ async def invitation_receive(request: web.BaseRequest):
             reason="Configuration does not allow receipt of invitations"
         )
 
-    session = await context.session()
-    oob_mgr = OutOfBandManager(session)
+    profile = context.profile
+    oob_mgr = OutOfBandManager(profile)
 
     body = await request.json()
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
@@ -233,7 +228,7 @@ async def invitation_receive(request: web.BaseRequest):
     except (DIDXManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response(result)
+    return web.json_response(result.serialize())
 
 
 async def register(app: web.Application):

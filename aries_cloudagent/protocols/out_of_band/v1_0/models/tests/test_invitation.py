@@ -10,7 +10,7 @@ from ...messages.invitation import InvitationMessage
 
 from ..invitation import InvitationRecord, InvitationRecordSchema
 
-TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
+TEST_DID = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
 
 
 class TestInvitationRecord(AsyncTestCase):

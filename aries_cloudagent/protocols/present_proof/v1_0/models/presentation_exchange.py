@@ -1,13 +1,17 @@
 """Aries#0037 v1.0 presentation exchange information with non-secrets storage."""
 
+import logging
+
 from typing import Any, Mapping, Union
 
 from marshmallow import fields, validate
 
-from .....indy.sdk.models.proof import IndyProof, IndyProofSchema
-from .....indy.sdk.models.proof_request import IndyProofRequest, IndyProofRequestSchema
+from .....core.profile import ProfileSession
+from .....indy.models.proof import IndyProof, IndyProofSchema
+from .....indy.models.proof_request import IndyProofRequest, IndyProofRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
+from .....storage.base import StorageError
 
 from ..messages.presentation_proposal import (
     PresentationProposal,
@@ -19,6 +23,8 @@ from ..messages.presentation_request import (
 )
 
 from . import UNENCRYPTED_TAGS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V10PresentationExchange(BaseExchangeRecord):
@@ -147,6 +153,41 @@ class V10PresentationExchange(BaseExchangeRecord):
     def presentation(self, value):
         """Setter; store de/serialized views."""
         self._presentation = IndyProof.serde(value)
+
+    async def save_error_state(
+        self,
+        session: ProfileSession,
+        *,
+        reason: str = None,
+        log_params: Mapping[str, Any] = None,
+        log_override: bool = False,
+    ):
+        """
+        Save record error state if need be; log and swallow any storage error.
+
+        Args:
+            session: The profile session to use
+            reason: A reason to add to the log
+            log_params: Additional parameters to log
+            override: Override configured logging regimen, print to stderr instead
+        """
+
+        if self._last_state is None:  # already done
+            return
+
+        self.state = None
+        if reason:
+            self.error_msg = reason
+
+        try:
+            await self.save(
+                session,
+                reason=reason,
+                log_params=log_params,
+                log_override=log_override,
+            )
+        except StorageError as err:
+            LOGGER.exception(err)
 
     @property
     def record_value(self) -> Mapping:

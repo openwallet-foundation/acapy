@@ -2,13 +2,15 @@
 
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
+from .. import problem_report_for_record
 from ..manager import V20PresManager
-from ..models.pres_exchange import V20PresExRecord
+from ..messages.pres_problem_report import ProblemReportReason
 from ..messages.pres_proposal import V20PresProposal
 
 
@@ -38,7 +40,8 @@ class V20PresProposalHandler(BaseHandler):
                 "No connection established for presentation proposal"
             )
 
-        pres_manager = V20PresManager(context.profile)
+        profile = context.profile
+        pres_manager = V20PresManager(profile)
         pres_ex_record = await pres_manager.receive_pres_proposal(
             context.message, context.connection_record
         )  # mgr only creates, saves record: on exception, saving state err is hopeless
@@ -62,17 +65,20 @@ class V20PresProposalHandler(BaseHandler):
                     comment=context.message.comment,
                 )
                 await responder.send_reply(pres_request_message)
-            except LedgerError as err:
+            except (BaseModelError, LedgerError, StorageError) as err:
                 self._logger.exception(err)
                 if pres_ex_record:
-                    async with context.session() as session:
+                    async with profile.session() as session:
                         await pres_ex_record.save_error_state(
                             session,
-                            state=V20PresExRecord.STATE_ABANDONED,
-                            reason=err.message,
+                            reason=err.roll_up,  # us: be specific
                         )
-            except StorageError as err:
-                self._logger.exception(err)  # may be logging to wire, not dead disk
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            pres_ex_record,
+                            ProblemReportReason.ABANDONED.value,  # them: be vague
+                        )
+                    )
 
             trace_event(
                 context.settings,

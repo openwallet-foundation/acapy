@@ -1,8 +1,11 @@
-from unittest import TestCase
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
+
+from ......core.in_memory import InMemoryProfile
 
 from ...messages.inner.credential_preview import CredAttrSpec, CredentialPreview
 from ...messages.credential_proposal import CredentialProposal
 
+from .. import credential_exchange as test_module
 from ..credential_exchange import V10CredentialExchange
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
@@ -26,10 +29,10 @@ CRED_PREVIEW = CredentialPreview(
 )
 
 
-class TestV10CredentialExchange(TestCase):
+class TestV10CredentialExchange(AsyncTestCase):
     """Test de/serialization."""
 
-    def test_serde(self):
+    async def test_serde(self):
         """Test de/serialization."""
 
         credential_proposal = CredentialProposal(
@@ -64,3 +67,21 @@ class TestV10CredentialExchange(TestCase):
             ser = cx_rec.serialize()
             deser = V10CredentialExchange.deserialize(ser)
             assert type(deser.credential_proposal_dict) == CredentialProposal
+
+    async def test_save_error_state(self):
+        session = InMemoryProfile.test_session()
+        record = V10CredentialExchange(state=None)
+        assert record._last_state is None
+        await record.save_error_state(session)  # cover short circuit
+
+        record.state = V10CredentialExchange.STATE_PROPOSAL_RECEIVED
+        await record.save(session)
+
+        with async_mock.patch.object(
+            record, "save", async_mock.CoroutineMock()
+        ) as mock_save, async_mock.patch.object(
+            test_module.LOGGER, "exception", async_mock.MagicMock()
+        ) as mock_log_exc:
+            mock_save.side_effect = test_module.StorageError()
+            await record.save_error_state(session, reason="test")
+            mock_log_exc.assert_called_once()

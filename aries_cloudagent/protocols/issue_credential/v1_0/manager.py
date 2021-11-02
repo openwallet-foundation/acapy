@@ -20,6 +20,7 @@ from ....messaging.responder import BaseResponder
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
+from ....revocation.util import notify_revocation_reg_event
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
 
@@ -273,7 +274,7 @@ class CredentialManager:
 
         credential_offer = None
         cache_key = f"credential_offer::{cred_def_id}"
-        cache = self._profile.inject(BaseCache, required=False)
+        cache = self._profile.inject_or(BaseCache)
         if cache:
             async with cache.acquire(cache_key) as entry:
                 if entry.result:
@@ -419,7 +420,7 @@ class CredentialManager:
                 f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
             )
             cred_req_result = None
-            cache = self._profile.inject(BaseCache, required=False)
+            cache = self._profile.inject_or(BaseCache)
             if cache:
                 async with cache.acquire(cache_key) as entry:
                     if entry.result:
@@ -468,11 +469,24 @@ class CredentialManager:
         credential_request = message.indy_cred_req(0)
 
         async with self._profile.session() as session:
-            cred_ex_record = await (
-                V10CredentialExchange.retrieve_by_connection_and_thread(
-                    session, connection_id, message._thread_id
+            try:
+                cred_ex_record = await (
+                    V10CredentialExchange.retrieve_by_connection_and_thread(
+                        session, connection_id, message._thread_id
+                    )
                 )
-            )
+            except StorageNotFoundError:
+                try:
+                    cred_ex_record = await V10CredentialExchange.retrieve_by_tag_filter(
+                        session,
+                        {"thread_id": message._thread_id},
+                        {"connection_id": None},
+                    )
+                    cred_ex_record.connection_id = connection_id
+                except StorageNotFoundError:
+                    raise CredentialManagerError(
+                        "Indy issue credential format can't start from credential request"
+                    )
             cred_ex_record.credential_request = credential_request
             cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
             await cred_ex_record.save(session, reason="receive credential request")
@@ -557,21 +571,20 @@ class CredentialManager:
                                     cred_ex_record.credential_definition_id,
                                 )
                             )  # prefer to reuse prior rev reg size
+                        cred_def_id = cred_ex_record.credential_definition_id
+                        rev_reg_size = (
+                            old_rev_reg_recs[0].max_cred_num
+                            if old_rev_reg_recs
+                            else None
+                        )
                         for _ in range(2):
-                            pending_rev_reg_rec = await revoc.init_issuer_registry(
-                                cred_ex_record.credential_definition_id,
-                                max_cred_num=(
-                                    old_rev_reg_recs[0].max_cred_num
-                                    if old_rev_reg_recs
-                                    else None
-                                ),
+                            await notify_revocation_reg_event(
+                                self.profile,
+                                cred_def_id,
+                                rev_reg_size,
+                                auto_create_rev_reg=True,
                             )
-                            asyncio.ensure_future(
-                                pending_rev_reg_rec.stage_pending_registry(
-                                    self._profile,
-                                    max_attempts=3,  # fail both in < 2s at worst
-                                )
-                            )
+
                     if retries > 0:
                         LOGGER.info(
                             "Waiting 2s on posted rev reg for cred def %s, retrying",
@@ -619,16 +632,13 @@ class CredentialManager:
                         )
 
                     # Send next 1 rev reg, publish tails file in background
-                    revoc = IndyRevocation(self._profile)
-                    pending_rev_reg_rec = await revoc.init_issuer_registry(
-                        active_rev_reg_rec.cred_def_id,
-                        max_cred_num=active_rev_reg_rec.max_cred_num,
-                    )
-                    asyncio.ensure_future(
-                        pending_rev_reg_rec.stage_pending_registry(
-                            self._profile,
-                            max_attempts=16,
-                        )
+                    cred_def_id = cred_ex_record.credential_definition_id
+                    rev_reg_size = active_rev_reg_rec.max_cred_num
+                    await notify_revocation_reg_event(
+                        self.profile,
+                        cred_def_id,
+                        rev_reg_size,
+                        auto_create_rev_reg=True,
                     )
 
             except IndyIssuerRevocationRegistryFullError:
@@ -707,7 +717,7 @@ class CredentialManager:
 
     async def store_credential(
         self, cred_ex_record: V10CredentialExchange, credential_id: str = None
-    ) -> Tuple[V10CredentialExchange, CredentialAck]:
+    ) -> V10CredentialExchange:
         """
         Store a credential in holder wallet; send ack to issuer.
 
@@ -813,7 +823,7 @@ class CredentialManager:
         except StorageError as err:
             LOGGER.exception(err)  # holder still owes an ack: carry on
 
-        responder = self._profile.inject(BaseResponder, required=False)
+        responder = self._profile.inject_or(BaseResponder)
         if responder:
             await responder.send_reply(
                 credential_ack_message,
@@ -855,32 +865,6 @@ class CredentialManager:
                 await cred_ex_record.delete_record(session)  # all done: delete
 
         return cred_ex_record
-
-    async def create_problem_report(
-        self,
-        cred_ex_record: V10CredentialExchange,
-        description: str,
-    ):
-        """
-        Update cred ex record; create and return problem report.
-
-        Returns:
-            problem report
-
-        """
-        cred_ex_record.state = None
-        async with self._profile.session() as session:
-            await cred_ex_record.save(session, reason="created problem report")
-
-        report = CredentialProblemReport(
-            description={
-                "en": description,
-                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
-            }
-        )
-        report.assign_thread_id(cred_ex_record.thread_id)
-
-        return report
 
     async def receive_problem_report(
         self, message: CredentialProblemReport, connection_id: str

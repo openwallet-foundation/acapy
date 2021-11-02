@@ -4,6 +4,7 @@ import re
 
 from abc import ABC, abstractmethod, ABCMeta
 from enum import Enum
+from hashlib import sha256
 from typing import Sequence, Tuple, Union
 
 from ..indy.issuer import IndyIssuer
@@ -58,6 +59,14 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         Args:
             did: The DID to look up on the ledger or in the cache
             endpoint_type: The type of the endpoint (default 'endpoint')
+        """
+
+    @abstractmethod
+    async def get_all_endpoints_for_did(self, did: str) -> dict:
+        """Fetch all endpoints for a ledger DID.
+
+        Args:
+            did: The DID to look up on the ledger or in the cache
         """
 
     @abstractmethod
@@ -116,22 +125,30 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         if did:
             return re.sub(r"^did:\w+:", "", did)
 
+    @abstractmethod
     async def get_txn_author_agreement(self, reload: bool = False):
         """Get the current transaction author agreement, fetching it if necessary."""
 
+    @abstractmethod
     async def fetch_txn_author_agreement(self):
         """Fetch the current AML and TAA from the ledger."""
 
+    @abstractmethod
     async def accept_txn_author_agreement(
         self, taa_record: dict, mechanism: str, accept_time: int = None
     ):
         """Save a new record recording the acceptance of the TAA."""
 
+    @abstractmethod
     async def get_latest_txn_author_acceptance(self):
         """Look up the latest TAA acceptance."""
 
     def taa_digest(self, version: str, text: str):
         """Generate the digest of a TAA record."""
+        if not version or not text:
+            raise ValueError("Bad input for TAA digest")
+        taa_plaintext = version + text
+        return sha256(taa_plaintext.encode("utf-8")).digest().hex()
 
     @abstractmethod
     async def txn_endorse(
@@ -176,7 +193,13 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Look up a revocation registry definition by ID."""
 
     @abstractmethod
-    async def send_revoc_reg_def(self, revoc_reg_def: dict, issuer_did: str = None):
+    async def send_revoc_reg_def(
+        self,
+        revoc_reg_def: dict,
+        issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ):
         """Publish a revocation registry definition to the ledger."""
 
     @abstractmethod
@@ -186,6 +209,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         revoc_def_type: str,
         revoc_reg_entry: dict,
         issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ):
         """Publish a revocation registry entry to the ledger."""
 
@@ -228,7 +253,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def get_revoc_reg_delta(
         self, revoc_reg_id: str, timestamp_from=0, timestamp_to=None
-    ) -> (dict, int):
+    ) -> Tuple[dict, int]:
         """Look up a revocation registry delta by ID."""
 
     @abstractmethod
@@ -242,7 +267,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def get_revoc_reg_entry(self, revoc_reg_id: str, timestamp: int):
+    async def get_revoc_reg_entry(
+        self, revoc_reg_id: str, timestamp: int
+    ) -> Tuple[dict, int]:
         """Get revocation registry entry by revocation registry ID and timestamp."""
 
 

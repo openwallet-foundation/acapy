@@ -140,7 +140,7 @@ class LoggingConfigurator:
             banner.print_spacer()
             banner.print_list(
                 [
-                    f"{outbound_queue.connection}",
+                    f"{outbound_queue}",
                 ]
             )
             banner.print_spacer()

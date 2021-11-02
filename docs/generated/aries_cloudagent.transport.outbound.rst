@@ -6,6 +6,14 @@ aries\_cloudagent.transport.outbound package
    :undoc-members:
    :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   aries_cloudagent.transport.outbound.queue
+
 Submodules
 ----------
 
@@ -37,6 +45,14 @@ aries\_cloudagent.transport.outbound.message module
 ---------------------------------------------------
 
 .. automodule:: aries_cloudagent.transport.outbound.message
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+aries\_cloudagent.transport.outbound.status module
+--------------------------------------------------
+
+.. automodule:: aries_cloudagent.transport.outbound.status
    :members:
    :undoc-members:
    :show-inheritance:

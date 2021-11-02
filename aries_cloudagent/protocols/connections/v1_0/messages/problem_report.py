@@ -7,7 +7,9 @@ from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
 from ..message_types import PROBLEM_REPORT
 
-HANDLER_CLASS = "aries_cloudagent.messaging.problem_report.handler.ProblemReportHandler"
+HANDLER_CLASS = (
+    "aries_cloudagent.protocols.problem_report.v1_0.handler.ProblemReportHandler"
+)
 
 
 class ProblemReportReason(Enum):

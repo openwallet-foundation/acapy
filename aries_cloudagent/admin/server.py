@@ -26,7 +26,7 @@ from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
-from ..multitenant.manager import MultitenantManager, MultitenantManagerError
+from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
@@ -34,6 +34,7 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..messaging.valid import UUIDFour
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -251,7 +252,7 @@ class AdminServer(BaseAdminServer):
         self.webhook_router = webhook_router
         self.websocket_queues = {}
         self.site = None
-        self.multitenant_manager = context.inject(MultitenantManager, required=False)
+        self.multitenant_manager = context.inject_or(BaseMultitenantManager)
 
         self.server_paths = []
 
@@ -273,6 +274,8 @@ class AdminServer(BaseAdminServer):
                     "/api/docs/swagger.json",
                     "/favicon.ico",
                     "/ws",  # ws handler checks authentication
+                    "/status/live",
+                    "/status/ready",
                 ]
                 or path.startswith("/static/swagger/")
             )
@@ -293,7 +296,7 @@ class AdminServer(BaseAdminServer):
 
             middlewares.append(check_token)
 
-        collector = self.context.inject(Collector, required=False)
+        collector = self.context.inject_or(Collector)
 
         if self.multitenant_manager:
 
@@ -309,6 +312,19 @@ class AdminServer(BaseAdminServer):
                 if authorization_header and is_multitenancy_path:
                     raise web.HTTPUnauthorized()
 
+                base_limited_access_path = (
+                    re.match(
+                        f"^/connections/(?:receive-invitation|{UUIDFour.PATTERN})", path
+                    )
+                    or path.startswith("/out-of-band/receive-invitation")
+                    or path.startswith("/mediation/requests/")
+                    or re.match(
+                        f"/mediation/(?:request/{UUIDFour.PATTERN}|"
+                        f"{UUIDFour.PATTERN}/default-mediator)",
+                        path,
+                    )
+                )
+
                 # base wallet is not allowed to perform ssi related actions.
                 # Only multitenancy and general server actions
                 if (
@@ -316,6 +332,7 @@ class AdminServer(BaseAdminServer):
                     and not is_multitenancy_path
                     and not is_server_path
                     and not is_unprotected_path(path)
+                    and not base_limited_access_path
                 ):
                     raise web.HTTPUnauthorized()
 
@@ -393,7 +410,7 @@ class AdminServer(BaseAdminServer):
         self.server_paths = [route.path for route in server_routes]
         app.add_routes(server_routes)
 
-        plugin_registry = self.context.inject(PluginRegistry, required=False)
+        plugin_registry = self.context.inject_or(PluginRegistry)
         if plugin_registry:
             await plugin_registry.register_admin_routes(app)
 
@@ -445,11 +462,11 @@ class AdminServer(BaseAdminServer):
         runner = web.AppRunner(self.app)
         await runner.setup()
 
-        plugin_registry = self.context.inject(PluginRegistry, required=False)
+        plugin_registry = self.context.inject_or(PluginRegistry)
         if plugin_registry:
             plugin_registry.post_process_routes(self.app)
 
-        event_bus = self.context.inject(EventBus, required=False)
+        event_bus = self.context.inject_or(EventBus)
         if event_bus:
             event_bus.subscribe(EVENT_PATTERN_WEBHOOK, self._on_webhook_event)
             event_bus.subscribe(EVENT_PATTERN_RECORD, self._on_record_event)
@@ -548,7 +565,7 @@ class AdminServer(BaseAdminServer):
             The module list response
 
         """
-        registry = self.context.inject(PluginRegistry, required=False)
+        registry = self.context.inject_or(PluginRegistry)
         plugins = registry and sorted(registry.plugin_names) or []
         return web.json_response({"result": plugins})
 
@@ -567,6 +584,8 @@ class AdminServer(BaseAdminServer):
         """
         config = {
             k: self.context.settings[k]
+            if (isinstance(self.context.settings[k], (str, int)))
+            else self.context.settings[k].copy()
             for k in self.context.settings
             if k
             not in [
@@ -575,7 +594,7 @@ class AdminServer(BaseAdminServer):
                 "wallet.key",
                 "wallet.rekey",
                 "wallet.seed",
-                "wallet.storage.creds",
+                "wallet.storage_creds",
             ]
         }
         for index in range(len(config.get("admin.webhook_urls", []))):
@@ -602,7 +621,7 @@ class AdminServer(BaseAdminServer):
         """
         status = {"version": __version__}
         status["label"] = self.context.settings.get("default_label")
-        collector = self.context.inject(Collector, required=False)
+        collector = self.context.inject_or(Collector)
         if collector:
             status["timing"] = collector.results
         if self.conductor_stats:
@@ -622,7 +641,7 @@ class AdminServer(BaseAdminServer):
             The web response
 
         """
-        collector = self.context.inject(Collector, required=False)
+        collector = self.context.inject_or(Collector)
         if collector:
             collector.reset()
         return web.json_response({})

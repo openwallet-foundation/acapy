@@ -15,7 +15,6 @@ Subpackages
    aries_cloudagent.protocols.present_proof.v1_0.handlers
    aries_cloudagent.protocols.present_proof.v1_0.messages
    aries_cloudagent.protocols.present_proof.v1_0.models
-   aries_cloudagent.protocols.present_proof.v1_0.util
 
 Submodules
 ----------

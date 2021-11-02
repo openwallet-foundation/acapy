@@ -1,32 +1,42 @@
 """
 Resolve did document admin routes.
 
-"/resolver/resolve/{did}": {
-    "get": {
-        "responses": {
-            "200": {
-                "schema": {
-                    "$ref": "#/definitions/DIDDoc"
-                },
-                "description": null
-            }
-        },
-        "parameters": [
-            {
-                "in": "path",
-                "name": "did",
-                "required": true,
-                "type": "string",
-                "pattern": "did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)",
-                "description": "decentralize identifier(DID)",
-                "example": "did:ted:WgWxqztrNooG92RXvxSTWv"
-            }
-        ],
-        "tags": [ "resolver" ],
-        "summary": "Retrieve doc for requested did",
-        "produces": [ "application/json" ]
+    "/resolver/resolve/{did}": {
+        "get": {
+            "responses": {
+                "200": {
+                    "schema": {
+                        "$ref": "#/definitions/DIDDoc"
+
+                    },
+                    "description": null
+
+                }
+
+            },
+            "parameters": [
+
+                {
+                    "in": "path",
+                    "name": "did",
+                    "required": true,
+                    "type": "string",
+                    "pattern": "did:([a-z]+):((?:[a-zA-Z0-9._-]*:)*[a-zA-Z0-9._-]+)",
+                    "description": "decentralize identifier(DID)",
+                    "example": "did:ted:WgWxqztrNooG92RXvxSTWv"
+
+                }
+
+            ],
+
+            "tags": [ "resolver" ],
+            "summary": "Retrieve doc for requested did",
+            "produces": [ "application/json" ]
+
+        }
+
     }
-}
+
 """
 
 from aiohttp import web

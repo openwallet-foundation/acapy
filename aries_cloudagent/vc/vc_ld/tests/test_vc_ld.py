@@ -208,6 +208,30 @@ class TestLinkedDataVerifiableCredential(TestCase):
             presentation_id="https://presentation_id.com",
         )
 
+    async def test_sign_presentation_bbsbls(self):
+        unsigned_presentation = await create_presentation(
+            credentials=[CREDENTIAL_ISSUED]
+        )
+
+        suite = BbsBlsSignature2020(
+            verification_method=self.bls12381g2_verification_method,
+            key_pair=WalletKeyPair(
+                wallet=self.wallet,
+                key_type=KeyType.BLS12381G2,
+                public_key_base58=self.bls12381g2_key_info.verkey,
+            ),
+            date=datetime.strptime("2020-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
+        )
+
+        assert unsigned_presentation == PRESENTATION_UNSIGNED
+        unsigned_presentation["@context"].append("https://w3id.org/security/bbs/v1")
+        presentation = await sign_presentation(
+            presentation=unsigned_presentation,
+            suite=suite,
+            document_loader=custom_document_loader,
+            challenge=self.presentation_challenge,
+        )
+
     async def test_verify_presentation(self):
         suite = Ed25519Signature2018(
             key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.ED25519),

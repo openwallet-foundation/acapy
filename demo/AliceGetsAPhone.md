@@ -19,6 +19,7 @@ This demo also introduces revocation of credentials.
 - [Present the Proof](#present-the-proof)
 - [Review the Proof](#review-the-proof)
 - [Revoke the Credential and Send Another Proof Request](#revoke-the-credential-and-send-another-proof-request)
+- [Send a Connectionless Proof Request](#send-a-connectionless-proof-request)
 - [Conclusion](#conclusion)
 
 ## Getting Started
@@ -133,8 +134,10 @@ Note that with _Play with Docker_ it can be challenging to capture the informati
 If you are running in a _local bash shell_, navigate to [The demo directory](/demo) and run:
 
 ```bash
-TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
+TAILS_NETWORK=docker_tails-server LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --aip 10 --revocation --events
 ```
+
+(Note that we have to start faber with `--aip 10` for compatibility with mobile clients.)
 
 The `TAILS_NETWORK` parameter lets the demo script know how to connect to the tails server (which should be running in a separate shell on the same machine).
 
@@ -143,7 +146,7 @@ The `TAILS_NETWORK` parameter lets the demo script know how to connect to the ta
 If you are running in _Play with Docker_, navigate to [The demo directory](/demo) and run:
 
 ```bash
-PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --revocation --events
+PUBLIC_TAILS_URL=https://c4f7fbb85911.ngrok.io LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --aip 10 --revocation --events
 ```
 
 The `PUBLIC_TAILS_URL` parameter lets the demo script know how to connect to the tails server. This can be running in another PWD session, or even on your local machine - the ngrok endpoint is public and will map to the correct location.
@@ -298,6 +301,18 @@ Once that is done, try sending another proof request and see what happens! Exper
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/revocation-3-console.png" alt="Revocation">
 </details>
+
+## Send a Connectionless Proof Request
+
+A connectionless proof request works the same way as a regular proof request, however it does not require a connection to be established between the Verifier and Holder/Prover.
+
+This is supported in the Faber demo, however note that it will only work when running Faber on the Docker playground service [Play with Docker](https://labs.play-with-docker.com/) (or on [Play with VON](http://play-with-von.vonx.io)).  (This is because both the Faber agent *and* controller both need to be exposed to the mobile agent.)
+
+If you have gone through the above steps, you can delete the Faber connection in your mobile agent (however *do not* delete the credential that Faber issued to you).
+
+Then in the faber demo, select option `2a` - Faber will display a QR code which you can scan with your mobile agent.  You will see the same proof request displayed in your mobile agent, which you can respond to.
+
+Behind the scenes, the Faber controller delivers the proof request information (linked from the url encoded in the QR code) directly to your mobile agent, without establishing and agent-to-agent connection first.  If you are interested in the underlying mechanics, you can review the `faber.py` code in the repository.
 
 ## Conclusion
 

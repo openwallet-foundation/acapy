@@ -1,5 +1,6 @@
-from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
+from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
 
 from ...message_types import ATTACHMENT_FORMAT, CRED_20_PROPOSAL
@@ -7,6 +8,7 @@ from ...messages.cred_format import V20CredFormat
 from ...messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
 from ...messages.cred_proposal import V20CredProposal
 
+from .. import cred_ex_record as test_module
 from ..cred_ex_record import V20CredExRecord
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
@@ -113,3 +115,21 @@ class TestV20CredExRecord(AsyncTestCase):
             ser = cx_rec.serialize()
             deser = V20CredExRecord.deserialize(ser)
             assert type(deser.cred_proposal) == V20CredProposal
+
+    async def test_save_error_state(self):
+        session = InMemoryProfile.test_session()
+        record = V20CredExRecord(state=None)
+        assert record._last_state is None
+        await record.save_error_state(session)  # cover short circuit
+
+        record.state = V20CredExRecord.STATE_PROPOSAL_RECEIVED
+        await record.save(session)
+
+        with async_mock.patch.object(
+            record, "save", async_mock.CoroutineMock()
+        ) as mock_save, async_mock.patch.object(
+            test_module.LOGGER, "exception", async_mock.MagicMock()
+        ) as mock_log_exc:
+            mock_save.side_effect = test_module.StorageError()
+            await record.save_error_state(session, reason="test")
+            mock_log_exc.assert_called_once()

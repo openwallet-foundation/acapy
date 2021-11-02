@@ -82,14 +82,6 @@ class TestIndySdkIssuer(AsyncTestCase):
             == CRED_DEF_ID
         )
 
-        (s_id, _) = await self.issuer.create_schema(
-            TEST_DID,
-            SCHEMA_NAME,
-            SCHEMA_VERSION,
-            ["name", "moniker", "genre", "effective"],
-        )
-        assert s_id == SCHEMA_ID
-
         mock_indy_cred_def.return_value = (
             CRED_DEF_ID,
             json.dumps({"dummy": "cred-def"}),

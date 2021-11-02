@@ -463,7 +463,6 @@ class TestValid(TestCase):
             "",
             "/path/only",
             "https://1.2.3.4?query=true&url=false",
-            "http://no_tld/bad",
             "no-proto:8080/my/path",
             "smtp:8080/my/path#fragment",
         ]
@@ -504,9 +503,11 @@ class TestValid(TestCase):
         with self.assertRaises(ValidationError):
             CREDENTIAL_TYPE["validate"](["WrongType", "AnotherWrongType"])
 
+        with self.assertRaises(ValidationError):
+            CREDENTIAL_TYPE["validate"](["VerifiableCredential"])
+
         CREDENTIAL_TYPE["validate"](["VerifiableCredential", "AnotherType"])
         CREDENTIAL_TYPE["validate"](["SomeType", "AnotherType", "VerifiableCredential"])
-        CREDENTIAL_TYPE["validate"](["VerifiableCredential"])
 
     def test_credential_context(self):
         with self.assertRaises(ValidationError):

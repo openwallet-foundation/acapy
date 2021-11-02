@@ -23,13 +23,14 @@ from ..messaging.valid import (
     ENDPOINT_TYPE,
     INDY_RAW_PUBLIC_KEY,
 )
-from ..multitenant.manager import MultitenantManager
-from .key_type import KeyType
-from .did_method import DIDMethod
+from ..multitenant.base import BaseMultitenantManager
+
 from .base import BaseWallet
 from .did_info import DIDInfo
 from .did_posture import DIDPosture
+from .did_method import DIDMethod
 from .error import WalletError, WalletNotFoundError
+from .key_type import KeyType
 
 
 class WalletModuleResponseSchema(OpenAPISchema):
@@ -198,7 +199,7 @@ async def wallet_did_list(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    wallet = session.inject(BaseWallet, required=False)
+    wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     filter_did = request.query.get("did")
@@ -207,10 +208,9 @@ async def wallet_did_list(request: web.BaseRequest):
     filter_posture = DIDPosture.get(request.query.get("posture"))
     filter_key_type = KeyType.from_key_type(request.query.get("key_type"))
     results = []
-    public_did_info = await wallet.get_public_did()
-    posted_did_infos = await wallet.get_posted_dids()
 
     if filter_posture is DIDPosture.PUBLIC:
+        public_did_info = await wallet.get_public_did()
         if (
             public_did_info
             and (not filter_verkey or public_did_info.verkey == filter_verkey)
@@ -221,6 +221,7 @@ async def wallet_did_list(request: web.BaseRequest):
             results.append(format_did_info(public_did_info))
     elif filter_posture is DIDPosture.POSTED:
         results = []
+        posted_did_infos = await wallet.get_posted_dids()
         for info in posted_did_infos:
             if (
                 (not filter_verkey or info.verkey == filter_verkey)
@@ -323,7 +324,7 @@ async def wallet_create_did(request: web.BaseRequest):
         )
 
     session = await context.session()
-    wallet = session.inject(BaseWallet, required=False)
+    wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     try:
@@ -350,7 +351,7 @@ async def wallet_get_public_did(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    wallet = session.inject(BaseWallet, required=False)
+    wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     try:
@@ -377,7 +378,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    wallet = session.inject(BaseWallet, required=False)
+    wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
@@ -385,11 +386,11 @@ async def wallet_set_public_did(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     # Multitenancy setup
-    multitenant_mgr = session.inject(MultitenantManager, required=False)
+    multitenant_mgr = session.inject_or(BaseMultitenantManager)
     wallet_id = session.settings.get("wallet.id")
 
     try:
-        ledger = session.inject(BaseLedger, required=False)
+        ledger = session.inject_or(BaseLedger)
         if not ledger:
             reason = "No ledger available"
             if not session.settings.get_value("wallet.type"):
@@ -401,7 +402,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
                 raise web.HTTPNotFound(reason=f"DID {did} is not posted to the ledger")
 
         did_info = await wallet.get_local_did(did)
-        info = await wallet.set_public_did(did)
+        info = await wallet.set_public_did(did_info)
         if info:
             # Publish endpoint if necessary
             endpoint = did_info.metadata.get("endpoint")
@@ -441,7 +442,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    wallet = session.inject(BaseWallet, required=False)
+    wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
 
@@ -453,7 +454,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     )
 
     try:
-        ledger = session.inject(BaseLedger, required=False)
+        ledger = session.inject_or(BaseLedger)
         await wallet.set_did_endpoint(did, endpoint, ledger, endpoint_type)
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -481,7 +482,7 @@ async def wallet_get_did_endpoint(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    wallet = session.inject(BaseWallet, required=False)
+    wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
@@ -514,7 +515,7 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     session = await context.session()
-    wallet = session.inject(BaseWallet, required=False)
+    wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")

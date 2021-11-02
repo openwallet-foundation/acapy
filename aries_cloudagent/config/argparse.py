@@ -1,17 +1,29 @@
 """Command line option parsing."""
 
 import abc
+import json
+
+from functools import reduce
+from itertools import chain
 from os import environ
+from typing import Type
+
+import deepmerge
+import yaml
 
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
-from typing import Type
+
+from ..utils.tracing import trace_event
 
 from .error import ArgsParseError
 from .util import BoundedInt, ByteSize
-from ..utils.tracing import trace_event
 
 CAT_PROVISION = "general"
 CAT_START = "start"
+
+ENDORSER_AUTHOR = "author"
+ENDORSER_ENDORSER = "endorser"
+ENDORSER_NONE = "none"
 
 
 class ArgumentGroup(abc.ABC):
@@ -477,6 +489,32 @@ class GeneralGroup(ArgumentGroup):
                 "instances of this parameter can be specified."
             ),
         )
+
+        parser.add_argument(
+            "--plugin-config",
+            dest="plugin_config",
+            type=str,
+            required=False,
+            env_var="ACAPY_PLUGIN_CONFIG",
+            help="Load YAML file path that defines external plugin configuration.",
+        )
+
+        parser.add_argument(
+            "-o",
+            "--plugin-config-value",
+            dest="plugin_config_values",
+            type=str,
+            nargs="+",
+            action="append",
+            required=False,
+            metavar="<KEY=VALUE>",
+            help=(
+                "Set an arbitrary plugin configuration option in the format "
+                "KEY=VALUE. Use dots in KEY to set deeply nested values, as in "
+                '"a.b.c=value". VALUE is parsed as yaml.'
+            ),
+        )
+
         parser.add_argument(
             "--storage-type",
             type=str,
@@ -545,6 +583,23 @@ class GeneralGroup(ArgumentGroup):
         settings = {}
         if args.external_plugins:
             settings["external_plugins"] = args.external_plugins
+
+        if args.plugin_config:
+            with open(args.plugin_config, "r") as stream:
+                settings["plugin_config"] = yaml.safe_load(stream)
+
+        if args.plugin_config_values:
+            if "plugin_config" not in settings:
+                settings["plugin_config"] = {}
+
+            for value_str in chain(*args.plugin_config_values):
+                key, value = value_str.split("=", maxsplit=1)
+                value = yaml.safe_load(value)
+                deepmerge.always_merger.merge(
+                    settings["plugin_config"],
+                    reduce(lambda v, k: {k: v}, key.split(".")[::-1], value),
+                )
+
         if args.storage_type:
             settings["storage_type"] = args.storage_type
 
@@ -635,6 +690,21 @@ class LedgerGroup(ArgumentGroup):
             env_var="ACAPY_LEDGER_KEEP_ALIVE",
             help="Specifies how many seconds to keep the ledger open. Default: 5",
         )
+        parser.add_argument(
+            "--ledger-socks-proxy",
+            type=str,
+            dest="ledger_socks_proxy",
+            metavar="<host:port>",
+            required=False,
+            env_var="ACAPY_LEDGER_SOCKS_PROXY",
+            help=(
+                "Specifies the socks proxy (NOT http proxy) hostname and port in format "
+                "'hostname:port'. This is an optional parameter to be passed to ledger "
+                "pool configuration and ZMQ in case if aca-py is running "
+                "in a corporate/private network behind a corporate proxy and will "
+                "connect to the public (outside of corporate network) ledger pool"
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
@@ -658,6 +728,8 @@ class LedgerGroup(ArgumentGroup):
                 settings["ledger.pool_name"] = args.ledger_pool_name
             if args.ledger_keepalive:
                 settings["ledger.keepalive"] = args.ledger_keepalive
+            if args.ledger_socks_proxy:
+                settings["ledger.socks_proxy"] = args.ledger_socks_proxy
 
         return settings
 
@@ -981,29 +1053,6 @@ class TransportGroup(ArgumentGroup):
             type=str,
             env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE",
             help=(
-                "Defines connection details for outbound queue in a single "
-                "connection string; e.g., 'redis://127.0.0.1:6379'."
-            ),
-        )
-        parser.add_argument(
-            "-oqp",
-            "--outbound-queue-prefix",
-            dest="outbound_queue_prefix",
-            type=str,
-            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX",
-            help=(
-                "Defines the prefix used to generate the queue key. The "
-                "default is 'acapy', which generates a queue key as follows: "
-                "'acapy.outbound_transport'."
-            ),
-        )
-        parser.add_argument(
-            "-oqc",
-            "--outbound-queue-class",
-            dest="outbound_queue_class",
-            type=str,
-            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_CLASS",
-            help=(
                 "Defines the location of the Outbound Queue Engine. This must be "
                 "a 'dotpath' to a Python module on the PYTHONPATH, followed by a "
                 "colon, followed by the name of a Python class that implements "
@@ -1083,13 +1132,6 @@ class TransportGroup(ArgumentGroup):
             settings["transport.outbound_configs"] = args.outbound_transports
         if args.outbound_queue:
             settings["transport.outbound_queue"] = args.outbound_queue
-        settings["transport.outbound_queue_prefix"] = (
-            args.outbound_queue_prefix or "acapy"
-        )
-        settings["transport.outbound_queue_class"] = (
-            args.outbound_queue_class
-            or "aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue"
-        )
 
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
@@ -1105,25 +1147,18 @@ class TransportGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_START)
-class MediationGroup(ArgumentGroup):
-    """Mediation settings."""
+@group(CAT_START, CAT_PROVISION)
+class MediationInviteGroup(ArgumentGroup):
+    """
+    Mediation invitation settings.
 
-    GROUP_NAME = "Mediation"
+    These can be provided at provision- and start-time.
+    """
+
+    GROUP_NAME = "Mediation invitation"
 
     def add_arguments(self, parser: ArgumentParser):
-        """Add mediation command line arguments to the parser."""
-        parser.add_argument(
-            "--open-mediation",
-            action="store_true",
-            env_var="ACAPY_MEDIATION_OPEN",
-            help=(
-                "Enables didcomm mediation. After establishing a connection, "
-                "if enabled, an agent may request message mediation, which will "
-                "allow the mediator to forward messages on behalf of the recipient. "
-                "See aries-rfc:0211."
-            ),
-        )
+        """Add mediation invitation command line arguments to the parser."""
         parser.add_argument(
             "--mediator-invitation",
             type=str,
@@ -1144,6 +1179,39 @@ class MediationGroup(ArgumentGroup):
                 "Default: false."
             ),
         )
+
+    def get_settings(self, args: Namespace):
+        """Extract mediation invitation settings."""
+        settings = {}
+        if args.mediator_invitation:
+            settings["mediation.invite"] = args.mediator_invitation
+        if args.mediator_connections_invite:
+            settings["mediation.connections_invite"] = True
+
+        return settings
+
+
+@group(CAT_START)
+class MediationGroup(ArgumentGroup):
+    """Mediation settings."""
+
+    GROUP_NAME = "Mediation"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add mediation command line arguments to the parser."""
+        parser.add_argument(
+            "--open-mediation",
+            action="store_true",
+            env_var="ACAPY_MEDIATION_OPEN",
+            help=(
+                "Enables automatic granting of mediation. After establishing a "
+                "connection, if enabled, an agent may request message mediation "
+                "and be granted it automatically, which will allow the mediator "
+                "to forward messages on behalf of the recipient. See "
+                "aries-rfc:0211."
+            ),
+        )
+
         parser.add_argument(
             "--default-mediator-id",
             type=str,
@@ -1163,14 +1231,10 @@ class MediationGroup(ArgumentGroup):
         settings = {}
         if args.open_mediation:
             settings["mediation.open"] = True
-        if args.mediator_invitation:
-            settings["mediation.invite"] = args.mediator_invitation
         if args.default_mediator_id:
             settings["mediation.default_id"] = args.default_mediator_id
         if args.clear_default_mediator:
             settings["mediation.clear"] = True
-        if args.mediator_connections_invite:
-            settings["mediation.connections_invite"] = True
 
         if args.clear_default_mediator and args.default_mediator_id:
             raise ArgsParseError(
@@ -1277,6 +1341,17 @@ class WalletGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--wallet-key-derivation-method",
+            type=str,
+            metavar="<key-derivation-method>",
+            env_var="ACAPY_WALLET_KEY_DERIVATION_METHOD",
+            help=(
+                "Specifies the key derivation method used for wallet encryption."
+                "If RAW key derivation method is used, also --wallet-key parameter"
+                " is expected."
+            ),
+        )
+        parser.add_argument(
             "--wallet-storage-creds",
             type=str,
             metavar="<storage-creds>",
@@ -1329,6 +1404,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.storage_type"] = args.wallet_storage_type
         if args.wallet_type:
             settings["wallet.type"] = args.wallet_type
+        if args.wallet_key_derivation_method:
+            settings["wallet.key_derivation_method"] = args.wallet_key_derivation_method
         if args.wallet_storage_config:
             settings["wallet.storage_config"] = args.wallet_storage_config
         if args.wallet_storage_creds:
@@ -1389,6 +1466,18 @@ class MultitenantGroup(ArgumentGroup):
             env_var="ACAPY_MULTITENANT_ADMIN",
             help="Specify whether to enable the multitenant admin api.",
         )
+        parser.add_argument(
+            "--multitenancy-config",
+            type=str,
+            metavar="<multitenancy-config>",
+            env_var="ACAPY_MULTITENANCY_CONFIGURATION",
+            help=(
+                'Specify multitenancy configuration ("wallet_type" and "wallet_name"). '
+                'For example: "{"wallet_type":"askar-profile","wallet_name":'
+                '"askar-profile-name"}"'
+                '"wallet_name" is only used when "wallet_type" is "askar-profile"'
+            ),
+        )
 
     def get_settings(self, args: Namespace):
         """Extract multitenant settings."""
@@ -1405,4 +1494,173 @@ class MultitenantGroup(ArgumentGroup):
 
             if args.multitenant_admin:
                 settings["multitenant.admin_enabled"] = True
+
+            if args.multitenancy_config:
+                multitenancyConfig = json.loads(args.multitenancy_config)
+
+                if multitenancyConfig.get("wallet_type"):
+                    settings["multitenant.wallet_type"] = multitenancyConfig.get(
+                        "wallet_type"
+                    )
+
+                if multitenancyConfig.get("wallet_name"):
+                    settings["multitenant.wallet_name"] = multitenancyConfig.get(
+                        "wallet_name"
+                    )
+
+        return settings
+
+
+@group(CAT_START)
+class EndorsementGroup(ArgumentGroup):
+    """Endorsement settings."""
+
+    GROUP_NAME = "Endorsement"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add endorsement-specific command line arguments to the parser."""
+        parser.add_argument(
+            "--endorser-protocol-role",
+            type=str.lower,
+            choices=[ENDORSER_AUTHOR, ENDORSER_ENDORSER, ENDORSER_NONE],
+            metavar="<endorser-role>",
+            env_var="ACAPY_ENDORSER_ROLE",
+            help=(
+                "Specify the role ('author' or 'endorser') which this agent will "
+                "participate. Authors will request transaction endorement from an "
+                "Endorser. Endorsers will endorse transactions from Authors, and "
+                "may write their own  transactions to the ledger. If no role "
+                "(or 'none') is specified then the endorsement protocol will not "
+                " be used and this agent will write transactions to the ledger "
+                "directly."
+            ),
+        )
+        parser.add_argument(
+            "--endorser-public-did",
+            type=str,
+            metavar="<endorser-public-did>",
+            env_var="ACAPY_ENDORSER_PUBLIC_DID",
+            help=(
+                "For transaction Authors, specify the the public DID of the Endorser "
+                "agent who will be endorsing transactions.  Note this requires that "
+                "the connection be made using the Endorser's public DID."
+            ),
+        )
+        parser.add_argument(
+            "--endorser-alias",
+            type=str,
+            metavar="<endorser-alias>",
+            env_var="ACAPY_ENDORSER_ALIAS",
+            help=(
+                "For transaction Authors, specify the the alias of the Endorser "
+                "connection that will be used to endorse transactions."
+            ),
+        )
+        parser.add_argument(
+            "--auto-request-endorsement",
+            action="store_true",
+            env_var="ACAPY_AUTO_REQUEST_ENDORSEMENT",
+            help="For Authors, specify whether to automatically request "
+            "endorsement for all transactions. (If not specified, the controller "
+            " must invoke the request endorse operation for each transaction.)",
+        )
+        parser.add_argument(
+            "--auto-endorse-transactions",
+            action="store_true",
+            env_var="ACAPY_AUTO_ENDORSE_TRANSACTIONS",
+            help="For Endorsers, specify whether to automatically endorse any "
+            "received endorsement requests. (If not specified, the controller "
+            " must invoke the endorsement operation for each transaction.)",
+        )
+        parser.add_argument(
+            "--auto-write-transactions",
+            action="store_true",
+            env_var="ACAPY_AUTO_WRITE_TRANSACTIONS",
+            help="For Authors, specify whether to automatically write any "
+            "endorsed transactions. (If not specified, the controller "
+            " must invoke the write transaction operation for each transaction.)",
+        )
+        parser.add_argument(
+            "--auto-create-revocation-transactions",
+            action="store_true",
+            env_var="ACAPY_CREATE_REVOCATION_TRANSACTIONS",
+            help="For Authors, specify whether to automatically create"
+            " transactions for a cred def's revocation registry. (If not specified,"
+            " the controller must invoke the endpoints required to create the"
+            " revocation registry and assign to the cred def.)",
+        )
+
+    def get_settings(self, args: Namespace):
+        """Extract endorser settings."""
+        settings = {}
+        settings["endorser.author"] = False
+        settings["endorser.endorser"] = False
+        settings["endorser.auto_endorse"] = False
+        settings["endorser.auto_write"] = False
+        settings["endorser.auto_create_rev_reg"] = False
+
+        if args.endorser_protocol_role:
+            if args.endorser_protocol_role == ENDORSER_AUTHOR:
+                settings["endorser.author"] = True
+            elif args.endorser_protocol_role == ENDORSER_ENDORSER:
+                settings["endorser.endorser"] = True
+
+        if args.endorser_public_did:
+            if settings["endorser.author"]:
+                settings["endorser.endorser_public_did"] = args.endorser_public_did
+            else:
+                raise ArgsParseError(
+                    "Parameter --endorser-public-did should only be set for transaction "
+                    "Authors"
+                )
+
+        if args.endorser_alias:
+            if settings["endorser.author"]:
+                settings["endorser.endorser_alias"] = args.endorser_alias
+            else:
+                raise ArgsParseError(
+                    "Parameter --endorser-alias should only be set for transaction "
+                    "Authors"
+                )
+
+        if args.auto_request_endorsement:
+            if settings["endorser.author"]:
+                settings["endorser.auto_request"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-request-endorsement should only be set for "
+                    "transaction Authors"
+                )
+
+        if args.auto_endorse_transactions:
+            if settings["endorser.endorser"]:
+                settings["endorser.auto_endorse"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-endorser-transactions should only be set for "
+                    "transaction Endorsers"
+                )
+
+        if args.auto_write_transactions:
+            if settings["endorser.author"]:
+                settings["endorser.auto_write"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-write-transactions should only be set for "
+                    "transaction Authors"
+                )
+
+        if args.auto_create_revocation_transactions:
+            if settings["endorser.author"]:
+                settings["endorser.auto_create_rev_reg"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-create-revocation-transactions should only be set "
+                    "for transaction Authors"
+                )
+
         return settings

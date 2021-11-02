@@ -11,8 +11,9 @@ from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
-from ....core.profile import ProfileSession
+from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
+from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -22,12 +23,12 @@ from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
 from ....wallet.error import WalletNotFoundError
 from ....wallet.util import bytes_to_b58
-from ....multitenant.manager import MultitenantManager
 from ...routing.v1_0.manager import RoutingManager
 from ...coordinate_mediation.v1_0.manager import MediationManager
 
 from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 
+from .message_types import ARIES_PROTOCOL as CONN_PROTO
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
 from .messages.connection_response import ConnectionResponse
@@ -42,27 +43,27 @@ class ConnectionManagerError(BaseError):
 class ConnectionManager(BaseConnectionManager):
     """Class for managing connections."""
 
-    def __init__(self, session: ProfileSession):
+    def __init__(self, profile: Profile):
         """
         Initialize a ConnectionManager.
 
         Args:
-            session: The profile session for this connection manager
+            profile: The profile for this connection manager
         """
-        self._session = session
+        self._profile = profile
         self._logger = logging.getLogger(__name__)
-        super().__init__(self._session)
+        super().__init__(self._profile)
 
     @property
-    def session(self) -> ProfileSession:
+    def profile(self) -> Profile:
         """
-        Accessor for the current profile session.
+        Accessor for the current profile.
 
         Returns:
-            The profile session for this connection manager
+            The profile for this connection manager
 
         """
-        return self._session
+        return self._profile
 
     async def create_invitation(
         self,
@@ -123,25 +124,27 @@ class ConnectionManager(BaseConnectionManager):
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await mediation_record_if_id(
-            self._session,
+            self.profile,
             mediation_id,
             or_default=True,
         )
         keylist_updates = None
-        image_url = self._session.context.settings.get("image_url")
+        image_url = self.profile.context.settings.get("image_url")
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
-        wallet_id = self._session.settings.get("wallet.id")
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        wallet_id = self.profile.settings.get("wallet.id")
 
         if not my_label:
-            my_label = self._session.settings.get("default_label")
-        wallet = self._session.inject(BaseWallet)
+            my_label = self.profile.settings.get("default_label")
+
         if public:
-            if not self._session.settings.get("public_invites"):
+            if not self.profile.settings.get("public_invites"):
                 raise ConnectionManagerError("Public invitations are not enabled")
 
-            public_did = await wallet.get_public_did()
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                public_did = await wallet.get_public_did()
             if not public_did:
                 raise ConnectionManagerError(
                     "Cannot create public invitation with no public DID"
@@ -181,12 +184,14 @@ class ConnectionManager(BaseConnectionManager):
             invitation_key = recipient_keys[0]  # TODO first key appropriate?
         else:
             # Create and store new invitation key
-            invitation_signing_key = await wallet.create_signing_key(
-                key_type=KeyType.ED25519
-            )
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                invitation_signing_key = await wallet.create_signing_key(
+                    key_type=KeyType.ED25519
+                )
             invitation_key = invitation_signing_key.verkey
             recipient_keys = [invitation_key]
-            mediation_mgr = MediationManager(self._session.profile)
+            mediation_mgr = MediationManager(self.profile)
             keylist_updates = await mediation_mgr.add_key(
                 invitation_key, keylist_updates
             )
@@ -200,7 +205,7 @@ class ConnectionManager(BaseConnectionManager):
                 auto_accept
                 or (
                     auto_accept is None
-                    and self._session.settings.get("debug.auto_accept_requests")
+                    and self.profile.settings.get("debug.auto_accept_requests")
                 )
             )
             else ConnRecord.ACCEPT_MANUAL
@@ -214,12 +219,13 @@ class ConnectionManager(BaseConnectionManager):
             accept=accept,
             invitation_mode=invitation_mode,
             alias=alias,
+            connection_protocol=CONN_PROTO,
         )
-
-        await connection.save(self._session, reason="Created new invitation")
+        async with self.profile.session() as session:
+            await connection.save(session, reason="Created new invitation")
 
         routing_keys = []
-        my_endpoint = my_endpoint or self._session.settings.get("default_endpoint")
+        my_endpoint = my_endpoint or self.profile.settings.get("default_endpoint")
 
         # The base wallet can act as a mediator for all tenants
         if multitenant_mgr and wallet_id:
@@ -239,12 +245,13 @@ class ConnectionManager(BaseConnectionManager):
             my_endpoint = mediation_record.endpoint
 
             # Save that this invitation was created with mediation
-            await connection.metadata_set(
-                self._session, "mediation", {"id": mediation_id}
-            )
+            async with self.profile.session() as session:
+                await connection.metadata_set(
+                    session, "mediation", {"id": mediation_id}
+                )
 
             if keylist_updates:
-                responder = self._session.inject(BaseResponder, required=False)
+                responder = self.profile.inject_or(BaseResponder)
                 await responder.send(
                     keylist_updates, connection_id=mediation_record.connection_id
                 )
@@ -259,11 +266,12 @@ class ConnectionManager(BaseConnectionManager):
             endpoint=my_endpoint,
             image_url=image_url,
         )
-        await connection.attach_invitation(self._session, invitation)
+        async with self.profile.session() as session:
+            await connection.attach_invitation(session, invitation)
 
-        if metadata:
-            for key, value in metadata.items():
-                await connection.metadata_set(self._session, key, value)
+            if metadata:
+                for key, value in metadata.items():
+                    await connection.metadata_set(session, key, value)
 
         return connection, invitation
 
@@ -305,7 +313,7 @@ class ConnectionManager(BaseConnectionManager):
                 auto_accept
                 or (
                     auto_accept is None
-                    and self._session.settings.get("debug.auto_accept_invites")
+                    and self.profile.settings.get("debug.auto_accept_invites")
                 )
             )
             else ConnRecord.ACCEPT_MANUAL
@@ -314,31 +322,35 @@ class ConnectionManager(BaseConnectionManager):
         connection = ConnRecord(
             invitation_key=invitation.recipient_keys and invitation.recipient_keys[0],
             their_label=invitation.label,
+            invitation_msg_id=invitation._id,
             their_role=ConnRecord.Role.RESPONDER.rfc160,
             state=ConnRecord.State.INVITATION.rfc160,
             accept=accept,
             alias=alias,
             their_public_did=their_public_did,
+            connection_protocol=CONN_PROTO,
         )
 
-        await connection.save(
-            self._session,
-            reason="Created new connection record from invitation",
-            log_params={"invitation": invitation, "their_label": invitation.label},
-        )
+        async with self.profile.session() as session:
+            await connection.save(
+                session,
+                reason="Created new connection record from invitation",
+                log_params={"invitation": invitation, "their_label": invitation.label},
+            )
 
-        # Save the invitation for later processing
-        await connection.attach_invitation(self._session, invitation)
+            # Save the invitation for later processing
+            await connection.attach_invitation(session, invitation)
 
         if connection.accept == ConnRecord.ACCEPT_AUTO:
             request = await self.create_request(connection, mediation_id=mediation_id)
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self.profile.inject_or(BaseResponder)
             if responder:
                 await responder.send(request, connection_id=connection.connection_id)
                 # refetch connection for accurate state
-                connection = await ConnRecord.retrieve_by_id(
-                    self._session, connection.connection_id
-                )
+                async with self.profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_id(
+                        session, connection.connection_id
+                    )
         else:
             self._logger.debug("Connection invitation will await acceptance")
         return connection
@@ -368,27 +380,30 @@ class ConnectionManager(BaseConnectionManager):
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await mediation_record_if_id(
-            self._session,
+            self.profile,
             mediation_id,
             or_default=True,
         )
 
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
-        wallet_id = self._session.settings.get("wallet.id")
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        wallet_id = self.profile.settings.get("wallet.id")
         base_mediation_record = None
 
         if multitenant_mgr and wallet_id:
             base_mediation_record = await multitenant_mgr.get_default_mediator()
-
         my_info = None
-        wallet = self._session.inject(BaseWallet)
+
         if connection.my_did:
-            my_info = await wallet.get_local_did(connection.my_did)
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.get_local_did(connection.my_did)
         else:
-            # Create new DID for connection
-            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                # Create new DID for connection
+                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
-            mediation_mgr = MediationManager(self._session.profile)
+            mediation_mgr = MediationManager(self.profile)
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
             )
@@ -402,10 +417,10 @@ class ConnectionManager(BaseConnectionManager):
             my_endpoints = [my_endpoint]
         else:
             my_endpoints = []
-            default_endpoint = self._session.settings.get("default_endpoint")
+            default_endpoint = self.profile.settings.get("default_endpoint")
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
-            my_endpoints.extend(self._session.settings.get("additional_endpoints", []))
+            my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
         did_doc = await self.create_did_document(
             my_info,
@@ -417,23 +432,24 @@ class ConnectionManager(BaseConnectionManager):
         )
 
         if not my_label:
-            my_label = self._session.settings.get("default_label")
+            my_label = self.profile.settings.get("default_label")
         request = ConnectionRequest(
             label=my_label,
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
-            image_url=self._session.settings.get("image_url"),
+            image_url=self.profile.settings.get("image_url"),
         )
 
         # Update connection state
         connection.request_id = request._id
         connection.state = ConnRecord.State.REQUEST.rfc160
 
-        await connection.save(self._session, reason="Created connection request")
+        async with self.profile.session() as session:
+            await connection.save(session, reason="Created connection request")
 
         # Notify mediator of keylist changes
         if keylist_updates and mediation_record:
             # send a update keylist message with new recipient keys.
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self.profile.inject_or(BaseResponder)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
@@ -460,32 +476,34 @@ class ConnectionManager(BaseConnectionManager):
         ConnRecord.log_state(
             "Receiving connection request",
             {"request": request},
-            settings=self._session.settings,
+            settings=self.profile.settings,
         )
 
-        mediation_mgr = MediationManager(self._session.profile)
+        mediation_mgr = MediationManager(self.profile)
         keylist_updates = None
         connection = None
         connection_key = None
         my_info = None
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
-        wallet_id = self._session.settings.get("wallet.id")
-        wallet = self._session.inject(BaseWallet)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        wallet_id = self.profile.settings.get("wallet.id")
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
-            my_info = await wallet.get_local_did(receipt.recipient_did)
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.get_local_did(receipt.recipient_did)
             connection_key = my_info.verkey
         else:
             connection_key = receipt.recipient_verkey
             try:
-                connection = await ConnRecord.retrieve_by_invitation_key(
-                    session=self._session,
-                    invitation_key=connection_key,
-                    their_role=ConnRecord.Role.REQUESTER.rfc160,
-                )
+                async with self.profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_invitation_key(
+                        session=session,
+                        invitation_key=connection_key,
+                        their_role=ConnRecord.Role.REQUESTER.rfc160,
+                    )
             except StorageNotFoundError:
                 raise ConnectionManagerError(
                     "No invitation found for pairwise connection "
@@ -495,17 +513,21 @@ class ConnectionManager(BaseConnectionManager):
 
         invitation = None
         if connection:
-            invitation = await connection.retrieve_invitation(self._session)
+            async with self.profile.session() as session:
+                invitation = await connection.retrieve_invitation(session)
             connection_key = connection.invitation_key
             ConnRecord.log_state(
                 "Found invitation",
                 {"invitation": invitation},
-                settings=self._session.settings,
+                settings=self.profile.settings,
             )
 
             if connection.is_multiuse_invitation:
-                wallet = self._session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    my_info = await wallet.create_local_did(
+                        DIDMethod.SOV, KeyType.ED25519
+                    )
                 keylist_updates = await mediation_mgr.add_key(
                     my_info.verkey, keylist_updates
                 )
@@ -516,19 +538,23 @@ class ConnectionManager(BaseConnectionManager):
                     state=ConnRecord.State.INVITATION.rfc160,
                     accept=connection.accept,
                     their_role=connection.their_role,
+                    connection_protocol=CONN_PROTO,
                 )
-
-                await new_connection.save(
-                    self._session,
-                    reason="Received connection request from multi-use invitation DID",
-                )
+                async with self.profile.session() as session:
+                    await new_connection.save(
+                        session,
+                        reason=(
+                            "Received connection request from multi-use invitation DID"
+                        ),
+                    )
 
                 # Transfer metadata from multi-use to new connection
                 # Must come after save so there's an ID to associate with metadata
-                for key, value in (
-                    await connection.metadata_get_all(self._session)
-                ).items():
-                    await new_connection.metadata_set(self._session, key, value)
+                async with self.profile.session() as session:
+                    for key, value in (
+                        await connection.metadata_get_all(session)
+                    ).items():
+                        await new_connection.metadata_set(session, key, value)
 
                 connection = new_connection
 
@@ -556,10 +582,11 @@ class ConnectionManager(BaseConnectionManager):
             connection.their_label = request.label
             connection.their_did = request.connection.did
             connection.state = ConnRecord.State.REQUEST.rfc160
-            await connection.save(
-                self._session, reason="Received connection request from invitation"
-            )
-        elif not self._session.settings.get("public_invites"):
+            async with self.profile.session() as session:
+                await connection.save(
+                    session, reason="Received connection request from invitation"
+                )
+        elif not self.profile.settings.get("public_invites"):
             raise ConnectionManagerError("Public invitations are not enabled")
         else:  # request from public did
             my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
@@ -580,38 +607,41 @@ class ConnectionManager(BaseConnectionManager):
                 their_label=request.label,
                 accept=(
                     ConnRecord.ACCEPT_AUTO
-                    if self._session.settings.get("debug.auto_accept_requests")
+                    if self.profile.settings.get("debug.auto_accept_requests")
                     else ConnRecord.ACCEPT_MANUAL
                 ),
                 state=ConnRecord.State.REQUEST.rfc160,
+                connection_protocol=CONN_PROTO,
             )
+            async with self.profile.session() as session:
+                await connection.save(
+                    session, reason="Received connection request from public DID"
+                )
 
-            await connection.save(
-                self._session, reason="Received connection request from public DID"
-            )
-
-        # Attach the connection request so it can be found and responded to
-        await connection.attach_request(self._session, request)
+        async with self.profile.session() as session:
+            # Attach the connection request so it can be found and responded to
+            await connection.attach_request(session, request)
 
         # Send keylist updates to mediator
-        mediation_record = await mediation_record_if_id(self._session, mediation_id)
+        mediation_record = await mediation_record_if_id(self.profile, mediation_id)
         if keylist_updates and mediation_record:
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self.profile.inject_or(BaseResponder)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
 
         if connection.accept == ConnRecord.ACCEPT_AUTO:
             response = await self.create_response(connection, mediation_id=mediation_id)
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self.profile.inject_or(BaseResponder)
             if responder:
                 await responder.send_reply(
                     response, connection_id=connection.connection_id
                 )
-                # refetch connection for accurate state
-                connection = await ConnRecord.retrieve_by_id(
-                    self._session, connection.connection_id
-                )
+                async with self.profile.session() as session:
+                    # refetch connection for accurate state
+                    connection = await ConnRecord.retrieve_by_id(
+                        session, connection.connection_id
+                    )
         else:
             self._logger.debug("Connection request will await acceptance")
 
@@ -638,15 +668,15 @@ class ConnectionManager(BaseConnectionManager):
         ConnRecord.log_state(
             "Creating connection response",
             {"connection_id": connection.connection_id},
-            settings=self._session.settings,
+            settings=self.profile.settings,
         )
 
         keylist_updates = None
-        mediation_record = await mediation_record_if_id(self._session, mediation_id)
+        mediation_record = await mediation_record_if_id(self.profile, mediation_id)
 
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
-        wallet_id = self._session.settings.get("wallet.id")
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        wallet_id = self.profile.settings.get("wallet.id")
         base_mediation_record = None
 
         if multitenant_mgr and wallet_id:
@@ -660,14 +690,18 @@ class ConnectionManager(BaseConnectionManager):
                 "Connection is not in the request or response state"
             )
 
-        request = await connection.retrieve_request(self._session)
-        wallet = self._session.inject(BaseWallet)
+        async with self.profile.session() as session:
+            request = await connection.retrieve_request(session)
         if connection.my_did:
-            my_info = await wallet.get_local_did(connection.my_did)
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.get_local_did(connection.my_did)
         else:
-            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
-            mediation_mgr = MediationManager(self._session.profile)
+            mediation_mgr = MediationManager(self.profile)
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
             )
@@ -680,10 +714,10 @@ class ConnectionManager(BaseConnectionManager):
             my_endpoints = [my_endpoint]
         else:
             my_endpoints = []
-            default_endpoint = self._session.settings.get("default_endpoint")
+            default_endpoint = self.profile.settings.get("default_endpoint")
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
-            my_endpoints.extend(self._session.settings.get("additional_endpoints", []))
+            my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
         did_doc = await self.create_did_document(
             my_info,
@@ -702,21 +736,22 @@ class ConnectionManager(BaseConnectionManager):
         response.assign_thread_from(request)
         response.assign_trace_from(request)
         # Sign connection field using the invitation key
-        wallet = self._session.inject(BaseWallet)
-        await response.sign_field("connection", connection.invitation_key, wallet)
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            await response.sign_field("connection", connection.invitation_key, wallet)
 
-        # Update connection state
-        connection.state = ConnRecord.State.RESPONSE.rfc160
+            # Update connection state
+            connection.state = ConnRecord.State.RESPONSE.rfc160
 
-        await connection.save(
-            self._session,
-            reason="Created connection response",
-            log_params={"response": response},
-        )
+            await connection.save(
+                session,
+                reason="Created connection response",
+                log_params={"response": response},
+            )
 
         # Update mediator if necessary
         if keylist_updates and mediation_record:
-            responder = self._session.inject(BaseResponder, required=False)
+            responder = self.profile.inject_or(BaseResponder)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
@@ -725,13 +760,14 @@ class ConnectionManager(BaseConnectionManager):
         # before the connection response. This would result in an error condition
         # difficult to accomodate for without modifying handlers for trust ping
         # to ensure the connection is active.
-        send_mediation_request = await connection.metadata_get(
-            self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
-        )
+        async with self.profile.session() as session:
+            send_mediation_request = await connection.metadata_get(
+                session, MediationManager.SEND_REQ_AFTER_CONNECTION
+            )
         if send_mediation_request:
-            mgr = MediationManager(self._session.profile)
+            mgr = MediationManager(self.profile)
             _record, request = await mgr.prepare_request(connection.connection_id)
-            responder = self._session.inject(BaseResponder)
+            responder = self.profile.inject(BaseResponder)
             await responder.send(request, connection_id=connection.connection_id)
 
         return response
@@ -763,18 +799,20 @@ class ConnectionManager(BaseConnectionManager):
         if response._thread:
             # identify the request by the thread ID
             try:
-                connection = await ConnRecord.retrieve_by_request_id(
-                    self._session, response._thread_id
-                )
+                async with self.profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_request_id(
+                        session, response._thread_id
+                    )
             except StorageNotFoundError:
                 pass
 
         if not connection and receipt.sender_did:
             # identify connection by the DID they used for us
             try:
-                connection = await ConnRecord.retrieve_by_did(
-                    self._session, receipt.sender_did, receipt.recipient_did
-                )
+                async with self.profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_did(
+                        session, receipt.sender_did, receipt.recipient_did
+                    )
             except StorageNotFoundError:
                 pass
 
@@ -805,16 +843,16 @@ class ConnectionManager(BaseConnectionManager):
 
         connection.their_did = their_did
         connection.state = ConnRecord.State.RESPONSE.rfc160
+        async with self.profile.session() as session:
+            await connection.save(session, reason="Accepted connection response")
 
-        await connection.save(self._session, reason="Accepted connection response")
-
-        send_mediation_request = await connection.metadata_get(
-            self._session, MediationManager.SEND_REQ_AFTER_CONNECTION
-        )
+            send_mediation_request = await connection.metadata_get(
+                session, MediationManager.SEND_REQ_AFTER_CONNECTION
+            )
         if send_mediation_request:
-            mgr = MediationManager(self._session.profile)
+            mgr = MediationManager(self.profile)
             _record, request = await mgr.prepare_request(connection.connection_id)
-            responder = self._session.inject(BaseResponder)
+            responder = self.profile.inject(BaseResponder)
             await responder.send(request, connection_id=connection.connection_id)
 
         return connection
@@ -830,13 +868,13 @@ class ConnectionManager(BaseConnectionManager):
             Their endpoint for this connection
 
         """
-        connection = await ConnRecord.retrieve_by_id(self._session, conn_id)
-
-        wallet = self._session.inject(BaseWallet)
-        my_did_info = await wallet.get_local_did(connection.my_did)
+        async with self.profile.session() as session:
+            connection = await ConnRecord.retrieve_by_id(session, conn_id)
+            wallet = session.inject(BaseWallet)
+            my_did_info = await wallet.get_local_did(connection.my_did)
         my_endpoint = my_did_info.metadata.get(
             "endpoint",
-            self._session.settings.get("default_endpoint"),
+            self.profile.settings.get("default_endpoint"),
         )
 
         conn_targets = await self.get_connection_targets(
@@ -872,17 +910,17 @@ class ConnectionManager(BaseConnectionManager):
             Tuple: my DIDInfo, their DIDInfo, new `ConnRecord` instance
 
         """
-        wallet = self._session.inject(BaseWallet)
-
         # Multitenancy setup
-        multitenant_mgr = self._session.inject(MultitenantManager, required=False)
-        wallet_id = self._session.settings.get("wallet.id")
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        wallet_id = self.profile.settings.get("wallet.id")
         base_mediation_record = None
 
-        # seed and DID optional
-        my_info = await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, my_seed, my_did
-        )
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            # seed and DID optional
+            my_info = await wallet.create_local_did(
+                DIDMethod.SOV, KeyType.ED25519, my_seed, my_did
+            )
 
         # must provide their DID and verkey if the seed is not known
         if (not their_did or not their_verkey) and not their_seed:
@@ -906,8 +944,10 @@ class ConnectionManager(BaseConnectionManager):
             their_label=their_label,
             state=ConnRecord.State.COMPLETED.rfc160,
             alias=alias,
+            connection_protocol=CONN_PROTO,
         )
-        await connection.save(self._session, reason="Created new static connection")
+        async with self.profile.session() as session:
+            await connection.save(session, reason="Created new static connection")
 
         # Add mapping for multitenant relaying / mediation
         if multitenant_mgr and wallet_id:
@@ -954,9 +994,10 @@ class ConnectionManager(BaseConnectionManager):
         connection = None
         if their_did:
             try:
-                connection = await ConnRecord.retrieve_by_did(
-                    self._session, their_did, my_did
-                )
+                async with self.profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_did(
+                        session, their_did, my_did
+                    )
             except StorageNotFoundError:
                 pass
 
@@ -966,15 +1007,17 @@ class ConnectionManager(BaseConnectionManager):
             and auto_complete
         ):
             connection.state = ConnRecord.State.COMPLETED.rfc160
-            await connection.save(self._session, reason="Connection promoted to active")
+            async with self.profile.session() as session:
+                await connection.save(session, reason="Connection promoted to active")
 
         if not connection and my_verkey:
             try:
-                connection = await ConnRecord.retrieve_by_invitation_key(
-                    self._session,
-                    my_verkey,
-                    their_role=ConnRecord.Role.REQUESTER.rfc160,
-                )
+                async with self.profile.session() as session:
+                    connection = await ConnRecord.retrieve_by_invitation_key(
+                        session,
+                        my_verkey,
+                        their_role=ConnRecord.Role.REQUESTER.rfc160,
+                    )
             except StorageError:
                 pass
 
@@ -1001,7 +1044,7 @@ class ConnectionManager(BaseConnectionManager):
                 f"connection_by_verkey::{receipt.sender_verkey}"
                 f"::{receipt.recipient_verkey}"
             )
-            cache = self._session.inject(BaseCache, required=False)
+            cache = self.profile.inject_or(BaseCache)
             if cache:
                 async with cache.acquire(cache_key) as entry:
                     if entry.result:
@@ -1009,9 +1052,10 @@ class ConnectionManager(BaseConnectionManager):
                         receipt.sender_did = cached["sender_did"]
                         receipt.recipient_did_public = cached["recipient_did_public"]
                         receipt.recipient_did = cached["recipient_did"]
-                        connection = await ConnRecord.retrieve_by_id(
-                            self._session, cached["id"]
-                        )
+                        async with self.profile.session() as session:
+                            connection = await ConnRecord.retrieve_by_id(
+                                session, cached["id"]
+                            )
                     else:
                         connection = await self.resolve_inbound_connection(receipt)
                         if connection:
@@ -1051,12 +1095,13 @@ class ConnectionManager(BaseConnectionManager):
 
         if receipt.recipient_verkey:
             try:
-                wallet = self._session.inject(BaseWallet)
-                my_info = await wallet.get_local_did_for_verkey(
-                    receipt.recipient_verkey
-                )
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    my_info = await wallet.get_local_did_for_verkey(
+                        receipt.recipient_verkey
+                    )
                 receipt.recipient_did = my_info.did
-                if "public" in my_info.metadata and my_info.metadata["public"] is True:
+                if "posted" in my_info.metadata and my_info.metadata["posted"] is True:
                     receipt.recipient_did_public = True
             except InjectionError:
                 self._logger.warning(
@@ -1085,7 +1130,7 @@ class ConnectionManager(BaseConnectionManager):
         """
         if not connection_id:
             connection_id = connection.connection_id
-        cache = self._session.inject(BaseCache, required=False)
+        cache = self.profile.inject_or(BaseCache)
         cache_key = f"connection_target::{connection_id}"
         if cache:
             async with cache.acquire(cache_key) as entry:
@@ -1095,9 +1140,10 @@ class ConnectionManager(BaseConnectionManager):
                     ]
                 else:
                     if not connection:
-                        connection = await ConnRecord.retrieve_by_id(
-                            self._session, connection_id
-                        )
+                        async with self.profile.session() as session:
+                            connection = await ConnRecord.retrieve_by_id(
+                                session, connection_id
+                            )
 
                     targets = await self.fetch_connection_targets(connection)
 
@@ -1120,18 +1166,18 @@ class ConnectionManager(BaseConnectionManager):
 
         # The connection must have a verkey, but in the case of a received
         # invitation we might not have created one yet
-        wallet = self._session.inject(BaseWallet)
-        if connection.my_did:
-            my_info = await wallet.get_local_did(connection.my_did)
-        else:
-            # Create new DID for connection
-            my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
-            connection.my_did = my_info.did
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            if connection.my_did:
+                my_info = await wallet.get_local_did(connection.my_did)
+            else:
+                # Create new DID for connection
+                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+                connection.my_did = my_info.did
 
         try:
-            router = await ConnRecord.retrieve_by_id(
-                self._session, inbound_connection_id
-            )
+            async with self.profile.session() as session:
+                router = await ConnRecord.retrieve_by_id(session, inbound_connection_id)
         except StorageNotFoundError:
             raise ConnectionManagerError(
                 f"Routing connection not found: {inbound_connection_id}"
@@ -1142,13 +1188,14 @@ class ConnectionManager(BaseConnectionManager):
             )
         connection.inbound_connection_id = inbound_connection_id
 
-        route_mgr = RoutingManager(self._session.profile)
+        route_mgr = RoutingManager(self.profile)
 
         await route_mgr.send_create_route(
             inbound_connection_id, my_info.verkey, outbound_handler
         )
         connection.routing_state = ConnRecord.ROUTING_STATE_REQUEST
-        await connection.save(self._session)
+        async with self.profile.session() as session:
+            await connection.save(session)
         return connection.routing_state
 
     async def update_inbound(
@@ -1159,16 +1206,17 @@ class ConnectionManager(BaseConnectionManager):
         Looks up pending connections associated with the inbound routing
         connection and marks the routing as complete.
         """
-        conns = await ConnRecord.query(
-            self._session, {"inbound_connection_id": inbound_connection_id}
-        )
-        wallet = self._session.inject(BaseWallet)
+        async with self.profile.session() as session:
+            conns = await ConnRecord.query(
+                session, {"inbound_connection_id": inbound_connection_id}
+            )
+            wallet = session.inject(BaseWallet)
 
-        for connection in conns:
-            # check the recipient key
-            if not connection.my_did:
-                continue
-            conn_info = await wallet.get_local_did(connection.my_did)
-            if conn_info.verkey == recip_verkey:
-                connection.routing_state = routing_state
-                await connection.save(self._session)
+            for connection in conns:
+                # check the recipient key
+                if not connection.my_did:
+                    continue
+                conn_info = await wallet.get_local_did(connection.my_did)
+                if conn_info.verkey == recip_verkey:
+                    connection.routing_state = routing_state
+                    await connection.save(session)

@@ -69,6 +69,81 @@ INVALID_INPUT_DOC = {
     },
 }
 
+VALID_VACCINATION_DOC = {
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/bbs/v1",
+        "https://w3id.org/vaccination/v1",
+    ],
+    "type": ["VerifiableCredential", "VaccinationCertificate"],
+    "issuer": "replace_me",
+    "id": "urn:uvci:af5vshde843jf831j128fj",
+    "name": "COVID-19 Vaccination Certificate",
+    "description": "COVID-19 Vaccination Certificate",
+    "issuanceDate": "2019-12-03T12:19:52Z",
+    "expirationDate": "2029-12-03T12:19:52Z",
+    "credentialSubject": {
+        "type": "VaccinationEvent",
+        "batchNumber": "1183738569",
+        "administeringCentre": "MoH",
+        "healthProfessional": "MoH",
+        "countryOfVaccination": "NZ",
+        "recipient": {
+            "type": "VaccineRecipient",
+            "givenName": "JOHN",
+            "familyName": "SMITH",
+            "gender": "Male",
+            "birthDate": "1958-07-17",
+        },
+        "vaccine": {
+            "type": "Vaccine",
+            "disease": "COVID-19",
+            "atcCode": "J07BX03",
+            "medicinalProductName": "COVID-19 Vaccine Moderna",
+            "marketingAuthorizationHolder": "Moderna Biotech",
+        },
+    },
+}
+
+
+INVALID_VACCINATION_DOC = {
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/bbs/v1",
+        "https://w3id.org/vaccination/v1",
+    ],
+    "type": ["VerifiableCredential", "VaccinationCertificate"],
+    "issuer": "replace_me",
+    "id": "urn:uvci:af5vshde843jf831j128fj",
+    "name": "COVID-19 Vaccination Certificate",
+    "description": "COVID-19 Vaccination Certificate",
+    "issuanceDate": "2019-12-03T12:19:52Z",
+    "expirationDate": "2029-12-03T12:19:52Z",
+    "credentialSubject": {
+        "type": "VaccinationEvent",
+        "batchNumber": "1183738569",
+        "administeringCentre": "MoH",
+        "healthProfessional": "MoH",
+        "countryOfVaccination": "NZ",
+        "recipient": {
+            "type": "VaccineRecipient",
+            "givenName": "JOHN",
+            "familyName": "SMITH",
+            "gender": "Male",
+            "birthDate": "1958-07-17",
+            "nonExistent": "hello",
+        },
+        "vaccine": {
+            "type": "Vaccine",
+            "disease": "COVID-19",
+            "atcCode": "J07BX03",
+            "medicinalProductName": "COVID-19 Vaccine Moderna",
+            "marketingAuthorizationHolder": "Moderna Biotech",
+            "nonExistent": {"hello": "goodbye"},
+        },
+    },
+}
+
 
 class TestCheck(TestCase):
     def test_get_properties_without_context_valid(self):
@@ -89,4 +164,20 @@ class TestCheck(TestCase):
             "proof.verificationMethod",
             "proof.proofPurpose",
             "proof.created",
+        ]
+
+    def test_get_properties_without_context_vaccination_valid(self):
+        assert (
+            get_properties_without_context(
+                VALID_VACCINATION_DOC, custom_document_loader
+            )
+            == []
+        )
+
+    def test_get_properties_without_context_vaccination_invalid(self):
+        assert get_properties_without_context(
+            INVALID_VACCINATION_DOC, custom_document_loader
+        ) == [
+            "credentialSubject.recipient.nonExistent",
+            "credentialSubject.vaccine.nonExistent",
         ]

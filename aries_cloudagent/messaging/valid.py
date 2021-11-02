@@ -2,7 +2,6 @@
 
 import json
 
-from datetime import datetime
 import re
 
 from base58 import alphabet
@@ -18,6 +17,8 @@ from ..wallet.did_posture import DIDPosture as DIDPostureEnum
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
+EXAMPLE_TIMESTAMP = 1640995199  # 2021-12-31 23:59:59Z
+
 
 class StrOrDictField(Field):
     """URI or Dict field for Marshmallow."""
@@ -30,6 +31,19 @@ class StrOrDictField(Field):
             return value
         else:
             raise ValidationError("Field should be str or dict")
+
+
+class StrOrNumberField(Field):
+    """String or Number field for Marshmallow."""
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        return value
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, (str, float, int)):
+            return value
+        else:
+            raise ValidationError("Field should be str or int or float")
 
 
 class DictOrDictListField(Field):
@@ -68,7 +82,7 @@ class UriOrDictField(StrOrDictField):
 class IntEpoch(Range):
     """Validate value against (integer) epoch format."""
 
-    EXAMPLE = int(datetime.now().timestamp())
+    EXAMPLE = EXAMPLE_TIMESTAMP
 
     def __init__(self):
         """Initializer."""
@@ -214,13 +228,27 @@ class DIDKey(Regexp):
     """Validate value against DID key specification."""
 
     EXAMPLE = "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
-    PATTERN = rf"^did:key:z[{B58}]+$"
+    PATTERN = re.compile(rf"^did:key:z[{B58}]+$")
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
             DIDKey.PATTERN, error="Value {input} is not in W3C did:key format"
+        )
+
+
+class DIDWeb(Regexp):
+    """Validate value against did:web specification."""
+
+    EXAMPLE = "did:web:example.com"
+    PATTERN = re.compile(r"^(did:web:)([a-zA-Z0-9%._-]*:)*[a-zA-Z0-9%._-]+$")
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            DIDWeb.PATTERN, error="Value {input} is not in W3C did:web format"
         )
 
 
@@ -242,7 +270,7 @@ class IndyDID(Regexp):
     """Validate value against indy DID."""
 
     EXAMPLE = "WgWxqztrNooG92RXvxSTWv"
-    PATTERN = rf"^(did:sov:)?[{B58}]{{21,22}}$"
+    PATTERN = re.compile(rf"^(did:sov:)?[{B58}]{{21,22}}$")
 
     def __init__(self):
         """Initializer."""
@@ -250,6 +278,44 @@ class IndyDID(Regexp):
         super().__init__(
             IndyDID.PATTERN,
             error="Value {input} is not an indy decentralized identifier (DID)",
+        )
+
+
+class DIDValidation(Regexp):
+    """Validate value against any valid DID spec."""
+
+    METHOD = r"([a-zA-Z0-9_]+)"
+    METHOD_ID = r"([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)"
+    PARAMS = r"((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)"
+    PATH = r"(\/[^#?]*)?"
+    QUERY = r"([?][^#]*)?"
+    FRAGMENT = r"(\#.*)?$"
+
+    EXAMPLE = "did:peer:WgWxqztrNooG92RXvxSTWv"
+    PATTERN = re.compile(rf"^did:{METHOD}:{METHOD_ID}{PARAMS}{PATH}{QUERY}{FRAGMENT}$")
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            DIDValidation.PATTERN,
+            error="Value {input} is not a valid DID",
+        )
+
+
+# temporary support for short Indy DIDs in place of qualified DIDs
+class MaybeIndyDID(Regexp):
+    """Validate value against any valid DID spec or a short Indy DID."""
+
+    EXAMPLE = DIDValidation.EXAMPLE
+    PATTERN = re.compile(IndyDID.PATTERN.pattern + "|" + DIDValidation.PATTERN.pattern)
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            MaybeIndyDID.PATTERN,
+            error="Value {input} is not a valid DID",
         )
 
 
@@ -371,7 +437,7 @@ class IndyPredicate(OneOf):
 class IndyISO8601DateTime(Regexp):
     """Validate value against ISO 8601 datetime format, indy profile."""
 
-    EXAMPLE = epoch_to_str(int(datetime.now().timestamp()))
+    EXAMPLE = epoch_to_str(EXAMPLE_TIMESTAMP)
     PATTERN = (
         r"^\d{4}-\d\d-\d\d[T ]\d\d:\d\d"
         r"(?:\:(?:\d\d(?:\.\d{1,6})?))?(?:[+-]\d\d:?\d\d|Z|)$"
@@ -573,7 +639,7 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
     EXAMPLE = "https://myhost:8021"
     PATTERN = (
         r"^[A-Za-z0-9\.\-\+]+:"  # scheme
-        r"//([A-Za-z0-9][.A-Za-z0-9-]+[A-Za-z0-9])+"  # host
+        r"//([A-Za-z0-9][.A-Za-z0-9-_]+[A-Za-z0-9])+"  # host
         r"(:[1-9][0-9]*)?"  # port
         r"(/[^?&#]+)?$"  # path
     )
@@ -616,6 +682,11 @@ class CredentialType(Validator):
         length = len(value)
         if length < 1 or CredentialType.CREDENTIAL_TYPE not in value:
             raise ValidationError(f"type must include {CredentialType.CREDENTIAL_TYPE}")
+        if length == 1:
+            raise ValidationError(
+                "type must include additional, more narrow,"
+                " types (e.g. UniversityDegreeCredential)"
+            )
 
         return value
 
@@ -674,7 +745,7 @@ class CredentialSubject(Validator):
 class IndyOrKeyDID(Regexp):
     """Indy or Key DID class."""
 
-    PATTERN = re.compile("|".join([DIDKey.PATTERN, IndyDID.PATTERN]))
+    PATTERN = "|".join(x.pattern for x in [DIDKey.PATTERN, IndyDID.PATTERN])
     EXAMPLE = IndyDID.EXAMPLE
 
     def __init__(
@@ -702,6 +773,7 @@ JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
 DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
+GENERIC_DID = {"validate": MaybeIndyDID(), "example": MaybeIndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {
     "validate": IndyRawPublicKey(),
     "example": IndyRawPublicKey.EXAMPLE,

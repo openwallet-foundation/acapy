@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 import base64
 import binascii
@@ -8,8 +7,6 @@ import os
 import sys
 from urllib.parse import urlparse
 
-from aiohttp import ClientError
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from runners.agent_container import (  # noqa:E402
@@ -17,20 +14,13 @@ from runners.agent_container import (  # noqa:E402
     create_agent_with_args,
     AriesAgent,
 )
-from runners.support.agent import (  # noqa:E402
-    DemoAgent,
-    default_genesis_txns,
-    start_mediator_agent,
-    connect_wallet_to_mediator,
-)
 from runners.support.utils import (  # noqa:E402
-    log_json,
+    check_requires,
     log_msg,
     log_status,
     log_timer,
     prompt,
     prompt_loop,
-    require_indy,
 )
 
 logging.basicConfig(level=logging.WARNING)
@@ -44,6 +34,8 @@ class AliceAgent(AriesAgent):
         http_port: int,
         admin_port: int,
         no_auto: bool = False,
+        aip: int = 20,
+        endorser_role: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -53,6 +45,8 @@ class AliceAgent(AriesAgent):
             prefix="Alice",
             no_auto=no_auto,
             seed=None,
+            aip=aip,
+            endorser_role=endorser_role,
             **kwargs,
         )
         self.connection_id = None
@@ -67,127 +61,9 @@ class AliceAgent(AriesAgent):
     def connection_ready(self):
         return self._connection_ready.done() and self._connection_ready.result()
 
-    async def handle_connections(self, message):
-        print(
-            self.ident, "handle_connections", message["state"], message["rfc23_state"]
-        )
-        conn_id = message["connection_id"]
-        if (not self.connection_id) and message["rfc23_state"] == "invitation-received":
-            print(self.ident, "set connection id", conn_id)
-            self.connection_id = conn_id
-        if (
-            message["connection_id"] == self.connection_id
-            and message["rfc23_state"] == "completed"
-            and not self._connection_ready.done()
-        ):
-            self.log("Connected")
-            self._connection_ready.set_result(True)
 
-    async def handle_issue_credential_v2_0(self, message):
-        state = message["state"]
-        cred_ex_id = message["cred_ex_id"]
-        prev_state = self.cred_state.get(cred_ex_id)
-        if prev_state == state:
-            return  # ignore
-        self.cred_state[cred_ex_id] = state
-
-        self.log(f"Credential: state = {state}, cred_ex_id {cred_ex_id}")
-
-        if state == "offer-received":
-            log_status("#15 After receiving credential offer, send credential request")
-            await self.admin_POST(
-                f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
-            )
-
-        elif state == "done":
-            # Moved to indy detail record handler
-            pass
-
-    async def handle_issue_credential_v2_0_indy(self, message):
-        cred_req_metadata = message.get("cred_request_metadata")
-        if cred_req_metadata:
-            log_json(cred_req_metadata, label="Credential request metadata:")
-
-        log_json(message, label="indy message:")
-        cred_id = message.get("cred_id_stored")
-        if cred_id:
-            self.log(f"Stored credential {cred_id} in wallet")
-            log_status(f"#18.1 Stored credential {cred_id} in wallet")
-            cred = await self.admin_GET(f"/credential/{cred_id}")
-            log_json(cred, label="Credential details:")
-            self.log("credential_id", cred_id)
-            self.log("cred_def_id", cred["cred_def_id"])
-            self.log("schema_id", cred["schema_id"])
-
-    async def handle_present_proof_v2_0(self, message):
-        state = message["state"]
-        pres_ex_id = message["pres_ex_id"]
-        log_msg("Presentation: state =", state, ", pres_ex_id =", pres_ex_id)
-
-        if state == "request-received":
-            log_status(
-                "#24 Query for credentials in the wallet that satisfy the proof request"
-            )
-            pres_request = message["by_format"].get("pres_request", {}).get("indy")
-
-            # include self-attested attributes (not included in credentials)
-            creds_by_reft = {}
-            revealed = {}
-            self_attested = {}
-            predicates = {}
-
-            try:
-                # select credentials to provide for the proof
-                creds = await self.admin_GET(
-                    f"/present-proof-2.0/records/{pres_ex_id}/credentials"
-                )
-                if creds:
-                    for row in sorted(
-                        creds,
-                        key=lambda c: int(c["cred_info"]["attrs"]["timestamp"]),
-                        reverse=True,
-                    ):
-                        for referent in row["presentation_referents"]:
-                            if referent not in creds_by_reft:
-                                creds_by_reft[referent] = row
-
-                for referent in pres_request["requested_attributes"]:
-                    if referent in creds_by_reft:
-                        revealed[referent] = {
-                            "cred_id": creds_by_reft[referent]["cred_info"]["referent"],
-                            "revealed": True,
-                        }
-                    else:
-                        self_attested[referent] = "my self-attested value"
-
-                for referent in pres_request["requested_predicates"]:
-                    if referent in creds_by_reft:
-                        predicates[referent] = {
-                            "cred_id": creds_by_reft[referent]["cred_info"]["referent"]
-                        }
-
-                log_status("#25 Generate the proof")
-                request = {
-                    "indy": {
-                        "requested_predicates": predicates,
-                        "requested_attributes": revealed,
-                        "self_attested_attributes": self_attested,
-                    }
-                }
-
-                log_status("#26 Send the proof to X")
-                await self.admin_POST(
-                    f"/present-proof-2.0/records/{pres_ex_id}/send-presentation",
-                    request,
-                )
-            except ClientError:
-                pass
-
-    async def handle_basicmessages(self, message):
-        self.log("Received message:", message["content"])
-
-
-async def input_invitation(agent):
+async def input_invitation(agent_container):
+    agent_container.agent._connection_ready = asyncio.Future()
     async for details in prompt_loop("Invite details: "):
         b64_invite = None
         try:
@@ -224,7 +100,7 @@ async def input_invitation(agent):
                 log_msg("Invalid invitation:", str(e))
 
     with log_timer("Connect duration:"):
-        connection = await agent.input_invitation(details, wait=True)
+        connection = await agent_container.input_invitation(details, wait=True)
 
 
 async def main(args):
@@ -245,10 +121,13 @@ async def main(args):
             alice_agent.start_port + 1,
             genesis_data=alice_agent.genesis_txns,
             no_auto=alice_agent.no_auto,
+            tails_server_base_url=alice_agent.tails_server_base_url,
             timing=alice_agent.show_timing,
             multitenant=alice_agent.multitenant,
             mediation=alice_agent.mediation,
             wallet_type=alice_agent.wallet_type,
+            aip=alice_agent.aip,
+            endorser_role=alice_agent.endorser_role,
         )
 
         await alice_agent.initialize(the_agent=agent)
@@ -257,6 +136,8 @@ async def main(args):
         await input_invitation(alice_agent)
 
         options = "    (3) Send Message\n" "    (4) Input New Invitation\n"
+        if alice_agent.endorser_role and alice_agent.endorser_role == "author":
+            options += "    (D) Set Endorser's DID\n"
         if alice_agent.multitenant:
             options += "    (W) Create and/or Enable Wallet\n"
         options += "    (X) Exit?\n[3/4/{}X] ".format(
@@ -268,6 +149,13 @@ async def main(args):
 
             if option is None or option in "xX":
                 break
+
+            elif option in "dD" and alice_agent.endorser_role:
+                endorser_did = await prompt("Enter Endorser's DID: ")
+                await alice_agent.agent.admin_POST(
+                    f"/transactions/{alice_agent.agent.connection_id}/set-endorser-info",
+                    params={"endorser_did": endorser_did, "endorser_name": "endorser"},
+                )
 
             elif option in "wW" and alice_agent.multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
@@ -290,7 +178,7 @@ async def main(args):
                 msg = await prompt("Enter message: ")
                 if msg:
                     await alice_agent.agent.admin_POST(
-                        f"/connections/{agent.connection_id}/send-message",
+                        f"/connections/{alice_agent.agent.connection_id}/send-message",
                         {"content": msg},
                     )
 
@@ -346,7 +234,7 @@ if __name__ == "__main__":
         except ImportError:
             print("pydevd_pycharm library was not found")
 
-    require_indy()
+    check_requires(args)
 
     try:
         asyncio.get_event_loop().run_until_complete(main(args))

@@ -22,4 +22,4 @@ class TestAdminRequestContext(AsyncTestCase):
         test_ctx = test_module.AdminRequestContext.test_context({Collector: None})
         async with test_ctx.session() as test_sesn:
             with self.assertRaises(test_module.InjectionError):
-                test_sesn.inject(Collector, required=True)
+                test_sesn.inject(Collector)

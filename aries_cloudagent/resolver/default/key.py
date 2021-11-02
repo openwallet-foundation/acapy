@@ -1,12 +1,15 @@
-"""Indy DID Resolver.
+"""Key DID Resolver.
 
 Resolution is performed using the IndyLedger class.
 """
-from typing import Sequence
+
+from typing import Pattern
 
 from ...did.did_key import DIDKey
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
+from ...messaging.valid import DIDKey as DIDKeyType
+
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
 
 
@@ -21,9 +24,9 @@ class KeyDIDResolver(BaseDIDResolver):
         """Perform required setup for Key DID resolution."""
 
     @property
-    def supported_methods(self) -> Sequence[str]:
-        """Return supported methods of Key DID Resolver."""
-        return ["key"]
+    def supported_did_regex(self) -> Pattern:
+        """Return supported_did_regex of Key DID Resolver."""
+        return DIDKeyType.PATTERN
 
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve a Key DID."""

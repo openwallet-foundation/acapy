@@ -1,6 +1,7 @@
 """Introduction service admin routes."""
 
 import logging
+from typing import Optional
 
 from aiohttp import web
 from aiohttp_apispec import docs, match_info_schema, querystring_schema, response_schema
@@ -64,8 +65,8 @@ async def introduction_start(request: web.BaseRequest):
     target_connection_id = request.query.get("target_connection_id")
     message = request.query.get("message")
 
-    service: BaseIntroductionService = context.inject(
-        BaseIntroductionService, required=False
+    service: Optional[BaseIntroductionService] = context.inject_or(
+        BaseIntroductionService
     )
     if not service:
         raise web.HTTPForbidden(reason="Introduction service not available")

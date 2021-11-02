@@ -61,9 +61,7 @@ class AdminRequestContext:
         self,
         base_cls: Type[InjectType],
         settings: Mapping[str, object] = None,
-        *,
-        required: bool = True
-    ) -> Optional[InjectType]:
+    ) -> InjectType:
         """
         Get the provided instance of a given class identifier.
 
@@ -75,7 +73,27 @@ class AdminRequestContext:
             An instance of the base class, or None
 
         """
-        return self._context.inject(base_cls, settings, required=required)
+        return self._context.inject(base_cls, settings)
+
+    def inject_or(
+        self,
+        base_cls: Type[InjectType],
+        settings: Mapping[str, object] = None,
+        default: Optional[InjectType] = None,
+    ) -> Optional[InjectType]:
+        """
+        Get the provided instance of a given class identifier or default if not found.
+
+        Args:
+            base_cls: The base class to retrieve an instance of
+            settings: An optional dict providing configuration to the provider
+            default: default return value if no instance is found
+
+        Returns:
+            An instance of the base class, or None
+
+        """
+        return self._context.inject_or(base_cls, settings, default)
 
     def update_settings(self, settings: Mapping[str, object]):
         """Update the current scope with additional settings."""
@@ -96,17 +114,26 @@ class AdminRequestContext:
     def _test_session(self) -> ProfileSession:
         session = self.profile.session(self._context)
 
-        def _inject(base_cls, required=True):
+        def _inject(base_cls):
             if session._active and base_cls in self.session_inject:
                 ret = self.session_inject[base_cls]
-                if ret is None and required:
+                if ret is None:
                     raise InjectionError(
                         "No instance provided for class: {}".format(base_cls.__name__)
                     )
                 return ret
-            return session._context.injector.inject(base_cls, required=required)
+            return session._context.injector.inject(base_cls)
+
+        def _inject_or(base_cls, default=None):
+            if session._active and base_cls in self.session_inject:
+                ret = self.session_inject[base_cls]
+                if ret is None:
+                    ret = default
+                return ret
+            return session._context.injector.inject_or(base_cls, default)
 
         setattr(session, "inject", _inject)
+        setattr(session, "inject_or", _inject_or)
         return session
 
     def __repr__(self) -> str:

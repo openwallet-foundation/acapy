@@ -6,19 +6,14 @@ import sys
 import uuid
 
 from datetime import datetime
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Type, TypeVar, Union
 
 from marshmallow import fields
 
 from ...cache.base import BaseCache
 from ...config.settings import BaseSettings
 from ...core.profile import ProfileSession
-from ...storage.base import (
-    BaseStorage,
-    StorageDuplicateError,
-    StorageError,
-    StorageNotFoundError,
-)
+from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundError
 from ...storage.record import StorageRecord
 
 from ..util import datetime_to_str, time_now
@@ -27,6 +22,9 @@ from ..valid import INDY_ISO8601_DATETIME
 from .base import BaseModel, BaseModelSchema
 
 LOGGER = logging.getLogger(__name__)
+
+
+RecordType = TypeVar("RecordType", bound="BaseRecord")
 
 
 def match_post_filter(
@@ -178,7 +176,7 @@ class BaseRecord(BaseModel):
         """
         if not cache_key:
             return
-        cache = session.inject(BaseCache, required=False)
+        cache = session.inject_or(BaseCache)
         if cache:
             return await cache.get(cache_key)
 
@@ -198,7 +196,7 @@ class BaseRecord(BaseModel):
 
         if not cache_key:
             return
-        cache = session.inject(BaseCache, required=False)
+        cache = session.inject_or(BaseCache)
         if cache:
             await cache.set(cache_key, value, ttl or cls.DEFAULT_CACHE_TTL)
 
@@ -214,14 +212,14 @@ class BaseRecord(BaseModel):
 
         if not cache_key:
             return
-        cache = session.inject(BaseCache, required=False)
+        cache = session.inject_or(BaseCache)
         if cache:
             await cache.clear(cache_key)
 
     @classmethod
     async def retrieve_by_id(
-        cls, session: ProfileSession, record_id: str
-    ) -> "BaseRecord":
+        cls: Type[RecordType], session: ProfileSession, record_id: str
+    ) -> RecordType:
         """
         Retrieve a stored record by ID.
 
@@ -239,8 +237,11 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def retrieve_by_tag_filter(
-        cls, session: ProfileSession, tag_filter: dict, post_filter: dict = None
-    ) -> "BaseRecord":
+        cls: Type[RecordType],
+        session: ProfileSession,
+        tag_filter: dict,
+        post_filter: dict = None,
+    ) -> RecordType:
         """
         Retrieve a record by tag filter.
 
@@ -280,14 +281,14 @@ class BaseRecord(BaseModel):
 
     @classmethod
     async def query(
-        cls,
+        cls: Type[RecordType],
         session: ProfileSession,
         tag_filter: dict = None,
         *,
         post_filter_positive: dict = None,
         post_filter_negative: dict = None,
         alt: bool = False,
-    ) -> Sequence["BaseRecord"]:
+    ) -> Sequence[RecordType]:
         """
         Query stored records.
 
@@ -429,40 +430,6 @@ class BaseRecord(BaseModel):
 
         await session.profile.notify(topic, payload)
 
-    async def save_error_state(
-        self,
-        session: ProfileSession,
-        state: str = None,
-        *,
-        reason: str = None,
-        log_params: Mapping[str, Any] = None,
-        log_override: bool = False,
-    ):
-        """
-        Save record error state if need be; log and swallow any storage error.
-
-        Args:
-            session: The profile session to use
-            state: The state to save if need be (typically None but by protocol)
-            reason: A reason to add to the log
-            log_params: Additional parameters to log
-            override: Override configured logging regimen, print to stderr instead
-        """
-
-        self.state = state
-        if self._last_state is state:  # already done
-            return
-
-        try:
-            await self.save(
-                session,
-                reason=reason,
-                log_params=log_params,
-                log_override=log_override,
-            )
-        except StorageError as err:
-            LOGGER.exception(err)
-
     @classmethod
     def log_state(
         cls,
@@ -552,7 +519,9 @@ class BaseRecordSchema(BaseModelSchema):
         model_class = None
 
     state = fields.Str(
-        required=False, description="Current record state", example="active"
+        required=False,
+        description="Current record state",
+        example="active",
     )
     created_at = fields.Str(
         required=False, description="Time of record creation", **INDY_ISO8601_DATETIME

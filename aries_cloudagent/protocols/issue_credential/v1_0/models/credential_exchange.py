@@ -1,21 +1,26 @@
 """Aries#0036 v1.0 credential exchange information with non-secrets storage."""
 
+import logging
+
 from typing import Any, Mapping, Union
 
 from marshmallow import fields, validate
 
 from .....core.profile import ProfileSession
-from .....indy.sdk.models.cred import IndyCredential, IndyCredentialSchema
-from .....indy.sdk.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSchema
-from .....indy.sdk.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
-from .....indy.sdk.models.cred_request import IndyCredRequest, IndyCredRequestSchema
+from .....indy.models.cred import IndyCredential, IndyCredentialSchema
+from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSchema
+from .....indy.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
+from .....indy.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
+from .....storage.base import StorageError
 
 from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
 from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
 
 from . import UNENCRYPTED_TAGS
+
+LOGGER = logging.getLogger(__name__)
 
 
 class V10CredentialExchange(BaseExchangeRecord):
@@ -177,6 +182,41 @@ class V10CredentialExchange(BaseExchangeRecord):
     def credential(self, value):
         """Setter; store de/serialized views."""
         self._credential = IndyCredInfo.serde(value)
+
+    async def save_error_state(
+        self,
+        session: ProfileSession,
+        *,
+        reason: str = None,
+        log_params: Mapping[str, Any] = None,
+        log_override: bool = False,
+    ):
+        """
+        Save record error state if need be; log and swallow any storage error.
+
+        Args:
+            session: The profile session to use
+            reason: A reason to add to the log
+            log_params: Additional parameters to log
+            override: Override configured logging regimen, print to stderr instead
+        """
+
+        if self._last_state is None:  # already done
+            return
+
+        self.state = None
+        if reason:
+            self.error_msg = reason
+
+        try:
+            await self.save(
+                session,
+                reason=reason,
+                log_params=log_params,
+                log_override=log_override,
+            )
+        except StorageError as err:
+            LOGGER.exception(err)
 
     @property
     def record_value(self) -> dict:

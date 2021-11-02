@@ -4,6 +4,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from typing import Sequence, Tuple
 
 from ..core.error import BaseError
+from ..core.profile import ProfileSession
 
 
 DEFAULT_CRED_DEF_TAG = "default"
@@ -124,7 +125,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         credential_values: dict,
         cred_ex_id: str,
         revoc_reg_id: str = None,
-        tails_reader_handle: int = None,
+        tails_file_path: str = None,
     ) -> Tuple[str, str]:
         """
         Create a credential.
@@ -136,7 +137,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
             credential_values: Values to go in credential
             cred_ex_id: credential exchange identifier to use in issuer cred rev rec
             revoc_reg_id: ID of the revocation registry
-            tails_reader_handle: Handle for the tails file blob reader
+            tails_file_path: The location of the tails file
 
         Returns:
             A tuple of created credential and revocation id
@@ -145,8 +146,12 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def revoke_credentials(
-        self, revoc_reg_id: str, tails_file_path: str, cred_rev_ids: Sequence[str]
-    ) -> (str, Sequence[str]):
+        self,
+        revoc_reg_id: str,
+        tails_file_path: str,
+        cred_rev_ids: Sequence[str],
+        transaction: ProfileSession = None,
+    ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.
 

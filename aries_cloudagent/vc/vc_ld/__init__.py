@@ -11,16 +11,16 @@ from .models import (
 )
 
 __all__ = [
-    issue,
-    verify_presentation,
-    verify_credential,
-    create_presentation,
-    sign_presentation,
-    derive_credential,
-    PresentationVerificationResult,
-    VerifiableCredential,
-    LDProof,
-    LinkedDataProofSchema,
-    CredentialSchema,
-    VerifiableCredentialSchema,
+    "issue",
+    "verify_presentation",
+    "verify_credential",
+    "create_presentation",
+    "sign_presentation",
+    "derive_credential",
+    "PresentationVerificationResult",
+    "VerifiableCredential",
+    "LDProof",
+    "LinkedDataProofSchema",
+    "CredentialSchema",
+    "VerifiableCredentialSchema",
 ]

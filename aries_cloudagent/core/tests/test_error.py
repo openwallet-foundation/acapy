@@ -1,6 +1,6 @@
 import asyncio
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from asynctest import TestCase as AsyncTestCase
 
 from ..error import BaseError
 

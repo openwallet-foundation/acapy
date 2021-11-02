@@ -76,10 +76,7 @@ class TestCredentialIssueHandler(AsyncTestCase):
                     )
                 ),
                 store_credential=async_mock.CoroutineMock(
-                    side_effect=[
-                        test_module.IndyHolderError(),
-                        test_module.StorageError(),
-                    ]
+                    side_effect=test_module.IndyHolderError()
                 ),
                 send_credential_ack=async_mock.CoroutineMock(),
             )
@@ -89,9 +86,13 @@ class TestCredentialIssueHandler(AsyncTestCase):
             handler = test_module.CredentialIssueHandler()
             responder = MockResponder()
 
-            await handler.handle(request_context, responder)  # holder error
-            await handler.handle(request_context, responder)  # storage error
-            assert mock_cred_mgr.return_value.send_credential_ack.call_count == 2
+            with async_mock.patch.object(
+                responder, "send_reply", async_mock.CoroutineMock()
+            ) as mock_send_reply, async_mock.patch.object(
+                handler._logger, "exception", async_mock.MagicMock()
+            ) as mock_log_exc:
+                await handler.handle(request_context, responder)
+                mock_log_exc.assert_called_once()
 
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()

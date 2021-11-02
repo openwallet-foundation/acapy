@@ -175,6 +175,7 @@ fi
 if ! [ -z "$POSTGRES" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e POSTGRES=1 -e RUST_BACKTRACE=1"
 fi
+# e.g. LEDGER_URL=http://test.bcovrin.vonx.io
 if ! [ -z "$LEDGER_URL" ]; then
   GENESIS_URL="${LEDGER_URL}/genesis"
   DOCKER_ENV="${DOCKER_ENV} -e LEDGER_URL=${LEDGER_URL}"
@@ -205,6 +206,7 @@ if ! [ -z "$TAILS_NETWORK" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e TAILS_NETWORK=${TAILS_NETWORK}"
   DOCKER_ENV="${DOCKER_ENV} -e TAILS_NGROK_NAME=ngrok-tails-server"
 fi
+# e.g. PUBLIC_TAILS_URL=https://tails-test.vonx.io
 if ! [ -z "$PUBLIC_TAILS_URL" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e PUBLIC_TAILS_URL=${PUBLIC_TAILS_URL}"
 fi
@@ -213,6 +215,9 @@ if ! [ -z "$TAILS_FILE_COUNT" ]; then
 fi
 if ! [ -z "$ACAPY_ARG_FILE" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e ACAPY_ARG_FILE=${ACAPY_ARG_FILE}"
+fi
+if ! [ -z "$BDD_EXTRA_AGENT_ARGS" ]; then
+  DOCKER_ENV="${DOCKER_ENV} -e BDD_EXTRA_AGENT_ARGS=${BDD_EXTRA_AGENT_ARGS}"
 fi
 
 if ! [ -z "${ENABLE_PYDEVD_PYCHARM}" ]; then

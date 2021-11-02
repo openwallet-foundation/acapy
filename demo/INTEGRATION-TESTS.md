@@ -30,6 +30,14 @@ docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432
 ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
 ```
 
+To run the tests against the back-end `askar` libraries (as opposed to indy-sdk) run the following:
+
+```bash
+BDD_EXTRA_AGENT_ARGS="{\"wallet-type\":\"askar\"}" ./run_bdd
+```
+
+(Note that `wallet-type` is currently the only extra argument supported.)
+
 You can run individual tests by specifying the tag(s):
 
 ```bash
@@ -91,6 +99,14 @@ ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
 ```
 
 ... will apply the parameters in the `postgres-indy-args.yml` file (which just happens to configure a postgres wallet) to *all* agents under test.
+
+Or the following:
+
+```bash
+ACAPY_ARG_FILE=askar-indy-args.yml ./run_bdd
+```
+
+... will run all the tests against an askar wallet (the new shared components, which replace indy-sdk).
 
 Any aca-py arguement can be included in the yml file, and order-of-precidence applies (see [https://pypi.org/project/ConfigArgParse/](https://pypi.org/project/ConfigArgParse/)).
 

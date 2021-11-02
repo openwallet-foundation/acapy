@@ -1,17 +1,20 @@
 """Presentation request message handler."""
 
 from .....indy.holder import IndyHolder, IndyHolderError
-from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError, StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
 from .....wallet.error import WalletNotFoundError
 
-from ..manager import PresentationManager, PresentationManagerError
+from .. import problem_report_for_record
+from ..manager import PresentationManager
 from ..messages.presentation_request import PresentationRequest
+from ..messages.presentation_problem_report import ProblemReportReason
 from ..models.presentation_exchange import V10PresentationExchange
 
 
@@ -97,7 +100,7 @@ class PresentationRequestHandler(BaseHandler):
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")
-                return
+                return  # not a protocol error: prover could still build proof manually
 
             presentation_message = None
             try:
@@ -113,9 +116,10 @@ class PresentationRequestHandler(BaseHandler):
                 )
                 await responder.send_reply(presentation_message)
             except (
+                BaseModelError,
                 IndyHolderError,
                 LedgerError,
-                PresentationManagerError,
+                StorageError,
                 WalletNotFoundError,
             ) as err:
                 self._logger.exception(err)
@@ -123,10 +127,14 @@ class PresentationRequestHandler(BaseHandler):
                     async with context.session() as session:
                         await presentation_exchange_record.save_error_state(
                             session,
-                            reason=err.message,
+                            reason=err.roll_up,  # us: be specific
                         )
-            except StorageError as err:
-                self._logger.exception(err)  # may be logging to wire, not dead disk
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            presentation_exchange_record,
+                            ProblemReportReason.ABANDONED.value,  # them: be vague
+                        )
+                    )
 
             trace_event(
                 context.settings,

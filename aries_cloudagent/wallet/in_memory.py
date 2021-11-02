@@ -4,9 +4,9 @@ import asyncio
 from typing import List, Sequence, Tuple, Union
 
 from ..core.in_memory import InMemoryProfile
+from ..did.did_key import DIDKey
 
 from .base import BaseWallet
-from .did_info import KeyInfo, DIDInfo
 from .crypto import (
     create_keypair,
     validate_seed,
@@ -15,12 +15,12 @@ from .crypto import (
     encode_pack_message,
     decode_pack_message,
 )
-from .key_type import KeyType
+from .did_info import KeyInfo, DIDInfo
+from .did_posture import DIDPosture
 from .did_method import DIDMethod
-from .util import random_seed
-from ..did.did_key import DIDKey
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
-from .util import b58_to_bytes, bytes_to_b58
+from .key_type import KeyType
+from .util import b58_to_bytes, bytes_to_b58, random_seed
 
 
 class InMemoryWallet(BaseWallet):
@@ -136,7 +136,7 @@ class InMemoryWallet(BaseWallet):
         did_method = DIDMethod.from_did(did)
         if not did_method.supports_rotation:
             raise WalletError(
-                f"Did method {did_method.method_name} does not support key rotation."
+                f"DID method '{did_method.method_name}' does not support key rotation."
             )
 
         key_info = await self.create_signing_key(
@@ -225,14 +225,14 @@ class InMemoryWallet(BaseWallet):
         # are added it is probably better create a did method specific handler
         if method == DIDMethod.KEY:
             if did:
-                raise WalletError("Not allowed to set did for did method key")
+                raise WalletError("Not allowed to set DID for DID method 'key'")
 
             did = DIDKey.from_public_key(verkey, key_type).did
         elif method == DIDMethod.SOV:
             if not did:
                 did = bytes_to_b58(verkey[:16])
         else:
-            raise WalletError(f"Unsupported did method: {method.method_name}")
+            raise WalletError(f"Unsupported DID method: {method.method_name}")
 
         if (
             did in self.profile.local_dids
@@ -362,6 +362,55 @@ class InMemoryWallet(BaseWallet):
                 return info["secret"]
 
         raise WalletError("Private key not found for verkey: {}".format(verkey))
+
+    async def get_public_did(self) -> DIDInfo:
+        """
+        Retrieve the public DID.
+
+        Returns:
+            The currently public `DIDInfo`, if any
+
+        """
+
+        dids = await self.get_local_dids()
+        for info in dids:
+            if info.metadata.get("public"):
+                return info
+
+        return None
+
+    async def set_public_did(self, did: Union[str, DIDInfo]) -> DIDInfo:
+        """
+        Assign the public DID.
+
+        Returns:
+            The updated `DIDInfo`
+
+        """
+
+        if isinstance(did, str):
+            # will raise an exception if not found
+            info = await self.get_local_did(did)
+        else:
+            info = did
+            did = info.did
+
+        if info.method != DIDMethod.SOV:
+            raise WalletError("Setting public DID is only allowed for did:sov DIDs")
+
+        public = await self.get_public_did()
+        if public and public.did == did:
+            info = public
+        else:
+            if public:
+                metadata = {**public.metadata, **DIDPosture.POSTED.metadata}
+                await self.replace_local_did_metadata(public.did, metadata)
+
+            metadata = {**info.metadata, **DIDPosture.PUBLIC.metadata}
+            await self.replace_local_did_metadata(did, metadata)
+            info = await self.get_local_did(did)
+
+        return info
 
     async def sign_message(
         self, message: Union[List[bytes], bytes], from_verkey: str

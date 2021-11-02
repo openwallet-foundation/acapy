@@ -3,9 +3,11 @@ from aiohttp.web import HTTPForbidden
 
 from ...admin.request_context import AdminRequestContext
 from ...ledger.base import BaseLedger
+from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from ...wallet.key_type import KeyType
 from ...wallet.did_method import DIDMethod
+
 from .. import routes as test_module
 from ..base import BaseWallet
 from ..did_info import DIDInfo
@@ -380,9 +382,7 @@ class TestWalletRoutes(AsyncTestCase):
                 KeyType.ED25519,
             )
             result = await test_module.wallet_set_public_did(self.request)
-            self.wallet.set_public_did.assert_awaited_once_with(
-                self.request.query["did"]
-            )
+            self.wallet.set_public_did.assert_awaited_once()
             json_response.assert_called_once_with(
                 {
                     "result": {
@@ -411,7 +411,7 @@ class TestWalletRoutes(AsyncTestCase):
         self.session_inject[BaseLedger] = ledger
 
         multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
-        self.session_inject[MultitenantManager] = multitenant_mgr
+        self.session_inject[BaseMultitenantManager] = multitenant_mgr
 
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
@@ -533,9 +533,7 @@ class TestWalletRoutes(AsyncTestCase):
                 KeyType.ED25519,
             )
             result = await test_module.wallet_set_public_did(self.request)
-            self.wallet.set_public_did.assert_awaited_once_with(
-                self.request.query["did"]
-            )
+            self.wallet.set_public_did.assert_awaited_once()
             json_response.assert_called_once_with(
                 {
                     "result": {
@@ -575,9 +573,7 @@ class TestWalletRoutes(AsyncTestCase):
             self.wallet.get_local_did.return_value = did_info
             self.wallet.set_public_did.return_value = did_info
             result = await test_module.wallet_set_public_did(self.request)
-            self.wallet.set_public_did.assert_awaited_once_with(
-                self.request.query["did"]
-            )
+            self.wallet.set_public_did.assert_awaited_once()
             self.wallet.set_did_endpoint.assert_awaited_once_with(
                 did_info.did, "https://default_endpoint.com", ledger
             )

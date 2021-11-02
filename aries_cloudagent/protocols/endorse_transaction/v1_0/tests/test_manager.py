@@ -5,12 +5,18 @@ from aiohttp import web
 from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
 
+from .....admin.request_context import AdminRequestContext
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
+from .....core.profile import Profile
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
+from .....wallet.base import BaseWallet
+from .....wallet.did_info import DIDInfo
+from .....wallet.did_method import DIDMethod
+from .....wallet.key_type import KeyType
 
 from ..manager import TransactionManager, TransactionManagerError
 from ..messages.messages_attach import MessagesAttach
@@ -29,8 +35,6 @@ CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
 
 class TestTransactionManager(AsyncTestCase):
     async def setUp(self):
-        self.session = InMemoryProfile.test_session()
-
         sigs = [
             (
                 "2iNTeFy44WK9zpsPfcwfu489aHWroYh3v8mme9tPyNKn"
@@ -107,11 +111,28 @@ class TestTransactionManager(AsyncTestCase):
         self.test_refuser_did = "AGDEjaMunDtFtBVrn1qPKQ"
 
         self.ledger = async_mock.create_autospec(BaseLedger)
-        self.session.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.ledger.txn_endorse = async_mock.CoroutineMock(
+            return_value=self.test_endorsed_message
+        )
 
-        self.manager = TransactionManager(self.session)
+        self.context = AdminRequestContext.test_context()
+        self.profile = self.context.profile
+        injector = self.profile.context.injector
+        injector.bind_instance(BaseLedger, self.ledger)
 
-        assert self.manager.session
+        async with self.profile.session() as session:
+            self.wallet: BaseWallet = session.inject_or(BaseWallet)
+            await self.wallet.create_local_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+                did="DJGEjaMunDtFtBVrn1qJMT",
+                metadata={"meta": "data"},
+            )
+            await self.wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
+
+        self.manager = TransactionManager(self.profile)
+
+        assert self.manager.profile
 
     async def test_transaction_jobs(self):
         author = TransactionJob.TRANSACTION_AUTHOR
@@ -145,13 +166,13 @@ class TestTransactionManager(AsyncTestCase):
             )
 
     async def test_txn_rec_retrieve_by_connection_and_thread_caching(self):
-        async with self.session.profile.session() as sesn:
+        async with self.profile.session() as sesn:
             sesn.context.injector.bind_instance(BaseCache, InMemoryCache())
             txn_rec = TransactionRecord(
                 connection_id="123",
                 thread_id="456",
             )
-            await txn_rec.save(self.session)
+            await txn_rec.save(sesn)
             await TransactionRecord.retrieve_by_connection_and_thread(
                 session=sesn,
                 connection_id="123",
@@ -261,10 +282,6 @@ class TestTransactionManager(AsyncTestCase):
             await self.manager.create_endorse_response(
                 transaction=transaction_record,
                 state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
-                endorser_did=self.test_endorser_did,
-                endorser_verkey=self.test_endorser_verkey,
-                endorsed_msg=self.test_endorsed_message,
-                signature=self.test_signature,
             )
 
     async def test_create_endorse_response(self):
@@ -284,10 +301,6 @@ class TestTransactionManager(AsyncTestCase):
             ) = await self.manager.create_endorse_response(
                 transaction_record,
                 state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
-                endorser_did=self.test_endorser_did,
-                endorser_verkey=self.test_endorser_verkey,
-                endorsed_msg=self.test_endorsed_message,
-                signature=self.test_signature,
             )
             save_record.assert_called_once()
 

@@ -9,9 +9,9 @@ from .linked_data_proof import (
 )
 
 __all__ = [
-    VerifiableCredential,
-    CredentialSchema,
-    VerifiableCredentialSchema,
-    LDProof,
-    LinkedDataProofSchema,
+    "VerifiableCredential",
+    "CredentialSchema",
+    "VerifiableCredentialSchema",
+    "LDProof",
+    "LinkedDataProofSchema",
 ]

@@ -1,6 +1,7 @@
-from unittest import TestCase as UnitTestCase
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from ......indy.sdk.models.pres_preview import (
+from ......core.in_memory import InMemoryProfile
+from ......indy.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,
@@ -11,6 +12,7 @@ from ......messaging.models.base_record import BaseExchangeRecord, BaseExchangeS
 from ...message_types import PRESENTATION_PROPOSAL
 from ...messages.presentation_proposal import PresentationProposal
 
+from .. import presentation_exchange as test_module
 from ..presentation_exchange import V10PresentationExchange
 
 S_ID = "NcYxiDXkpYi6ov5FcYDi1e:2:vidya:1.0"
@@ -85,8 +87,8 @@ class BasexRecordImplSchema(BaseExchangeSchema):
         model_class = BasexRecordImpl
 
 
-class TestRecord(UnitTestCase):
-    def test_record(self):
+class TestRecord(AsyncTestCase):
+    async def test_record(self):
         presentation_proposal = PresentationProposal(
             comment="Hello World", presentation_proposal=PRES_PREVIEW
         )
@@ -115,3 +117,21 @@ class TestRecord(UnitTestCase):
 
         bx_record = BasexRecordImpl()
         assert record != bx_record
+
+    async def test_save_error_state(self):
+        session = InMemoryProfile.test_session()
+        record = V10PresentationExchange(state=None)
+        assert record._last_state is None
+        await record.save_error_state(session)  # cover short circuit
+
+        record.state = V10PresentationExchange.STATE_PROPOSAL_RECEIVED
+        await record.save(session)
+
+        with async_mock.patch.object(
+            record, "save", async_mock.CoroutineMock()
+        ) as mock_save, async_mock.patch.object(
+            test_module.LOGGER, "exception", async_mock.MagicMock()
+        ) as mock_log_exc:
+            mock_save.side_effect = test_module.StorageError()
+            await record.save_error_state(session, reason="testing")
+            mock_log_exc.assert_called_once()

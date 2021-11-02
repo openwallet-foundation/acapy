@@ -1,18 +1,20 @@
 """Presentation request message handler."""
 
-from .....indy.holder import IndyHolder, IndyHolderError
-from .....indy.sdk.models.xform import indy_proof_req_preview2indy_requested_creds
+from .....indy.holder import IndyHolderError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
+from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError, StorageNotFoundError
 from .....utils.tracing import trace_event, get_timer
 from .....wallet.error import WalletNotFoundError
 
-from ..manager import V20PresManager, V20PresManagerError
-from ..messages.pres_format import V20PresFormat
+from .. import problem_report_for_record
+from ..formats.handler import V20PresFormatHandlerError
+from ..manager import V20PresManager
 from ..messages.pres_request import V20PresRequest
+from ..messages.pres_problem_report import ProblemReportReason
 from ..models.pres_exchange import V20PresExRecord
 
 
@@ -40,25 +42,27 @@ class V20PresRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for presentation request")
 
-        pres_manager = V20PresManager(context.profile)
+        profile = context.profile
+        pres_manager = V20PresManager(profile)
 
         # Get pres ex record (holder initiated via proposal)
         # or create it (verifier sent request first)
         try:
-            async with context.session() as session:
+            async with profile.session() as session:
                 pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
                     session,
                     {"thread_id": context.message._thread_id},
                     {"connection_id": context.connection_record.connection_id},
                 )  # holder initiated via proposal
-            pres_ex_record.pres_request = context.message.serialize()
-        except StorageNotFoundError:  # verifier sent this request free of any proposal
+            pres_ex_record.pres_request = context.message
+        except StorageNotFoundError:
+            # verifier sent this request free of any proposal
             pres_ex_record = V20PresExRecord(
                 connection_id=context.connection_record.connection_id,
                 thread_id=context.message._thread_id,
                 initiator=V20PresExRecord.INITIATOR_EXTERNAL,
                 role=V20PresExRecord.ROLE_PROVER,
-                pres_request=context.message.serialize(),
+                pres_request=context.message,
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
                 ),
@@ -78,46 +82,37 @@ class V20PresRequestHandler(BaseHandler):
 
         # If auto_present is enabled, respond immediately with presentation
         if pres_ex_record.auto_present:
-            indy_proof_request = context.message.attachment(V20PresFormat.Format.INDY)
-
-            try:
-                req_creds = await indy_proof_req_preview2indy_requested_creds(
-                    indy_proof_request,
-                    preview=None,
-                    holder=context.inject(IndyHolder),
-                )
-            except ValueError as err:
-                self._logger.warning(f"{err}")
-                return
-
             pres_message = None
             try:
                 (pres_ex_record, pres_message) = await pres_manager.create_pres(
                     pres_ex_record=pres_ex_record,
-                    requested_credentials=req_creds,
                     comment=(
-                        "auto-presented for proof request nonce "
-                        f"{indy_proof_request['nonce']}"
+                        f"auto-presented for proof requests"
+                        f", pres_ex_record: {pres_ex_record.pres_ex_id}"
                     ),
                 )
                 await responder.send_reply(pres_message)
             except (
+                BaseModelError,
                 IndyHolderError,
                 LedgerError,
-                V20PresManagerError,
+                StorageError,
                 WalletNotFoundError,
+                V20PresFormatHandlerError,
             ) as err:
                 self._logger.exception(err)
                 if pres_ex_record:
-                    async with context.session() as session:
+                    async with profile.session() as session:
                         await pres_ex_record.save_error_state(
                             session,
-                            state=V20PresExRecord.STATE_ABANDONED,
-                            reason=err.message,
+                            reason=err.roll_up,  # us: be specific
                         )
-            except StorageError as err:
-                self._logger.exception(err)  # may be logging to wire, not dead disk
-
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            pres_ex_record,
+                            ProblemReportReason.ABANDONED.value,  # them: be vague
+                        )
+                    )
             trace_event(
                 context.settings,
                 pres_message,

@@ -1,5 +1,7 @@
 """A problem report message."""
 
+import logging
+
 from enum import Enum
 
 from marshmallow import EXCLUDE, ValidationError, validates_schema
@@ -11,6 +13,8 @@ from ..message_types import CRED_20_PROBLEM_REPORT, PROTOCOL_PACKAGE
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.cred_problem_report_handler.CredProblemReportHandler"
 )
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ProblemReportReason(Enum):
@@ -52,11 +56,16 @@ class V20CredProblemReportSchema(ProblemReportSchema):
             data: The data to validate
 
         """
-        if (
+        if not data.get("description", {}).get("code", ""):
+            raise ValidationError("Value for description.code must be present")
+        elif (
             data.get("description", {}).get("code", "")
             != ProblemReportReason.ISSUANCE_ABANDONED.value
         ):
-            raise ValidationError(
-                "Value for description.code must be "
-                f"{ProblemReportReason.ISSUANCE_ABANDONED.value}"
+            locales = list(data.get("description").keys())
+            locales.remove("code")
+            LOGGER.warning(
+                "Unexpected error code received.\n"
+                f"Code: {data.get('description').get('code')}, "
+                f"Description: {data.get('description').get(locales[0])}"
             )
