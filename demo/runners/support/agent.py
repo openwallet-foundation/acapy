@@ -150,7 +150,7 @@ class DemoAgent:
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.tails_server_base_url = tails_server_base_url
         self.endorser_role = endorser_role
-        self.endorser_did = None # set this later
+        self.endorser_did = None  # set this later
         self.endorser_invite = None  # set this later
         self.extra_args = extra_args
         self.trace_enabled = TRACE_ENABLED
@@ -572,7 +572,7 @@ class DemoAgent:
         # if endorser, endorse the wallet ledger operations
         if endorser_agent:
             if not await connect_wallet_to_endorser(self, endorser_agent):
-               raise Exception("Endorser setup FAILED :-(")
+                raise Exception("Endorser setup FAILED :-(")
 
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
