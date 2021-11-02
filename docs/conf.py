@@ -42,7 +42,7 @@ autodoc_mock_imports = [
     "jsonpath_ng",
     "unflatten",
     "aries_cloudagent.vc",
-    "dataclasses"
+    "dataclasses",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",
