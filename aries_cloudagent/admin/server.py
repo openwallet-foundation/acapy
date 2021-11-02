@@ -34,6 +34,7 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..messaging.valid import UUIDFour
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -311,6 +312,19 @@ class AdminServer(BaseAdminServer):
                 if authorization_header and is_multitenancy_path:
                     raise web.HTTPUnauthorized()
 
+                base_limited_access_path = (
+                    re.match(
+                        f"^/connections/(?:receive-invitation|{UUIDFour.PATTERN})", path
+                    )
+                    or path.startswith("/out-of-band/receive-invitation")
+                    or path.startswith("/mediation/requests/")
+                    or re.match(
+                        f"/mediation/(?:request/{UUIDFour.PATTERN}|"
+                        f"{UUIDFour.PATTERN}/default-mediator)",
+                        path,
+                    )
+                )
+
                 # base wallet is not allowed to perform ssi related actions.
                 # Only multitenancy and general server actions
                 if (
@@ -318,6 +332,7 @@ class AdminServer(BaseAdminServer):
                     and not is_multitenancy_path
                     and not is_server_path
                     and not is_unprotected_path(path)
+                    and not base_limited_access_path
                 ):
                     raise web.HTTPUnauthorized()
 

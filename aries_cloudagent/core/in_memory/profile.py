@@ -4,14 +4,14 @@ from collections import OrderedDict
 from typing import Any, Mapping, Type
 from weakref import ref
 
-from ..config.injection_context import InjectionContext
-from ..config.provider import ClassProvider
-from ..storage.base import BaseStorage
-from ..storage.vc_holder.base import VCHolder
-from ..utils.classloader import DeferLoad
-from ..wallet.base import BaseWallet
+from ...config.injection_context import InjectionContext
+from ...config.provider import ClassProvider
+from ...storage.base import BaseStorage
+from ...storage.vc_holder.base import VCHolder
+from ...utils.classloader import DeferLoad
+from ...wallet.base import BaseWallet
 
-from .profile import Profile, ProfileManager, ProfileSession
+from ..profile import Profile, ProfileManager, ProfileSession
 
 STORAGE_CLASS = DeferLoad("aries_cloudagent.storage.in_memory.InMemoryStorage")
 WALLET_CLASS = DeferLoad("aries_cloudagent.wallet.in_memory.InMemoryWallet")

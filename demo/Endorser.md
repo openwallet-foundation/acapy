@@ -1,23 +1,58 @@
 # Endorser Demo
 
-The demo is in an "interim" state right now, endorser support is added but not "fully added".  The following is how it works now (sets up the endorser roles to allow manual testing using the swagger page) but will be updated in the future once the Endorser support in aca-py is finalized.
+There are two ways to run the alice/faber demo with endorser support enabled.
 
-Run the following in 2 separate shells (make sure you are running von-network and the tails server first):
+
+## Run Faber as an Author, with a dedicated Endorser agent
+
+This approach runs Faber as an un-privileged agent, and starts a dedicated Endorser sub-process to endorse Faber's transactions.
+
+Start a VON Network and a Tails server.
+
+Start up Faber as Author (note the tails file size override, to allow testing of the revocation registry roll-over):
 
 ```bash
-./run_demo faber --endorser-role endorser --revocation
+TAILS_FILE_COUNT=5 ./run_demo faber --endorser-role author --revocation
 ```
+
+Start up Alcie as normal:
 
 ```bash
-./run_demo alice --endorser-role author --revocation
+./run_demo alice
 ```
 
-Copy the invitation from faber to alice to complete the connection.
+You can run all of Faber's functions as normal - if you watch the console you will see that all ledger operations go through the endorser workflow.
 
-Then in the alice shell, select option "D" and copy faber's DID to alice (it is the DID displayed on faber agent startup).
+If you issue more than 5 credentials, you will see Faber creating a new revocation registry (encluding endorser operations).
 
-This starts up the aca-py agents with the endorser role set (via the new command-line args) and sets up the connection between the 2 agents with appropriate configuration.
 
-Then, in the [alice swagger page](http://localhost:8031) you can create a schema and cred def, and all the endorser steps will happen automatically.  You don't need to specify a connection id or explicitly request endorsement (aca-py does it all automatically based on the startup args).
+## Run Alice as an Author and Faber as an Endorser
 
-If you check the endorser transaction records in either [alice](http://localhost:8031) or [faber](http://localhost:8021) you can see that the endorser protocol executed automatically and the appropriate endorsements were endorsed before writing the transactions to the ledger.
+This approach sets up the endorser roles to allow manual testing using the agents' swagger pages:
+
+- Faber runs as an Endorser (all of Faber's functions - issue credential, request proof, etc.) run normally, since Faber has ledger write access
+- Alice starts up with a DID aith Author privileges (no ledger write access) and Faber is setup as Alice's Endorser
+
+Start a VON Network and a Tails server.
+
+Start up Faber as Endorser:
+
+```bash
+TAILS_FILE_COUNT=5 ./run_demo faber --endorser-role endorser --revocation
+```
+
+Start up Alice as Author:
+
+```bash
+TAILS_FILE_COUNT=5 ./run_demo alice --endorser-role author --revocation
+```
+
+Copy the invitation from Faber to Alice to complete the connection.
+
+Then in the Alice shell, select option "D" and copy Faber's DID (it is the DID displayed on faber agent startup).
+
+This starts up the ACA-Py agents with the endorser role set (via the new command-line args) and sets up the connection between the 2 agents with appropriate configuration.
+
+Then, in the [Alice swagger page](http://localhost:8031) you can create a schema and cred def, and all the endorser steps will happen automatically.  You don't need to specify a connection id or explicitly request endorsement (ACA-Py does it all automatically based on the startup args).
+
+If you check the endorser transaction records in either [Alice](http://localhost:8031) or [Faber](http://localhost:8021) you can see that the endorser protocol executes automatically and the appropriate endorsements were endorsed before writing the transactions to the ledger.

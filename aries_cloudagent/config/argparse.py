@@ -1204,10 +1204,11 @@ class MediationGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_MEDIATION_OPEN",
             help=(
-                "Enables didcomm mediation. After establishing a connection, "
-                "if enabled, an agent may request message mediation, which will "
-                "allow the mediator to forward messages on behalf of the recipient. "
-                "See aries-rfc:0211."
+                "Enables automatic granting of mediation. After establishing a "
+                "connection, if enabled, an agent may request message mediation "
+                "and be granted it automatically, which will allow the mediator "
+                "to forward messages on behalf of the recipient. See "
+                "aries-rfc:0211."
             ),
         )
 

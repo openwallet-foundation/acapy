@@ -5,13 +5,9 @@ import re
 from abc import ABC, abstractmethod, ABCMeta
 from enum import Enum
 from hashlib import sha256
-from time import time
 from typing import Sequence, Tuple, Union
 
 from ..indy.issuer import IndyIssuer
-from ..storage.base import StorageRecord
-from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ..messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
 
@@ -275,58 +271,6 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         self, revoc_reg_id: str, timestamp: int
     ) -> Tuple[dict, int]:
         """Get revocation registry entry by revocation registry ID and timestamp."""
-
-    async def add_schema_non_secrets_record(self, schema_id: str, issuer_did: str):
-        """
-        Write the wallet non-secrets record for a schema (already written to the ledger).
-
-        Args:
-            schema_id: The schema id (or stringified sequence number)
-            issuer_did: The DID of the issuer
-
-        """
-        schema_id_parts = schema_id.split(":")
-        schema_tags = {
-            "schema_id": schema_id,
-            "schema_issuer_did": issuer_did,
-            "schema_name": schema_id_parts[-2],
-            "schema_version": schema_id_parts[-1],
-            "epoch": str(int(time())),
-        }
-        record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
-        storage = self.get_indy_storage()
-        await storage.add_record(record)
-
-    async def add_cred_def_non_secrets_record(
-        self, schema_id: str, issuer_did: str, credential_definition_id: str
-    ):
-        """
-        Write the wallet non-secrets record for cred def (already written to the ledger).
-
-        Note that the cred def private key signing informtion must already exist in the
-        wallet.
-
-        Args:
-            schema_id: The schema id (or stringified sequence number)
-            issuer_did: The DID of the issuer
-            credential_definition_id: The credential definition id
-
-        """
-        schema_id_parts = schema_id.split(":")
-        cred_def_tags = {
-            "schema_id": schema_id,
-            "schema_issuer_did": schema_id_parts[0],
-            "schema_name": schema_id_parts[-2],
-            "schema_version": schema_id_parts[-1],
-            "issuer_did": issuer_did,
-            "cred_def_id": credential_definition_id,
-            "epoch": str(int(time())),
-        }
-        record = StorageRecord(
-            CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
-        )
-        storage = self.get_indy_storage()
-        await storage.add_record(record)
 
 
 class Role(Enum):

@@ -50,6 +50,7 @@ from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..wallet.did_info import DIDInfo
 from .dispatcher import Dispatcher
+from .util import STARTUP_EVENT_TOPIC, SHUTDOWN_EVENT_TOPIC
 
 LOGGER = logging.getLogger(__name__)
 
@@ -115,7 +116,7 @@ class Conductor:
 
         # Register all outbound transports
         self.outbound_transport_manager = OutboundTransportManager(
-            context, self.handle_not_delivered
+            self.root_profile, self.handle_not_delivered
         )
         await self.outbound_transport_manager.setup()
 
@@ -363,8 +364,14 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Error accepting mediation invitation")
 
+        # notify protcols of startup status
+        await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
+
     async def stop(self, timeout=1.0):
         """Stop the agent."""
+        # notify protcols that we are shutting down
+        await self.root_profile.notify(SHUTDOWN_EVENT_TOPIC, {})
+
         shutdown = TaskQueue()
         if self.dispatcher:
             shutdown.run(self.dispatcher.complete())

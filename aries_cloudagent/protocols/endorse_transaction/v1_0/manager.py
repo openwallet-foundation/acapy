@@ -8,16 +8,17 @@ from asyncio import shield
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
-from ....core.profile import ProfileSession
+from ....core.profile import Profile
 from ....indy.issuer import IndyIssuerError
-from ....indy.util import tails_path
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
-from ....messaging.responder import BaseResponder
-from ....revocation.error import RevocationError, RevocationNotSupportedError
-from ....revocation.indy import IndyRevocation
+from ....messaging.credential_definitions.util import notify_cred_def_event
+from ....messaging.schemas.util import notify_schema_event
+from ....revocation.util import (
+    notify_revocation_entry_event,
+    notify_revocation_tails_file_event,
+)
 from ....storage.error import StorageError, StorageNotFoundError
-from ....tails.base import BaseTailsServer
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 
@@ -39,28 +40,30 @@ class TransactionManagerError(BaseError):
 class TransactionManager:
     """Class for managing transactions."""
 
-    def __init__(self, session: ProfileSession):
+    def __init__(self, profile: Profile):
         """
         Initialize a TransactionManager.
 
         Args:
             session: The Profile Session for this transaction manager
         """
-        self._session = session
+        self._profile = profile
         self._logger = logging.getLogger(__name__)
 
     @property
-    def session(self) -> ProfileSession:
+    def profile(self) -> Profile:
         """
-        Accessor for the current Profile Session.
+        Accessor for the current Profile.
 
         Returns:
-            The Profile Session for this transaction manager
+            The Profile for this transaction manager
 
         """
-        return self._session
+        return self._profile
 
-    async def create_record(self, messages_attach: str, connection_id: str):
+    async def create_record(
+        self, messages_attach: str, connection_id: str, meta_data: dict = None
+    ):
         """
         Create a new Transaction Record.
 
@@ -90,11 +93,14 @@ class TransactionManager:
 
         transaction.messages_attach.clear()
         transaction.messages_attach.append(messages_attach_dict)
+
+        if meta_data:
+            transaction.meta_data = meta_data
+
         transaction.state = TransactionRecord.STATE_TRANSACTION_CREATED
         transaction.connection_id = connection_id
 
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Created a Transaction Record")
 
         return transaction
@@ -144,8 +150,7 @@ class TransactionManager:
         transaction.timing = timing
         transaction.endorser_write_txn = endorser_write_txn
 
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Created an endorsement request")
 
         transaction_request = TransactionRequest(
@@ -188,8 +193,7 @@ class TransactionManager:
         transaction.state = TransactionRecord.STATE_REQUEST_RECEIVED
         transaction.endorser_write_txn = request.endorser_write_txn
 
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Received an endorsement request")
 
         return transaction
@@ -225,13 +229,10 @@ class TransactionManager:
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
         transaction_json = transaction.messages_attach[0]["data"]["json"]
 
-        profile_session = await self.session
-        async with profile_session as session:
+        async with self._profile.session() as session:
             wallet: BaseWallet = session.inject_or(BaseWallet)
-
             if not wallet:
                 raise StorageError("No wallet available")
-
             endorser_did_info = await wallet.get_public_did()
             if not endorser_did_info:
                 raise StorageError(
@@ -240,12 +241,13 @@ class TransactionManager:
             endorser_did = endorser_did_info.did
             endorser_verkey = endorser_did_info.verkey
 
-        ledger = self._session.context.inject_or(BaseLedger)
-        if not ledger:
-            reason = "No ledger available"
-            if not self._session.context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise LedgerError(reason=reason)
+        async with self._profile.session() as session:
+            ledger = session.context.inject_or(BaseLedger)
+            if not ledger:
+                reason = "No ledger available"
+                if not session.context.settings.get_value("wallet.type"):
+                    reason += ": missing wallet-type?"
+                raise LedgerError(reason=reason)
 
         async with ledger:
             endorsed_msg = await shield(ledger.txn_endorse(transaction_json))
@@ -268,7 +270,7 @@ class TransactionManager:
 
         transaction.state = state
 
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Created an endorsed response")
 
         if transaction.endorser_write_txn:
@@ -302,8 +304,7 @@ class TransactionManager:
             response: The Endorsed Transaction Response
         """
 
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, response.transaction_id
             )
@@ -322,18 +323,18 @@ class TransactionManager:
             "signature"
         ][endorser_did]
 
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Received an endorsed response")
 
         # this scenario is where the author has asked the endorser to write the ledger
         if transaction.endorser_write_txn:
             connection_id = transaction.connection_id
-            async with profile_session.profile.session() as session:
+            async with self._profile.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
-            await self.store_record_in_wallet(
-                response.ledger_response, connection_record
+            await self.endorsed_txn_post_processing(
+                transaction, response.ledger_response, connection_record
             )
 
         return transaction
@@ -354,27 +355,29 @@ class TransactionManager:
         """
         ledger_transaction = transaction.messages_attach[0]["data"]["json"]
 
-        ledger = self._session.inject(BaseLedger)
-        if not ledger:
-            reason = "No ledger available"
-            if not self._session.context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise TransactionManagerError(reason)
+        async with self._profile.session() as session:
+            ledger = self._profile.inject(BaseLedger)
+            if not ledger:
+                reason = "No ledger available"
+                if not session.context.settings.get_value("wallet.type"):
+                    reason += ": missing wallet-type?"
+                raise TransactionManagerError(reason)
 
-        async with ledger:
-            try:
-                ledger_response_json = await shield(
-                    ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
-                )
-            except (IndyIssuerError, LedgerError) as err:
-                raise TransactionManagerError(err.roll_up) from err
+            async with ledger:
+                try:
+                    ledger_response_json = await shield(
+                        ledger.txn_submit(
+                            ledger_transaction, sign=False, taa_accept=False
+                        )
+                    )
+                except (IndyIssuerError, LedgerError) as err:
+                    raise TransactionManagerError(err.roll_up) from err
 
         ledger_response = json.loads(ledger_response_json)
 
-        profile_session = await self.session
         transaction.state = TransactionRecord.STATE_TRANSACTION_ACKED
 
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Completed transaction")
 
         # this scenario is where the endorser is writing the transaction
@@ -383,9 +386,9 @@ class TransactionManager:
             return ledger_response
 
         connection_id = transaction.connection_id
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
-        jobs = await connection_record.metadata_get(self._session, "transaction_jobs")
+            jobs = await connection_record.metadata_get(session, "transaction_jobs")
         if not jobs:
             raise TransactionManagerError(
                 "The transaction related jobs are not set up in "
@@ -398,7 +401,9 @@ class TransactionManager:
             )
         if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
             # the author write the endorsed transaction to the ledger
-            await self.store_record_in_wallet(ledger_response, connection_record)
+            await self.endorsed_txn_post_processing(
+                transaction, ledger_response, connection_record
+            )
             transaction_acknowledgement_message = TransactionAcknowledgement(
                 thread_id=transaction._id
             )
@@ -421,8 +426,7 @@ class TransactionManager:
             connection_id: The connection_id related to this Transaction Record
         """
 
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
                 session, connection_id, response.thread_id
             )
@@ -433,19 +437,19 @@ class TransactionManager:
             )
 
         transaction.state = TransactionRecord.STATE_TRANSACTION_ACKED
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Received a transaction ack")
 
         connection_id = transaction.connection_id
 
         try:
-            async with profile_session.profile.session() as session:
+            async with self._profile.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
+                jobs = await connection_record.metadata_get(session, "transaction_jobs")
         except StorageNotFoundError as err:
             raise TransactionManagerError(err.roll_up) from err
-        jobs = await connection_record.metadata_get(self._session, "transaction_jobs")
         if not jobs:
             raise TransactionManagerError(
                 "The transaction related jobs are not set up in "
@@ -458,8 +462,8 @@ class TransactionManager:
             )
         if jobs["transaction_my_job"] == TransactionJob.TRANSACTION_AUTHOR.name:
             # store the related non-secrets record in our wallet
-            await self.store_record_in_wallet(
-                response.ledger_response, connection_record
+            await self.endorsed_txn_post_processing(
+                transaction, response.ledger_response, connection_record
             )
 
         return transaction
@@ -501,8 +505,7 @@ class TransactionManager:
 
         transaction.state = state
 
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Created a refused response")
 
         refused_transaction_response = RefusedTransactionResponse(
@@ -523,8 +526,7 @@ class TransactionManager:
             response: The refused transaction response
         """
 
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_id(
                 session, response.transaction_id
             )
@@ -536,7 +538,7 @@ class TransactionManager:
         transaction.signature_response.append(response.signature_response)
         transaction.thread_id = response.thread_id
 
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Received a refused response")
 
         return transaction
@@ -564,8 +566,7 @@ class TransactionManager:
             )
 
         transaction.state = state
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Cancelled the transaction")
 
         cancelled_transaction_response = CancelTransaction(
@@ -585,14 +586,13 @@ class TransactionManager:
             connection_id: The connection_id related to this Transaction Record
         """
 
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
                 session, connection_id, response.thread_id
             )
 
         transaction.state = response.state
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Received a cancel request")
 
         return transaction
@@ -620,8 +620,7 @@ class TransactionManager:
             )
 
         transaction.state = state
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Resends the transaction request")
 
         resend_transaction_response = TransactionResend(
@@ -642,14 +641,13 @@ class TransactionManager:
             connection_id: The connection_id related to this Transaction Record
         """
 
-        profile_session = await self.session
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             transaction = await TransactionRecord.retrieve_by_connection_and_thread(
                 session, connection_id, response.thread_id
             )
 
         transaction.state = response.state
-        async with profile_session.profile.session() as session:
+        async with self._profile.session() as session:
             await transaction.save(session, reason="Receives a transaction request")
 
         return transaction
@@ -667,15 +665,16 @@ class TransactionManager:
 
         """
 
-        value = await record.metadata_get(self._session, "transaction_jobs")
-
-        if value:
-            value["transaction_my_job"] = transaction_my_job
-        else:
-            value = {"transaction_my_job": transaction_my_job}
-        await record.metadata_set(self._session, key="transaction_jobs", value=value)
+        async with self._profile.session() as session:
+            value = await record.metadata_get(session, "transaction_jobs")
+            if value:
+                value["transaction_my_job"] = transaction_my_job
+            else:
+                value = {"transaction_my_job": transaction_my_job}
+            await record.metadata_set(session, key="transaction_jobs", value=value)
 
         tx_job_to_send = TransactionJobToSend(job=transaction_my_job)
+
         return tx_job_to_send
 
     async def set_transaction_their_job(
@@ -690,45 +689,59 @@ class TransactionManager:
         """
 
         try:
-            connection = await ConnRecord.retrieve_by_did(
-                self._session, receipt.sender_did, receipt.recipient_did
-            )
+            async with self._profile.session() as session:
+                connection = await ConnRecord.retrieve_by_did(
+                    session, receipt.sender_did, receipt.recipient_did
+                )
+                value = await connection.metadata_get(session, "transaction_jobs")
+                if value:
+                    value["transaction_their_job"] = tx_job_received.job
+                else:
+                    value = {"transaction_their_job": tx_job_received.job}
+                await connection.metadata_set(
+                    session, key="transaction_jobs", value=value
+                )
         except StorageNotFoundError as err:
             raise TransactionManagerError(err.roll_up) from err
 
-        value = await connection.metadata_get(self._session, "transaction_jobs")
-        if value:
-            value["transaction_their_job"] = tx_job_received.job
-        else:
-            value = {"transaction_their_job": tx_job_received.job}
-        await connection.metadata_set(
-            self._session, key="transaction_jobs", value=value
-        )
-
-    async def store_record_in_wallet(
-        self, ledger_response: dict = None, connection_record: ConnRecord = None
+    async def endorsed_txn_post_processing(
+        self,
+        transaction: TransactionRecord,
+        ledger_response: dict = None,
+        connection_record: ConnRecord = None,
     ):
         """
-        Store record in wallet.
+        Store record in wallet, and kick off any required post-processing.
 
         Args:
             transaction: The transaction from which the schema/cred_def
                          would be stored in wallet.
         """
 
-        ledger = self._session.inject(BaseLedger)
-        if not ledger:
-            reason = "No ledger available"
-            if not self._session.context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise TransactionManagerError(reason)
+        async with self._profile.session() as session:
+            ledger = self._profile.inject(BaseLedger)
+            if not ledger:
+                reason = "No ledger available"
+                if not session.context.settings.get_value("wallet.type"):
+                    reason += ": missing wallet-type?"
+                raise TransactionManagerError(reason)
+
+        # setup meta_data to pass to future events, if necessary
+        meta_data = transaction.meta_data
+        meta_data["endorser"] = {
+            "connection_id": transaction.connection_id,
+        }
 
         # write the wallet non-secrets record
         if ledger_response["result"]["txn"]["type"] == "101":
             # schema transaction
             schema_id = ledger_response["result"]["txnMetadata"]["txnId"]
             public_did = ledger_response["result"]["txn"]["metadata"]["from"]
-            await ledger.add_schema_non_secrets_record(schema_id, public_did)
+            meta_data["context"]["schema_id"] = schema_id
+            meta_data["context"]["public_did"] = public_did
+
+            # Notify schema ledger write event
+            await notify_schema_event(self._profile, schema_id, meta_data)
 
         elif ledger_response["result"]["txn"]["type"] == "102":
             # cred def transaction
@@ -740,212 +753,43 @@ class TransactionManager:
                     raise TransactionManagerError(err.roll_up) from err
 
             schema_id = schema_response["id"]
-            public_did = ledger_response["result"]["txn"]["metadata"]["from"]
-            credential_definition_id = ledger_response["result"]["txnMetadata"]["txnId"]
-            await ledger.add_cred_def_non_secrets_record(
-                schema_id, public_did, credential_definition_id
+            cred_def_id = ledger_response["result"]["txnMetadata"]["txnId"]
+            issuer_did = ledger_response["result"]["txn"]["metadata"]["from"]
+            meta_data["context"]["schema_id"] = schema_id
+            meta_data["context"]["cred_def_id"] = cred_def_id
+            meta_data["context"]["issuer_did"] = issuer_did
+
+            # Notify event
+            await notify_cred_def_event(self._profile, cred_def_id, meta_data)
+
+        elif ledger_response["result"]["txn"]["type"] == "113":
+            # revocation registry transaction
+            rev_reg_id = ledger_response["result"]["txnMetadata"]["txnId"]
+            meta_data["context"]["rev_reg_id"] = rev_reg_id
+            auto_create_rev_reg = meta_data["processing"].get(
+                "auto_create_rev_reg", False
             )
+
+            # If "auto_processing" is enabled, also create the revocation entry record
+            if auto_create_rev_reg:
+                await notify_revocation_entry_event(
+                    self._profile, rev_reg_id, meta_data
+                )
+
+        elif ledger_response["result"]["txn"]["type"] == "114":
+            # revocation entry transaction
+            rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
+            meta_data["context"]["rev_reg_id"] = rev_reg_id
+            auto_create_rev_reg = meta_data["processing"].get(
+                "auto_create_rev_reg", False
+            )
+
+            # If "auto_processing" is enabled, also upload tails file for this registry
+            if auto_create_rev_reg:
+                await notify_revocation_tails_file_event(
+                    self._profile, rev_reg_id, meta_data
+                )
 
         else:
             # TODO unknown ledger transaction type, just ignore for now ...
             pass
-
-        # if we are setup as "author" role and configured for auto-revocation-setup,
-        # then automate subsequent transactions
-        if not self._session.context.settings.get_value("endorser.auto_create_rev_reg"):
-            return
-
-        # for a schema, we don't need to do anything
-        if ledger_response["result"]["txn"]["type"] == "101":
-            # no-op
-            pass
-
-        # for a cred def, see if we need to initiate the revocation registry
-        elif (
-            ledger_response["result"]["txn"]["type"] == "102"
-            and "revocation" in ledger_response["result"]["txn"]["data"]["data"]
-        ):
-            endorser_info = await connection_record.metadata_get(
-                self.session, "endorser_info"
-            )
-            if not endorser_info:
-                raise TransactionManagerError(
-                    reason="Endorser Info is not set up in "
-                    "connection metadata for this connection record"
-                )
-            if "endorser_did" not in endorser_info.keys():
-                raise TransactionManagerError(
-                    reason=' "endorser_did" is not set in "endorser_info"'
-                    " in connection metadata for this connection record"
-                )
-            endorser_did = endorser_info["endorser_did"]
-
-            cred_def_id = ledger_response["result"]["txnMetadata"]["txnId"]
-            profile = self._session.context
-            try:
-                tails_base_url = profile.settings.get("tails_server_base_url")
-                if not tails_base_url:
-                    raise TransactionManagerError(
-                        reason="tails_server_base_url not configured"
-                    )
-
-                # Create registry
-                revoc = IndyRevocation(self.session.profile)
-                registry_record = await revoc.init_issuer_registry(
-                    cred_def_id,
-                    # TODO just use the default registry size for now
-                    # max_cred_num=rev_reg_size,
-                )
-
-                await shield(registry_record.generate_registry(self.session.profile))
-
-                await registry_record.set_tails_file_public_uri(
-                    self.session.profile,
-                    f"{tails_base_url}/{registry_record.revoc_reg_id}",
-                )
-                rev_reg_resp = await registry_record.send_def(
-                    self.session.profile,
-                    write_ledger=False,
-                    endorser_did=endorser_did,
-                )
-            except RevocationError as e:
-                raise TransactionManagerError(reason=e.message) from e
-            except RevocationNotSupportedError as e:
-                raise TransactionManagerError(reason=e.message) from e
-
-            try:
-                revo_transaction = await self.create_record(
-                    messages_attach=rev_reg_resp["result"],
-                    connection_id=connection_record.connection_id,
-                )
-            except StorageError as err:
-                raise TransactionManagerError(reason=err.roll_up) from err
-
-            # if auto-request, send the request to the endorser
-            if profile.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        revo_transaction,
-                        revo_transaction_request,
-                    ) = await self.create_request(
-                        transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise TransactionManagerError(reason=err.roll_up) from err
-
-                responder = self._session.inject_or(BaseResponder)
-                if responder:
-                    await responder.send(
-                        revo_transaction_request,
-                        connection_id=connection_record.connection_id,
-                    )
-                else:
-                    self._logger.warning(
-                        "Configuration has no BaseResponder: cannot update "
-                        "revocation on cred def %s",
-                        cred_def_id,
-                    )
-
-        # for a revocation definition, initiate the revocation entry/accumulator
-        elif ledger_response["result"]["txn"]["type"] == "113":
-            endorser_info = await connection_record.metadata_get(
-                self.session, "endorser_info"
-            )
-            if not endorser_info:
-                raise TransactionManagerError(
-                    reason="Endorser Info is not set up in "
-                    "connection metadata for this connection record"
-                )
-            if "endorser_did" not in endorser_info.keys():
-                raise TransactionManagerError(
-                    reason=' "endorser_did" is not set in "endorser_info"'
-                    " in connection metadata for this connection record"
-                )
-            endorser_did = endorser_info["endorser_did"]
-
-            rev_reg_id = ledger_response["result"]["txnMetadata"]["txnId"]
-            profile = self._session.context
-            try:
-                tails_base_url = profile.settings.get("tails_server_base_url")
-                if not tails_base_url:
-                    raise TransactionManagerError(
-                        reason="tails_server_base_url not configured"
-                    )
-
-                revoc = IndyRevocation(self.session.profile)
-                registry_record = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-                rev_entry_resp = await registry_record.send_entry(
-                    self.session.profile,
-                    write_ledger=False,
-                    endorser_did=endorser_did,
-                )
-            except RevocationError as e:
-                raise TransactionManagerError(reason=e.message) from e
-            except RevocationNotSupportedError as e:
-                raise TransactionManagerError(reason=e.message) from e
-
-            try:
-                revo_transaction = await self.create_record(
-                    messages_attach=rev_entry_resp["result"],
-                    connection_id=connection_record.connection_id,
-                )
-            except StorageError as err:
-                raise TransactionManagerError(reason=err.roll_up) from err
-
-            # if auto-request, send the request to the endorser
-            if profile.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        revo_transaction,
-                        revo_transaction_request,
-                    ) = await self.create_request(
-                        transaction=revo_transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise TransactionManagerError(reason=err.roll_up) from err
-
-                responder = self._session.inject_or(BaseResponder)
-                if responder:
-                    await responder.send(
-                        revo_transaction_request,
-                        connection_id=connection_record.connection_id,
-                    )
-                else:
-                    self._logger.warning(
-                        "Configuration has no BaseResponder: cannot update "
-                        "revocation on cred def %s",
-                        cred_def_id,
-                    )
-
-        # for a revocation entry/accumulator, upload the tails file
-        elif ledger_response["result"]["txn"]["type"] == "114":
-            profile = self._session.context
-            tails_base_url = profile.settings.get("tails_server_base_url")
-            if not tails_base_url:
-                raise TransactionManagerError(
-                    reason="tails_server_base_url not configured"
-                )
-            tails_server = profile.inject(BaseTailsServer)
-            revoc_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
-            tails_local_path = tails_path(revoc_reg_id)
-            (upload_success, reason) = await tails_server.upload_tails_file(
-                self.session.profile,
-                revoc_reg_id,
-                tails_local_path,
-                interval=0.8,
-                backoff=-0.5,
-                max_attempts=5,  # heuristic: respect HTTP timeout
-            )
-            if not upload_success:
-                raise TransactionManagerError(
-                    reason=(
-                        f"Tails file for rev reg {revoc_reg_id} "
-                        f"failed to upload: {reason}"
-                    )
-                )
