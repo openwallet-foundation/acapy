@@ -150,6 +150,7 @@ class DemoAgent:
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.tails_server_base_url = tails_server_base_url
         self.endorser_role = endorser_role
+        self.endorser_did = None # set this later
         self.endorser_invite = None  # set this later
         self.extra_args = extra_args
         self.trace_enabled = TRACE_ENABLED
@@ -397,9 +398,14 @@ class DemoAgent:
                         ("--auto-write-transactions",),
                         ("--auto-create-revocation-transactions",),
                         ("--endorser-alias", "endorser"),
-                        ("--endorser-public-did", self.endorser_did),
                     ]
                 )
+                if self.endorser_did:
+                    result.extend(
+                        [
+                            ("--endorser-public-did", self.endorser_did),
+                        ]
+                    )
                 if self.endorser_invite:
                     result.extend(
                         (
@@ -483,6 +489,7 @@ class DemoAgent:
         webhook_port: int = None,
         mediator_agent=None,
         cred_type: str = CRED_FORMAT_INDY,
+        endorser_agent=None,
     ):
         if webhook_port is not None:
             await self.listen_webhooks(webhook_port)
@@ -563,7 +570,9 @@ class DemoAgent:
                 raise Exception("Mediation setup FAILED :-(")
 
         # if endorser, endorse the wallet ledger operations
-        # TODO
+        if endorser_agent:
+            if not await connect_wallet_to_endorser(self, endorser_agent):
+               raise Exception("Endorser setup FAILED :-(")
 
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True

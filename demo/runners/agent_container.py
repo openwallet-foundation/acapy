@@ -662,8 +662,6 @@ class AgentContainer:
             )
             if not self.endorser_agent:
                 raise Exception("Endorser agent returns None :-(")
-            # if not await connect_wallet_to_endorser(self.agent, self.endorser_agent):
-            #    raise Exception("Endorser setup FAILED :-(")
 
             # set the endorser invite so the agent can auto-connect
             self.agent.endorser_invite = (
@@ -696,6 +694,7 @@ class AgentContainer:
                 public_did=self.public_did,
                 webhook_port=None,
                 mediator_agent=self.mediator_agent,
+                endorser_agent=self.endorser_agent,
             )
         elif self.mediation:
             # we need to pre-connect the agent to its mediator
