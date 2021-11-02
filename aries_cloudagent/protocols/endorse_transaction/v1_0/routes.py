@@ -1,6 +1,5 @@
 """Endorse Transaction handling admin routes."""
 
-import asyncio
 import json
 import logging
 
