@@ -324,21 +324,13 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_non_revox:
             INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
             verified = await self.verifier.verify_presentation(
-                deepcopy(INDY_PROOF_REQ_X),
+                INDY_PROOF_REQ_X,
                 INDY_PROOF_PRED_NAMES,
                 "schemas",
                 {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
-
-        INDY_PROOF_REQ_X["requested_attributes"]["18_uuid"]["non_revoked"]["from"] = 0
-        INDY_PROOF_REQ_X["requested_predicates"]["18_id_GE_uuid"]["non_revoked"][
-            "from"
-        ] = 0
-        INDY_PROOF_REQ_X["requested_predicates"]["18_busid_GE_uuid"]["non_revoked"][
-            "from"
-        ] = 0
 
         mock_verify.assert_called_once_with(
             json.dumps(INDY_PROOF_REQ_X),
