@@ -27,7 +27,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         """
         return "<{}>".format(self.__class__.__name__)
 
-    def non_revoc_intervals(self, pres_req: dict, pres: dict):
+    def non_revoc_intervals(self, pres_req: dict, pres: dict, cred_defs: dict):
         """
         Remove superfluous non-revocation intervals in presentation request.
 
@@ -47,10 +47,14 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         }.items():
             for (uuid, spec) in pres["requested_proof"].get(req_proof_key, {}).items():
                 if (
-                    pres["identifiers"][spec["sub_proof_index"]].get("timestamp")
-                    is None
+                    "revocation"
+                    not in cred_defs[
+                        pres["identifiers"][spec["sub_proof_index"]]["cred_def_id"]
+                    ]["value"]
                 ):
-                    if pres_req[pres_key][uuid].pop("non_revoked", None):
+                    if uuid in pres_req[pres_key] and pres_req[pres_key][uuid].pop(
+                        "non_revoked", None
+                    ):
                         LOGGER.info(
                             (
                                 "Amended presentation request (nonce=%s): removed "
