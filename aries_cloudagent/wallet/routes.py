@@ -198,92 +198,93 @@ async def wallet_did_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
+
     filter_did = request.query.get("did")
     filter_verkey = request.query.get("verkey")
     filter_method = DIDMethod.from_method(request.query.get("method"))
     filter_posture = DIDPosture.get(request.query.get("posture"))
     filter_key_type = KeyType.from_key_type(request.query.get("key_type"))
     results = []
-
-    if filter_posture is DIDPosture.PUBLIC:
-        public_did_info = await wallet.get_public_did()
-        if (
-            public_did_info
-            and (not filter_verkey or public_did_info.verkey == filter_verkey)
-            and (not filter_did or public_did_info.did == filter_did)
-            and (not filter_method or public_did_info.method == filter_method)
-            and (not filter_key_type or public_did_info.key_type == filter_key_type)
-        ):
-            results.append(format_did_info(public_did_info))
-    elif filter_posture is DIDPosture.POSTED:
-        results = []
-        posted_did_infos = await wallet.get_posted_dids()
-        for info in posted_did_infos:
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
+        if filter_posture is DIDPosture.PUBLIC:
+            public_did_info = await wallet.get_public_did()
             if (
-                (not filter_verkey or info.verkey == filter_verkey)
-                and (not filter_did or info.did == filter_did)
+                public_did_info
+                and (not filter_verkey or public_did_info.verkey == filter_verkey)
+                and (not filter_did or public_did_info.did == filter_did)
+                and (not filter_method or public_did_info.method == filter_method)
+                and (not filter_key_type or public_did_info.key_type == filter_key_type)
+            ):
+                results.append(format_did_info(public_did_info))
+        elif filter_posture is DIDPosture.POSTED:
+            results = []
+            posted_did_infos = await wallet.get_posted_dids()
+            for info in posted_did_infos:
+                if (
+                    (not filter_verkey or info.verkey == filter_verkey)
+                    and (not filter_did or info.did == filter_did)
+                    and (not filter_method or info.method == filter_method)
+                    and (not filter_key_type or info.key_type == filter_key_type)
+                ):
+                    results.append(format_did_info(info))
+        elif filter_did:
+            try:
+                info = await wallet.get_local_did(filter_did)
+            except WalletError:
+                # badly formatted DID or record not found
+                info = None
+            if (
+                info
+                and (not filter_verkey or info.verkey == filter_verkey)
                 and (not filter_method or info.method == filter_method)
                 and (not filter_key_type or info.key_type == filter_key_type)
+                and (
+                    filter_posture is None
+                    or (
+                        filter_posture is DIDPosture.WALLET_ONLY
+                        and not info.metadata.get("posted")
+                    )
+                )
             ):
                 results.append(format_did_info(info))
-    elif filter_did:
-        try:
-            info = await wallet.get_local_did(filter_did)
-        except WalletError:
-            # badly formatted DID or record not found
-            info = None
-        if (
-            info
-            and (not filter_verkey or info.verkey == filter_verkey)
-            and (not filter_method or info.method == filter_method)
-            and (not filter_key_type or info.key_type == filter_key_type)
-            and (
-                filter_posture is None
-                or (
-                    filter_posture is DIDPosture.WALLET_ONLY
-                    and not info.metadata.get("posted")
-                )
-            )
-        ):
-            results.append(format_did_info(info))
-    elif filter_verkey:
-        try:
-            info = await wallet.get_local_did_for_verkey(filter_verkey)
-        except WalletError:
-            info = None
-        if (
-            info
-            and (not filter_method or info.method == filter_method)
-            and (not filter_key_type or info.key_type == filter_key_type)
-            and (
-                filter_posture is None
-                or (
-                    filter_posture is DID_POSTURE.WALLET_ONLY
-                    and not info.metadata.get("posted")
-                )
-            )
-        ):
-            results.append(format_did_info(info))
-    else:
-        dids = await wallet.get_local_dids()
-        results = [
-            format_did_info(info)
-            for info in dids
+        elif filter_verkey:
+            try:
+                info = await wallet.get_local_did_for_verkey(filter_verkey)
+            except WalletError:
+                info = None
             if (
-                filter_posture is None
-                or DIDPosture.get(info.metadata) is DIDPosture.WALLET_ONLY
-            )
-            and (not filter_method or info.method == filter_method)
-            and (not filter_key_type or info.key_type == filter_key_type)
-        ]
+                info
+                and (not filter_method or info.method == filter_method)
+                and (not filter_key_type or info.key_type == filter_key_type)
+                and (
+                    filter_posture is None
+                    or (
+                        filter_posture is DID_POSTURE.WALLET_ONLY
+                        and not info.metadata.get("posted")
+                    )
+                )
+            ):
+                results.append(format_did_info(info))
+        else:
+            dids = await wallet.get_local_dids()
+            results = [
+                format_did_info(info)
+                for info in dids
+                if (
+                    filter_posture is None
+                    or DIDPosture.get(info.metadata) is DIDPosture.WALLET_ONLY
+                )
+                and (not filter_method or info.method == filter_method)
+                and (not filter_key_type or info.key_type == filter_key_type)
+            ]
 
     results.sort(
         key=lambda info: (DIDPosture.get(info["posture"]).ordinal, info["did"])
     )
+
     return web.json_response({"results": results})
 
 
@@ -322,16 +323,16 @@ async def wallet_create_did(request: web.BaseRequest):
                 f" support key type {key_type.key_type}"
             )
         )
+    info = None
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
+        try:
+            info = await wallet.create_local_did(method=method, key_type=key_type)
 
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
-    try:
-        info = await wallet.create_local_did(method=method, key_type=key_type)
-
-    except WalletError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+        except WalletError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"result": format_did_info(info)})
 
@@ -350,14 +351,15 @@ async def wallet_get_public_did(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
-    try:
-        info = await wallet.get_public_did()
-    except WalletError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    info = None
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
+        try:
+            info = await wallet.get_public_did()
+        except WalletError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"result": format_did_info(info)})
 
@@ -377,43 +379,48 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
+
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
+    wallet_id = context.settings.get("wallet.id")
 
-    # Multitenancy setup
-    multitenant_mgr = session.inject_or(BaseMultitenantManager)
-    wallet_id = session.settings.get("wallet.id")
-
+    info: DIDInfo = None
     try:
-        ledger = session.inject_or(BaseLedger)
+        ledger = context.profile.inject_or(BaseLedger)
         if not ledger:
             reason = "No ledger available"
-            if not session.settings.get_value("wallet.type"):
+            if not context.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
             raise web.HTTPForbidden(reason=reason)
 
         async with ledger:
             if not await ledger.get_key_for_did(did):
                 raise web.HTTPNotFound(reason=f"DID {did} is not posted to the ledger")
-
-        did_info = await wallet.get_local_did(did)
-        info = await wallet.set_public_did(did_info)
+        did_info: DIDInfo = None
+        async with context.session() as session:
+            wallet = session.inject_or(BaseWallet)
+            did_info = await wallet.get_local_did(did)
+            info = await wallet.set_public_did(did_info)
         if info:
             # Publish endpoint if necessary
             endpoint = did_info.metadata.get("endpoint")
 
             if not endpoint:
-                endpoint = session.settings.get("default_endpoint")
-                await wallet.set_did_endpoint(info.did, endpoint, ledger)
+                async with context.session() as session:
+                    wallet = session.inject_or(BaseWallet)
+                    endpoint = context.settings.get("default_endpoint")
+                    await wallet.set_did_endpoint(info.did, endpoint, ledger)
 
             async with ledger:
                 await ledger.update_endpoint_for_did(info.did, endpoint)
 
+            # Multitenancy setup
+            multitenant_mgr = context.profile.inject_or(BaseMultitenantManager)
             # Add multitenant relay mapping so implicit invitations are still routed
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(
@@ -441,27 +448,26 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
-
     body = await request.json()
     did = body["did"]
     endpoint = body.get("endpoint")
     endpoint_type = EndpointType.get(
         body.get("endpoint_type", EndpointType.ENDPOINT.w3c)
     )
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
 
-    try:
-        ledger = session.inject_or(BaseLedger)
-        await wallet.set_did_endpoint(did, endpoint, ledger, endpoint_type)
-    except WalletNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except LedgerConfigError as err:
-        raise web.HTTPForbidden(reason=err.roll_up) from err
-    except (LedgerError, WalletError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+        try:
+            ledger = context.profile.inject_or(BaseLedger)
+            await wallet.set_did_endpoint(did, endpoint, ledger, endpoint_type)
+        except WalletNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except LedgerConfigError as err:
+            raise web.HTTPForbidden(reason=err.roll_up) from err
+        except (LedgerError, WalletError) as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
 
@@ -481,20 +487,21 @@ async def wallet_get_did_endpoint(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
-    did = request.query.get("did")
-    if not did:
-        raise web.HTTPBadRequest(reason="Request query must include DID")
-    try:
-        did_info = await wallet.get_local_did(did)
-        endpoint = did_info.metadata.get("endpoint")
-    except WalletNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except WalletError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
+        did = request.query.get("did")
+        if not did:
+            raise web.HTTPBadRequest(reason="Request query must include DID")
+
+        try:
+            did_info = await wallet.get_local_did(did)
+            endpoint = did_info.metadata.get("endpoint")
+        except WalletNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except WalletError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"did": did, "endpoint": endpoint})
 
@@ -514,24 +521,26 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    wallet = session.inject_or(BaseWallet)
-    if not wallet:
-        raise web.HTTPForbidden(reason="No wallet available")
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
-    try:
-        did_info = await wallet.get_local_did(did)
-        if did_info.metadata.get("posted", False):
-            # call from ledger API instead to propagate through ledger NYM transaction
-            raise web.HTTPBadRequest(reason=f"DID {did} is posted to the ledger")
-        await wallet.rotate_did_keypair_start(did)  # do not take seed over the wire
-        await wallet.rotate_did_keypair_apply(did)
-    except WalletNotFoundError as err:
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    except WalletError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    async with context.session() as session:
+        wallet = session.inject_or(BaseWallet)
+        if not wallet:
+            raise web.HTTPForbidden(reason="No wallet available")
+        try:
+            did_info: DIDInfo = None
+            did_info = await wallet.get_local_did(did)
+            if did_info.metadata.get("posted", False):
+                # call from ledger API instead to propagate through ledger NYM transaction
+                raise web.HTTPBadRequest(reason=f"DID {did} is posted to the ledger")
+            await wallet.rotate_did_keypair_start(did)  # do not take seed over the wire
+            await wallet.rotate_did_keypair_apply(did)
+        except WalletNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except WalletError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
 
