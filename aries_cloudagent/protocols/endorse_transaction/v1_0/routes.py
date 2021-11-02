@@ -1,5 +1,6 @@
 """Endorse Transaction handling admin routes."""
 
+import asyncio
 import json
 import logging
 
@@ -713,6 +714,7 @@ def register_events(event_bus: EventBus):
 
 async def on_startup_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
+
     # auto setup is only for authors
     if not is_author_role(profile):
         return
@@ -734,7 +736,7 @@ async def on_startup_event(profile: Profile, event: Event):
         # there is already a connection
         return
 
-    endorser_did = profile.settings.get_value("endorser.endorser_did")
+    endorser_did = profile.settings.get_value("endorser.endorser_public_did")
     if not endorser_did:
         # TBD possibly bail at this point, we can't configure the connection
         # for now just continue
@@ -747,9 +749,10 @@ async def on_startup_event(profile: Profile, event: Event):
         conn_record = await conn_mgr.receive_invitation(
             invitation=ConnectionInvitation.from_url(endorser_invitation),
             auto_accept=True,
+            alias=endorser_alias,
         )
 
-        # configure the connection role and info
+        # configure the connection role and info (don't need to wait for the connection)
         transaction_mgr = TransactionManager(profile)
         await transaction_mgr.set_transaction_my_job(
             record=conn_record,
