@@ -166,8 +166,6 @@ class IndySdkIssuer(IndyIssuer):
         cred_ex_id: str,
         rev_reg_id: str = None,
         tails_file_path: str = None,
-        thread_id: str = None,
-        connection_id: str = None,
     ) -> Tuple[str, str]:
         """
         Create a credential.
@@ -229,8 +227,6 @@ class IndySdkIssuer(IndyIssuer):
                     cred_ex_id=cred_ex_id,
                     rev_reg_id=rev_reg_id,
                     cred_rev_id=cred_rev_id,
-                    thread_id=thread_id,
-                    connection_id=connection_id,
                 )
                 async with self.profile.session() as session:
                     await issuer_cr_rec.save(

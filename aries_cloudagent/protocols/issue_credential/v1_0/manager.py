@@ -621,8 +621,6 @@ class CredentialManager:
                     cred_ex_record.credential_exchange_id,
                     cred_ex_record.revoc_reg_id,
                     tails_path,
-                    cred_ex_record.thread_id,
-                    cred_ex_record.connection_id,
                 )
 
                 # If the rev reg is now full
