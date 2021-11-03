@@ -4,6 +4,9 @@ import json
 import logging
 from typing import Mapping, Sequence, Text
 
+from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
+    RevNotificationRecord,
+)
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer
@@ -32,7 +35,13 @@ class RevocationManager:
         self._logger = logging.getLogger(__name__)
 
     async def revoke_credential_by_cred_ex_id(
-        self, cred_ex_id: str, publish: bool = False
+        self,
+        cred_ex_id: str,
+        publish: bool = False,
+        notify: bool = False,
+        thread_id: str = None,
+        connection_id: str = None,
+        comment: str = None,
     ):
         """
         Revoke a credential by its credential exchange identifier at issue.
@@ -57,7 +66,13 @@ class RevocationManager:
                 f"credential exchange id {cred_ex_id}"
             ) from err
         return await self.revoke_credential(
-            rev_reg_id=rec.rev_reg_id, cred_rev_id=rec.cred_rev_id, publish=publish
+            rev_reg_id=rec.rev_reg_id,
+            cred_rev_id=rec.cred_rev_id,
+            publish=publish,
+            notify=notify,
+            thread_id=thread_id,
+            connection_id=connection_id,
+            comment=comment,
         )
 
     async def revoke_credential(
@@ -65,6 +80,10 @@ class RevocationManager:
         rev_reg_id: str,
         cred_rev_id: str,
         publish: bool = False,
+        notify: bool = False,
+        thread_id: str = None,
+        connection_id: str = None,
+        comment: str = None,
     ):
         """
         Revoke a credential.
@@ -86,6 +105,17 @@ class RevocationManager:
             raise RevocationManagerError(
                 f"No revocation registry record found for id {rev_reg_id}"
             )
+
+        if notify:
+            rev_notify_rec = RevNotificationRecord(
+                rev_reg_id=rev_reg_id,
+                cred_rev_id=cred_rev_id,
+                thread_id=thread_id,
+                connection_id=connection_id,
+                comment=comment,
+            )
+            async with self._profile.session() as session:
+                await rev_notify_rec.save(session, reason="New revaction notification")
 
         if publish:
             rev_reg = await revoc.get_ledger_registry(rev_reg_id)

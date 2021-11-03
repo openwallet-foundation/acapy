@@ -12,9 +12,9 @@ from .....storage.base import StorageDuplicateError
 from ..messages.revoke import Revoke
 
 
-class RevocationNotificationRecord(BaseRecord):
+class RevNotificationRecord(BaseRecord):
     class Meta:
-        schema_class = "RevocationNotificationRecordSchema"
+        schema_class = "RevNotificationRecordSchema"
 
     RECORD_TYPE = "revocation_notification"
     RECORD_ID_NAME = "revocation_notification_id"
@@ -57,7 +57,7 @@ class RevocationNotificationRecord(BaseRecord):
         *,
         cred_rev_id: str = None,
         rev_reg_id: str = None,
-    ) -> "RevocationNotificationRecord":
+    ) -> "RevNotificationRecord":
         """Retrieve issuer cred rev records by cred def id and/or rev reg id.
 
         Args:
@@ -74,7 +74,7 @@ class RevocationNotificationRecord(BaseRecord):
         result = await cls.query(session, tag_filter)
         if len(result) > 1:
             raise StorageDuplicateError(
-                "More than one RevocationNotificationRecord was found for the given IDs"
+                "More than one RevNotificationRecord was found for the given IDs"
             )
         return result[0]
 
@@ -90,9 +90,9 @@ class RevocationNotificationRecord(BaseRecord):
         )
 
 
-class RevocationNotificationRecordSchema(BaseRecordSchema):
+class RevNotificationRecordSchema(BaseRecordSchema):
     class Meta:
-        model_class = "RevocationNotificationRecord"
+        model_class = "RevNotificationRecord"
         unknown = EXCLUDE
 
     rev_reg_id = fields.Str(
