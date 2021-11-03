@@ -7,7 +7,7 @@ from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
 from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
-from ....revocation.util import ISSUER_REVOKE_EVENT, REVOCATION_EVENT_PREFIX
+from ....revocation.util import REVOCATION_PUBLISHED_EVENT, REVOCATION_EVENT_PREFIX
 from ....storage.error import StorageError, StorageNotFoundError
 from .models.rev_notification_record import RevNotificationRecord
 
@@ -16,7 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 def register_events(event_bus: EventBus):
     event_bus.subscribe(
-        re.compile(f"^{REVOCATION_EVENT_PREFIX}{ISSUER_REVOKE_EVENT}.*"),
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}.*"),
         on_issuer_revoke_event,
     )
 

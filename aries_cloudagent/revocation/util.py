@@ -15,7 +15,7 @@ EVENT_LISTENER_PATTERN = re.compile(f"^{REVOCATION_EVENT_PREFIX}(.*)?$")
 REVOCATION_REG_EVENT = "REGISTRY"
 REVOCATION_ENTRY_EVENT = "ENTRY"
 REVOCATION_TAILS_EVENT = "TAILS"
-ISSUER_REVOKE_EVENT = "issuer::revoke"
+REVOCATION_PUBLISHED_EVENT = "published"
 
 
 async def notify_revocation_reg_event(
@@ -78,14 +78,14 @@ async def notify_revocation_tails_file_event(
     )
 
 
-async def notify_issuer_credential_revoked_event(
+async def notify_revocation_published_event(
     profile: Profile,
     rev_reg_id: str,
     cred_rev_id: str,
     cred_rev_record: IssuerCredRevRecord = None,
 ):
     """Send notification of credential revoked as issuer."""
-    topic = f"{REVOCATION_EVENT_PREFIX}{ISSUER_REVOKE_EVENT}::{cred_rev_id}"
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::{cred_rev_id}"
     if not cred_rev_record:
         async with profile.session() as session:
             cred_rev_record = await IssuerCredRevRecord.retrieve_by_ids(
