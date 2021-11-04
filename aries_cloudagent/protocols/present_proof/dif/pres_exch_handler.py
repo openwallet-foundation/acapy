@@ -298,6 +298,7 @@ class DIFPresExchHandler:
             )
             return requirement
         requirement = Requirement(
+            count=len(srs),
             nested_req=[],
         )
         for submission_requirement in srs:

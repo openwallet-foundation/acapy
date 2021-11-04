@@ -1330,12 +1330,14 @@ pres_exch_multiple_srs_met = """
       ],
       "schema": {
         "oneOf": [
-            {
-                "uri":"https://www.w3.org/Test#Test"
-            },
-            {
-                "uri":"https://w3id.org/citizenship#PermanentResidentCard"
-            }
+            [
+                {
+                    "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                },
+                {
+                    "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+                }
+            ]
         ]
       },
       "constraints":{
@@ -1474,19 +1476,11 @@ pres_exch_datetime_maximum_met = """
       "group":[
         "A"
       ],
-      "schema":[
-        {
-          "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
-        },
-        {
-          "uri":"https://w3id.org/citizenship#PermanentResidentCard"
-        }
-      ],
       "schema": {
         "oneOf": [
             [
                 {
-                "uri":"https://www.w3.org/Test#Test"
+                    "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
                 },
                 {
                     "uri":"https://w3id.org/citizenship#PermanentResidentCard"
@@ -2352,8 +2346,8 @@ def get_test_data():
             )
         )
     pd_json_list = [
-        (pres_exch_multiple_srs_not_met, 6),
-        (pres_exch_multiple_srs_met, 6),
+        (pres_exch_multiple_srs_not_met, 0),
+        (pres_exch_multiple_srs_met, 4),
         (pres_exch_datetime_minimum_met, 6),
         (pres_exch_datetime_maximum_met, 6),
         (pres_exch_nested_srs_a, 4),
