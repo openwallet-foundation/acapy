@@ -376,6 +376,7 @@ async def revoke(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     cred_ex_id = body.get("cred_ex_id")
+    body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
 
     rev_manager = RevocationManager(context.profile)
     try:
