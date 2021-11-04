@@ -343,6 +343,7 @@ async def present_proof_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
 
     tag_filter = {}
     if "thread_id" in request.query and request.query["thread_id"] != "":
@@ -354,7 +355,7 @@ async def present_proof_list(request: web.BaseRequest):
     }
 
     try:
-        async with context.session() as session:
+        async with profile.session() as session:
             records = await V20PresExRecord.query(
                 session=session,
                 tag_filter=tag_filter,
@@ -385,12 +386,13 @@ async def present_proof_retrieve(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     pres_ex_id = request.match_info["pres_ex_id"]
     pres_ex_record = None
     try:
-        async with context.session() as session:
+        async with profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
         result = pres_ex_record.serialize()
     except StorageNotFoundError as err:
@@ -399,7 +401,7 @@ async def present_proof_retrieve(request: web.BaseRequest):
     except (BaseModelError, StorageError) as err:
         # present but broken or hopeless: protocol error
         if pres_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -431,6 +433,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     pres_ex_id = request.match_info["pres_ex_id"]
@@ -438,7 +441,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     pres_referents = (r.strip() for r in referents.split(",")) if referents else ()
 
     try:
-        async with context.session() as session:
+        async with profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -454,7 +457,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    indy_holder = context.profile.inject(IndyHolder)
+    indy_holder = profile.inject(IndyHolder)
     indy_credentials = []
     # INDY
     try:
@@ -473,7 +476,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             )
     except IndyHolderError as err:
         if pres_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -483,7 +486,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             outbound_handler,
         )
 
-    dif_holder = context.profile.inject(VCHolder)
+    dif_holder = profile.inject(VCHolder)
     dif_credentials = []
     dif_cred_value_list = []
     # DIF
@@ -634,7 +637,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
         V20PresFormatHandlerError,
     ) as err:
         if pres_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -676,6 +679,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -685,16 +689,16 @@ async def present_proof_send_proposal(request: web.BaseRequest):
 
     pres_proposal = body.get("presentation_proposal")
     conn_record = None
-    async with context.session() as session:
-        try:
+    try:
+        async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-            pres_proposal_message = V20PresProposal(
-                comment=comment,
-                **_formats_attach(pres_proposal, PRES_20_PROPOSAL, "proposals"),
-            )
-        except (BaseModelError, StorageError) as err:
-            # other party does not care about our false protocol start
-            raise web.HTTPBadRequest(reason=err.roll_up)
+        pres_proposal_message = V20PresProposal(
+            comment=comment,
+            **_formats_attach(pres_proposal, PRES_20_PROPOSAL, "proposals"),
+        )
+    except (BaseModelError, StorageError) as err:
+        # other party does not care about our false protocol start
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     if not conn_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
@@ -708,7 +712,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
 
-    pres_manager = V20PresManager(context.profile)
+    pres_manager = V20PresManager(profile)
     pres_ex_record = None
     try:
         pres_ex_record = await pres_manager.create_exchange_for_proposal(
@@ -719,7 +723,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
         if pres_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
@@ -759,6 +763,7 @@ async def present_proof_create_request(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -779,7 +784,7 @@ async def present_proof_create_request(request: web.BaseRequest):
         trace_msg,
     )
 
-    pres_manager = V20PresManager(context.profile)
+    pres_manager = V20PresManager(profile)
     pres_ex_record = None
     try:
         pres_ex_record = await pres_manager.create_exchange_for_request(
@@ -789,7 +794,7 @@ async def present_proof_create_request(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
         if pres_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
@@ -826,16 +831,17 @@ async def present_proof_send_free_request(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
     connection_id = body.get("connection_id")
-    async with context.session() as session:
-        try:
+    try:
+        async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-        except StorageNotFoundError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except StorageNotFoundError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not conn_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
@@ -855,7 +861,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
         trace_msg,
     )
 
-    pres_manager = V20PresManager(context.profile)
+    pres_manager = V20PresManager(profile)
     pres_ex_record = None
     try:
         pres_ex_record = await pres_manager.create_exchange_for_request(
@@ -865,7 +871,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
         if pres_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
@@ -903,37 +909,39 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
     pres_ex_id = request.match_info["pres_ex_id"]
     pres_ex_record = None
-    async with context.session() as session:
-        try:
+    try:
+        async with profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
-        if pres_ex_record.state != (V20PresExRecord.STATE_PROPOSAL_RECEIVED):
-            raise web.HTTPBadRequest(
-                reason=(
-                    f"Presentation exchange {pres_ex_id} "
-                    f"in {pres_ex_record.state} state "
-                    f"(must be {V20PresExRecord.STATE_PROPOSAL_RECEIVED})"
-                )
+    if pres_ex_record.state != (V20PresExRecord.STATE_PROPOSAL_RECEIVED):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Presentation exchange {pres_ex_id} "
+                f"in {pres_ex_record.state} state "
+                f"(must be {V20PresExRecord.STATE_PROPOSAL_RECEIVED})"
             )
-        connection_id = pres_ex_record.connection_id
+        )
+    connection_id = pres_ex_record.connection_id
 
-        try:
+    try:
+        async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except StorageError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not conn_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-    pres_manager = V20PresManager(context.profile)
+    pres_manager = V20PresManager(profile)
     try:
         (
             pres_ex_record,
@@ -942,7 +950,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (BaseModelError, LedgerError, StorageError) as err:
         if pres_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cares that we cannot continue protocol
         await report_problem(
@@ -988,6 +996,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
@@ -1006,31 +1015,32 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         )
     comment = body.get("comment")
     pres_ex_record = None
-    async with context.session() as session:
-        try:
+    try:
+        async with profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
-        if pres_ex_record.state != (V20PresExRecord.STATE_REQUEST_RECEIVED):
-            raise web.HTTPBadRequest(
-                reason=(
-                    f"Presentation exchange {pres_ex_id} "
-                    f"in {pres_ex_record.state} state "
-                    f"(must be {V20PresExRecord.STATE_REQUEST_RECEIVED})"
-                )
+    if pres_ex_record.state != (V20PresExRecord.STATE_REQUEST_RECEIVED):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Presentation exchange {pres_ex_id} "
+                f"in {pres_ex_record.state} state "
+                f"(must be {V20PresExRecord.STATE_REQUEST_RECEIVED})"
             )
+        )
 
-        connection_id = pres_ex_record.connection_id
-        try:
+    connection_id = pres_ex_record.connection_id
+    try:
+        async with profile.session() as session:
             conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-        except StorageNotFoundError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except StorageNotFoundError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if not conn_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-    pres_manager = V20PresManager(context.profile)
+    pres_manager = V20PresManager(profile)
     try:
         request_data = {fmt: body.get(fmt)}
         pres_ex_record, pres_message = await pres_manager.create_pres(
@@ -1047,7 +1057,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         StorageError,
         WalletNotFoundError,
     ) as err:
-        async with context.session() as session:
+        async with profile.session() as session:
             await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cares that we cannot continue protocol
         await report_problem(
@@ -1091,33 +1101,34 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     pres_ex_id = request.match_info["pres_ex_id"]
 
     pres_ex_record = None
-    async with context.session() as session:
-        try:
+    try:
+        async with profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
-        if pres_ex_record.state != (V20PresExRecord.STATE_PRESENTATION_RECEIVED):
-            raise web.HTTPBadRequest(
-                reason=(
-                    f"Presentation exchange {pres_ex_id} "
-                    f"in {pres_ex_record.state} state "
-                    f"(must be {V20PresExRecord.STATE_PRESENTATION_RECEIVED})"
-                )
+    if pres_ex_record.state != (V20PresExRecord.STATE_PRESENTATION_RECEIVED):
+        raise web.HTTPBadRequest(
+            reason=(
+                f"Presentation exchange {pres_ex_id} "
+                f"in {pres_ex_record.state} state "
+                f"(must be {V20PresExRecord.STATE_PRESENTATION_RECEIVED})"
             )
+        )
 
-    pres_manager = V20PresManager(context.profile)
+    pres_manager = V20PresManager(profile)
     try:
         pres_ex_record = await pres_manager.verify_pres(pres_ex_record)
         result = pres_ex_record.serialize()
     except (BaseModelError, LedgerError, StorageError) as err:
         if pres_ex_record:
-            async with context.session() as session:
+            async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cares that we cannot continue protocol
         await report_problem(
@@ -1161,7 +1172,7 @@ async def present_proof_problem_report(request: web.BaseRequest):
     description = body["description"]
 
     try:
-        async with await context.session() as session:
+        async with await context.profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
         report = problem_report_for_record(pres_ex_record, description)
         await pres_ex_record.save_error_state(
@@ -1197,7 +1208,7 @@ async def present_proof_remove(request: web.BaseRequest):
     pres_ex_id = request.match_info["pres_ex_id"]
     pres_ex_record = None
     try:
-        async with context.session() as session:
+        async with context.profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
             await pres_ex_record.delete_record(session)
     except StorageNotFoundError as err:

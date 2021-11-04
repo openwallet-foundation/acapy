@@ -14,10 +14,13 @@ from ..wire_format import BaseWireFormat
 class BaseOutboundTransport(ABC):
     """Base outbound transport class."""
 
-    def __init__(self, wire_format: BaseWireFormat = None) -> None:
+    def __init__(
+        self, wire_format: BaseWireFormat = None, root_profile: Profile = None
+    ) -> None:
         """Initialize a `BaseOutboundTransport` instance."""
         self._collector = None
         self._wire_format = wire_format
+        self.root_profile = root_profile
 
     @property
     def collector(self) -> Collector:

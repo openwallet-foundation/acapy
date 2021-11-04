@@ -19,6 +19,8 @@ from runners.support.agent import (  # noqa:E402
     default_genesis_txns,
     start_mediator_agent,
     connect_wallet_to_mediator,
+    start_endorser_agent,
+    connect_wallet_to_endorser,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
     DID_METHOD_SOV,
@@ -617,6 +619,7 @@ class AgentContainer:
         the_agent: DemoAgent = None,
         schema_name: str = None,
         schema_attrs: list = None,
+        create_endorser_agent: bool = False,
     ):
         """Startup agent(s), register DID, schema, cred def as appropriate."""
 
@@ -679,6 +682,17 @@ class AgentContainer:
             # we need to pre-connect the agent to its mediator
             if not await connect_wallet_to_mediator(self.agent, self.mediator_agent):
                 raise Exception("Mediation setup FAILED :-(")
+
+        if create_endorser_agent:
+            self.endorser_agent = await start_endorser_agent(
+                self.start_port + 7, self.genesis_txns
+            )
+            if not self.endorser_agent:
+                raise Exception("Endorser agent returns None :-(")
+            if not await connect_wallet_to_endorser(self.agent, self.endorser_agent):
+                raise Exception("Endorser setup FAILED :-(")
+        else:
+            self.endorser_agent = None
 
         if self.public_did and self.cred_type == CRED_FORMAT_JSON_LD:
             # create did of appropriate type
@@ -846,6 +860,9 @@ class AgentContainer:
 
         terminated = True
         try:
+            if self.endorser_agent:
+                log_msg("Shutting down endorser agent ...")
+                await self.endorser_agent.terminate()
             if self.mediator_agent:
                 log_msg("Shutting down mediator agent ...")
                 await self.mediator_agent.terminate()

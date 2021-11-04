@@ -27,7 +27,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         """
         return "<{}>".format(self.__class__.__name__)
 
-    def non_revoc_intervals(self, pres_req: dict, pres: dict):
+    def non_revoc_intervals(self, pres_req: dict, pres: dict, cred_defs: dict):
         """
         Remove superfluous non-revocation intervals in presentation request.
 
@@ -47,10 +47,14 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         }.items():
             for (uuid, spec) in pres["requested_proof"].get(req_proof_key, {}).items():
                 if (
-                    pres["identifiers"][spec["sub_proof_index"]].get("timestamp")
-                    is None
+                    "revocation"
+                    not in cred_defs[
+                        pres["identifiers"][spec["sub_proof_index"]]["cred_def_id"]
+                    ]["value"]
                 ):
-                    if pres_req[pres_key][uuid].pop("non_revoked", None):
+                    if uuid in pres_req[pres_key] and pres_req[pres_key][uuid].pop(
+                        "non_revoked", None
+                    ):
                         LOGGER.info(
                             (
                                 "Amended presentation request (nonce=%s): removed "
@@ -116,7 +120,14 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
 
             if timestamp > now + 300:  # allow 5 min for clock skew
                 raise ValueError(f"Timestamp {timestamp} is in the future")
-            if timestamp < rev_reg_defs[rev_reg_id]["txnTime"]:
+            reg_def = rev_reg_defs.get(rev_reg_id)
+            if not reg_def:
+                raise ValueError(f"Missing registry definition for '{rev_reg_id}'")
+            if "txnTime" not in reg_def:
+                raise ValueError(
+                    f"Missing txnTime for registry definition '{rev_reg_id}'"
+                )
+            if timestamp < reg_def["txnTime"]:
                 raise ValueError(
                     f"Timestamp {timestamp} predates rev reg {rev_reg_id} creation"
                 )

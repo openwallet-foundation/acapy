@@ -9,7 +9,7 @@ from ...messaging.valid import (
     INDY_CRED_DEF_ID,
     INDY_REV_REG_ID,
     INDY_SCHEMA_ID,
-    NUM_STR_WHOLE,
+    NUM_STR_ANY,
 )
 
 
@@ -44,7 +44,7 @@ class IndyAttrValueSchema(BaseModelSchema):
     encoded = fields.Str(
         required=True,
         description="Attribute encoded value",
-        **NUM_STR_WHOLE,
+        **NUM_STR_ANY,
     )
 
 

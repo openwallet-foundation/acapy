@@ -108,8 +108,6 @@ class RevocationManager:
     async def publish_pending_revocations(
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,
-        write_ledger: bool = True,
-        endorser_did: str = None,
     ) -> Mapping[Text, Sequence[Text]]:
         """
         Publish pending revocations to the ledger.
@@ -131,46 +129,39 @@ class RevocationManager:
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
                     - no pending revocations from any other revocation registries.
-            write_ledger: wether to write the transaction to the ledger, or prepare a
-                transaction to be endorsed
-            endorser_did: the did of the endorser, if endorsing the transaction
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
         result = {}
         issuer = self._profile.inject(IndyIssuer)
 
-        txn = await self._profile.transaction()
-        issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(txn)
-        for issuer_rr_rec in issuer_rr_recs:
-            rrid = issuer_rr_rec.revoc_reg_id
-            crids = []
-            if not rrid2crid:
-                crids = issuer_rr_rec.pending_pub
-            elif rrid in rrid2crid:
-                crids = [
-                    crid
-                    for crid in issuer_rr_rec.pending_pub
-                    if crid in (rrid2crid[rrid] or []) or not rrid2crid[rrid]
-                ]
-            if crids:
-                # FIXME - must use the same transaction
-                (delta_json, failed_crids) = await issuer.revoke_credentials(
-                    issuer_rr_rec.revoc_reg_id,
-                    issuer_rr_rec.tails_local_path,
-                    crids,
-                )
-                issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
-                send_entry_result = await issuer_rr_rec.send_entry(
-                    self._profile, write_ledger=write_ledger, endorser_did=endorser_did
-                )
-                if endorser_did and not write_ledger:
-                    return send_entry_result
-
-                published = [crid for crid in crids if crid not in failed_crids]
-                result[issuer_rr_rec.revoc_reg_id] = published
-                await issuer_rr_rec.clear_pending(txn, published)
-                await txn.commit()
+        async with self._profile.transaction() as txn:
+            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(txn)
+            for issuer_rr_rec in issuer_rr_recs:
+                rrid = issuer_rr_rec.revoc_reg_id
+                crids = []
+                if not rrid2crid:
+                    crids = issuer_rr_rec.pending_pub
+                elif rrid in rrid2crid:
+                    crids = [
+                        crid
+                        for crid in issuer_rr_rec.pending_pub
+                        if crid in (rrid2crid[rrid] or []) or not rrid2crid[rrid]
+                    ]
+                if crids:
+                    # FIXME - must use the same transaction
+                    (delta_json, failed_crids) = await issuer.revoke_credentials(
+                        issuer_rr_rec.revoc_reg_id,
+                        issuer_rr_rec.tails_local_path,
+                        crids,
+                        transaction=txn,
+                    )
+                    issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
+                    await issuer_rr_rec.send_entry(self._profile)
+                    published = [crid for crid in crids if crid not in failed_crids]
+                    result[issuer_rr_rec.revoc_reg_id] = published
+                    await issuer_rr_rec.clear_pending(txn, published)
+                    await txn.commit()
 
         return result
 

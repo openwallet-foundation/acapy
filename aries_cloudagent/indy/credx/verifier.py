@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from indy_credx import Presentation
+from indy_credx import CredxError, Presentation
 
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
@@ -48,7 +48,7 @@ class IndyCredxVerifier(IndyVerifier):
         """
 
         try:
-            self.non_revoc_intervals(pres_req, pres)
+            self.non_revoc_intervals(pres_req, pres, credential_definitions)
             await self.check_timestamps(self.ledger, pres_req, pres, rev_reg_defs)
             await self.pre_verify(pres_req, pres)
         except ValueError as err:
@@ -69,7 +69,7 @@ class IndyCredxVerifier(IndyVerifier):
                 rev_reg_defs.values(),
                 rev_reg_entries,
             )
-        except Exception:
+        except CredxError:
             LOGGER.exception(
                 f"Validation of presentation on nonce={pres_req['nonce']} "
                 "failed with error"

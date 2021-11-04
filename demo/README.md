@@ -24,6 +24,7 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Multi-tenancy](#multi-tenancy)
   - [DID Exchange](#did-exchange)
   - [Endorser](#endorser)
+  - [Run Askar Backend](#run-askar-backend)
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
 - [OpenAPI (Swagger) Demo](#openapi-swagger-demo)
 - [Performance Demo](#performance-demo)
@@ -244,6 +245,14 @@ Note that you can't (currently) use the DID Exchange protocol to connect with an
 ### Endorser
 
 This is described in [Endorser.md](Endorser.md)
+
+### Run Askar Backend
+
+This runs using the askar libraries instead of indy-sdk:
+
+```bash
+./run_demo faber --wallet-type askar
+```
 
 ### Mediation
 
