@@ -34,6 +34,7 @@ from ..pres_exch import (
     Requirement,
     Filter,
     SchemaInputDescriptor,
+    SchemasInputDescriptorFilter,
     Constraints,
     DIFField,
 )
@@ -1562,12 +1563,19 @@ class TestPresExchHandler:
     async def test_filter_schema(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(profile)
-        tmp_schema_list = [
-            SchemaInputDescriptor(
-                uri="test123",
-                required=True,
-            )
-        ]
+        tmp_schema_list = SchemasInputDescriptorFilter(
+            oneOf=True,
+            uri_groups=[
+                [
+                    SchemaInputDescriptor(
+                        uri="test123",
+                        required=True,
+                    ),
+                    SchemaInputDescriptor(uri="test321"),
+                ],
+                [SchemaInputDescriptor(uri="test789")],
+            ],
+        )
         assert (
             len(await dif_pres_exch_handler.filter_schema(cred_list, tmp_schema_list))
             == 0
