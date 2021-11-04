@@ -12,6 +12,8 @@ class Revoke(AgentMessage):
     """Class representing revoke message."""
 
     class Meta:
+        """Revoke Meta."""
+
         handler_class = HANDLER_CLASS
         message_type = REVOKE
         schema_class = "RevokeSchema"
@@ -28,6 +30,8 @@ class RevokeSchema(AgentMessageSchema):
     """Schema of Revoke message."""
 
     class Meta:
+        """RevokeSchema Meta."""
+
         model_class = Revoke
 
     # TODO support please ack

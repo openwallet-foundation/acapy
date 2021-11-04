@@ -19,6 +19,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def register_events(event_bus: EventBus):
+    """Register to handle events."""
     event_bus.subscribe(
         re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}.*"),
         on_issuer_revoke_event,

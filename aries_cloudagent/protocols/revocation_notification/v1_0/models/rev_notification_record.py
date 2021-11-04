@@ -13,7 +13,11 @@ from ..messages.revoke import Revoke
 
 
 class RevNotificationRecord(BaseRecord):
+    """Revocation Notification Record."""
+
     class Meta:
+        """RevNotificationRecord Meta."""
+
         schema_class = "RevNotificationRecordSchema"
 
     RECORD_TYPE = "revocation_notification"
@@ -35,6 +39,7 @@ class RevNotificationRecord(BaseRecord):
         comment: str = None,
         **kwargs,
     ):
+        """Construct record."""
         super().__init__(revocation_notification_id, **kwargs)
         self.rev_reg_id = rev_reg_id
         self.cred_rev_id = cred_rev_id
@@ -44,10 +49,12 @@ class RevNotificationRecord(BaseRecord):
 
     @property
     def revocation_notification_id(self) -> Optional[str]:
+        """Return record id."""
         return self._id
 
     @property
     def record_value(self) -> dict:
+        """Return record value."""
         return {prop: getattr(self, prop) for prop in ("thread_id", "comment")}
 
     @classmethod
@@ -95,6 +102,7 @@ class RevNotificationRecord(BaseRecord):
         return await cls.query(session, tag_filter)
 
     def to_message(self):
+        """Return a revocation notification constructed from this record."""
         if not self.thread_id:
             raise ValueError(
                 "No thread ID set on revocation notification record, "
@@ -107,7 +115,11 @@ class RevNotificationRecord(BaseRecord):
 
 
 class RevNotificationRecordSchema(BaseRecordSchema):
+    """Revocation Notification Record Schema."""
+
     class Meta:
+        """RevNotificationRecordSchema Meta."""
+
         model_class = "RevNotificationRecord"
         unknown = EXCLUDE
 
