@@ -1283,6 +1283,11 @@ class EndorserAgent(DemoAgent):
         return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_connections(self, message):
+        # inviter:
+        conn_id = message["connection_id"]
+        if message["state"] == "invitation":
+            self.connection_id = conn_id
+
         # author responds to a multi-use invitation
         if message["state"] == "request":
             self.endorser_connection_id = message["connection_id"]
@@ -1307,7 +1312,7 @@ class EndorserAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def start_endorser_agent(start_port, genesis):
+async def start_endorser_agent(start_port, genesis, use_did_exchange: bool = True):
     # start mediator agent
     endorser_agent = EndorserAgent(
         start_port,
@@ -1326,11 +1331,19 @@ async def start_endorser_agent(start_port, genesis):
     log_msg("Generate endorser multi-use invite ...")
     endorser_agent.endorser_connection_id = None
     endorser_agent.endorser_public_did = None
-    endorser_connection = await endorser_agent.admin_POST(
-        "/connections/create-invitation?alias=EndorserMultiuse&auto_accept=true&multi_use=true"
-    )
+    endorser_agent.use_did_exchange = use_did_exchange
+    if use_did_exchange:
+        endorser_connection = await endorser_agent.admin_POST(
+            "/out-of-band/create-invitation",
+            {"handshake_protocols": ["rfc23"]},
+            params={"alias": "EndorserMultiuse", "auto_accept": "true", "multi_use": "true"},
+        )
+    else:
+        # old-style connection
+        endorser_connection = await endorser_agent.admin_POST(
+            "/connections/create-invitation?alias=EndorserMultiuse&auto_accept=true&multi_use=true"
+        )
     endorser_agent.endorser_multi_connection = endorser_connection
-    endorser_agent.endorser_connection_id = endorser_connection["connection_id"]
     endorser_agent.endorser_multi_invitation = endorser_connection["invitation"]
     endorser_agent.endorser_multi_invitation_url = endorser_connection["invitation_url"]
 
@@ -1352,11 +1365,18 @@ async def connect_wallet_to_endorser(agent, endorser_agent):
 
     # accept the invitation
     log_msg("Accept endorser invite ...")
-    connection = await agent.admin_POST(
-        "/connections/receive-invitation",
-        endorser_connection["invitation"],
-        params={"alias": "endorser"},
-    )
+    if endorser_agent.use_did_exchange:
+        connection = await agent.admin_POST(
+            "/out-of-band/receive-invitation",
+            endorser_connection["invitation"],
+            params={"alias": "endorser"},
+        )
+    else:
+        connection = await agent.admin_POST(
+            "/connections/receive-invitation",
+            endorser_connection["invitation"],
+            params={"alias": "endorser"},
+        )
     agent.endorser_connection_id = connection["connection_id"]
 
     log_msg("Await endorser connection status ...")

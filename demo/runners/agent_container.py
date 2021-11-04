@@ -596,6 +596,7 @@ class AgentContainer:
         self.multitenant = multitenant
         self.mediation = mediation
         self.use_did_exchange = use_did_exchange
+        print("Setting use_did_exchange:", self.use_did_exchange)
         self.wallet_type = wallet_type
         self.public_did = public_did
         self.seed = seed
@@ -658,7 +659,9 @@ class AgentContainer:
         # multi-use invitation to auto-connect the agent on startup
         if create_endorser_agent:
             self.endorser_agent = await start_endorser_agent(
-                self.start_port + 7, self.genesis_txns
+                self.start_port + 7,
+                self.genesis_txns,
+                use_did_exchange=self.use_did_exchange,
             )
             if not self.endorser_agent:
                 raise Exception("Endorser agent returns None :-(")
@@ -1157,7 +1160,7 @@ async def create_agent_with_args(args, ident: str = None):
         multitenant=args.multitenant,
         mediation=args.mediation,
         cred_type=cred_type,
-        use_did_exchange=args.did_exchange if ("did_exchange" in args) else (aip == 20),
+        use_did_exchange=(aip == 20) if ("aip" in args) else args.did_exchange,
         wallet_type=arg_file_dict.get("wallet-type") or args.wallet_type,
         public_did=public_did,
         seed="random" if public_did else None,

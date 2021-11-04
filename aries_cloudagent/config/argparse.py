@@ -1541,7 +1541,7 @@ class EndorsementGroup(ArgumentGroup):
             metavar="<endorser-invitation>",
             env_var="ACAPY_ENDORSER_INVITATION",
             help=(
-                "For transaction Authors, specify the the invitation used to "
+                "For transaction Authors, specify the invitation used to "
                 "connect to the Endorser agent who will be endorsing transactions. "
                 "Note this is a multi-use invitation created by the Endorser agent."
             ),
@@ -1552,7 +1552,7 @@ class EndorsementGroup(ArgumentGroup):
             metavar="<endorser-public-did>",
             env_var="ACAPY_ENDORSER_PUBLIC_DID",
             help=(
-                "For transaction Authors, specify the the public DID of the Endorser "
+                "For transaction Authors, specify the public DID of the Endorser "
                 "agent who will be endorsing transactions."
             ),
         )
@@ -1562,7 +1562,7 @@ class EndorsementGroup(ArgumentGroup):
             metavar="<endorser-alias>",
             env_var="ACAPY_ENDORSER_ALIAS",
             help=(
-                "For transaction Authors, specify the the alias of the Endorser "
+                "For transaction Authors, specify the alias of the Endorser "
                 "connection that will be used to endorse transactions."
             ),
         )
@@ -1615,15 +1615,6 @@ class EndorsementGroup(ArgumentGroup):
             elif args.endorser_protocol_role == ENDORSER_ENDORSER:
                 settings["endorser.endorser"] = True
 
-        if args.endorser_invitation:
-            if settings["endorser.author"]:
-                settings["endorser.endorser_invitation"] = args.endorser_invitation
-            else:
-                raise ArgsParseError(
-                    "Parameter --endorser-public-did should only be set for transaction "
-                    "Authors"
-                )
-
         if args.endorser_public_did:
             if settings["endorser.author"]:
                 settings["endorser.endorser_public_did"] = args.endorser_public_did
@@ -1639,6 +1630,25 @@ class EndorsementGroup(ArgumentGroup):
             else:
                 raise ArgsParseError(
                     "Parameter --endorser-alias should only be set for transaction "
+                    "Authors"
+                )
+
+        if args.endorser_invitation:
+            if settings["endorser.author"]:
+                if not settings.get("endorser.endorser_public_did"):
+                    raise ArgsParseError(
+                        "Parameter --endorser-public-did must be provided if "
+                        "--endorser-invitation is set."
+                    )
+                if not settings.get("endorser.endorser_alias"):
+                    raise ArgsParseError(
+                        "Parameter --endorser-alias must be provided if "
+                        "--endorser-invitation is set."
+                    )
+                settings["endorser.endorser_invitation"] = args.endorser_invitation
+            else:
+                raise ArgsParseError(
+                    "Parameter --endorser-invitation should only be set for transaction "
                     "Authors"
                 )
 

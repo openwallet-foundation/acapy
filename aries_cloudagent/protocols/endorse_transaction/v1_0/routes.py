@@ -27,6 +27,8 @@ from ....protocols.connections.v1_0.manager import ConnectionManager
 from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
+from ....protocols.out_of_band.v1_0.manager import OutOfBandManager
+from ....protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ....storage.error import StorageError, StorageNotFoundError
 
 from .manager import TransactionManager, TransactionManagerError
@@ -728,6 +730,7 @@ async def on_startup_event(profile: Profile, event: Event):
     endorser_alias = profile.settings.get_value("endorser.endorser_alias")
     if not endorser_alias:
         # no alias is specified for the endorser connection
+        # note that alias is required if invitation is specified
         return
 
     connection_id = await get_endorser_connection_id(profile)
@@ -737,19 +740,33 @@ async def on_startup_event(profile: Profile, event: Event):
 
     endorser_did = profile.settings.get_value("endorser.endorser_public_did")
     if not endorser_did:
-        # TBD possibly bail at this point, we can't configure the connection
-        # for now just continue
-        pass
+        # no DID, we can connect but we can't properly setup the connection metadata
+        # note that DID is required if invitation is specified
+        return
 
     try:
         # OK, we are an author, we have no endorser connection but we have enough info
         # to automatically initiate the connection
-        conn_mgr = ConnectionManager(profile)
-        conn_record = await conn_mgr.receive_invitation(
-            invitation=ConnectionInvitation.from_url(endorser_invitation),
-            auto_accept=True,
-            alias=endorser_alias,
-        )
+        invite = InvitationMessage.from_url(endorser_invitation)
+        if invite:
+            oob_mgr = OutOfBandManager(profile)
+            conn_record = await oob_mgr.receive_invitation(
+                invitation=invite,
+                auto_accept=True,
+                alias=endorser_alias,
+            )
+        else:
+            invite = ConnectionInvitation.from_url(endorser_invitation)
+            if invite:
+                conn_mgr = ConnectionManager(profile)
+                conn_record = await conn_mgr.receive_invitation(
+                    invitation=invite,
+                    auto_accept=True,
+                    alias=endorser_alias,
+                )
+            else:
+                raise Exception("Failed to establish endorser connection, invalid "
+                                "invitation format.")
 
         # configure the connection role and info (don't need to wait for the connection)
         transaction_mgr = TransactionManager(profile)
