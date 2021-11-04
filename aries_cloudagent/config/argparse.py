@@ -596,11 +596,6 @@ class GeneralGroup(ArgumentGroup):
 
         if args.read_only_ledger:
             settings["read_only_ledger"] = True
-        if args.tails_server_base_url:
-            settings["tails_server_base_url"] = args.tails_server_base_url
-            settings["tails_server_upload_url"] = args.tails_server_base_url
-        if args.tails_server_upload_url:
-            settings["tails_server_upload_url"] = args.tails_server_upload_url
         return settings
 
 
