@@ -30,9 +30,6 @@ def register_events(event_bus: EventBus):
 
 async def on_issuer_revoke_event(profile: Profile, event: Event):
     """Handle issuer revoke event."""
-    if not profile.settings.get("revocation.notify"):
-        return
-
     LOGGER.debug("Sending notification of revocation to recipient: %s", event.payload)
     try:
         async with profile.session() as session:
@@ -41,9 +38,15 @@ async def on_issuer_revoke_event(profile: Profile, event: Event):
                 rev_reg_id=event.payload["rev_reg_id"],
                 cred_rev_id=event.payload["cred_rev_id"],
             )
-        notification = rev_notify_rec.to_message()
-        responder = profile.inject(BaseResponder)
-        await responder.send(notification, connection_id=rev_notify_rec.connection_id)
+            await rev_notify_rec.delete_record(session)
+
+        if profile.settings.get("revocation.notify"):
+            notification = rev_notify_rec.to_message()
+            responder = profile.inject(BaseResponder)
+            await responder.send(
+                notification, connection_id=rev_notify_rec.connection_id
+            )
+
     except StorageNotFoundError:
         LOGGER.info(
             "No revocation notification record found for revoked credential; "
