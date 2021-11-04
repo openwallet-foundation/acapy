@@ -1,6 +1,6 @@
 """Store revocation notification details until revocation is published."""
 
-from typing import Optional
+from typing import Optional, Sequence
 
 from marshmallow import fields
 from marshmallow.utils import EXCLUDE
@@ -54,17 +54,15 @@ class RevNotificationRecord(BaseRecord):
     async def query_by_ids(
         cls,
         session: ProfileSession,
-        *,
-        cred_rev_id: str = None,
-        rev_reg_id: str = None,
+        cred_rev_id: str,
+        rev_reg_id: str,
     ) -> "RevNotificationRecord":
-        """Retrieve issuer cred rev records by cred def id and/or rev reg id.
+        """Retrieve revocation notification record by cred rev id and/or rev reg id.
 
         Args:
             session: the profile session to use
-            cred_def_id: the cred def id by which to filter
+            cred_rev_id: the cred rev id by which to filter
             rev_reg_id: the rev reg id by which to filter
-            state: a state value by which to filter
         """
         tag_filter = {
             **{"cred_rev_id": cred_rev_id for _ in [""] if cred_rev_id},
@@ -77,6 +75,24 @@ class RevNotificationRecord(BaseRecord):
                 "More than one RevNotificationRecord was found for the given IDs"
             )
         return result[0]
+
+    @classmethod
+    async def query_by_rev_reg_id(
+        cls,
+        session: ProfileSession,
+        rev_reg_id: str,
+    ) -> Sequence["RevNotificationRecord"]:
+        """Retrieve revocation notification records by rev reg id.
+
+        Args:
+            session: the profile session to use
+            rev_reg_id: the rev reg id by which to filter
+        """
+        tag_filter = {
+            **{"rev_reg_id": rev_reg_id for _ in [""] if rev_reg_id},
+        }
+
+        return await cls.query(session, tag_filter)
 
     def to_message(self):
         if not self.thread_id:

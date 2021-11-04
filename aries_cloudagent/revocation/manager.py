@@ -14,7 +14,7 @@ from ..storage.error import StorageNotFoundError
 from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
-from .util import notify_revocation_published_event
+from .util import notify_pending_cleared_event, notify_revocation_published_event
 
 
 class RevocationManagerError(BaseError):
@@ -243,6 +243,7 @@ class RevocationManager:
                 await issuer_rr_rec.clear_pending(txn, (purge or {}).get(rrid))
                 if issuer_rr_rec.pending_pub:
                     result[rrid] = issuer_rr_rec.pending_pub
+                await notify_pending_cleared_event(self._profile, rrid)
             await txn.commit()
 
         return result

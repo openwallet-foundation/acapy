@@ -16,6 +16,7 @@ REVOCATION_REG_EVENT = "REGISTRY"
 REVOCATION_ENTRY_EVENT = "ENTRY"
 REVOCATION_TAILS_EVENT = "TAILS"
 REVOCATION_PUBLISHED_EVENT = "published"
+REVOCATION_CLEAR_PENDING_EVENT = "clear-pending"
 
 
 async def notify_revocation_reg_event(
@@ -92,3 +93,12 @@ async def notify_revocation_published_event(
                 session, rev_reg_id=rev_reg_id, cred_rev_id=cred_rev_id
             )
     await profile.notify(topic, cred_rev_record.serialize())
+
+
+async def notify_pending_cleared_event(
+    profile: Profile,
+    rev_reg_id: str,
+):
+    """Send notification of credential revoked as issuer."""
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_CLEAR_PENDING_EVENT}::{rev_reg_id}"
+    await profile.notify(topic, {"rev_reg_id": rev_reg_id})
