@@ -388,13 +388,15 @@ class DIFPresExchHandler:
                 if applicable and field.id and field.id in is_holder_field_ids:
                     # Missing credentialSubject.id - cannot verify that holder of claim
                     # is same as subject
-                    if not credential.subject_ids or len(credential.subject_ids) == 0:
+                    credential_subject_ids = credential.subject_ids
+                    if not credential_subject_ids or len(credential_subject_ids) == 0:
                         applicable = False
                         break
                     # Holder of claim is not same as the subject
-                    if not await self.process_constraint_holders(
-                        subject_ids=credential.subject_ids
-                    ):
+                    is_holder_same_as_subject = await self.process_constraint_holders(
+                        subject_ids=credential_subject_ids
+                    )
+                    if not is_holder_same_as_subject:
                         applicable = False
                         break
             if not applicable:
@@ -595,19 +597,38 @@ class DIFPresExchHandler:
                 # No filter in constraint
                 if not field._filter:
                     return True
-                if self.validate_patch(match_item.value, field._filter):
+                if (
+                    isinstance(match_item.value, dict)
+                    and "type" in match_item.value
+                    and "@value" in match_item.value
+                ):
+                    to_filter_type = match_item.value.get("type")
+                    to_filter_value = match_item.value.get("@value")
+                    if "integer" in to_filter_type:
+                        to_filter_value = int(to_filter_value)
+                    elif "dateTime" in to_filter_type or "date" in to_filter_type:
+                        to_filter_value = self.string_to_timezone_aware_datetime(
+                            to_filter_value
+                        )
+                    elif "boolean" in to_filter_type:
+                        to_filter_value = bool(to_filter_value)
+                    elif "double" in to_filter_type or "decimal" in to_filter_type:
+                        to_filter_value = float(to_filter_value)
+                else:
+                    to_filter_value = match_item.value
+                if self.validate_patch(to_filter_value, field._filter):
                     return True
         return False
 
-    def string_to_timezone_aware_datetime(
-        self, datetime_str: str
-    ) -> Optional[datetime]:
+    def string_to_timezone_aware_datetime(self, datetime_str: str) -> datetime:
         """Convert string with PYTZ timezone to datetime for comparison."""
         if PYTZ_TIMEZONE_PATTERN.search(datetime_str):
             result = PYTZ_TIMEZONE_PATTERN.search(datetime_str).group(1)
             datetime_str = datetime_str.replace(result, "")
             return dateutil_parser(datetime_str).replace(tzinfo=pytz.timezone(result))
-        return None
+        else:
+            utc = pytz.UTC
+            return dateutil_parser(datetime_str).replace(tzinfo=utc)
 
     def validate_patch(self, to_check: any, _filter: Filter) -> bool:
         """
@@ -636,11 +657,6 @@ class DIFPresExchHandler:
                                 to_compare_date = (
                                     self.string_to_timezone_aware_datetime(to_check)
                                 )
-                                if not to_compare_date:
-                                    utc = pytz.UTC
-                                    to_compare_date = dateutil_parser(to_check).replace(
-                                        tzinfo=utc
-                                    )
                                 if isinstance(to_compare_date, datetime):
                                     return True
                             except (ParserError, TypeError):
@@ -764,18 +780,11 @@ class DIFPresExchHandler:
         """
         try:
             if _filter.fmt:
-                utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
                     to_compare_date = self.string_to_timezone_aware_datetime(
                         _filter.exclusive_min
                     )
-                    if not to_compare_date:
-                        to_compare_date = dateutil_parser(
-                            _filter.exclusive_min
-                        ).replace(tzinfo=utc)
                     given_date = self.string_to_timezone_aware_datetime(str(val))
-                    if not given_date:
-                        given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
                     return given_date > to_compare_date
             else:
                 if self.is_numeric(val):
@@ -799,18 +808,11 @@ class DIFPresExchHandler:
         """
         try:
             if _filter.fmt:
-                utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
                     to_compare_date = self.string_to_timezone_aware_datetime(
                         _filter.exclusive_max
                     )
-                    if not to_compare_date:
-                        to_compare_date = dateutil_parser(
-                            _filter.exclusive_max
-                        ).replace(tzinfo=utc)
                     given_date = self.string_to_timezone_aware_datetime(str(val))
-                    if not given_date:
-                        given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
                     return given_date < to_compare_date
             else:
                 if self.is_numeric(val):
@@ -834,18 +836,11 @@ class DIFPresExchHandler:
         """
         try:
             if _filter.fmt:
-                utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
                     to_compare_date = self.string_to_timezone_aware_datetime(
                         _filter.maximum
                     )
-                    if not to_compare_date:
-                        to_compare_date = dateutil_parser(_filter.maximum).replace(
-                            tzinfo=utc
-                        )
                     given_date = self.string_to_timezone_aware_datetime(str(val))
-                    if not given_date:
-                        given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
                     return given_date <= to_compare_date
             else:
                 if self.is_numeric(val):
@@ -869,18 +864,11 @@ class DIFPresExchHandler:
         """
         try:
             if _filter.fmt:
-                utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
                     to_compare_date = self.string_to_timezone_aware_datetime(
                         _filter.minimum
                     )
-                    if not to_compare_date:
-                        to_compare_date = dateutil_parser(_filter.minimum).replace(
-                            tzinfo=utc
-                        )
                     given_date = self.string_to_timezone_aware_datetime(str(val))
-                    if not given_date:
-                        given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
                     return given_date >= to_compare_date
             else:
                 if self.is_numeric(val):
@@ -985,7 +973,9 @@ class DIFPresExchHandler:
         return False
 
     async def filter_schema(
-        self, credentials: Sequence[VCRecord], schemas: Sequence[SchemaInputDescriptor]
+        self,
+        credentials: Sequence[VCRecord],
+        schemas: Sequence[SchemaInputDescriptor],
     ) -> Sequence[VCRecord]:
         """
         Filter by schema.
@@ -1079,11 +1069,12 @@ class DIFPresExchHandler:
                 )
                 filtered_by_schema = await self.filter_schema(
                     credentials=filtered_creds_by_descriptor_id,
-                    schemas=descriptor.schemas,
+                    schemas=descriptor.schemas.uri_groups[0],
                 )
             else:
                 filtered_by_schema = await self.filter_schema(
-                    credentials=credentials, schemas=descriptor.schemas
+                    credentials=credentials,
+                    schemas=descriptor.schemas.uri_groups[0],
                 )
             # Filter credentials based upon path expressions specified in constraints
             filtered = await self.filter_constraints(

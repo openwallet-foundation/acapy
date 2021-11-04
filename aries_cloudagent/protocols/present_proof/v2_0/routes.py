@@ -504,20 +504,28 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             record_ids = set()
             for input_descriptor in input_descriptors:
                 proof_type = None
-                uri_list = []
                 limit_disclosure = input_descriptor.constraint.limit_disclosure and (
                     input_descriptor.constraint.limit_disclosure == "required"
                 )
-                for schema in input_descriptor.schemas:
-                    uri = schema.uri
-                    if schema.required is None:
-                        required = True
+                uri_list = []
+                one_of_uri_groups = []
+                if input_descriptor.schemas:
+                    if input_descriptor.schemas.oneOf:
+                        for schema_uri_group in input_descriptor.schemas.uri_groups:
+                            one_of_uri_groups.append(schema_uri_group)
                     else:
-                        required = schema.required
-                    if required:
-                        uri_list.append(uri)
+                        schema_uris = input_descriptor.schemas.uri_groups[0]
+                        for schema_uri in schema_uris:
+                            if schema_uri.required is None:
+                                required = True
+                            else:
+                                required = schema_uri.required
+                            if required:
+                                uri_list.append(schema_uri.uri)
                 if len(uri_list) == 0:
                     uri_list = None
+                if len(one_of_uri_groups) == 0:
+                    one_of_uri_groups = None
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                 if claim_fmt:
@@ -597,11 +605,20 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                 " signature types are supported"
                             )
                         )
-                search = dif_holder.search_credentials(
-                    proof_types=proof_type,
-                    pd_uri_list=uri_list,
-                )
-                records = await search.fetch(count)
+                if one_of_uri_groups:
+                    for uri_group in one_of_uri_groups:
+                        search = dif_holder.search_credentials(
+                            proof_types=proof_type, pd_uri_list=uri_group
+                        )
+                        records = await search.fetch(count)
+                        if records and len(records) > 0:
+                            break
+                else:
+                    search = dif_holder.search_credentials(
+                        proof_types=proof_type,
+                        pd_uri_list=uri_list,
+                    )
+                    records = await search.fetch(count)
                 # Avoiding addition of duplicate records
                 vcrecord_list, vcrecord_ids_set = await process_vcrecords_return_list(
                     records, record_ids

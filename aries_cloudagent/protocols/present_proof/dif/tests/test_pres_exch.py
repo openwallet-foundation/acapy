@@ -12,6 +12,7 @@ from ..pres_exch import (
     Filter,
     Constraints,
     VerifiablePresentation,
+    SchemasInputDescriptorFilter,
 )
 
 
@@ -378,3 +379,60 @@ class TestPresExchSchemas(TestCase):
         }
         vp = VerifiablePresentation.deserialize(test_vp_dict)
         assert isinstance(vp, VerifiablePresentation)
+
+    def test_schemas_input_desc_filter(self):
+        test_schema_list = [
+            [
+                {"uri": "https://www.w3.org/2018/VC"},
+                {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+            ],
+            [{"uri": "https://www.w3.org/Test#Test"}],
+        ]
+        test_schemas_filter = {
+            "oneOf": test_schema_list,
+        }
+
+        deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
+            test_schemas_filter
+        )
+        assert deser_schema_filter.oneOf
+        assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0][0].get(
+            "uri"
+        )
+        assert deser_schema_filter.uri_groups[0][1].uri == test_schema_list[0][1].get(
+            "uri"
+        )
+        assert deser_schema_filter.uri_groups[1][0].uri == test_schema_list[1][0].get(
+            "uri"
+        )
+        assert isinstance(deser_schema_filter, SchemasInputDescriptorFilter)
+
+        test_schema_list = [
+            {"uri": "https://www.w3.org/Test#Test"},
+            {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+        ]
+        test_schemas_filter = {
+            "oneOf": test_schema_list,
+        }
+
+        deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
+            test_schemas_filter
+        )
+        assert deser_schema_filter.oneOf
+        assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0].get(
+            "uri"
+        )
+        assert deser_schema_filter.uri_groups[1][0].uri == test_schema_list[1].get(
+            "uri"
+        )
+        assert isinstance(deser_schema_filter, SchemasInputDescriptorFilter)
+
+        deser_schema_filter = SchemasInputDescriptorFilter.deserialize(test_schema_list)
+        assert not deser_schema_filter.oneOf
+        assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0].get(
+            "uri"
+        )
+        assert deser_schema_filter.uri_groups[0][1].uri == test_schema_list[1].get(
+            "uri"
+        )
+        assert isinstance(deser_schema_filter, SchemasInputDescriptorFilter)

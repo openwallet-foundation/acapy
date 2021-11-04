@@ -1328,14 +1328,16 @@ pres_exch_multiple_srs_met = """
       "group":[
         "A"
       ],
-      "schema":[
-        {
-          "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
-        },
-        {
-          "uri":"https://w3id.org/citizenship#PermanentResidentCard"
-        }
-      ],
+      "schema": {
+        "oneOf": [
+            {
+                "uri":"https://www.w3.org/Test#Test"
+            },
+            {
+                "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+            }
+        ]
+      },
       "constraints":{
         "fields":[
           {
@@ -1480,6 +1482,23 @@ pres_exch_datetime_maximum_met = """
           "uri":"https://w3id.org/citizenship#PermanentResidentCard"
         }
       ],
+      "schema": {
+        "oneOf": [
+            [
+                {
+                "uri":"https://www.w3.org/Test#Test"
+                },
+                {
+                    "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+                }
+            ],
+            [
+                {
+                    "uri":"https://w3id.org/Test#Test"
+                }
+            ]
+        ]
+      },
       "constraints":{
         "fields":[
           {

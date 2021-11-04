@@ -199,16 +199,24 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     input_descriptor.constraint.limit_disclosure == "required"
                 )
                 uri_list = []
-                for schema in input_descriptor.schemas:
-                    uri = schema.uri
-                    if schema.required is None:
-                        required = True
+                one_of_uri_groups = []
+                if input_descriptor.schemas:
+                    if input_descriptor.schemas.oneOf:
+                        for schema_uri_group in input_descriptor.schemas.uri_groups:
+                            one_of_uri_groups.append(schema_uri_group)
                     else:
-                        required = schema.required
-                    if required:
-                        uri_list.append(uri)
+                        schema_uris = input_descriptor.schemas.uri_groups[0]
+                        for schema_uri in schema_uris:
+                            if schema_uri.required is None:
+                                required = True
+                            else:
+                                required = schema_uri.required
+                            if required:
+                                uri_list.append(schema_uri.uri)
                 if len(uri_list) == 0:
                     uri_list = None
+                if len(one_of_uri_groups) == 0:
+                    one_of_uri_groups = None
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                     dif_handler_proof_type = BbsBlsSignature2020.signature_type
@@ -287,13 +295,25 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             "BbsBlsSignature2020 and Ed25519Signature2018"
                             " signature types are supported"
                         )
-                search = holder.search_credentials(
-                    proof_types=proof_type, pd_uri_list=uri_list
-                )
-                # Defaults to page_size but would like to include all
-                # For now, setting to 1000
-                max_results = 1000
-                records = await search.fetch(max_results)
+                if one_of_uri_groups:
+                    for uri_group in one_of_uri_groups:
+                        search = holder.search_credentials(
+                            proof_types=proof_type, pd_uri_list=uri_group
+                        )
+                        max_results = 1000
+                        records = await search.fetch(max_results)
+                        if records and len(records) > 0:
+                            input_descriptor.schemas.uri_groups = [uri_group]
+                            pres_definition.input_descriptors = input_descriptor
+                            break
+                else:
+                    search = holder.search_credentials(
+                        proof_types=proof_type, pd_uri_list=uri_list
+                    )
+                    # Defaults to page_size but would like to include all
+                    # For now, setting to 1000
+                    max_results = 1000
+                    records = await search.fetch(max_results)
                 # Avoiding addition of duplicate records
                 (
                     vcrecord_list,

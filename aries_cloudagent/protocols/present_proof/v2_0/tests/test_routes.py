@@ -458,6 +458,90 @@ class TestPresentProofRoutes(AsyncTestCase):
                 ]
             )
 
+    async def test_present_proof_credentials_list_dif_one_of_filter(self):
+        self.request.match_info = {
+            "pres_ex_id": "123-456-789",
+        }
+        self.request.query = {"extra_query": {}}
+
+        returned_credentials = [
+            async_mock.MagicMock(cred_value={"name": "Credential1"}),
+            async_mock.MagicMock(cred_value={"name": "Credential2"}),
+        ]
+        self.profile.context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=(
+                    async_mock.CoroutineMock()
+                )
+            ),
+        )
+        self.profile.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(
+                            return_value=returned_credentials
+                        )
+                    )
+                )
+            ),
+        )
+        pres_request = deepcopy(DIF_PROOF_REQ)
+        pres_request["presentation_definition"]["input_descriptors"][0]["schema"] = {
+            "oneOf": [
+                [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                    {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+                ],
+                [{"uri": "https://www.w3.org/Test#Test"}],
+            ]
+        }
+        record = V20PresExRecord(
+            state="request-received",
+            role="prover",
+            pres_proposal=None,
+            pres_request={
+                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
+                "comment": "string",
+                "formats": [
+                    {
+                        "attach_id": "dif",
+                        "format": "dif/presentation-exchange/definitions@v1.0",
+                    }
+                ],
+                "request_presentations~attach": [
+                    {
+                        "@id": "dif",
+                        "mime-type": "application/json",
+                        "data": {"json": pres_request},
+                    }
+                ],
+                "will_confirm": True,
+            },
+            pres=None,
+            verified=None,
+            auto_present=False,
+            error_msg=None,
+        )
+
+        with async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
+
+            await test_module.present_proof_credentials_list(self.request)
+            mock_response.assert_called_once_with(
+                [
+                    {"name": "Credential1", "record_id": ANY},
+                    {"name": "Credential2", "record_id": ANY},
+                ]
+            )
+
     async def test_present_proof_credentials_dif_no_tag_query(self):
         self.request.match_info = {
             "pres_ex_id": "123-456-789",

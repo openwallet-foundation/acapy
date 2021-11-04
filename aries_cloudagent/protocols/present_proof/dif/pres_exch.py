@@ -180,7 +180,7 @@ class SchemaInputDescriptor(BaseModel):
         uri: str = None,
         required: bool = None,
     ):
-        """Initialize InputDescriptors."""
+        """Initialize SchemaInputDescriptor."""
         self.uri = uri
         self.required = required
 
@@ -199,6 +199,58 @@ class SchemaInputDescriptorSchema(BaseModelSchema):
         required=False,
     )
     required = fields.Bool(description="Required", required=False)
+
+
+class SchemasInputDescriptorFilter(BaseModel):
+    """SchemasInputDescriptorFilter."""
+
+    class Meta:
+        """InputDescriptor Schemas filter metadata."""
+
+        schema_class = "SchemasInputDescriptorFilterSchema"
+
+    def __init__(
+        self,
+        *,
+        oneOf: bool = False,
+        uri_groups: Sequence[Sequence[SchemaInputDescriptor]] = None,
+    ):
+        """Initialize SchemasInputDescriptorFilter."""
+        self.oneOf = oneOf
+        self.uri_groups = uri_groups
+
+
+class SchemasInputDescriptorFilterSchema(BaseModelSchema):
+    """Single SchemasInputDescriptorFilterSchema Schema."""
+
+    class Meta:
+        """SchemasInputDescriptorFilterSchema metadata."""
+
+        model_class = SchemasInputDescriptorFilter
+        unknown = EXCLUDE
+
+    uri_groups = fields.List(fields.List(fields.Nested(SchemaInputDescriptorSchema)))
+    oneOf = fields.Bool(description="oneOf", required=False)
+
+    @pre_load
+    def extract_info(self, data, **kwargs):
+        """deserialize."""
+        new_data = {}
+        if isinstance(data, dict):
+            if "oneOf" in data:
+                new_data["oneOf"] = True
+                uri_group_list_of_list = []
+                uri_group_list = data.get("oneOf")
+                for uri_group in uri_group_list:
+                    if isinstance(uri_group, list):
+                        uri_group_list_of_list.append(uri_group)
+                    else:
+                        uri_group_list_of_list.append([uri_group])
+                new_data["uri_groups"] = uri_group_list_of_list
+        elif isinstance(data, list):
+            new_data["uri_groups"] = [data]
+        data = new_data
+        return data
 
 
 class DIFHolder(BaseModel):
@@ -548,7 +600,7 @@ class InputDescriptors(BaseModel):
         purpose: str = None,
         metadata: dict = None,
         constraint: Constraints = None,
-        schemas: Sequence[SchemaInputDescriptor] = None,
+        schemas: SchemasInputDescriptorFilter = None,
     ):
         """Initialize InputDescriptors."""
         self.id = id
@@ -584,8 +636,8 @@ class InputDescriptorsSchema(BaseModelSchema):
     constraint = fields.Nested(
         ConstraintsSchema, required=False, data_key="constraints"
     )
-    schemas = fields.List(
-        fields.Nested(SchemaInputDescriptorSchema), required=False, data_key="schema"
+    schemas = fields.Nested(
+        SchemasInputDescriptorFilterSchema, required=False, data_key="schema"
     )
 
 

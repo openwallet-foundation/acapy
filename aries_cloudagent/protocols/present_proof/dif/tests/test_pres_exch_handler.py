@@ -3553,6 +3553,77 @@ class TestPresExchHandler:
         )
         assert not await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
 
+    @pytest.mark.asyncio
+    async def test_filter_by_field_xsd_parser(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["lprNumber"] = {
+            "type": "xsd:integer",
+            "@value": "10",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize(
+            {
+                "path": ["$.credentialSubject.lprNumber"],
+                "filter": {
+                    "minimum": 5,
+                    "type": "number",
+                },
+            }
+        )
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["testDate"] = {
+            "type": "xsd:dateTime",
+            "@value": "2020-09-28T11:00:00+00:00",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize(
+            {
+                "path": ["$.credentialSubject.testDate"],
+                "filter": {"type": "string", "format": "date", "minimum": "2005-5-16"},
+            }
+        )
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["testFlag"] = {
+            "type": "xsd:boolean",
+            "@value": "false",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize(
+            {
+                "path": ["$.credentialSubject.testFlag"],
+            }
+        )
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["testDouble"] = {
+            "type": "xsd:double",
+            "@value": "10.2",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize(
+            {"path": ["$.credentialSubject.testDouble"], "filter": {"const": 10.2}}
+        )
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["test"] = {
+            "type": ["test"],
+            "@id": "test",
+            "test": "val",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize({"path": ["$.credentialSubject.test"]})
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+
     def test_string_to_timezone_aware_datetime(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(
             profile, proof_type=BbsBlsSignature2020.signature_type
@@ -3562,9 +3633,9 @@ class TestPresExchHandler:
             dif_pres_exch_handler.string_to_timezone_aware_datetime(test_datetime_str),
             datetime,
         )
-        assert (
+        assert isinstance(
             dif_pres_exch_handler.string_to_timezone_aware_datetime(
                 "2020-09-28T11:00:00+00:00"
-            )
-            is None
+            ),
+            datetime,
         )
