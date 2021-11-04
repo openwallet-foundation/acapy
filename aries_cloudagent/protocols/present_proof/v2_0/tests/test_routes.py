@@ -465,8 +465,12 @@ class TestPresentProofRoutes(AsyncTestCase):
         self.request.query = {"extra_query": {}}
 
         returned_credentials = [
-            async_mock.MagicMock(cred_value={"name": "Credential1"}),
-            async_mock.MagicMock(cred_value={"name": "Credential2"}),
+            async_mock.MagicMock(
+                cred_value={"name": "Credential1"}, record_id="test_1"
+            ),
+            async_mock.MagicMock(
+                cred_value={"name": "Credential2"}, record_id="test_2"
+            ),
         ]
         self.profile.context.injector.bind_instance(
             IndyHolder,
@@ -537,8 +541,8 @@ class TestPresentProofRoutes(AsyncTestCase):
             await test_module.present_proof_credentials_list(self.request)
             mock_response.assert_called_once_with(
                 [
-                    {"name": "Credential1", "record_id": ANY},
-                    {"name": "Credential2", "record_id": ANY},
+                    {"name": "Credential1", "record_id": "test_1"},
+                    {"name": "Credential2", "record_id": "test_2"},
                 ]
             )
 

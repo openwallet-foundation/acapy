@@ -609,13 +609,21 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                             )
                         )
                 if one_of_uri_groups:
+                    records = []
+                    cred_group_record_ids = set()
                     for uri_group in one_of_uri_groups:
                         search = dif_holder.search_credentials(
                             proof_types=proof_type, pd_uri_list=uri_group
                         )
-                        records = await search.fetch(count)
-                        if records and len(records) > 0:
-                            break
+                        cred_group = await search.fetch(count)
+                        (
+                            cred_group_vcrecord_list,
+                            cred_group_vcrecord_ids_set,
+                        ) = await process_vcrecords_return_list(
+                            cred_group, cred_group_record_ids
+                        )
+                        cred_group_record_ids = cred_group_vcrecord_ids_set
+                        records = records + cred_group_vcrecord_list
                 else:
                     search = dif_holder.search_credentials(
                         proof_types=proof_type,

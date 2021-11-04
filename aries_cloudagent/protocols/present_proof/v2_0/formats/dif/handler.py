@@ -296,16 +296,22 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             " signature types are supported"
                         )
                 if one_of_uri_groups:
+                    records = []
+                    cred_group_record_ids = set()
                     for uri_group in one_of_uri_groups:
                         search = holder.search_credentials(
                             proof_types=proof_type, pd_uri_list=uri_group
                         )
                         max_results = 1000
-                        records = await search.fetch(max_results)
-                        if records and len(records) > 0:
-                            input_descriptor.schemas.uri_groups = [uri_group]
-                            pres_definition.input_descriptors = input_descriptor
-                            break
+                        cred_group = await search.fetch(max_results)
+                        (
+                            cred_group_vcrecord_list,
+                            cred_group_vcrecord_ids_set,
+                        ) = await self.process_vcrecords_return_list(
+                            cred_group, cred_group_record_ids
+                        )
+                        cred_group_record_ids = cred_group_vcrecord_ids_set
+                        records = records + cred_group_vcrecord_list
                 else:
                     search = holder.search_credentials(
                         proof_types=proof_type, pd_uri_list=uri_list

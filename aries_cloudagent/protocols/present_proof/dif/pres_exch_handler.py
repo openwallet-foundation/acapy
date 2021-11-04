@@ -49,7 +49,7 @@ from .pres_exch import (
     Constraints,
     SubmissionRequirements,
     Requirement,
-    SchemaInputDescriptor,
+    SchemasInputDescriptorFilter,
     InputDescriptorMapping,
     PresentationSubmission,
 )
@@ -976,7 +976,7 @@ class DIFPresExchHandler:
     async def filter_schema(
         self,
         credentials: Sequence[VCRecord],
-        schemas: Sequence[SchemaInputDescriptor],
+        schemas: SchemasInputDescriptorFilter,
     ) -> Sequence[VCRecord]:
         """
         Filter by schema.
@@ -994,19 +994,31 @@ class DIFPresExchHandler:
         result = []
         for credential in credentials:
             applicable = False
-            for schema in schemas:
-                applicable = self.credential_match_schema(
-                    credential=credential, schema_id=schema.uri
-                )
-                if schema.required and not applicable:
-                    break
-                if applicable:
-                    if schema.uri in [
-                        EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
-                    ]:
-                        continue
-                    else:
+            if schemas.oneOf:
+                for uri_group in schemas.uri_groups:
+                    if applicable:
                         break
+                    for schema in uri_group:
+                        applicable = self.credential_match_schema(
+                            credential=credential, schema_id=schema.uri
+                        )
+                        if schema.required and not applicable:
+                            break
+            else:
+                uri_group = schemas.uri_groups[0]
+                for schema in uri_group:
+                    applicable = self.credential_match_schema(
+                        credential=credential, schema_id=schema.uri
+                    )
+                    if schema.required and not applicable:
+                        break
+                    if applicable:
+                        if schema.uri in [
+                            EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
+                        ]:
+                            continue
+                        else:
+                            break
             if applicable:
                 result.append(credential)
         return result
@@ -1070,12 +1082,12 @@ class DIFPresExchHandler:
                 )
                 filtered_by_schema = await self.filter_schema(
                     credentials=filtered_creds_by_descriptor_id,
-                    schemas=descriptor.schemas.uri_groups[0],
+                    schemas=descriptor.schemas,
                 )
             else:
                 filtered_by_schema = await self.filter_schema(
                     credentials=credentials,
-                    schemas=descriptor.schemas.uri_groups[0],
+                    schemas=descriptor.schemas,
                 )
             # Filter credentials based upon path expressions specified in constraints
             filtered = await self.filter_constraints(
