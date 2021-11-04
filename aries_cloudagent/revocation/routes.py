@@ -153,6 +153,7 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate fields - connection_id and thread_id must be present if notify."""
+        super().validate_fields(data, **kwargs)
 
         notify = data.get("notify")
         connection_id = data.get("connection_id")
