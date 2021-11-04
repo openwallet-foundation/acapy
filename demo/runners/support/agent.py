@@ -1336,7 +1336,11 @@ async def start_endorser_agent(start_port, genesis, use_did_exchange: bool = Tru
         endorser_connection = await endorser_agent.admin_POST(
             "/out-of-band/create-invitation",
             {"handshake_protocols": ["rfc23"]},
-            params={"alias": "EndorserMultiuse", "auto_accept": "true", "multi_use": "true"},
+            params={
+                "alias": "EndorserMultiuse",
+                "auto_accept": "true",
+                "multi_use": "true",
+            },
         )
     else:
         # old-style connection

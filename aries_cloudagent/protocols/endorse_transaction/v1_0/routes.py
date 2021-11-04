@@ -765,8 +765,10 @@ async def on_startup_event(profile: Profile, event: Event):
                     alias=endorser_alias,
                 )
             else:
-                raise Exception("Failed to establish endorser connection, invalid "
-                                "invitation format.")
+                raise Exception(
+                    "Failed to establish endorser connection, invalid "
+                    "invitation format."
+                )
 
         # configure the connection role and info (don't need to wait for the connection)
         transaction_mgr = TransactionManager(profile)
