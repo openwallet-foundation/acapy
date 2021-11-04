@@ -7,7 +7,6 @@ from ..protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
     is_author_role,
 )
-from .models.issuer_cred_rev_record import IssuerCredRevRecord
 
 
 REVOCATION_EVENT_PREFIX = "acapy::REVOCATION::"
@@ -83,16 +82,10 @@ async def notify_revocation_published_event(
     profile: Profile,
     rev_reg_id: str,
     cred_rev_id: str,
-    cred_rev_record: IssuerCredRevRecord = None,
 ):
     """Send notification of credential revoked as issuer."""
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::{cred_rev_id}"
-    if not cred_rev_record:
-        async with profile.session() as session:
-            cred_rev_record = await IssuerCredRevRecord.retrieve_by_ids(
-                session, rev_reg_id=rev_reg_id, cred_rev_id=cred_rev_id
-            )
-    await profile.notify(topic, cred_rev_record.serialize())
+    await profile.notify(topic, {"rev_reg_id": rev_reg_id, "cred_rev_id": cred_rev_id})
 
 
 async def notify_pending_cleared_event(

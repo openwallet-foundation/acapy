@@ -1,12 +1,10 @@
 """Routes for revocation notification."""
 import logging
 import re
-from typing import cast
 
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
-from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation.util import (
     REVOCATION_CLEAR_PENDING_EVENT,
     REVOCATION_PUBLISHED_EVENT,
@@ -36,15 +34,12 @@ async def on_issuer_revoke_event(profile: Profile, event: Event):
         return
 
     LOGGER.debug("Sending notification of revocation to recipient: %s", event.payload)
-
-    cred_rev_rec = IssuerCredRevRecord.deserialize(event.payload)
-    cred_rev_rec = cast(IssuerCredRevRecord, cred_rev_rec)
     try:
         async with profile.session() as session:
             rev_notify_rec = await RevNotificationRecord.query_by_ids(
                 session,
-                rev_reg_id=cred_rev_rec.rev_reg_id,
-                cred_rev_id=cred_rev_rec.cred_rev_id,
+                rev_reg_id=event.payload["rev_reg_id"],
+                cred_rev_id=event.payload["cred_rev_id"],
             )
         notification = rev_notify_rec.to_message()
         responder = profile.inject(BaseResponder)
