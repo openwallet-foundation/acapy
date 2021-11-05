@@ -49,6 +49,7 @@ from .pres_exch import (
     Constraints,
     SubmissionRequirements,
     Requirement,
+    SchemaInputDescriptor,
     SchemasInputDescriptorFilter,
     InputDescriptorMapping,
     PresentationSubmission,
@@ -973,6 +974,22 @@ class DIFPresExchHandler:
                 return True
         return False
 
+    async def _credential_match_schema_filter_helper(
+        self, credential: VCRecord, filter: Sequence[Sequence[SchemaInputDescriptor]]
+    ) -> bool:
+        """credential_match_schema for SchemasInputDescriptorFilter.uri_groups."""
+        applicable = False
+        for uri_group in filter:
+            if applicable:
+                return True
+            for schema in uri_group:
+                applicable = self.credential_match_schema(
+                    credential=credential, schema_id=schema.uri
+                )
+                if schema.required and not applicable:
+                    break
+        return applicable
+
     async def filter_schema(
         self,
         credentials: Sequence[VCRecord],
@@ -995,15 +1012,9 @@ class DIFPresExchHandler:
         for credential in credentials:
             applicable = False
             if schemas.oneOf:
-                for uri_group in schemas.uri_groups:
-                    if applicable:
-                        break
-                    for schema in uri_group:
-                        applicable = self.credential_match_schema(
-                            credential=credential, schema_id=schema.uri
-                        )
-                        if schema.required and not applicable:
-                            break
+                applicable = await self._credential_match_schema_filter_helper(
+                    credential=credential, filter=schemas.uri_groups
+                )
             else:
                 uri_group = schemas.uri_groups[0]
                 for schema in uri_group:
@@ -1353,11 +1364,17 @@ class DIFPresExchHandler:
         descriptor_map_list = pres.get("presentation_submission").get("descriptor_map")
         input_descriptors = pd.input_descriptors
         inp_desc_id_contraint_map = {}
+        inp_desc_id_schema_one_of_filter = set()
         for input_descriptor in input_descriptors:
             inp_desc_id_contraint_map[input_descriptor.id] = input_descriptor.constraint
+            if input_descriptor.schemas.oneOf:
+                inp_desc_id_schema_one_of_filter.add(input_descriptor.id)
         for desc_map_item in descriptor_map_list:
             desc_map_item_id = desc_map_item.get("id")
             constraint = inp_desc_id_contraint_map.get(desc_map_item_id)
+            is_one_of_filtered = False
+            if desc_map_item_id in inp_desc_id_schema_one_of_filter:
+                is_one_of_filtered = True
             desc_map_item_path = desc_map_item.get("path")
             jsonpath = parse(desc_map_item_path)
             match = jsonpath.find(pres)
@@ -1367,15 +1384,27 @@ class DIFPresExchHandler:
                 )
             for match_item in match:
                 if not await self.apply_constraint_received_cred(
-                    constraint, match_item.value
+                    constraint, match_item.value, is_one_of_filtered
                 ):
                     raise DIFPresExchError(
                         f"Constraint specified for {desc_map_item_id} does not "
                         f"apply to the enclosed credential in {desc_map_item_path}"
                     )
 
+    async def restrict_field_paths_one_of_filter(
+        self, field_paths: Sequence[str], cred_dict: dict
+    ) -> Sequence[str]:
+        """Return field_paths that are applicable to oneOf filter."""
+        applied_field_paths = []
+        for path in field_paths:
+            jsonpath = parse(path)
+            match = jsonpath.find(cred_dict)
+            if len(match) > 0:
+                applied_field_paths.append(path)
+        return applied_field_paths
+
     async def apply_constraint_received_cred(
-        self, constraint: Constraints, cred_dict: dict
+        self, constraint: Constraints, cred_dict: dict, is_one_of_filtered: bool = False
     ) -> bool:
         """Evaluate constraint from the request against received credential."""
         fields = constraint._fields
@@ -1387,7 +1416,14 @@ class DIFPresExchHandler:
                 field = await self.get_updated_field(field, cred_dict)
             if not await self.filter_by_field(field, credential):
                 return False
-            field_paths = field_paths + field.paths
+            if is_one_of_filtered:
+                field_paths = field_paths + (
+                    await self.restrict_field_paths_one_of_filter(
+                        field_paths=field.paths, cred_dict=cred_dict
+                    )
+                )
+            else:
+                field_paths = field_paths + field.paths
         # Selective Disclosure check
         if is_limit_disclosure:
             field_paths = set([path.replace("$.", "") for path in field_paths])

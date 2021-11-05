@@ -3,6 +3,8 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
 
+from aries_cloudagent.protocols.present_proof.dif.pres_exch import SchemaInputDescriptor
+
 from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......storage.vc_holder.base import VCHolder
@@ -1249,6 +1251,18 @@ class TestDIFFormatHandler(AsyncTestCase):
         assert len(returned_cred_list) == 1
         assert len(returned_record_ids) == 2
         assert returned_cred_list[0].record_id == "test2"
+
+    async def test_retrieve_uri_list_from_schema_filter(self):
+        test_schema_filter = [
+            [
+                SchemaInputDescriptor(uri="test123"),
+                SchemaInputDescriptor(uri="test321", required=True),
+            ]
+        ]
+        test_one_of_uri_groups = (
+            await self.handler.retrieve_uri_list_from_schema_filter(test_schema_filter)
+        )
+        assert test_one_of_uri_groups == [["test123", "test321"]]
 
     async def test_verify_received_pres_a(self):
         dif_pres = V20Pres(

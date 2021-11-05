@@ -38,7 +38,7 @@ from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSche
 from ....vc.ld_proofs import BbsBlsSignature2020, Ed25519Signature2018
 from ....wallet.error import WalletNotFoundError
 
-from ..dif.pres_exch import InputDescriptors, ClaimFormat
+from ..dif.pres_exch import InputDescriptors, ClaimFormat, SchemaInputDescriptor
 from ..dif.pres_proposal_schema import DIFProofProposalSchema
 from ..dif.pres_request_schema import (
     DIFProofRequestSchema,
@@ -514,8 +514,9 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 one_of_uri_groups = []
                 if input_descriptor.schemas:
                     if input_descriptor.schemas.oneOf:
-                        for schema_uri_group in input_descriptor.schemas.uri_groups:
-                            one_of_uri_groups.append(schema_uri_group)
+                        one_of_uri_groups = await retrieve_uri_list_from_schema_filter(
+                            input_descriptor.schemas.uri_groups
+                        )
                     else:
                         schema_uris = input_descriptor.schemas.uri_groups[0]
                         for schema_uri in schema_uris:
@@ -668,6 +669,20 @@ async def process_vcrecords_return_list(
             to_add.append(vc_record)
             record_ids.add(vc_record.record_id)
     return (to_add, record_ids)
+
+
+async def retrieve_uri_list_from_schema_filter(
+    schema_uri_groups: Sequence[Sequence[SchemaInputDescriptor]],
+) -> Sequence[str]:
+    """Retrieve list of schema uri from uri_group."""
+    group_schema_uri_list = []
+    for schema_group in schema_uri_groups:
+        uri_list = []
+        for schema in schema_group:
+            uri_list.append(schema.uri)
+        if len(uri_list) > 0:
+            group_schema_uri_list.append(uri_list)
+    return group_schema_uri_list
 
 
 @docs(tags=["present-proof v2.0"], summary="Sends a presentation proposal")

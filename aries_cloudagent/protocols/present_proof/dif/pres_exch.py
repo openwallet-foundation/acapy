@@ -230,7 +230,7 @@ class SchemasInputDescriptorFilterSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     uri_groups = fields.List(fields.List(fields.Nested(SchemaInputDescriptorSchema)))
-    oneOf = fields.Bool(description="oneOf", required=False)
+    oneOf = fields.Bool(description="oneOf")
 
     @pre_load
     def extract_info(self, data, **kwargs):
@@ -248,6 +248,7 @@ class SchemasInputDescriptorFilterSchema(BaseModelSchema):
                         uri_group_list_of_list.append([uri_group])
                 new_data["uri_groups"] = uri_group_list_of_list
         elif isinstance(data, list):
+            new_data["oneOf"] = False
             new_data["uri_groups"] = [data]
         data = new_data
         return data

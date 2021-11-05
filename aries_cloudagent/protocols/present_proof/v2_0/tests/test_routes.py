@@ -14,6 +14,8 @@ from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder
 from .....storage.vc_holder.vc_record import VCRecord
 
+from ...dif.pres_exch import SchemaInputDescriptor
+
 from .. import routes as test_module
 from ..messages.pres_format import V20PresFormat
 from ..models.pres_exchange import V20PresExRecord
@@ -2426,6 +2428,18 @@ class TestPresentProofRoutes(AsyncTestCase):
         assert len(returned_cred_list) == 1
         assert len(returned_record_ids) == 2
         assert returned_cred_list[0].record_id == "test2"
+
+    async def test_retrieve_uri_list_from_schema_filter(self):
+        test_schema_filter = [
+            [
+                SchemaInputDescriptor(uri="test123"),
+                SchemaInputDescriptor(uri="test321", required=True),
+            ]
+        ]
+        test_one_of_uri_groups = await test_module.retrieve_uri_list_from_schema_filter(
+            test_schema_filter
+        )
+        assert test_one_of_uri_groups == [["test123", "test321"]]
 
     async def test_send_presentation_no_specification(self):
         self.request.json = async_mock.CoroutineMock(return_value={"comment": "test"})
