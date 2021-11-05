@@ -1015,6 +1015,9 @@ class DIFPresExchHandler:
                 applicable = await self._credential_match_schema_filter_helper(
                     credential=credential, filter=schemas.uri_groups
                 )
+                if applicable:
+                    result.append(credential)
+                    break
             else:
                 uri_group = schemas.uri_groups[0]
                 for schema in uri_group:

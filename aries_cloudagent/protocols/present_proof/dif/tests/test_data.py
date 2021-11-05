@@ -1328,6 +1328,117 @@ pres_exch_multiple_srs_met = """
       "group":[
         "A"
       ],
+      "schema": [
+            {
+                "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+            },
+            {
+                "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+            }
+      ],
+      "constraints":{
+        "fields":[
+          {
+           "path":[
+              "$.issuer.id",
+              "$.vc.issuer.id",
+              "$.issuer"
+            ],
+            "filter":{
+              "type":"string",
+              "enum": ["did:example:489398593", "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa", "did:sov:2wJPyULfLLnYTEFYzByfUR"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id":"citizenship_input_2",
+      "name":"US Passport",
+      "group":[
+        "B"
+      ],
+      "schema":[
+        {
+          "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+        },
+        {
+          "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+        }
+      ],
+      "constraints":{
+        "fields":[
+          {
+            "path":[
+              "$.credentialSubject.gender"
+            ],
+            "filter":{
+              "const":"Male"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id":"citizenship_input_3",
+      "name":"US Passport",
+      "group":[
+        "C"
+      ],
+      "schema":[
+        {
+          "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+        },
+        {
+          "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+        }
+      ],
+      "constraints":{
+        "fields":[
+          {
+            "path":[
+              "$.issuanceDate"
+            ],
+            "filter":{
+              "type":"string",
+              "format":"date",
+              "minimum":"2005-5-16"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+"""
+
+pres_exch_multiple_srs_met_one_of = """
+{
+  "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+  "submission_requirements":[
+    {
+      "name": "Citizenship Information",
+      "rule": "all",
+      "from": "A"
+    },
+    {
+      "name": "European Union Citizenship Proofs",
+      "rule": "all",
+      "from": "B"
+    },
+    {
+      "name": "Date Test",
+      "rule": "all",
+      "from": "C"
+    }
+  ],
+  "input_descriptors":[
+    {
+      "id":"citizenship_input_1",
+      "name":"EU Driver's License",
+      "group":[
+        "A"
+      ],
       "schema": {
         "oneOf": [
             [
@@ -2348,8 +2459,9 @@ def get_test_data():
     pd_json_list = [
         (pres_exch_multiple_srs_not_met, 0),
         (pres_exch_multiple_srs_met, 4),
+        (pres_exch_multiple_srs_met_one_of, 1),
         (pres_exch_datetime_minimum_met, 6),
-        (pres_exch_datetime_maximum_met, 6),
+        (pres_exch_datetime_maximum_met, 1),
         (pres_exch_nested_srs_a, 4),
         (pres_exch_nested_srs_b, 5),
         (pres_exch_nested_srs_c, 2),
