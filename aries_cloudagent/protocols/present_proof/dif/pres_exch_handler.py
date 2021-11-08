@@ -1425,14 +1425,11 @@ class DIFPresExchHandler:
                 field = await self.get_updated_field(field, cred_dict)
             if not await self.filter_by_field(field, credential):
                 return False
-            if is_one_of_filtered:
-                field_paths = field_paths + (
-                    await self.restrict_field_paths_one_of_filter(
-                        field_paths=field.paths, cred_dict=cred_dict
-                    )
+            field_paths = field_paths + (
+                await self.restrict_field_paths_one_of_filter(
+                    field_paths=field.paths, cred_dict=cred_dict
                 )
-            else:
-                field_paths = field_paths + field.paths
+            )
         # Selective Disclosure check
         if is_limit_disclosure:
             field_paths = set([path.replace("$.", "") for path in field_paths])
