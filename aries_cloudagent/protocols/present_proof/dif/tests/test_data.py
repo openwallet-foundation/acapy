@@ -1301,7 +1301,7 @@ pres_exch_multiple_srs_not_met = """
 }
 """
 
-pres_exch_multiple_srs_met = """
+pres_exch_multiple_srs_met_one_of_filter_invalid = """
 {
   "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
   "submission_requirements":[
@@ -1328,6 +1328,33 @@ pres_exch_multiple_srs_met = """
       "group":[
         "A"
       ],
+      "schema": [
+            {
+                "uri":"https://www.w3.org/Test#Test"
+            }
+      ],
+      "constraints":{
+        "fields":[
+          {
+           "path":[
+              "$.issuer.id",
+              "$.vc.issuer.id",
+              "$.issuer"
+            ],
+            "filter":{
+              "type":"string",
+              "enum": ["did:example:489398593", "did:key:zUC72Q7XD4PE4CrMiDVXuvZng3sBvMmaGgNeTUJuzavH2BS7ThbHL9FhsZM9QYY5fqAQ4MB8M9oudz3tfuaX36Ajr97QRW7LBt6WWmrtESe6Bs5NYzFtLWEmeVtvRYVAgjFcJSa", "did:sov:2wJPyULfLLnYTEFYzByfUR"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id":"citizenship_input_2",
+      "name":"US Passport",
+      "group":[
+        "B"
+      ],
       "schema":[
         {
           "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
@@ -1336,6 +1363,91 @@ pres_exch_multiple_srs_met = """
           "uri":"https://w3id.org/citizenship#PermanentResidentCard"
         }
       ],
+      "constraints":{
+        "fields":[
+          {
+            "path":[
+              "$.credentialSubject.gender"
+            ],
+            "filter":{
+              "const":"Male"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id":"citizenship_input_3",
+      "name":"US Passport",
+      "group":[
+        "C"
+      ],
+      "schema":[
+        {
+          "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+        },
+        {
+          "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+        }
+      ],
+      "constraints":{
+        "fields":[
+          {
+            "path":[
+              "$.issuanceDate"
+            ],
+            "filter":{
+              "type":"string",
+              "format":"date",
+              "minimum":"2005-5-16"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+"""
+
+pres_exch_multiple_srs_met_one_of_valid = """
+{
+  "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+  "submission_requirements":[
+    {
+      "name": "Citizenship Information",
+      "rule": "all",
+      "from": "A"
+    },
+    {
+      "name": "European Union Citizenship Proofs",
+      "rule": "all",
+      "from": "B"
+    },
+    {
+      "name": "Date Test",
+      "rule": "all",
+      "from": "C"
+    }
+  ],
+  "input_descriptors":[
+    {
+      "id":"citizenship_input_1",
+      "name":"EU Driver's License",
+      "group":[
+        "A"
+      ],
+      "schema": {
+        "oneof_filter": [
+            [
+                {
+                    "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                },
+                {
+                    "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+                }
+            ]
+        ]
+      },
       "constraints":{
         "fields":[
           {
@@ -1472,14 +1584,23 @@ pres_exch_datetime_maximum_met = """
       "group":[
         "A"
       ],
-      "schema":[
-        {
-          "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
-        },
-        {
-          "uri":"https://w3id.org/citizenship#PermanentResidentCard"
-        }
-      ],
+      "schema": {
+        "oneof_filter": [
+            [
+                {
+                    "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
+                },
+                {
+                    "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+                }
+            ],
+            [
+                {
+                    "uri":"https://w3id.org/Test#Test"
+                }
+            ]
+        ]
+      },
       "constraints":{
         "fields":[
           {
@@ -1500,6 +1621,825 @@ pres_exch_datetime_maximum_met = """
 }
 """
 
+TEST_CRED_DICT = {
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/bbs/v1",
+        {
+            "MedicalPass": {
+                "@id": "https://www.vdel.com/MedicalPass",
+                "@context": {
+                    "description": "http://schema.org/description",
+                    "identifier": "http://schema.org/identifier",
+                    "name": "http://schema.org/name",
+                    "image": "http://schema.org/image",
+                },
+            }
+        },
+        {
+            "Patient": {
+                "@id": "http://hl7.org/fhir/Patient",
+                "@context": [
+                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/patient.context.jsonld"
+                ],
+            }
+        },
+    ],
+    "id": "urn:bnid:_:c14n4",
+    "type": ["MedicalPass", "VerifiableCredential"],
+    "credentialSubject": {
+        "id": "urn:bnid:_:c14n6",
+        "Patient": {
+            "@id": "urn:bnid:_:c14n7",
+            "@type": "fhir:resource-types#Patient",
+            "address": {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+        },
+    },
+    "issuanceDate": "2021-10-01T20:16:40+02:00",
+    "issuer": "did:key:test",
+    "proof": {
+        "type": "BbsBlsSignatureProof2020",
+        "nonce": "M9yQx0eKIAI3Zs0sLF1kQsO7/hV1ZKEnqX9f0V/SzwRMKEixa0tJgqbGwviMA04XoL0=",
+        "proofValue": "ACYgFHwPj5TxR9H+k+V+rBsfZ3SgOEvoKrYCcvAl4HhaKNR039r5UWE89tnHaVOx22k604EWibf0s7BTezijjYv1VWSVkZar4wtOslplXv6g7dVc8/0IWXQWOfn2hTE2N65Wv8xz2qw5dWwEzSXTx44o15wE2ubimgGFMM7Mv++SAoHC1dQGotGqKqOB2PS8yI+ToiWmswAAAHSD5NRIZHKeiWP8hK/e9xUYy5gSPBivDVAORybl62B/F3eaUC/pRdfsORAWRHLjmfcAAAACcOe6yrLqI3OmxkKUfsCGgIl83LLcQ9pLjaigdc/5XRs6KYo533Q/7cGryn2IvLFAJiHgZJ8Ovwi9xkDy1USKjZfjgRMil4PEiwZ2Gqu4g+HlJ11JemUX2HDAjJYgJHSFguZp/l/5y//0pQegHOi9hwAAABcp9nblpM/ALrFpdenGn23x5kdYC4gMyTV6a6RPuMwryVZcmTP50XDVHiY2t4JLvULdJcGDcOCpetMPhqyAf3VeNtorYjr1+YWSgjApfqZ594rMyohWGwkNu0zqv19qDkQ+aBibGhhsCBHe+jFy/BXQv2TlIMgX7YdUgVtUuO4YJT4cz4xrDlK58sJPpmJqraasoA0E+ciPOtGX5J7e4n+dGlPwkQjcD79cjBGs7hXmljeqbe2a82YQw/Q+L/yVKqxl8+ucLoqQ2QzREKslQ7ljchX8RsHQURflZTgPxGjNyCqHtEIcT6d7COcpmqGYSo5ge0pIXab97H97NBnk9mmdcCOCETWOJ8shuS7n4R4GdnRDjB5ArbBnpIMYUGEsdD0ZR87nVBbAfWFhQWJgsJvpPOGq2p6VPImfwhIoh7LIYkpwVogRLrSQGl5IZcHexlHwjZoogafCD5OSyEAO3au3UUoVde4S98v2233QuOwXvz3ptYOO+aJIbqmgdmGs41YfbyT830/H+248+Zbkob7T1FBWbYtEW+k8omat87tc3RfU9LYgNrXWUpJ/TZ+4Cqg7VljkPhCIEZYNUoKQxG1pP11HsmLvzhtnoNVLwjvJA7IrcinAr2pnWSBzjm/wBx8mANrCAHW4f4yyvSXCWZJOfnf/N8dt01Di0QaNbYs8Hlo6yjjjqkrvgLpZtAuuca8nQPPNZWrj3Oids/Z0nZsgKGwZxHo5negKE1JKEEz7zJQUd14JhRYiwfzWYprHcJ9szp5Tgmskksv3NIyKQ7XfLwnOY29zLOpTm51c99Ru6CVvAvIGckB+oE8cwPRjfE9fajJtQEODZ1ljbzYNACzLZ52iSsL+rSKq9LL79TgmN2lE0SkmgrwkOBAjmSwzrBc9DdQrkpWlSZzOWyL/QuNfHfEiNn43nwhaJpbvQ6zr/XHbspH7oqe0eexfvzowzkKc9noWqQnU0IaMrtRgyOma",
+        "verificationMethod": "did:key:test",
+        "proofPurpose": "assertionMethod",
+        "created": "2021-10-01T18:16:41.072975+00:00",
+    },
+}
+
+TEST_CRED_WILDCARD = {
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/security/bbs/v1",
+        {
+            "LabReport": {
+                "@id": "https://www.vdel.com/LabReport",
+                "@context": {
+                    "description": "http://schema.org/description",
+                    "identifier": "http://schema.org/identifier",
+                    "name": "http://schema.org/name",
+                    "image": "http://schema.org/image",
+                },
+            }
+        },
+        {
+            "Specimen": {
+                "@id": "http://hl7.org/fhir/Specimen",
+                "@context": [
+                    None,
+                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/specimen.context.jsonld",
+                ],
+            }
+        },
+        {
+            "Observation": {
+                "@id": "http://hl7.org/fhir/Observation",
+                "@context": [
+                    None,
+                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/observation.context.jsonld",
+                ],
+            }
+        },
+        {
+            "Organization": {
+                "@id": "http://hl7.org/fhir/Organization",
+                "@context": [
+                    None,
+                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/organization.context.jsonld",
+                ],
+            }
+        },
+        {
+            "Practitioner": {
+                "@id": "http://hl7.org/fhir/Practitioner",
+                "@context": [
+                    None,
+                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/practitioner.context.jsonld",
+                ],
+            }
+        },
+        {
+            "DiagnosticReport": {
+                "@id": "http://hl7.org/fhir/DiagnosticReport",
+                "@context": [
+                    None,
+                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/diagnosticreport.context.jsonld",
+                ],
+            }
+        },
+        {
+            "PractitionerRole": {
+                "@id": "http://hl7.org/fhir/PractitionerRole",
+                "@context": [
+                    None,
+                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/practitionerrole.context.jsonld",
+                ],
+            }
+        },
+    ],
+    "type": ["VerifiableCredential", "LabReport"],
+    "issuer": "did:key:zUC74FYQCzCbDpbVm9v1LVCc2RkxJY3XMdxV9UpsVaerTgEAAjpdWfE8WemccfdNhski3kHiXfLzPZW2wgsvSCkZFWV3zSNxQEqZoV8kVpwLtLzzpskRcskBB3M3DxaeBnDvK4H",
+    "issuanceDate": "2021-10-01T20:17:12+02:00",
+    "credentialSubject": {
+        "DiagnosticReport": {
+            "resourceType": "http://hl7.org/fhir/resource-types#DiagnosticReport",
+            "id": "ca66dd0a-6ad5-db5e-e053-5a18000aa066",
+            "language": "sr-Cyrl-RS",
+            "basedOn": [
+                {"reference": "ServiceRequest/ca66a8f6-1b0e-2881-e053-5a18000acec9"}
+            ],
+            "status": "final",
+            "category": {
+                "coding": [
+                    {
+                        "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+                        "code": "LAB",
+                    }
+                ]
+            },
+            "code": {
+                "coding": [
+                    {
+                        "system": "http://loinc.org",
+                        "code": "11502-2",
+                        "display": "Laboratory report",
+                    }
+                ]
+            },
+            "subject": {"reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"},
+            "effectiveDateTime": "2021-08-25T19:47:00EUROPE/BELGRADE",
+            "issued": "2021-08-25T19:47:00EUROPE/BELGRADE",
+            "performer": [
+                {"reference": "PractitionerRole/ca6632d5-a447-6306-e053-5a18000a3953"}
+            ],
+            "specimen": [
+                {"reference": "Specimen/ca666dfb-5a85-614a-e053-5a18000af20b"}
+            ],
+            "result": [
+                {"reference": "Observation/ca708651-e8eb-3513-e053-5a18000ae79b"},
+                {"reference": "Observation/ca708651-e8ec-3513-e053-5a18000ae79b"},
+                {"reference": "Observation/ca708651-e8ed-3513-e053-5a18000ae79b"},
+                {"reference": "Observation/ca708651-e8e9-3513-e053-5a18000ae79b"},
+                {"reference": "Observation/ca708651-e8ea-3513-e053-5a18000ae79b"},
+                {"reference": "Observation/ca708651-e8e7-3513-e053-5a18000ae79b"},
+                {"reference": "Observation/ca708651-e8e8-3513-e053-5a18000ae79b"},
+            ],
+        },
+        "Specimen": {
+            "resourceType": "http://hl7.org/fhir/resource-types#Specimen",
+            "id": "ca666dfb-5a85-614a-e053-5a18000af20b",
+            "language": "sr-Cyrl-RS",
+            "accessionIdentifier": {
+                "type": {
+                    "coding": [
+                        {
+                            "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                            "code": "ACSN",
+                        }
+                    ],
+                    "text": "Broj protokola",
+                },
+                "value": "124",
+            },
+            "status": "available",
+            "type": {
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": "122592007",
+                        "display": "Acellular blood (serum or plasma) specimen",
+                    }
+                ]
+            },
+            "subject": {"reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"},
+            "receivedTime": "2021-08-25T19:16:00EUROPE/BELGRADE",
+        },
+        "PractitionerRole": {
+            "resourceType": "http://hl7.org/fhir/resource-types#PractitionerRole",
+            "id": "ca6632d5-a447-6306-e053-5a18000a3953",
+            "active": True,
+            "practitioner": {
+                "reference": "Practitioner/ca5ed67e-5780-0136-e053-5a18000ae501"
+            },
+            "organization": {
+                "reference": "Organization/ca661f4d-ffc6-6111-e053-5a18000a3dea"
+            },
+            "code": [
+                {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/uv/ips/ValueSet/healthcare-professional-roles-uv-ips",
+                            "code": "2212",
+                            "display": "Специјалисти лекари",
+                        }
+                    ]
+                }
+            ],
+            "specialty": [
+                {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "408454008",
+                            "display": "Клиничка микробиологија",
+                        }
+                    ]
+                }
+            ],
+        },
+        "Practitioner": {
+            "resourceType": "http://hl7.org/fhir/resource-types#Practitioner",
+            "id": "ca5ed67e-5780-0136-e053-5a18000ae501",
+            "language": "sr-Cyrl-RS",
+            "text": "специјалиста медицинске микробиологије",
+            "active": True,
+            "name": [{"family": "Банчевић", "given": ["Маја"], "suffix": ["др"]}],
+            "gender": "female",
+            "qualification": [{"code": {"coding": [{"code": "MD"}]}}],
+        },
+        "Observation": [
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Observation",
+                "id": "ca708651-e8eb-3513-e053-5a18000ae79b",
+                "language": "sr-Cyrl-RS",
+                "text": {"status": "generated", "div": "Negativan"},
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                "code": "laboratory",
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips",
+                            "code": "24115-8",
+                            "display": "Epstein Barr virus (EBV) IgM",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "40168006",
+                            "display": "Epstein Barr virus (EBV)",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "74889000",
+                            "display": "IgM",
+                        },
+                    ]
+                },
+                "subject": {
+                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
+                },
+                "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
+                "method": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/ValueSet/observation-methods",
+                            "code": "76978006",
+                            "display": "ELISA",
+                        }
+                    ]
+                },
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "2667000",
+                            "display": "Odsutno",
+                        }
+                    ]
+                },
+                "interpretation": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                                "code": "NEG",
+                                "display": "Negativan",
+                            }
+                        ]
+                    }
+                ],
+            },
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Observation",
+                "id": "ca708651-e8e8-3513-e053-5a18000ae79b",
+                "language": "sr-Cyrl-RS",
+                "text": {"status": "generated", "div": "Pozitivan"},
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                "code": "laboratory",
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips",
+                            "code": "35275-7",
+                            "display": "Morbille virus IgG",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "52584002",
+                            "display": "Morbilli virus",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "29246005",
+                            "display": "IgG",
+                        },
+                    ]
+                },
+                "subject": {
+                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
+                },
+                "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
+                "method": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/ValueSet/observation-methods",
+                            "code": "76978006",
+                            "display": "ELISA",
+                        }
+                    ]
+                },
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "52101004",
+                            "display": "Prisutno",
+                        }
+                    ]
+                },
+                "interpretation": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                                "code": "POS",
+                                "display": "Pozitivan",
+                            }
+                        ]
+                    }
+                ],
+            },
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Observation",
+                "id": "ca708651-e8e7-3513-e053-5a18000ae79b",
+                "language": "sr-Cyrl-RS",
+                "text": {"status": "generated", "div": "Negativan"},
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                "code": "laboratory",
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips",
+                            "code": "35276-5",
+                            "display": "Morbille virus IgM",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "52584002",
+                            "display": "Morbilli virus",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "74889000",
+                            "display": "IgM",
+                        },
+                    ]
+                },
+                "subject": {
+                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
+                },
+                "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
+                "method": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/ValueSet/observation-methods",
+                            "code": "76978006",
+                            "display": "ELISA",
+                        }
+                    ]
+                },
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "2667000",
+                            "display": "Odsutno",
+                        }
+                    ]
+                },
+                "interpretation": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                                "code": "NEG",
+                                "display": "Negativan",
+                            }
+                        ]
+                    }
+                ],
+            },
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Observation",
+                "id": "ca708651-e8ea-3513-e053-5a18000ae79b",
+                "language": "sr-Cyrl-RS",
+                "text": {"status": "generated", "div": "Pozitivan"},
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                "code": "laboratory",
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips",
+                            "code": "29660-8",
+                            "display": "Humani Parvo virus B19 IgG",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "63603005",
+                            "display": "Humani Parvo virus B19",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "29246005",
+                            "display": "IgG",
+                        },
+                    ]
+                },
+                "subject": {
+                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
+                },
+                "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
+                "method": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/ValueSet/observation-methods",
+                            "code": "76978006",
+                            "display": "ELISA",
+                        }
+                    ]
+                },
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "52101004",
+                            "display": "Prisutno",
+                        }
+                    ]
+                },
+                "interpretation": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                                "code": "POS",
+                                "display": "Pozitivan",
+                            }
+                        ]
+                    }
+                ],
+            },
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Observation",
+                "id": "ca708651-e8e9-3513-e053-5a18000ae79b",
+                "language": "sr-Cyrl-RS",
+                "text": {"status": "generated", "div": "Negativan"},
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                "code": "laboratory",
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips",
+                            "code": "40658-7",
+                            "display": "Humani Parvo virus B19 IgM",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "63603005",
+                            "display": "Humani Parvo virus B19",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "74889000",
+                            "display": "IgM",
+                        },
+                    ]
+                },
+                "subject": {
+                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
+                },
+                "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
+                "method": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/ValueSet/observation-methods",
+                            "code": "76978006",
+                            "display": "ELISA",
+                        }
+                    ]
+                },
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "2667000",
+                            "display": "Odsutno",
+                        }
+                    ]
+                },
+                "interpretation": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                                "code": "NEG",
+                                "display": "Negativan",
+                            }
+                        ]
+                    }
+                ],
+            },
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Observation",
+                "id": "ca708651-e8ed-3513-e053-5a18000ae79b",
+                "language": "sr-Cyrl-RS",
+                "text": {"status": "generated", "div": "Negativan"},
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                "code": "laboratory",
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips",
+                            "code": "40729-6",
+                            "display": "Herpes Simplex virus (HSV) IgM",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "19965007",
+                            "display": "Herpes Simplex virus (HSV)",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "74889000",
+                            "display": "IgM",
+                        },
+                    ]
+                },
+                "subject": {
+                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
+                },
+                "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
+                "method": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/ValueSet/observation-methods",
+                            "code": "76978006",
+                            "display": "ELISA",
+                        }
+                    ]
+                },
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "2667000",
+                            "display": "Odsutno",
+                        }
+                    ]
+                },
+                "interpretation": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                                "code": "NEG",
+                                "display": "Negativan",
+                            }
+                        ]
+                    }
+                ],
+            },
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Observation",
+                "id": "ca708651-e8ec-3513-e053-5a18000ae79b",
+                "language": "sr-Cyrl-RS",
+                "text": {"status": "generated", "div": "Pozitivan"},
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                "code": "laboratory",
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/uv/ips/ValueSet/results-laboratory-observations-uv-ips",
+                            "code": "24114-1",
+                            "display": "Epstein Barr virus (EBV) IgG",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "40168006",
+                            "display": "Epstein Barr virus (EBV)",
+                        },
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "29246005",
+                            "display": "IgG",
+                        },
+                    ]
+                },
+                "subject": {
+                    "reference": "Patient/ca66572a-0a1b-0d53-e053-5a18000ad0b7"
+                },
+                "effectiveDateTime": "2021-08-26T07:09:00EUROPE/BELGRADE",
+                "method": {
+                    "coding": [
+                        {
+                            "system": "http://hl7.org/fhir/ValueSet/observation-methods",
+                            "code": "76978006",
+                            "display": "ELISA",
+                        }
+                    ]
+                },
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "52101004",
+                            "display": "Prisutno",
+                        }
+                    ]
+                },
+                "interpretation": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                                "code": "POS",
+                                "display": "Pozitivan",
+                            }
+                        ]
+                    }
+                ],
+            },
+        ],
+        "Organization": [
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Organization",
+                "id": "ca661f4d-ffc6-6111-e053-5a18000a3dea",
+                "language": "sr-Cyrl-RS",
+                "active": True,
+                "type": ["team"],
+                "name": "Национална лабораторија за полиомијелитис и ентеровирусе",
+                "partOf": {
+                    "reference": "Organization/ca661f4d-ffc5-6111-e053-5a18000a3dea",
+                    "type": "Organization",
+                },
+                "address": [{"type": "both", "country": "RS"}],
+            },
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Organization",
+                "id": "ca661f4d-ffc5-6111-e053-5a18000a3dea",
+                "language": "sr-Cyrl-RS",
+                "active": True,
+                "type": ["team"],
+                "name": "Одсек за серодијагностику и молекуларну дијагностику",
+                "partOf": {
+                    "reference": "Organization/ca661c1e-cab1-611d-e053-5a18000af938",
+                    "type": "Organization",
+                },
+                "address": [{"type": "both", "country": "RS"}],
+            },
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Organization",
+                "id": "ca661c1e-cab1-611d-e053-5a18000af938",
+                "language": "sr-Cyrl-RS",
+                "active": True,
+                "type": ["team"],
+                "name": "Служба за лабораторијску дијагностику",
+                "partOf": {
+                    "reference": "Organization/ca65fdc3-3516-4830-e053-5a18000af96e",
+                    "type": "Organization",
+                },
+                "address": [{"type": "both", "country": "RS"}],
+            },
+            {
+                "resourceType": "http://hl7.org/fhir/resource-types#Organization",
+                "id": "ca65fdc3-3516-4830-e053-5a18000af96e",
+                "language": "sr-Cyrl-RS",
+                "identifier": [
+                    {
+                        "use": "official",
+                        "type": {
+                            "coding": [
+                                {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                                    "code": "XX",
+                                }
+                            ],
+                            "text": "Matični broj",
+                        },
+                        "system": "http://www.apr.gov.rs/регистри/здравствене-установе",
+                        "value": "17078712",
+                    },
+                    {
+                        "use": "official",
+                        "type": {
+                            "coding": [
+                                {
+                                    "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                                    "code": "TAX",
+                                }
+                            ],
+                            "text": "PIB",
+                        },
+                        "system": "http://www.purs.gov.rs/pib.html",
+                        "value": "101739057",
+                    },
+                ],
+                "active": True,
+                "type": ["prov"],
+                "name": 'ИНСТИТУТ ЗА ВИРУСОЛОГИЈУ, ВАКЦИНЕ И СЕРУМЕ "ТОРЛАК"',
+                "telecom": [
+                    {"system": "email", "value": "office@torlak.rs", "rank": 1},
+                    {"system": "phone", "value": "+381113953700", "rank": 3},
+                ],
+                "address": [
+                    {
+                        "type": "both",
+                        "line": ["Војводе Степе 458"],
+                        "city": "Београд",
+                        "country": "RS",
+                    }
+                ],
+            },
+        ],
+    },
+    "name": "VDEL Lab Report",
+}
+
 
 def get_test_data():
     vc_record_list = []
@@ -1515,7 +2455,8 @@ def get_test_data():
         )
     pd_json_list = [
         (pres_exch_multiple_srs_not_met, 0),
-        (pres_exch_multiple_srs_met, 4),
+        (pres_exch_multiple_srs_met_one_of_filter_invalid, 0),
+        (pres_exch_multiple_srs_met_one_of_valid, 4),
         (pres_exch_datetime_minimum_met, 6),
         (pres_exch_datetime_maximum_met, 6),
         (pres_exch_nested_srs_a, 4),

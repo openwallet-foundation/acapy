@@ -12,6 +12,7 @@ from ..pres_exch import (
     Filter,
     Constraints,
     VerifiablePresentation,
+    SchemasInputDescriptorFilter,
 )
 
 
@@ -100,6 +101,53 @@ class TestPresExchSchemas(TestCase):
             }
         """
         expected_result = json.loads(nested_submission_req_json)
+        actual_result = (
+            SubmissionRequirements.deserialize(nested_submission_req_json)
+        ).serialize()
+        assert expected_result == actual_result
+
+    def test_submission_requirements_from_nested_of_nested(self):
+        nested_submission_req_json = """
+            {
+                "name": "Лабораторијски резултати",
+                "purpose": "Morbilli virus критеријум",
+                "rule": "pick",
+                "count": 1,
+                "from_nested": [
+                    {
+                        "name": "Лични подаци",
+                        "purpose": "Морамо идентификовати субјекта акредитива",
+                        "rule": "pick",
+                        "count": 1,
+                        "from": "Patient"
+                    },
+                    {
+                        "name": "Лабораторијски резултати",
+                        "purpose": "Morbilli virus критеријум",
+                        "rule": "pick",
+                        "count": 1,
+                        "from_nested": [
+                            {
+                                "name": "Негативан тест у последња 24 сата",
+                                "purpose": "Незаразност",
+                                "rule": "pick",
+                                "count": 1,
+                                "from": "PCR"
+                            },
+                            {
+                                "name": "Тест атнитела",
+                                "purpose": "Имуност",
+                                "rule": "pick",
+                                "count": 1,
+                                "from": "IgG"
+                            }
+                        ]
+                    }
+                ]
+            }
+        """
+        expected_result = json.loads(nested_submission_req_json)
+        assert SubmissionRequirements.deserialize(nested_submission_req_json)
         actual_result = (
             SubmissionRequirements.deserialize(nested_submission_req_json)
         ).serialize()
@@ -331,3 +379,60 @@ class TestPresExchSchemas(TestCase):
         }
         vp = VerifiablePresentation.deserialize(test_vp_dict)
         assert isinstance(vp, VerifiablePresentation)
+
+    def test_schemas_input_desc_filter(self):
+        test_schema_list = [
+            [
+                {"uri": "https://www.w3.org/2018/VC"},
+                {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+            ],
+            [{"uri": "https://www.w3.org/Test#Test"}],
+        ]
+        test_schemas_filter = {
+            "oneof_filter": test_schema_list,
+        }
+
+        deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
+            test_schemas_filter
+        )
+        assert deser_schema_filter.oneof_filter
+        assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0][0].get(
+            "uri"
+        )
+        assert deser_schema_filter.uri_groups[0][1].uri == test_schema_list[0][1].get(
+            "uri"
+        )
+        assert deser_schema_filter.uri_groups[1][0].uri == test_schema_list[1][0].get(
+            "uri"
+        )
+        assert isinstance(deser_schema_filter, SchemasInputDescriptorFilter)
+
+        test_schema_list = [
+            {"uri": "https://www.w3.org/Test#Test"},
+            {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+        ]
+        test_schemas_filter = {
+            "oneof_filter": test_schema_list,
+        }
+
+        deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
+            test_schemas_filter
+        )
+        assert deser_schema_filter.oneof_filter
+        assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0].get(
+            "uri"
+        )
+        assert deser_schema_filter.uri_groups[1][0].uri == test_schema_list[1].get(
+            "uri"
+        )
+        assert isinstance(deser_schema_filter, SchemasInputDescriptorFilter)
+
+        deser_schema_filter = SchemasInputDescriptorFilter.deserialize(test_schema_list)
+        assert not deser_schema_filter.oneof_filter
+        assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0].get(
+            "uri"
+        )
+        assert deser_schema_filter.uri_groups[0][1].uri == test_schema_list[1].get(
+            "uri"
+        )
+        assert isinstance(deser_schema_filter, SchemasInputDescriptorFilter)
