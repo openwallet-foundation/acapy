@@ -201,7 +201,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 uri_list = []
                 one_of_uri_groups = []
                 if input_descriptor.schemas:
-                    if input_descriptor.schemas.oneOf:
+                    if input_descriptor.schemas.oneof_filter:
                         one_of_uri_groups = (
                             await self.retrieve_uri_list_from_schema_filter(
                                 input_descriptor.schemas.uri_groups

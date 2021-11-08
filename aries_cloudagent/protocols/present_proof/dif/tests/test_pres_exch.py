@@ -389,13 +389,13 @@ class TestPresExchSchemas(TestCase):
             [{"uri": "https://www.w3.org/Test#Test"}],
         ]
         test_schemas_filter = {
-            "oneOf": test_schema_list,
+            "oneof_filter": test_schema_list,
         }
 
         deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
             test_schemas_filter
         )
-        assert deser_schema_filter.oneOf
+        assert deser_schema_filter.oneof_filter
         assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0][0].get(
             "uri"
         )
@@ -412,13 +412,13 @@ class TestPresExchSchemas(TestCase):
             {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
         ]
         test_schemas_filter = {
-            "oneOf": test_schema_list,
+            "oneof_filter": test_schema_list,
         }
 
         deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
             test_schemas_filter
         )
-        assert deser_schema_filter.oneOf
+        assert deser_schema_filter.oneof_filter
         assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0].get(
             "uri"
         )
@@ -428,7 +428,7 @@ class TestPresExchSchemas(TestCase):
         assert isinstance(deser_schema_filter, SchemasInputDescriptorFilter)
 
         deser_schema_filter = SchemasInputDescriptorFilter.deserialize(test_schema_list)
-        assert not deser_schema_filter.oneOf
+        assert not deser_schema_filter.oneof_filter
         assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0].get(
             "uri"
         )

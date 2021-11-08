@@ -1301,7 +1301,7 @@ pres_exch_multiple_srs_not_met = """
 }
 """
 
-pres_exch_multiple_srs_met = """
+pres_exch_multiple_srs_met_one_of_filter_invalid = """
 {
   "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
   "submission_requirements":[
@@ -1330,10 +1330,7 @@ pres_exch_multiple_srs_met = """
       ],
       "schema": [
             {
-                "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
-            },
-            {
-                "uri":"https://w3id.org/citizenship#PermanentResidentCard"
+                "uri":"https://www.w3.org/Test#Test"
             }
       ],
       "constraints":{
@@ -1412,7 +1409,7 @@ pres_exch_multiple_srs_met = """
 }
 """
 
-pres_exch_multiple_srs_met_one_of = """
+pres_exch_multiple_srs_met_one_of_valid = """
 {
   "id":"32f54163-7166-48f1-93d8-ff217bdb0653",
   "submission_requirements":[
@@ -1440,7 +1437,7 @@ pres_exch_multiple_srs_met_one_of = """
         "A"
       ],
       "schema": {
-        "oneOf": [
+        "oneof_filter": [
             [
                 {
                     "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
@@ -1588,7 +1585,7 @@ pres_exch_datetime_maximum_met = """
         "A"
       ],
       "schema": {
-        "oneOf": [
+        "oneof_filter": [
             [
                 {
                     "uri":"https://www.w3.org/2018/credentials#VerifiableCredential"
@@ -2458,10 +2455,10 @@ def get_test_data():
         )
     pd_json_list = [
         (pres_exch_multiple_srs_not_met, 0),
-        (pres_exch_multiple_srs_met, 4),
-        (pres_exch_multiple_srs_met_one_of, 1),
+        (pres_exch_multiple_srs_met_one_of_filter_invalid, 0),
+        (pres_exch_multiple_srs_met_one_of_valid, 4),
         (pres_exch_datetime_minimum_met, 6),
-        (pres_exch_datetime_maximum_met, 1),
+        (pres_exch_datetime_maximum_met, 6),
         (pres_exch_nested_srs_a, 4),
         (pres_exch_nested_srs_b, 5),
         (pres_exch_nested_srs_c, 2),

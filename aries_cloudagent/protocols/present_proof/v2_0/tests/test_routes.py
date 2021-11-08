@@ -496,7 +496,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
         pres_request = deepcopy(DIF_PROOF_REQ)
         pres_request["presentation_definition"]["input_descriptors"][0]["schema"] = {
-            "oneOf": [
+            "oneof_filter": [
                 [
                     {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
                     {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},

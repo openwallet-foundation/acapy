@@ -1564,7 +1564,7 @@ class TestPresExchHandler:
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         tmp_schema_list = SchemasInputDescriptorFilter(
-            oneOf=True,
+            oneof_filter=True,
             uri_groups=[
                 [
                     SchemaInputDescriptor(
@@ -3065,7 +3065,7 @@ class TestPresExchHandler:
             == "TEST"
         )
 
-        tmp_pd = pd_list[1]
+        tmp_pd = pd_list[2]
         tmp_vp = await dif_pres_exch_handler.create_vp(
             credentials=test_creds,
             pd=tmp_pd[0],

@@ -988,6 +988,13 @@ class DIFPresExchHandler:
                 )
                 if schema.required and not applicable:
                     break
+                if applicable:
+                    if schema.uri in [
+                        EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
+                    ]:
+                        continue
+                    else:
+                        break
         return applicable
 
     async def filter_schema(
@@ -1011,28 +1018,9 @@ class DIFPresExchHandler:
         result = []
         for credential in credentials:
             applicable = False
-            if schemas.oneOf:
-                applicable = await self._credential_match_schema_filter_helper(
-                    credential=credential, filter=schemas.uri_groups
-                )
-                if applicable:
-                    result.append(credential)
-                    break
-            else:
-                uri_group = schemas.uri_groups[0]
-                for schema in uri_group:
-                    applicable = self.credential_match_schema(
-                        credential=credential, schema_id=schema.uri
-                    )
-                    if schema.required and not applicable:
-                        break
-                    if applicable:
-                        if schema.uri in [
-                            EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
-                        ]:
-                            continue
-                        else:
-                            break
+            applicable = await self._credential_match_schema_filter_helper(
+                credential=credential, filter=schemas.uri_groups
+            )
             if applicable:
                 result.append(credential)
         return result
@@ -1368,13 +1356,16 @@ class DIFPresExchHandler:
         input_descriptors = pd.input_descriptors
         inp_desc_id_contraint_map = {}
         inp_desc_id_schema_one_of_filter = set()
+        inp_desc_id_schemas_map = {}
         for input_descriptor in input_descriptors:
             inp_desc_id_contraint_map[input_descriptor.id] = input_descriptor.constraint
-            if input_descriptor.schemas.oneOf:
+            inp_desc_id_schemas_map[input_descriptor.id] = input_descriptor.schemas
+            if input_descriptor.schemas.oneof_filter:
                 inp_desc_id_schema_one_of_filter.add(input_descriptor.id)
         for desc_map_item in descriptor_map_list:
             desc_map_item_id = desc_map_item.get("id")
             constraint = inp_desc_id_contraint_map.get(desc_map_item_id)
+            schema_filter = inp_desc_id_schemas_map.get(desc_map_item_id)
             is_one_of_filtered = False
             if desc_map_item_id in inp_desc_id_schema_one_of_filter:
                 is_one_of_filtered = True
@@ -1393,11 +1384,26 @@ class DIFPresExchHandler:
                         f"Constraint specified for {desc_map_item_id} does not "
                         f"apply to the enclosed credential in {desc_map_item_path}"
                     )
+                if (
+                    not len(
+                        await self.filter_schema(
+                            credentials=[
+                                self.create_vcrecord(cred_dict=match_item.value)
+                            ],
+                            schemas=schema_filter,
+                        )
+                    )
+                    == 1
+                ):
+                    raise DIFPresExchError(
+                        f"Schema filtering specified in {desc_map_item_id} does not "
+                        f"match with the enclosed credential in {desc_map_item_path}"
+                    )
 
     async def restrict_field_paths_one_of_filter(
         self, field_paths: Sequence[str], cred_dict: dict
     ) -> Sequence[str]:
-        """Return field_paths that are applicable to oneOf filter."""
+        """Return field_paths that are applicable to oneof_filter."""
         applied_field_paths = []
         for path in field_paths:
             jsonpath = parse(path)

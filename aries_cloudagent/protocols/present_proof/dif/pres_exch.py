@@ -212,11 +212,11 @@ class SchemasInputDescriptorFilter(BaseModel):
     def __init__(
         self,
         *,
-        oneOf: bool = False,
+        oneof_filter: bool = False,
         uri_groups: Sequence[Sequence[SchemaInputDescriptor]] = None,
     ):
         """Initialize SchemasInputDescriptorFilter."""
-        self.oneOf = oneOf
+        self.oneof_filter = oneof_filter
         self.uri_groups = uri_groups
 
 
@@ -230,17 +230,17 @@ class SchemasInputDescriptorFilterSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     uri_groups = fields.List(fields.List(fields.Nested(SchemaInputDescriptorSchema)))
-    oneOf = fields.Bool(description="oneOf")
+    oneof_filter = fields.Bool(description="oneOf")
 
     @pre_load
     def extract_info(self, data, **kwargs):
         """deserialize."""
         new_data = {}
         if isinstance(data, dict):
-            if "oneOf" in data:
-                new_data["oneOf"] = True
+            if "oneof_filter" in data:
+                new_data["oneof_filter"] = True
                 uri_group_list_of_list = []
-                uri_group_list = data.get("oneOf")
+                uri_group_list = data.get("oneof_filter")
                 for uri_group in uri_group_list:
                     if isinstance(uri_group, list):
                         uri_group_list_of_list.append(uri_group)
@@ -248,7 +248,7 @@ class SchemasInputDescriptorFilterSchema(BaseModelSchema):
                         uri_group_list_of_list.append([uri_group])
                 new_data["uri_groups"] = uri_group_list_of_list
         elif isinstance(data, list):
-            new_data["oneOf"] = False
+            new_data["oneof_filter"] = False
             new_data["uri_groups"] = [data]
         data = new_data
         return data
@@ -638,7 +638,28 @@ class InputDescriptorsSchema(BaseModelSchema):
         ConstraintsSchema, required=False, data_key="constraints"
     )
     schemas = fields.Nested(
-        SchemasInputDescriptorFilterSchema, required=False, data_key="schema"
+        SchemasInputDescriptorFilterSchema,
+        required=False,
+        data_key="schema",
+        description=(
+            "Accepts a list of schema or a dict containing filters like oneof_filter."
+        ),
+        example=(
+            {
+                "oneOf": [
+                    [
+                        {"uri": "https://www.w3.org/Test1#Test1"},
+                        {"uri": "https://www.w3.org/Test2#Test2"},
+                    ],
+                    {
+                        "oneof_filter": [
+                            [{"uri": "https://www.w3.org/Test1#Test1"}],
+                            [{"uri": "https://www.w3.org/Test2#Test2"}],
+                        ]
+                    },
+                ]
+            }
+        ),
     )
 
 

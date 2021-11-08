@@ -7299,12 +7299,6 @@
         "purpose" : {
           "type" : "string",
           "description" : "Purpose"
-        },
-        "schema" : {
-          "type" : "array",
-          "items" : {
-            "$ref" : "#/definitions/SchemaInputDescriptor"
-          }
         }
       }
     },
