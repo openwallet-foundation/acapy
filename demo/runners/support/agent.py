@@ -119,6 +119,7 @@ class DemoAgent:
         internal_host: str = None,
         external_host: str = None,
         genesis_data: str = None,
+        genesis_txn_list: str = None,
         seed: str = None,
         label: str = None,
         color: str = None,
@@ -142,6 +143,7 @@ class DemoAgent:
         self.internal_host = internal_host or DEFAULT_INTERNAL_HOST
         self.external_host = external_host or DEFAULT_EXTERNAL_HOST
         self.genesis_data = genesis_data
+        self.genesis_txn_list = genesis_txn_list
         self.label = label or ident
         self.color = color
         self.prefix = prefix
@@ -324,6 +326,8 @@ class DemoAgent:
             )
         if self.genesis_data:
             result.append(("--genesis-transactions", self.genesis_data))
+        if self.genesis_txn_list:
+            result.append("--genesis-transactions-list", self.genesis_txn_list)
         if self.seed:
             result.append(("--seed", self.seed))
         if self.storage_type:
