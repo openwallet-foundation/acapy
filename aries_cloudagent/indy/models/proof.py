@@ -11,6 +11,7 @@ from ...messaging.valid import (
     INDY_SCHEMA_ID,
     INT_EPOCH,
     NUM_STR_WHOLE,
+    NUM_STR_ANY,
 )
 from ...utils.tracing import AdminAPIMessageTracingSchema
 
@@ -60,7 +61,7 @@ class IndyEQProofSchema(BaseModelSchema):
 
     revealed_attrs = fields.Dict(
         keys=fields.Str(example="preference"),
-        values=fields.Str(**NUM_STR_WHOLE),
+        values=fields.Str(**NUM_STR_ANY),
     )
     a_prime = fields.Str(**NUM_STR_WHOLE)
     e = fields.Str(**NUM_STR_WHOLE)
@@ -375,7 +376,7 @@ class RawEncodedSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     raw = fields.Str(description="Raw value")
-    encoded = fields.Str(description="Encoded value", **NUM_STR_WHOLE)
+    encoded = fields.Str(description="Encoded value", **NUM_STR_ANY)
 
 
 class IndyProofRequestedProofRevealedAttr(RawEncoded):

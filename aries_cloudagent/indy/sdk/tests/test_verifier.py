@@ -335,20 +335,23 @@ class TestIndySdkVerifier(AsyncTestCase):
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = self.ledger
+            INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
             verified = await self.verifier.verify_presentation(
-                INDY_PROOF_REQ_PRED_NAMES,
+                INDY_PROOF_REQ_X,
                 INDY_PROOF_PRED_NAMES,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
 
         mock_verify.assert_called_once_with(
-            json.dumps(INDY_PROOF_REQ_PRED_NAMES),
+            json.dumps(INDY_PROOF_REQ_X),
             json.dumps(INDY_PROOF_PRED_NAMES),
             json.dumps("schemas"),
-            json.dumps("credential_definitions"),
+            json.dumps(
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}}
+            ),
             json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
@@ -371,7 +374,7 @@ class TestIndySdkVerifier(AsyncTestCase):
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_NAME,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
@@ -380,7 +383,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             json.dumps(INDY_PROOF_REQ_NAME),
             json.dumps(INDY_PROOF_NAME),
             json.dumps("schemas"),
-            json.dumps("credential_definitions"),
+            json.dumps({"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}}),
             json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
@@ -398,7 +401,7 @@ class TestIndySdkVerifier(AsyncTestCase):
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_NAME,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
@@ -407,7 +410,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             json.dumps(INDY_PROOF_REQ_NAME),
             json.dumps(INDY_PROOF_NAME),
             json.dumps("schemas"),
-            json.dumps("credential_definitions"),
+            json.dumps({"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}}),
             json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
@@ -427,7 +430,7 @@ class TestIndySdkVerifier(AsyncTestCase):
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_X,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
@@ -450,7 +453,7 @@ class TestIndySdkVerifier(AsyncTestCase):
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_X,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
@@ -466,20 +469,23 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_get_ledger:
             mock_get_ledger.return_value = ("test", self.ledger)
             mock_verify.return_value = True
+            INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
             verified = await self.verifier.verify_presentation(
-                INDY_PROOF_REQ_PRED_NAMES,
+                INDY_PROOF_REQ_X,
                 INDY_PROOF_PRED_NAMES,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
 
         mock_verify.assert_called_once_with(
-            json.dumps(INDY_PROOF_REQ_PRED_NAMES),
+            json.dumps(INDY_PROOF_REQ_X),
             json.dumps(INDY_PROOF_PRED_NAMES),
             json.dumps("schemas"),
-            json.dumps("credential_definitions"),
+            json.dumps(
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}}
+            ),
             json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
@@ -497,10 +503,10 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_get_ledger:
             mock_get_ledger.return_value = self.ledger
             verified = await self.verifier.verify_presentation(
-                INDY_PROOF_REQ_PRED_NAMES,
+                deepcopy(INDY_PROOF_REQ_PRED_NAMES),
                 INDY_PROOF_X,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
@@ -521,7 +527,7 @@ class TestIndySdkVerifier(AsyncTestCase):
                 INDY_PROOF_REQ_X,
                 INDY_PROOF_PRED_NAMES,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
@@ -541,10 +547,10 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_get_ledger:
             mock_get_ledger.return_value = ("test", self.ledger)
             verified = await self.verifier.verify_presentation(
-                INDY_PROOF_REQ_PRED_NAMES,
+                deepcopy(INDY_PROOF_REQ_PRED_NAMES),
                 INDY_PROOF_X,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )

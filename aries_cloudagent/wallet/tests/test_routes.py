@@ -1,3 +1,4 @@
+from ...core.in_memory import InMemoryProfile
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from aiohttp.web import HTTPForbidden
 
@@ -17,11 +18,11 @@ from ..did_posture import DIDPosture
 class TestWalletRoutes(AsyncTestCase):
     async def setUp(self):
         self.wallet = async_mock.create_autospec(BaseWallet)
+        self.session_inject = {BaseWallet: self.wallet}
         self.profile = InMemoryProfile.test_profile()
-        self.context = self.profile.context
-        setattr(self.context, "profile", self.profile)
-        self.session = await self.profile.session()
-        self.session.context.injector.bind_instance(BaseWallet, self.wallet)
+        self.context = AdminRequestContext.test_context(
+            self.session_inject, self.profile
+        )
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -40,28 +41,32 @@ class TestWalletRoutes(AsyncTestCase):
 
     async def test_missing_wallet(self):
         self.session.context.injector.clear_binding(BaseWallet)
-        with async_mock.patch.object(
-            self.context.profile,
-            "session",
-            async_mock.MagicMock(return_value=self.session),
-        ) as mock_session:
-            with self.assertRaises(HTTPForbidden):
-                await test_module.wallet_create_did(self.request)
+        with self.assertRaises(HTTPForbidden):
+            await test_module.wallet_create_did(self.request)
 
-            with self.assertRaises(HTTPForbidden):
-                await test_module.wallet_did_list(self.request)
+        with self.assertRaises(HTTPForbidden):
+            await test_module.wallet_did_list(self.request)
 
-            with self.assertRaises(HTTPForbidden):
-                await test_module.wallet_get_public_did(self.request)
+        with self.assertRaises(HTTPForbidden):
+            await test_module.wallet_get_public_did(self.request)
 
-            with self.assertRaises(HTTPForbidden):
-                await test_module.wallet_set_public_did(self.request)
+        with self.assertRaises(HTTPForbidden):
+            await test_module.wallet_set_public_did(self.request)
 
-            with self.assertRaises(HTTPForbidden):
-                await test_module.wallet_set_did_endpoint(self.request)
+        with self.assertRaises(HTTPForbidden):
+            await test_module.wallet_set_did_endpoint(self.request)
 
-            with self.assertRaises(HTTPForbidden):
-                await test_module.wallet_get_did_endpoint(self.request)
+        with self.assertRaises(HTTPForbidden):
+            self.request.json = async_mock.CoroutineMock(
+                return_value={
+                    "did": self.test_did,
+                    "endpoint": "https://my-endpoint.ca:8020",
+                }
+            )
+            await test_module.wallet_set_did_endpoint(self.request)
+
+        with self.assertRaises(HTTPForbidden):
+            await test_module.wallet_get_did_endpoint(self.request)
 
     def test_format_did_info(self):
         did_info = DIDInfo(
@@ -428,7 +433,7 @@ class TestWalletRoutes(AsyncTestCase):
         ledger.get_key_for_did = async_mock.CoroutineMock()
         ledger.update_endpoint_for_did = async_mock.CoroutineMock()
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.set_public_did.return_value = DIDInfo(
             self.test_did,
@@ -472,20 +477,12 @@ class TestWalletRoutes(AsyncTestCase):
         ledger.get_key_for_did = async_mock.CoroutineMock()
         ledger.update_endpoint_for_did = async_mock.CoroutineMock()
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
-        self.session.context.injector.bind_instance(
+        self.profile.context.injector.bind_instance(
             BaseMultitenantManager, multitenant_mgr
         )
-        self.wallet.set_public_did.return_value = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            DIDPosture.PUBLIC.metadata,
-            DIDMethod.SOV,
-            KeyType.ED25519,
-        )
-        self.session.context.injector.bind_instance(BaseWallet, self.wallet)
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ), async_mock.patch.object(
@@ -516,14 +513,10 @@ class TestWalletRoutes(AsyncTestCase):
         ledger = Ledger()
         ledger.get_key_for_did = async_mock.CoroutineMock(return_value=None)
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
-        with async_mock.patch.object(
-            self.context.profile,
-            "session",
-            async_mock.MagicMock(return_value=self.session),
-        ) as mock_session:
-            with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.wallet_set_public_did(self.request)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
+
+        with self.assertRaises(test_module.web.HTTPNotFound):
+            await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_not_found(self):
         self.request.query = {"did": self.test_did}
@@ -532,7 +525,7 @@ class TestWalletRoutes(AsyncTestCase):
         ledger = Ledger()
         ledger.get_key_for_did = async_mock.CoroutineMock(return_value=None)
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.get_local_did.side_effect = test_module.WalletNotFoundError()
         self.session.context.injector.bind_instance(BaseWallet, self.wallet)
@@ -552,16 +545,7 @@ class TestWalletRoutes(AsyncTestCase):
         ledger.update_endpoint_for_did = async_mock.CoroutineMock()
         ledger.get_key_for_did = async_mock.CoroutineMock()
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
-        self.wallet.get_public_did.return_value = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            DIDPosture.PUBLIC.metadata,
-            DIDMethod.SOV,
-            KeyType.ED25519,
-        )
-        self.wallet.set_public_did.side_effect = test_module.WalletError()
-        self.session.context.injector.bind_instance(BaseWallet, self.wallet)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response, async_mock.patch.object(
@@ -580,7 +564,7 @@ class TestWalletRoutes(AsyncTestCase):
         ledger.update_endpoint_for_did = async_mock.CoroutineMock()
         ledger.get_key_for_did = async_mock.CoroutineMock()
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.get_public_did.return_value = DIDInfo(
             self.test_did,
@@ -609,7 +593,7 @@ class TestWalletRoutes(AsyncTestCase):
         ledger.update_endpoint_for_did = async_mock.CoroutineMock()
         ledger.get_key_for_did = async_mock.CoroutineMock()
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.set_public_did.return_value = DIDInfo(
             self.test_did,
@@ -652,17 +636,8 @@ class TestWalletRoutes(AsyncTestCase):
         ledger.update_endpoint_for_did = async_mock.CoroutineMock()
         ledger.get_key_for_did = async_mock.CoroutineMock()
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
-        did_info = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            DIDPosture.PUBLIC.metadata,
-            DIDMethod.SOV,
-            KeyType.ED25519,
-        )
-        self.wallet.get_local_did.return_value = did_info
-        self.wallet.set_public_did.return_value = did_info
-        self.session.context.injector.bind_instance(BaseWallet, self.wallet)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
+
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response, async_mock.patch.object(
@@ -700,7 +675,7 @@ class TestWalletRoutes(AsyncTestCase):
         ledger = Ledger()
         ledger.update_endpoint_for_did = async_mock.CoroutineMock()
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.get_local_did.return_value = DIDInfo(
             self.test_did,
@@ -772,7 +747,7 @@ class TestWalletRoutes(AsyncTestCase):
         ledger = Ledger()
         ledger.update_endpoint_for_did = async_mock.CoroutineMock()
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.set_did_endpoint.side_effect = test_module.WalletError()
         self.session.context.injector.bind_instance(BaseWallet, self.wallet)
@@ -796,7 +771,7 @@ class TestWalletRoutes(AsyncTestCase):
         ledger = Ledger()
         ledger.update_endpoint_for_did = async_mock.CoroutineMock()
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
-        self.session.context.injector.bind_instance(BaseLedger, ledger)
+        self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         self.wallet.set_did_endpoint.side_effect = test_module.WalletNotFoundError()
 

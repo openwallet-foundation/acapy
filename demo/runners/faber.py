@@ -139,6 +139,7 @@ class FaberAgent(AriesAgent):
                                 "@context": [
                                     "https://www.w3.org/2018/credentials/v1",
                                     "https://w3id.org/citizenship/v1",
+                                    "https://w3id.org/security/bbs/v1",
                                 ],
                                 "type": [
                                     "VerifiableCredential",
@@ -468,12 +469,14 @@ async def main(args):
                         webhook_port=faber_agent.agent.get_new_webhook_port(),
                         public_did=True,
                         mediator_agent=faber_agent.mediator_agent,
+                        endorser_agent=faber_agent.endorser_agent,
                     )
                 else:
                     created = await faber_agent.agent.register_or_switch_wallet(
                         target_wallet_name,
                         public_did=True,
                         mediator_agent=faber_agent.mediator_agent,
+                        endorser_agent=faber_agent.endorser_agent,
                         cred_type=faber_agent.cred_type,
                     )
                 # create a schema and cred def for the new wallet

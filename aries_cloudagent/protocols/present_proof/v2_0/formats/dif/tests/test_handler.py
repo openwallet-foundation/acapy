@@ -3,6 +3,8 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
 
+from aries_cloudagent.protocols.present_proof.dif.pres_exch import SchemaInputDescriptor
+
 from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......storage.vc_holder.base import VCHolder
@@ -18,6 +20,7 @@ from .......vc.vc_ld.validation_result import PresentationVerificationResult
 from .......wallet.base import BaseWallet
 
 from .....dif.pres_exch_handler import DIFPresExchHandler, DIFPresExchError
+from .....dif.tests.test_data import TEST_CRED_DICT
 
 from ....message_types import (
     ATTACHMENT_FORMAT,
@@ -500,6 +503,183 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
         request_data = {}
         request_data["dif"] = dif_pres_spec
+
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(return_value=cred_list)
+                    )
+                )
+            ),
+        )
+
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "create_vp",
+            async_mock.CoroutineMock(),
+        ) as mock_create_vp:
+            mock_create_vp.return_value = DIF_PRES
+            output = await self.handler.create_pres(record, request_data)
+            assert isinstance(output[0], V20PresFormat) and isinstance(
+                output[1], AttachDecorator
+            )
+            assert output[1].data.json_ == DIF_PRES
+
+    async def test_create_pres_prover_proof_spec_with_reveal_doc(self):
+        dif_pres_spec = deepcopy(DIF_PRES_REQUEST_A)
+        dif_pres_spec["issuer_id"] = "test123"
+        dif_pres_spec["reveal_doc"] = {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "type": ["VerifiableCredential", "LabReport"],
+            "@explicit": True,
+            "@requireAll": True,
+            "issuanceDate": {},
+            "issuer": {},
+            "credentialSubject": {
+                "Observation": [
+                    {"effectiveDateTime": {}, "@explicit": True, "@requireAll": True}
+                ],
+                "@explicit": True,
+                "@requireAll": True,
+            },
+        }
+        cred_list = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="did:example:489398593",
+                subject_ids=[
+                    "did:sov:WgWxqztrNooG92RXvxSTWv",
+                ],
+                proof_types=["Ed25519Signature2018"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...", "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+                record_id="test1",
+            )
+        ]
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        request_data = {}
+        request_data["dif"] = dif_pres_spec
+
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(return_value=cred_list)
+                    )
+                )
+            ),
+        )
+
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "create_vp",
+            async_mock.CoroutineMock(),
+        ) as mock_create_vp:
+            mock_create_vp.return_value = DIF_PRES
+            output = await self.handler.create_pres(record, request_data)
+            assert isinstance(output[0], V20PresFormat) and isinstance(
+                output[1], AttachDecorator
+            )
+            assert output[1].data.json_ == DIF_PRES
+
+    async def test_create_pres_one_of_filter(self):
+        cred_list = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="did:example:489398593",
+                subject_ids=[
+                    "did:sov:WgWxqztrNooG92RXvxSTWv",
+                ],
+                proof_types=["Ed25519Signature2018"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...", "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+                record_id="test1",
+            )
+        ]
+        pres_request = deepcopy(DIF_PRES_REQUEST_B)
+        pres_request["presentation_definition"]["input_descriptors"][0]["schema"] = {
+            "oneof_filter": [
+                [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                    {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+                ],
+                [{"uri": "https://www.w3.org/Test#Test"}],
+            ]
+        }
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(pres_request, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        request_data = {"dif": {}}
 
         self.context.injector.bind_instance(
             VCHolder,
@@ -1072,6 +1252,18 @@ class TestDIFFormatHandler(AsyncTestCase):
         assert len(returned_record_ids) == 2
         assert returned_cred_list[0].record_id == "test2"
 
+    async def test_retrieve_uri_list_from_schema_filter(self):
+        test_schema_filter = [
+            [
+                SchemaInputDescriptor(uri="test123"),
+                SchemaInputDescriptor(uri="test321", required=True),
+            ]
+        ]
+        test_one_of_uri_groups = (
+            await self.handler.retrieve_uri_list_from_schema_filter(test_schema_filter)
+        )
+        assert test_one_of_uri_groups == [["test123", "test321"]]
+
     async def test_verify_received_pres_a(self):
         dif_pres = V20Pres(
             formats=[
@@ -1223,6 +1415,180 @@ class TestDIFFormatHandler(AsyncTestCase):
             ],
             request_presentations_attach=[
                 AttachDecorator.data_json(dif_proof_req, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_limit_disclosure_a(self):
+        dif_proof = deepcopy(DIF_PRES)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"]["Patient"] = [
+            {
+                "address": [
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                ]
+            },
+            {
+                "address": [
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                ]
+            },
+        ]
+        dif_proof["verifiableCredential"] = []
+        dif_proof["verifiableCredential"].append(cred_dict)
+        dif_proof["verifiableCredential"].append(cred_dict)
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=dif_proof,
+                    ident="dif",
+                )
+            ],
+        )
+        pres_request = deepcopy(DIF_PRES_REQUEST_B)
+        pres_request["presentation_definition"]["input_descriptors"][0][
+            "constraints"
+        ] = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[0].address[*].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        pres_request["presentation_definition"]["input_descriptors"][0]["schema"] = {
+            "oneof_filter": [
+                [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                    {"uri": "https://www.vdel.com/MedicalPass"},
+                    {"uri": "http://hl7.org/fhir/Patient"},
+                ],
+                [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                    {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+                ],
+            ]
+        }
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(pres_request, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_limit_disclosure_b(self):
+        dif_proof = deepcopy(DIF_PRES)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"]["Patient"]["address"] = [
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+        ]
+        dif_proof["verifiableCredential"] = []
+        dif_proof["verifiableCredential"].append(cred_dict)
+        dif_proof["verifiableCredential"].append(cred_dict)
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=dif_proof,
+                    ident="dif",
+                )
+            ],
+        )
+        pres_request = deepcopy(DIF_PRES_REQUEST_B)
+        pres_request["presentation_definition"]["input_descriptors"][0][
+            "constraints"
+        ] = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[*].address"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        pres_request["presentation_definition"]["input_descriptors"][0]["schema"] = [
+            {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+            {"uri": "https://www.vdel.com/MedicalPass"},
+            {"uri": "http://hl7.org/fhir/Patient"},
+        ]
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(pres_request, ident="dif")
             ],
         )
         record = V20PresExRecord(
@@ -1465,6 +1831,93 @@ class TestDIFFormatHandler(AsyncTestCase):
             ],
             request_presentations_attach=[
                 AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        with self.assertRaises(DIFPresExchError):
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_pres_fail_schema_filter(self):
+        dif_proof = deepcopy(DIF_PRES)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"]["Patient"] = [
+            {
+                "address": [
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                ]
+            },
+            {
+                "address": [
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                ]
+            },
+        ]
+        dif_proof["verifiableCredential"] = []
+        dif_proof["verifiableCredential"].append(cred_dict)
+        dif_proof["verifiableCredential"].append(cred_dict)
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=dif_proof,
+                    ident="dif",
+                )
+            ],
+        )
+        pres_request = deepcopy(DIF_PRES_REQUEST_B)
+        pres_request["presentation_definition"]["input_descriptors"][0][
+            "constraints"
+        ] = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[0].address[*].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(pres_request, ident="dif")
             ],
         )
         record = V20PresExRecord(

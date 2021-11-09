@@ -127,6 +127,21 @@ class NumericStrWhole(Regexp):
         )
 
 
+class NumericStrAny(Regexp):
+    """Validate value against any number numeric string."""
+
+    EXAMPLE = "-1"
+    PATTERN = r"^-?[0-9]*$"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            NumericStrAny.PATTERN,
+            error="Value {input} is not a numeric string",
+        )
+
+
 class NaturalNumber(Range):
     """Validate value as positive integer."""
 
@@ -762,6 +777,7 @@ class IndyOrKeyDID(Regexp):
 INT_EPOCH = {"validate": IntEpoch(), "example": IntEpoch.EXAMPLE}
 WHOLE_NUM = {"validate": WholeNumber(), "example": WholeNumber.EXAMPLE}
 NUM_STR_WHOLE = {"validate": NumericStrWhole(), "example": NumericStrWhole.EXAMPLE}
+NUM_STR_ANY = {"validate": NumericStrAny(), "example": NumericStrAny.EXAMPLE}
 NATURAL_NUM = {"validate": NaturalNumber(), "example": NaturalNumber.EXAMPLE}
 NUM_STR_NATURAL = {
     "validate": NumericStrNatural(),

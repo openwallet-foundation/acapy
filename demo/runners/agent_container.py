@@ -598,6 +598,7 @@ class AgentContainer:
         self.multitenant = multitenant
         self.mediation = mediation
         self.use_did_exchange = use_did_exchange
+        print("Setting use_did_exchange:", self.use_did_exchange)
         self.wallet_type = wallet_type
         self.public_did = public_did
         self.seed = seed
@@ -657,6 +658,25 @@ class AgentContainer:
             await self.agent.register_did(cred_type=CRED_FORMAT_INDY)
             log_msg("Created public DID")
 
+        # if we are endorsing, create the endorser agent first, then we can use the
+        # multi-use invitation to auto-connect the agent on startup
+        if create_endorser_agent:
+            self.endorser_agent = await start_endorser_agent(
+                self.start_port + 7,
+                self.genesis_txns,
+                use_did_exchange=self.use_did_exchange,
+            )
+            if not self.endorser_agent:
+                raise Exception("Endorser agent returns None :-(")
+
+            # set the endorser invite so the agent can auto-connect
+            self.agent.endorser_invite = (
+                self.endorser_agent.endorser_multi_invitation_url
+            )
+            self.agent.endorser_did = self.endorser_agent.endorser_public_did
+        else:
+            self.endorser_agent = None
+
         with log_timer("Startup duration:"):
             await self.agent.start_process()
 
@@ -680,22 +700,12 @@ class AgentContainer:
                 public_did=self.public_did,
                 webhook_port=None,
                 mediator_agent=self.mediator_agent,
+                endorser_agent=self.endorser_agent,
             )
         elif self.mediation:
             # we need to pre-connect the agent to its mediator
             if not await connect_wallet_to_mediator(self.agent, self.mediator_agent):
                 raise Exception("Mediation setup FAILED :-(")
-
-        if create_endorser_agent:
-            self.endorser_agent = await start_endorser_agent(
-                self.start_port + 7, self.genesis_txns
-            )
-            if not self.endorser_agent:
-                raise Exception("Endorser agent returns None :-(")
-            if not await connect_wallet_to_endorser(self.agent, self.endorser_agent):
-                raise Exception("Endorser setup FAILED :-(")
-        else:
-            self.endorser_agent = None
 
         if self.public_did and self.cred_type == CRED_FORMAT_JSON_LD:
             # create did of appropriate type
@@ -1167,7 +1177,7 @@ async def create_agent_with_args(args, ident: str = None):
         multitenant=args.multitenant,
         mediation=args.mediation,
         cred_type=cred_type,
-        use_did_exchange=args.did_exchange if ("did_exchange" in args) else (aip == 20),
+        use_did_exchange=(aip == 20) if ("aip" in args) else args.did_exchange,
         wallet_type=arg_file_dict.get("wallet-type") or args.wallet_type,
         public_did=public_did,
         seed="random" if public_did else None,

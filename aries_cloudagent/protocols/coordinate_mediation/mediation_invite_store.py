@@ -5,17 +5,15 @@ Handle storage and retrieval of mediation invites provided through arguments.
 Enables having the mediation invite config be the same
 for `provision` and `starting` commands.
 """
-import dataclasses
 import json
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from aries_cloudagent.storage.base import BaseStorage
 from aries_cloudagent.storage.error import StorageNotFoundError
 from aries_cloudagent.storage.record import StorageRecord
 
 
-@dataclasses.dataclass
-class MediationInviteRecord:
+class MediationInviteRecord(NamedTuple):
     """A record to store mediation invites and their freshness."""
 
     invite: str

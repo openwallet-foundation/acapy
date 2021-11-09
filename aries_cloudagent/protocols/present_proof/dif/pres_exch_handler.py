@@ -17,7 +17,7 @@ from dateutil.parser import ParserError
 from jsonpath_ng import parse
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
-from typing import Sequence, Optional, Tuple
+from typing import Sequence, Optional, Tuple, Union, Dict, List
 from unflatten import unflatten
 from uuid import uuid4
 
@@ -50,6 +50,7 @@ from .pres_exch import (
     SubmissionRequirements,
     Requirement,
     SchemaInputDescriptor,
+    SchemasInputDescriptorFilter,
     InputDescriptorMapping,
     PresentationSubmission,
 )
@@ -58,6 +59,8 @@ PRESENTATION_SUBMISSION_JSONLD_CONTEXT = (
     "https://identity.foundation/presentation-exchange/submission/v1"
 )
 PRESENTATION_SUBMISSION_JSONLD_TYPE = "PresentationSubmission"
+PYTZ_TIMEZONE_PATTERN = re.compile(r"(([a-zA-Z]+)(?:\/)([a-zA-Z]+))")
+LIST_INDEX_PATTERN = re.compile(r"\[(\W+)\]|\[(\d+)\]")
 
 
 class DIFPresExchError(BaseError):
@@ -91,6 +94,7 @@ class DIFPresExchHandler:
         profile: Profile,
         pres_signing_did: str = None,
         proof_type: str = None,
+        reveal_doc: dict = None,
     ):
         """Initialize PresExchange Handler."""
         super().__init__()
@@ -101,6 +105,7 @@ class DIFPresExchHandler:
         else:
             self.proof_type = proof_type
         self.is_holder = False
+        self.reveal_doc_frame = reveal_doc
 
     async def _get_issue_suite(
         self,
@@ -385,13 +390,15 @@ class DIFPresExchHandler:
                 if applicable and field.id and field.id in is_holder_field_ids:
                     # Missing credentialSubject.id - cannot verify that holder of claim
                     # is same as subject
-                    if not credential.subject_ids or len(credential.subject_ids) == 0:
+                    credential_subject_ids = credential.subject_ids
+                    if not credential_subject_ids or len(credential_subject_ids) == 0:
                         applicable = False
                         break
                     # Holder of claim is not same as the subject
-                    if not await self.process_constraint_holders(
-                        subject_ids=credential.subject_ids
-                    ):
+                    is_holder_same_as_subject = await self.process_constraint_holders(
+                        subject_ids=credential_subject_ids
+                    )
+                    if not is_holder_same_as_subject:
                         applicable = False
                         break
             if not applicable:
@@ -503,48 +510,47 @@ class DIFPresExchHandler:
 
     def reveal_doc(self, credential_dict: dict, constraints: Constraints):
         """Generate reveal_doc dict for deriving credential."""
-        derived = {
-            "@context": credential_dict.get("@context"),
-            "type": credential_dict.get("type"),
-            "@explicit": True,
-            "@requireAll": True,
-            "issuanceDate": {},
-            "issuer": {},
-        }
-        unflatten_dict = {}
-        for field in constraints._fields:
-            for path in field.paths:
-                jsonpath = parse(path)
-                match = jsonpath.find(credential_dict)
-                if len(match) == 0:
-                    continue
-                for match_item in match:
-                    full_path = str(match_item.full_path)
-                    if bool(re.search(pattern=r"\[[0-9]+\]", string=full_path)):
-                        full_path = full_path.replace(".[", "[")
-                    unflatten_dict[full_path] = {}
-                    explicit_key_path = None
-                    key_list = full_path.split(".")[:-1]
-                    for key in key_list:
-                        if not explicit_key_path:
-                            explicit_key_path = key
-                        else:
-                            explicit_key_path = explicit_key_path + "." + key
-                        unflatten_dict[explicit_key_path + ".@explicit"] = True
-                        unflatten_dict[explicit_key_path + ".@requireAll"] = True
-        derived = self.new_credential_builder(derived, unflatten_dict)
-        # Fix issue related to credentialSubject type property
-        if "credentialSubject" in derived.keys():
-            if "type" in credential_dict.get("credentialSubject"):
-                derived["credentialSubject"]["type"] = credential_dict.get(
-                    "credentialSubject"
-                ).get("type")
-        if "credentialSubject" not in derived.keys():
-            if isinstance(credential_dict.get("credentialSubject"), list):
-                derived["credentialSubject"] = []
-            elif isinstance(credential_dict.get("credentialSubject"), dict):
-                derived["credentialSubject"] = {}
-        return derived
+        if not self.reveal_doc_frame:
+            derived = {
+                "@context": credential_dict.get("@context"),
+                "type": credential_dict.get("type"),
+                "@explicit": True,
+                "@requireAll": True,
+                "issuanceDate": {},
+                "issuer": {},
+            }
+            unflatten_dict = {}
+            for field in constraints._fields:
+                for path in field.paths:
+                    jsonpath = parse(path)
+                    match = jsonpath.find(credential_dict)
+                    if len(match) == 0:
+                        continue
+                    for match_item in match:
+                        full_path = str(match_item.full_path)
+                        if bool(LIST_INDEX_PATTERN.search(full_path)):
+                            full_path = re.sub(r"\[(\W+)\]|\[(\d+)\]", "[0]", full_path)
+                            full_path = full_path.replace(".[", "[")
+                        unflatten_dict[full_path] = {}
+                        explicit_key_path = None
+                        key_list = full_path.split(".")[:-1]
+                        for key in key_list:
+                            if not explicit_key_path:
+                                explicit_key_path = key
+                            else:
+                                explicit_key_path = explicit_key_path + "." + key
+                            unflatten_dict[explicit_key_path + ".@explicit"] = True
+                            unflatten_dict[explicit_key_path + ".@requireAll"] = True
+            derived = self.new_credential_builder(derived, unflatten_dict)
+            # Fix issue related to credentialSubject type property
+            if "credentialSubject" in derived.keys():
+                if "type" in credential_dict.get("credentialSubject"):
+                    derived["credentialSubject"]["type"] = credential_dict.get(
+                        "credentialSubject"
+                    ).get("type")
+            return derived
+        else:
+            return self.reveal_doc_frame
 
     def new_credential_builder(
         self, new_credential: dict, unflatten_dict: dict
@@ -582,17 +588,49 @@ class DIFPresExchHandler:
                     "JSON Path expression matching on proof object "
                     "is not currently supported"
                 )
-            jsonpath = parse(path)
-            match = jsonpath.find(credential_dict)
+            try:
+                jsonpath = parse(path)
+                match = jsonpath.find(credential_dict)
+            except KeyError:
+                continue
             if len(match) == 0:
                 continue
             for match_item in match:
                 # No filter in constraint
                 if not field._filter:
                     return True
-                if self.validate_patch(match_item.value, field._filter):
+                if (
+                    isinstance(match_item.value, dict)
+                    and "type" in match_item.value
+                    and "@value" in match_item.value
+                ):
+                    to_filter_type = match_item.value.get("type")
+                    to_filter_value = match_item.value.get("@value")
+                    if "integer" in to_filter_type:
+                        to_filter_value = int(to_filter_value)
+                    elif "dateTime" in to_filter_type or "date" in to_filter_type:
+                        to_filter_value = self.string_to_timezone_aware_datetime(
+                            to_filter_value
+                        )
+                    elif "boolean" in to_filter_type:
+                        to_filter_value = bool(to_filter_value)
+                    elif "double" in to_filter_type or "decimal" in to_filter_type:
+                        to_filter_value = float(to_filter_value)
+                else:
+                    to_filter_value = match_item.value
+                if self.validate_patch(to_filter_value, field._filter):
                     return True
         return False
+
+    def string_to_timezone_aware_datetime(self, datetime_str: str) -> datetime:
+        """Convert string with PYTZ timezone to datetime for comparison."""
+        if PYTZ_TIMEZONE_PATTERN.search(datetime_str):
+            result = PYTZ_TIMEZONE_PATTERN.search(datetime_str).group(1)
+            datetime_str = datetime_str.replace(result, "")
+            return dateutil_parser(datetime_str).replace(tzinfo=pytz.timezone(result))
+        else:
+            utc = pytz.UTC
+            return dateutil_parser(datetime_str).replace(tzinfo=utc)
 
     def validate_patch(self, to_check: any, _filter: Filter) -> bool:
         """
@@ -618,7 +656,9 @@ class DIFPresExchHandler:
                     if isinstance(to_check, str):
                         if _filter.fmt == "date" or _filter.fmt == "date-time":
                             try:
-                                to_compare_date = dateutil_parser(to_check)
+                                to_compare_date = (
+                                    self.string_to_timezone_aware_datetime(to_check)
+                                )
                                 if isinstance(to_compare_date, datetime):
                                     return True
                             except (ParserError, TypeError):
@@ -742,12 +782,11 @@ class DIFPresExchHandler:
         """
         try:
             if _filter.fmt:
-                utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
-                    to_compare_date = dateutil_parser(_filter.exclusive_min).replace(
-                        tzinfo=utc
+                    to_compare_date = self.string_to_timezone_aware_datetime(
+                        _filter.exclusive_min
                     )
-                    given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                    given_date = self.string_to_timezone_aware_datetime(str(val))
                     return given_date > to_compare_date
             else:
                 if self.is_numeric(val):
@@ -771,12 +810,11 @@ class DIFPresExchHandler:
         """
         try:
             if _filter.fmt:
-                utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
-                    to_compare_date = dateutil_parser(_filter.exclusive_max).replace(
-                        tzinfo=utc
+                    to_compare_date = self.string_to_timezone_aware_datetime(
+                        _filter.exclusive_max
                     )
-                    given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                    given_date = self.string_to_timezone_aware_datetime(str(val))
                     return given_date < to_compare_date
             else:
                 if self.is_numeric(val):
@@ -800,12 +838,11 @@ class DIFPresExchHandler:
         """
         try:
             if _filter.fmt:
-                utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
-                    to_compare_date = dateutil_parser(_filter.maximum).replace(
-                        tzinfo=utc
+                    to_compare_date = self.string_to_timezone_aware_datetime(
+                        _filter.maximum
                     )
-                    given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                    given_date = self.string_to_timezone_aware_datetime(str(val))
                     return given_date <= to_compare_date
             else:
                 if self.is_numeric(val):
@@ -829,12 +866,11 @@ class DIFPresExchHandler:
         """
         try:
             if _filter.fmt:
-                utc = pytz.UTC
                 if _filter.fmt == "date" or _filter.fmt == "date-time":
-                    to_compare_date = dateutil_parser(_filter.minimum).replace(
-                        tzinfo=utc
+                    to_compare_date = self.string_to_timezone_aware_datetime(
+                        _filter.minimum
                     )
-                    given_date = dateutil_parser(str(val)).replace(tzinfo=utc)
+                    given_date = self.string_to_timezone_aware_datetime(str(val))
                     return given_date >= to_compare_date
             else:
                 if self.is_numeric(val):
@@ -938,8 +974,33 @@ class DIFPresExchHandler:
                 return True
         return False
 
+    async def _credential_match_schema_filter_helper(
+        self, credential: VCRecord, filter: Sequence[Sequence[SchemaInputDescriptor]]
+    ) -> bool:
+        """credential_match_schema for SchemasInputDescriptorFilter.uri_groups."""
+        applicable = False
+        for uri_group in filter:
+            if applicable:
+                return True
+            for schema in uri_group:
+                applicable = self.credential_match_schema(
+                    credential=credential, schema_id=schema.uri
+                )
+                if schema.required and not applicable:
+                    break
+                if applicable:
+                    if schema.uri in [
+                        EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
+                    ]:
+                        continue
+                    else:
+                        break
+        return applicable
+
     async def filter_schema(
-        self, credentials: Sequence[VCRecord], schemas: Sequence[SchemaInputDescriptor]
+        self,
+        credentials: Sequence[VCRecord],
+        schemas: SchemasInputDescriptorFilter,
     ) -> Sequence[VCRecord]:
         """
         Filter by schema.
@@ -957,19 +1018,9 @@ class DIFPresExchHandler:
         result = []
         for credential in credentials:
             applicable = False
-            for schema in schemas:
-                applicable = self.credential_match_schema(
-                    credential=credential, schema_id=schema.uri
-                )
-                if schema.required and not applicable:
-                    break
-                if applicable:
-                    if schema.uri in [
-                        EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
-                    ]:
-                        continue
-                    else:
-                        break
+            applicable = await self._credential_match_schema_filter_helper(
+                credential=credential, filter=schemas.uri_groups
+            )
             if applicable:
                 result.append(credential)
         return result
@@ -1037,7 +1088,8 @@ class DIFPresExchHandler:
                 )
             else:
                 filtered_by_schema = await self.filter_schema(
-                    credentials=credentials, schemas=descriptor.schemas
+                    credentials=credentials,
+                    schemas=descriptor.schemas,
                 )
             # Filter credentials based upon path expressions specified in constraints
             filtered = await self.filter_constraints(
@@ -1250,7 +1302,7 @@ class DIFPresExchHandler:
     async def merge(
         self,
         dict_descriptor_creds: dict,
-    ) -> (Sequence[VCRecord], Sequence[InputDescriptorMapping]):
+    ) -> Tuple[Sequence[VCRecord], Sequence[InputDescriptorMapping]]:
         """
         Return applicable credentials and descriptor_map for attachment.
 
@@ -1303,11 +1355,20 @@ class DIFPresExchHandler:
         descriptor_map_list = pres.get("presentation_submission").get("descriptor_map")
         input_descriptors = pd.input_descriptors
         inp_desc_id_contraint_map = {}
+        inp_desc_id_schema_one_of_filter = set()
+        inp_desc_id_schemas_map = {}
         for input_descriptor in input_descriptors:
             inp_desc_id_contraint_map[input_descriptor.id] = input_descriptor.constraint
+            inp_desc_id_schemas_map[input_descriptor.id] = input_descriptor.schemas
+            if input_descriptor.schemas.oneof_filter:
+                inp_desc_id_schema_one_of_filter.add(input_descriptor.id)
         for desc_map_item in descriptor_map_list:
             desc_map_item_id = desc_map_item.get("id")
             constraint = inp_desc_id_contraint_map.get(desc_map_item_id)
+            schema_filter = inp_desc_id_schemas_map.get(desc_map_item_id)
+            is_one_of_filtered = False
+            if desc_map_item_id in inp_desc_id_schema_one_of_filter:
+                is_one_of_filtered = True
             desc_map_item_path = desc_map_item.get("path")
             jsonpath = parse(desc_map_item_path)
             match = jsonpath.find(pres)
@@ -1317,26 +1378,60 @@ class DIFPresExchHandler:
                 )
             for match_item in match:
                 if not await self.apply_constraint_received_cred(
-                    constraint, match_item.value
+                    constraint, match_item.value, is_one_of_filtered
                 ):
                     raise DIFPresExchError(
                         f"Constraint specified for {desc_map_item_id} does not "
                         f"apply to the enclosed credential in {desc_map_item_path}"
                     )
+                if (
+                    not len(
+                        await self.filter_schema(
+                            credentials=[
+                                self.create_vcrecord(cred_dict=match_item.value)
+                            ],
+                            schemas=schema_filter,
+                        )
+                    )
+                    == 1
+                ):
+                    raise DIFPresExchError(
+                        f"Schema filtering specified in {desc_map_item_id} does not "
+                        f"match with the enclosed credential in {desc_map_item_path}"
+                    )
+
+    async def restrict_field_paths_one_of_filter(
+        self, field_paths: Sequence[str], cred_dict: dict
+    ) -> Sequence[str]:
+        """Return field_paths that are applicable to oneof_filter."""
+        applied_field_paths = []
+        for path in field_paths:
+            jsonpath = parse(path)
+            match = jsonpath.find(cred_dict)
+            if len(match) > 0:
+                applied_field_paths.append(path)
+        return applied_field_paths
 
     async def apply_constraint_received_cred(
-        self, constraint: Constraints, cred_dict: dict
+        self, constraint: Constraints, cred_dict: dict, is_one_of_filtered: bool = False
     ) -> bool:
         """Evaluate constraint from the request against received credential."""
         fields = constraint._fields
         field_paths = []
         credential = self.create_vcrecord(cred_dict)
+        is_limit_disclosure = constraint.limit_disclosure == "required"
         for field in fields:
-            field_paths = field_paths + field.paths
+            if is_limit_disclosure:
+                field = await self.get_updated_field(field, cred_dict)
             if not await self.filter_by_field(field, credential):
                 return False
+            field_paths = field_paths + (
+                await self.restrict_field_paths_one_of_filter(
+                    field_paths=field.paths, cred_dict=cred_dict
+                )
+            )
         # Selective Disclosure check
-        if constraint.limit_disclosure == "required":
+        if is_limit_disclosure:
             field_paths = set([path.replace("$.", "") for path in field_paths])
             mandatory_paths = {
                 "@context",
@@ -1355,7 +1450,7 @@ class DIFPresExchHandler:
                     key = ".".join(split_field_path[:-1])
                     value = split_field_path[-1]
                     nested_field_paths = self.build_nested_paths_dict(
-                        key, value, nested_field_paths
+                        key, value, nested_field_paths, cred_dict
                     )
                     to_remove_from_field_paths.add(field_path)
             for to_remove_path in to_remove_from_field_paths:
@@ -1368,33 +1463,109 @@ class DIFPresExchHandler:
                     return False
             for nested_attr_key in nested_field_paths:
                 nested_attr_values = nested_field_paths[nested_attr_key]
-                split_nested_attr_key = nested_attr_key.split(".")
-                extracted_dict = self.nested_get(cred_dict, split_nested_attr_key)
-                for attrs in extracted_dict.keys():
-                    if attrs not in nested_attr_values:
+                extracted = self.nested_get(cred_dict, nested_attr_key)
+                if isinstance(extracted, dict):
+                    if not self.check_attr_in_extracted_dict(
+                        extracted, nested_attr_values
+                    ):
                         return False
+                elif isinstance(extracted, list):
+                    for extracted_dict in extracted:
+                        if not self.check_attr_in_extracted_dict(
+                            extracted_dict, nested_attr_values
+                        ):
+                            return False
         return True
 
-    def nested_get(self, input_dict: dict, nested_key: Sequence[str]) -> dict:
-        """Return internal dict from nested input_dict given list of nested_key."""
-        internal_dict_value = input_dict
-        for k in nested_key:
-            internal_dict_value = internal_dict_value.get(k, None)
-        return internal_dict_value
+    def check_attr_in_extracted_dict(
+        self, extracted_dict: dict, nested_attr_values: dict
+    ) -> bool:
+        """Check if keys of extracted_dict exists in nested_attr_values."""
+        for attrs in extracted_dict.keys():
+            if attrs not in nested_attr_values:
+                return False
+        return True
+
+    def get_dict_keys_from_path(self, derived_cred_dict: dict, path: str) -> List:
+        """Return additional_attrs to build nested_field_paths."""
+        additional_attrs = []
+        mandatory_paths = ["@id", "@type"]
+        match_item = self.nested_get(derived_cred_dict, path)
+        if isinstance(match_item, dict):
+            for key in match_item.keys():
+                if key in mandatory_paths:
+                    additional_attrs.append(key)
+        elif isinstance(match_item, list):
+            for key in match_item[0].keys():
+                if key in mandatory_paths:
+                    additional_attrs.append(key)
+        return additional_attrs
+
+    async def get_updated_field(self, field: DIFField, cred: dict) -> DIFField:
+        """Return field with updated json path, if necessary."""
+        new_paths = []
+        for path in field.paths:
+            new_paths.append(await self.get_updated_path(cred, path))
+        field.paths = new_paths
+        return field
+
+    async def get_updated_path(self, cred_dict: dict, json_path: str) -> str:
+        """Return updated json path, if necessary."""
+
+        def update_path_recursive_call(path: str, level: int = 0):
+            path_split_array = path.split(".", level)
+            to_check = path_split_array[-1]
+            if "." not in to_check:
+                return path
+            split_by_index = re.split(r"\[(\d+)\]", to_check, 1)
+            if len(split_by_index) > 1:
+                jsonpath = parse(split_by_index[0])
+                match = jsonpath.find(cred_dict)
+                if len(match) > 0:
+                    if isinstance(match[0].value, dict):
+                        new_path = split_by_index[0] + split_by_index[2]
+                        return update_path_recursive_call(new_path, level + 1)
+            return update_path_recursive_call(path, level + 1)
+
+        return update_path_recursive_call(json_path)
+
+    def nested_get(self, input_dict: dict, path: str) -> Union[Dict, List]:
+        """Return dict or list from nested dict given list of nested_key."""
+        jsonpath = parse(path)
+        match = jsonpath.find(input_dict)
+        if len(match) > 1:
+            return_list = []
+            for match_item in match:
+                return_list.append(match_item.value)
+            return return_list
+        else:
+            return match[0].value
 
     def build_nested_paths_dict(
-        self, key: str, value: str, nested_field_paths: dict
+        self,
+        key: str,
+        value: str,
+        nested_field_paths: dict,
+        cred_dict: dict,
     ) -> dict:
         """Build and return nested_field_paths dict."""
+        additional_attrs = self.get_dict_keys_from_path(cred_dict, key)
+        value = re.sub(r"\[(\W+)\]|\[(\d+)\]", "", value)
         if key in nested_field_paths.keys():
             nested_field_paths[key].add(value)
         else:
             nested_field_paths[key] = {value}
+        if len(additional_attrs) > 0:
+            for attr in additional_attrs:
+                nested_field_paths[key].add(attr)
         split_key = key.split(".")
         if len(split_key) > 1:
             nested_field_paths.update(
                 self.build_nested_paths_dict(
-                    ".".join(split_key[:-1]), split_key[-1], nested_field_paths
+                    ".".join(split_key[:-1]),
+                    split_key[-1],
+                    nested_field_paths,
+                    cred_dict,
                 )
             )
         return nested_field_paths
