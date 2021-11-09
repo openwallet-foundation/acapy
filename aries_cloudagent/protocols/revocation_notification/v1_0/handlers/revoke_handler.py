@@ -10,6 +10,9 @@ from ..messages.revoke import Revoke
 class RevokeHandler(BaseHandler):
     """Handler for revoke message."""
 
+    RECIEVED_TOPIC = "acapy::revocation-notification::received"
+    WEBHOOK_TOPIC = "acapy::webhook::revocation-notification"
+
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Handle revoke message."""
         assert isinstance(context.message, Revoke)
@@ -22,7 +25,7 @@ class RevokeHandler(BaseHandler):
         # Emit a webhook
         if context.settings.get("revocation.monitor_notification"):
             await context.profile.notify(
-                "acapy::webhook::revocation-notification",
+                self.WEBHOOK_TOPIC,
                 {
                     "thread_id": context.message.thread_id,
                     "comment": context.message.comment,
@@ -31,7 +34,7 @@ class RevokeHandler(BaseHandler):
 
         # Emit an event
         await context.profile.notify(
-            "acapy::revocation-notification::received",
+            self.RECIEVED_TOPIC,
             {
                 "thread_id": context.message.thread_id,
                 "comment": context.message.comment,
