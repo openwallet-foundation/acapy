@@ -40,13 +40,14 @@ def test_register_events():
 async def test_on_revocation_published(profile: Profile, responder: MockResponder):
     """Test revocation published event handler."""
     mock_rec = mock.MagicMock()
+    mock_rec.cred_rev_id = "mock"
     mock_rec.delete_record = mock.CoroutineMock()
 
     MockRec = mock.MagicMock()
-    MockRec.query_by_ids = mock.CoroutineMock(return_value=mock_rec)
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(return_value=[mock_rec])
 
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::mock"
-    event = Event(topic, {"rev_reg_id": "mock", "cred_rev_id": "mock"})
+    event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
 
     assert isinstance(profile.settings, Settings)
     profile.settings["revocation.notify"] = True
@@ -54,9 +55,35 @@ async def test_on_revocation_published(profile: Profile, responder: MockResponde
     with mock.patch.object(test_module, "RevNotificationRecord", MockRec):
         await test_module.on_revocation_published(profile, event)
 
-    MockRec.query_by_ids.assert_called_once()
+    MockRec.query_by_rev_reg_id.assert_called_once()
     mock_rec.delete_record.assert_called_once()
     assert responder.messages
+
+
+@pytest.mark.asyncio
+async def test_on_revocation_published_no_notify(
+    profile: Profile, responder: MockResponder
+):
+    """Test revocation published event handler."""
+    mock_rec = mock.MagicMock()
+    mock_rec.cred_rev_id = "mock"
+    mock_rec.delete_record = mock.CoroutineMock()
+
+    MockRec = mock.MagicMock()
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(return_value=[mock_rec])
+
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::mock"
+    event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
+
+    assert isinstance(profile.settings, Settings)
+    profile.settings["revocation.notify"] = False
+
+    with mock.patch.object(test_module, "RevNotificationRecord", MockRec):
+        await test_module.on_revocation_published(profile, event)
+
+    MockRec.query_by_rev_reg_id.assert_called_once()
+    mock_rec.delete_record.assert_called_once()
+    assert not responder.messages
 
 
 @pytest.mark.asyncio
@@ -65,15 +92,15 @@ async def test_on_revocation_published_x_not_found(
 ):
     """Test revocation published event handler."""
     MockRec = mock.MagicMock()
-    MockRec.query_by_ids = mock.CoroutineMock(side_effect=StorageNotFoundError)
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(side_effect=StorageNotFoundError)
 
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::mock"
-    event = Event(topic, {"rev_reg_id": "mock", "cred_rev_id": "mock"})
+    event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
 
     with mock.patch.object(test_module, "RevNotificationRecord", MockRec):
         await test_module.on_revocation_published(profile, event)
 
-    MockRec.query_by_ids.assert_called_once()
+    MockRec.query_by_rev_reg_id.assert_called_once()
     assert not responder.messages
 
 
@@ -83,15 +110,15 @@ async def test_on_revocation_published_x_storage_error(
 ):
     """Test revocation published event handler."""
     MockRec = mock.MagicMock()
-    MockRec.query_by_ids = mock.CoroutineMock(side_effect=StorageError)
+    MockRec.query_by_rev_reg_id = mock.CoroutineMock(side_effect=StorageError)
 
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::mock"
-    event = Event(topic, {"rev_reg_id": "mock", "cred_rev_id": "mock"})
+    event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
 
     with mock.patch.object(test_module, "RevNotificationRecord", MockRec):
         await test_module.on_revocation_published(profile, event)
 
-    MockRec.query_by_ids.assert_called_once()
+    MockRec.query_by_rev_reg_id.assert_called_once()
     assert not responder.messages
 
 

@@ -132,7 +132,7 @@ class RevocationManager:
                 async with self._profile.session() as session:
                     await issuer_rr_rec.clear_pending(session)
                 await notify_revocation_published_event(
-                    self._profile, rev_reg_id, cred_rev_id
+                    self._profile, rev_reg_id, [cred_rev_id]
                 )
 
         else:
@@ -197,10 +197,9 @@ class RevocationManager:
                     await issuer_rr_rec.clear_pending(txn, published)
                     await txn.commit()
 
-                    for crid in crids:
-                        await notify_revocation_published_event(
-                            self._profile, issuer_rr_rec.revoc_reg_id, crid
-                        )
+                    await notify_revocation_published_event(
+                        self._profile, issuer_rr_rec.revoc_reg_id, crids
+                    )
 
         return result
 
