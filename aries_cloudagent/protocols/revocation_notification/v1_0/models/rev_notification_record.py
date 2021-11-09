@@ -5,10 +5,11 @@ from typing import Optional, Sequence
 from marshmallow import fields
 from marshmallow.utils import EXCLUDE
 
+
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
 from .....messaging.valid import INDY_CRED_REV_ID, INDY_REV_REG_ID, UUID4
-from .....storage.base import StorageDuplicateError
+from .....storage.error import StorageNotFoundError, StorageDuplicateError
 from ..messages.revoke import Revoke
 
 
@@ -80,6 +81,10 @@ class RevNotificationRecord(BaseRecord):
         if len(result) > 1:
             raise StorageDuplicateError(
                 "More than one RevNotificationRecord was found for the given IDs"
+            )
+        if not result:
+            raise StorageNotFoundError(
+                "No RevNotificationRecord found for the given IDs"
             )
         return result[0]
 
