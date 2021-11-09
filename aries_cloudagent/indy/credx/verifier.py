@@ -47,7 +47,7 @@ class IndyCredxVerifier(IndyVerifier):
         """
 
         try:
-            self.non_revoc_intervals(pres_req, pres)
+            self.non_revoc_intervals(pres_req, pres, credential_definitions)
             await self.check_timestamps(self.profile, pres_req, pres, rev_reg_defs)
             await self.pre_verify(pres_req, pres)
         except ValueError as err:
