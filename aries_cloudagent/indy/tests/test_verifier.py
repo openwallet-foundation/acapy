@@ -605,8 +605,12 @@ class TestIndySdkVerifier(AsyncTestCase):
                 },
             ],
         }
+        cred_defs = {
+            "LjgpST2rjsoxYegQDRm7EL:3:CL:17:tag": {"value": {}},
+            "LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {}},
+        }
 
-        self.verifier.non_revoc_intervals(big_pres_req, big_pres)
+        self.verifier.non_revoc_intervals(big_pres_req, big_pres, cred_defs)
 
         assert "non_revoked" not in big_pres_req
         for spec in big_pres_req["requested_attributes"].values():
