@@ -3,7 +3,7 @@
 import pytest
 
 from ......core.in_memory import InMemoryProfile
-from ......storage.error import StorageDuplicateError
+from ......storage.error import StorageDuplicateError, StorageNotFoundError
 from ...messages.revoke import Revoke
 from ..rev_notification_record import RevNotificationRecord
 
@@ -40,6 +40,11 @@ async def test_storage(profile, rec):
             session, rev_reg_id="mock_rev_reg_id"
         )
         assert recalled == rec
+
+        with pytest.raises(StorageNotFoundError):
+            await RevNotificationRecord.query_by_ids(
+                session, cred_rev_id="unknown", rev_reg_id="unknown"
+            )
 
         with pytest.raises(StorageDuplicateError):
             another = RevNotificationRecord(
