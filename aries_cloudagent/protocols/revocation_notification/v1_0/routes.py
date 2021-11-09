@@ -20,7 +20,7 @@ def register_events(event_bus: EventBus):
     """Register to handle events."""
     event_bus.subscribe(
         re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}.*"),
-        on_issuer_revoke_event,
+        on_revocation_published,
     )
     event_bus.subscribe(
         re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_CLEAR_PENDING_EVENT}.*"),
@@ -28,7 +28,7 @@ def register_events(event_bus: EventBus):
     )
 
 
-async def on_issuer_revoke_event(profile: Profile, event: Event):
+async def on_revocation_published(profile: Profile, event: Event):
     """Handle issuer revoke event."""
     LOGGER.debug("Sending notification of revocation to recipient: %s", event.payload)
     try:
