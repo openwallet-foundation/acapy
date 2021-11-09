@@ -35,23 +35,32 @@ async def fetch_genesis_transactions(genesis_url: str) -> str:
         raise ConfigError("Error retrieving ledger genesis transactions") from e
 
 
+async def _get_genesis_transactions_helper(ledger_settings: dict) -> str:
+    """Fetch genesis transactions from genesis_url or genesis_file if necessary."""
+
+    if ledger_settings.get("genesis_url"):
+        txns = await fetch_genesis_transactions(ledger_settings.get("genesis_url"))
+    elif ledger_settings.get("genesis_file"):
+        try:
+            genesis_path = ledger_settings.get("genesis_file")
+            LOGGER.info("Reading ledger genesis transactions from: %s", genesis_path)
+            with open(genesis_path, "r") as genesis_file:
+                txns = genesis_file.read()
+        except IOError as e:
+            raise ConfigError("Error reading ledger genesis transactions") from e
+    return txns
+
+
 async def get_genesis_transactions(settings: Settings) -> str:
     """Fetch genesis transactions if necessary."""
 
     txns = settings.get("ledger.genesis_transactions")
     if not txns:
         if settings.get("ledger.genesis_url"):
-            txns = await fetch_genesis_transactions(settings["ledger.genesis_url"])
+            ledger_settings = {"genesis_url": settings.get("ledger.genesis_url")}
         elif settings.get("ledger.genesis_file"):
-            try:
-                genesis_path = settings["ledger.genesis_file"]
-                LOGGER.info(
-                    "Reading ledger genesis transactions from: %s", genesis_path
-                )
-                with open(genesis_path, "r") as genesis_file:
-                    txns = genesis_file.read()
-            except IOError as e:
-                raise ConfigError("Error reading ledger genesis transactions") from e
+            ledger_settings = {"genesis_file": settings.get("ledger.genesis_file")}
+        txns = await _get_genesis_transactions_helper(ledger_settings)
         if txns:
             settings["ledger.genesis_transactions"] = txns
     return txns
@@ -63,20 +72,13 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings):
     ledger_config_list = settings.get("ledger.ledger_config_list")
     ledger_txns_list = []
     for config in ledger_config_list:
-        if "genesis_url" in config:
-            txns = await fetch_genesis_transactions(config.get("genesis_url"))
-        elif "genesis_file" in config:
-            try:
-                genesis_path = config.get("genesis_file")
-                LOGGER.info(
-                    "Reading ledger genesis transactions from: %s", genesis_path
-                )
-                with open(genesis_path, "r") as genesis_file:
-                    txns = genesis_file.read()
-            except IOError as e:
-                raise ConfigError("Error reading ledger genesis transactions") from e
-        else:
-            txns = config.get("genesis_transactions")
+        txns = config.get("genesis_transactions")
+        if not txns:
+            if "genesis_url" in config:
+                ledger_settings = {"genesis_url": config.get("genesis_url")}
+            elif "genesis_file" in config:
+                ledger_settings = {"genesis_file": config.get("genesis_file")}
+            txns = await _get_genesis_transactions_helper(ledger_settings)
         ledger_txns_list.append(
             {
                 "id": config.get("id") or str(uuid.uuid4()),

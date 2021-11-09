@@ -36,6 +36,7 @@ from ..ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
 )
+from ..ledger.multiple_ledger.manager_provider import MultiIndyLedgerManagerProvider
 from ..ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager
@@ -123,11 +124,15 @@ class Conductor:
             context.settings.get("ledger.ledger_config_list")
             and len(context.settings.get("ledger.ledger_config_list")) > 0
         ):
-            multi_ledger_manager = MultitenantManagerProvider(self.root_profile)
-            ledger = await multi_ledger_manager.get_write_ledger()[1]
             context.injector.bind_provider(
-                BaseMultipleLedgerManager, multi_ledger_manager
+                BaseMultipleLedgerManager,
+                MultiIndyLedgerManagerProvider(self.root_profile),
             )
+            ledger = (
+                await (
+                    context.injector.inject(BaseMultipleLedgerManager)
+                ).get_write_ledger()
+            )[1]
             if isinstance(self.root_profile, AskarProfile) and isinstance(
                 ledger, IndyVdrLedger
             ):
