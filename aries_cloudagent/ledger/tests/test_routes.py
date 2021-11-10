@@ -498,61 +498,6 @@ class TestLedgerRoutes(AsyncTestCase):
             await test_module.get_write_ledger(self.request)
             assert "No instance provided for BaseMultipleLedgerManager" in cm
 
-    async def test_get_reset_write_ledger(self):
-        self.profile.context.injector.bind_instance(
-            BaseMultipleLedgerManager,
-            async_mock.MagicMock(
-                reset_write_ledger=async_mock.CoroutineMock(
-                    return_value=("orig_ledger_id", self.ledger)
-                )
-            ),
-        )
-        with async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
-        ) as json_response:
-            result = await test_module.reset_write_ledger(self.request)
-            json_response.assert_called_once_with(
-                {
-                    "ledger_id": "orig_ledger_id",
-                }
-            )
-            assert result is json_response.return_value
-
-    async def test_get_reset_write_ledger_x(self):
-        with self.assertRaises(test_module.web.HTTPForbidden) as cm:
-            await test_module.reset_write_ledger(self.request)
-            assert "No instance provided for BaseMultipleLedgerManager" in cm
-
-    async def test_set_write_ledger(self):
-        self.profile.context.injector.bind_instance(
-            BaseMultipleLedgerManager,
-            async_mock.MagicMock(set_write_ledger=async_mock.CoroutineMock()),
-        )
-        self.request.query = {"ledger_id": "test_prod_1"}
-        with async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
-        ) as json_response:
-            await test_module.set_write_ledger(self.request)
-            json_response.assert_called_once_with({})
-
-    async def test_set_write_ledger_x(self):
-        with self.assertRaises(test_module.web.HTTPForbidden) as cm:
-            await test_module.set_write_ledger(self.request)
-            assert "No instance provided for BaseMultipleLedgerManager" in cm
-
-    async def test_set_write_ledger_catch_exception(self):
-        self.profile.context.injector.bind_instance(
-            BaseMultipleLedgerManager,
-            async_mock.MagicMock(
-                set_write_ledger=async_mock.CoroutineMock(
-                    side_effect=MultipleLedgerManagerError("This is test")
-                )
-            ),
-        )
-        with self.assertRaises(test_module.web.HTTPBadRequest) as cm:
-            await test_module.set_write_ledger(self.request)
-            assert "This is test" in cm
-
     async def test_get_ledger_config(self):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
@@ -574,36 +519,4 @@ class TestLedgerRoutes(AsyncTestCase):
     async def test_get_ledger_config_x(self):
         with self.assertRaises(test_module.web.HTTPForbidden) as cm:
             await test_module.get_ledger_config(self.request)
-            assert "No instance provided for BaseMultipleLedgerManager" in cm
-
-    async def test_update_ledger_config(self):
-        self.profile.context.injector.bind_instance(
-            BaseMultipleLedgerManager,
-            async_mock.MagicMock(update_ledger_config=async_mock.CoroutineMock()),
-        )
-        self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "ledger_config_list": [
-                    {"id": "test_1"},
-                    {"id": "test_2"},
-                ]
-            }
-        )
-        with async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
-        ) as json_response:
-            await test_module.update_ledger_config(self.request)
-            json_response.assert_called_once_with({})
-
-    async def test_update_ledger_config_x(self):
-        self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "ledger_config_list": [
-                    {"id": "test_1"},
-                    {"id": "test_2"},
-                ]
-            }
-        )
-        with self.assertRaises(test_module.web.HTTPForbidden) as cm:
-            await test_module.update_ledger_config(self.request)
             assert "No instance provided for BaseMultipleLedgerManager" in cm

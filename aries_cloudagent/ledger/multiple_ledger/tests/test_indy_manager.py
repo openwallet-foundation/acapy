@@ -69,75 +69,6 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
         assert ledger_id == "test_non_prod_1"
         assert ledger_inst.pool.name == "test_non_prod_1"
 
-    async def test_set_write_ledger_prod_ledger(self):
-        await self.manager.set_write_ledger("test_prod_1")
-        write_ledger_info = self.manager.write_ledger_info
-        assert write_ledger_info[0] == "test_prod_1"
-        assert write_ledger_info[1].pool.name == "test_prod_1"
-
-    async def test_set_write_ledger_non_prod_ledger(self):
-        self.non_production_ledger = OrderedDict()
-        self.non_production_ledger["test_non_prod_1"] = IndySdkLedger(
-            IndySdkLedgerPool("test_non_prod_1", checked=True), self.profile
-        )
-        self.non_production_ledger["test_non_prod_2"] = IndySdkLedger(
-            IndySdkLedgerPool("test_non_prod_2", checked=True), self.profile
-        )
-        self.manager = MultiIndyLedgerManager(
-            self.profile,
-            non_production_ledgers=self.non_production_ledger,
-        )
-        await self.manager.set_write_ledger("test_non_prod_1")
-        write_ledger_info = self.manager.write_ledger_info
-        assert write_ledger_info[0] == "test_non_prod_1"
-        assert write_ledger_info[1].pool.name == "test_non_prod_1"
-
-    async def test_set_write_ledger_x(self):
-        with self.assertRaises(MultipleLedgerManagerError) as cm:
-            await self.manager.set_write_ledger("test_prod_invalid")
-            assert (
-                "not found in configured production and non_production ledgers." in cm
-            )
-
-    async def test_reset_write_ledger(self):
-        ledger_id, ledger_inst = await self.manager.reset_write_ledger()
-        assert ledger_id == "test_prod_1"
-        assert ledger_inst.pool.name == "test_prod_1"
-
-    async def test_update_ledger_config(self):
-        # production
-        ledger_config_list = [
-            {
-                "id": "updated_test_prod_1",
-                "pool_name": "updated_pool_name",
-                "is_production": True,
-                "genesis_transactions": "genesis_transactions",
-            }
-        ]
-        await self.manager.update_ledger_config(ledger_config_list)
-        assert len(self.manager.production_ledgers) == 1
-        assert len(self.manager.non_production_ledgers) == 0
-        assert "updated_test_prod_1" in self.manager.production_ledgers
-        assert (
-            self.manager.production_ledgers["updated_test_prod_1"]
-        ).pool.name == "updated_pool_name"
-        # non production
-        ledger_config_list = [
-            {
-                "id": "updated_test_non_prod_1",
-                "pool_name": "updated_pool_name",
-                "is_production": False,
-                "genesis_transactions": "genesis_transactions",
-            }
-        ]
-        await self.manager.update_ledger_config(ledger_config_list)
-        assert len(self.manager.production_ledgers) == 0
-        assert len(self.manager.non_production_ledgers) == 1
-        assert "updated_test_non_prod_1" in self.manager.non_production_ledgers
-        assert (
-            self.manager.non_production_ledgers["updated_test_non_prod_1"]
-        ).pool.name == "updated_pool_name"
-
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
     @async_mock.patch("indy.ledger.build_get_nym_request")
@@ -205,7 +136,16 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
         self, mock_submit, mock_build_get_nym_req, mock_close, mock_open
     ):
         get_nym_reply = deepcopy(GET_NYM_REPLY)
-        get_nym_reply["result"]["data"]["verkey"] = "ABUF7uxYTxZ6qYdZ4G9e1Gi"
+        get_nym_reply["result"]["data"] = json.dumps(
+            {
+                "dest": "Av63wJYM7xYR4AiygYq4c3",
+                "identifier": "V4SGRU86Z58d6TV7PBUe6f",
+                "role": "101",
+                "seqNo": 17794,
+                "txnTime": 1632262244,
+                "verkey": "ABUF7uxYTxZ6qYdZ4G9e1Gi",
+            }
+        )
         with async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(

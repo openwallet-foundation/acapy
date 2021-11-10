@@ -5,17 +5,14 @@ import logging
 import json
 
 from collections import OrderedDict
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
-from ...config.provider import ClassProvider
-from ...indy.verifier import IndyVerifier
-from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.crypto import did_is_self_certified
 
-from ..indy import IndySdkLedger, IndySdkLedgerPool
+from ..indy import IndySdkLedger
 from ..merkel_validation.domain_txn_handler import (
     prepare_for_state_read,
     get_proof_nodes,
@@ -64,88 +61,6 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
                 self.write_ledger_info = (ledger_info[0][0], ledger_info[0][1])
         return self.write_ledger_info
 
-    async def set_write_ledger(self, ledger_id: str):
-        """Set a IndySdkLedger as the write ledger.
-
-        Args:
-            ledger_id: The identifier for the configured ledger
-
-        """
-        ledger = None
-        if ledger_id in self.production_ledgers.keys():
-            ledger = self.production_ledgers.get(ledger_id)
-        elif ledger_id in self.non_production_ledgers.keys():
-            ledger = self.non_production_ledgers.get(ledger_id)
-
-        if ledger:
-            await self.update_profile_context(ledger)
-            self.write_ledger_info = (ledger_id, ledger)
-        else:
-            raise MultipleLedgerManagerError(
-                f"ledger {ledger_id} not found in configured production"
-                " and non_production ledgers."
-            )
-
-    async def update_profile_context(self, ledger: IndySdkLedger):
-        """Bind updated BaseLedger and IndyVerifer in Profile Context."""
-        self.profile.context.injector.bind_instance(BaseLedger, ledger)
-        self.profile.context.injector.bind_provider(
-            IndyVerifier,
-            ClassProvider(
-                "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                self.profile,
-            ),
-        )
-
-    async def reset_write_ledger(self) -> Tuple[str, IndySdkLedger]:
-        """Reset set write ledger, if any, to default."""
-        self.write_ledger_info = None
-        ledger_id, ledger = await self.get_write_ledger()
-        await self.update_profile_context(ledger)
-        return (ledger_id, ledger)
-
-    async def update_ledger_config(self, ledger_config_list: List):
-        """
-        Update ledger config.
-
-        Recreate production_ledgers and non_production_ledgers from
-        the provided ledger_config_list
-
-        Args:
-            ledger_config_list: provided config list
-
-        """
-        self.profile.settings["ledger.ledger_config_list"] = ledger_config_list
-        production_ledgers = OrderedDict()
-        non_production_ledgers = OrderedDict()
-        for config in ledger_config_list:
-            keepalive = int(config.get("keepalive", 5))
-            read_only = bool(config.get("read_only", False))
-            socks_proxy = config.get("socks_proxy")
-            genesis_transactions = config.get("genesis_transactions")
-            cache = self.profile.inject_or(BaseCache)
-            ledger_id = config.get("id")
-            pool_name = config.get("pool_name", ledger_id)
-            ledger_is_production = config.get("is_production")
-            ledger_pool = IndySdkLedgerPool(
-                pool_name,
-                keepalive=keepalive,
-                cache=cache,
-                genesis_transactions=genesis_transactions,
-                read_only=read_only,
-                socks_proxy=socks_proxy,
-            )
-            ledger_instance = IndySdkLedger(
-                pool=ledger_pool,
-                profile=self.profile,
-            )
-            if ledger_is_production:
-                production_ledgers[ledger_id] = ledger_instance
-            else:
-                non_production_ledgers[ledger_id] = ledger_instance
-        self.production_ledgers = production_ledgers
-        self.non_production_ledgers = non_production_ledgers
-
     async def _get_ledger_by_did(
         self,
         ledger_id: str,
@@ -184,8 +99,6 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
                     return None
                 if isinstance(data, str):
                     data = json.loads(data)
-                if isinstance(response, str):
-                    response = json.loads(response)
                 if not await SubTrie.verify_spv_proof(
                     expected_value=prepare_for_state_read(response),
                     proof_nodes=get_proof_nodes(response),

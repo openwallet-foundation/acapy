@@ -275,30 +275,16 @@ async def schemas_send_schema(request: web.BaseRequest):
         # if auto-request, send the request to the endorser
         if context.settings.get_value("endorser.auto_request"):
             try:
-                transaction = await transaction_mgr.create_record(
-                    messages_attach=schema_def["signed_txn"],
-                    connection_id=connection_id,
-                    meta_data=meta_data,
+                transaction, transaction_request = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
                 )
-            except StorageError as err:
+            except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-            # if auto-request, send the request to the endorser
-            if context.settings.get_value("endorser.auto_request"):
-                try:
-                    (
-                        transaction,
-                        transaction_request,
-                    ) = await transaction_mgr.create_request(
-                        transaction=transaction,
-                        # TODO see if we need to parameterize these params
-                        # expires_time=expires_time,
-                        # endorser_write_txn=endorser_write_txn,
-                    )
-                except (StorageError, TransactionManagerError) as err:
-                    raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-                await outbound_handler(transaction_request, connection_id=connection_id)
+            await outbound_handler(transaction_request, connection_id=connection_id)
 
         return web.json_response({"txn": transaction.serialize()})
 

@@ -1,13 +1,10 @@
 """Ledger admin routes."""
-import uuid
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
-from typing import List
 
 from ..admin.request_context import AdminRequestContext
-from ..config.ledger import fetch_genesis_transactions, ConfigError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     ENDPOINT,
@@ -22,7 +19,6 @@ from ..wallet.error import WalletError, WalletNotFoundError
 from .base import BaseLedger, Role as LedgerRole
 from .multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
-    MultipleLedgerManagerError,
 )
 from .multiple_ledger.ledger_requests_executor import (
     GET_NYM_ROLE,
@@ -32,7 +28,6 @@ from .multiple_ledger.ledger_requests_executor import (
 )
 from .multiple_ledger.ledger_config_schema import (
     LedgerConfigListSchema,
-    MultipleLedgerModuleResultSchema,
     WriteLedgerRequestSchema,
 )
 from .endpoint_type import EndpointType
@@ -170,39 +165,6 @@ class GetDIDEndpointResponseSchema(OpenAPISchema):
         allow_none=True,
         **ENDPOINT,
     )
-
-
-async def process_input_ledger_config_list(ledger_config_list: List) -> List:
-    """Return multiple ledger configuration list with genesis transactions."""
-    ledger_txns_list = []
-    for config in ledger_config_list:
-        txns = None
-        if "genesis_transactions" in config:
-            txns = config.get("genesis_transactions")
-        if not txns:
-            if "genesis_url" in config:
-                txns = await fetch_genesis_transactions(config.get("genesis_url"))
-            elif "genesis_file" in config:
-                try:
-                    genesis_path = config.get("genesis_file")
-                    with open(genesis_path, "r") as genesis_file:
-                        txns = genesis_file.read()
-                except IOError as e:
-                    raise ConfigError(
-                        "Error reading ledger genesis transactions"
-                    ) from e
-        ledger_txns_list.append(
-            {
-                "id": config.get("id") or str(uuid.uuid4()),
-                "is_production": (
-                    True
-                    if config.get("is_production") is None
-                    else config.get("is_production")
-                ),
-                "genesis_transactions": txns,
-            }
-        )
-    return ledger_txns_list
 
 
 @docs(
@@ -551,58 +513,6 @@ async def get_write_ledger(request: web.BaseRequest):
 
 
 @docs(
-    tags=["ledger"], summary="Reset write ledger to default based on the configuration."
-)
-@response_schema(WriteLedgerRequestSchema(), 200, description="")
-async def reset_write_ledger(request: web.BaseRequest):
-    """
-    Request handler reset the write ledger to default.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        Default write ledger identifier
-
-    """
-    context: AdminRequestContext = request["context"]
-    async with context.profile.session() as session:
-        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
-    if not multiledger_mgr:
-        reason = "Multiple ledger support not enabled"
-        raise web.HTTPForbidden(reason=reason)
-    ledger_id = (await multiledger_mgr.reset_write_ledger())[0]
-    return web.json_response({"ledger_id": ledger_id})
-
-
-@docs(
-    tags=["ledger"], summary="Set a write ledger, if multiple ledgers are configured."
-)
-@querystring_schema(WriteLedgerRequestSchema)
-@response_schema(MultipleLedgerModuleResultSchema, 200, description="")
-async def set_write_ledger(request: web.BaseRequest):
-    """
-    Request handler for accepting the current transaction author agreement.
-
-    Args:
-        request: aiohttp request object
-
-    """
-    context: AdminRequestContext = request["context"]
-    async with context.profile.session() as session:
-        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
-    if not multiledger_mgr:
-        reason = "Multiple ledger support not enabled"
-        raise web.HTTPForbidden(reason=reason)
-    ledger_id = request.query.get("ledger_id")
-    try:
-        await multiledger_mgr.set_write_ledger(ledger_id)
-    except MultipleLedgerManagerError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response({})
-
-
-@docs(
     tags=["ledger"], summary="Fetch the multiple ledger configuration currently in use"
 )
 @response_schema(LedgerConfigListSchema, 200, description="")
@@ -627,31 +537,6 @@ async def get_ledger_config(request: web.BaseRequest):
     return web.json_response({"ledger_config_list": ledger_config_list})
 
 
-@docs(tags=["ledger"], summary="Update configuration for multiple ledger support")
-@request_schema(LedgerConfigListSchema)
-@response_schema(MultipleLedgerModuleResultSchema, 200, description="")
-async def update_ledger_config(request: web.BaseRequest):
-    """
-    Request handler for updating configuration for multiple ledgers.
-
-    Args:
-        request: aiohttp request object
-
-    """
-    context: AdminRequestContext = request["context"]
-    async with context.profile.session() as session:
-        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
-    if not multiledger_mgr:
-        reason = "Multiple ledger support not enabled"
-        raise web.HTTPForbidden(reason=reason)
-    ledger_config_input = await request.json()
-    processed_ledger_config_list = await process_input_ledger_config_list(
-        ledger_config_input.get("ledger_config_list")
-    )
-    await multiledger_mgr.update_ledger_config(processed_ledger_config_list)
-    return web.json_response({})
-
-
 async def register(app: web.Application):
     """Register routes."""
 
@@ -667,10 +552,7 @@ async def register(app: web.Application):
             web.get(
                 "/ledger/multiple/get-write-ledger", get_write_ledger, allow_head=False
             ),
-            web.post("/ledger/multiple/set-write-ledger", set_write_ledger),
-            web.post("/ledger/multiple/reset-write-ledger", reset_write_ledger),
             web.get("/ledger/multiple/config", get_ledger_config, allow_head=False),
-            web.post("/ledger/multiple/update-config", update_ledger_config),
         ]
     )
 

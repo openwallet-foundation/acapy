@@ -1,7 +1,7 @@
 """Manager for multiple ledger."""
 
 from abc import ABC, abstractmethod
-from typing import TypeVar, List, Optional, Tuple
+from typing import TypeVar, Optional, Tuple
 
 from ...core.error import BaseError
 from ...core.profile import Profile
@@ -22,22 +22,6 @@ class BaseMultipleLedgerManager(ABC):
     @abstractmethod
     async def get_write_ledger(self) -> Tuple[str, T]:
         """Return write ledger."""
-
-    @abstractmethod
-    async def set_write_ledger(self, ledger_id: str = None):
-        """Set a ledger as write ledger and update BaseLedger."""
-
-    @abstractmethod
-    async def update_profile_context(self, ledger: T):
-        """Update BaseLedger and Verifier in context."""
-
-    @abstractmethod
-    async def reset_write_ledger(self) -> Tuple[str, T]:
-        """Reset the assigned write_ledger and return new write ledger."""
-
-    @abstractmethod
-    async def update_ledger_config(self, ledger_config_list: List):
-        """Update production and non_production ledgers."""
 
     @abstractmethod
     async def _get_ledger_by_did(
