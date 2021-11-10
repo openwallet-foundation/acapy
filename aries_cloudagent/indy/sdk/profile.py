@@ -54,7 +54,7 @@ class IndySdkProfile(Profile):
             LOGGER.info("Ledger support is disabled")
             return
 
-        if not self.settings.get("ledger.genesis_transactions_list"):
+        if not self.settings.get("ledger.ledger_config_list"):
             self.ledger_pool = self.context.inject(IndySdkLedgerPool, self.settings)
 
     def bind_providers(self):
@@ -88,6 +88,7 @@ class IndySdkProfile(Profile):
             injector.bind_provider(
                 BaseLedger, ClassProvider(IndySdkLedger, self.ledger_pool, ref(self))
             )
+        if self.ledger_pool or self.settings.get("ledger.ledger_config_list"):
             injector.bind_provider(
                 IndyVerifier,
                 ClassProvider(

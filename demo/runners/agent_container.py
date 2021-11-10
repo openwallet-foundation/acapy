@@ -664,6 +664,7 @@ class AgentContainer:
             self.endorser_agent = await start_endorser_agent(
                 self.start_port + 7,
                 self.genesis_txns,
+                self.genesis_txn_list,
                 use_did_exchange=self.use_did_exchange,
             )
             if not self.endorser_agent:
@@ -685,7 +686,7 @@ class AgentContainer:
 
         if self.mediation:
             self.mediator_agent = await start_mediator_agent(
-                self.start_port + 4, self.genesis_txns
+                self.start_port + 4, self.genesis_txns, self.genesis_txn_list
             )
             if not self.mediator_agent:
                 raise Exception("Mediator agent returns None :-(")

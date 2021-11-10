@@ -180,6 +180,10 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                 if not data:
                     LOGGER.warning(f"Did {did} not posted to ledger {ledger_id}")
                     return None
+                if isinstance(data, str):
+                    data = json.loads(data)
+                if isinstance(response, str):
+                    response = json.loads(response)
                 if not await SubTrie.verify_spv_proof(
                     expected_value=prepare_for_state_read(response),
                     proof_nodes=get_proof_nodes(response),
@@ -204,15 +208,6 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                 f"for Did {did} and ledger {ledger_id}, {err}"
             )
             return None
-
-    def _get_ledger_by_did_callable(
-        self,
-        ledger_id: str,
-        did: str,
-    ) -> Optional[Tuple[str, IndyVdrLedger, bool]]:
-        """Call _get_ledger_by_did, return (ledger_id, IndyVdrLedger, bool) or None."""
-        loop = asyncio.new_event_loop()
-        return loop.run_until_complete(self._get_ledger_by_did(ledger_id, did))
 
     async def lookup_did_in_configured_ledgers(
         self, did: str, cache_did: bool = True
@@ -240,13 +235,11 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
             self.non_production_ledgers.keys()
         )
         coro_futures = {
-            self.executor.submit(
-                self._get_ledger_by_did_callable, ledger_id, did
-            ): ledger_id
+            self.executor.submit(self._get_ledger_by_did, ledger_id, did): ledger_id
             for ledger_id in ledger_ids
         }
         for coro_future in concurrent.futures.as_completed(coro_futures):
-            result = coro_future.result()
+            result = await coro_future.result()
             if result:
                 applicable_ledger_id = result[0]
                 applicable_ledger_inst = result[1]

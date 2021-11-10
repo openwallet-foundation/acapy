@@ -329,7 +329,7 @@ class DemoAgent:
         if self.genesis_data:
             result.append(("--genesis-transactions", self.genesis_data))
         if self.genesis_txn_list:
-            result.append("--genesis-transactions-list", self.genesis_txn_list)
+            result.append(("--genesis-transactions-list", self.genesis_txn_list))
         if self.seed:
             result.append(("--seed", self.seed))
         if self.storage_type:
@@ -1200,12 +1200,15 @@ class MediatorAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def start_mediator_agent(start_port, genesis):
+async def start_mediator_agent(
+    start_port, genesis: str = None, genesis_txn_list: str = None
+):
     # start mediator agent
     mediator_agent = MediatorAgent(
         start_port,
         start_port + 1,
         genesis_data=genesis,
+        genesis_txn_list=genesis_txn_list,
     )
     await mediator_agent.listen_webhooks(start_port + 2)
     await mediator_agent.start_process()
@@ -1316,12 +1319,18 @@ class EndorserAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def start_endorser_agent(start_port, genesis, use_did_exchange: bool = True):
+async def start_endorser_agent(
+    start_port,
+    genesis: str = None,
+    genesis_txn_list: str = None,
+    use_did_exchange: bool = True,
+):
     # start mediator agent
     endorser_agent = EndorserAgent(
         start_port,
         start_port + 1,
         genesis_data=genesis,
+        genesis_txn_list=genesis_txn_list,
     )
     await endorser_agent.register_did(cred_type=CRED_FORMAT_INDY)
     await endorser_agent.listen_webhooks(start_port + 2)

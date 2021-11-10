@@ -179,6 +179,8 @@ def prepare_get_nym_for_state(reply):
     data = result.get(DATA)
     value = None
     if data is not None:
+        if isinstance(data, str):
+            data = json.loads(data)
         data.pop(DEST, None)
         value = json.dumps(data)
     return value

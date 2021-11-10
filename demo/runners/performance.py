@@ -317,12 +317,12 @@ async def main(
 
             if mediation:
                 alice_mediator_agent = await start_mediator_agent(
-                    start_port + 8, genesis
+                    start_port + 8, genesis, multi_ledger_config_path
                 )
                 if not alice_mediator_agent:
                     raise Exception("Mediator agent returns None :-(")
                 faber_mediator_agent = await start_mediator_agent(
-                    start_port + 11, genesis
+                    start_port + 11, genesis, multi_ledger_config_path
                 )
                 if not faber_mediator_agent:
                     raise Exception("Mediator agent returns None :-(")
