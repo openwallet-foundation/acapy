@@ -50,3 +50,29 @@ class DIFPresSpecSchema(OpenAPISchema):
         PresentationDefinitionSchema(),
         required=False,
     )
+    reveal_doc = fields.Dict(
+        description=(
+            "reveal doc [JSON-LD frame] dict used"
+            " to derive the credential when selective"
+            " disclosure is required"
+        ),
+        required=False,
+        example={
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "type": ["VerifiableCredential", "LabReport"],
+            "@explicit": True,
+            "@requireAll": True,
+            "issuanceDate": {},
+            "issuer": {},
+            "credentialSubject": {
+                "Observation": [
+                    {"effectiveDateTime": {}, "@explicit": True, "@requireAll": True}
+                ],
+                "@explicit": True,
+                "@requireAll": True,
+            },
+        },
+    )

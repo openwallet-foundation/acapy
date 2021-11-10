@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import pytest
 
 from asynctest import mock as async_mock
@@ -33,6 +34,7 @@ from ..pres_exch import (
     Requirement,
     Filter,
     SchemaInputDescriptor,
+    SchemasInputDescriptorFilter,
     Constraints,
     DIFField,
 )
@@ -51,6 +53,8 @@ from .test_data import (
     is_holder_pd,
     is_holder_pd_multiple_fields_excluded,
     is_holder_pd_multiple_fields_included,
+    TEST_CRED_DICT,
+    TEST_CRED_WILDCARD,
 )
 
 
@@ -496,6 +500,59 @@ class TestPresExchHandler:
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
+    async def test_reveal_doc_with_frame_provided(self, profile):
+        reveal_doc_frame = {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "type": ["VerifiableCredential", "LabReport"],
+            "@explicit": True,
+            "@requireAll": True,
+            "issuanceDate": {},
+            "issuer": {},
+            "credentialSubject": {
+                "Observation": [
+                    {"effectiveDateTime": {}, "@explicit": True, "@requireAll": True}
+                ],
+                "@explicit": True,
+                "@requireAll": True,
+            },
+        }
+        dif_pres_exch_handler = DIFPresExchHandler(profile, reveal_doc=reveal_doc_frame)
+        test_constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.givenName"],
+                    "filter": {"type": "string", "const": "JOHN"},
+                },
+                {
+                    "path": ["$.credentialSubject.familyName"],
+                    "filter": {"type": "string", "const": "SMITH"},
+                },
+                {
+                    "path": ["$.credentialSubject.type"],
+                    "filter": {
+                        "type": "string",
+                        "enum": ["PermanentResident", "Person"],
+                    },
+                },
+                {
+                    "path": ["$.credentialSubject.gender"],
+                    "filter": {"type": "string", "const": "Male"},
+                },
+            ],
+        }
+
+        test_constraint = Constraints.deserialize(test_constraint)
+        tmp_reveal_doc = dif_pres_exch_handler.reveal_doc(
+            credential_dict=BBS_SIGNED_VC_MATTR, constraints=test_constraint
+        )
+        assert tmp_reveal_doc == reveal_doc_frame
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_reveal_doc_a(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         test_constraint = {
@@ -637,6 +694,27 @@ class TestPresExchHandler:
         test_cred = cred_list[2].cred_value
         tmp_reveal_doc = dif_pres_exch_handler.reveal_doc(
             credential_dict=test_cred, constraints=test_constraint
+        )
+        assert tmp_reveal_doc
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_reveal_doc_wildcard(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(profile)
+        test_constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Observation[*].effectiveDateTime"],
+                    "id": "Observation_effectiveDateTime",
+                    "purpose": "Време узимања узорка",
+                }
+            ],
+        }
+
+        test_constraint = Constraints.deserialize(test_constraint)
+        tmp_reveal_doc = dif_pres_exch_handler.reveal_doc(
+            credential_dict=TEST_CRED_WILDCARD, constraints=test_constraint
         )
         assert tmp_reveal_doc
 
@@ -1485,12 +1563,19 @@ class TestPresExchHandler:
     async def test_filter_schema(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(profile)
-        tmp_schema_list = [
-            SchemaInputDescriptor(
-                uri="test123",
-                required=True,
-            )
-        ]
+        tmp_schema_list = SchemasInputDescriptorFilter(
+            oneof_filter=True,
+            uri_groups=[
+                [
+                    SchemaInputDescriptor(
+                        uri="test123",
+                        required=True,
+                    ),
+                    SchemaInputDescriptor(uri="test321"),
+                ],
+                [SchemaInputDescriptor(uri="test789")],
+            ],
+        )
         assert (
             len(await dif_pres_exch_handler.filter_schema(cred_list, tmp_schema_list))
             == 0
@@ -2980,7 +3065,7 @@ class TestPresExchHandler:
             == "TEST"
         )
 
-        tmp_pd = pd_list[1]
+        tmp_pd = pd_list[2]
         tmp_vp = await dif_pres_exch_handler.create_vp(
             credentials=test_creds,
             pd=tmp_pd[0],
@@ -3149,3 +3234,416 @@ class TestPresExchHandler:
         )
         assert len(tmp_vp.get("verifiableCredential")) == 0
         assert not tmp_vp.get("proof")
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_apply_constraint_received_cred_path_update(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"]["Patient"]["address"] = [
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+        ]
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[0].address[*].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_apply_constraint_received_cred_invalid(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"]["Patient"]["address"] = [
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+                "country": "test",
+            },
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+        ]
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[0].address[0].city[0]"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert not await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[0].address[*].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert not await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_apply_constraint_received_cred_valid(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient.address"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient.address[0].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+        cred_dict["credentialSubject"]["Patient"]["address"] = [
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+        ]
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient.address[0].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+        cred_dict["credentialSubject"]["Patient"] = [
+            {
+                "address": [
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                ]
+            },
+            {
+                "address": [
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                    {
+                        "@id": "urn:bnid:_:c14n1",
+                        "city": "Рума",
+                    },
+                ]
+            },
+        ]
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[0].address[0].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[*].address[*].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[*].address[0].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+        constraint = {
+            "limit_disclosure": "required",
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient[0].address[*].city"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
+    async def test_apply_constraint_received_cred_no_sel_disc(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        constraint = {
+            "fields": [
+                {
+                    "path": ["$.credentialSubject.Patient.address.country"],
+                    "purpose": "Test",
+                }
+            ],
+        }
+        constraint = Constraints.deserialize(constraint)
+        assert not await dif_pres_exch_handler.apply_constraint_received_cred(
+            constraint=constraint, cred_dict=cred_dict
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_updated_path(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"]["Patient"]["address"] = [
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+            {
+                "@id": "urn:bnid:_:c14n1",
+                "city": "Рума",
+            },
+        ]
+        original_path = "$.credentialSubject.Patient[*].address[0].city"
+        updated_path = await dif_pres_exch_handler.get_updated_path(
+            cred_dict, original_path
+        )
+        assert updated_path == "$.credentialSubject.Patient[*].address[0].city"
+        cred_dict["credentialSubject"]["Patient"]["address"] = {
+            "@id": "urn:bnid:_:c14n1",
+            "city": "Рума",
+        }
+        original_path = "$.credentialSubject.Patient[*].address[0].city"
+        updated_path = await dif_pres_exch_handler.get_updated_path(
+            cred_dict, original_path
+        )
+        assert updated_path == "$.credentialSubject.Patient[*].address.city"
+
+    def test_get_dict_keys_from_path(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_dict = {
+            "id": "urn:bnid:_:c14n14",
+            "type": ["MedicalPass", "VerifiableCredential"],
+            "issuanceDate": "2021-09-27T12:40:03+02:00",
+            "issuer": "did:key:zUC7DVPRfshooBqmnT2LrMxabCUkRhyyUCu8xKvYRot5aeTLTpPxzZoMyFkMLgKHMPUzdEnJM1EqbxfQd466ed3QuEtUJr8iqKRVfJ4txBa3PRoASaup6fjVAkU9VdbDbs5et64",
+        }
+        assert dif_pres_exch_handler.get_dict_keys_from_path(cred_dict, "issuer") == []
+
+        cred_dict = {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "id": "urn:bnid:_:c14n4",
+            "type": ["MedicalPass", "VerifiableCredential"],
+            "credentialSubject": {
+                "id": "urn:bnid:_:c14n6",
+                "Patient": {
+                    "@id": "urn:bnid:_:c14n7",
+                    "@type": "fhir:resource-types#Patient",
+                    "address": [
+                        {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+                        {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+                    ],
+                },
+            },
+            "issuanceDate": "2021-10-01T20:16:40+02:00",
+            "issuer": "did:key:test",
+        }
+        assert dif_pres_exch_handler.get_dict_keys_from_path(
+            cred_dict, "credentialSubject.Patient.address"
+        ) == ["@id"]
+
+    @pytest.mark.asyncio
+    async def test_filter_by_field_keyerror(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"]["Patient"] = {
+            "@id": "urn:bnid:_:c14n7",
+            "@type": "fhir:resource-types#Patient",
+            "address": {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize(
+            {
+                "path": ["$.credentialSubject.Patient[0].address[0].city"],
+            }
+        )
+        assert not await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+
+    @pytest.mark.asyncio
+    async def test_filter_by_field_xsd_parser(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["lprNumber"] = {
+            "type": "xsd:integer",
+            "@value": "10",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize(
+            {
+                "path": ["$.credentialSubject.lprNumber"],
+                "filter": {
+                    "minimum": 5,
+                    "type": "number",
+                },
+            }
+        )
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["testDate"] = {
+            "type": "xsd:dateTime",
+            "@value": "2020-09-28T11:00:00+00:00",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize(
+            {
+                "path": ["$.credentialSubject.testDate"],
+                "filter": {"type": "string", "format": "date", "minimum": "2005-5-16"},
+            }
+        )
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["testFlag"] = {
+            "type": "xsd:boolean",
+            "@value": "false",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize(
+            {
+                "path": ["$.credentialSubject.testFlag"],
+            }
+        )
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["testDouble"] = {
+            "type": "xsd:double",
+            "@value": "10.2",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize(
+            {"path": ["$.credentialSubject.testDouble"], "filter": {"const": 10.2}}
+        )
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        cred_dict = deepcopy(TEST_CRED_DICT)
+        cred_dict["credentialSubject"] = {}
+        cred_dict["credentialSubject"]["test"] = {
+            "type": ["test"],
+            "@id": "test",
+            "test": "val",
+        }
+        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+        field = DIFField.deserialize({"path": ["$.credentialSubject.test"]})
+        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+
+    def test_string_to_timezone_aware_datetime(self, profile):
+        dif_pres_exch_handler = DIFPresExchHandler(
+            profile, proof_type=BbsBlsSignature2020.signature_type
+        )
+        test_datetime_str = "2021-09-28T16:09:00EUROPE/BELGRADE"
+        assert isinstance(
+            dif_pres_exch_handler.string_to_timezone_aware_datetime(test_datetime_str),
+            datetime,
+        )
+        assert isinstance(
+            dif_pres_exch_handler.string_to_timezone_aware_datetime(
+                "2020-09-28T11:00:00+00:00"
+            ),
+            datetime,
+        )
