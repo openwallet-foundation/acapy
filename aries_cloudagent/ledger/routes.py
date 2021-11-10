@@ -1,11 +1,13 @@
 """Ledger admin routes."""
+import uuid
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
-
 from marshmallow import fields, validate
+from typing import List
 
 from ..admin.request_context import AdminRequestContext
+from ..config.ledger import fetch_genesis_transactions, ConfigError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     ENDPOINT,
@@ -168,6 +170,39 @@ class GetDIDEndpointResponseSchema(OpenAPISchema):
         allow_none=True,
         **ENDPOINT,
     )
+
+
+async def process_input_ledger_config_list(ledger_config_list: List) -> List:
+    """Return multiple ledger configuration list with genesis transactions."""
+    ledger_txns_list = []
+    for config in ledger_config_list:
+        txns = None
+        if "genesis_transactions" in config:
+            txns = config.get("genesis_transactions")
+        if not txns:
+            if "genesis_url" in config:
+                txns = await fetch_genesis_transactions(config.get("genesis_url"))
+            elif "genesis_file" in config:
+                try:
+                    genesis_path = config.get("genesis_file")
+                    with open(genesis_path, "r") as genesis_file:
+                        txns = genesis_file.read()
+                except IOError as e:
+                    raise ConfigError(
+                        "Error reading ledger genesis transactions"
+                    ) from e
+        ledger_txns_list.append(
+            {
+                "id": config.get("id") or str(uuid.uuid4()),
+                "is_production": (
+                    True
+                    if config.get("is_production") is None
+                    else config.get("is_production")
+                ),
+                "genesis_transactions": txns,
+            }
+        )
+    return ledger_txns_list
 
 
 @docs(
@@ -610,9 +645,10 @@ async def update_ledger_config(request: web.BaseRequest):
         reason = "Multiple ledger support not enabled"
         raise web.HTTPForbidden(reason=reason)
     ledger_config_input = await request.json()
-    await multiledger_mgr.update_ledger_config(
+    processed_ledger_config_list = await process_input_ledger_config_list(
         ledger_config_input.get("ledger_config_list")
     )
+    await multiledger_mgr.update_ledger_config(processed_ledger_config_list)
     return web.json_response({})
 
 

@@ -84,7 +84,11 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings):
         ledger_txns_list.append(
             {
                 "id": config.get("id") or str(uuid.uuid4()),
-                "is_production": config.get("is_production") or True,
+                "is_production": (
+                    True
+                    if config.get("is_production") is None
+                    else config.get("is_production")
+                ),
                 "genesis_transactions": txns,
             }
         )

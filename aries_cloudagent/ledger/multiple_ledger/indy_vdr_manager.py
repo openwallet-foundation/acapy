@@ -117,13 +117,13 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         production_ledgers = OrderedDict()
         non_production_ledgers = OrderedDict()
         for config in ledger_config_list:
-            pool_name = config.get("pool_name", "default")
             keepalive = int(config.get("keepalive", 5))
             read_only = bool(config.get("read_only", False))
             socks_proxy = config.get("socks_proxy")
             genesis_transactions = config.get("genesis_transactions")
             cache = self.profile.inject_or(BaseCache)
             ledger_id = config.get("id")
+            pool_name = config.get("pool_name", ledger_id)
             ledger_is_production = config.get("is_production")
             ledger_pool = IndyVdrLedgerPool(
                 pool_name,

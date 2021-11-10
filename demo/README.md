@@ -22,6 +22,7 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Revocation](#revocation)
   - [Mediation](#mediation)
   - [Multi-tenancy](#multi-tenancy)
+  - [Multi-ledger](#multi-ledger)
   - [DID Exchange](#did-exchange)
   - [Endorser](#endorser)
   - [Run Askar Backend](#run-askar-backend)
@@ -71,7 +72,7 @@ In the first terminal window, start `von-network` by following the [Running the 
 In the second terminal, change directory into `demo` directory of your clone of this repository. Start the `faber` agent by issuing the following command:
 
 ``` bash
-  ./run_demo faber 
+  ./run_demo faber
 ```
 
 In the third terminal, change directory into `demo` directory of your clone of this repository. Start the `alice` agent by issuing the following command:
@@ -80,7 +81,7 @@ In the third terminal, change directory into `demo` directory of your clone of t
   ./run_demo alice
 ```
 
-Jump to the [Follow the Script](#follow-the-script) section below for further instructions. 
+Jump to the [Follow the Script](#follow-the-script) section below for further instructions.
 
 ### Running Locally
 
@@ -229,7 +230,7 @@ When you revoke a credential you will need to provide those values:
 
 Enter revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
 Enter credential revocation ID: 1
-Publish now? [Y/N]: y 
+Publish now? [Y/N]: y
 ```
 
 Note that you need to Publish the revocation information to the ledger.  Once you've revoked a credential any proof which uses this credential will fail to verify.
@@ -273,6 +274,16 @@ To enable support for multi-tenancy, run the `alice` or `faber` demo with the `-
 ```
 
 (This option can be used with both (or either) `alice` and/or `faber`.)
+
+### Multi-ledger
+
+To enable multiple ledger mode, run the `alice` or `faber` demo with the `--multi-ledger` option:
+
+```bash
+./run_demo faber --multi-ledger
+```
+
+The configuration file for setting up multiple ledgers (for the demo) can be found at `./demo/multiple_ledger_config.yml`.
 
 You will see an additional menu option to create new sub-wallets (or they can be considered to be "virtual agents").
 
