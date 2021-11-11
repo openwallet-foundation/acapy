@@ -958,7 +958,7 @@ class ConnectionManager(BaseConnectionManager):
         did_doc = await self.create_did_document(
             their_info,
             None,
-            [their_endpoint],
+            [their_endpoint or ""],
             mediation_records=[base_mediation_record]
             if base_mediation_record
             else None,
