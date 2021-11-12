@@ -104,12 +104,11 @@ provides notes about the implementation of specific RFCs.
 ### AIP 2.0
 
 All RFCs listed in [AIP 2.0](https://github.com/hyperledger/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-20) (including the sub-targets) 
-are fully supported in ACA-Py except as noted in the table below.
+are fully supported in ACA-Py **EXCEPT** as noted in the table below.
 
 | RFC | Supported | Notes |
  --- | :--: | -- |
 | [0023-did-exchange](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0023-did-exchange)   | :warning:   |     Not using DIDDoc conventions yet, still using DID format of 0160-connections (which is incorrect and outdated). Also using incorrect format for `did:peer`  (or not using a `did:` prefix at all) |
-| [0025-didcomm-transports](https://github.com/hyperledger/aries-rfcs/tree/b490ebe492985e1be9804fc0763119238b2e51ab/features/0025-didcomm-transports)   | :white_check_mark:        | ACA-Py currently supports HTTP and WebSockets for both inbound and outbound messaging. Transports are pluggable and an agent instance can use multiple inbound and outbound transports.|
 | [0183-revocation-notification](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0183-revocation-notification)  | :construction:      |  [PR is in review](https://github.com/hyperledger/aries-cloudagent-python/pull/1464) |
 | [0211-route-coordination](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0211-route-coordination)   | :warning:        | Only pre-AIP 2.0 version. Must be updated to use `did:key` for full AIP 2.0 support  |
 | [0317-please-ack](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) |  :x: | |
