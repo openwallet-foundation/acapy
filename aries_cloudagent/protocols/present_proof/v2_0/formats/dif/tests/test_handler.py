@@ -16,6 +16,7 @@ from .......vc.ld_proofs import (
     BbsBlsSignatureProof2020,
 )
 from .......vc.tests.document_loader import custom_document_loader
+from .......vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
 from .......vc.vc_ld.validation_result import PresentationVerificationResult
 from .......wallet.base import BaseWallet
 
@@ -37,6 +38,7 @@ from ....models.pres_exchange import V20PresExRecord
 from ...handler import V20PresFormatHandlerError
 
 from .. import handler as test_module
+from .....dif.pres_exch_handler import DIFPresExchHandler as test_pe_handler_module
 from ..handler import DIFPresFormatHandler
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
@@ -1652,8 +1654,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with self.assertRaises(DIFPresExchError):
+        with async_mock.patch.object(
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+            mock_log_err.assert_called_once()
 
     async def test_verify_received_pres_no_match_a(self):
         dif_proof_req = deepcopy(DIF_PRES_REQUEST_B)
@@ -1702,8 +1707,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with self.assertRaises(DIFPresExchError):
+        with async_mock.patch.object(
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+            mock_log_err.assert_called_once()
 
     async def test_verify_received_pres_no_match_b(self):
         dif_proof_req = deepcopy(DIF_PRES_REQUEST_B)
@@ -1752,8 +1760,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with self.assertRaises(DIFPresExchError):
+        with async_mock.patch.object(
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+            mock_log_err.assert_called_once()
 
     async def test_verify_received_pres_limit_disclosure_fail_a(self):
         dif_proof = deepcopy(DIF_PRES)
@@ -1799,8 +1810,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with self.assertRaises(DIFPresExchError):
+        with async_mock.patch.object(
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+            mock_log_err.assert_called_once()
 
     async def test_verify_received_pres_limit_disclosure_fail_b(self):
         dif_proof = deepcopy(DIF_PRES)
@@ -1846,8 +1860,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with self.assertRaises(DIFPresExchError):
+        with async_mock.patch.object(
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+            mock_log_err.assert_called_once()
 
     async def test_verify_received_pres_fail_schema_filter(self):
         dif_proof = deepcopy(DIF_PRES)
@@ -1933,5 +1950,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        with self.assertRaises(DIFPresExchError):
+        with async_mock.patch.object(
+            test_module.LOGGER, "error", async_mock.MagicMock()
+        ) as mock_log_err:
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+            mock_log_err.assert_called_once()

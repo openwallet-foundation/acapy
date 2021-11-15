@@ -6,6 +6,7 @@ from marshmallow import RAISE
 from typing import Mapping, Tuple, Sequence
 from uuid import uuid4
 
+from ......messaging.base_handler import BaseResponder
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.error import StorageNotFoundError
 from ......storage.vc_holder.base import VCHolder
@@ -21,14 +22,17 @@ from ......vc.vc_ld.verify import verify_presentation
 from ......wallet.base import BaseWallet
 from ......wallet.key_type import KeyType
 
+from .....problem_report.v1_0.message import ProblemReport
+
 from ....dif.pres_exch import PresentationDefinition, SchemaInputDescriptor
-from ....dif.pres_exch_handler import DIFPresExchHandler
+from ....dif.pres_exch_handler import DIFPresExchHandler, DIFPresExchError
 from ....dif.pres_proposal_schema import DIFProofProposalSchema
 from ....dif.pres_request_schema import (
     DIFProofRequestSchema,
     DIFPresSpecSchema,
 )
 from ....dif.pres_schema import DIFProofSchema
+from ....v2_0.messages.pres_problem_report import ProblemReportReason
 
 from ...message_types import (
     ATTACHMENT_FORMAT,
@@ -339,15 +343,30 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             proof_type=dif_handler_proof_type,
             reveal_doc=reveal_doc_frame,
         )
-
-        pres = await dif_handler.create_vp(
-            challenge=challenge,
-            domain=domain,
-            pd=pres_definition,
-            credentials=credentials_list,
-            records_filter=limit_record_ids,
-        )
-        return self.get_format_data(PRES_20, pres)
+        try:
+            pres = await dif_handler.create_vp(
+                challenge=challenge,
+                domain=domain,
+                pd=pres_definition,
+                credentials=credentials_list,
+                records_filter=limit_record_ids,
+            )
+            return self.get_format_data(PRES_20, pres)
+        except DIFPresExchError as err:
+            LOGGER.error(str(err))
+            responder = self._profile.inject_or(BaseResponder)
+            if responder:
+                report = ProblemReport(
+                    description={
+                        "en": str(err),
+                        "code": ProblemReportReason.ABANDONED.value,
+                    }
+                )
+                if pres_ex_record.thread_id:
+                    report.assign_thread_id(pres_ex_record.thread_id)
+                await responder.send_reply(
+                    report, connection_id=pres_ex_record.connection_id
+                )
 
     async def process_vcrecords_return_list(
         self, vc_records: Sequence[VCRecord], record_ids: set
@@ -385,7 +404,21 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_definition = PresentationDefinition.deserialize(
             proof_request.get("presentation_definition")
         )
-        await dif_handler.verify_received_pres(pd=pres_definition, pres=dif_proof)
+        try:
+            await dif_handler.verify_received_pres(pd=pres_definition, pres=dif_proof)
+        except DIFPresExchError as err:
+            LOGGER.error(str(err))
+            responder = self._profile.inject_or(BaseResponder)
+            if responder:
+                report = ProblemReport(
+                    description={
+                        "en": str(err),
+                        "code": ProblemReportReason.ABANDONED.value,
+                    }
+                )
+                await responder.send_reply(
+                    report, connection_id=pres_ex_record.connection_id
+                )
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
         """
