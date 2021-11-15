@@ -1366,9 +1366,6 @@ class DIFPresExchHandler:
             desc_map_item_id = desc_map_item.get("id")
             constraint = inp_desc_id_contraint_map.get(desc_map_item_id)
             schema_filter = inp_desc_id_schemas_map.get(desc_map_item_id)
-            is_one_of_filtered = False
-            if desc_map_item_id in inp_desc_id_schema_one_of_filter:
-                is_one_of_filtered = True
             desc_map_item_path = desc_map_item.get("path")
             jsonpath = parse(desc_map_item_path)
             match = jsonpath.find(pres)
@@ -1378,7 +1375,7 @@ class DIFPresExchHandler:
                 )
             for match_item in match:
                 if not await self.apply_constraint_received_cred(
-                    constraint, match_item.value, is_one_of_filtered
+                    constraint, match_item.value
                 ):
                     raise DIFPresExchError(
                         f"Constraint specified for {desc_map_item_id} does not "
@@ -1413,7 +1410,7 @@ class DIFPresExchHandler:
         return applied_field_paths
 
     async def apply_constraint_received_cred(
-        self, constraint: Constraints, cred_dict: dict, is_one_of_filtered: bool = False
+        self, constraint: Constraints, cred_dict: dict
     ) -> bool:
         """Evaluate constraint from the request against received credential."""
         fields = constraint._fields
