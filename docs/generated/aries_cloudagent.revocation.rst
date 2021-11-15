@@ -48,3 +48,11 @@ aries\_cloudagent.revocation.routes module
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.revocation.util module
+----------------------------------------
+
+.. automodule:: aries_cloudagent.revocation.util
+   :members:
+   :undoc-members:
+   :show-inheritance:
