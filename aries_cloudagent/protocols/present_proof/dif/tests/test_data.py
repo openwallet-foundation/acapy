@@ -1625,25 +1625,6 @@ TEST_CRED_DICT = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://w3id.org/security/bbs/v1",
-        {
-            "MedicalPass": {
-                "@id": "https://www.vdel.com/MedicalPass",
-                "@context": {
-                    "description": "http://schema.org/description",
-                    "identifier": "http://schema.org/identifier",
-                    "name": "http://schema.org/name",
-                    "image": "http://schema.org/image",
-                },
-            }
-        },
-        {
-            "Patient": {
-                "@id": "http://hl7.org/fhir/Patient",
-                "@context": [
-                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/patient.context.jsonld"
-                ],
-            }
-        },
     ],
     "id": "urn:bnid:_:c14n4",
     "type": ["MedicalPass", "VerifiableCredential"],
@@ -1674,71 +1655,6 @@ TEST_CRED_WILDCARD = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://w3id.org/security/bbs/v1",
-        {
-            "LabReport": {
-                "@id": "https://www.vdel.com/LabReport",
-                "@context": {
-                    "description": "http://schema.org/description",
-                    "identifier": "http://schema.org/identifier",
-                    "name": "http://schema.org/name",
-                    "image": "http://schema.org/image",
-                },
-            }
-        },
-        {
-            "Specimen": {
-                "@id": "http://hl7.org/fhir/Specimen",
-                "@context": [
-                    None,
-                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/specimen.context.jsonld",
-                ],
-            }
-        },
-        {
-            "Observation": {
-                "@id": "http://hl7.org/fhir/Observation",
-                "@context": [
-                    None,
-                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/observation.context.jsonld",
-                ],
-            }
-        },
-        {
-            "Organization": {
-                "@id": "http://hl7.org/fhir/Organization",
-                "@context": [
-                    None,
-                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/organization.context.jsonld",
-                ],
-            }
-        },
-        {
-            "Practitioner": {
-                "@id": "http://hl7.org/fhir/Practitioner",
-                "@context": [
-                    None,
-                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/practitioner.context.jsonld",
-                ],
-            }
-        },
-        {
-            "DiagnosticReport": {
-                "@id": "http://hl7.org/fhir/DiagnosticReport",
-                "@context": [
-                    None,
-                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/diagnosticreport.context.jsonld",
-                ],
-            }
-        },
-        {
-            "PractitionerRole": {
-                "@id": "http://hl7.org/fhir/PractitionerRole",
-                "@context": [
-                    None,
-                    "https://fhircat.org/fhir-r5/rdf-r5/contexts/practitionerrole.context.jsonld",
-                ],
-            }
-        },
     ],
     "type": ["VerifiableCredential", "LabReport"],
     "issuer": "did:key:zUC74FYQCzCbDpbVm9v1LVCc2RkxJY3XMdxV9UpsVaerTgEAAjpdWfE8WemccfdNhski3kHiXfLzPZW2wgsvSCkZFWV3zSNxQEqZoV8kVpwLtLzzpskRcskBB3M3DxaeBnDvK4H",
