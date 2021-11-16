@@ -149,6 +149,7 @@ class DemoAgent:
         self.timing_log = timing_log
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.tails_server_base_url = tails_server_base_url
+        self.revocation = revocation
         self.endorser_role = endorser_role
         self.endorser_did = None  # set this later
         self.endorser_invite = None  # set this later
@@ -355,6 +356,12 @@ class DemoAgent:
                     ("--trace-label", self.label + ".trace"),
                 ]
             )
+
+        if self.revocation:
+            # turn on notifications if revocation is enabled
+            result.append("--notify-revocation")
+        # always enable notification webhooks
+        result.append("--monitor-revocation-notification")
 
         if self.tails_server_base_url:
             result.append(("--tails-server-base-url", self.tails_server_base_url))

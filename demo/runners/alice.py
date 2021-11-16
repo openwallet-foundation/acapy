@@ -122,6 +122,7 @@ async def main(args):
             genesis_data=alice_agent.genesis_txns,
             no_auto=alice_agent.no_auto,
             tails_server_base_url=alice_agent.tails_server_base_url,
+            revocation=alice_agent.revocation,
             timing=alice_agent.show_timing,
             multitenant=alice_agent.multitenant,
             mediation=alice_agent.mediation,

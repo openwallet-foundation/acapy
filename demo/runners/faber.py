@@ -45,6 +45,7 @@ class FaberAgent(AriesAgent):
         admin_port: int,
         no_auto: bool = False,
         endorser_role: str = None,
+        revocation: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -54,6 +55,7 @@ class FaberAgent(AriesAgent):
             prefix="Faber",
             no_auto=no_auto,
             endorser_role=endorser_role,
+            revocation=revocation,
             **kwargs,
         )
         self.connection_id = None
@@ -389,6 +391,7 @@ async def main(args):
             genesis_data=faber_agent.genesis_txns,
             no_auto=faber_agent.no_auto,
             tails_server_base_url=faber_agent.tails_server_base_url,
+            revocation=faber_agent.revocation,
             timing=faber_agent.show_timing,
             multitenant=faber_agent.multitenant,
             mediation=faber_agent.mediation,
