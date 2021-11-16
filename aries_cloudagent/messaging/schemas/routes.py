@@ -368,7 +368,7 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
 
     schema_id = request.match_info["schema_id"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger = context.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
