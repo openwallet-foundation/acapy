@@ -3,6 +3,7 @@
 import json
 import logging
 from asyncio import shield
+import re
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -59,7 +60,7 @@ from .models.issuer_cred_rev_record import (
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .util import (
-    EVENT_LISTENER_PATTERN,
+    REVOCATION_EVENT_PREFIX,
     REVOCATION_REG_EVENT,
     REVOCATION_ENTRY_EVENT,
     REVOCATION_TAILS_EVENT,
@@ -149,11 +150,49 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
 class RevokeRequestSchema(CredRevRecordQueryStringSchema):
     """Parameters and validators for revocation request."""
 
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate fields - connection_id and thread_id must be present if notify."""
+        super().validate_fields(data, **kwargs)
+
+        notify = data.get("notify")
+        connection_id = data.get("connection_id")
+        thread_id = data.get("thread_id")
+
+        if notify and not (connection_id or thread_id):
+            raise ValidationError(
+                "Request must specify thread_id and connection_id if notify is true"
+            )
+
     publish = fields.Boolean(
         description=(
             "(True) publish revocation to ledger immediately, or "
             "(default, False) mark it pending"
         ),
+        required=False,
+    )
+    notify = fields.Boolean(
+        description="Send a notification to the credential recipient",
+        required=False,
+    )
+    connection_id = fields.Str(
+        description=(
+            "Connection ID to which the revocation notification will be sent; "
+            "required if notify is true"
+        ),
+        required=False,
+        **UUID4,
+    )
+    thread_id = fields.Str(
+        description=(
+            "Thread ID of the credential exchange message thread resulting in "
+            "the credential now being revoked; required if notify is true"
+        ),
+        required=False,
+        **UUID4,
+    )
+    comment = fields.Str(
+        description="Optional comment to include in revocation notification",
         required=False,
     )
 
@@ -335,20 +374,19 @@ async def revoke(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
     body = await request.json()
-
-    rev_reg_id = body.get("rev_reg_id")
-    cred_rev_id = body.get("cred_rev_id")  # numeric str, which indy wants
     cred_ex_id = body.get("cred_ex_id")
-    publish = body.get("publish")
+    body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
 
     rev_manager = RevocationManager(context.profile)
     try:
         if cred_ex_id:
-            await rev_manager.revoke_credential_by_cred_ex_id(cred_ex_id, publish)
+            # rev_reg_id and cred_rev_id should not be present so we can
+            # safely splat the body
+            await rev_manager.revoke_credential_by_cred_ex_id(**body)
         else:
-            await rev_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
+            # no cred_ex_id so we can safely splat the body
+            await rev_manager.revoke_credential(**body)
     except (
         RevocationManagerError,
         RevocationError,
@@ -990,24 +1028,18 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
 def register_events(event_bus: EventBus):
     """Subscribe to any events we need to support."""
-    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_revocation_event)
-
-
-async def on_revocation_event(profile: Profile, event: Event):
-    """Handle any events we need to support."""
-    event_topic_parts = event.topic.split("::")
-    if event_topic_parts[2] == REVOCATION_REG_EVENT:
-        # create the revocation registry (ledger transaction may require endorsement)
-        await on_revocation_registry_event(profile, event)
-    elif event_topic_parts[2] == REVOCATION_ENTRY_EVENT:
-        # create the revocation entry (ledger transaction may require endorsement)
-        await on_revocation_entry_event(profile, event)
-    elif event_topic_parts[2] == REVOCATION_TAILS_EVENT:
-        # upload tails file
-        await on_revocation_tails_file_event(profile, event)
-    else:
-        # TODO error handling
-        pass
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_REG_EVENT}.*"),
+        on_revocation_registry_event,
+    )
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_ENTRY_EVENT}.*"),
+        on_revocation_entry_event,
+    )
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_TAILS_EVENT}.*"),
+        on_revocation_tails_file_event,
+    )
 
 
 async def on_revocation_registry_event(profile: Profile, event: Event):

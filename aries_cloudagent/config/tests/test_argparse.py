@@ -3,7 +3,6 @@ from configargparse import ArgumentTypeError
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from .. import argparse
-from ..error import ArgsParseError
 from ..util import BoundedInt, ByteSize
 
 
