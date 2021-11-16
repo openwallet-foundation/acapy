@@ -53,6 +53,8 @@ from .test_data import (
     is_holder_pd,
     is_holder_pd_multiple_fields_excluded,
     is_holder_pd_multiple_fields_included,
+    EXPANDED_CRED_FHIR_TYPE_1,
+    EXPANDED_CRED_FHIR_TYPE_2,
     TEST_CRED_DICT,
     TEST_CRED_WILDCARD,
 )
@@ -3262,9 +3264,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
+            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -3294,9 +3300,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert not await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
+            assert not await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
         constraint = {
             "limit_disclosure": "required",
@@ -3308,9 +3318,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert not await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
+            assert not await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -3330,9 +3344,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
+            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
         constraint = {
             "limit_disclosure": "required",
@@ -3344,9 +3362,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
+            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
         cred_dict["credentialSubject"]["Patient"]["address"] = [
             {
@@ -3368,9 +3390,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
+            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
         cred_dict["credentialSubject"]["Patient"] = [
             {
@@ -3408,9 +3434,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
         constraint = {
             "limit_disclosure": "required",
@@ -3422,9 +3452,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
         constraint = {
             "limit_disclosure": "required",
@@ -3436,9 +3470,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
         constraint = {
             "limit_disclosure": "required",
@@ -3450,9 +3488,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            assert await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -3470,9 +3512,13 @@ class TestPresExchHandler:
             ],
         }
         constraint = Constraints.deserialize(constraint)
-        assert not await dif_pres_exch_handler.apply_constraint_received_cred(
-            constraint=constraint, cred_dict=cred_dict
-        )
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
+            assert not await dif_pres_exch_handler.apply_constraint_received_cred(
+                constraint=constraint, cred_dict=cred_dict
+            )
 
     @pytest.mark.asyncio
     async def test_get_updated_path(self, profile):
@@ -3553,13 +3599,19 @@ class TestPresExchHandler:
             "@type": "fhir:resource-types#Patient",
             "address": {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
         }
-        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
-        field = DIFField.deserialize(
-            {
-                "path": ["$.credentialSubject.Patient[0].address[0].city"],
-            }
-        )
-        assert not await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
+            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            field = DIFField.deserialize(
+                {
+                    "path": ["$.credentialSubject.Patient[0].address[0].city"],
+                }
+            )
+            assert not await dif_pres_exch_handler.filter_by_field(
+                field, vc_record_cred
+            )
 
     @pytest.mark.asyncio
     async def test_filter_by_field_xsd_parser(self, profile):
@@ -3572,55 +3624,75 @@ class TestPresExchHandler:
             "type": "xsd:integer",
             "@value": "10",
         }
-        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
-        field = DIFField.deserialize(
-            {
-                "path": ["$.credentialSubject.lprNumber"],
-                "filter": {
-                    "minimum": 5,
-                    "type": "number",
-                },
-            }
-        )
-        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            field = DIFField.deserialize(
+                {
+                    "path": ["$.credentialSubject.lprNumber"],
+                    "filter": {
+                        "minimum": 5,
+                        "type": "number",
+                    },
+                }
+            )
+            assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"] = {}
         cred_dict["credentialSubject"]["testDate"] = {
             "type": "xsd:dateTime",
             "@value": "2020-09-28T11:00:00+00:00",
         }
-        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
-        field = DIFField.deserialize(
-            {
-                "path": ["$.credentialSubject.testDate"],
-                "filter": {"type": "string", "format": "date", "minimum": "2005-5-16"},
-            }
-        )
-        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            field = DIFField.deserialize(
+                {
+                    "path": ["$.credentialSubject.testDate"],
+                    "filter": {
+                        "type": "string",
+                        "format": "date",
+                        "minimum": "2005-5-16",
+                    },
+                }
+            )
+            assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"] = {}
         cred_dict["credentialSubject"]["testFlag"] = {
             "type": "xsd:boolean",
             "@value": "false",
         }
-        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
-        field = DIFField.deserialize(
-            {
-                "path": ["$.credentialSubject.testFlag"],
-            }
-        )
-        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            field = DIFField.deserialize(
+                {
+                    "path": ["$.credentialSubject.testFlag"],
+                }
+            )
+            assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"] = {}
         cred_dict["credentialSubject"]["testDouble"] = {
             "type": "xsd:double",
             "@value": "10.2",
         }
-        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
-        field = DIFField.deserialize(
-            {"path": ["$.credentialSubject.testDouble"], "filter": {"const": 10.2}}
-        )
-        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            field = DIFField.deserialize(
+                {"path": ["$.credentialSubject.testDouble"], "filter": {"const": 10.2}}
+            )
+            assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"] = {}
         cred_dict["credentialSubject"]["test"] = {
@@ -3628,9 +3700,13 @@ class TestPresExchHandler:
             "@id": "test",
             "test": "val",
         }
-        vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
-        field = DIFField.deserialize({"path": ["$.credentialSubject.test"]})
-        assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
+        with async_mock.patch.object(
+            test_module.jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            field = DIFField.deserialize({"path": ["$.credentialSubject.test"]})
+            assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
 
     def test_string_to_timezone_aware_datetime(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(

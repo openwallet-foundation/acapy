@@ -2,6 +2,7 @@ from copy import deepcopy
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
+from pyld import jsonld
 
 from aries_cloudagent.protocols.present_proof.dif.pres_exch import SchemaInputDescriptor
 
@@ -25,7 +26,11 @@ from .......vc.vc_ld.validation_result import PresentationVerificationResult
 from .......wallet.base import BaseWallet
 
 from .....dif.pres_exch_handler import DIFPresExchHandler, DIFPresExchError
-from .....dif.tests.test_data import TEST_CRED_DICT
+from .....dif.tests.test_data import (
+    TEST_CRED_DICT,
+    EXPANDED_CRED_FHIR_TYPE_1,
+    EXPANDED_CRED_FHIR_TYPE_2,
+)
 
 from ....message_types import (
     ATTACHMENT_FORMAT,
@@ -1535,7 +1540,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+        with async_mock.patch.object(
+            jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
 
     async def test_verify_received_limit_disclosure_b(self):
         dif_proof = deepcopy(DIF_PRES)
@@ -1610,7 +1619,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+        with async_mock.patch.object(
+            jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
 
     async def test_verify_received_pres_invalid_jsonpath(self):
         dif_proof = deepcopy(DIF_PRES)
@@ -1956,6 +1969,9 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
         with async_mock.patch.object(
             test_module.LOGGER, "error", async_mock.MagicMock()
-        ) as mock_log_err:
+        ) as mock_log_err, async_mock.patch.object(
+            jsonld, "expand", async_mock.MagicMock()
+        ) as mock_jsonld_expand:
+            mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
