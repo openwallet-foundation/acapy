@@ -323,7 +323,7 @@ class OutOfBandManager(BaseConnectionManager):
 
                 async with self.profile.session() as session:
                     await conn_rec.metadata_set(
-                        session, "mediation", {"id": mediation_id}
+                        session, "mediation", {"id": mediation_record.mediation_id}
                     )
 
                 if keylist_updates:

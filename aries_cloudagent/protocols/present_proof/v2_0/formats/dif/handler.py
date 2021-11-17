@@ -21,7 +21,7 @@ from ......vc.vc_ld.verify import verify_presentation
 from ......wallet.base import BaseWallet
 from ......wallet.key_type import KeyType
 
-from ....dif.pres_exch import PresentationDefinition
+from ....dif.pres_exch import PresentationDefinition, SchemaInputDescriptor
 from ....dif.pres_exch_handler import DIFPresExchHandler
 from ....dif.pres_proposal_schema import DIFProofProposalSchema
 from ....dif.pres_request_schema import (
@@ -164,6 +164,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         )
         pres_definition = None
         limit_record_ids = None
+        reveal_doc_frame = None
         challenge = None
         domain = None
         if request_data != {} and DIFPresFormatHandler.format.api in request_data:
@@ -173,6 +174,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             pres_definition = pres_spec_payload.get("presentation_definition")
             issuer_id = pres_spec_payload.get("issuer_id")
             limit_record_ids = pres_spec_payload.get("record_ids")
+            reveal_doc_frame = pres_spec_payload.get("reveal_doc")
         if not pres_definition:
             if "options" in proof_request:
                 challenge = proof_request.get("options").get("challenge")
@@ -197,16 +199,27 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     input_descriptor.constraint.limit_disclosure == "required"
                 )
                 uri_list = []
-                for schema in input_descriptor.schemas:
-                    uri = schema.uri
-                    if schema.required is None:
-                        required = True
+                one_of_uri_groups = []
+                if input_descriptor.schemas:
+                    if input_descriptor.schemas.oneof_filter:
+                        one_of_uri_groups = (
+                            await self.retrieve_uri_list_from_schema_filter(
+                                input_descriptor.schemas.uri_groups
+                            )
+                        )
                     else:
-                        required = schema.required
-                    if required:
-                        uri_list.append(uri)
+                        schema_uris = input_descriptor.schemas.uri_groups[0]
+                        for schema_uri in schema_uris:
+                            if schema_uri.required is None:
+                                required = True
+                            else:
+                                required = schema_uri.required
+                            if required:
+                                uri_list.append(schema_uri.uri)
                 if len(uri_list) == 0:
                     uri_list = None
+                if len(one_of_uri_groups) == 0:
+                    one_of_uri_groups = None
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                     dif_handler_proof_type = BbsBlsSignature2020.signature_type
@@ -285,13 +298,31 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             "BbsBlsSignature2020 and Ed25519Signature2018"
                             " signature types are supported"
                         )
-                search = holder.search_credentials(
-                    proof_types=proof_type, pd_uri_list=uri_list
-                )
-                # Defaults to page_size but would like to include all
-                # For now, setting to 1000
-                max_results = 1000
-                records = await search.fetch(max_results)
+                if one_of_uri_groups:
+                    records = []
+                    cred_group_record_ids = set()
+                    for uri_group in one_of_uri_groups:
+                        search = holder.search_credentials(
+                            proof_types=proof_type, pd_uri_list=uri_group
+                        )
+                        max_results = 1000
+                        cred_group = await search.fetch(max_results)
+                        (
+                            cred_group_vcrecord_list,
+                            cred_group_vcrecord_ids_set,
+                        ) = await self.process_vcrecords_return_list(
+                            cred_group, cred_group_record_ids
+                        )
+                        cred_group_record_ids = cred_group_vcrecord_ids_set
+                        records = records + cred_group_vcrecord_list
+                else:
+                    search = holder.search_credentials(
+                        proof_types=proof_type, pd_uri_list=uri_list
+                    )
+                    # Defaults to page_size but would like to include all
+                    # For now, setting to 1000
+                    max_results = 1000
+                    records = await search.fetch(max_results)
                 # Avoiding addition of duplicate records
                 (
                     vcrecord_list,
@@ -303,7 +334,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             raise V20PresFormatHandlerError(err)
 
         dif_handler = DIFPresExchHandler(
-            self._profile, pres_signing_did=issuer_id, proof_type=dif_handler_proof_type
+            self._profile,
+            pres_signing_did=issuer_id,
+            proof_type=dif_handler_proof_type,
+            reveal_doc=reveal_doc_frame,
         )
 
         pres = await dif_handler.create_vp(
@@ -325,6 +359,19 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 to_add.append(vc_record)
                 record_ids.add(vc_record.record_id)
         return (to_add, record_ids)
+
+    async def retrieve_uri_list_from_schema_filter(
+        self, schema_uri_groups: Sequence[Sequence[SchemaInputDescriptor]]
+    ) -> Sequence[str]:
+        """Retrieve list of schema uri from uri_group."""
+        group_schema_uri_list = []
+        for schema_group in schema_uri_groups:
+            uri_list = []
+            for schema in schema_group:
+                uri_list.append(schema.uri)
+            if len(uri_list) > 0:
+                group_schema_uri_list.append(uri_list)
+        return group_schema_uri_list
 
     async def receive_pres(
         self, message: V20Pres, pres_ex_record: V20PresExRecord
