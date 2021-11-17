@@ -6,6 +6,7 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
+from ..manager import V10DiscoveryMgr
 from ..messages.disclose import Disclose
 
 
@@ -16,5 +17,6 @@ class DiscloseHandler(BaseHandler):
         """Message handler implementation."""
         self._logger.debug("DiscloseHandler called with context %s", context)
         assert isinstance(context.message, Disclose)
-
-        print("Received protocols:\n{}".format(context.message.protocols))
+        profile = context.profile
+        mgr = V10DiscoveryMgr(profile)
+        await mgr.receive_disclose(context.message)
