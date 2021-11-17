@@ -8,6 +8,7 @@ from aries_cloudagent.protocols.present_proof.dif.pres_exch import SchemaInputDe
 
 from .......core.in_memory import InMemoryProfile
 from .......messaging.decorators.attach_decorator import AttachDecorator
+from .......messaging.responder import MockResponder, BaseResponder
 from .......storage.vc_holder.base import VCHolder
 from .......storage.vc_holder.vc_record import VCRecord
 from .......vc.ld_proofs import (
@@ -260,6 +261,7 @@ class TestDIFFormatHandler(AsyncTestCase):
 
         # Set custom document loader
         self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
+        self.context.injector.bind_instance(BaseResponder, MockResponder())
 
         self.handler = DIFPresFormatHandler(self.profile)
         assert self.handler.profile
@@ -1975,3 +1977,103 @@ class TestDIFFormatHandler(AsyncTestCase):
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
             mock_log_err.assert_called_once()
+
+    async def test_create_pres_catch_typeerror(self):
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(side_effect=TypeError)
+            ),
+        )
+        test_pd = deepcopy(DIF_PRES_REQUEST_B)
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(test_pd, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        await self.handler.create_pres(record)
+
+    async def test_create_pres_catch_diferror(self):
+        cred_list = [
+            VCRecord(
+                contexts=[
+                    "https://www.w3.org/2018/credentials/v1",
+                    "https://www.w3.org/2018/credentials/examples/v1",
+                ],
+                expanded_types=[
+                    "https://www.w3.org/2018/credentials#VerifiableCredential",
+                    "https://example.org/examples#UniversityDegreeCredential",
+                ],
+                issuer_id="did:example:489398593",
+                subject_ids=[
+                    "did:sov:WgWxqztrNooG92RXvxSTWv",
+                ],
+                proof_types=["Ed25519Signature2018"],
+                schema_ids=["https://example.org/examples/degree.json"],
+                cred_value={"...", "..."},
+                given_id="http://example.edu/credentials/3732",
+                cred_tags={"some": "tag"},
+                record_id="test1",
+            )
+        ]
+        self.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(return_value=cred_list)
+                    )
+                )
+            ),
+        )
+        test_pd = deepcopy(DIF_PRES_REQUEST_B)
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(test_pd, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        with async_mock.patch.object(
+            DIFPresExchHandler, "create_vp", async_mock.MagicMock()
+        ) as mock_create_vp:
+            mock_create_vp.side_effect = DIFPresExchError("TEST")
+            await self.handler.create_pres(record)
