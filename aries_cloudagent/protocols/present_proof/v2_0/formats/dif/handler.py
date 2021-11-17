@@ -336,6 +336,25 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 credentials_list = credentials_list + vcrecord_list
         except StorageNotFoundError as err:
             raise V20PresFormatHandlerError(err)
+        except TypeError as err:
+            LOGGER.error(str(err))
+            responder = self._profile.inject_or(BaseResponder)
+            if responder:
+                report = ProblemReport(
+                    description={
+                        "en": (
+                            "Presentation request not properly formatted,"
+                            " TypeError raised on Holder agent."
+                        ),
+                        "code": ProblemReportReason.ABANDONED.value,
+                    }
+                )
+                if pres_ex_record.thread_id:
+                    report.assign_thread_id(pres_ex_record.thread_id)
+                await responder.send_reply(
+                    report, connection_id=pres_ex_record.connection_id
+                )
+                return
 
         dif_handler = DIFPresExchHandler(
             self._profile,
@@ -392,9 +411,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 group_schema_uri_list.append(uri_list)
         return group_schema_uri_list
 
-    async def receive_pres(
-        self, message: V20Pres, pres_ex_record: V20PresExRecord
-    ) -> None:
+    async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):
         """Receive a presentation, from message in context on manager creation."""
         dif_handler = DIFPresExchHandler(self._profile)
         dif_proof = message.attachment(DIFPresFormatHandler.format)
@@ -406,6 +423,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         )
         try:
             await dif_handler.verify_received_pres(pd=pres_definition, pres=dif_proof)
+            return True
         except DIFPresExchError as err:
             LOGGER.error(str(err))
             responder = self._profile.inject_or(BaseResponder)
@@ -416,9 +434,12 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                         "code": ProblemReportReason.ABANDONED.value,
                     }
                 )
+                if pres_ex_record.thread_id:
+                    report.assign_thread_id(pres_ex_record.thread_id)
                 await responder.send_reply(
                     report, connection_id=pres_ex_record.connection_id
                 )
+                return False
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
         """
