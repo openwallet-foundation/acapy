@@ -66,6 +66,6 @@ class IndyLedgerRequestsExecutor:
                     extracted_did, cache_did=cache_did
                 )
             except (MultipleLedgerManagerError, InjectionError):
-                return self.profile.inject(BaseLedger)
+                return self.profile.inject_or(BaseLedger)
         else:
-            return self.profile.inject(BaseLedger)
+            return self.profile.inject_or(BaseLedger)

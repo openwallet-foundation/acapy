@@ -247,7 +247,7 @@ class ConnectionManager(BaseConnectionManager):
             # Save that this invitation was created with mediation
             async with self.profile.session() as session:
                 await connection.metadata_set(
-                    session, "mediation", {"id": mediation_id}
+                    session, "mediation", {"id": mediation_record.mediation_id}
                 )
 
             if keylist_updates:
@@ -958,7 +958,7 @@ class ConnectionManager(BaseConnectionManager):
         did_doc = await self.create_did_document(
             their_info,
             None,
-            [their_endpoint],
+            [their_endpoint or ""],
             mediation_records=[base_mediation_record]
             if base_mediation_record
             else None,
