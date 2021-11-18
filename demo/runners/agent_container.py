@@ -498,6 +498,9 @@ class AriesAgent(DemoAgent):
     async def handle_endorse_transaction(self, message):
         self.log("Received transaction message:", message["state"])
 
+    async def handle_revocation_notification(self, message):
+        self.log("Received revocation notification message:", message)
+
     async def generate_invitation(
         self,
         use_did_exchange: bool,
