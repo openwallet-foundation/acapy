@@ -1,17 +1,17 @@
 """Base classes for the queue module."""
 from abc import ABC, abstractmethod
-import logging
 import asyncio
+import logging
 from typing import Union
 
-from ...error import TransportError, BaseError
-from ....config.settings import Settings
+from ....core.profile import Profile
+from ...error import BaseError, TransportError
 
 
 class BaseOutboundQueue(ABC):
     """Base class for the outbound queue generic type."""
 
-    def __init__(self, settings: Settings):
+    def __init__(self, root_profile: Profile):
         """Initialize base queue type."""
         self.logger = logging.getLogger(__name__)
 
