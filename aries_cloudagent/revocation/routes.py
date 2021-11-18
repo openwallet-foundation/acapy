@@ -159,7 +159,7 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
         connection_id = data.get("connection_id")
         thread_id = data.get("thread_id")
 
-        if notify and not (connection_id or thread_id):
+        if notify and not (connection_id and thread_id):
             raise ValidationError(
                 "Request must specify thread_id and connection_id if notify is true"
             )
@@ -377,6 +377,14 @@ async def revoke(request: web.BaseRequest):
     body = await request.json()
     cred_ex_id = body.get("cred_ex_id")
     body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
+    notify = body.get("notify")
+    connection_id = body.get("connection_id")
+    thread_id = body.get("thread_id")
+
+    if notify and not (connection_id and thread_id):
+        raise web.HTTPBadRequest(
+            reason="thread_id and connection_id must be set when notify is true"
+        )
 
     rev_manager = RevocationManager(context.profile)
     try:
