@@ -23,4 +23,4 @@ def get_outbound_queue(settings: Settings) -> Optional[BaseOutboundQueue]:
         raise OutboundQueueConfigurationError(
             "Configured class is not a subclass of BaseOutboundQueue"
         )
-    return klass(settings)
+    return instance
