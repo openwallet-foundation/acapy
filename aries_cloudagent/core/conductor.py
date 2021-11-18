@@ -139,7 +139,7 @@ class Conductor:
             DocumentLoader, DocumentLoader(self.root_profile)
         )
 
-        self.outbound_queue = get_outbound_queue(context.settings)
+        self.outbound_queue = get_outbound_queue(self.root_profile)
 
         # Admin API
         if context.settings.get("admin.enabled"):
