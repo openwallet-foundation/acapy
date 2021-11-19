@@ -22,10 +22,11 @@ Link: [Greenlight](https://greenlight.orgbook.gov.bc.ca/) - choose the "City of 
 Link: [Information about Verifiable Organizations Network (VON)](https://vonx.io)
 Link: [OrgBook BC - Production Instance](https://orgbook.gov.bc.ca/)
 
-### The IIWBook Mobile Agent Demo
+### The ConfBook Mobile Agent Demo
 
-The IIWBook demo was presented during the [Internet Identity Workshop](https://internetidentityworkshop.com/) (IIW) 28. The demo uses instances of the Aries Cloud Agent - Python-based services interacting with a mobile agent to issue and verify credentials. Follow along with the demo to get a beta Indy mobile agent from [Streetcred](https://app.streetcred.id/), use it to get a verifiable credential that you control your email address, and proof the claims from that credential to get a verifiable credential that you attended IIW (or at least added attended a demo presented at IIW).
+The ConfBook demo was presented during the [Internet Identity Workshop](https://internetidentityworkshop.com/) (IIW) 28. The demo uses instances of the Aries Cloud Agent - Python-based services interacting with a mobile agent to issue and verify credentials. Follow along with the demo to get an Aries Mobile Agent and use it to get a verifiable credential that you control your email address, and proof the claims from that credential to get a verifiable credential that you attended a
+conference.
 
-Link: [IIWBook Demo](https://vonx.io/how_to/iiwbook)
+Link: [ConfBook Demo](https://vonx.io/how_to/confbook)
 
 > Back to the [Aries Developer - Getting Started Guide](README.md).

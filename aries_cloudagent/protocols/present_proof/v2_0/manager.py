@@ -259,12 +259,16 @@ class V20PresManager:
             pres_exch_format = V20PresFormat.Format.get(format.format)
 
             if pres_exch_format:
-                pres_formats.append(
-                    await pres_exch_format.handler(self._profile).create_pres(
-                        pres_ex_record,
-                        request_data,
-                    )
+                pres_tuple = await pres_exch_format.handler(self._profile).create_pres(
+                    pres_ex_record,
+                    request_data,
                 )
+                if pres_tuple:
+                    pres_formats.append(pres_tuple)
+                else:
+                    raise V20PresManagerError(
+                        "Unable to create presentation. ProblemReport message sent"
+                    )
         if len(pres_formats) == 0:
             raise V20PresManagerError(
                 "Unable to create presentation. No supported formats"
@@ -322,10 +326,17 @@ class V20PresManager:
             pres_format = V20PresFormat.Format.get(format.format)
 
             if pres_format:
-                await pres_format.handler(self._profile).receive_pres(
+                receive_pres_return = await pres_format.handler(
+                    self._profile
+                ).receive_pres(
                     message,
                     pres_ex_record,
                 )
+                if isinstance(receive_pres_return, bool) and not receive_pres_return:
+                    raise V20PresManagerError(
+                        "Unable to verify received presentation."
+                        " ProblemReport message sent"
+                    )
         pres_ex_record.pres = message
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
 
