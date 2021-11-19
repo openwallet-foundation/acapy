@@ -1,14 +1,14 @@
-"""Represents a feature discovery query message."""
+"""Represents a feature discovery queries message."""
 
 from typing import Sequence
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, validate
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.models.base import BaseModel, BaseModelSchema
 
 from ..message_types import PROTOCOL_PACKAGE, QUERIES
 
-HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.query_handler.QueryHandler"
+HANDLER_CLASS = f"{PROTOCOL_PACKAGE}.handlers.queries_handler.QueriesHandler"
 
 
 class QueryItem(BaseModel):
@@ -40,7 +40,10 @@ class QueryItemSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     feature_type = fields.Str(
-        required=True, description="feature-type", data_key="feature-type"
+        required=True,
+        description="feature type",
+        data_key="feature-type",
+        validate=validate.OneOf(["protocol", "goal-code"]),
     )
     match = fields.Str(required=True, description="match")
 
@@ -56,7 +59,7 @@ class Queries(AgentMessage):
 
         handler_class = HANDLER_CLASS
         message_type = QUERIES
-        schema_class = "QueiesSchema"
+        schema_class = "QueriesSchema"
 
     def __init__(self, *, queries: Sequence[QueryItem] = None, **kwargs):
         """
@@ -79,4 +82,4 @@ class QueriesSchema(AgentMessageSchema):
         model_class = Queries
         unknown = EXCLUDE
 
-    queries = fields.List(fields.List(fields.Nested(QueryItemSchema)))
+    queries = fields.List(fields.Nested(QueryItemSchema))

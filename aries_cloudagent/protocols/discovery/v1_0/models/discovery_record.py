@@ -35,23 +35,20 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
         discovery_exchange_id: str = None,
         connection_id: str = None,
         thread_id: str = None,
-        parent_thread_id: str = None,
-        comment: str = None,
-        query: Union[Mapping, Query],
-        disclose: Union[Mapping, Disclose],
+        query: Union[Mapping, Query] = None,
+        disclose: Union[Mapping, Disclose] = None,
         **kwargs,
     ):
+        """Initialize a new V10DiscoveryExchangeRecord."""
         super().__init__(discovery_exchange_id, **kwargs)
         self._id = discovery_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id
-        self.parent_thread_id = parent_thread_id
-        self.comment = comment
         self._query = Query.serde(query)
-        self.disclose = Query.serde(disclose)
+        self._disclose = Disclose.serde(disclose)
 
     @property
-    def record_id(self) -> str:
+    def discovery_exchange_id(self) -> str:
         """Accessor for the ID."""
         return self._id
 
@@ -60,10 +57,20 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
         """Accessor; get deserialized view."""
         return None if self._query is None else self._query.de
 
+    @query.setter
+    def query(self, value):
+        """Setter; store de/serialized views."""
+        self._query = Query.serde(value)
+
     @property
     def disclose(self) -> Disclose:
         """Accessor; get deserialized view."""
-        return None if self.disclose is None else self.disclose.de
+        return None if self._disclose is None else self._disclose.de
+
+    @disclose.setter
+    def disclose(self, value):
+        """Setter; store de/serialized views."""
+        self._disclose = Disclose.serde(value)
 
     @classmethod
     async def retrieve_by_connection_id(
@@ -105,7 +112,7 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
 
 
 class V10DiscoveryRecordSchema(BaseExchangeSchema):
-    """Schema to allow serialization/deserialization of Discover Feature (0031) records"""
+    """Schema to allow ser/deser of Discover Feature (0031) records."""
 
     class Meta:
         """V10DiscoveryRecordSchema metadata."""
@@ -123,10 +130,6 @@ class V10DiscoveryRecordSchema(BaseExchangeSchema):
     thread_id = fields.Str(
         required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
     )
-    parent_thread_id = fields.Str(
-        required=False, description="Parent thread identifier", example=UUIDFour.EXAMPLE
-    )
-    comment = fields.Str(required=False, description="Comment")
     query = fields.Nested(
         QuerySchema(),
         required=False,

@@ -1,5 +1,6 @@
 import pytest
 
+from ......core.in_memory import InMemoryProfile
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -18,14 +19,17 @@ def request_context() -> RequestContext:
     ctx = RequestContext.test_context()
     registry = ProtocolRegistry()
     registry.register_message_types({TEST_MESSAGE_TYPE: object()})
-    ctx.injector.bind_instance(ProtocolRegistry, registry)
+    profile = ctx.profile
+    profile.context.injector.bind_instance(ProtocolRegistry, registry)
     yield ctx
 
 
 class TestQueryHandler:
     @pytest.mark.asyncio
     async def test_query_all(self, request_context):
-        request_context.message = Query(query="*")
+        query_msg = Query(query="*")
+        query_msg.assign_thread_id("test123")
+        request_context.message = query_msg
         handler = QueryHandler()
         responder = MockResponder()
         await handler.handle(request_context, responder)

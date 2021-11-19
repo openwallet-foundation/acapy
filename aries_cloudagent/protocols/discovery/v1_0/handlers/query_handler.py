@@ -19,7 +19,7 @@ class QueryHandler(BaseHandler):
         assert isinstance(context.message, Query)
         profile = context.profile
         mgr = V10DiscoveryMgr(profile)
-        reply = await mgr.receive_query(context)
+        reply = await mgr.receive_query(context.message)
         reply.assign_thread_from(context.message)
         reply.assign_trace_from(context.message)
         await responder.send_reply(reply)

@@ -1,5 +1,7 @@
 import pytest
 
+from asynctest import mock as async_mock
+
 from ......core.protocol_registry import ProtocolRegistry
 from ......messaging.base_handler import HandlerException
 from ......messaging.request_context import RequestContext
@@ -9,6 +11,8 @@ from .....didcomm_prefix import DIDCommPrefix
 
 from ...handlers.disclose_handler import DiscloseHandler
 from ...messages.disclose import Disclose
+from ...messages.query import Query
+from ...models.discovery_record import V10DiscoveryExchangeRecord
 
 TEST_MESSAGE_FAMILY = "TEST_FAMILY"
 TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
@@ -26,7 +30,7 @@ class TestDiscloseHandler:
         registry = ProtocolRegistry()
         registry.register_message_types({TEST_MESSAGE_TYPE: object()})
         request_context.injector.bind_instance(ProtocolRegistry, registry)
-        request_context.message = Disclose(
+        disclose_msg = Disclose(
             protocols=[
                 {
                     "pid": DIDCommPrefix.qualify_current(
@@ -36,8 +40,21 @@ class TestDiscloseHandler:
                 }
             ]
         )
+        query_msg = Query(query="*")
+        discovery_record = V10DiscoveryExchangeRecord(
+            connection_id="test123",
+            thread_id="test123",
+            query=query_msg,
+        )
+        disclose_msg.assign_thread_id("test123")
+        request_context.message = disclose_msg
 
         handler = DiscloseHandler()
         mock_responder = MockResponder()
-        await handler.handle(request_context, mock_responder)
-        assert not mock_responder.messages
+        with async_mock.patch.object(
+            V10DiscoveryExchangeRecord,
+            "retrieve_by_thread_id",
+            async_mock.CoroutineMock(return_value=discovery_record),
+        ) as mock_get_rec_thread_id:
+            await handler.handle(request_context, mock_responder)
+            assert not mock_responder.messages

@@ -1,4 +1,4 @@
-"""Handler for incoming query messages."""
+"""Handler for incoming queries messages."""
 
 from .....messaging.base_handler import (
     BaseHandler,
@@ -6,20 +6,20 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
-from ..manager import V10DiscoveryMgr
-from ..messages.query import Query
+from ..manager import V20DiscoveryMgr
+from ..messages.queries import Queries
 
 
-class QueryHandler(BaseHandler):
-    """Handler for incoming query messages."""
+class QueriesHandler(BaseHandler):
+    """Handler for incoming queries messages."""
 
     async def handle(self, context: RequestContext, responder: BaseResponder):
         """Message handler implementation."""
         self._logger.debug("QueryHandler called with context %s", context)
-        assert isinstance(context.message, Query)
+        assert isinstance(context.message, Queries)
         profile = context.profile
-        mgr = V10DiscoveryMgr(profile)
-        reply = await mgr.receive_query(context)
+        mgr = V20DiscoveryMgr(profile)
+        reply = await mgr.receive_query(context.message)
         reply.assign_thread_from(context.message)
         reply.assign_trace_from(context.message)
         await responder.send_reply(reply)

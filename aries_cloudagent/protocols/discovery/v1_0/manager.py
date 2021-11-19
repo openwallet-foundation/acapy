@@ -3,7 +3,6 @@ import logging
 
 from aries_cloudagent.protocols.discovery.v1_0.messages.query import Query
 
-from ....config.injection_context import InjectionContext
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....core.protocol_registry import ProtocolRegistry
@@ -47,48 +46,84 @@ class V10DiscoveryMgr:
     ) -> V10DiscoveryExchangeRecord:
         """Receive Disclose message and return updated V10DiscoveryExchangeRecord."""
         thread_id = disclose_msg._thread.thid
-        async with self._profile.session() as session:
-            discover_exch_rec = await V10DiscoveryExchangeRecord.retrieve_by_thread_id(
-                session=session, thread_id=thread_id
-            )
-        discover_exch_rec.disclose = disclose_msg
-        return discover_exch_rec
+        try:
+            async with self._profile.session() as session:
+                discover_exch_rec = (
+                    await V10DiscoveryExchangeRecord.retrieve_by_thread_id(
+                        session=session, thread_id=thread_id
+                    )
+                )
+                discover_exch_rec.disclose = disclose_msg
+                await discover_exch_rec.save(session)
+            return discover_exch_rec
+        except StorageNotFoundError:
+            raise V10DiscoveryMgrError("")
 
-    async def receive_query(self, base_context: InjectionContext) -> Disclose:
+    async def receive_query(self, query_msg: Query) -> Disclose:
         """Process query and return the corresponding disclose message."""
-        registry = base_context.inject(ProtocolRegistry)
-        query_msg = base_context.message.query
-        protocols = registry.protocols_matching_query(query_msg)
-        result = await registry.prepare_disclosed(base_context, protocols)
-        disclose_msg = Disclose(protocols=result)
+        registry = self._profile.context.inject_or(ProtocolRegistry)
+        query_str = query_msg.query
+        published_results = []
+        protocols = registry.protocols_matching_query(query_str)
+        results = await registry.prepare_disclosed(self._profile.context, protocols)
+        async with self._profile.session() as session:
+            to_publish_protocols = None
+            if (
+                session.settings.get("disclose_protocol_list")
+                and len(session.settings.get("disclose_protocol_list")) > 0
+            ):
+                to_publish_protocols = session.settings.get("disclose_protocol_list")
+            for result in results:
+                to_publish_result = {}
+                if "pid" in result:
+                    if (
+                        to_publish_protocols
+                        and result.get("pid") not in to_publish_protocols
+                    ):
+                        continue
+                    to_publish_result["pid"] = result.get("pid")
+                else:
+                    continue
+                if "roles" in result:
+                    to_publish_result["roles"] = result.get("roles")
+                published_results.append(to_publish_result)
+        disclose_msg = Disclose(protocols=published_results)
         disclose_msg.assign_thread_id(query_msg._thread.thid)
         return disclose_msg
 
     async def create_and_send_query(
-        self, connection_id: str, query: str, comment: str = None
+        self, query: str, comment: str = None, connection_id: str = None
     ) -> V10DiscoveryExchangeRecord:
         """Create and send a Query message."""
-        async with self._profile.session() as session:
-            try:
-                # If existing record exists for a connection_id
-                existing_discovery_ex_rec = (
-                    await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
-                        session=session, connection_id=connection_id
-                    )
-                )
-                await existing_discovery_ex_rec.delete_record(session)
-                existing_discovery_ex_rec = V10DiscoveryExchangeRecord()
-            except StorageNotFoundError:
-                existing_discovery_ex_rec = V10DiscoveryExchangeRecord()
         query_msg = Query(query=query, comment=comment)
-        existing_discovery_ex_rec.query = query_msg
-        existing_discovery_ex_rec.comment = comment
-        responder = self.profile.inject_or(BaseResponder)
-        if responder:
-            await responder.send(query_msg, connection_id=connection_id)
+        if connection_id:
+            async with self._profile.session() as session:
+                try:
+                    # If existing record exists for a connection_id
+                    existing_discovery_ex_rec = (
+                        await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
+                            session=session, connection_id=connection_id
+                        )
+                    )
+                    await existing_discovery_ex_rec.delete_record(session)
+                    discovery_ex_rec = V10DiscoveryExchangeRecord()
+                except StorageNotFoundError:
+                    discovery_ex_rec = V10DiscoveryExchangeRecord()
+            discovery_ex_rec.query = query_msg
+            await discovery_ex_rec.save(session)
+            responder = self.profile.inject_or(BaseResponder)
+            if responder:
+                await responder.send(query_msg, connection_id=connection_id)
+            else:
+                self._logger.exception(
+                    "Unable to send discover-features v1 query message"
+                    ": BaseResponder unavailable"
+                )
+            return discovery_ex_rec
         else:
-            self._logger.exception(
-                "Unable to send discover-features v1 query message"
-                ": BaseResponder unavailable"
-            )
-        return existing_discovery_ex_rec
+            # Disclose this agent's features and/or goal codes
+            discovery_ex_rec = V10DiscoveryExchangeRecord()
+            discovery_ex_rec.query = query_msg
+            disclose = await self.receive_query(query_msg=query_msg)
+            discovery_ex_rec.disclose = disclose
+            return discovery_ex_rec

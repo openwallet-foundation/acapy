@@ -8,8 +8,8 @@ from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
-from ..messages.disclose import Disclose, DiscloseSchema
-from ..messages.query import Queries, QueriesSchema
+from ..messages.disclosures import Disclosures, DisclosuresSchema
+from ..messages.queries import Queries, QueriesSchema
 
 from . import UNENCRYPTED_TAGS
 
@@ -22,7 +22,7 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
     class Meta:
         """V20DiscoveryExchangeRecord metadata."""
 
-        schema_class = "V10DiscoveryRecordSchema"
+        schema_class = "V20DiscoveryRecordSchema"
 
     RECORD_TYPE = "discovery_exchange_v20"
     RECORD_ID_NAME = "discovery_exchange_id"
@@ -35,35 +35,42 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
         discovery_exchange_id: str = None,
         connection_id: str = None,
         thread_id: str = None,
-        parent_thread_id: str = None,
-        comment: str = None,
-        queries: Union[Sequence, Queries],
-        disclose: Union[Mapping, Disclose],
+        queries: Union[Sequence, Queries] = None,
+        disclosures: Union[Mapping, Disclosures] = None,
         **kwargs,
     ):
+        """Initialize a new V20DiscoveryExchangeRecord."""
         super().__init__(discovery_exchange_id, **kwargs)
         self._id = discovery_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id
-        self.parent_thread_id = parent_thread_id
-        self.comment = comment
-        self.queries = Queries.serde(queries)
-        self.disclose = Queries.serde(disclose)
+        self._queries = Queries.serde(queries)
+        self._disclosures = Disclosures.serde(disclosures)
 
     @property
-    def record_id(self) -> str:
+    def discovery_exchange_id(self) -> str:
         """Accessor for the ID."""
         return self._id
 
     @property
-    def query(self) -> Queries:
+    def queries(self) -> Queries:
         """Accessor; get deserialized view."""
-        return None if self.queries is None else self.queries.de
+        return None if self._queries is None else self._queries.de
+
+    @queries.setter
+    def queries(self, value):
+        """Setter; store de/serialized views."""
+        self._queries = Queries.serde(value)
 
     @property
-    def disclose(self) -> Disclose:
+    def disclosures(self) -> Disclosures:
         """Accessor; get deserialized view."""
-        return None if self.disclose is None else self.disclose.de
+        return None if self._disclosures is None else self._disclosures.de
+
+    @disclosures.setter
+    def disclosures(self, value):
+        """Setter; store de/serialized views."""
+        self._disclosures = Disclosures.serde(value)
 
     @classmethod
     async def retrieve_by_connection_id(
@@ -105,7 +112,7 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
 
 
 class V20DiscoveryRecordSchema(BaseExchangeSchema):
-    """Schema to allow serialization/deserialization of Discover Feature v2_0 records"""
+    """Schema to allow ser/deser of Discover Feature v2_0 records."""
 
     class Meta:
         """V20DiscoveryRecordSchema metadata."""
@@ -123,17 +130,13 @@ class V20DiscoveryRecordSchema(BaseExchangeSchema):
     thread_id = fields.Str(
         required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
     )
-    parent_thread_id = fields.Str(
-        required=False, description="Parent thread identifier", example=UUIDFour.EXAMPLE
-    )
-    comment = fields.Str(required=False, description="Comment")
     queries = fields.Nested(
         QueriesSchema(),
         required=False,
         description="Queries message",
     )
-    disclose = fields.Nested(
-        DiscloseSchema(),
+    disclosures = fields.Nested(
+        DisclosuresSchema(),
         required=False,
-        description="Disclose message",
+        description="Disclosures message",
     )

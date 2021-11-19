@@ -8,14 +8,14 @@ SPEC_URI = (
 )
 
 # Message types
-DISCLOSE = "discover-features/2.0/disclose"
-QUERY = "discover-features/2.0/query"
+DISCLOSURES = "discover-features/2.0/disclosures"
+QUERIES = "discover-features/2.0/queries"
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.discovery.v2_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
     {
-        DISCLOSE: f"{PROTOCOL_PACKAGE}.messages.disclose.Disclose",
-        QUERY: f"{PROTOCOL_PACKAGE}.messages.query.Query",
+        DISCLOSURES: f"{PROTOCOL_PACKAGE}.messages.disclosures.Disclosures",
+        QUERIES: f"{PROTOCOL_PACKAGE}.messages.queries.Queries",
     }
 )
