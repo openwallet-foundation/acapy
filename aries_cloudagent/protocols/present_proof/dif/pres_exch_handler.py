@@ -430,7 +430,7 @@ class DIFPresExchHandler:
             reqd_field_ids = []
             return reqd_field_ids
         for holder in constraints.holders:
-            if holder.directive == "required":
+            if holder.directive == "required" or holder.directive == "preferred":
                 reqd_field_ids = set.union(reqd_field_ids, set(holder.field_ids))
         return list(reqd_field_ids)
 
@@ -1255,43 +1255,41 @@ class DIFPresExchHandler:
                 return vp
             else:
                 vp = await create_presentation(credentials=filtered_creds_list)
-                vp["presentation_submission"] = submission_property.serialize()
-                if self.proof_type is BbsBlsSignature2020.signature_type:
-                    vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                issue_suite = await self._get_issue_suite(
-                    wallet=wallet,
-                    issuer_id=issuer_id,
-                )
-                signed_vp = await sign_presentation(
-                    presentation=vp,
-                    suite=issue_suite,
-                    challenge=challenge,
-                    document_loader=document_loader,
-                )
-                return signed_vp
         else:
-            vp = await create_presentation(credentials=applicable_creds_list)
-            vp["presentation_submission"] = submission_property.serialize()
-            if self.proof_type is BbsBlsSignature2020.signature_type:
-                vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-            if self.pres_signing_did:
-                async with self.profile.session() as session:
-                    wallet = session.inject(BaseWallet)
-                    issue_suite = await self._get_issue_suite(
-                        wallet=wallet,
-                        issuer_id=self.pres_signing_did,
-                    )
-                    signed_vp = await sign_presentation(
-                        presentation=vp,
-                        suite=issue_suite,
-                        challenge=challenge,
-                        document_loader=document_loader,
-                    )
-                    return signed_vp
+            if not self.pres_signing_did:
+                (
+                    issuer_id,
+                    filtered_creds_list,
+                ) = await self.get_sign_key_credential_subject_id(
+                    applicable_creds=applicable_creds
+                )
+                if not issuer_id:
+                    vp = await create_presentation(credentials=applicable_creds_list)
+                    vp["presentation_submission"] = submission_property.serialize()
+                    if self.proof_type is BbsBlsSignature2020.signature_type:
+                        vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+                    return vp
+                else:
+                    vp = await create_presentation(credentials=filtered_creds_list)
             else:
-                return vp
+                issuer_id = self.pres_signing_did
+                vp = await create_presentation(credentials=applicable_creds_list)
+        vp["presentation_submission"] = submission_property.serialize()
+        if self.proof_type is BbsBlsSignature2020.signature_type:
+            vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            issue_suite = await self._get_issue_suite(
+                wallet=wallet,
+                issuer_id=issuer_id,
+            )
+            signed_vp = await sign_presentation(
+                presentation=vp,
+                suite=issue_suite,
+                challenge=challenge,
+                document_loader=document_loader,
+            )
+            return signed_vp
 
     def check_if_cred_id_derived(self, id: str) -> bool:
         """Check if credential or credentialSubjet id is derived."""
@@ -1366,9 +1364,6 @@ class DIFPresExchHandler:
             desc_map_item_id = desc_map_item.get("id")
             constraint = inp_desc_id_contraint_map.get(desc_map_item_id)
             schema_filter = inp_desc_id_schemas_map.get(desc_map_item_id)
-            is_one_of_filtered = False
-            if desc_map_item_id in inp_desc_id_schema_one_of_filter:
-                is_one_of_filtered = True
             desc_map_item_path = desc_map_item.get("path")
             jsonpath = parse(desc_map_item_path)
             match = jsonpath.find(pres)
@@ -1378,7 +1373,7 @@ class DIFPresExchHandler:
                 )
             for match_item in match:
                 if not await self.apply_constraint_received_cred(
-                    constraint, match_item.value, is_one_of_filtered
+                    constraint, match_item.value
                 ):
                     raise DIFPresExchError(
                         f"Constraint specified for {desc_map_item_id} does not "
@@ -1413,7 +1408,7 @@ class DIFPresExchHandler:
         return applied_field_paths
 
     async def apply_constraint_received_cred(
-        self, constraint: Constraints, cred_dict: dict, is_one_of_filtered: bool = False
+        self, constraint: Constraints, cred_dict: dict
     ) -> bool:
         """Evaluate constraint from the request against received credential."""
         fields = constraint._fields
