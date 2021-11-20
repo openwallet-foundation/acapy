@@ -1,4 +1,4 @@
-"""Feature discovery admin routes."""
+"""Feature discovery v2 admin routes."""
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, response_schema
@@ -68,7 +68,7 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["discover-feature v2.0"],
+    tags=["discover-features v2.0"],
     summary="Query supported features",
 )
 @querystring_schema(QueryFeaturesQueryStringSchema())
@@ -95,11 +95,11 @@ async def query_features(request: web.BaseRequest):
         query_protocol=query_protocol,
         query_goal_code=query_goal_code,
     )
-    return web.json_response(result)
+    return web.json_response(result.serialize())
 
 
 @docs(
-    tags=["discover-feature v2.0"],
+    tags=["discover-features v2.0"],
     summary="Discover Features v2.0 records",
 )
 @querystring_schema(QueryDiscoveryExchRecordsSchema())
@@ -116,23 +116,24 @@ async def query_records(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     connection_id = request.query.get("connection_id")
     if not connection_id:
         try:
-            async with profile.session() as session:
+            async with context.profile.session() as session:
                 records = await V20DiscoveryExchangeRecord.query(session=session)
+            results = [record.serialize() for record in records]
         except (StorageError, BaseModelError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
     else:
         try:
-            async with profile.session() as session:
-                records = await V20DiscoveryExchangeRecord.retrieve_by_connection_id(
+            async with context.profile.session() as session:
+                record = await V20DiscoveryExchangeRecord.retrieve_by_connection_id(
                     session=session, connection_id=connection_id
                 )
+            # There should only be one record for a connection
+            results = [record.serialize()]
         except (StorageError, BaseModelError, StorageNotFoundError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
-    results = [record.serialize() for record in records]
     return web.json_response({"results": results})
 
 
@@ -156,7 +157,7 @@ def post_process_routes(app: web.Application):
     app._state["swagger_dict"]["tags"].append(
         {
             "name": "discover-features v2.0",
-            "description": "Feature discovery",
+            "description": "Feature discovery v2",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )

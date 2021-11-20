@@ -7,6 +7,7 @@ from marshmallow import fields
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
+from .....storage.error import StorageDuplicateError, StorageNotFoundError
 
 from ..messages.disclose import Disclose, DiscloseSchema
 from ..messages.query import Query, QuerySchema
@@ -27,7 +28,7 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
     RECORD_TYPE = "discovery_exchange_v10"
     RECORD_ID_NAME = "discovery_exchange_id"
     RECORD_TOPIC = "dicover_feature"
-    TAG_NAMES = {"~thread_id"} if UNENCRYPTED_TAGS else {"thread_id"}
+    TAG_NAMES = {"~thread_id" if UNENCRYPTED_TAGS else "thread_id", "connection_id"}
 
     def __init__(
         self,
@@ -35,7 +36,7 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
         discovery_exchange_id: str = None,
         connection_id: str = None,
         thread_id: str = None,
-        query: Union[Mapping, Query] = None,
+        query_msg: Union[Mapping, Query] = None,
         disclose: Union[Mapping, Disclose] = None,
         **kwargs,
     ):
@@ -44,7 +45,7 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
         self._id = discovery_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id
-        self._query = Query.serde(query)
+        self._query_msg = Query.serde(query_msg)
         self._disclose = Disclose.serde(disclose)
 
     @property
@@ -53,14 +54,14 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
         return self._id
 
     @property
-    def query(self) -> Query:
+    def query_msg(self) -> Query:
         """Accessor; get deserialized view."""
-        return None if self._query is None else self._query.de
+        return None if self._query_msg is None else self._query_msg.de
 
-    @query.setter
-    def query(self, value):
+    @query_msg.setter
+    def query_msg(self, value):
         """Setter; store de/serialized views."""
-        self._query = Query.serde(value)
+        self._query_msg = Query.serde(value)
 
     @property
     def disclose(self) -> Disclose:
@@ -77,34 +78,45 @@ class V10DiscoveryExchangeRecord(BaseExchangeRecord):
         cls, session: ProfileSession, connection_id: str
     ) -> "V10DiscoveryExchangeRecord":
         """Retrieve a discovery exchange record by connection."""
-        cache_key = f"discover_exchange_ctidx::{connection_id}"
-        record_id = await cls.get_cached_key(session, cache_key)
-        if record_id:
-            record = await cls.retrieve_by_id(session, record_id)
-        else:
-            record = await cls.retrieve_by_tag_filter(
-                session,
-                {"connection_id": connection_id},
-            )
-            await cls.set_cached_key(session, cache_key, record.discovery_exchange_id)
-        return record
+        tag_filter = {"connection_id": connection_id}
+        return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     @classmethod
-    async def retrieve_by_thread_id(
-        cls, session: ProfileSession, thread_id: str
-    ) -> "V10DiscoveryExchangeRecord":
-        """Retrieve a discovery exchange record by thread ID."""
-        cache_key = f"discover_exchange_ctidx::{thread_id}"
-        record_id = await cls.get_cached_key(session, cache_key)
-        if record_id:
-            record = await cls.retrieve_by_id(session, record_id)
-        else:
-            record = await cls.retrieve_by_tag_filter(
-                session,
-                {"thread_id": thread_id},
-            )
-            await cls.set_cached_key(session, cache_key, record.discovery_exchange_id)
-        return record
+    async def exists_for_connection_id(
+        cls, session: ProfileSession, connection_id: str
+    ) -> bool:
+        """Return whether a discovery exchange record exists for the given connection.
+
+        Args:
+            session (ProfileSession): session
+            connection_id (str): connection_id
+
+        Returns:
+            bool: whether record exists
+
+        """
+        tag_filter = {"connection_id": connection_id}
+        try:
+            record = await cls.retrieve_by_tag_filter(session, tag_filter)
+        except StorageNotFoundError:
+            return False
+        except StorageDuplicateError:
+            return True
+        return bool(record)
+
+    @property
+    def record_value(self) -> dict:
+        """Accessor for the JSON record value generated."""
+        return {
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in (
+                    "query_msg",
+                    "disclose",
+                )
+                if getattr(self, prop) is not None
+            },
+        }
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -130,7 +142,7 @@ class V10DiscoveryRecordSchema(BaseExchangeSchema):
     thread_id = fields.Str(
         required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
     )
-    query = fields.Nested(
+    query_msg = fields.Nested(
         QuerySchema(),
         required=False,
         description="Query message",

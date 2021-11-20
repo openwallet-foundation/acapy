@@ -63,7 +63,7 @@ class TestDisclosuresHandler:
         mock_responder = MockResponder()
         with async_mock.patch.object(
             V20DiscoveryExchangeRecord,
-            "retrieve_by_thread_id",
+            "retrieve_by_id",
             async_mock.CoroutineMock(return_value=discovery_record),
         ) as mock_get_rec_thread_id:
             await handler.handle(request_context, mock_responder)
@@ -103,7 +103,7 @@ class TestDisclosuresHandler:
         mock_responder = MockResponder()
         with async_mock.patch.object(
             V20DiscoveryExchangeRecord,
-            "retrieve_by_thread_id",
+            "retrieve_by_id",
             async_mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as mock_get_rec_thread_id, async_mock.patch.object(
             V20DiscoveryExchangeRecord,
@@ -141,7 +141,7 @@ class TestDisclosuresHandler:
         mock_responder = MockResponder()
         with async_mock.patch.object(
             V20DiscoveryExchangeRecord,
-            "retrieve_by_thread_id",
+            "retrieve_by_id",
             async_mock.CoroutineMock(side_effect=StorageNotFoundError),
         ) as mock_get_rec_thread_id, async_mock.patch.object(
             V20DiscoveryExchangeRecord,

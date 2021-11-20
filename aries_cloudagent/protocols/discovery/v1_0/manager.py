@@ -1,8 +1,6 @@
 """."""
 import logging
 
-from aries_cloudagent.protocols.discovery.v1_0.messages.query import Query
-
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....core.protocol_registry import ProtocolRegistry
@@ -10,6 +8,7 @@ from ....storage.error import StorageNotFoundError
 from ....messaging.responder import BaseResponder
 
 from .messages.disclose import Disclose
+from .messages.query import Query
 from .models.discovery_record import V10DiscoveryExchangeRecord
 
 
@@ -42,22 +41,30 @@ class V10DiscoveryMgr:
         return self._profile
 
     async def receive_disclose(
-        self, disclose_msg: Disclose
+        self, disclose_msg: Disclose, connection_id: str
     ) -> V10DiscoveryExchangeRecord:
         """Receive Disclose message and return updated V10DiscoveryExchangeRecord."""
         thread_id = disclose_msg._thread.thid
         try:
             async with self._profile.session() as session:
-                discover_exch_rec = (
-                    await V10DiscoveryExchangeRecord.retrieve_by_thread_id(
-                        session=session, thread_id=thread_id
-                    )
+                discover_exch_rec = await V10DiscoveryExchangeRecord.retrieve_by_id(
+                    session, thread_id
                 )
-                discover_exch_rec.disclose = disclose_msg
-                await discover_exch_rec.save(session)
-            return discover_exch_rec
         except StorageNotFoundError:
-            raise V10DiscoveryMgrError("")
+            try:
+                async with self._profile.session() as session:
+                    discover_exch_rec = (
+                        await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
+                            session=session, connection_id=connection_id
+                        )
+                    )
+            except StorageNotFoundError:
+                discover_exch_rec = V10DiscoveryExchangeRecord()
+        async with self._profile.session() as session:
+            discover_exch_rec.connection_id = connection_id
+            discover_exch_rec.disclose = disclose_msg
+            await discover_exch_rec.save(session)
+        return discover_exch_rec
 
     async def receive_query(self, query_msg: Query) -> Disclose:
         """Process query and return the corresponding disclose message."""
@@ -88,7 +95,10 @@ class V10DiscoveryMgr:
                     to_publish_result["roles"] = result.get("roles")
                 published_results.append(to_publish_result)
         disclose_msg = Disclose(protocols=published_results)
-        disclose_msg.assign_thread_id(query_msg._thread.thid)
+        # Check if query message has a thid
+        # If disclosing this agents feature
+        if query_msg._thread:
+            disclose_msg.assign_thread_id(query_msg._thread.thid)
         return disclose_msg
 
     async def create_and_send_query(
@@ -100,18 +110,23 @@ class V10DiscoveryMgr:
             async with self._profile.session() as session:
                 try:
                     # If existing record exists for a connection_id
-                    existing_discovery_ex_rec = (
-                        await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
-                            session=session, connection_id=connection_id
+                    if await V10DiscoveryExchangeRecord.exists_for_connection_id(
+                        session=session, connection_id=connection_id
+                    ):
+                        existing_discovery_ex_rec = (
+                            await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
+                                session=session, connection_id=connection_id
+                            )
                         )
-                    )
-                    await existing_discovery_ex_rec.delete_record(session)
+                        await existing_discovery_ex_rec.delete_record(session)
                     discovery_ex_rec = V10DiscoveryExchangeRecord()
                 except StorageNotFoundError:
                     discovery_ex_rec = V10DiscoveryExchangeRecord()
-            discovery_ex_rec.query = query_msg
-            await discovery_ex_rec.save(session)
-            responder = self.profile.inject_or(BaseResponder)
+                discovery_ex_rec.query_msg = query_msg
+                discovery_ex_rec.connection_id = connection_id
+                await discovery_ex_rec.save(session)
+            query_msg.assign_thread_id(discovery_ex_rec.discovery_exchange_id)
+            responder = self._profile.inject_or(BaseResponder)
             if responder:
                 await responder.send(query_msg, connection_id=connection_id)
             else:
@@ -123,7 +138,7 @@ class V10DiscoveryMgr:
         else:
             # Disclose this agent's features and/or goal codes
             discovery_ex_rec = V10DiscoveryExchangeRecord()
-            discovery_ex_rec.query = query_msg
+            discovery_ex_rec.query_msg = query_msg
             disclose = await self.receive_query(query_msg=query_msg)
             discovery_ex_rec.disclose = disclose
             return discovery_ex_rec

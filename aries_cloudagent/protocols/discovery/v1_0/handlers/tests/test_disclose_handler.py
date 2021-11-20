@@ -21,6 +21,8 @@ TEST_MESSAGE_TYPE = TEST_MESSAGE_FAMILY + "/MESSAGE"
 @pytest.fixture()
 def request_context() -> RequestContext:
     ctx = RequestContext.test_context()
+    ctx.connection_ready = True
+    ctx.connection_record = async_mock.MagicMock(connection_id="test123")
     yield ctx
 
 
@@ -44,7 +46,7 @@ class TestDiscloseHandler:
         discovery_record = V10DiscoveryExchangeRecord(
             connection_id="test123",
             thread_id="test123",
-            query=query_msg,
+            query_msg=query_msg,
         )
         disclose_msg.assign_thread_id("test123")
         request_context.message = disclose_msg
@@ -53,7 +55,7 @@ class TestDiscloseHandler:
         mock_responder = MockResponder()
         with async_mock.patch.object(
             V10DiscoveryExchangeRecord,
-            "retrieve_by_thread_id",
+            "retrieve_by_id",
             async_mock.CoroutineMock(return_value=discovery_record),
         ) as mock_get_rec_thread_id:
             await handler.handle(request_context, mock_responder)

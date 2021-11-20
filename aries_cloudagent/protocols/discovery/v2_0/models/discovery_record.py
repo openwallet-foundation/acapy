@@ -7,6 +7,7 @@ from marshmallow import fields
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
+from .....storage.error import StorageDuplicateError, StorageNotFoundError
 
 from ..messages.disclosures import Disclosures, DisclosuresSchema
 from ..messages.queries import Queries, QueriesSchema
@@ -27,7 +28,7 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
     RECORD_TYPE = "discovery_exchange_v20"
     RECORD_ID_NAME = "discovery_exchange_id"
     RECORD_TOPIC = "dicover_feature"
-    TAG_NAMES = {"~thread_id"} if UNENCRYPTED_TAGS else {"thread_id"}
+    TAG_NAMES = {"~thread_id" if UNENCRYPTED_TAGS else "thread_id", "connection_id"}
 
     def __init__(
         self,
@@ -77,34 +78,45 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
         cls, session: ProfileSession, connection_id: str
     ) -> "V20DiscoveryExchangeRecord":
         """Retrieve a discovery exchange record by connection."""
-        cache_key = f"discover_exchange_ctidx::{connection_id}"
-        record_id = await cls.get_cached_key(session, cache_key)
-        if record_id:
-            record = await cls.retrieve_by_id(session, record_id)
-        else:
-            record = await cls.retrieve_by_tag_filter(
-                session,
-                {"connection_id": connection_id},
-            )
-            await cls.set_cached_key(session, cache_key, record.discovery_exchange_id)
-        return record
+        tag_filter = {"connection_id": connection_id}
+        return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     @classmethod
-    async def retrieve_by_thread_id(
-        cls, session: ProfileSession, thread_id: str
-    ) -> "V20DiscoveryExchangeRecord":
-        """Retrieve a discovery exchange record by thread ID."""
-        cache_key = f"discover_exchange_ctidx::{thread_id}"
-        record_id = await cls.get_cached_key(session, cache_key)
-        if record_id:
-            record = await cls.retrieve_by_id(session, record_id)
-        else:
-            record = await cls.retrieve_by_tag_filter(
-                session,
-                {"thread_id": thread_id},
-            )
-            await cls.set_cached_key(session, cache_key, record.discovery_exchange_id)
-        return record
+    async def exists_for_connection_id(
+        cls, session: ProfileSession, connection_id: str
+    ) -> bool:
+        """Return whether a discovery exchange record exists for the given connection.
+
+        Args:
+            session (ProfileSession): session
+            connection_id (str): connection_id
+
+        Returns:
+            bool: whether record exists
+
+        """
+        tag_filter = {"connection_id": connection_id}
+        try:
+            record = await cls.retrieve_by_tag_filter(session, tag_filter)
+        except StorageNotFoundError:
+            return False
+        except StorageDuplicateError:
+            return True
+        return bool(record)
+
+    @property
+    def record_value(self) -> dict:
+        """Accessor for the JSON record value generated."""
+        return {
+            **{
+                prop: getattr(self, f"_{prop}").ser
+                for prop in (
+                    "queries",
+                    "disclosures",
+                )
+                if getattr(self, prop) is not None
+            },
+        }
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""

@@ -48,33 +48,24 @@ class V20DiscoveryMgr:
         thread_id = disclose_msg._thread.thid
         try:
             async with self._profile.session() as session:
-                discover_exch_rec = (
-                    await V20DiscoveryExchangeRecord.retrieve_by_thread_id(
-                        session=session, thread_id=thread_id
-                    )
+                discover_exch_rec = await V20DiscoveryExchangeRecord.retrieve_by_id(
+                    session=session, record_id=thread_id
                 )
-                discover_exch_rec.disclose = disclose_msg
-                await discover_exch_rec.save(session)
-            return discover_exch_rec
         except StorageNotFoundError:
-            if connection_id:
-                try:
-                    async with self._profile.session() as session:
-                        discover_exch_rec = (
-                            await V20DiscoveryExchangeRecord.retrieve_by_connection_id(
-                                session=session, connection_id=connection_id
-                            )
+            try:
+                async with self._profile.session() as session:
+                    discover_exch_rec = (
+                        await V20DiscoveryExchangeRecord.retrieve_by_connection_id(
+                            session=session, connection_id=connection_id
                         )
-                except StorageNotFoundError:
-                    discover_exch_rec = V20DiscoveryExchangeRecord()
-                    discover_exch_rec.connection_id = connection_id
-            else:
+                    )
+            except StorageNotFoundError:
                 discover_exch_rec = V20DiscoveryExchangeRecord()
-                discover_exch_rec.connection_id = connection_id
-            async with self._profile.session() as session:
-                discover_exch_rec.disclose = disclose_msg
-                await discover_exch_rec.save(session)
-            return discover_exch_rec
+        async with self._profile.session() as session:
+            discover_exch_rec.disclosures = disclose_msg
+            discover_exch_rec.connection_id = connection_id
+            await discover_exch_rec.save(session)
+        return discover_exch_rec
 
     async def receive_query(self, queries_msg: Queries) -> Disclosures:
         """Process query and return the corresponding disclose message."""
@@ -132,7 +123,10 @@ class V20DiscoveryMgr:
                         to_publish_result["id"] = result
                         published_results.append(to_publish_result)
         disclosures.disclosures = published_results
-        disclosures.assign_thread_id(queries_msg._thread.thid)
+        # Check if query message has a thid
+        # If disclosing this agents feature
+        if queries_msg._thread:
+            disclosures.assign_thread_id(queries_msg._thread.thid)
         return disclosures
 
     async def create_and_send_query(
@@ -154,17 +148,22 @@ class V20DiscoveryMgr:
             async with self._profile.session() as session:
                 try:
                     # If existing record exists for a connection_id
-                    existing_discovery_ex_rec = (
-                        await V20DiscoveryExchangeRecord.retrieve_by_connection_id(
-                            session=session, connection_id=connection_id
+                    if await V20DiscoveryExchangeRecord.exists_for_connection_id(
+                        session=session, connection_id=connection_id
+                    ):
+                        existing_discovery_ex_rec = (
+                            await V20DiscoveryExchangeRecord.retrieve_by_connection_id(
+                                session=session, connection_id=connection_id
+                            )
                         )
-                    )
-                    await existing_discovery_ex_rec.delete_record(session)
+                        await existing_discovery_ex_rec.delete_record(session)
                     discovery_ex_rec = V20DiscoveryExchangeRecord()
                 except StorageNotFoundError:
                     discovery_ex_rec = V20DiscoveryExchangeRecord()
-            discovery_ex_rec.queries = queries_msg
-            await discovery_ex_rec.save(session)
+                discovery_ex_rec.queries = queries_msg
+                discovery_ex_rec.connection_id = connection_id
+                await discovery_ex_rec.save(session)
+            queries_msg.assign_thread_id(discovery_ex_rec.discovery_exchange_id)
             responder = self.profile.inject_or(BaseResponder)
             if responder:
                 await responder.send(queries_msg, connection_id=connection_id)

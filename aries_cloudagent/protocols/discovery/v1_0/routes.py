@@ -66,7 +66,7 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
 
 
 @docs(
-    tags=["discover-feature"],
+    tags=["discover-features"],
     summary="Query supported features",
 )
 @querystring_schema(QueryFeaturesQueryStringSchema())
@@ -93,11 +93,11 @@ async def query_features(request: web.BaseRequest):
         query=query,
         comment=comment,
     )
-    return web.json_response(result)
+    return web.json_response(result.serialize())
 
 
 @docs(
-    tags=["discover-feature"],
+    tags=["discover-features"],
     summary="Discover Features records",
 )
 @querystring_schema(QueryDiscoveryExchRecordsSchema())
@@ -114,23 +114,24 @@ async def query_records(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     connection_id = request.query.get("connection_id")
     if not connection_id:
         try:
-            async with profile.session() as session:
+            async with context.profile.session() as session:
                 records = await V10DiscoveryExchangeRecord.query(session=session)
+            results = [record.serialize() for record in records]
         except (StorageError, BaseModelError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
     else:
         try:
-            async with profile.session() as session:
-                records = await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
+            async with context.profile.session() as session:
+                record = await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
                     session=session, connection_id=connection_id
                 )
+            # There should only be one record for a connection
+            results = [record.serialize()]
         except (StorageError, BaseModelError, StorageNotFoundError) as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
-    results = [record.serialize() for record in records]
     return web.json_response({"results": results})
 
 
@@ -139,7 +140,7 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get("/discover-features/queries", query_features, allow_head=False),
+            web.get("/discover-features/query", query_features, allow_head=False),
             web.get("/discover-features/records", query_records, allow_head=False),
         ]
     )
@@ -153,7 +154,7 @@ def post_process_routes(app: web.Application):
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
         {
-            "name": "discover-features v1.0",
+            "name": "discover-features",
             "description": "Feature discovery",
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
