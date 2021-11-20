@@ -18,7 +18,7 @@ class TestV20DiscoveryExchangeRecord(AsyncTestCase):
         same = [
             V20DiscoveryExchangeRecord(
                 discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                queries=Queries(
+                queries_msg=Queries(
                     queries=[
                         QueryItem(feature_type="protocol", match="*"),
                         QueryItem(feature_type="goal-code", match="test"),
@@ -40,7 +40,7 @@ class TestV20DiscoveryExchangeRecord(AsyncTestCase):
         diff = [
             V20DiscoveryExchangeRecord(
                 discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                queries=Queries(
+                queries_msg=Queries(
                     queries=[
                         QueryItem(feature_type="protocol", match="test1.*"),
                         QueryItem(feature_type="goal-code", match="test1"),
@@ -60,7 +60,7 @@ class TestV20DiscoveryExchangeRecord(AsyncTestCase):
             ),
             V20DiscoveryExchangeRecord(
                 discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                queries=Queries(
+                queries_msg=Queries(
                     queries=[
                         QueryItem(feature_type="protocol", match="test2.*"),
                         QueryItem(feature_type="goal-code", match="test2"),
@@ -96,26 +96,28 @@ class TestV20DiscoveryExchangeRecord(AsyncTestCase):
         )
         ex_rec = V20DiscoveryExchangeRecord(
             discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            queries=queries,
             disclosures=disclosures,
         )
-        assert type(ex_rec.query_msg) == Queries
+        ex_rec.queries_msg = queries
+        assert type(ex_rec.queries_msg) == Queries
         ser = ex_rec.serialize()
         deser = V20DiscoveryExchangeRecord.deserialize(ser)
-        assert type(deser.query_msg) == Queries
+        assert type(deser.queries_msg) == Queries
 
-        assert type(ex_rec.disclose) == Disclosures
+        assert type(ex_rec.disclosures) == Disclosures
         ser = ex_rec.serialize()
         deser = V20DiscoveryExchangeRecord.deserialize(ser)
-        assert type(deser.disclose) == Disclosures
+        assert type(deser.disclosures) == Disclosures
 
     async def test_retrieve_by_conn_id(self):
         session = InMemoryProfile.test_session()
         record = V20DiscoveryExchangeRecord(
-            queries=[
-                QueryItem(feature_type="protocol", match="*"),
-                QueryItem(feature_type="goal-code", match="test"),
-            ],
+            queries_msg=Queries(
+                queries=[
+                    QueryItem(feature_type="protocol", match="*"),
+                    QueryItem(feature_type="goal-code", match="test"),
+                ],
+            ),
             connection_id="test123",
         )
         await record.save(session)
@@ -128,10 +130,12 @@ class TestV20DiscoveryExchangeRecord(AsyncTestCase):
     async def test_exists_for_connection_id(self):
         session = InMemoryProfile.test_session()
         record = V20DiscoveryExchangeRecord(
-            queries=[
-                QueryItem(feature_type="protocol", match="*"),
-                QueryItem(feature_type="goal-code", match="test"),
-            ],
+            queries_msg=Queries(
+                queries=[
+                    QueryItem(feature_type="protocol", match="*"),
+                    QueryItem(feature_type="goal-code", match="test"),
+                ],
+            ),
             connection_id="test123",
         )
         await record.save(session)

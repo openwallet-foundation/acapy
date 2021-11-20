@@ -1,5 +1,9 @@
-"""."""
+"""Classes to manage discover features."""
+
+import asyncio
 import logging
+
+from typing import Optional
 
 from ....core.error import BaseError
 from ....core.profile import Profile
@@ -44,27 +48,44 @@ class V10DiscoveryMgr:
         self, disclose_msg: Disclose, connection_id: str
     ) -> V10DiscoveryExchangeRecord:
         """Receive Disclose message and return updated V10DiscoveryExchangeRecord."""
-        thread_id = disclose_msg._thread.thid
-        try:
-            async with self._profile.session() as session:
-                discover_exch_rec = await V10DiscoveryExchangeRecord.retrieve_by_id(
-                    session, thread_id
-                )
-        except StorageNotFoundError:
+        if disclose_msg._thread:
+            thread_id = disclose_msg._thread.thid
             try:
                 async with self._profile.session() as session:
-                    discover_exch_rec = (
-                        await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
-                            session=session, connection_id=connection_id
-                        )
+                    discover_exch_rec = await V10DiscoveryExchangeRecord.retrieve_by_id(
+                        session=session, record_id=thread_id
                     )
             except StorageNotFoundError:
+                discover_exch_rec = await self.lookup_exchange_rec_by_connection(
+                    connection_id
+                )
+                if not discover_exch_rec:
+                    discover_exch_rec = V10DiscoveryExchangeRecord()
+        else:
+            discover_exch_rec = await self.lookup_exchange_rec_by_connection(
+                connection_id
+            )
+            if not discover_exch_rec:
                 discover_exch_rec = V10DiscoveryExchangeRecord()
         async with self._profile.session() as session:
             discover_exch_rec.connection_id = connection_id
             discover_exch_rec.disclose = disclose_msg
             await discover_exch_rec.save(session)
         return discover_exch_rec
+
+    async def lookup_exchange_rec_by_connection(
+        self, connection_id: str
+    ) -> Optional[V10DiscoveryExchangeRecord]:
+        """Retrieve V20DiscoveryExchangeRecord by connection_id."""
+        async with self._profile.session() as session:
+            if await V10DiscoveryExchangeRecord.exists_for_connection_id(
+                session=session, connection_id=connection_id
+            ):
+                return await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
+                    session=session, connection_id=connection_id
+                )
+            else:
+                return None
 
     async def receive_query(self, query_msg: Query) -> Disclose:
         """Process query and return the corresponding disclose message."""
@@ -101,6 +122,22 @@ class V10DiscoveryMgr:
             disclose_msg.assign_thread_id(query_msg._thread.thid)
         return disclose_msg
 
+    async def check_if_disclosure_received(
+        self, record_id: str
+    ) -> V10DiscoveryExchangeRecord:
+        """Check if disclosures has been received."""
+        received = False
+        while not received:
+            async with self._profile.session() as session:
+                ex_rec = await V10DiscoveryExchangeRecord.retrieve_by_id(
+                    session=session, record_id=record_id
+                )
+            if ex_rec.disclose:
+                received = True
+            else:
+                asyncio.sleep(1)
+        return ex_rec
+
     async def create_and_send_query(
         self, query: str, comment: str = None, connection_id: str = None
     ) -> V10DiscoveryExchangeRecord:
@@ -108,19 +145,17 @@ class V10DiscoveryMgr:
         query_msg = Query(query=query, comment=comment)
         if connection_id:
             async with self._profile.session() as session:
-                try:
-                    # If existing record exists for a connection_id
-                    if await V10DiscoveryExchangeRecord.exists_for_connection_id(
-                        session=session, connection_id=connection_id
-                    ):
-                        existing_discovery_ex_rec = (
-                            await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
-                                session=session, connection_id=connection_id
-                            )
+                # If existing record exists for a connection_id
+                if await V10DiscoveryExchangeRecord.exists_for_connection_id(
+                    session=session, connection_id=connection_id
+                ):
+                    existing_discovery_ex_rec = (
+                        await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
+                            session=session, connection_id=connection_id
                         )
-                        await existing_discovery_ex_rec.delete_record(session)
-                    discovery_ex_rec = V10DiscoveryExchangeRecord()
-                except StorageNotFoundError:
+                    )
+                    discovery_ex_rec = existing_discovery_ex_rec
+                else:
                     discovery_ex_rec = V10DiscoveryExchangeRecord()
                 discovery_ex_rec.query_msg = query_msg
                 discovery_ex_rec.connection_id = connection_id
@@ -134,7 +169,15 @@ class V10DiscoveryMgr:
                     "Unable to send discover-features v1 query message"
                     ": BaseResponder unavailable"
                 )
-            return discovery_ex_rec
+            try:
+                return await asyncio.wait_for(
+                    self.check_if_disclosure_received(
+                        record_id=discovery_ex_rec.discovery_exchange_id,
+                    ),
+                    5,
+                )
+            except asyncio.TimeoutError:
+                return discovery_ex_rec
         else:
             # Disclose this agent's features and/or goal codes
             discovery_ex_rec = V10DiscoveryExchangeRecord()

@@ -54,7 +54,7 @@ class TestDisclosuresHandler:
         discovery_record = V20DiscoveryExchangeRecord(
             connection_id="test123",
             thread_id="test123",
-            queries=queries,
+            queries_msg=queries,
         )
         disclosures.assign_thread_id("test123")
         request_context.message = disclosures
@@ -94,7 +94,7 @@ class TestDisclosuresHandler:
         discovery_record = V20DiscoveryExchangeRecord(
             connection_id="test123",
             thread_id="test123",
-            queries=queries,
+            queries_msg=queries,
         )
         disclosures.assign_thread_id("test123")
         request_context.message = disclosures

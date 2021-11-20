@@ -39,3 +39,20 @@ class TestQueryHandler:
         assert isinstance(result, Disclose) and result.protocols
         assert result.protocols[0]["pid"] == TEST_MESSAGE_FAMILY
         assert not target
+
+    @pytest.mark.asyncio
+    async def test_query_all_disclose_list_settings(self, request_context):
+        profile = request_context.profile
+        profile.settings["disclose_protocol_list"] = [TEST_MESSAGE_FAMILY]
+        query_msg = Query(query="*")
+        query_msg.assign_thread_id("test123")
+        request_context.message = query_msg
+        handler = QueryHandler()
+        responder = MockResponder()
+        await handler.handle(request_context, responder)
+        messages = responder.messages
+        assert len(messages) == 1
+        result, target = messages[0]
+        assert isinstance(result, Disclose) and result.protocols
+        assert result.protocols[0]["pid"] == TEST_MESSAGE_FAMILY
+        assert not target

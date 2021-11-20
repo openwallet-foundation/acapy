@@ -36,7 +36,7 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
         discovery_exchange_id: str = None,
         connection_id: str = None,
         thread_id: str = None,
-        queries: Union[Sequence, Queries] = None,
+        queries_msg: Union[Sequence, Queries] = None,
         disclosures: Union[Mapping, Disclosures] = None,
         **kwargs,
     ):
@@ -45,7 +45,7 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
         self._id = discovery_exchange_id
         self.connection_id = connection_id
         self.thread_id = thread_id
-        self._queries = Queries.serde(queries)
+        self._queries_msg = Queries.serde(queries_msg)
         self._disclosures = Disclosures.serde(disclosures)
 
     @property
@@ -54,14 +54,14 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
         return self._id
 
     @property
-    def queries(self) -> Queries:
+    def queries_msg(self) -> Queries:
         """Accessor; get deserialized view."""
-        return None if self._queries is None else self._queries.de
+        return None if self._queries_msg is None else self._queries_msg.de
 
-    @queries.setter
-    def queries(self, value):
+    @queries_msg.setter
+    def queries_msg(self, value):
         """Setter; store de/serialized views."""
-        self._queries = Queries.serde(value)
+        self._queries_msg = Queries.serde(value)
 
     @property
     def disclosures(self) -> Disclosures:
@@ -111,7 +111,7 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
             **{
                 prop: getattr(self, f"_{prop}").ser
                 for prop in (
-                    "queries",
+                    "queries_msg",
                     "disclosures",
                 )
                 if getattr(self, prop) is not None
@@ -142,7 +142,7 @@ class V20DiscoveryRecordSchema(BaseExchangeSchema):
     thread_id = fields.Str(
         required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
     )
-    queries = fields.Nested(
+    queries_msg = fields.Nested(
         QueriesSchema(),
         required=False,
         description="Queries message",

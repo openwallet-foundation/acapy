@@ -34,7 +34,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
 
         test_rec = V20DiscoveryExchangeRecord(
             discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            queries=Queries(
+            queries_msg=Queries(
                 queries=[
                     QueryItem(feature_type="protocol", match="*"),
                     QueryItem(feature_type="goal-code", match="test"),
@@ -62,7 +62,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
 
         test_rec = V20DiscoveryExchangeRecord(
             discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            queries=Queries(
+            queries_msg=Queries(
                 queries=[
                     QueryItem(feature_type="protocol", match="*"),
                     QueryItem(feature_type="goal-code", match="test"),
@@ -86,7 +86,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
 
         test_rec = V20DiscoveryExchangeRecord(
             discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            queries=Queries(
+            queries_msg=Queries(
                 queries=[
                     QueryItem(feature_type="protocol", match="*"),
                     QueryItem(feature_type="goal-code", match="test"),
@@ -123,7 +123,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
         test_recs = [
             V20DiscoveryExchangeRecord(
                 discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                queries=Queries(
+                queries_msg=Queries(
                     queries=[
                         QueryItem(feature_type="protocol", match="*"),
                         QueryItem(feature_type="goal-code", match="test"),
@@ -132,7 +132,7 @@ class TestDiscoveryRoutes(AsyncTestCase):
             ),
             V20DiscoveryExchangeRecord(
                 discovery_exchange_id="3fa85f64-5717-4562-b3fc-2c963f66afa7",
-                queries=Queries(
+                queries_msg=Queries(
                     queries=[
                         QueryItem(feature_type="protocol", match="test"),
                         QueryItem(feature_type="goal-code", match="*"),

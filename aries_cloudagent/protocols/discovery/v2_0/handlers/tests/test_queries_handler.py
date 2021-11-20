@@ -73,3 +73,35 @@ class TestQueriesHandler:
         assert result.disclosures[2].get("id") == ISSUE_VC
         assert result.disclosures[2].get("feature-type") == "goal-code"
         assert not target
+
+    @pytest.mark.asyncio
+    async def test_queries_protocol_goal_code_all_disclose_list_settings(
+        self, request_context
+    ):
+        profile = request_context.profile
+        profile.settings["disclose_protocol_list"] = [TEST_MESSAGE_FAMILY]
+        profile.settings["disclose_goal_code_list"] = [
+            PARTICIPATE_VC_INTERACTION,
+            ISSUE_VC,
+        ]
+        test_queries = [
+            QueryItem(feature_type="protocol", match="*"),
+            QueryItem(feature_type="goal-code", match="*"),
+        ]
+        queries = Queries(queries=test_queries)
+        queries.assign_thread_id("test123")
+        request_context.message = queries
+        handler = QueriesHandler()
+        responder = MockResponder()
+        await handler.handle(request_context, responder)
+        messages = responder.messages
+        assert len(messages) == 1
+        result, target = messages[0]
+        assert isinstance(result, Disclosures)
+        assert result.disclosures[0].get("id") == TEST_MESSAGE_FAMILY
+        assert result.disclosures[0].get("feature-type") == "protocol"
+        assert result.disclosures[1].get("id") == PARTICIPATE_VC_INTERACTION
+        assert result.disclosures[1].get("feature-type") == "goal-code"
+        assert result.disclosures[2].get("id") == ISSUE_VC
+        assert result.disclosures[2].get("feature-type") == "goal-code"
+        assert not target

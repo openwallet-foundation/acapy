@@ -51,9 +51,9 @@ class TestV10DiscoveryExchangeRecord(AsyncTestCase):
         query_msg = Query(query="*", comment="test")
         disclose_msg = Disclose(protocols=test_protocols)
         ex_rec = V10DiscoveryExchangeRecord(
-            query_msg=query_msg,
             disclose=disclose_msg,
         )
+        ex_rec.query_msg = query_msg
         assert type(ex_rec.query_msg) == Query
         ser = ex_rec.serialize()
         deser = V10DiscoveryExchangeRecord.deserialize(ser)
