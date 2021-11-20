@@ -150,3 +150,23 @@ class TestDisclosuresHandler:
         ) as mock_get_rec_conn_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
+
+    @pytest.mark.asyncio
+    async def test_disclose_connection_not_ready(self, request_context):
+        request_context.connection_ready = False
+        disclosures = Disclosures(
+            disclosures=[
+                {
+                    "id": DIDCommPrefix.qualify_current("basicmessage/1.0/message"),
+                    "feature-type": "protocol",
+                    "roles": [],
+                },
+                {"feature-type": "goal-code", "id": "aries.sell.goods.consumer"},
+            ]
+        )
+        disclosures.assign_thread_id("test123")
+        request_context.message = disclosures
+        handler = DisclosuresHandler()
+        mock_responder = MockResponder()
+        with pytest.raises(HandlerException):
+            await handler.handle(request_context, mock_responder)

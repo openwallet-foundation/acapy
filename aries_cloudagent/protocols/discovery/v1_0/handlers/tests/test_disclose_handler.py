@@ -60,3 +60,24 @@ class TestDiscloseHandler:
         ) as mock_get_rec_thread_id:
             await handler.handle(request_context, mock_responder)
             assert not mock_responder.messages
+
+    @pytest.mark.asyncio
+    async def test_disclose_connection_not_ready(self, request_context):
+        request_context.connection_ready = False
+        disclose_msg = Disclose(
+            protocols=[
+                {
+                    "pid": DIDCommPrefix.qualify_current(
+                        "test_proto/v1.0/test_message"
+                    ),
+                    "roles": [],
+                }
+            ]
+        )
+        disclose_msg.assign_thread_id("test123")
+        request_context.message = disclose_msg
+
+        handler = DiscloseHandler()
+        mock_responder = MockResponder()
+        with pytest.raises(HandlerException):
+            await handler.handle(request_context, mock_responder)
