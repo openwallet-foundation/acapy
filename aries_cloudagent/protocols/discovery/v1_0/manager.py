@@ -126,17 +126,14 @@ class V10DiscoveryMgr:
         self, record_id: str
     ) -> V10DiscoveryExchangeRecord:
         """Check if disclosures has been received."""
-        received = False
-        while not received:
+        while True:
             async with self._profile.session() as session:
                 ex_rec = await V10DiscoveryExchangeRecord.retrieve_by_id(
                     session=session, record_id=record_id
                 )
             if ex_rec.disclose:
-                received = True
-            else:
-                asyncio.sleep(1)
-        return ex_rec
+                return ex_rec
+            asyncio.sleep(0.5)
 
     async def create_and_send_query(
         self, query: str, comment: str = None, connection_id: str = None

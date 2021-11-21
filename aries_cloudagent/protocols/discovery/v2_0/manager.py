@@ -185,17 +185,14 @@ class V20DiscoveryMgr:
         self, record_id: str
     ) -> V20DiscoveryExchangeRecord:
         """Check if disclosures has been received."""
-        received = False
-        while not received:
+        while True:
             async with self._profile.session() as session:
                 ex_rec = await V20DiscoveryExchangeRecord.retrieve_by_id(
                     session=session, record_id=record_id
                 )
             if ex_rec.disclosures:
-                received = True
-            else:
-                asyncio.sleep(1)
-        return ex_rec
+                return ex_rec
+            asyncio.sleep(0.5)
 
     async def create_and_send_query(
         self,
@@ -206,7 +203,9 @@ class V20DiscoveryMgr:
         """Create and send a Query message."""
         queries = []
         if not query_goal_code and not query_protocol:
-            raise V20DiscoveryMgrError("")
+            raise V20DiscoveryMgrError(
+                "Atleast one protocol or goal-code feature-type query is required."
+            )
         if query_protocol:
             queries.append(QueryItem(feature_type="protocol", match=query_protocol))
         if query_goal_code:
