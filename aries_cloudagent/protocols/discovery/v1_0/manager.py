@@ -146,12 +146,13 @@ class V10DiscoveryMgr:
                 if await V10DiscoveryExchangeRecord.exists_for_connection_id(
                     session=session, connection_id=connection_id
                 ):
-                    existing_discovery_ex_rec = (
+                    discovery_ex_rec = (
                         await V10DiscoveryExchangeRecord.retrieve_by_connection_id(
                             session=session, connection_id=connection_id
                         )
                     )
-                    discovery_ex_rec = existing_discovery_ex_rec
+                    discovery_ex_rec.disclose = None
+                    await discovery_ex_rec.save(session)
                 else:
                     discovery_ex_rec = V10DiscoveryExchangeRecord()
                 discovery_ex_rec.query_msg = query_msg

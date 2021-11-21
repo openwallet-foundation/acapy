@@ -222,6 +222,8 @@ class V20DiscoveryMgr:
                             session=session, connection_id=connection_id
                         )
                     )
+                    discovery_ex_rec.disclosures = None
+                    await discovery_ex_rec.save(session)
                 else:
                     discovery_ex_rec = V20DiscoveryExchangeRecord()
                 discovery_ex_rec.queries_msg = queries_msg
