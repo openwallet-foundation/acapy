@@ -9,7 +9,7 @@ from pyld.jsonld import JsonLdProcessor
 
 from ....wallet.util import b64_to_bytes, bytes_to_b64, str_to_b64, b64_to_str
 
-from ..crypto import KeyPair
+from ..crypto import _KeyPair as KeyPair
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 

@@ -68,7 +68,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         ] = None,  # aries message: ..._dict for historic compat on all aries msgs
         credential_offer_dict: Union[Mapping, CredentialOffer] = None,  # aries message
         credential_offer: Union[Mapping, IndyCredAbstract] = None,  # indy artifact
-        credential_request: [Mapping, IndyCredRequest] = None,  # indy artifact
+        credential_request: Union[Mapping, IndyCredRequest] = None,  # indy artifact
         credential_request_metadata: Mapping = None,
         credential_id: str = None,
         raw_credential: Union[Mapping, IndyCredential] = None,  # indy cred as received
