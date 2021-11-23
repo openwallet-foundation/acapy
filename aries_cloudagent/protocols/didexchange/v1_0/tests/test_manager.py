@@ -35,6 +35,7 @@ from ....coordinate_mediation.v1_0.messages.keylist_update import (
     KeylistUpdateRule,
 )
 from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
+from ....discovery.v2_0.manager import V20DiscoveryMgr
 from ....didcomm_prefix import DIDCommPrefix
 from ....out_of_band.v1_0.manager import OutOfBandManager
 from ....out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
@@ -1664,6 +1665,68 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             assert conn_rec.their_did == TestConfig.test_target_did
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
 
+    async def test_accept_response_find_by_thread_id_auto_disclose_features(self):
+        mock_response = async_mock.MagicMock()
+        mock_response._thread = async_mock.MagicMock()
+        mock_response.did = TestConfig.test_target_did
+        mock_response.did_doc_attach = async_mock.MagicMock(
+            data=async_mock.MagicMock(
+                verify=async_mock.CoroutineMock(return_value=True),
+                signed=async_mock.MagicMock(
+                    decode=async_mock.MagicMock(
+                        return_value=json.dumps({"dummy": "did-doc"})
+                    )
+                ),
+            )
+        )
+
+        receipt = MessageReceipt(
+            recipient_did=TestConfig.test_did,
+            recipient_did_public=True,
+        )
+        self.context.update_settings({"auto_disclose_features": True})
+
+        with async_mock.patch.object(
+            ConnRecord, "save", autospec=True
+        ) as mock_conn_rec_save, async_mock.patch.object(
+            ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_id, async_mock.patch.object(
+            DIDDoc, "deserialize", async_mock.MagicMock()
+        ) as mock_did_doc_deser, async_mock.patch.object(
+            V20DiscoveryMgr, "proactive_disclose_features", async_mock.CoroutineMock()
+        ) as mock_proactive_disclose_features:
+            mock_did_doc_deser.return_value = async_mock.MagicMock(
+                did=TestConfig.test_target_did
+            )
+            mock_conn_retrieve_by_req_id.return_value = async_mock.MagicMock(
+                did=TestConfig.test_target_did,
+                did_doc_attach=async_mock.MagicMock(
+                    data=async_mock.MagicMock(
+                        verify=async_mock.CoroutineMock(return_value=True),
+                        signed=async_mock.MagicMock(
+                            decode=async_mock.MagicMock(
+                                return_value=json.dumps({"dummy": "did-doc"})
+                            )
+                        ),
+                    )
+                ),
+                state=ConnRecord.State.REQUEST.rfc23,
+                save=async_mock.CoroutineMock(),
+                metadata_get=async_mock.CoroutineMock(),
+                connection_id="test-conn-id",
+            )
+            mock_conn_retrieve_by_id.return_value = async_mock.MagicMock(
+                their_did=TestConfig.test_target_did,
+                save=async_mock.CoroutineMock(),
+            )
+
+            conn_rec = await self.manager.accept_response(mock_response, receipt)
+            assert conn_rec.their_did == TestConfig.test_target_did
+            assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
+            mock_proactive_disclose_features.assert_called_once()
+
     async def test_accept_response_not_found_by_thread_id_receipt_has_sender_did(self):
         mock_response = async_mock.MagicMock()
         mock_response._thread = async_mock.MagicMock()
@@ -1869,6 +1932,20 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             mock_conn_retrieve_by_req_id.return_value.save = async_mock.CoroutineMock()
             conn_rec = await self.manager.accept_complete(mock_complete, receipt)
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
+
+    async def test_accept_complete(self):
+        mock_complete = async_mock.MagicMock()
+        receipt = MessageReceipt(sender_did=TestConfig.test_target_did)
+        self.context.update_settings({"auto_disclose_features": True})
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_request_id", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_req_id, async_mock.patch.object(
+            V20DiscoveryMgr, "proactive_disclose_features", async_mock.CoroutineMock()
+        ) as mock_proactive_disclose_features:
+            mock_conn_retrieve_by_req_id.return_value.save = async_mock.CoroutineMock()
+            conn_rec = await self.manager.accept_complete(mock_complete, receipt)
+            assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
+            mock_proactive_disclose_features.assert_called_once()
 
     async def test_accept_complete_x_not_found(self):
         mock_complete = async_mock.MagicMock()

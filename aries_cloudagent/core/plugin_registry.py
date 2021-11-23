@@ -11,6 +11,7 @@ from ..utils.classloader import ClassLoader, ModuleLoadError
 
 from .error import ProtocolDefinitionValidationError
 from .protocol_registry import ProtocolRegistry
+from .goal_code_registry import GoalCodeRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -212,16 +213,17 @@ class PluginRegistry:
         version_definition: dict = None,
     ):
         """Load a particular protocol version."""
-        registry = context.inject(ProtocolRegistry)
-
+        protocol_registry = context.inject(ProtocolRegistry)
+        goal_code_resgistry = context.inject(GoalCodeRegistry)
         if hasattr(mod, "MESSAGE_TYPES"):
-            registry.register_message_types(
+            protocol_registry.register_message_types(
                 mod.MESSAGE_TYPES, version_definition=version_definition
             )
         if hasattr(mod, "CONTROLLERS"):
-            registry.register_controllers(
+            protocol_registry.register_controllers(
                 mod.CONTROLLERS, version_definition=version_definition
             )
+            goal_code_resgistry.register_controllers(mod.CONTROLLERS)
 
     async def load_protocols(self, context: InjectionContext, plugin: ModuleType):
         """For modules that don't implement setup, register protocols manually."""

@@ -35,6 +35,8 @@ from ....coordinate_mediation.v1_0.messages.inner.keylist_update_rule import (
 from ....coordinate_mediation.v1_0.messages.keylist_update import KeylistUpdate
 from ....coordinate_mediation.v1_0.messages.mediate_request import MediationRequest
 from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
+from ....discovery.v2_0.manager import V20DiscoveryMgr
+
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
@@ -1485,6 +1487,40 @@ class TestConnectionManager(AsyncTestCase):
                 "test_wallet", self.test_verkey
             )
 
+    async def test_create_static_connection_multitenant_auto_disclose_features(self):
+        self.context.update_settings(
+            {
+                "auto_disclose_features": True,
+                "multitenant.enabled": True,
+                "wallet.id": "test_wallet",
+            }
+        )
+        self.multitenant_mgr.get_default_mediator.return_value = None
+        with async_mock.patch.object(
+            ConnRecord, "save", autospec=True
+        ), async_mock.patch.object(
+            InMemoryWallet, "create_local_did", autospec=True
+        ) as mock_wallet_create_local_did, async_mock.patch.object(
+            V20DiscoveryMgr, "proactive_disclose_features", async_mock.CoroutineMock()
+        ) as mock_proactive_disclose_features:
+            mock_wallet_create_local_did.return_value = DIDInfo(
+                self.test_did,
+                self.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
+            )
+            await self.manager.create_static_connection(
+                my_did=self.test_did,
+                their_did=self.test_target_did,
+                their_verkey=self.test_target_verkey,
+                their_endpoint=self.test_endpoint,
+            )
+            self.multitenant_mgr.add_key.assert_called_once_with(
+                "test_wallet", self.test_verkey
+            )
+            mock_proactive_disclose_features.assert_called_once()
+
     async def test_create_static_connection_multitenant_mediator(self):
         self.context.update_settings(
             {"wallet.id": "test_wallet", "multitenant.enabled": True}
@@ -1590,6 +1626,27 @@ class TestConnectionManager(AsyncTestCase):
                 auto_complete=True,
             )
             assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
+
+    async def test_find_connection_retrieve_by_did_auto_disclose_features(self):
+        self.context.update_settings({"auto_disclose_features": True})
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_did", async_mock.CoroutineMock()
+        ) as mock_conn_retrieve_by_did, async_mock.patch.object(
+            V20DiscoveryMgr, "proactive_disclose_features", async_mock.CoroutineMock()
+        ) as mock_proactive_disclose_features:
+            mock_conn_retrieve_by_did.return_value = async_mock.MagicMock(
+                state=ConnRecord.State.RESPONSE.rfc23,
+                save=async_mock.CoroutineMock(),
+            )
+
+            conn_rec = await self.manager.find_connection(
+                their_did=self.test_target_did,
+                my_did=self.test_did,
+                my_verkey=self.test_verkey,
+                auto_complete=True,
+            )
+            assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED
+            mock_proactive_disclose_features.assert_called_once()
 
     async def test_find_connection_retrieve_by_invitation_key(self):
         with async_mock.patch.object(
