@@ -19,3 +19,7 @@ class Controller:
         service = context.inject_or(BaseMenuService)
         if service:
             return ["provider"]
+
+    def determine_goal_codes(self) -> Sequence[str]:
+        """Return defined goal_codes."""
+        return []

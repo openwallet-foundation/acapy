@@ -27,6 +27,7 @@ from ...routing.v1_0.manager import RoutingManager
 from ...coordinate_mediation.v1_0.manager import MediationManager
 
 from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
+from ...discovery.v2_0.manager import V20DiscoveryMgr
 
 from .message_types import ARIES_PROTOCOL as CONN_PROTO
 from .messages.connection_invitation import ConnectionInvitation
@@ -948,6 +949,11 @@ class ConnectionManager(BaseConnectionManager):
         )
         async with self.profile.session() as session:
             await connection.save(session, reason="Created new static connection")
+            if session.settings.get("auto_disclose_features"):
+                discovery_mgr = V20DiscoveryMgr(self._profile)
+                await discovery_mgr.proactive_disclose_features(
+                    connection_id=connection.connection_id
+                )
 
         # Add mapping for multitenant relaying / mediation
         if multitenant_mgr and wallet_id:
@@ -1009,6 +1015,11 @@ class ConnectionManager(BaseConnectionManager):
             connection.state = ConnRecord.State.COMPLETED.rfc160
             async with self.profile.session() as session:
                 await connection.save(session, reason="Connection promoted to active")
+                if session.settings.get("auto_disclose_features"):
+                    discovery_mgr = V20DiscoveryMgr(self._profile)
+                    await discovery_mgr.proactive_disclose_features(
+                        connection_id=connection.connection_id
+                    )
 
         if not connection and my_verkey:
             try:

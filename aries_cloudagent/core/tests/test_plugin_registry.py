@@ -8,6 +8,7 @@ from ...utils.classloader import ClassLoader, ModuleLoadError
 
 from ..plugin_registry import PluginRegistry
 from ..protocol_registry import ProtocolRegistry
+from ..goal_code_registry import GoalCodeRegistry
 
 from ..error import ProtocolDefinitionValidationError
 
@@ -21,7 +22,11 @@ class TestPluginRegistry(AsyncTestCase):
             register_message_types=async_mock.MagicMock(),
             register_controllers=async_mock.MagicMock(),
         )
+        self.goal_code_registry = async_mock.MagicMock(
+            register_controllers=async_mock.MagicMock(),
+        )
         self.context.injector.bind_instance(ProtocolRegistry, self.proto_registry)
+        self.context.injector.bind_instance(GoalCodeRegistry, self.goal_code_registry)
 
     async def test_setup(self):
         mod_name = "test_mod"
