@@ -460,6 +460,49 @@ class DebugGroup(ArgumentGroup):
         return settings
 
 
+@group(CAT_START, CAT_PROVISION)
+class DiscoverFeaturesGroup(ArgumentGroup):
+    """Discover Features settings."""
+
+    GROUP_NAME = "Discover features"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add discover features specific command line arguments to the parser."""
+        parser.add_argument(
+            "--auto-disclose-features",
+            action="store_true",
+            env_var="ACAPY_AUTO_DISCLOSE_FEATURES",
+            help=(
+                "Specifies that the agent will proactively/auto disclose protocols"
+                " and goal-codes features on connection creation [RFC0557]."
+            ),
+        )
+        parser.add_argument(
+            "--disclose-features-list",
+            type=str,
+            dest="disclose_features_list",
+            required=False,
+            env_var="ACAPY_DISCLOSE_FEATURES_LIST",
+            help="Load YAML file path that specifies which features to disclose.",
+        )
+
+    def get_settings(self, args: Namespace) -> dict:
+        """Extract discover features settings."""
+        settings = {}
+        if args.auto_disclose_features:
+            settings["auto_disclose_features"] = True
+        if args.disclose_features_list:
+            with open(args.disclose_features_list, "r") as stream:
+                provided_lists = yaml.safe_load(stream)
+                if "protocols" in provided_lists:
+                    settings["disclose_protocol_list"] = provided_lists.get("protocols")
+                if "goal-codes" in provided_lists:
+                    settings["disclose_goal_code_list"] = provided_lists.get(
+                        "goal-codes"
+                    )
+        return settings
+
+
 @group(CAT_PROVISION, CAT_START)
 class GeneralGroup(ArgumentGroup):
     """General settings."""

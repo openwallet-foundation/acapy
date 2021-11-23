@@ -6,10 +6,10 @@ from typing import List, Union
 
 from ....wallet.util import b64_to_bytes, bytes_to_b64
 
-from ..crypto import KeyPair
+from ..crypto import _KeyPair as KeyPair
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
-from ..purposes import ProofPurpose
+from ..purposes import _ProofPurpose as ProofPurpose
 from ..validation_result import ProofResult
 
 from .bbs_bls_signature_2020_base import BbsBlsSignature2020Base
