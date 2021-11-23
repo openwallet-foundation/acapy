@@ -255,9 +255,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
 
     else:
-        session = await context.session()
-
-        transaction_mgr = TransactionManager(session)
+        transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
                 messages_attach=schema_def["signed_txn"],
@@ -370,7 +368,7 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
 
     schema_id = request.match_info["schema_id"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger = context.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -404,6 +402,8 @@ def register_events(event_bus: EventBus):
 async def on_schema_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
     schema_id = event.payload["context"]["schema_id"]
+
+    # after the ledger record is written, write the wallet non-secrets record
     await add_schema_non_secrets_record(profile, schema_id)
 
 

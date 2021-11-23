@@ -24,3 +24,11 @@ aries\_cloudagent.protocols.coordinate\_mediation.definition module
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.protocols.coordinate\_mediation.mediation\_invite\_store module
+---------------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.coordinate_mediation.mediation_invite_store
+   :members:
+   :undoc-members:
+   :show-inheritance:

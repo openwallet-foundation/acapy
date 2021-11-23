@@ -23,6 +23,11 @@ from ...indy import pres_exch_handler as test_indy_util_module
 
 from .. import manager as test_module
 from ..formats.handler import V20PresFormatHandlerError
+from ..formats.dif.handler import DIFPresFormatHandler
+from ..formats.dif.tests.test_handler import (
+    DIF_PRES_REQUEST_B as DIF_PRES_REQ,
+    DIF_PRES,
+)
 from ..formats.indy import handler as test_indy_handler
 from ..manager import V20PresManager, V20PresManagerError
 from ..message_types import (
@@ -602,6 +607,86 @@ class TestV20PresManager(AsyncTestCase):
                 comment="test",
             )
         assert "No supported formats" in str(context.exception)
+
+    async def test_create_pres_catch_diferror(self):
+        px_rec = V20PresExRecord(
+            pres_request=V20PresRequest(
+                formats=[
+                    V20PresFormat(
+                        attach_id="dif",
+                        format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                            V20PresFormat.Format.DIF.api
+                        ],
+                    )
+                ],
+                request_presentations_attach=[
+                    AttachDecorator.data_json(DIF_PRES_REQ, ident="dif")
+                ],
+            ).serialize(),
+        )
+        with async_mock.patch.object(
+            DIFPresFormatHandler, "create_pres", autospec=True
+        ) as mock_create_pres:
+            mock_create_pres.return_value = None
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.create_pres(
+                    pres_ex_record=px_rec,
+                    request_data={},
+                    comment="test",
+                )
+            assert "Unable to create presentation. ProblemReport message sent" in str(
+                context.exception
+            )
+
+    async def test_receive_pres_catch_diferror(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        pres_x = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(
+                    mapping=DIF_PRES,
+                    ident="dif",
+                )
+            ],
+        )
+        pres_req = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQ, ident="dif")
+            ],
+        )
+        px_rec = V20PresExRecord(
+            pres_request=pres_req.serialize(),
+            pres=pres_x.serialize(),
+        )
+        with async_mock.patch.object(
+            DIFPresFormatHandler, "receive_pres", autospec=True
+        ) as mock_receive_pres, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            mock_receive_pres.return_value = False
+            retrieve_ex.side_effect = [
+                StorageNotFoundError("no such record"),  # cover out-of-band
+                px_rec,
+            ]
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.receive_pres(
+                    pres_x,
+                    connection_record,
+                )
+            assert "Unable to verify received presentation." in str(context.exception)
 
     async def test_create_exchange_for_request(self):
         pres_req = V20PresRequest(

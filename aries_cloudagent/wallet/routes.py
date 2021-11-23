@@ -400,9 +400,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
         async with ledger:
             if not await ledger.get_key_for_did(did):
-                raise web.HTTPNotFound(
-                    reason=f"DID {did} is not posted to the ledger"
-                )
+                raise web.HTTPNotFound(reason=f"DID {did} is not posted to the ledger")
         did_info: DIDInfo = None
         async with context.session() as session:
             wallet = session.inject_or(BaseWallet)

@@ -322,20 +322,23 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_pre_verify, async_mock.patch.object(
             self.verifier, "non_revoc_intervals", async_mock.MagicMock()
         ) as mock_non_revox:
+            INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
             verified = await self.verifier.verify_presentation(
-                INDY_PROOF_REQ_PRED_NAMES,
+                INDY_PROOF_REQ_X,
                 INDY_PROOF_PRED_NAMES,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
 
         mock_verify.assert_called_once_with(
-            json.dumps(INDY_PROOF_REQ_PRED_NAMES),
+            json.dumps(INDY_PROOF_REQ_X),
             json.dumps(INDY_PROOF_PRED_NAMES),
             json.dumps("schemas"),
-            json.dumps("credential_definitions"),
+            json.dumps(
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}}
+            ),
             json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
@@ -355,7 +358,7 @@ class TestIndySdkVerifier(AsyncTestCase):
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_NAME,
                 "schemas",
-                "credential_definitions",
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}},
                 REV_REG_DEFS,
                 "rev_reg_entries",
             )
@@ -364,7 +367,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             json.dumps(INDY_PROOF_REQ_NAME),
             json.dumps(INDY_PROOF_NAME),
             json.dumps("schemas"),
-            json.dumps("credential_definitions"),
+            json.dumps({"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}}),
             json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
@@ -378,7 +381,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             INDY_PROOF_REQ_NAME,
             INDY_PROOF_NAME,
             "schemas",
-            "credential_definitions",
+            {"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}},
             REV_REG_DEFS,
             "rev_reg_entries",
         )
@@ -387,7 +390,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             json.dumps(INDY_PROOF_REQ_NAME),
             json.dumps(INDY_PROOF_NAME),
             json.dumps("schemas"),
-            json.dumps("credential_definitions"),
+            json.dumps({"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}}),
             json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
@@ -405,7 +408,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             INDY_PROOF_REQ_NAME,
             INDY_PROOF_X,
             "schemas",
-            "credential_definitions",
+            {"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}},
             REV_REG_DEFS,
             "rev_reg_entries",
         )
@@ -425,7 +428,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             INDY_PROOF_REQ_NAME,
             INDY_PROOF_X,
             "schemas",
-            "credential_definitions",
+            {"LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag": {"value": {}}},
             REV_REG_DEFS,
             "rev_reg_entries",
         )
@@ -437,20 +440,23 @@ class TestIndySdkVerifier(AsyncTestCase):
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names(self, mock_verify):
         mock_verify.return_value = True
+        INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
         verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_PRED_NAMES,
+            INDY_PROOF_REQ_X,
             INDY_PROOF_PRED_NAMES,
             "schemas",
-            "credential_definitions",
+            {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}},
             REV_REG_DEFS,
             "rev_reg_entries",
         )
 
         mock_verify.assert_called_once_with(
-            json.dumps(INDY_PROOF_REQ_PRED_NAMES),
+            json.dumps(INDY_PROOF_REQ_X),
             json.dumps(INDY_PROOF_PRED_NAMES),
             json.dumps("schemas"),
-            json.dumps("credential_definitions"),
+            json.dumps(
+                {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {"revocation": {}}}}
+            ),
             json.dumps(REV_REG_DEFS),
             json.dumps("rev_reg_entries"),
         )
@@ -465,10 +471,10 @@ class TestIndySdkVerifier(AsyncTestCase):
         ]["value"] = 0
 
         verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_PRED_NAMES,
+            deepcopy(INDY_PROOF_REQ_PRED_NAMES),
             INDY_PROOF_X,
             "schemas",
-            "credential_definitions",
+            {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {}}},
             REV_REG_DEFS,
             "rev_reg_entries",
         )
@@ -486,7 +492,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             INDY_PROOF_REQ_X,
             INDY_PROOF_PRED_NAMES,
             "schemas",
-            "credential_definitions",
+            {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {}}},
             REV_REG_DEFS,
             "rev_reg_entries",
         )
@@ -503,10 +509,10 @@ class TestIndySdkVerifier(AsyncTestCase):
         ] = INDY_PROOF_X["requested_proof"]["revealed_attr_groups"].pop("18_uuid")
 
         verified = await self.verifier.verify_presentation(
-            INDY_PROOF_REQ_PRED_NAMES,
+            deepcopy(INDY_PROOF_REQ_PRED_NAMES),
             INDY_PROOF_X,
             "schemas",
-            "credential_definitions",
+            {"LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag": {"value": {}}},
             REV_REG_DEFS,
             "rev_reg_entries",
         )
