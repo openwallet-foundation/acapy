@@ -16,7 +16,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.vc_ld import (
-    issue,
+    issue_vc as issue,
     verify_credential,
     VerifiableCredentialSchema,
     LDProof,

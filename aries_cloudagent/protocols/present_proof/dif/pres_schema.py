@@ -6,7 +6,7 @@ from ....messaging.valid import (
     UUID4,
     StrOrDictField,
 )
-from ....vc.vc_ld.models import LinkedDataProofSchema
+from ....vc.vc_ld import LinkedDataProofSchema
 
 from .pres_exch import PresentationSubmissionSchema
 
