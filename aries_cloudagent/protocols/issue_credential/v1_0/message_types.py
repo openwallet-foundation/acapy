@@ -48,3 +48,7 @@ ATTACH_DECO_IDS = {
     CREDENTIAL_REQUEST: "libindy-cred-request-0",
     CREDENTIAL_ISSUE: "libindy-cred-0",
 }
+
+CONTROLLERS = DIDCommPrefix.qualify_all(
+    {"issue-credential/1.0": f"{PROTOCOL_PACKAGE}.controller.Controller"}
+)
