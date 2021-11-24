@@ -388,7 +388,7 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
 
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger = context.inject_or(BaseLedger)
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
