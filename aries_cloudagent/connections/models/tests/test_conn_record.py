@@ -3,7 +3,6 @@ from asynctest import mock as async_mock
 from datetime import timedelta
 
 from ....core.in_memory import InMemoryProfile
-from ....messaging.util import datetime_now, datetime_to_str, str_to_datetime
 from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
