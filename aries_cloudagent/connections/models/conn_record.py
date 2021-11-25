@@ -9,7 +9,6 @@ from marshmallow import fields, validate
 
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ...messaging.util import datetime_now, str_to_datetime
 from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 
 from ...protocols.connections.v1_0.message_types import (
@@ -348,25 +347,6 @@ class ConnRecord(BaseRecord):
         """
         post_filter = {"alias": alias}
         return await cls.query(session, post_filter_positive=post_filter)
-
-    @classmethod
-    async def flush_stale_connections(cls, session: ProfileSession):
-        """Retrieve and delete stale connection records."""
-
-        # To delete stale ConnRecords added when generating
-        # OOB invitations, for example, if other agent uses
-        # existing connection then subsequent invitations and
-        # associated ConnRecords will remain unused.
-        post_filter = {"state": "invitation", "invitation_mode": "once"}
-        records = await cls.query(session, post_filter_positive=post_filter)
-        current_time = datetime_now()
-        stale_record_time_filter = 3
-        for record in records:
-            updated_time = str_to_datetime(record.updated_at)
-            if (
-                (current_time - updated_time).total_seconds() / 3600
-            ) >= stale_record_time_filter:
-                await record.delete_record(session)
 
     async def attach_invitation(
         self,
