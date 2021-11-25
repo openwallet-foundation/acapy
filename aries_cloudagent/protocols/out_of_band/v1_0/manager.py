@@ -1100,7 +1100,9 @@ class OutOfBandManager(BaseConnectionManager):
                     session=session, key="reuse_msg_state", value="accepted"
                 )
                 conn_record.invitation_msg_id = invi_msg_id
-                await conn_record.save(session, reason="Assigning new invitation_msg_id")
+                await conn_record.save(
+                    session, reason="Assigning new invitation_msg_id"
+                )
         except Exception as e:
             raise OutOfBandManagerError(
                 (
