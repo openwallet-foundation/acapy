@@ -1058,6 +1058,10 @@ class OutOfBandManager(BaseConnectionManager):
                 message=reuse_accept_msg,
                 target_list=connection_targets,
             )
+        # Update ConnRecord's invi_msg_id
+        async with self._profile.session() as session:
+            conn_rec.invitation_msg_id = invi_msg_id
+            await conn_rec.save(session, reason="Assigning new invitation_msg_id")
         # Delete the ConnRecord created; re-use existing connection
         await self.delete_stale_connection_by_invitation(invi_msg_id)
 
@@ -1095,6 +1099,8 @@ class OutOfBandManager(BaseConnectionManager):
                 await conn_record.metadata_set(
                     session=session, key="reuse_msg_state", value="accepted"
                 )
+                conn_record.invitation_msg_id = invi_msg_id
+                await conn_record.save(session, reason="Assigning new invitation_msg_id")
         except Exception as e:
             raise OutOfBandManagerError(
                 (
