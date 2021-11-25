@@ -1,6 +1,4 @@
 from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
-from datetime import timedelta
 
 from ....core.in_memory import InMemoryProfile
 from ....protocols.connections.v1_0.messages.connection_invitation import (
