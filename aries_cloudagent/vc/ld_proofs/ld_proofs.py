@@ -4,8 +4,8 @@ from typing import List
 
 from .document_loader import DocumentLoaderMethod
 from .proof_set import ProofSet
-from .purposes import ProofPurpose
-from .suites import LinkedDataProof
+from .purposes import _ProofPurpose as ProofPurpose
+from .suites import _LinkedDataProof as LinkedDataProof
 from .validation_result import DocumentVerificationResult
 
 

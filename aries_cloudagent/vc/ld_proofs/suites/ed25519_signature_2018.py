@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Union
 
-from ..crypto import KeyPair
+from ..crypto import _KeyPair as KeyPair
 
 from .jws_linked_data_signature import JwsLinkedDataSignature
 
