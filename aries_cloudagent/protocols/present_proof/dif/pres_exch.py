@@ -16,7 +16,7 @@ from ....messaging.valid import (
     StrOrDictField,
     StrOrNumberField,
 )
-from ....vc.vc_ld.models import LinkedDataProofSchema
+from ....vc.vc_ld import LinkedDataProofSchema
 
 
 class ClaimFormat(BaseModel):

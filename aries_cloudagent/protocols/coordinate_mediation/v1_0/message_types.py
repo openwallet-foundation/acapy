@@ -40,3 +40,7 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.CMProblemReport",
     }
 )
+
+CONTROLLERS = DIDCommPrefix.qualify_all(
+    {"coordinate-mediation/1.0": f"{PROTOCOL_PACKAGE}.controller.Controller"}
+)

@@ -358,3 +358,37 @@ class TestArgParse(AsyncTestCase):
         settings = group.get_settings(result)
 
         assert settings.get("wallet.key") == key_value
+
+    async def test_discover_features_args(self):
+        """Test discover features support related argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.DiscoverFeaturesGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            args=(
+                "--auto-disclose-features --disclose-features-list"
+                " ./aries_cloudagent/config/tests/test_disclose_features_list.yaml"
+            )
+        )
+
+        assert result.auto_disclose_features
+        assert (
+            result.disclose_features_list
+            == "./aries_cloudagent/config/tests/test_disclose_features_list.yaml"
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("auto_disclose_features")
+        assert (["test_protocol_1", "test_protocol_2"]) == settings.get(
+            "disclose_protocol_list"
+        )
+        assert (["test_goal_code_1", "test_goal_code_2"]) == settings.get(
+            "disclose_goal_code_list"
+        )

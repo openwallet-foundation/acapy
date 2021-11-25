@@ -10,6 +10,7 @@ from ..core.event_bus import EventBus
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
+from ..core.goal_code_registry import GoalCodeRegistry
 from ..resolver.did_resolver import DIDResolver
 from ..resolver.did_resolver_registry import DIDResolverRegistry
 from ..tails.base import BaseTailsServer
@@ -42,6 +43,9 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Global protocol registry
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+
+        # Global goal code registry
+        context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
 
         # Global event bus
         context.injector.bind_instance(EventBus, EventBus())
