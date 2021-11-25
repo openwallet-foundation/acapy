@@ -1,6 +1,9 @@
 from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock
+from datetime import timedelta
 
 from ....core.in_memory import InMemoryProfile
+from ....messaging.util import datetime_now, datetime_to_str, str_to_datetime
 from ....protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
@@ -420,3 +423,34 @@ class TestConnRecord(AsyncTestCase):
             )
             == []
         )
+
+    async def test_flush_stale_connections(self):
+        current_datetime = datetime_now()
+        older_datetime = current_datetime - timedelta(hours=4)
+        record_a = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.INVITATION.rfc23,
+            invitation_key="dummy1",
+            invitation_mode="once",
+            updated_at=datetime_to_str(current_datetime),
+        )
+        record_b = ConnRecord(
+            my_did=self.test_did,
+            their_did="FBmi5JLf5g58kDnNXMy4QM",
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.INVITATION.rfc160,
+            invitation_key="dummy2",
+            invitation_mode="once",
+            updated_at=datetime_to_str(older_datetime),
+        )
+        records = [record_a, record_b]
+        with async_mock.patch.object(
+            ConnRecord, "query", async_mock.CoroutineMock()
+        ) as mock_connrecord_query, async_mock.patch.object(
+            ConnRecord, "delete_record", async_mock.CoroutineMock()
+        ) as mock_connrecord_delete:
+            mock_connrecord_query.return_value = records
+            await ConnRecord.flush_stale_connections(self.session)
+            mock_connrecord_delete.assert_called_once()

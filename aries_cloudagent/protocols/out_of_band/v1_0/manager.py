@@ -369,6 +369,10 @@ class OutOfBandManager(BaseConnectionManager):
                     for key, value in metadata.items():
                         await conn_rec.metadata_set(session, key, value)
 
+        # Flushing stale connections
+        async with self.profile.session() as session:
+            await ConnRecord.flush_stale_connections(session)
+
         return InvitationRecord(  # for return via admin API, not storage
             state=InvitationRecord.STATE_INITIAL,
             invi_msg_id=invi_msg._id,
