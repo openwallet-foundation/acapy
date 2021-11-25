@@ -359,10 +359,13 @@ class ConnRecord(BaseRecord):
         # associated ConnRecords will remain unused.
         post_filter = {"state": "invitation", "invitation_mode": "once"}
         records = await cls.query(session, post_filter_positive=post_filter)
+        current_time = datetime_now()
+        stale_record_time_filter = 3
         for record in records:
             updated_time = str_to_datetime(record.updated_at)
-            current_time = datetime_now()
-            if ((current_time - updated_time).total_seconds() / 3600) >= 3:
+            if (
+                (current_time - updated_time).total_seconds() / 3600
+            ) >= stale_record_time_filter:
                 await record.delete_record(session)
 
     async def attach_invitation(
