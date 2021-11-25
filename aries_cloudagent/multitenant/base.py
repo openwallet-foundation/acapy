@@ -270,7 +270,8 @@ class BaseMultitenantManager:
             {"wallet.key": wallet_key},
         )
 
-        del self._instances[wallet_id]
+        if profile.settings.get("multitenant.wallet_type") != "askar-profile":
+            del self._instances[wallet_id]
         await profile.remove()
 
         # Remove all routing records associated with wallet
