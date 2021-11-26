@@ -222,7 +222,7 @@ class DemoAgent:
                         "localhost", str(self.external_host)
                     )
                 updated_config_list.append(config)
-            with open(self.genesis_txn_list, 'w') as file:
+            with open(self.genesis_txn_list, "w") as file:
                 documents = yaml.dump(updated_config_list, file)
 
     async def get_wallets(self):
