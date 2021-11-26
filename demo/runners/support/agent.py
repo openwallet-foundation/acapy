@@ -1,5 +1,6 @@
 import asyncio
 import asyncpg
+import base64
 import functools
 import json
 import logging
@@ -7,8 +8,9 @@ import os
 import random
 import subprocess
 import sys
+import yaml
+
 from timeit import default_timer
-import base64
 
 from aiohttp import (
     web,
@@ -207,6 +209,21 @@ class DemoAgent:
             self.agency_wallet_seed = self.seed
             self.agency_wallet_did = self.did
             self.agency_wallet_key = self.wallet_key
+
+        if self.genesis_txn_list:
+            updated_config_list = []
+            with open(self.genesis_txn_list, "r") as stream:
+                ledger_config_list = yaml.safe_load(stream)
+            for config in ledger_config_list:
+                if "genesis_url" in config and "/localhost:" in config.get(
+                    "genesis_url"
+                ):
+                    config["genesis_url"] = config.get("genesis_url").replace(
+                        "localhost", str(self.external_host)
+                    )
+                updated_config_list.append(config)
+            with open(self.genesis_txn_list, 'w') as file:
+                documents = yaml.dump(updated_config_list, file)
 
     async def get_wallets(self):
         """Get registered wallets of agent (this is an agency call)."""
