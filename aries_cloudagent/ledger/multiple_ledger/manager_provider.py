@@ -62,15 +62,17 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                     indy_sdk_production_ledgers = OrderedDict()
                     indy_sdk_non_production_ledgers = OrderedDict()
                     ledger_config_list = settings.get_value("ledger.ledger_config_list")
+                    write_ledger_info = None
                     for config in ledger_config_list:
-                        keepalive = int(config.get("keepalive", 5))
-                        read_only = bool(config.get("read_only", False))
+                        keepalive = config.get("keepalive")
+                        read_only = config.get("read_only")
                         socks_proxy = config.get("socks_proxy")
                         genesis_transactions = config.get("genesis_transactions")
                         cache = injector.inject_or(BaseCache)
                         ledger_id = config.get("id")
-                        pool_name = config.get("pool_name", ledger_id)
+                        pool_name = config.get("pool_name")
                         ledger_is_production = config.get("is_production")
+                        ledger_is_write = config.get("is_write")
                         ledger_pool = IndySdkLedgerPool(
                             pool_name,
                             keepalive=keepalive,
@@ -83,6 +85,8 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             pool=ledger_pool,
                             profile=self.root_profile,
                         )
+                        if ledger_is_write:
+                            write_ledger_info = (ledger_id, ledger_instance)
                         if ledger_is_production:
                             indy_sdk_production_ledgers[ledger_id] = ledger_instance
                         else:
@@ -92,20 +96,23 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                         self.root_profile,
                         production_ledgers=indy_sdk_production_ledgers,
                         non_production_ledgers=indy_sdk_non_production_ledgers,
+                        write_ledger_info=write_ledger_info,
                     )
                 else:
                     indy_vdr_production_ledgers = OrderedDict()
                     indy_vdr_non_production_ledgers = OrderedDict()
                     ledger_config_list = settings.get_value("ledger.ledger_config_list")
+                    write_ledger_info = None
                     for config in ledger_config_list:
-                        keepalive = int(config.get("keepalive", 5))
-                        read_only = bool(config.get("read_only", False))
+                        keepalive = config.get("keepalive")
+                        read_only = config.get("read_only")
                         socks_proxy = config.get("socks_proxy")
                         genesis_transactions = config.get("genesis_transactions")
                         cache = injector.inject_or(BaseCache)
                         ledger_id = config.get("id")
-                        pool_name = config.get("pool_name", ledger_id)
+                        pool_name = config.get("pool_name")
                         ledger_is_production = config.get("is_production")
+                        ledger_is_write = config.get("is_write")
                         ledger_pool = IndyVdrLedgerPool(
                             pool_name,
                             keepalive=keepalive,
@@ -118,6 +125,8 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             pool=ledger_pool,
                             profile=self.root_profile,
                         )
+                        if ledger_is_write:
+                            write_ledger_info = (ledger_id, ledger_instance)
                         if ledger_is_production:
                             indy_vdr_production_ledgers[ledger_id] = ledger_instance
                         else:
@@ -126,6 +135,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                         self.root_profile,
                         production_ledgers=indy_vdr_production_ledgers,
                         non_production_ledgers=indy_vdr_non_production_ledgers,
+                        write_ledger_info=write_ledger_info,
                     )
             except ClassNotFoundError as err:
                 raise InjectionError(

@@ -112,7 +112,11 @@ class Conductor:
         # Fetch genesis transactions if necessary
         if context.settings.get("ledger.ledger_config_list"):
             await load_multiple_genesis_transactions_from_config(context.settings)
-        else:
+        if (
+            context.settings.get("ledger.genesis_transactions")
+            or context.settings.get("ledger.genesis_file")
+            or context.settings.get("ledger.genesis_url")
+        ):
             await get_genesis_transactions(context.settings)
 
         # Configure the root profile
@@ -128,38 +132,39 @@ class Conductor:
                 BaseMultipleLedgerManager,
                 MultiIndyLedgerManagerProvider(self.root_profile),
             )
-            ledger = (
-                await (
-                    context.injector.inject(BaseMultipleLedgerManager)
-                ).get_write_ledger()
-            )[1]
-            if isinstance(self.root_profile, AskarProfile) and isinstance(
-                ledger, IndyVdrLedger
-            ):
-                context.injector.bind_provider(BaseLedger, ledger)
-                context.injector.bind_provider(
-                    IndyVerifier,
-                    ClassProvider(
-                        "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
-                        self.root_profile,
-                    ),
-                )
-            elif isinstance(self.root_profile, IndySdkProfile) and isinstance(
-                ledger, IndySdkLedger
-            ):
-                context.injector.bind_instance(BaseLedger, ledger)
-                context.injector.bind_provider(
-                    IndyVerifier,
-                    ClassProvider(
-                        "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                        self.root_profile,
-                    ),
-                )
-            else:
-                raise MultipleLedgerManagerError(
-                    "Multiledger is supported only for Indy SDK or Askar "
-                    "[Indy VDR] profile"
-                )
+            if not context.settings.get("ledger.genesis_transactions"):
+                ledger = (
+                    await (
+                        context.injector.inject(BaseMultipleLedgerManager)
+                    ).get_write_ledger()
+                )[1]
+                if isinstance(self.root_profile, AskarProfile) and isinstance(
+                    ledger, IndyVdrLedger
+                ):
+                    context.injector.bind_instance(BaseLedger, ledger)
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                elif isinstance(self.root_profile, IndySdkProfile) and isinstance(
+                    ledger, IndySdkLedger
+                ):
+                    context.injector.bind_instance(BaseLedger, ledger)
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                else:
+                    raise MultipleLedgerManagerError(
+                        "Multiledger is supported only for Indy SDK or Askar "
+                        "[Indy VDR] profile"
+                    )
         context.injector.bind_instance(
             IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(self.root_profile)
         )

@@ -32,6 +32,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         profile: Profile,
         production_ledgers: OrderedDict = OrderedDict(),
         non_production_ledgers: OrderedDict = OrderedDict(),
+        write_ledger_info: Tuple[str, IndyVdrLedger] = None,
         cache_ttl: int = None,
     ):
         """Initialize MultiIndyLedgerManager.
@@ -46,19 +47,12 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         self.profile = profile
         self.production_ledgers = production_ledgers
         self.non_production_ledgers = non_production_ledgers
-        self.write_ledger_info = None
+        self.write_ledger_info = write_ledger_info
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
 
-    async def get_write_ledger(self) -> Tuple[str, IndyVdrLedger]:
+    async def get_write_ledger(self) -> Optional[Tuple[str, IndyVdrLedger]]:
         """Return the write IndyVdrLedger instance."""
-        if not self.write_ledger_info:
-            if len(self.production_ledgers) > 0:
-                ledger_info = list(self.production_ledgers.items())
-                self.write_ledger_info = (ledger_info[0][0], ledger_info[0][1])
-            elif len(self.non_production_ledgers) > 0:
-                ledger_info = list(self.non_production_ledgers.items())
-                self.write_ledger_info = (ledger_info[0][0], ledger_info[0][1])
         return self.write_ledger_info
 
     async def _get_ledger_by_did(

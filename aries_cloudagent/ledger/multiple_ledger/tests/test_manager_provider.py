@@ -15,6 +15,7 @@ LEDGER_CONFIG = [
     {
         "id": "sovrinStaging",
         "is_production": True,
+        "is_write": True,
         "genesis_transactions": {
             "reqSignature": {},
             "txn": {

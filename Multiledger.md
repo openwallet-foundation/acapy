@@ -1,6 +1,6 @@
 # Multi-ledger in ACA-Py <!-- omit in toc -->
 
-Ability to use multiple Indy ledgers (both IndySdk and IndyVdr) for resolving a `DID` by the ACA-Py agent. For read requests, checking of multiple ledgers in parallel is done dynamically according to logic detailed in [Read Requests Ledger Selection](#read-requests). For write requests, dynamic allocation of `write_ledger` is not supported, it is automatically set to first configured pool (by order and preferring `production`) on [startup](#write-requests).
+Ability to use multiple Indy ledgers (both IndySdk and IndyVdr) for resolving a `DID` by the ACA-Py agent. For read requests, checking of multiple ledgers in parallel is done dynamically according to logic detailed in [Read Requests Ledger Selection](#read-requests). For write requests, dynamic allocation of `write_ledger` is not supported. Write ledger can be assigned using `is_write` in the [configuration](#config-properties) or using any of the `--genesis-url`, `--genesis-file`, and `--genesis-transactions` startup (ACA-Py) arguments. If no write ledger is assigned then a `ConfigError` is raised.
 
 More background information including problem statement, design (algorithm) and more can be found [here](https://docs.google.com/document/d/109C_eMsuZnTnYe2OAd02jAts1vC4axwEKIq7_4dnNVA).
 
@@ -31,6 +31,7 @@ If `--genesis-transactions-list` is specified, then `--genesis-url, --genesis-fi
   genesis_url: 'http://host.docker.internal:9000/genesis'
 - id: bcorvinTest
   is_production: true
+  is_write: true
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
 ```
 
@@ -50,6 +51,7 @@ Optional properties:
 - `pool_name`: name of the indy pool to be opened
 - `keepalive`: how many seconds to keep the ledger open
 - `socks_proxy`
+- `is_write`: Whether the ledger is the write ledger. Only one ledger can be assigned, otherwise a `ConfigError` is raised.
 
 
 ## Multi-ledger Admin API

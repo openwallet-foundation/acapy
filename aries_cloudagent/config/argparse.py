@@ -767,20 +767,25 @@ class LedgerGroup(ArgumentGroup):
         if args.no_ledger:
             settings["ledger.disabled"] = True
         else:
+            configured = False
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
+                configured = True
             elif args.genesis_file:
                 settings["ledger.genesis_file"] = args.genesis_file
+                configured = True
             elif args.genesis_transactions:
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
-            elif args.genesis_transactions_list:
+                configured = True
+            if args.genesis_transactions_list:
                 with open(args.genesis_transactions_list, "r") as stream:
                     txn_config_list = yaml.safe_load(stream)
                     ledger_config_list = []
                     for txn_config in txn_config_list:
                         ledger_config_list.append(txn_config)
                     settings["ledger.ledger_config_list"] = ledger_config_list
-            else:
+                    configured = True
+            if not configured:
                 raise ArgsParseError(
                     "One of --genesis-url --genesis-file, --genesis-transactions "
                     "or --genesis-transactions-list must be specified (unless "

@@ -30,9 +30,9 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
         self.context.injector.bind_instance(BaseResponder, self.responder)
         self.production_ledger = OrderedDict()
         self.non_production_ledger = OrderedDict()
-        self.production_ledger["test_prod_1"] = IndyVdrLedger(
-            IndyVdrLedgerPool("test_prod_1"), self.profile
-        )
+        test_prod_ledger = IndyVdrLedger(IndyVdrLedgerPool("test_prod_1"), self.profile)
+        test_write_ledger = ("test_prod_1", test_prod_ledger)
+        self.production_ledger["test_prod_1"] = test_prod_ledger
         self.production_ledger["test_prod_2"] = IndyVdrLedger(
             IndyVdrLedgerPool("test_prod_2"), self.profile
         )
@@ -46,28 +46,13 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
             self.profile,
             production_ledgers=self.production_ledger,
             non_production_ledgers=self.non_production_ledger,
+            write_ledger_info=test_write_ledger,
         )
 
-    async def test_get_write_ledger_prod_ledger(self):
+    async def test_get_write_ledger(self):
         ledger_id, ledger_inst = await self.manager.get_write_ledger()
         assert ledger_id == "test_prod_1"
         assert ledger_inst.pool.name == "test_prod_1"
-
-    async def test_get_write_ledger_non_prod_ledger(self):
-        self.non_production_ledger = OrderedDict()
-        self.non_production_ledger["test_non_prod_1"] = IndyVdrLedger(
-            IndyVdrLedgerPool("test_non_prod_1"), self.profile
-        )
-        self.non_production_ledger["test_non_prod_2"] = IndyVdrLedger(
-            IndyVdrLedgerPool("test_non_prod_2"), self.profile
-        )
-        self.manager = MultiIndyVDRLedgerManager(
-            self.profile,
-            non_production_ledgers=self.non_production_ledger,
-        )
-        ledger_id, ledger_inst = await self.manager.get_write_ledger()
-        assert ledger_id == "test_non_prod_1"
-        assert ledger_inst.pool.name == "test_non_prod_1"
 
     @async_mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
     @async_mock.patch(

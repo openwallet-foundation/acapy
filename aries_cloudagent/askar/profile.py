@@ -64,7 +64,7 @@ class AskarProfile(Profile):
         if self.settings.get("ledger.disabled"):
             LOGGER.info("Ledger support is disabled")
             return
-        if not self.settings.get("ledger.ledger_config_list"):
+        if self.settings.get("ledger.genesis_transactions"):
             pool_name = self.settings.get("ledger.pool_name", "default")
             keepalive = int(self.settings.get("ledger.keepalive", 5))
             read_only = bool(self.settings.get("ledger.read_only", False))

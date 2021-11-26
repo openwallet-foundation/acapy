@@ -42,7 +42,11 @@ async def provision(settings: dict):
     try:
         if context.settings.get("ledger.ledger_config_list"):
             await load_multiple_genesis_transactions_from_config(context.settings)
-        else:
+        if (
+            context.settings.get("ledger.genesis_transactions")
+            or context.settings.get("ledger.genesis_file")
+            or context.settings.get("ledger.genesis_url")
+        ):
             await get_genesis_transactions(context.settings)
 
         root_profile, public_did = await wallet_config(context, provision=True)
