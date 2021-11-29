@@ -1131,15 +1131,13 @@ async def create_agent_with_args(args, ident: str = None):
             "If revocation is enabled, --tails-server-base-url must be provided"
         )
 
+    multi_ledger_config_path = None
     if "multi_ledger" in args and args.multi_ledger:
-        genesis = None
         multi_ledger_config_path = "./demo/multi_ledger_config.yml"
-    else:
-        genesis = await default_genesis_txns()
-        multi_ledger_config_path = None
-        if not genesis:
-            print("Error retrieving ledger genesis transactions")
-            sys.exit(1)
+    genesis = await default_genesis_txns()
+    if not genesis and not multi_ledger_config_path:
+        print("Error retrieving ledger genesis transactions")
+        sys.exit(1)
 
     agent_ident = ident if ident else (args.ident if "ident" in args else "Aries")
 

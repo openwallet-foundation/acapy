@@ -1,7 +1,6 @@
-- id: localVON
-  is_production: true
-  genesis_url: 'http://localhost:9000/genesis'
-  is_write: true
 - id: bcorvinTest
   is_production: true
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+- id: greenlightTest
+  is_production: true
+  genesis_url: 'http://dev.greenlight.bcovrin.vonx.io/genesis'
