@@ -22,6 +22,7 @@ from ....wallet.did_posture import DIDPosture
 from ....did.did_key import DIDKey
 
 from ...coordinate_mediation.v1_0.manager import MediationManager
+from ...discovery.v2_0.manager import V20DiscoveryMgr
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
@@ -784,6 +785,11 @@ class DIDXManager(BaseConnectionManager):
             conn_rec.state = ConnRecord.State.COMPLETED.rfc23
             async with self.profile.session() as session:
                 await conn_rec.save(session, reason="Sent connection complete")
+                if session.settings.get("auto_disclose_features"):
+                    discovery_mgr = V20DiscoveryMgr(self._profile)
+                    await discovery_mgr.proactive_disclose_features(
+                        connection_id=conn_rec.connection_id
+                    )
 
         return conn_rec
 
@@ -827,6 +833,11 @@ class DIDXManager(BaseConnectionManager):
         conn_rec.state = ConnRecord.State.COMPLETED.rfc23
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Received connection complete")
+            if session.settings.get("auto_disclose_features"):
+                discovery_mgr = V20DiscoveryMgr(self._profile)
+                await discovery_mgr.proactive_disclose_features(
+                    connection_id=conn_rec.connection_id
+                )
 
         return conn_rec
 

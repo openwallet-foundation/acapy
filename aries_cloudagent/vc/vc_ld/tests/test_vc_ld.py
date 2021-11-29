@@ -9,7 +9,7 @@ from ....wallet.in_memory import InMemoryWallet
 from ....core.in_memory import InMemoryProfile
 from ...ld_proofs import Ed25519Signature2018, WalletKeyPair, BbsBlsSignature2020
 from ...vc_ld import (
-    issue,
+    issue_vc as issue,
     verify_credential,
     create_presentation,
     sign_presentation,

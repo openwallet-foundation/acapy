@@ -9,6 +9,8 @@ from .....messaging.models.base_record import (
 )
 from .....messaging.valid import UUIDFour
 
+from ..controller import ENDORSE_TRANSACTION, REFUSE_TRANSACTION, WRITE_TRANSACTION
+
 
 class TransactionRecord(BaseExchangeRecord):
     """Represents a single transaction record."""
@@ -35,9 +37,9 @@ class TransactionRecord(BaseExchangeRecord):
 
     ADD_SIGNATURE = "add-signature"
 
-    ENDORSE_TRANSACTION = "transaction.endorse"
-    REFUSE_TRANSACTION = "transaction.refuse"
-    WRITE_TRANSACTION = "transaction.ledger.write"
+    ENDORSE_TRANSACTION = ENDORSE_TRANSACTION
+    REFUSE_TRANSACTION = REFUSE_TRANSACTION
+    WRITE_TRANSACTION = WRITE_TRANSACTION
 
     FORMAT_VERSION = "dif/endorse-transaction/request@v1.0"
 

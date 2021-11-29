@@ -460,6 +460,49 @@ class DebugGroup(ArgumentGroup):
         return settings
 
 
+@group(CAT_START, CAT_PROVISION)
+class DiscoverFeaturesGroup(ArgumentGroup):
+    """Discover Features settings."""
+
+    GROUP_NAME = "Discover features"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add discover features specific command line arguments to the parser."""
+        parser.add_argument(
+            "--auto-disclose-features",
+            action="store_true",
+            env_var="ACAPY_AUTO_DISCLOSE_FEATURES",
+            help=(
+                "Specifies that the agent will proactively/auto disclose protocols"
+                " and goal-codes features on connection creation [RFC0557]."
+            ),
+        )
+        parser.add_argument(
+            "--disclose-features-list",
+            type=str,
+            dest="disclose_features_list",
+            required=False,
+            env_var="ACAPY_DISCLOSE_FEATURES_LIST",
+            help="Load YAML file path that specifies which features to disclose.",
+        )
+
+    def get_settings(self, args: Namespace) -> dict:
+        """Extract discover features settings."""
+        settings = {}
+        if args.auto_disclose_features:
+            settings["auto_disclose_features"] = True
+        if args.disclose_features_list:
+            with open(args.disclose_features_list, "r") as stream:
+                provided_lists = yaml.safe_load(stream)
+                if "protocols" in provided_lists:
+                    settings["disclose_protocol_list"] = provided_lists.get("protocols")
+                if "goal-codes" in provided_lists:
+                    settings["disclose_goal_code_list"] = provided_lists.get(
+                        "goal-codes"
+                    )
+        return settings
+
+
 @group(CAT_PROVISION, CAT_START)
 class GeneralGroup(ArgumentGroup):
     """General settings."""
@@ -1536,14 +1579,24 @@ class EndorsementGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--endorser-invitation",
+            type=str,
+            metavar="<endorser-invitation>",
+            env_var="ACAPY_ENDORSER_INVITATION",
+            help=(
+                "For transaction Authors, specify the invitation used to "
+                "connect to the Endorser agent who will be endorsing transactions. "
+                "Note this is a multi-use invitation created by the Endorser agent."
+            ),
+        )
+        parser.add_argument(
             "--endorser-public-did",
             type=str,
             metavar="<endorser-public-did>",
             env_var="ACAPY_ENDORSER_PUBLIC_DID",
             help=(
-                "For transaction Authors, specify the the public DID of the Endorser "
-                "agent who will be endorsing transactions.  Note this requires that "
-                "the connection be made using the Endorser's public DID."
+                "For transaction Authors, specify the public DID of the Endorser "
+                "agent who will be endorsing transactions."
             ),
         )
         parser.add_argument(
@@ -1552,7 +1605,7 @@ class EndorsementGroup(ArgumentGroup):
             metavar="<endorser-alias>",
             env_var="ACAPY_ENDORSER_ALIAS",
             help=(
-                "For transaction Authors, specify the the alias of the Endorser "
+                "For transaction Authors, specify the alias of the Endorser "
                 "connection that will be used to endorse transactions."
             ),
         )
@@ -1620,6 +1673,25 @@ class EndorsementGroup(ArgumentGroup):
             else:
                 raise ArgsParseError(
                     "Parameter --endorser-alias should only be set for transaction "
+                    "Authors"
+                )
+
+        if args.endorser_invitation:
+            if settings["endorser.author"]:
+                if not settings.get("endorser.endorser_public_did"):
+                    raise ArgsParseError(
+                        "Parameter --endorser-public-did must be provided if "
+                        "--endorser-invitation is set."
+                    )
+                if not settings.get("endorser.endorser_alias"):
+                    raise ArgsParseError(
+                        "Parameter --endorser-alias must be provided if "
+                        "--endorser-invitation is set."
+                    )
+                settings["endorser.endorser_invitation"] = args.endorser_invitation
+            else:
+                raise ArgsParseError(
+                    "Parameter --endorser-invitation should only be set for transaction "
                     "Authors"
                 )
 
