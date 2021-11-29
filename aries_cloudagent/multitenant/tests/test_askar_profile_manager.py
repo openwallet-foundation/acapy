@@ -174,10 +174,6 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
     async def test_remove_wallet_profile(self):
         test_profile = InMemoryProfile.test_profile()
 
-        with async_mock.patch.object(
-            InMemoryProfile, "remove"
-        ) as profile_remove:
-            await self.manager.remove_wallet_profile(
-                test_profile
-            )
+        with async_mock.patch.object(InMemoryProfile, "remove") as profile_remove:
+            await self.manager.remove_wallet_profile(test_profile)
             profile_remove.assert_called_once_with()

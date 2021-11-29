@@ -328,9 +328,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             get_wallet_profile.assert_called_once_with(
                 self.profile.context, wallet_record, {"wallet.key": "test_key"}
             )
-            remove_wallet_profile.assert_called_once_with(
-                wallet_profile
-            )
+            remove_wallet_profile.assert_called_once_with(wallet_profile)
             assert wallet_delete_record.call_count == 1
             delete_all_records.assert_called_once_with(
                 RouteRecord.RECORD_TYPE, {"wallet_id": "test"}

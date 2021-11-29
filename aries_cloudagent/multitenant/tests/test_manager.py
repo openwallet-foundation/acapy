@@ -180,11 +180,7 @@ class TestMultitenantManager(AsyncTestCase):
         )
         self.manager._instances["test"] = test_profile
 
-        with async_mock.patch.object(
-            InMemoryProfile, "remove"
-        ) as profile_remove:
-            await self.manager.remove_wallet_profile(
-                test_profile
-            )
+        with async_mock.patch.object(InMemoryProfile, "remove") as profile_remove:
+            await self.manager.remove_wallet_profile(test_profile)
             assert "test" not in self.manager._instances
             profile_remove.assert_called_once_with()
