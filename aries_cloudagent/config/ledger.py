@@ -110,7 +110,6 @@ async def load_multiple_genesis_transactions_from_config(settings: Settings):
         settings.get("ledger.genesis_transactions")
         or settings.get("ledger.genesis_file")
         or settings.get("ledger.genesis_url")
-        or settings.get("ledger.genesis_transactions")
     ):
         raise ConfigError(
             "No is_write ledger set and no genesis_url,"
