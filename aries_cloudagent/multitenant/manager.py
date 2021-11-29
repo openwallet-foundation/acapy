@@ -71,3 +71,14 @@ class MultitenantManager(BaseMultitenantManager):
             self._instances[wallet_id] = profile
 
         return self._instances[wallet_id]
+
+    async def remove_wallet_profile(self, profile: Profile):
+        """Remove the wallet profile instance.
+
+        Args:
+            profile: The wallet profile instance
+
+        """
+        wallet_id = profile.settings.get("wallet.id")
+        del self._instances[wallet_id]
+        await profile.remove()
