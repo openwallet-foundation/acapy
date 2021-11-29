@@ -210,6 +210,21 @@ class DemoAgent:
             self.agency_wallet_did = self.did
             self.agency_wallet_key = self.wallet_key
 
+        if self.genesis_txn_list:
+            updated_config_list = []
+            with open(self.genesis_txn_list, "r") as stream:
+                ledger_config_list = yaml.safe_load(stream)
+            for config in ledger_config_list:
+                if "genesis_url" in config and "/$LEDGER_HOST:" in config.get(
+                    "genesis_url"
+                ):
+                    config["genesis_url"] = config.get("genesis_url").replace(
+                        "$LEDGER_HOST", str(self.external_host)
+                    )
+                updated_config_list.append(config)
+            with open(self.genesis_txn_list, "w") as file:
+                documents = yaml.dump(updated_config_list, file)
+
     async def get_wallets(self):
         """Get registered wallets of agent (this is an agency call)."""
         wallets = await self.admin_GET("/multitenancy/wallets")
