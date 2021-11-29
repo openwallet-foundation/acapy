@@ -1,7 +1,7 @@
 """Manager for multiple ledger."""
 
 from abc import ABC, abstractmethod
-from typing import TypeVar, Optional, Tuple
+from typing import TypeVar, Optional, Tuple, Mapping
 
 from ...core.error import BaseError
 from ...core.profile import Profile
@@ -22,6 +22,14 @@ class BaseMultipleLedgerManager(ABC):
     @abstractmethod
     async def get_write_ledger(self) -> Tuple[str, T]:
         """Return write ledger."""
+
+    @abstractmethod
+    async def get_prod_ledgers(self) -> Mapping:
+        """Return configured production ledgers."""
+
+    @abstractmethod
+    async def get_nonprod_ledgers(self) -> Mapping:
+        """Return configured non production ledgers."""
 
     @abstractmethod
     async def _get_ledger_by_did(

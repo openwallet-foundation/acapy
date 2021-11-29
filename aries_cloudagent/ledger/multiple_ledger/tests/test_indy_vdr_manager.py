@@ -436,3 +436,9 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
                 "Av63wJYM7xYR4AiygYq4c3", cache_did=True
             )
             assert "cached ledger_id invalid_id not found in either" in cm
+
+    async def test_get_production_ledgers(self):
+        assert len(await self.manager.get_prod_ledgers()) == 2
+
+    async def test_get_non_production_ledgers(self):
+        assert len(await self.manager.get_nonprod_ledgers()) == 2

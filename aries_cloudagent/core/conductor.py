@@ -132,10 +132,10 @@ class Conductor:
                 BaseMultipleLedgerManager,
                 MultiIndyLedgerManagerProvider(self.root_profile),
             )
-            if not context.settings.get("ledger.genesis_transactions"):
+            if not (context.settings.get("ledger.genesis_transactions")):
                 ledger = (
-                    await (
-                        context.injector.inject(BaseMultipleLedgerManager)
+                    await context.injector.inject(
+                        BaseMultipleLedgerManager
                     ).get_write_ledger()
                 )[1]
                 if isinstance(self.root_profile, AskarProfile) and isinstance(

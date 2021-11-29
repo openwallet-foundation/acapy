@@ -534,7 +534,32 @@ async def get_ledger_config(request: web.BaseRequest):
             reason = "Multiple ledger support not enabled"
             raise web.HTTPForbidden(reason=reason)
         ledger_config_list = session.settings.get_value("ledger.ledger_config_list")
-    return web.json_response({"ledger_config_list": ledger_config_list})
+        config_ledger_dict = {"production_ledgers": [], "non_production_ledgers": []}
+        production_ledger_keys = (await multiledger_mgr.get_prod_ledgers()).keys()
+        non_production_ledger_keys = (
+            await multiledger_mgr.get_nonprod_ledgers()
+        ).keys()
+        config_ledger_ids_set = set()
+        for config in ledger_config_list:
+            ledger_id = config.get("id")
+            config_ledger_ids_set.add(ledger_id)
+            # removing genesis_transactions
+            config = {
+                key: val for key, val in config.items() if key != "genesis_transactions"
+            }
+            if ledger_id in production_ledger_keys:
+                config_ledger_dict.get("production_ledgers").append(config)
+            if ledger_id in non_production_ledger_keys:
+                config_ledger_dict.get("non_production_ledgers").append(config)
+        diff_prod_ledger_ids_set = set(production_ledger_keys) - config_ledger_ids_set
+        for diff_prod_ledger_id in diff_prod_ledger_ids_set:
+            config_ledger_dict.get("production_ledgers").append(
+                {
+                    "id": diff_prod_ledger_id,
+                    "desc": "ledger configured outside --genesis-transactions-list",
+                }
+            )
+    return web.json_response(config_ledger_dict)
 
 
 async def register(app: web.Application):

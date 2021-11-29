@@ -5,7 +5,7 @@ import logging
 import json
 
 from collections import OrderedDict
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Mapping
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
@@ -39,8 +39,8 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
 
         Args:
             profile: The base profile for this manager
-            production_ledgers: List of production IndyVDRLedger
-            non_production_ledgers: List of non_production IndyVDRLedger
+            production_ledgers: production IndyVDRLedger mapping
+            non_production_ledgers: non_production IndyVDRLedger mapping
             cache_ttl: Time in sec to persist did_ledger_id_resolver cache keys
 
         """
@@ -54,6 +54,14 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
     async def get_write_ledger(self) -> Optional[Tuple[str, IndyVdrLedger]]:
         """Return the write IndyVdrLedger instance."""
         return self.write_ledger_info
+
+    async def get_prod_ledgers(self) -> Mapping:
+        """Return production ledgers mapping."""
+        return self.production_ledgers
+
+    async def get_nonprod_ledgers(self) -> Mapping:
+        """Return non_production ledgers mapping."""
+        return self.non_production_ledgers
 
     async def _get_ledger_by_did(
         self,

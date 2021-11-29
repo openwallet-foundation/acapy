@@ -426,3 +426,9 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
             )
             == "WgWxqztrNooG92RXvxSTWv"
         )
+
+    async def test_get_production_ledgers(self):
+        assert len(await self.manager.get_prod_ledgers()) == 2
+
+    async def test_get_non_production_ledgers(self):
+        assert len(await self.manager.get_nonprod_ledgers()) == 2

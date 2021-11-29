@@ -501,18 +501,44 @@ class TestLedgerRoutes(AsyncTestCase):
     async def test_get_ledger_config(self):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
-            async_mock.MagicMock(),
+            async_mock.MagicMock(
+                get_prod_ledgers=async_mock.CoroutineMock(
+                    return_value={
+                        "test_1": async_mock.MagicMock(),
+                        "test_2": async_mock.MagicMock(),
+                        "test_5": async_mock.MagicMock(),
+                    }
+                ),
+                get_nonprod_ledgers=async_mock.CoroutineMock(
+                    return_value={
+                        "test_3": async_mock.MagicMock(),
+                        "test_4": async_mock.MagicMock(),
+                    }
+                ),
+            ),
         )
         self.context.settings["ledger.ledger_config_list"] = [
-            {"id": "test_1"},
-            {"id": "test_2"},
+            {"id": "test_1", "genesis_transactions": "..."},
+            {"id": "test_2", "genesis_transactions": "..."},
+            {"id": "test_3", "genesis_transactions": "..."},
+            {"id": "test_4", "genesis_transactions": "..."},
         ]
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             result = await test_module.get_ledger_config(self.request)
             json_response.assert_called_once_with(
-                {"ledger_config_list": [{"id": "test_1"}, {"id": "test_2"}]}
+                {
+                    "production_ledgers": [
+                        {"id": "test_1"},
+                        {"id": "test_2"},
+                        {
+                            "id": "test_5",
+                            "desc": "ledger configured outside --genesis-transactions-list",
+                        },
+                    ],
+                    "non_production_ledgers": [{"id": "test_3"}, {"id": "test_4"}],
+                }
             )
             assert result is json_response.return_value
 

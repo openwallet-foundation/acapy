@@ -10,6 +10,7 @@ from ...config.settings import BaseSettings
 from ...config.injector import BaseInjector, InjectionError
 from ...cache.base import BaseCache
 from ...indy.sdk.profile import IndySdkProfile
+from ...ledger.base import BaseLedger
 from ...utils.classloader import ClassLoader, ClassNotFoundError
 
 from ..indy import IndySdkLedgerPool, IndySdkLedger
@@ -91,7 +92,15 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             indy_sdk_production_ledgers[ledger_id] = ledger_instance
                         else:
                             indy_sdk_non_production_ledgers[ledger_id] = ledger_instance
-
+                    if settings.get_value("ledger.genesis_transactions"):
+                        ledger_instance = self.root_profile.inject_or(BaseLedger)
+                        ledger_id = "startup::" + ledger_instance.pool.name
+                        indy_sdk_production_ledgers[ledger_id] = ledger_instance
+                        if not write_ledger_info:
+                            write_ledger_info = (ledger_id, ledger_instance)
+                            indy_sdk_production_ledgers.move_to_end(
+                                ledger_id, last=False
+                            )
                     self._inst[manager_class] = ClassLoader.load_class(manager_class)(
                         self.root_profile,
                         production_ledgers=indy_sdk_production_ledgers,
@@ -131,6 +140,15 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             indy_vdr_production_ledgers[ledger_id] = ledger_instance
                         else:
                             indy_vdr_non_production_ledgers[ledger_id] = ledger_instance
+                    if settings.get_value("ledger.genesis_transactions"):
+                        ledger_instance = self.root_profile.inject_or(BaseLedger)
+                        ledger_id = "startup::" + ledger_instance.pool.name
+                        indy_vdr_production_ledgers[ledger_id] = ledger_instance
+                        if not write_ledger_info:
+                            write_ledger_info = (ledger_id, ledger_instance)
+                            indy_vdr_non_production_ledgers.move_to_end(
+                                ledger_id, last=False
+                            )
                     self._inst[manager_class] = ClassLoader.load_class(manager_class)(
                         self.root_profile,
                         production_ledgers=indy_vdr_production_ledgers,
