@@ -1,8 +1,8 @@
-from ...core.in_memory import InMemoryProfile
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from aiohttp.web import HTTPForbidden
 
 from ...admin.request_context import AdminRequestContext
+from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager

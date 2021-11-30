@@ -261,6 +261,7 @@ async def main(
     show_timing: bool = False,
     multitenant: bool = False,
     mediation: bool = False,
+    multi_ledger: bool = False,
     use_did_exchange: bool = False,
     revocation: bool = False,
     tails_server_base_url: str = None,
@@ -268,10 +269,15 @@ async def main(
     wallet_type: str = None,
 ):
 
-    genesis = await default_genesis_txns()
-    if not genesis:
-        print("Error retrieving ledger genesis transactions")
-        sys.exit(1)
+    if multi_ledger:
+        genesis = None
+        multi_ledger_config_path = "./demo/multi_ledger_config.yml"
+    else:
+        genesis = await default_genesis_txns()
+        multi_ledger_config_path = None
+        if not genesis:
+            print("Error retrieving ledger genesis transactions")
+            sys.exit(1)
 
     alice = None
     faber = None
@@ -284,6 +290,7 @@ async def main(
         alice = AliceAgent(
             start_port,
             genesis_data=genesis,
+            genesis_txn_list=multi_ledger_config_path,
             timing=show_timing,
             multitenant=multitenant,
             mediation=mediation,
@@ -294,6 +301,7 @@ async def main(
         faber = FaberAgent(
             start_port + 3,
             genesis_data=genesis,
+            genesis_txn_list=multi_ledger_config_path,
             timing=show_timing,
             tails_server_base_url=tails_server_base_url,
             multitenant=multitenant,
@@ -309,12 +317,12 @@ async def main(
 
             if mediation:
                 alice_mediator_agent = await start_mediator_agent(
-                    start_port + 8, genesis
+                    start_port + 8, genesis, multi_ledger_config_path
                 )
                 if not alice_mediator_agent:
                     raise Exception("Mediator agent returns None :-(")
                 faber_mediator_agent = await start_mediator_agent(
-                    start_port + 11, genesis
+                    start_port + 11, genesis, multi_ledger_config_path
                 )
                 if not faber_mediator_agent:
                     raise Exception("Mediator agent returns None :-(")
@@ -604,6 +612,14 @@ if __name__ == "__main__":
         "--mediation", action="store_true", help="Enable mediation functionality"
     )
     parser.add_argument(
+        "--multi-ledger",
+        action="store_true",
+        help=(
+            "Enable multiple ledger mode, config file can be found "
+            "here: ./demo/multi_ledger_config.yml"
+        ),
+    )
+    parser.add_argument(
         "--did-exchange",
         action="store_true",
         help="Use DID-Exchange protocol for connections",
@@ -669,6 +685,7 @@ if __name__ == "__main__":
                 args.timing,
                 args.multitenant,
                 args.mediation,
+                args.multi_ledger,
                 args.did_exchange,
                 args.revocation,
                 tails_server_base_url,
