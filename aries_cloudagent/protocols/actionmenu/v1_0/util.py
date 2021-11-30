@@ -16,7 +16,7 @@ async def retrieve_connection_menu(
     connection_id: str, context: AdminRequestContext
 ) -> Menu:
     """Retrieve the previously-received action menu."""
-    async with context.session() as session:
+    async with context.profile.session() as session:
         storage = session.inject(BaseStorage)
         try:
             record = await storage.find_record(
@@ -31,7 +31,7 @@ async def save_connection_menu(
     menu: Menu, connection_id: str, context: AdminRequestContext
 ):
     """Save a received action menu."""
-    async with context.session() as session:
+    async with context.profile.session() as session:
         storage = session.inject(BaseStorage)
         try:
             record = await storage.find_record(

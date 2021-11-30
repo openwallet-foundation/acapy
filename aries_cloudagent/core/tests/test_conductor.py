@@ -1061,3 +1061,31 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             await conductor.stop()
             mock_from_url.assert_called_once_with("test-invite")
             mock_logger.exception.assert_called_once()
+
+    async def test_setup_ledger_both_multiple_and_base(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"ledger.genesis_transactions": "..."})
+        builder.update_settings({"ledger.ledger_config_list": [{"...": "..."}]})
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module,
+            "load_multiple_genesis_transactions_from_config",
+            async_mock.CoroutineMock(),
+        ) as mock_multiple_genesis_load, async_mock.patch.object(
+            test_module, "get_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_genesis_load:
+            await conductor.setup()
+            mock_multiple_genesis_load.assert_called_once()
+            mock_genesis_load.assert_called_once()
+
+    async def test_setup_ledger_only_base(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"ledger.genesis_transactions": "..."})
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "get_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_genesis_load:
+            await conductor.setup()
+            mock_genesis_load.assert_called_once()

@@ -151,6 +151,10 @@ PORTS="5000:5000 8000:8000 1000:1000" ./scripts/run_docker start --inbound-trans
 
 Refer to [the previous section](#Running) for instructions on how to run the software.
 
+### Logging
+
+You can find more details about logging and log levels [here](Logging.md).
+
 ### Running Tests
 
 To run the ACA-Py test suite, use the following script:
