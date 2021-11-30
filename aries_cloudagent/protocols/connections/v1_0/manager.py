@@ -439,6 +439,7 @@ class ConnectionManager(BaseConnectionManager):
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
             image_url=self.profile.settings.get("image_url"),
         )
+        request.assign_thread_id(thid=request._id, pthid=connection.invitation_msg_id)
 
         # Update connection state
         connection.request_id = request._id
@@ -601,21 +602,28 @@ class ConnectionManager(BaseConnectionManager):
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
-
-            connection = ConnRecord(
-                invitation_key=connection_key,
-                my_did=my_info.did,
-                their_role=ConnRecord.Role.RESPONDER.rfc160,
-                their_did=request.connection.did,
-                their_label=request.label,
-                accept=(
-                    ConnRecord.ACCEPT_AUTO
-                    if self.profile.settings.get("debug.auto_accept_requests")
-                    else ConnRecord.ACCEPT_MANUAL
-                ),
-                state=ConnRecord.State.REQUEST.rfc160,
-                connection_protocol=CONN_PROTO,
+            async with self.profile.session() as session:
+                conn_records = await ConnRecord.retrieve_by_invitation_msg_id(
+                    session=session,
+                    invitation_msg_id=request._thread.pthid,
+                    their_role=ConnRecord.Role.REQUESTER.rfc160,
+                )
+            if len(conn_records) == 1:
+                connection = conn_records[0]
+            else:
+                connection = ConnRecord()
+            connection.invitation_key = connection_key
+            connection.my_did = my_info.did
+            connection.their_role = ConnRecord.Role.RESPONDER.rfc160
+            connection.their_did = request.connection.did
+            connection.their_label = request.label
+            connection.accept = (
+                ConnRecord.ACCEPT_AUTO
+                if self.profile.settings.get("debug.auto_accept_requests")
+                else ConnRecord.ACCEPT_MANUAL
             )
+            connection.state = ConnRecord.State.REQUEST.rfc160
+            connection.connection_protocol = CONN_PROTO
             async with self.profile.session() as session:
                 await connection.save(
                     session, reason="Received connection request from public DID"
