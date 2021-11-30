@@ -26,6 +26,7 @@ class TestProfile(AsyncTestCase):
         context.settings = {
             "multitenant.wallet_type": "askar-profile",
             "wallet.askar_profile": profile_id,
+            "ledger.genesis_transactions": mock.MagicMock(),
         }
         askar_profile = AskarProfile(openStore, context)
         remove_profile_stub = asyncio.Future()
