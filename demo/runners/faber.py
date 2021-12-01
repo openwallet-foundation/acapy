@@ -699,7 +699,8 @@ async def main(args):
                             "cred_rev_id": cred_rev_id,
                             "publish": publish,
                             "connection_id": faber_agent.agent.connection_id,
-                            "thread_id": "12345678-4444-4444-4444-123456789012",
+                            # leave out thread_id, let aca-py generate
+                            # "thread_id": "12345678-4444-4444-4444-123456789012",
                             "comment": "Revocation reason goes here ...",
                         },
                     )
