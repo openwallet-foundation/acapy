@@ -83,3 +83,12 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         ).extend(extra_settings)
 
         return AskarProfile(multitenant_wallet.opened, profile_context)
+
+    async def remove_wallet_profile(self, profile: Profile):
+        """Remove the wallet profile instance.
+
+        Args:
+            profile: The wallet profile instance
+
+        """
+        await profile.remove()
