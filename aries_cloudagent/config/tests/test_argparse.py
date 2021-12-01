@@ -53,6 +53,47 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("transport.outbound_configs") == ["http"]
         assert result.max_outbound_retry == 5
 
+    async def test_get_genesis_transactions_list_with_ledger_selection(self):
+        """Test multiple ledger support related argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.LedgerGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--genesis-transactions-list",
+                "./aries_cloudagent/config/tests/test-ledger-args.yaml",
+            ]
+        )
+
+        assert (
+            result.genesis_transactions_list
+            == "./aries_cloudagent/config/tests/test-ledger-args.yaml"
+        )
+
+        settings = group.get_settings(result)
+
+        assert len(settings.get("ledger.ledger_config_list")) == 3
+        assert (
+            {
+                "id": "sovrinStaging",
+                "is_production": True,
+                "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
+            }
+        ) in settings.get("ledger.ledger_config_list")
+        assert (
+            {
+                "id": "sovrinTest",
+                "is_production": False,
+                "genesis_url": "http://localhost:9000/genesis",
+            }
+        ) in settings.get("ledger.ledger_config_list")
+
     async def test_outbound_is_required(self):
         """Test that either -ot or -oq are required"""
         parser = argparse.create_argument_parser()

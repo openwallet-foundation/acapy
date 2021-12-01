@@ -387,6 +387,7 @@ async def main(args):
             faber_agent.start_port,
             faber_agent.start_port + 1,
             genesis_data=faber_agent.genesis_txns,
+            genesis_txn_list=faber_agent.genesis_txn_list,
             no_auto=faber_agent.no_auto,
             tails_server_base_url=faber_agent.tails_server_base_url,
             timing=faber_agent.show_timing,
