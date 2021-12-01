@@ -45,6 +45,7 @@ class FaberAgent(AriesAgent):
         admin_port: int,
         no_auto: bool = False,
         endorser_role: str = None,
+        revocation: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -54,6 +55,7 @@ class FaberAgent(AriesAgent):
             prefix="Faber",
             no_auto=no_auto,
             endorser_role=endorser_role,
+            revocation=revocation,
             **kwargs,
         )
         self.connection_id = None
@@ -390,6 +392,7 @@ async def main(args):
             genesis_txn_list=faber_agent.genesis_txn_list,
             no_auto=faber_agent.no_auto,
             tails_server_base_url=faber_agent.tails_server_base_url,
+            revocation=faber_agent.revocation,
             timing=faber_agent.show_timing,
             multitenant=faber_agent.multitenant,
             mediation=faber_agent.mediation,
@@ -695,6 +698,10 @@ async def main(args):
                             "rev_reg_id": rev_reg_id,
                             "cred_rev_id": cred_rev_id,
                             "publish": publish,
+                            "connection_id": faber_agent.agent.connection_id,
+                            # leave out thread_id, let aca-py generate
+                            # "thread_id": "12345678-4444-4444-4444-123456789012",
+                            "comment": "Revocation reason goes here ...",
                         },
                     )
                 except ClientError:

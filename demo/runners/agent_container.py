@@ -57,6 +57,7 @@ class AriesAgent(DemoAgent):
         seed: str = None,
         aip: int = 20,
         endorser_role: str = None,
+        revocation: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -67,6 +68,7 @@ class AriesAgent(DemoAgent):
             seed=seed,
             aip=aip,
             endorser_role=endorser_role,
+            revocation=revocation,
             extra_args=(
                 []
                 if no_auto
@@ -495,6 +497,9 @@ class AriesAgent(DemoAgent):
 
     async def handle_endorse_transaction(self, message):
         self.log("Received transaction message:", message["state"])
+
+    async def handle_revocation_notification(self, message):
+        self.log("Received revocation notification message:", message)
 
     async def generate_invitation(
         self,
