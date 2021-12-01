@@ -11,6 +11,7 @@ wallet.
 import hashlib
 import json
 import logging
+from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
@@ -350,6 +351,9 @@ class Conductor:
                 invite_url = invi_rec.invitation.to_url(base_url)
                 print("Invitation URL:")
                 print(invite_url, flush=True)
+                qr = QRCode(border=1)
+                qr.add_data(invite_url)
+                qr.print_ascii(invert=True)
                 del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
@@ -367,8 +371,12 @@ class Conductor:
                     ),
                 )
                 base_url = context.settings.get("invite_base_url")
+                invite_url = invite.to_url(base_url)
                 print("Invitation URL (Connections protocol):")
-                print(invite.to_url(base_url), flush=True)
+                print(invite_url, flush=True)
+                qr = QRCode(border=1)
+                qr.add_data(invite_url)
+                qr.print_ascii(invert=True)
                 del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")

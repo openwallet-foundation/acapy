@@ -307,8 +307,8 @@ class TestBaseMultitenantManager(AsyncTestCase):
         ) as retrieve_by_id, async_mock.patch.object(
             BaseMultitenantManager, "get_wallet_profile"
         ) as get_wallet_profile, async_mock.patch.object(
-            InMemoryProfile, "remove"
-        ) as remove_profile, async_mock.patch.object(
+            BaseMultitenantManager, "remove_wallet_profile"
+        ) as remove_wallet_profile, async_mock.patch.object(
             WalletRecord, "delete_record"
         ) as wallet_delete_record, async_mock.patch.object(
             InMemoryStorage, "delete_all_records"
@@ -320,17 +320,15 @@ class TestBaseMultitenantManager(AsyncTestCase):
             )
             wallet_profile = InMemoryProfile.test_profile()
 
-            self.manager._instances["test"] = wallet_profile
             retrieve_by_id.return_value = wallet_record
             get_wallet_profile.return_value = wallet_profile
 
             await self.manager.remove_wallet("test")
 
-            assert "test" not in self.manager._instances
             get_wallet_profile.assert_called_once_with(
                 self.profile.context, wallet_record, {"wallet.key": "test_key"}
             )
-            remove_profile.assert_called_once_with()
+            remove_wallet_profile.assert_called_once_with(wallet_profile)
             assert wallet_delete_record.call_count == 1
             delete_all_records.assert_called_once_with(
                 RouteRecord.RECORD_TYPE, {"wallet_id": "test"}

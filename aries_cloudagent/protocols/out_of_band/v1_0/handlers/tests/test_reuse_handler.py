@@ -38,10 +38,13 @@ class TestHandshakeReuseHandler:
         mock_oob_mgr.return_value.receive_reuse_message = async_mock.CoroutineMock()
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
+        request_context.connection_record = ConnRecord()
         responder = MockResponder()
         await handler.handle(request_context, responder)
         mock_oob_mgr.return_value.receive_reuse_message.assert_called_once_with(
-            request_context.message, request_context.message_receipt
+            request_context.message,
+            request_context.message_receipt,
+            request_context.connection_record,
         )
 
     @pytest.mark.asyncio
@@ -52,11 +55,13 @@ class TestHandshakeReuseHandler:
         mock_oob_mgr.return_value.receive_reuse_message.return_value = reuse_accepted
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
+        request_context.connection_record = ConnRecord()
         responder = MockResponder()
         await handler.handle(request_context, responder)
         mock_oob_mgr.return_value.receive_reuse_message.assert_called_once_with(
             request_context.message,
             request_context.message_receipt,
+            request_context.connection_record,
         )
 
     @pytest.mark.asyncio
@@ -68,6 +73,7 @@ class TestHandshakeReuseHandler:
         )
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()
+        request_context.connection_record = ConnRecord()
         responder = MockResponder()
         await handler.handle(request_context, responder)
         assert mock_oob_mgr.return_value._logger.exception.called_once_("error")
