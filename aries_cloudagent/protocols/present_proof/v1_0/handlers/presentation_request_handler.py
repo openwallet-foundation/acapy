@@ -31,6 +31,7 @@ class PresentationRequestHandler(BaseHandler):
 
         """
         r_time = get_timer()
+        profile = context.profile
 
         self._logger.debug("PresentationRequestHandler called with context %s", context)
         assert isinstance(context.message, PresentationRequest)
@@ -42,14 +43,14 @@ class PresentationRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for presentation request")
 
-        presentation_manager = PresentationManager(context.profile)
+        presentation_manager = PresentationManager(profile)
 
         indy_proof_request = context.message.indy_proof_request(0)
 
         # Get presentation exchange record (holder initiated via proposal)
         # or create it (verifier sent request first)
         try:
-            async with context.session() as session:
+            async with profile.session() as session:
                 (
                     presentation_exchange_record
                 ) = await V10PresentationExchange.retrieve_by_tag_filter(
@@ -124,7 +125,7 @@ class PresentationRequestHandler(BaseHandler):
             ) as err:
                 self._logger.exception(err)
                 if presentation_exchange_record:
-                    async with context.session() as session:
+                    async with profile.session() as session:
                         await presentation_exchange_record.save_error_state(
                             session,
                             reason=err.roll_up,  # us: be specific

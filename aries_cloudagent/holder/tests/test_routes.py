@@ -39,6 +39,7 @@ class TestHolderRoutes(AsyncTestCase):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
+
         self.request_dict = {"context": self.context}
         self.request = async_mock.MagicMock(
             app={},

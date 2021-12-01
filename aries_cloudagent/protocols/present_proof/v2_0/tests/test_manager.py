@@ -15,6 +15,9 @@ from .....indy.models.pres_preview import (
 )
 from .....indy.verifier import IndyVerifier
 from .....ledger.base import BaseLedger
+from .....ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
@@ -420,6 +423,14 @@ class TestV20PresManager(AsyncTestCase):
             )
         )
         injector.bind_instance(BaseLedger, self.ledger)
+        injector.bind_instance(
+            IndyLedgerRequestsExecutor,
+            async_mock.MagicMock(
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=self.ledger
+                )
+            ),
+        )
 
         Holder = async_mock.MagicMock(IndyHolder, autospec=True)
         self.holder = Holder()

@@ -571,11 +571,12 @@ class AriesAgent(DemoAgent):
 class AgentContainer:
     def __init__(
         self,
-        genesis_txns: str,
         ident: str,
         start_port: int,
         no_auto: bool = False,
         revocation: bool = False,
+        genesis_txns: str = None,
+        genesis_txn_list: str = None,
         tails_server_base_url: str = None,
         cred_type: str = CRED_FORMAT_INDY,
         show_timing: bool = False,
@@ -591,6 +592,7 @@ class AgentContainer:
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
+        self.genesis_txn_list = genesis_txn_list
         self.ident = ident
         self.start_port = start_port
         self.no_auto = no_auto
@@ -639,6 +641,7 @@ class AgentContainer:
                 self.start_port,
                 self.start_port + 1,
                 genesis_data=self.genesis_txns,
+                genesis_txn_list=self.genesis_txn_list,
                 no_auto=self.no_auto,
                 tails_server_base_url=self.tails_server_base_url,
                 timing=self.show_timing,
@@ -666,6 +669,7 @@ class AgentContainer:
             self.endorser_agent = await start_endorser_agent(
                 self.start_port + 7,
                 self.genesis_txns,
+                self.genesis_txn_list,
                 use_did_exchange=self.use_did_exchange,
             )
             if not self.endorser_agent:
@@ -687,7 +691,7 @@ class AgentContainer:
 
         if self.mediation:
             self.mediator_agent = await start_mediator_agent(
-                self.start_port + 4, self.genesis_txns
+                self.start_port + 4, self.genesis_txns, self.genesis_txn_list
             )
             if not self.mediator_agent:
                 raise Exception("Mediator agent returns None :-(")
@@ -1055,6 +1059,14 @@ def arg_parser(ident: str = None, port: int = 8020):
         "--mediation", action="store_true", help="Enable mediation functionality"
     )
     parser.add_argument(
+        "--multi-ledger",
+        action="store_true",
+        help=(
+            "Enable multiple ledger mode, config file can be found "
+            "here: ./demo/multi_ledger_config.yml"
+        ),
+    )
+    parser.add_argument(
         "--wallet-type",
         type=str,
         metavar="<wallet-type>",
@@ -1124,8 +1136,11 @@ async def create_agent_with_args(args, ident: str = None):
             "If revocation is enabled, --tails-server-base-url must be provided"
         )
 
+    multi_ledger_config_path = None
+    if "multi_ledger" in args and args.multi_ledger:
+        multi_ledger_config_path = "./demo/multi_ledger_config.yml"
     genesis = await default_genesis_txns()
-    if not genesis:
+    if not genesis and not multi_ledger_config_path:
         print("Error retrieving ledger genesis transactions")
         sys.exit(1)
 
@@ -1155,9 +1170,10 @@ async def create_agent_with_args(args, ident: str = None):
     )
 
     agent = AgentContainer(
-        genesis,
-        agent_ident + ".agent",
-        args.port,
+        genesis_txns=genesis,
+        genesis_txn_list=multi_ledger_config_path,
+        ident=agent_ident + ".agent",
+        start_port=args.port,
         no_auto=args.no_auto,
         revocation=args.revocation if "revocation" in args else False,
         tails_server_base_url=tails_server_base_url,
@@ -1197,9 +1213,9 @@ async def test_main(
     try:
         # initialize the containers
         faber_container = AgentContainer(
-            genesis,
-            "Faber.agent",
-            start_port,
+            genesis_txns=genesis,
+            ident="Faber.agent",
+            start_port=start_port,
             no_auto=no_auto,
             revocation=revocation,
             tails_server_base_url=tails_server_base_url,
@@ -1214,9 +1230,9 @@ async def test_main(
             aip=aip,
         )
         alice_container = AgentContainer(
-            genesis,
-            "Alice.agent",
-            start_port + 10,
+            genesis_txns=genesis,
+            ident="Alice.agent",
+            start_port=start_port + 10,
             no_auto=no_auto,
             revocation=False,
             show_timing=show_timing,

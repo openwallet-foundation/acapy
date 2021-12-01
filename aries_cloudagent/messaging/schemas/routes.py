@@ -24,6 +24,10 @@ from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.schema import SchemaSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
+from ...ledger.multiple_ledger.ledger_requests_executor import (
+    GET_SCHEMA,
+    IndyLedgerRequestsExecutor,
+)
 from ...protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
@@ -163,6 +167,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     create_transaction_for_endorser = json.loads(
@@ -191,7 +196,7 @@ async def schemas_send_schema(request: web.BaseRequest):
 
     if not write_ledger:
         try:
-            async with context.session() as session:
+            async with profile.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
@@ -200,8 +205,10 @@ async def schemas_send_schema(request: web.BaseRequest):
         except BaseModelError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        session = await context.session()
-        endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        async with profile.session() as session:
+            endorser_info = await connection_record.metadata_get(
+                session, "endorser_info"
+            )
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason="Endorser Info is not set up in "
@@ -328,10 +335,20 @@ async def schemas_get_schema(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
     schema_id = request.match_info["schema_id"]
 
-    ledger = context.inject_or(BaseLedger)
+    ledger_id = None
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        schema_id,
+        txn_record_type=GET_SCHEMA,
+    )
+    if isinstance(ledger_info, tuple):
+        ledger_id = ledger_info[0]
+        ledger = ledger_info[1]
+    else:
+        ledger = ledger_info
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -343,8 +360,10 @@ async def schemas_get_schema(request: web.BaseRequest):
             schema = await ledger.get_schema(schema_id)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({"schema": schema})
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "schema": schema})
+    else:
+        return web.json_response({"schema": schema})
 
 
 @docs(tags=["schema"], summary="Writes a schema non-secret record to the wallet")
@@ -363,12 +382,23 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
-    session = await context.session()
-    storage = session.inject(BaseStorage)
+    profile = context.profile
 
     schema_id = request.match_info["schema_id"]
 
-    ledger = context.inject_or(BaseLedger)
+    ledger_id = None
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        schema_id,
+        txn_record_type=GET_SCHEMA,
+    )
+    if isinstance(ledger_info, tuple):
+        ledger_id = ledger_info[0]
+        ledger = ledger_info[1]
+    else:
+        ledger = ledger_info
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -387,11 +417,13 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
                 },
             )
             if 0 == len(found):
-                await add_schema_non_secrets_record(session.profile, schema_id)
+                await add_schema_non_secrets_record(profile, schema_id)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    return web.json_response({"schema": schema})
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "schema": schema})
+    else:
+        return web.json_response({"schema": schema})
 
 
 def register_events(event_bus: EventBus):

@@ -27,6 +27,8 @@ class HandshakeReuseMessageHandler(BaseHandler):
         profile = context.profile
         mgr = OutOfBandManager(profile)
         try:
-            await mgr.receive_reuse_message(context.message, context.message_receipt)
+            await mgr.receive_reuse_message(
+                context.message, context.message_receipt, context.connection_record
+            )
         except OutOfBandManagerError as e:
             self._logger.exception(f"Error processing Handshake Reuse message, {e}")
