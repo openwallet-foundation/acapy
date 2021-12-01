@@ -323,6 +323,25 @@ class ConnRecord(BaseRecord):
         return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
 
     @classmethod
+    async def retrieve_by_invitation_msg_id(
+        cls, session: ProfileSession, invitation_msg_id: str, their_role: str = None
+    ) -> "ConnRecord":
+        """Retrieve a connection record by invitation_msg_id.
+
+        Args:
+            session: The active profile session
+            invitation_msg_id: Invitation message identifier
+            initiator: Filter by the initiator value
+        """
+        post_filter = {
+            "state": cls.State.INVITATION.rfc160,
+            "invitation_msg_id": invitation_msg_id,
+        }
+        if their_role:
+            post_filter["their_role"] = cls.Role.get(their_role).rfc160
+        return await cls.query(session, post_filter_positive=post_filter)
+
+    @classmethod
     async def retrieve_by_request_id(
         cls, session: ProfileSession, request_id: str
     ) -> "ConnRecord":
