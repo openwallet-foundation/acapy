@@ -2448,3 +2448,52 @@ class TestPresentProofRoutes(AsyncTestCase):
         }
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.present_proof_send_presentation(self.request)
+
+    async def test_v20presentationsendreqschema(self):
+        test_input = {
+            "comment": "string",
+            "connection_id": "631522e9-ca17-4c88-9a4c-d1cad35e463a",
+            "presentation_request": {
+                "dif": {
+                    "_schema": [
+                        {
+                            "uri": "https://www.w3.org/2018/credentials/#VerifiableCredential"
+                        }
+                    ],
+                    "presentation_definition": {
+                        "format": {"ldp_vp": {"proof_type": "BbsBlsSignature2020"}},
+                        "id": "fa2c4a76-c7bd-4313-a0f8-d9f5979c1fd2",
+                        "input_descriptors": [
+                            {
+                                "schema": [
+                                    {
+                                        "uri": "https://www.w3.org/2018/credentials/#VerifiableCredential"
+                                    }
+                                ],
+                                "constraints": {
+                                    "fields": [
+                                        {
+                                            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                            "path": ["$.credentialSubject.id"],
+                                        }
+                                    ],
+                                    "is_holder": [
+                                        {
+                                            "directive": "required",
+                                            "field_id": [
+                                                "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                                            ],
+                                        }
+                                    ],
+                                    "limit_disclosure": "required",
+                                },
+                                "id": "XXXXXXX",
+                                "name": "XXXXXXX",
+                            }
+                        ],
+                    },
+                }
+            },
+        }
+        with self.assertRaises(TypeError):
+            test_module.V20PresSendRequestRequestSchema.load(test_input)
