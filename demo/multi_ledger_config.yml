@@ -1,0 +1,6 @@
+- id: bcorvinTest
+  is_production: true
+  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+- id: greenlightTest
+  is_production: true
+  genesis_url: 'http://dev.greenlight.bcovrin.vonx.io/genesis'

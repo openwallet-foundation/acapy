@@ -2,6 +2,8 @@ from aiohttp.web import HTTPBadRequest, HTTPNotFound
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from aries_cloudagent.core.in_memory import InMemoryProfile
+
 from ...admin.request_context import AdminRequestContext
 from ...storage.in_memory import InMemoryStorage
 from ...tails.base import BaseTailsServer
@@ -16,8 +18,9 @@ class TestRevocationRoutes(AsyncTestCase):
         self.tails_server.upload_tails_file = async_mock.CoroutineMock(
             return_value=(True, None)
         )
-        self.session_inject = {}
-        self.context = AdminRequestContext.test_context(self.session_inject)
+        self.profile = InMemoryProfile.test_profile()
+        self.context = self.profile.context
+        setattr(self.context, "profile", self.profile)
         self.context.injector.bind_instance(BaseTailsServer, self.tails_server)
         self.request_dict = {
             "context": self.context,

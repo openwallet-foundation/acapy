@@ -375,6 +375,20 @@ class DIDXManager(BaseConnectionManager):
         # Determine what key will need to sign the response
         if recipient_verkey:  # peer DID
             connection_key = recipient_verkey
+            try:
+                async with self.profile.session() as session:
+                    conn_rec = await ConnRecord.retrieve_by_invitation_key(
+                        session=session,
+                        invitation_key=connection_key,
+                        their_role=ConnRecord.Role.REQUESTER.rfc23,
+                    )
+            except StorageNotFoundError:
+                if recipient_verkey:
+                    raise DIDXManagerError(
+                        "No explicit invitation found for pairwise connection "
+                        f"in state {ConnRecord.State.INVITATION.rfc23}: "
+                        "a prior connection request may have updated the connection state"
+                    )
         else:
             if not self.profile.settings.get("public_invites"):
                 raise DIDXManagerError(
@@ -391,20 +405,14 @@ class DIDXManager(BaseConnectionManager):
                 raise DIDXManagerError(f"Request DID {recipient_did} is not public")
             connection_key = my_info.verkey
 
-        try:
             async with self.profile.session() as session:
-                conn_rec = await ConnRecord.retrieve_by_invitation_key(
+                conn_records = await ConnRecord.retrieve_by_invitation_msg_id(
                     session=session,
-                    invitation_key=connection_key,
+                    invitation_msg_id=request._thread.pthid,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
-        except StorageNotFoundError:
-            if recipient_verkey:
-                raise DIDXManagerError(
-                    "No explicit invitation found for pairwise connection "
-                    f"in state {ConnRecord.State.INVITATION.rfc23}: "
-                    "a prior connection request may have updated the connection state"
-                )
+            if len(conn_records) == 1:
+                conn_rec = conn_records[0]
 
         if conn_rec:  # invitation was explicit
             connection_key = conn_rec.invitation_key

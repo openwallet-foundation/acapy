@@ -7,7 +7,11 @@ from typing import Sequence
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.base import BaseError
-from ..config.ledger import get_genesis_transactions, ledger_config
+from ..config.ledger import (
+    get_genesis_transactions,
+    ledger_config,
+    load_multiple_genesis_transactions_from_config,
+)
 from ..config.util import common_config
 from ..config.wallet import wallet_config
 from ..protocols.coordinate_mediation.mediation_invite_store import (
@@ -36,7 +40,14 @@ async def provision(settings: dict):
     context = await context_builder.build_context()
 
     try:
-        await get_genesis_transactions(context.settings)
+        if context.settings.get("ledger.ledger_config_list"):
+            await load_multiple_genesis_transactions_from_config(context.settings)
+        if (
+            context.settings.get("ledger.genesis_transactions")
+            or context.settings.get("ledger.genesis_file")
+            or context.settings.get("ledger.genesis_url")
+        ):
+            await get_genesis_transactions(context.settings)
 
         root_profile, public_did = await wallet_config(context, provision=True)
 

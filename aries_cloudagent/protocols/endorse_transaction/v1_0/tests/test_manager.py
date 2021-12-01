@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 
@@ -388,10 +389,13 @@ class TestTransactionManager(AsyncTestCase):
             messages_attach=self.test_messages_attach,
             connection_id=self.test_connection_id,
         )
-
-        self.ledger.get_indy_storage = async_mock.MagicMock(
-            return_value=async_mock.MagicMock(add_record=async_mock.CoroutineMock())
+        future = asyncio.Future()
+        future.set_result(
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(add_record=async_mock.CoroutineMock())
+            )
         )
+        self.ledger.get_indy_storage = future
         self.ledger.txn_submit = async_mock.CoroutineMock(
             return_value=json.dumps(
                 {
