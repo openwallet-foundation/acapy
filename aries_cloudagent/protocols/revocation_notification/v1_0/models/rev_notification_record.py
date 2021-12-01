@@ -152,7 +152,6 @@ class RevNotificationRecordSchema(BaseRecordSchema):
             "the credential now being revoked; required if notify is true"
         ),
         required=False,
-        **UUID4,
     )
     comment = fields.Str(
         description="Optional comment to include in revocation notification",

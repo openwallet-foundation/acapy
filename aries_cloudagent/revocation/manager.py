@@ -107,6 +107,7 @@ class RevocationManager:
             )
 
         if notify:
+            thread_id = thread_id or f"indy::{rev_reg_id}::{cred_rev_id}"
             rev_notify_rec = RevNotificationRecord(
                 rev_reg_id=rev_reg_id,
                 cred_rev_id=cred_rev_id,
@@ -115,7 +116,7 @@ class RevocationManager:
                 comment=comment,
             )
             async with self._profile.session() as session:
-                await rev_notify_rec.save(session, reason="New revaction notification")
+                await rev_notify_rec.save(session, reason="New revocation notification")
 
         if publish:
             rev_reg = await revoc.get_ledger_registry(rev_reg_id)

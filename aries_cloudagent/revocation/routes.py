@@ -157,11 +157,10 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
 
         notify = data.get("notify")
         connection_id = data.get("connection_id")
-        thread_id = data.get("thread_id")
 
-        if notify and not (connection_id and thread_id):
+        if notify and not connection_id:
             raise ValidationError(
-                "Request must specify thread_id and connection_id if notify is true"
+                "Request must specify connection_id if notify is true"
             )
 
     publish = fields.Boolean(
@@ -189,7 +188,6 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
             "the credential now being revoked; required if notify is true"
         ),
         required=False,
-        **UUID4,
     )
     comment = fields.Str(
         description="Optional comment to include in revocation notification",
@@ -379,12 +377,9 @@ async def revoke(request: web.BaseRequest):
     body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
     notify = body.get("notify")
     connection_id = body.get("connection_id")
-    thread_id = body.get("thread_id")
 
-    if notify and not (connection_id and thread_id):
-        raise web.HTTPBadRequest(
-            reason="thread_id and connection_id must be set when notify is true"
-        )
+    if notify and not connection_id:
+        raise web.HTTPBadRequest(reason="connection_id must be set when notify is true")
 
     rev_manager = RevocationManager(context.profile)
     try:
