@@ -170,3 +170,10 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
                     wallet_config.call_args[0][0].settings.get("wallet.name")
                     == multitenant_sub_wallet_name
                 )
+
+    async def test_remove_wallet_profile(self):
+        test_profile = InMemoryProfile.test_profile()
+
+        with async_mock.patch.object(InMemoryProfile, "remove") as profile_remove:
+            await self.manager.remove_wallet_profile(test_profile)
+            profile_remove.assert_called_once_with()

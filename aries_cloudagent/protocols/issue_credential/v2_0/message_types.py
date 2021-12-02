@@ -57,3 +57,7 @@ ATTACHMENT_FORMAT = {
         V20CredFormat.Format.LD_PROOF.api: "aries/ld-proof-vc@v1.0",
     },
 }
+
+CONTROLLERS = DIDCommPrefix.qualify_all(
+    {"issue-credential/2.0": f"{PROTOCOL_PACKAGE}.controller.Controller"}
+)

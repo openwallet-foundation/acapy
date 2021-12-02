@@ -25,3 +25,7 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         PROBLEM_REPORT: f"{PROTOCOL_PACKAGE}.messages.problem_report.OOBProblemReport",
     }
 )
+
+CONTROLLERS = DIDCommPrefix.qualify_all(
+    {"out-of-band/1.0": f"{PROTOCOL_PACKAGE}.controller.Controller"}
+)

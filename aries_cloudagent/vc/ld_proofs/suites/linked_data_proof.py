@@ -11,7 +11,7 @@ from ..check import get_properties_without_context
 from ..constants import SECURITY_CONTEXT_URL
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
-from ..purposes import ProofPurpose
+from ..purposes import _ProofPurpose as ProofPurpose
 from ..validation_result import ProofResult
 
 

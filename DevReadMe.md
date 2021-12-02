@@ -109,6 +109,8 @@ aca-py provision --wallet-type indy --seed $SEED
 
 For additional `provision` options, execute `aca-py provision --help`.
 
+Additional information about wallet storages can be found [here](Databases.md).
+
 ### Mediation
 
 ACA-Py can also run in mediator mode - ACA-Py can be run *as* a mediator (it can mediate connections for other agents), or it can connect to an external mediator to mediate its own connections.  See the [docs on mediation](Mediation.md) for more info.
@@ -150,6 +152,10 @@ PORTS="5000:5000 8000:8000 1000:1000" ./scripts/run_docker start --inbound-trans
 ```
 
 Refer to [the previous section](#Running) for instructions on how to run the software.
+
+### Logging
+
+You can find more details about logging and log levels [here](Logging.md).
 
 ### Running Tests
 

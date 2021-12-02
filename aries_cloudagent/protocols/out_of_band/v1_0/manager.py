@@ -323,7 +323,7 @@ class OutOfBandManager(BaseConnectionManager):
 
                 async with self.profile.session() as session:
                     await conn_rec.metadata_set(
-                        session, "mediation", {"id": mediation_id}
+                        session, "mediation", {"id": mediation_record.mediation_id}
                     )
 
                 if keylist_updates:
@@ -985,9 +985,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         """
         try:
-            # ID of Out-of-Band invitation to use as a pthid
-            # pthid = invi_msg._id
-            pthid = conn_record.invitation_msg_id
+            pthid = invi_msg._id
             reuse_msg = HandshakeReuse()
             thid = reuse_msg._id
             reuse_msg.assign_thread_id(thid=thid, pthid=pthid)
@@ -1012,10 +1010,25 @@ class OutOfBandManager(BaseConnectionManager):
                 f"Error on creating and sending a handshake reuse message: {err}"
             )
 
+    async def delete_stale_connection_by_invitation(self, invi_msg_id: str):
+        """Delete unused connections, using existing an active connection instead."""
+        post_filter = {}
+        post_filter["invitation_msg_id"] = invi_msg_id
+        post_filter["invitation_mode"] = "once"
+        post_filter["state"] = "invitation"
+        async with self.profile.session() as session:
+            conn_records = await ConnRecord.query(
+                session,
+                post_filter_positive=post_filter,
+            )
+            for conn_rec in conn_records:
+                await conn_rec.delete_record(session)
+
     async def receive_reuse_message(
         self,
         reuse_msg: HandshakeReuse,
         receipt: MessageReceipt,
+        conn_rec: ConnRecord,
     ) -> None:
         """
         Receive and process a HandshakeReuse message under RFC 0434.
@@ -1034,67 +1047,23 @@ class OutOfBandManager(BaseConnectionManager):
             or the connection does not exists
 
         """
-        try:
-            invi_msg_id = reuse_msg._thread.pthid
-            reuse_msg_id = reuse_msg._thread.thid
-            tag_filter = {}
-            post_filter = {}
-            # post_filter["state"] = "active"
-            # tag_filter["their_did"] = receipt.sender_did
-            post_filter["invitation_msg_id"] = invi_msg_id
-            conn_record = await self.find_existing_connection(
-                tag_filter=tag_filter, post_filter=post_filter
+        invi_msg_id = reuse_msg._thread.pthid
+        reuse_msg_id = reuse_msg._thread.thid
+        responder = self.profile.inject_or(BaseResponder)
+        reuse_accept_msg = HandshakeReuseAccept()
+        reuse_accept_msg.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
+        connection_targets = await self.fetch_connection_targets(connection=conn_rec)
+        if responder:
+            await responder.send(
+                message=reuse_accept_msg,
+                target_list=connection_targets,
             )
-            responder = self.profile.inject_or(BaseResponder)
-            if conn_record is not None:
-                # For ConnRecords created using did-exchange
-                reuse_accept_msg = HandshakeReuseAccept()
-                reuse_accept_msg.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
-                connection_targets = await self.fetch_connection_targets(
-                    connection=conn_record
-                )
-                if responder:
-                    await responder.send(
-                        message=reuse_accept_msg,
-                        target_list=connection_targets,
-                    )
-                # This is not required as now we attaching the invitation_msg_id
-                # using original invitation [from existing connection]
-                #
-                # Delete the ConnRecord created; re-use existing connection
-                # invi_id_post_filter = {}
-                # invi_id_post_filter["invitation_msg_id"] = invi_msg_id
-                # conn_rec_to_delete = await self.find_existing_connection(
-                #     tag_filter={},
-                #     post_filter=invi_id_post_filter,
-                # )
-                # if conn_rec_to_delete is not None:
-                #     if conn_record.connection_id != conn_rec_to_delete.connection_id:
-                #         await conn_rec_to_delete.delete_record(session=self._session)
-            else:
-                conn_record = await self.find_existing_connection(
-                    tag_filter={"their_did": receipt.sender_did}, post_filter={}
-                )
-                # Problem Report is redundant in this case as with no active
-                # connection, it cannot reach the invitee any way
-                if conn_record is not None:
-                    # For ConnRecords created using RFC 0160 connections
-                    reuse_accept_msg = HandshakeReuseAccept()
-                    reuse_accept_msg.assign_thread_id(
-                        thid=reuse_msg_id, pthid=invi_msg_id
-                    )
-                    connection_targets = await self.fetch_connection_targets(
-                        connection=conn_record
-                    )
-                    if responder:
-                        await responder.send(
-                            message=reuse_accept_msg,
-                            target_list=connection_targets,
-                        )
-        except StorageNotFoundError:
-            raise OutOfBandManagerError(
-                (f"No existing ConnRecord found for OOB Invitee, {receipt.sender_did}"),
-            )
+        # Update ConnRecord's invi_msg_id
+        async with self._profile.session() as session:
+            conn_rec.invitation_msg_id = invi_msg_id
+            await conn_rec.save(session, reason="Assigning new invitation_msg_id")
+        # Delete the ConnRecord created; re-use existing connection
+        await self.delete_stale_connection_by_invitation(invi_msg_id)
 
     async def receive_reuse_accepted_message(
         self,
@@ -1129,6 +1098,10 @@ class OutOfBandManager(BaseConnectionManager):
                 assert thread_reuse_msg_id == conn_reuse_msg_id
                 await conn_record.metadata_set(
                     session=session, key="reuse_msg_state", value="accepted"
+                )
+                conn_record.invitation_msg_id = invi_msg_id
+                await conn_record.save(
+                    session, reason="Assigning new invitation_msg_id"
                 )
         except Exception as e:
             raise OutOfBandManagerError(

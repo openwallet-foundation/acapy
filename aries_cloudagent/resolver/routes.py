@@ -90,8 +90,8 @@ async def resolve_did(request: web.Request):
 
     did = request.match_info["did"]
     try:
-        session = await context.session()
-        resolver = session.inject(DIDResolver)
+        async with context.profile.session() as session:
+            resolver = session.inject(DIDResolver)
         result: ResolutionResult = await resolver.resolve_with_metadata(
             context.profile, did
         )

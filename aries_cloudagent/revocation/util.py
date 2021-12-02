@@ -1,11 +1,12 @@
 """Revocation utilities."""
 
 import re
+from typing import Sequence
 
 from ..core.profile import Profile
 from ..protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
 
 
@@ -14,6 +15,8 @@ EVENT_LISTENER_PATTERN = re.compile(f"^{REVOCATION_EVENT_PREFIX}(.*)?$")
 REVOCATION_REG_EVENT = "REGISTRY"
 REVOCATION_ENTRY_EVENT = "ENTRY"
 REVOCATION_TAILS_EVENT = "TAILS"
+REVOCATION_PUBLISHED_EVENT = "published"
+REVOCATION_CLEAR_PENDING_EVENT = "clear-pending"
 
 
 async def notify_revocation_reg_event(
@@ -74,3 +77,22 @@ async def notify_revocation_tails_file_event(
         event_id,
         meta_data,
     )
+
+
+async def notify_revocation_published_event(
+    profile: Profile,
+    rev_reg_id: str,
+    crids: Sequence[str],
+):
+    """Send notification of credential revoked as issuer."""
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::{rev_reg_id}"
+    await profile.notify(topic, {"rev_reg_id": rev_reg_id, "crids": crids})
+
+
+async def notify_pending_cleared_event(
+    profile: Profile,
+    rev_reg_id: str,
+):
+    """Send notification of credential revoked as issuer."""
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_CLEAR_PENDING_EVENT}::{rev_reg_id}"
+    await profile.notify(topic, {"rev_reg_id": rev_reg_id})

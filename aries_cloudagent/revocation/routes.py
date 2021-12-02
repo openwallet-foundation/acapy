@@ -3,6 +3,7 @@
 import json
 import logging
 from asyncio import shield
+import re
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -59,7 +60,7 @@ from .models.issuer_cred_rev_record import (
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .util import (
-    EVENT_LISTENER_PATTERN,
+    REVOCATION_EVENT_PREFIX,
     REVOCATION_REG_EVENT,
     REVOCATION_ENTRY_EVENT,
     REVOCATION_TAILS_EVENT,
@@ -149,11 +150,47 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
 class RevokeRequestSchema(CredRevRecordQueryStringSchema):
     """Parameters and validators for revocation request."""
 
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate fields - connection_id and thread_id must be present if notify."""
+        super().validate_fields(data, **kwargs)
+
+        notify = data.get("notify")
+        connection_id = data.get("connection_id")
+
+        if notify and not connection_id:
+            raise ValidationError(
+                "Request must specify connection_id if notify is true"
+            )
+
     publish = fields.Boolean(
         description=(
             "(True) publish revocation to ledger immediately, or "
             "(default, False) mark it pending"
         ),
+        required=False,
+    )
+    notify = fields.Boolean(
+        description="Send a notification to the credential recipient",
+        required=False,
+    )
+    connection_id = fields.Str(
+        description=(
+            "Connection ID to which the revocation notification will be sent; "
+            "required if notify is true"
+        ),
+        required=False,
+        **UUID4,
+    )
+    thread_id = fields.Str(
+        description=(
+            "Thread ID of the credential exchange message thread resulting in "
+            "the credential now being revoked; required if notify is true"
+        ),
+        required=False,
+    )
+    comment = fields.Str(
+        description="Optional comment to include in revocation notification",
         required=False,
     )
 
@@ -335,20 +372,24 @@ async def revoke(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
     body = await request.json()
-
-    rev_reg_id = body.get("rev_reg_id")
-    cred_rev_id = body.get("cred_rev_id")  # numeric str, which indy wants
     cred_ex_id = body.get("cred_ex_id")
-    publish = body.get("publish")
+    body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
+    notify = body.get("notify")
+    connection_id = body.get("connection_id")
+
+    if notify and not connection_id:
+        raise web.HTTPBadRequest(reason="connection_id must be set when notify is true")
 
     rev_manager = RevocationManager(context.profile)
     try:
         if cred_ex_id:
-            await rev_manager.revoke_credential_by_cred_ex_id(cred_ex_id, publish)
+            # rev_reg_id and cred_rev_id should not be present so we can
+            # safely splat the body
+            await rev_manager.revoke_credential_by_cred_ex_id(**body)
         else:
-            await rev_manager.revoke_credential(rev_reg_id, cred_rev_id, publish)
+            # no cred_ex_id so we can safely splat the body
+            await rev_manager.revoke_credential(**body)
     except (
         RevocationManagerError,
         RevocationError,
@@ -433,14 +474,14 @@ async def create_rev_reg(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
+    profile = context.profile
     body = await request.json()
 
     credential_definition_id = body.get("credential_definition_id")
     max_cred_num = body.get("max_cred_num")
 
     # check we published this cred def
-    async with context.session() as session:
+    async with profile.session() as session:
         storage = session.inject(BaseStorage)
 
         found = await storage.find_all_records(
@@ -453,14 +494,14 @@ async def create_rev_reg(request: web.BaseRequest):
         )
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = IndyRevocation(profile)
         issuer_rev_reg_rec = await revoc.init_issuer_registry(
             credential_definition_id,
             max_cred_num=max_cred_num,
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
-    await shield(issuer_rev_reg_rec.generate_registry(context.profile))
+    await shield(issuer_rev_reg_rec.generate_registry(profile))
 
     return web.json_response({"result": issuer_rev_reg_rec.serialize()})
 
@@ -490,7 +531,7 @@ async def rev_regs_created(request: web.BaseRequest):
     tag_filter = {
         tag: request.query[tag] for tag in search_tags if tag in request.query
     }
-    async with context.session() as session:
+    async with context.profile.session() as session:
         found = await IssuerRevRegRecord.query(session, tag_filter)
 
     return web.json_response({"rev_reg_ids": [record.revoc_reg_id for record in found]})
@@ -547,7 +588,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    async with context.session() as session:
+    async with context.profile.session() as session:
         try:
             await IssuerRevRegRecord.retrieve_by_revoc_reg_id(session, rev_reg_id)
         except StorageNotFoundError as err:
@@ -583,7 +624,7 @@ async def get_cred_rev_record(request: web.BaseRequest):
     cred_ex_id = request.query.get("cred_ex_id")
 
     try:
-        async with context.session() as session:
+        async with context.profile.session() as session:
             if rev_reg_id and cred_rev_id:
                 rec = await IssuerCredRevRecord.retrieve_by_ids(
                     session, rev_reg_id, cred_rev_id
@@ -718,6 +759,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
     rev_reg_id = request.match_info["rev_reg_id"]
     create_transaction_for_endorser = json.loads(
@@ -728,19 +770,19 @@ async def send_rev_reg_def(request: web.BaseRequest):
     connection_id = request.query.get("conn_id")
 
     # check if we need to endorse
-    if is_author_role(context.profile):
+    if is_author_role(profile):
         # authors cannot write to the ledger
         write_ledger = False
         create_transaction_for_endorser = True
         if not connection_id:
             # author has not provided a connection id, so determine which to use
-            connection_id = await get_endorser_connection_id(context.profile)
+            connection_id = await get_endorser_connection_id(profile)
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
 
     if not write_ledger:
         try:
-            async with context.session() as session:
+            async with profile.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
@@ -749,8 +791,10 @@ async def send_rev_reg_def(request: web.BaseRequest):
         except BaseModelError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        session = await context.session()
-        endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        async with profile.session() as session:
+            endorser_info = await connection_record.metadata_get(
+                session, "endorser_info"
+            )
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason="Endorser Info is not set up in "
@@ -764,11 +808,11 @@ async def send_rev_reg_def(request: web.BaseRequest):
         endorser_did = endorser_info["endorser_did"]
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = IndyRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
 
         rev_reg_resp = await rev_reg.send_def(
-            context.profile,
+            profile,
             write_ledger=write_ledger,
             endorser_did=endorser_did,
         )
@@ -782,7 +826,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
         return web.json_response({"result": rev_reg.serialize()})
 
     else:
-        transaction_mgr = TransactionManager(context.profile)
+        transaction_mgr = TransactionManager(profile)
         try:
             transaction = await transaction_mgr.create_record(
                 messages_attach=rev_reg_resp["result"], connection_id=connection_id
@@ -793,7 +837,10 @@ async def send_rev_reg_def(request: web.BaseRequest):
         # if auto-request, send the request to the endorser
         if context.settings.get_value("endorser.auto_request"):
             try:
-                transaction, transaction_request = await transaction_mgr.create_request(
+                (
+                    transaction,
+                    transaction_request,
+                ) = await transaction_mgr.create_request(
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
@@ -827,6 +874,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
@@ -837,19 +885,19 @@ async def send_rev_reg_entry(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
 
     # check if we need to endorse
-    if is_author_role(context.profile):
+    if is_author_role(profile):
         # authors cannot write to the ledger
         write_ledger = False
         create_transaction_for_endorser = True
         if not connection_id:
             # author has not provided a connection id, so determine which to use
-            connection_id = await get_endorser_connection_id(context.profile)
+            connection_id = await get_endorser_connection_id(profile)
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
 
     if not write_ledger:
         try:
-            async with context.session() as session:
+            async with profile.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
@@ -858,8 +906,10 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         except BaseModelError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        session = await context.session()
-        endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        async with profile.session() as session:
+            endorser_info = await connection_record.metadata_get(
+                session, "endorser_info"
+            )
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason="Endorser Info is not set up in "
@@ -873,10 +923,10 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         endorser_did = endorser_info["endorser_did"]
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = IndyRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         rev_entry_resp = await rev_reg.send_entry(
-            context.profile,
+            profile,
             write_ledger=write_ledger,
             endorser_did=endorser_did,
         )
@@ -892,10 +942,11 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         return web.json_response({"result": rev_reg.serialize()})
 
     else:
-        transaction_mgr = TransactionManager(context.profile)
+        transaction_mgr = TransactionManager(profile)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=rev_entry_resp["result"], connection_id=connection_id
+                messages_attach=rev_entry_resp["result"],
+                connection_id=connection_id,
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -903,7 +954,10 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         # if auto-request, send the request to the endorser
         if context.settings.get_value("endorser.auto_request"):
             try:
-                transaction, transaction_request = await transaction_mgr.create_request(
+                (
+                    transaction,
+                    transaction_request,
+                ) = await transaction_mgr.create_request(
                     transaction=transaction,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
@@ -936,16 +990,16 @@ async def update_rev_reg(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
+    profile = context.profile
     body = await request.json()
     tails_public_uri = body.get("tails_public_uri")
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = IndyRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        await rev_reg.set_tails_file_public_uri(context.profile, tails_public_uri)
+        await rev_reg.set_tails_file_public_uri(profile, tails_public_uri)
 
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -971,13 +1025,14 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     rev_reg_id = request.match_info["rev_reg_id"]
     state = request.query.get("state")
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = IndyRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        async with context.session() as session:
+        async with profile.session() as session:
             await rev_reg.set_state(session, state)
 
         LOGGER.debug("set registry %s state: %s", rev_reg_id, state)
@@ -990,24 +1045,18 @@ async def set_rev_reg_state(request: web.BaseRequest):
 
 def register_events(event_bus: EventBus):
     """Subscribe to any events we need to support."""
-    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_revocation_event)
-
-
-async def on_revocation_event(profile: Profile, event: Event):
-    """Handle any events we need to support."""
-    event_topic_parts = event.topic.split("::")
-    if event_topic_parts[2] == REVOCATION_REG_EVENT:
-        # create the revocation registry (ledger transaction may require endorsement)
-        await on_revocation_registry_event(profile, event)
-    elif event_topic_parts[2] == REVOCATION_ENTRY_EVENT:
-        # create the revocation entry (ledger transaction may require endorsement)
-        await on_revocation_entry_event(profile, event)
-    elif event_topic_parts[2] == REVOCATION_TAILS_EVENT:
-        # upload tails file
-        await on_revocation_tails_file_event(profile, event)
-    else:
-        # TODO error handling
-        pass
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_REG_EVENT}.*"),
+        on_revocation_registry_event,
+    )
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_ENTRY_EVENT}.*"),
+        on_revocation_entry_event,
+    )
+    event_bus.subscribe(
+        re.compile(f"^{REVOCATION_EVENT_PREFIX}{REVOCATION_TAILS_EVENT}.*"),
+        on_revocation_tails_file_event,
+    )
 
 
 async def on_revocation_registry_event(profile: Profile, event: Event):

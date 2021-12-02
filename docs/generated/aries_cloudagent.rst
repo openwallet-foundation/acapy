@@ -19,7 +19,6 @@ Subpackages
    aries_cloudagent.config
    aries_cloudagent.connections
    aries_cloudagent.core
-   aries_cloudagent.crypto
    aries_cloudagent.did
    aries_cloudagent.holder
    aries_cloudagent.indy

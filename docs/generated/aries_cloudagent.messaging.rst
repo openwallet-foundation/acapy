@@ -12,7 +12,6 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   aries_cloudagent.messaging.ack
    aries_cloudagent.messaging.credential_definitions
    aries_cloudagent.messaging.decorators
    aries_cloudagent.messaging.jsonld

@@ -151,7 +151,7 @@ class MediationInviteStore:
 
         :param provided_mediation_invitation: mediation invite provided by user
         :return: mediation invite to use/that was used to connect to the mediator. None if
-        no invitation was provided/provisioned.
+            no invitation was provided/provisioned.
         """
 
         stored_invite = await self.__retrieve()
