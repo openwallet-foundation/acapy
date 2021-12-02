@@ -713,12 +713,6 @@ class TestConnectionManager(AsyncTestCase):
                 conn_rec = await self.manager.receive_request(mock_request, receipt)
                 assert conn_rec
 
-            messages = self.responder.messages
-            assert len(messages) == 1
-            (result, target) = messages[0]
-            assert type(result) == ConnectionResponse
-            assert "connection_id" in target
-
     async def test_receive_request_public_did_conn_invite(self):
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock()
