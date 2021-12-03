@@ -1,8 +1,10 @@
 """Credential definition admin routes."""
 
 import json
+from time import time
 
-from asyncio import ensure_future, shield
+# from asyncio import ensure_future, shield
+from asyncio import shield
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -16,25 +18,43 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ...admin.request_context import AdminRequestContext
-from ...indy.issuer import IndyIssuer
+from ...core.event_bus import Event, EventBus
+from ...core.profile import Profile
+from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
-from ...protocols.endorse_transaction.v1_0.manager import TransactionManager
+from ...ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    IndyLedgerRequestsExecutor,
+)
+from ...protocols.endorse_transaction.v1_0.manager import (
+    TransactionManager,
+    TransactionManagerError,
+)
 from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
-from ...revocation.error import RevocationError, RevocationNotSupportedError
-from ...revocation.indy import IndyRevocation
-from ...storage.base import BaseStorage
+from ...protocols.endorse_transaction.v1_0.util import (
+    is_author_role,
+    get_endorser_connection_id,
+)
+
+from ...revocation.util import notify_revocation_reg_event
+from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
-from ...tails.base import BaseTailsServer
 
 from ..models.openapi import OpenAPISchema
 from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID
 
 
-from .util import CredDefQueryStringSchema, CRED_DEF_TAGS, CRED_DEF_SENT_RECORD_TYPE
+from .util import (
+    CredDefQueryStringSchema,
+    CRED_DEF_TAGS,
+    CRED_DEF_SENT_RECORD_TYPE,
+    EVENT_LISTENER_PATTERN,
+    notify_cred_def_event,
+)
 
 
 from ..valid import UUIDFour
@@ -148,6 +168,9 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
+    outbound_handler = request["outbound_message_router"]
+
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
     )
@@ -162,10 +185,20 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
 
-    if not write_ledger:
+    # check if we need to endorse
+    if is_author_role(context.profile):
+        # authors cannot write to the ledger
+        write_ledger = False
+        create_transaction_for_endorser = True
+        if not connection_id:
+            # author has not provided a connection id, so determine which to use
+            connection_id = await get_endorser_connection_id(context.profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
 
+    if not write_ledger:
         try:
-            async with context.session() as session:
+            async with profile.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
@@ -174,8 +207,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         except BaseModelError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        session = await context.session()
-        endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        async with profile.session() as session:
+            endorser_info = await connection_record.metadata_get(
+                session, "endorser_info"
+            )
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason="Endorser Info is not set up in "
@@ -210,75 +245,61 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 )
             )
 
-    except LedgerError as e:
+    except (IndyIssuerError, LedgerError) as e:
         raise web.HTTPBadRequest(reason=e.message) from e
 
-    # If revocation is requested and cred def is novel, create revocation registry
-    if support_revocation and novel and write_ledger:
-        profile = context.profile
-        tails_base_url = profile.settings.get("tails_server_base_url")
-        if not tails_base_url:
-            raise web.HTTPBadRequest(reason="tails_server_base_url not configured")
-        try:
-            # Create registry
-            revoc = IndyRevocation(profile)
-            registry_record = await revoc.init_issuer_registry(
-                cred_def_id,
-                max_cred_num=rev_reg_size,
-            )
-
-        except RevocationNotSupportedError as e:
-            raise web.HTTPBadRequest(reason=e.message) from e
-        await shield(registry_record.generate_registry(profile))
-        try:
-            await registry_record.set_tails_file_public_uri(
-                profile, f"{tails_base_url}/{registry_record.revoc_reg_id}"
-            )
-            await registry_record.send_def(profile)
-            await registry_record.send_entry(profile)
-
-            # stage pending registry independent of whether tails server is OK
-            pending_registry_record = await revoc.init_issuer_registry(
-                registry_record.cred_def_id,
-                max_cred_num=registry_record.max_cred_num,
-            )
-            ensure_future(
-                pending_registry_record.stage_pending_registry(profile, max_attempts=16)
-            )
-
-            tails_server = profile.inject(BaseTailsServer)
-            (upload_success, reason) = await tails_server.upload_tails_file(
-                profile,
-                registry_record.revoc_reg_id,
-                registry_record.tails_local_path,
-                interval=0.8,
-                backoff=-0.5,
-                max_attempts=5,  # heuristic: respect HTTP timeout
-            )
-            if not upload_success:
-                raise web.HTTPInternalServerError(
-                    reason=(
-                        f"Tails file for rev reg {registry_record.revoc_reg_id} "
-                        f"failed to upload: {reason}"
-                    )
-                )
-
-        except RevocationError as e:
-            raise web.HTTPBadRequest(reason=e.message) from e
+    meta_data = {
+        "context": {
+            "schema_id": schema_id,
+            "support_revocation": support_revocation,
+            "novel": novel,
+            "tag": tag,
+            "rev_reg_size": rev_reg_size,
+        },
+        "processing": {
+            "create_pending_rev_reg": True,
+        },
+    }
 
     if not create_transaction_for_endorser:
+        # Notify event
+        issuer_did = cred_def_id.split(":")[0]
+        meta_data["context"]["schema_id"] = schema_id
+        meta_data["context"]["cred_def_id"] = cred_def_id
+        meta_data["context"]["issuer_did"] = issuer_did
+        meta_data["processing"]["auto_create_rev_reg"] = True
+        await notify_cred_def_event(context.profile, cred_def_id, meta_data)
+
         return web.json_response({"credential_definition_id": cred_def_id})
 
     else:
-        session = await context.session()
+        meta_data["processing"]["auto_create_rev_reg"] = context.settings.get_value(
+            "endorser.auto_create_rev_reg"
+        )
 
-        transaction_mgr = TransactionManager(session)
+        transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=cred_def["signed_txn"], connection_id=connection_id
+                messages_attach=cred_def["signed_txn"],
+                connection_id=connection_id,
+                meta_data=meta_data,
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if context.settings.get_value("endorser.auto_request"):
+            try:
+                transaction, transaction_request = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+            await outbound_handler(transaction_request, connection_id=connection_id)
 
         return web.json_response({"txn": transaction.serialize()})
 
@@ -334,10 +355,20 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     """
     context: AdminRequestContext = request["context"]
-
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger = context.inject_or(BaseLedger)
+    ledger_id = None
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        cred_def_id,
+        txn_record_type=GET_CRED_DEF,
+    )
+    if isinstance(ledger_info, tuple):
+        ledger_id = ledger_info[0]
+        ledger = ledger_info[1]
+    else:
+        ledger = ledger_info
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -347,7 +378,12 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
     async with ledger:
         cred_def = await ledger.get_credential_definition(cred_def_id)
 
-    return web.json_response({"credential_definition": cred_def})
+    if ledger_id:
+        return web.json_response(
+            {"ledger_id": ledger_id, "credential_definition": cred_def}
+        )
+    else:
+        return web.json_response({"credential_definition": cred_def})
 
 
 @docs(
@@ -369,12 +405,21 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
     """
     context: AdminRequestContext = request["context"]
 
-    session = await context.session()
-    storage = session.inject(BaseStorage)
-
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    ledger_id = None
+    async with context.profile.session() as session:
+        storage = session.inject(BaseStorage)
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        cred_def_id,
+        txn_record_type=GET_CRED_DEF,
+    )
+    if isinstance(ledger_info, tuple):
+        ledger_id = ledger_info[0]
+        ledger = ledger_info[1]
+    else:
+        ledger = ledger_info
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -397,11 +442,96 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
             },
         )
         if 0 == len(found):
-            await ledger.add_cred_def_non_secrets_record(
-                schema_id, iss_did, cred_def_id
+            await add_cred_def_non_secrets_record(
+                session.profile, schema_id, iss_did, cred_def_id
             )
+    if ledger_id:
+        return web.json_response(
+            {"ledger_id": ledger_id, "credential_definition": cred_def}
+        )
+    else:
+        return web.json_response({"credential_definition": cred_def})
 
-    return web.json_response({"credential_definition": cred_def})
+
+def register_events(event_bus: EventBus):
+    """Subscribe to any events we need to support."""
+    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_cred_def_event)
+
+
+async def on_cred_def_event(profile: Profile, event: Event):
+    """Handle any events we need to support."""
+    schema_id = event.payload["context"]["schema_id"]
+    cred_def_id = event.payload["context"]["cred_def_id"]
+    issuer_did = event.payload["context"]["issuer_did"]
+
+    # after the ledger record is written, write the wallet non-secrets record
+    await add_cred_def_non_secrets_record(profile, schema_id, issuer_did, cred_def_id)
+
+    # check if we need to kick off the revocation registry setup
+    meta_data = event.payload
+    support_revocation = meta_data["context"]["support_revocation"]
+    novel = meta_data["context"]["novel"]
+    rev_reg_size = (
+        meta_data["context"].get("rev_reg_size", None) if support_revocation else None
+    )
+    auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
+    create_pending_rev_reg = meta_data["processing"].get(
+        "create_pending_rev_reg", False
+    )
+    endorser_connection_id = (
+        meta_data["endorser"].get("connection_id", None)
+        if "endorser" in meta_data
+        else None
+    )
+    if support_revocation and novel and auto_create_rev_reg:
+        # this kicks off the revocation registry creation process, which is 3 steps:
+        # 1 - create revocation registry (ledger transaction may require endorsement)
+        # 2 - create revocation entry (ledger transaction may require endorsement)
+        # 3 - upload tails file
+        # For a cred def we also automatically create a second "pending" revocation
+        # registry, so when the first one fills up we can continue to issue credentials
+        # without a delay
+        await notify_revocation_reg_event(
+            profile,
+            cred_def_id,
+            rev_reg_size,
+            auto_create_rev_reg=auto_create_rev_reg,
+            create_pending_rev_reg=create_pending_rev_reg,
+            endorser_connection_id=endorser_connection_id,
+        )
+
+
+async def add_cred_def_non_secrets_record(
+    profile: Profile, schema_id: str, issuer_did: str, credential_definition_id: str
+):
+    """
+    Write the wallet non-secrets record for cred def (already written to the ledger).
+
+    Note that the cred def private key signing informtion must already exist in the
+    wallet.
+
+    Args:
+        schema_id: The schema id (or stringified sequence number)
+        issuer_did: The DID of the issuer
+        credential_definition_id: The credential definition id
+
+    """
+    schema_id_parts = schema_id.split(":")
+    cred_def_tags = {
+        "schema_id": schema_id,
+        "schema_issuer_did": schema_id_parts[0],
+        "schema_name": schema_id_parts[-2],
+        "schema_version": schema_id_parts[-1],
+        "issuer_did": issuer_did,
+        "cred_def_id": credential_definition_id,
+        "epoch": str(int(time())),
+    }
+    record = StorageRecord(
+        CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
+    )
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        await storage.add_record(record)
 
 
 async def register(app: web.Application):

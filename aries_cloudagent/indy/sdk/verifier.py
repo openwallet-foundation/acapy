@@ -6,7 +6,7 @@ import logging
 import indy.anoncreds
 from indy.error import IndyError
 
-from ...ledger.indy import IndySdkLedger
+from ...core.profile import Profile
 
 from ..verifier import IndyVerifier
 
@@ -16,15 +16,15 @@ LOGGER = logging.getLogger(__name__)
 class IndySdkVerifier(IndyVerifier):
     """Indy-SDK verifier implementation."""
 
-    def __init__(self, ledger: IndySdkLedger):
+    def __init__(self, profile: Profile):
         """
         Initialize an IndyVerifier instance.
 
         Args:
-            ledger: ledger instance
+            profile: Active Profile instance
 
         """
-        self.ledger = ledger
+        self.profile = profile
 
     async def verify_presentation(
         self,
@@ -48,8 +48,8 @@ class IndySdkVerifier(IndyVerifier):
         """
 
         try:
-            self.non_revoc_intervals(pres_req, pres)
-            await self.check_timestamps(self.ledger, pres_req, pres, rev_reg_defs)
+            self.non_revoc_intervals(pres_req, pres, credential_definitions)
+            await self.check_timestamps(self.profile, pres_req, pres, rev_reg_defs)
             await self.pre_verify(pres_req, pres)
         except ValueError as err:
             LOGGER.error(

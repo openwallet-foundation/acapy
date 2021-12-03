@@ -1,6 +1,8 @@
 from copy import deepcopy
+from .......vc.ld_proofs.error import LinkedDataProofException
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
+from unittest.mock import patch
 from marshmallow import ValidationError
 
 from .. import handler as test_module
@@ -402,18 +404,16 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         await self.handler.receive_proposal(cred_ex_record, cred_proposal_message)
 
     async def test_create_offer(self):
-        cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            role=V20CredExRecord.ROLE_ISSUER,
-            cred_proposal=self.cred_proposal,
-        )
-
         with async_mock.patch.object(
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
             async_mock.CoroutineMock(),
-        ) as mock_can_issue:
-            (cred_format, attachment) = await self.handler.create_offer(cred_ex_record)
+        ) as mock_can_issue, patch.object(
+            test_module, "get_properties_without_context", return_value=[]
+        ):
+            (cred_format, attachment) = await self.handler.create_offer(
+                self.cred_proposal
+            )
 
             mock_can_issue.assert_called_once_with(
                 LD_PROOF_VC_DETAIL["credential"]["issuer"],
@@ -444,25 +444,42 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             ],
         )
 
-        cred_ex_record = V20CredExRecord(cred_proposal=cred_proposal)
-
         with async_mock.patch.object(
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
             async_mock.CoroutineMock(),
-        ):
-            (cred_format, attachment) = await self.handler.create_offer(cred_ex_record)
+        ), patch.object(test_module, "get_properties_without_context", return_value=[]):
+            (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
         # assert BBS url added to context
         assert SECURITY_CONTEXT_BBS_URL in attachment.content["credential"]["@context"]
 
     async def test_create_offer_x_no_proposal(self):
-        cred_ex_record = async_mock.MagicMock(cred_proposal=None)
-
         with self.assertRaises(V20CredFormatError) as context:
-            await self.handler.create_offer(cred_ex_record)
+            await self.handler.create_offer(None)
         assert "Cannot create linked data proof offer without proposal data" in str(
             context.exception
+        )
+
+    async def test_create_offer_x_wrong_attributes(self):
+        missing_properties = ["foo"]
+        with async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_assert_can_issue_with_id_and_proof_type",
+            async_mock.CoroutineMock(),
+        ), patch.object(
+            test_module,
+            "get_properties_without_context",
+            return_value=missing_properties,
+        ), self.assertRaises(
+            LinkedDataProofException
+        ) as context:
+            await self.handler.create_offer(self.cred_proposal)
+
+        assert (
+            f"{len(missing_properties)} attributes dropped. "
+            f"Provide definitions in context to correct. {missing_properties}"
+            in str(context.exception)
         )
 
     async def test_receive_offer(self):

@@ -1,13 +1,44 @@
 """DIF Proof Request Schema."""
-from marshmallow import fields
+from marshmallow import fields, INCLUDE
+from typing import Optional, Union
 
+from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.models.openapi import OpenAPISchema
 
-from .pres_exch import PresentationDefinitionSchema, DIFOptionsSchema
+from .pres_exch import (
+    PresentationDefinitionSchema,
+    PresentationDefinition,
+    DIFOptionsSchema,
+    DIFOptions,
+)
 
 
-class DIFProofRequestSchema(OpenAPISchema):
-    """Schema for DIF Proof request."""
+class DIFProofRequest(BaseModel):
+    """DIF presentation request input detail."""
+
+    class Meta:
+        """DIFProofRequest metadata."""
+
+        schema_class = "DIFProofRequestSchema"
+
+    def __init__(
+        self,
+        presentation_definition: Optional[Union[dict, PresentationDefinition]],
+        options: Optional[Union[dict, DIFOptions]] = None,
+    ) -> None:
+        """Initialize the DIFProofRequest instance."""
+        self.presentation_definition = presentation_definition
+        self.options = options
+
+
+class DIFProofRequestSchema(BaseModelSchema):
+    """Schema for DIF presentation request."""
+
+    class Meta:
+        """Accept parameter overload."""
+
+        unknown = INCLUDE
+        model_class = DIFProofRequest
 
     options = fields.Nested(
         DIFOptionsSchema(),
@@ -49,4 +80,30 @@ class DIFPresSpecSchema(OpenAPISchema):
     presentation_definition = fields.Nested(
         PresentationDefinitionSchema(),
         required=False,
+    )
+    reveal_doc = fields.Dict(
+        description=(
+            "reveal doc [JSON-LD frame] dict used"
+            " to derive the credential when selective"
+            " disclosure is required"
+        ),
+        required=False,
+        example={
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/security/bbs/v1",
+            ],
+            "type": ["VerifiableCredential", "LabReport"],
+            "@explicit": True,
+            "@requireAll": True,
+            "issuanceDate": {},
+            "issuer": {},
+            "credentialSubject": {
+                "Observation": [
+                    {"effectiveDateTime": {}, "@explicit": True, "@requireAll": True}
+                ],
+                "@explicit": True,
+                "@requireAll": True,
+            },
+        },
     )

@@ -7,7 +7,6 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.verifier import IndyVerifier
-from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
@@ -137,7 +136,7 @@ class PresentationManager:
             name=name,
             version=version,
             nonce=nonce,
-            ledger=self._profile.inject(BaseLedger),
+            profile=self._profile,
         )
         presentation_request_message = PresentationRequest(
             comment=comment,
@@ -398,7 +397,9 @@ class PresentationManager:
         verifier = self._profile.inject(IndyVerifier)
         presentation_exchange_record.verified = json.dumps(  # tag: needs string value
             await verifier.verify_presentation(
-                indy_proof_request,
+                dict(
+                    indy_proof_request
+                ),  # copy to avoid changing the proof req in the stored pres exch
                 indy_proof,
                 schemas,
                 cred_defs,

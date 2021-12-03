@@ -45,3 +45,7 @@ ATTACHMENT_FORMAT = {
         V20PresFormat.Format.DIF.api: "dif/presentation-exchange/submission@v1.0",
     },
 }
+
+CONTROLLERS = DIDCommPrefix.qualify_all(
+    {"present-proof/2.0": f"{PROTOCOL_PACKAGE}.controller.Controller"}
+)

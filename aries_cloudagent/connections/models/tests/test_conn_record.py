@@ -178,6 +178,29 @@ class TestConnRecord(AsyncTestCase):
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
             )
 
+    async def test_retrieve_by_invitation_msg_id(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.INVITATION.rfc160,
+            invitation_msg_id="test123",
+        )
+        await record.save(self.session)
+        results = await ConnRecord.retrieve_by_invitation_msg_id(
+            session=self.session,
+            invitation_msg_id="test123",
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+        )
+        assert len(results) == 1
+        assert results[0] == record
+        results = await ConnRecord.retrieve_by_invitation_msg_id(
+            session=self.session,
+            invitation_msg_id="test123",
+            their_role=ConnRecord.Role.REQUESTER.rfc160,
+        )
+        assert len(results) == 0
+
     async def test_retrieve_by_request_id(self):
         record = ConnRecord(
             my_did=self.test_did,

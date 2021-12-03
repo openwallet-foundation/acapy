@@ -4,6 +4,9 @@ import json
 import logging
 from typing import Mapping, Sequence, Text
 
+from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
+    RevNotificationRecord,
+)
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer
@@ -11,6 +14,7 @@ from ..storage.error import StorageNotFoundError
 from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
+from .util import notify_pending_cleared_event, notify_revocation_published_event
 
 
 class RevocationManagerError(BaseError):
@@ -31,7 +35,13 @@ class RevocationManager:
         self._logger = logging.getLogger(__name__)
 
     async def revoke_credential_by_cred_ex_id(
-        self, cred_ex_id: str, publish: bool = False
+        self,
+        cred_ex_id: str,
+        publish: bool = False,
+        notify: bool = False,
+        thread_id: str = None,
+        connection_id: str = None,
+        comment: str = None,
     ):
         """
         Revoke a credential by its credential exchange identifier at issue.
@@ -56,7 +66,13 @@ class RevocationManager:
                 f"credential exchange id {cred_ex_id}"
             ) from err
         return await self.revoke_credential(
-            rev_reg_id=rec.rev_reg_id, cred_rev_id=rec.cred_rev_id, publish=publish
+            rev_reg_id=rec.rev_reg_id,
+            cred_rev_id=rec.cred_rev_id,
+            publish=publish,
+            notify=notify,
+            thread_id=thread_id,
+            connection_id=connection_id,
+            comment=comment,
         )
 
     async def revoke_credential(
@@ -64,6 +80,10 @@ class RevocationManager:
         rev_reg_id: str,
         cred_rev_id: str,
         publish: bool = False,
+        notify: bool = False,
+        thread_id: str = None,
+        connection_id: str = None,
+        comment: str = None,
     ):
         """
         Revoke a credential.
@@ -86,6 +106,18 @@ class RevocationManager:
                 f"No revocation registry record found for id {rev_reg_id}"
             )
 
+        if notify:
+            thread_id = thread_id or f"indy::{rev_reg_id}::{cred_rev_id}"
+            rev_notify_rec = RevNotificationRecord(
+                rev_reg_id=rev_reg_id,
+                cred_rev_id=cred_rev_id,
+                thread_id=thread_id,
+                connection_id=connection_id,
+                comment=comment,
+            )
+            async with self._profile.session() as session:
+                await rev_notify_rec.save(session, reason="New revocation notification")
+
         if publish:
             rev_reg = await revoc.get_ledger_registry(rev_reg_id)
             await rev_reg.get_or_fetch_local_tails_path()
@@ -100,6 +132,9 @@ class RevocationManager:
                 await issuer_rr_rec.send_entry(self._profile)
                 async with self._profile.session() as session:
                     await issuer_rr_rec.clear_pending(session)
+                await notify_revocation_published_event(
+                    self._profile, rev_reg_id, [cred_rev_id]
+                )
 
         else:
             async with self._profile.session() as session:
@@ -108,8 +143,6 @@ class RevocationManager:
     async def publish_pending_revocations(
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,
-        write_ledger: bool = True,
-        endorser_did: str = None,
     ) -> Mapping[Text, Sequence[Text]]:
         """
         Publish pending revocations to the ledger.
@@ -131,46 +164,43 @@ class RevocationManager:
                     - all pending revocations from all revocation registry tagged 0
                     - pending ["1", "2"] from revocation registry tagged 1
                     - no pending revocations from any other revocation registries.
-            write_ledger: wether to write the transaction to the ledger, or prepare a
-                transaction to be endorsed
-            endorser_did: the did of the endorser, if endorsing the transaction
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
         result = {}
         issuer = self._profile.inject(IndyIssuer)
 
-        txn = await self._profile.transaction()
-        issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(txn)
-        for issuer_rr_rec in issuer_rr_recs:
-            rrid = issuer_rr_rec.revoc_reg_id
-            crids = []
-            if not rrid2crid:
-                crids = issuer_rr_rec.pending_pub
-            elif rrid in rrid2crid:
-                crids = [
-                    crid
-                    for crid in issuer_rr_rec.pending_pub
-                    if crid in (rrid2crid[rrid] or []) or not rrid2crid[rrid]
-                ]
-            if crids:
-                # FIXME - must use the same transaction
-                (delta_json, failed_crids) = await issuer.revoke_credentials(
-                    issuer_rr_rec.revoc_reg_id,
-                    issuer_rr_rec.tails_local_path,
-                    crids,
-                )
-                issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
-                send_entry_result = await issuer_rr_rec.send_entry(
-                    self._profile, write_ledger=write_ledger, endorser_did=endorser_did
-                )
-                if endorser_did and not write_ledger:
-                    return send_entry_result
+        async with self._profile.transaction() as txn:
+            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(txn)
+            for issuer_rr_rec in issuer_rr_recs:
+                rrid = issuer_rr_rec.revoc_reg_id
+                crids = []
+                if not rrid2crid:
+                    crids = issuer_rr_rec.pending_pub
+                elif rrid in rrid2crid:
+                    crids = [
+                        crid
+                        for crid in issuer_rr_rec.pending_pub
+                        if crid in (rrid2crid[rrid] or []) or not rrid2crid[rrid]
+                    ]
+                if crids:
+                    # FIXME - must use the same transaction
+                    (delta_json, failed_crids) = await issuer.revoke_credentials(
+                        issuer_rr_rec.revoc_reg_id,
+                        issuer_rr_rec.tails_local_path,
+                        crids,
+                        transaction=txn,
+                    )
+                    issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
+                    await issuer_rr_rec.send_entry(self._profile)
+                    published = [crid for crid in crids if crid not in failed_crids]
+                    result[issuer_rr_rec.revoc_reg_id] = published
+                    await issuer_rr_rec.clear_pending(txn, published)
+                    await txn.commit()
 
-                published = [crid for crid in crids if crid not in failed_crids]
-                result[issuer_rr_rec.revoc_reg_id] = published
-                await issuer_rr_rec.clear_pending(txn, published)
-                await txn.commit()
+                    await notify_revocation_published_event(
+                        self._profile, issuer_rr_rec.revoc_reg_id, crids
+                    )
 
         return result
 
@@ -213,6 +243,7 @@ class RevocationManager:
                 await issuer_rr_rec.clear_pending(txn, (purge or {}).get(rrid))
                 if issuer_rr_rec.pending_pub:
                     result[rrid] = issuer_rr_rec.pending_pub
+                await notify_pending_cleared_event(self._profile, rrid)
             await txn.commit()
 
         return result

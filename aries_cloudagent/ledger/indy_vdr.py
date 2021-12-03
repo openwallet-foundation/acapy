@@ -12,7 +12,7 @@ from datetime import datetime, date
 from io import StringIO
 from pathlib import Path
 from time import time
-from typing import Sequence, Tuple, Union
+from typing import Sequence, Tuple, Union, Optional
 
 from indy_vdr import ledger, open_pool, Pool, Request, VdrError
 
@@ -1006,6 +1006,21 @@ class IndyVdrLedger(BaseLedger):
             nym = self.did_to_nym(nym)
             return f"did:sov:{nym}"
 
+    async def build_and_return_get_nym_request(
+        self, submitter_did: Optional[str], target_did: str
+    ) -> str:
+        """Build GET_NYM request and return request_json."""
+        try:
+            request_json = ledger.build_get_nym_request(submitter_did, target_did)
+            return request_json
+        except VdrError as err:
+            raise LedgerError("Exception when building get-nym request") from err
+
+    async def submit_get_nym_request(self, request_json: str) -> str:
+        """Submit GET_NYM request to ledger and return response_json."""
+        response_json = await self._submit(request_json)
+        return response_json
+
     async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
         """
         Rotate keypair for public DID: create new key, submit to ledger, update wallet.
@@ -1022,14 +1037,14 @@ class IndyVdrLedger(BaseLedger):
             del wallet
             await txn.commit()
 
-        # submit to ledger (retain role and alias)
+        # fetch current nym info from ledger
         nym = self.did_to_nym(public_did)
         try:
-            nym_req = ledger.build_get_nym_request(public_did, nym)
+            get_nym_req = ledger.build_get_nym_request(public_did, nym)
         except VdrError as err:
             raise LedgerError("Exception when building nym request") from err
 
-        response = await self._submit(nym_req)
+        response = await self._submit(get_nym_req)
         data = json.loads(response["data"])
         if not data:
             raise BadLedgerRequestError(
@@ -1051,7 +1066,8 @@ class IndyVdrLedger(BaseLedger):
         txn_data_data = txn_resp_data["txn"]["data"]
         role_token = Role.get(txn_data_data.get("role")).token()
         alias = txn_data_data.get("alias")
-        await self.register_nym(public_did, verkey, role_token, alias)
+        # submit the updated nym record
+        await self.register_nym(public_did, verkey, alias=alias, role=role_token)
 
         # update wallet
         async with self.profile.transaction() as txn:
@@ -1352,6 +1368,9 @@ class IndyVdrLedger(BaseLedger):
         sign_did: DIDInfo = sentinel,
     ) -> str:
         """Write the provided (signed and possibly endorsed) transaction to the ledger."""
-        return await self._submit(
+        resp = await self._submit(
             request_json, sign=sign, taa_accept=taa_accept, sign_did=sign_did
         )
+        # match the format returned by indy sdk
+        sdk_resp = {"op": "REPLY", "result": resp}
+        return json.dumps(sdk_resp)

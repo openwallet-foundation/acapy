@@ -1,3 +1,5 @@
+# Credential Revocation
+
 These are the ACA-py steps and APIs involved to support credential revocation.
 
 Run ACA-Py with tails server support enabled. You will need to have the URL of an running instance of https://github.com/bcgov/indy-tails-server.
@@ -47,8 +49,12 @@ Include the command line parameter `--tails-server-base-url <indy-tails-server u
 2.  Revoking credential
 
     ```
-    POST /issue-credential/revoke?rev_reg_id=<revocation_registry_id>
-         &cred_rev_id=<credential_revocation_id>&publish=<true|false>
+    POST /revocation/revoke
+    {
+        "rev_reg_id": <revocation_registry_id>
+        "cred_rev_id": <credential_revocation_id>,
+        "publish": <true|false>
+    }
     ```
 
     If publish=false, you must use `​/issue-credential​/publish-revocations` to publish
@@ -93,3 +99,55 @@ Include the command line parameter `--tails-server-base-url <indy-tails-server u
        }
      }
     ```
+
+## Revocation Notification
+
+ACA-Py supports [Revocation Notification v1.0](https://github.com/hyperledger/aries-rfcs/blob/main/features/0183-revocation-notification/README.md).
+
+> **Note:** The optional `~please_ack` is not currently supported.
+
+
+### Issuer Role
+
+To notify connections to which credentials have been issued, during step 2
+above, include the following attributes in the request body:
+
+- `notify` - A boolean value indicating whether or not a notification should be
+  sent. If the argument `--notify-revocation` is used on startup, this value
+  defaults to `true`. Otherwise, it will default to `false`. This value
+  overrides the `--notify-revocation` flag; the value of `notify` always takes
+  precedence.
+- `connection_id` - Connection ID for the connection of the credential holder.
+  This is required when `notify` is `true`.
+- `thread_id` - Message Thread ID of the credential exchange message that
+  resulted in the credential now being revoked. This is required when `notify`
+  is `true`
+- `comment` - An optional comment presented to the credential holder as part of
+  the revocation notification. This field might contain the reason for
+  revocation or some other human readable information about the revocation.
+
+Your request might look something like:
+
+```
+POST /revocation/revoke
+{
+    "rev_reg_id": <revocation_registry_id>
+    "cred_rev_id": <credential_revocation_id>,
+    "publish": <true|false>,
+    "notify": true,
+    "connection_id": <connection id>,
+    "thread_id": <thread id>,
+    "comment": "optional comment"
+}
+```
+
+### Holder Role
+
+On receipt of a revocation notification, an event with topic
+`acapy::revocation-notification::received` and payload containing the thread ID
+and comment is emitted on the event bus. This can be handled in plugins to
+further customize notification handling.
+
+If the argument `--monitor-revocation-notification` is used on startup, a
+webhook with the topic `revocation-notification` and a payload containing the
+thread ID and comment is emitted to registered webhook urls.

@@ -27,7 +27,7 @@ class PresentationHandler(BaseHandler):
 
         """
         r_time = get_timer()
-
+        profile = context.profile
         self._logger.debug("PresentationHandler called with context %s", context)
         assert isinstance(context.message, Presentation)
         self._logger.info(
@@ -35,7 +35,7 @@ class PresentationHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        presentation_manager = PresentationManager(context.profile)
+        presentation_manager = PresentationManager(profile)
 
         presentation_exchange_record = await presentation_manager.receive_presentation(
             context.message, context.connection_record
@@ -57,7 +57,7 @@ class PresentationHandler(BaseHandler):
             except (BaseModelError, LedgerError, StorageError) as err:
                 self._logger.exception(err)
                 if presentation_exchange_record:
-                    async with context.session() as session:
+                    async with profile.session() as session:
                         await presentation_exchange_record.save_error_state(
                             session,
                             reason=err.roll_up,  # us: be specific

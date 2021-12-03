@@ -7,8 +7,11 @@ from .....messaging.base_handler import (
     RequestContext,
 )
 
+from .....storage.error import StorageError
+
 from ..manager import TransactionManager, TransactionManagerError
 from ..messages.transaction_request import TransactionRequest
+from ..models.transaction_record import TransactionRecord
 
 
 class TransactionRequestHandler(BaseHandler):
@@ -29,11 +32,29 @@ class TransactionRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established")
 
-        profile_session = await context.session()
-        mgr = TransactionManager(profile_session)
+        mgr = TransactionManager(context.profile)
         try:
-            await mgr.receive_request(
+            transaction = await mgr.receive_request(
                 context.message, context.connection_record.connection_id
             )
-        except TransactionManagerError:
-            self._logger.exception("Error receiving transaction request")
+        except TransactionManagerError as err:
+            self._logger.exception(err)
+            return
+
+        # Automatically endorse transaction if flag is set
+        if context.settings.get("endorser.auto_endorse"):
+            try:
+                (
+                    transaction,
+                    endorsed_transaction_response,
+                ) = await mgr.create_endorse_response(
+                    transaction=transaction,
+                    state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
+                )
+
+                await responder.send_reply(
+                    endorsed_transaction_response,
+                    connection_id=transaction.connection_id,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                self._logger.exception(err)

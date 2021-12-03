@@ -6,10 +6,12 @@ from types import ModuleType
 from typing import Sequence
 
 from ..config.injection_context import InjectionContext
+from ..core.event_bus import EventBus
 from ..utils.classloader import ClassLoader, ModuleLoadError
 
 from .error import ProtocolDefinitionValidationError
 from .protocol_registry import ProtocolRegistry
+from .goal_code_registry import GoalCodeRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -201,6 +203,9 @@ class PluginRegistry:
             else:
                 await self.load_protocols(context, plugin)
 
+        # register event handlers for each protocol, if providedf
+        self.register_protocol_events(context)
+
     async def load_protocol_version(
         self,
         context: InjectionContext,
@@ -208,16 +213,17 @@ class PluginRegistry:
         version_definition: dict = None,
     ):
         """Load a particular protocol version."""
-        registry = context.inject(ProtocolRegistry)
-
+        protocol_registry = context.inject(ProtocolRegistry)
+        goal_code_resgistry = context.inject(GoalCodeRegistry)
         if hasattr(mod, "MESSAGE_TYPES"):
-            registry.register_message_types(
+            protocol_registry.register_message_types(
                 mod.MESSAGE_TYPES, version_definition=version_definition
             )
         if hasattr(mod, "CONTROLLERS"):
-            registry.register_controllers(
+            protocol_registry.register_controllers(
                 mod.CONTROLLERS, version_definition=version_definition
             )
+            goal_code_resgistry.register_controllers(mod.CONTROLLERS)
 
     async def load_protocols(self, context: InjectionContext, plugin: ModuleType):
         """For modules that don't implement setup, register protocols manually."""
@@ -279,6 +285,36 @@ class PluginRegistry:
                     continue
                 if mod and hasattr(mod, "register"):
                     await mod.register(app)
+
+    def register_protocol_events(self, context: InjectionContext):
+        """Call route register_events methods on the current context."""
+        event_bus = context.inject_or(EventBus)
+        if not event_bus:
+            LOGGER.error("No event bus in context")
+            return
+        for plugin in self._plugins.values():
+            definition = ClassLoader.load_module("definition", plugin.__name__)
+            if definition:
+                # Load plugin routes that are in a versioned package.
+                for plugin_version in definition.versions:
+                    try:
+                        mod = ClassLoader.load_module(
+                            f"{plugin.__name__}.{plugin_version['path']}.routes"
+                        )
+                    except ModuleLoadError as e:
+                        LOGGER.error("Error loading admin routes: %s", e)
+                        continue
+                    if mod and hasattr(mod, "register_events"):
+                        mod.register_events(event_bus)
+            else:
+                # Load plugin routes that aren't in a versioned package.
+                try:
+                    mod = ClassLoader.load_module(f"{plugin.__name__}.routes")
+                except ModuleLoadError as e:
+                    LOGGER.error("Error loading admin routes: %s", e)
+                    continue
+                if mod and hasattr(mod, "register_events"):
+                    mod.register_events(event_bus)
 
     def post_process_routes(self, app):
         """Call route binary file response OpenAPI fixups if applicable."""

@@ -14,6 +14,8 @@ from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder
 from .....storage.vc_holder.vc_record import VCRecord
 
+from ...dif.pres_exch import SchemaInputDescriptor
+
 from .. import routes as test_module
 from ..messages.pres_format import V20PresFormat
 from ..models.pres_exchange import V20PresExRecord
@@ -455,6 +457,94 @@ class TestPresentProofRoutes(AsyncTestCase):
                 [
                     {"name": "Credential1", "record_id": ANY},
                     {"name": "Credential2", "record_id": ANY},
+                ]
+            )
+
+    async def test_present_proof_credentials_list_dif_one_of_filter(self):
+        self.request.match_info = {
+            "pres_ex_id": "123-456-789",
+        }
+        self.request.query = {"extra_query": {}}
+
+        returned_credentials = [
+            async_mock.MagicMock(
+                cred_value={"name": "Credential1"}, record_id="test_1"
+            ),
+            async_mock.MagicMock(
+                cred_value={"name": "Credential2"}, record_id="test_2"
+            ),
+        ]
+        self.profile.context.injector.bind_instance(
+            IndyHolder,
+            async_mock.MagicMock(
+                get_credentials_for_presentation_request_by_referent=(
+                    async_mock.CoroutineMock()
+                )
+            ),
+        )
+        self.profile.context.injector.bind_instance(
+            VCHolder,
+            async_mock.MagicMock(
+                search_credentials=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        fetch=async_mock.CoroutineMock(
+                            return_value=returned_credentials
+                        )
+                    )
+                )
+            ),
+        )
+        pres_request = deepcopy(DIF_PROOF_REQ)
+        pres_request["presentation_definition"]["input_descriptors"][0]["schema"] = {
+            "oneof_filter": [
+                [
+                    {"uri": "https://www.w3.org/2018/credentials#VerifiableCredential"},
+                    {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
+                ],
+                [{"uri": "https://www.w3.org/Test#Test"}],
+            ]
+        }
+        record = V20PresExRecord(
+            state="request-received",
+            role="prover",
+            pres_proposal=None,
+            pres_request={
+                "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
+                "comment": "string",
+                "formats": [
+                    {
+                        "attach_id": "dif",
+                        "format": "dif/presentation-exchange/definitions@v1.0",
+                    }
+                ],
+                "request_presentations~attach": [
+                    {
+                        "@id": "dif",
+                        "mime-type": "application/json",
+                        "data": {"json": pres_request},
+                    }
+                ],
+                "will_confirm": True,
+            },
+            pres=None,
+            verified=None,
+            auto_present=False,
+            error_msg=None,
+        )
+
+        with async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_pres_ex_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_pres_ex_rec_cls.retrieve_by_id.return_value = record
+
+            await test_module.present_proof_credentials_list(self.request)
+            mock_response.assert_called_once_with(
+                [
+                    {"name": "Credential1", "record_id": "test_1"},
+                    {"name": "Credential2", "record_id": "test_2"},
                 ]
             )
 
@@ -2082,59 +2172,6 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_verify_presentation(self.request)
             assert "no such record" in str(context.exception)
 
-    async def test_present_proof_verify_presentation_not_found(self):
-        self.request.match_info = {"pres_ex_id": "dummy"}
-
-        with async_mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, async_mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
-            mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
-                state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
-                serialize=async_mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
-            )
-            mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_px_rec_inst
-            )
-
-            mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
-            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
-                side_effect=StorageNotFoundError()
-            )
-
-            with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.present_proof_verify_presentation(self.request)
-
-    async def test_present_proof_verify_presentation_not_ready(self):
-        self.request.match_info = {"pres_ex_id": "dummy"}
-
-        with async_mock.patch.object(
-            test_module, "ConnRecord", autospec=True
-        ) as mock_conn_rec_cls, async_mock.patch.object(
-            test_module, "V20PresExRecord", autospec=True
-        ) as mock_px_rec_cls:
-            mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
-                state=test_module.V20PresExRecord.STATE_PRESENTATION_RECEIVED,
-                serialize=async_mock.MagicMock(
-                    return_value={"thread_id": "sample-thread-id"}
-                ),
-            )
-            mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_px_rec_inst
-            )
-            mock_conn_rec_inst = async_mock.MagicMock(is_ready=False)
-            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
-                return_value=mock_conn_rec_inst
-            )
-
-            with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.present_proof_verify_presentation(self.request)
-
     async def test_present_proof_verify_presentation_bad_state(self):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
@@ -2392,6 +2429,18 @@ class TestPresentProofRoutes(AsyncTestCase):
         assert len(returned_record_ids) == 2
         assert returned_cred_list[0].record_id == "test2"
 
+    async def test_retrieve_uri_list_from_schema_filter(self):
+        test_schema_filter = [
+            [
+                SchemaInputDescriptor(uri="test123"),
+                SchemaInputDescriptor(uri="test321", required=True),
+            ]
+        ]
+        test_one_of_uri_groups = await test_module.retrieve_uri_list_from_schema_filter(
+            test_schema_filter
+        )
+        assert test_one_of_uri_groups == [["test123", "test321"]]
+
     async def test_send_presentation_no_specification(self):
         self.request.json = async_mock.CoroutineMock(return_value={"comment": "test"})
         self.request.match_info = {
@@ -2399,3 +2448,52 @@ class TestPresentProofRoutes(AsyncTestCase):
         }
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.present_proof_send_presentation(self.request)
+
+    async def test_v20presentationsendreqschema(self):
+        test_input = {
+            "comment": "string",
+            "connection_id": "631522e9-ca17-4c88-9a4c-d1cad35e463a",
+            "presentation_request": {
+                "dif": {
+                    "_schema": [
+                        {
+                            "uri": "https://www.w3.org/2018/credentials/#VerifiableCredential"
+                        }
+                    ],
+                    "presentation_definition": {
+                        "format": {"ldp_vp": {"proof_type": "BbsBlsSignature2020"}},
+                        "id": "fa2c4a76-c7bd-4313-a0f8-d9f5979c1fd2",
+                        "input_descriptors": [
+                            {
+                                "schema": [
+                                    {
+                                        "uri": "https://www.w3.org/2018/credentials/#VerifiableCredential"
+                                    }
+                                ],
+                                "constraints": {
+                                    "fields": [
+                                        {
+                                            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                            "path": ["$.credentialSubject.id"],
+                                        }
+                                    ],
+                                    "is_holder": [
+                                        {
+                                            "directive": "required",
+                                            "field_id": [
+                                                "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                                            ],
+                                        }
+                                    ],
+                                    "limit_disclosure": "required",
+                                },
+                                "id": "XXXXXXX",
+                                "name": "XXXXXXX",
+                            }
+                        ],
+                    },
+                }
+            },
+        }
+        with self.assertRaises(TypeError):
+            test_module.V20PresSendRequestRequestSchema.load(test_input)

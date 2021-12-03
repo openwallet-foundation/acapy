@@ -14,6 +14,11 @@ from ......indy.models.cred import IndyCredentialSchema
 from ......indy.models.cred_request import IndyCredRequestSchema
 from ......indy.models.cred_abstract import IndyCredAbstractSchema
 from ......ledger.base import BaseLedger
+from ......ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    GET_SCHEMA,
+    IndyLedgerRequestsExecutor,
+)
 from ......messaging.credential_definitions.util import (
     CRED_DEF_SENT_RECORD_TYPE,
     CredDefQueryStringSchema,
@@ -22,6 +27,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ......revocation.models.revocation_registry import RevocationRegistry
 from ......revocation.indy import IndyRevocation
+from ......revocation.util import notify_revocation_reg_event
 from ......storage.base import BaseStorage
 from ......storage.error import StorageNotFoundError
 
@@ -179,15 +185,13 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """
 
     async def create_offer(
-        self, cred_ex_record: V20CredExRecord, offer_data: Mapping = None
+        self, cred_proposal_message: V20CredProposal
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
 
         issuer = self.profile.inject(IndyIssuer)
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
-
-        cred_proposal_message = cred_ex_record.cred_proposal
 
         cred_def_id = await self._match_sent_cred_def_id(
             cred_proposal_message.attachment(IndyCredFormatHandler.format)
@@ -197,6 +201,15 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
+        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            cred_def_id,
+            txn_record_type=GET_CRED_DEF,
+        )
+        if isinstance(ledger_info, tuple):
+            ledger = ledger_info[1]
+        else:
+            ledger = ledger_info
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
@@ -251,7 +264,15 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_def_id = cred_offer["cred_def_id"]
 
         async def _create():
-            ledger = self.profile.inject(BaseLedger)
+            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+                cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+            if isinstance(ledger_info, tuple):
+                ledger = ledger_info[1]
+            else:
+                ledger = ledger_info
             async with ledger:
                 cred_def = await ledger.get_credential_definition(cred_def_id)
 
@@ -313,8 +334,15 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         rev_reg_id = None
         rev_reg = None
-
-        ledger = self.profile.inject(BaseLedger)
+        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            schema_id,
+            txn_record_type=GET_SCHEMA,
+        )
+        if isinstance(ledger_info, tuple):
+            ledger = ledger_info[1]
+        else:
+            ledger = ledger_info
         async with ledger:
             schema = await ledger.get_schema(schema_id)
             cred_def = await ledger.get_credential_definition(cred_def_id)
@@ -348,21 +376,17 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                                 cred_def_id,
                             )
                         )  # prefer to reuse prior rev reg size
+                    rev_reg_size = (
+                        old_rev_reg_recs[0].max_cred_num if old_rev_reg_recs else None
+                    )
                     for _ in range(2):
-                        pending_rev_reg_rec = await revoc.init_issuer_registry(
+                        await notify_revocation_reg_event(
+                            self.profile,
                             cred_def_id,
-                            max_cred_num=(
-                                old_rev_reg_recs[0].max_cred_num
-                                if old_rev_reg_recs
-                                else None
-                            ),
+                            rev_reg_size,
+                            auto_create_rev_reg=True,
                         )
-                        asyncio.ensure_future(
-                            pending_rev_reg_rec.stage_pending_registry(
-                                self.profile,
-                                max_attempts=3,  # fail both in < 2s at worst
-                            )
-                        )
+
                 if retries > 0:
                     LOGGER.info(
                         ("Waiting 2s on posted rev reg " "for cred def %s, retrying"),
@@ -409,16 +433,9 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     )
 
                 # Send next 1 rev reg, publish tails file in background
-                revoc = IndyRevocation(self.profile)
-                pending_rev_reg_rec = await revoc.init_issuer_registry(
-                    active_rev_reg_rec.cred_def_id,
-                    max_cred_num=active_rev_reg_rec.max_cred_num,
-                )
-                asyncio.ensure_future(
-                    pending_rev_reg_rec.stage_pending_registry(
-                        self.profile,
-                        max_attempts=16,
-                    )
+                rev_reg_size = active_rev_reg_rec.max_cred_num
+                await notify_revocation_reg_event(
+                    self.profile, cred_def_id, rev_reg_size, auto_create_rev_reg=True
                 )
 
             async with self.profile.session() as session:
@@ -463,7 +480,15 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 
         rev_reg_def = None
-        ledger = self.profile.inject(BaseLedger)
+        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+            cred["cred_def_id"],
+            txn_record_type=GET_CRED_DEF,
+        )
+        if isinstance(ledger_info, tuple):
+            ledger = ledger_info[1]
+        else:
+            ledger = ledger_info
         async with ledger:
             cred_def = await ledger.get_credential_definition(cred["cred_def_id"])
             if cred.get("rev_reg_id"):

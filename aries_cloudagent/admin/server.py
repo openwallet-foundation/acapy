@@ -26,7 +26,7 @@ from ..core.profile import Profile
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
-from ..multitenant.manager import MultitenantManager, MultitenantManagerError
+from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
@@ -34,6 +34,7 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
+from ..messaging.valid import UUIDFour
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -251,7 +252,7 @@ class AdminServer(BaseAdminServer):
         self.webhook_router = webhook_router
         self.websocket_queues = {}
         self.site = None
-        self.multitenant_manager = context.inject_or(MultitenantManager)
+        self.multitenant_manager = context.inject_or(BaseMultitenantManager)
 
         self.server_paths = []
 
@@ -273,6 +274,8 @@ class AdminServer(BaseAdminServer):
                     "/api/docs/swagger.json",
                     "/favicon.ico",
                     "/ws",  # ws handler checks authentication
+                    "/status/live",
+                    "/status/ready",
                 ]
                 or path.startswith("/static/swagger/")
             )
@@ -309,6 +312,19 @@ class AdminServer(BaseAdminServer):
                 if authorization_header and is_multitenancy_path:
                     raise web.HTTPUnauthorized()
 
+                base_limited_access_path = (
+                    re.match(
+                        f"^/connections/(?:receive-invitation|{UUIDFour.PATTERN})", path
+                    )
+                    or path.startswith("/out-of-band/receive-invitation")
+                    or path.startswith("/mediation/requests/")
+                    or re.match(
+                        f"/mediation/(?:request/{UUIDFour.PATTERN}|"
+                        f"{UUIDFour.PATTERN}/default-mediator)",
+                        path,
+                    )
+                )
+
                 # base wallet is not allowed to perform ssi related actions.
                 # Only multitenancy and general server actions
                 if (
@@ -316,6 +332,7 @@ class AdminServer(BaseAdminServer):
                     and not is_multitenancy_path
                     and not is_server_path
                     and not is_unprotected_path(path)
+                    and not base_limited_access_path
                 ):
                     raise web.HTTPUnauthorized()
 
@@ -567,6 +584,8 @@ class AdminServer(BaseAdminServer):
         """
         config = {
             k: self.context.settings[k]
+            if (isinstance(self.context.settings[k], (str, int)))
+            else self.context.settings[k].copy()
             for k in self.context.settings
             if k
             not in [

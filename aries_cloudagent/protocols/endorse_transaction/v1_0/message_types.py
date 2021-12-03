@@ -43,3 +43,7 @@ MESSAGE_TYPES = DIDCommPrefix.qualify_all(
         ),
     }
 )
+
+CONTROLLERS = DIDCommPrefix.qualify_all(
+    {"transactions/1.0": f"{PROTOCOL_PACKAGE}.controller.Controller"}
+)

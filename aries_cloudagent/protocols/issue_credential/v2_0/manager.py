@@ -226,7 +226,9 @@ class V20CredManager:
 
             if cred_format:
                 formats.append(
-                    await cred_format.handler(self.profile).create_offer(cred_ex_record)
+                    await cred_format.handler(self.profile).create_offer(
+                        cred_proposal_message
+                    )
                 )
 
         if len(formats) == 0:
@@ -276,39 +278,38 @@ class V20CredManager:
 
         """
 
-        async with self._profile.session() as session:
-            # Get credential exchange record (holder sent proposal first)
-            # or create it (issuer sent offer first)
-            try:
+        # Get credential exchange record (holder sent proposal first)
+        # or create it (issuer sent offer first)
+        try:
+            async with self._profile.session() as session:
                 cred_ex_record = await (
                     V20CredExRecord.retrieve_by_conn_and_thread(
                         session, connection_id, cred_offer_message._thread_id
                     )
                 )
-            except StorageNotFoundError:  # issuer sent this offer free of any proposal
-                cred_ex_record = V20CredExRecord(
-                    connection_id=connection_id,
-                    thread_id=cred_offer_message._thread_id,
-                    initiator=V20CredExRecord.INITIATOR_EXTERNAL,
-                    role=V20CredExRecord.ROLE_HOLDER,
-                    auto_remove=not self._profile.settings.get(
-                        "preserve_exchange_records"
-                    ),
-                    trace=(cred_offer_message._trace is not None),
+        except StorageNotFoundError:  # issuer sent this offer free of any proposal
+            cred_ex_record = V20CredExRecord(
+                connection_id=connection_id,
+                thread_id=cred_offer_message._thread_id,
+                initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+                role=V20CredExRecord.ROLE_HOLDER,
+                auto_remove=not self._profile.settings.get("preserve_exchange_records"),
+                trace=(cred_offer_message._trace is not None),
+            )
+
+        # Format specific receive_offer handler
+        for format in cred_offer_message.formats:
+            cred_format = V20CredFormat.Format.get(format.format)
+
+            if cred_format:
+                await cred_format.handler(self.profile).receive_offer(
+                    cred_ex_record, cred_offer_message
                 )
 
-            # Format specific receive_offer handler
-            for format in cred_offer_message.formats:
-                cred_format = V20CredFormat.Format.get(format.format)
+        cred_ex_record.cred_offer = cred_offer_message
+        cred_ex_record.state = V20CredExRecord.STATE_OFFER_RECEIVED
 
-                if cred_format:
-                    await cred_format.handler(self.profile).receive_offer(
-                        cred_ex_record, cred_offer_message
-                    )
-
-            cred_ex_record.cred_offer = cred_offer_message
-            cred_ex_record.state = V20CredExRecord.STATE_OFFER_RECEIVED
-
+        async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential offer")
 
         return cred_ex_record
@@ -444,6 +445,7 @@ class V20CredManager:
             cred_ex_record.cred_request = cred_request_message
             cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED
 
+        async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential request")
 
         return cred_ex_record
@@ -579,6 +581,7 @@ class V20CredManager:
             cred_ex_record.cred_issue = cred_issue_message
             cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
 
+        async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential issue")
         return cred_ex_record
 

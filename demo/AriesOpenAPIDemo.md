@@ -502,10 +502,12 @@ Finally, we need put into the JSON the data values for the `credential_preview` 
         "value": "Maths"
       },
       {
-        "name": "age",
-        "value": "24"
+        "name": "birthdate_dateint",
+        "value": "19640101"
       }
 ```
+
+(Note that the birthdate above is used to present later on to pass an "age proof".)
 
 OK, finally, you are ready to click `Execute`. The request should work, but if it doesn’t - check your JSON! Did you get all the quotes and commas right?
 
@@ -640,9 +642,9 @@ From the Faber browser tab, get ready to execute the **`POST /present-proof/send
       },
       "requested_predicates": {
         "0_age_GE_uuid": {
-          "name": "age",
-          "p_type": ">=",
-          "p_value": 18,
+          "name": "birthdate_dateint",
+          "p_type": "<=",
+          "p_value": 20030101,
           "restrictions": [
             {
               "cred_def_id": "SsX9siFWXJyCAmXnHY514N:3:CL:8:faber.agent.degree_schema"
@@ -654,6 +656,8 @@ From the Faber browser tab, get ready to execute the **`POST /present-proof/send
   }
 }
 ```
+
+(Note that the birthdate requested above is used as an "age proof", the calculation is something like `now() - years(18)`, and the presented birthdate must be on or before this date.  You can see the calculation in action in the `faber.py` demo code.)
 
 Notice that the proof request is using a predicate to check if Alice is older than 18 without asking for her age. Not sure what this has to do with her education level! Click `Execute` and cross your fingers. If the request fails check your JSON!
 

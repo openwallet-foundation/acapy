@@ -1,4 +1,5 @@
 """Test Problem Report Message."""
+import logging
 import pytest
 
 from unittest import mock, TestCase
@@ -15,6 +16,10 @@ from ..problem_report import (
 
 class TestOOBProblemReportMessage(TestCase):
     """Test problem report."""
+
+    @pytest.fixture(autouse=True)
+    def inject_fixtures(self, caplog):
+        self._caplog = caplog
 
     def setUp(self):
         self.problem_report = OOBProblemReport(
@@ -54,3 +59,17 @@ class TestOOBProblemReportMessage(TestCase):
         schema = OOBProblemReportSchema()
         with pytest.raises(ValidationError):
             schema.validate_fields({})
+
+    def test_validate_and_logger(self):
+        """Capture ValidationError and Logs."""
+        data = OOBProblemReport(
+            description={
+                "en": "Insufficient credit",
+                "code": "invalid_code",
+            },
+        )
+        data.assign_thread_id(thid="test_thid", pthid="test_pthid")
+        data = data.serialize()
+        self._caplog.set_level(logging.WARNING)
+        OOBProblemReportSchema().validate_fields(data)
+        assert "Unexpected error code received" in self._caplog.text

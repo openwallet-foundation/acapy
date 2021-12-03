@@ -22,7 +22,10 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Revocation](#revocation)
   - [Mediation](#mediation)
   - [Multi-tenancy](#multi-tenancy)
+  - [Multi-ledger](#multi-ledger)
   - [DID Exchange](#did-exchange)
+  - [Endorser](#endorser)
+  - [Run Askar Backend](#run-askar-backend)
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
 - [OpenAPI (Swagger) Demo](#openapi-swagger-demo)
 - [Performance Demo](#performance-demo)
@@ -69,7 +72,7 @@ In the first terminal window, start `von-network` by following the [Running the 
 In the second terminal, change directory into `demo` directory of your clone of this repository. Start the `faber` agent by issuing the following command:
 
 ``` bash
-  ./run_demo faber 
+  ./run_demo faber
 ```
 
 In the third terminal, change directory into `demo` directory of your clone of this repository. Start the `alice` agent by issuing the following command:
@@ -78,7 +81,7 @@ In the third terminal, change directory into `demo` directory of your clone of t
   ./run_demo alice
 ```
 
-Jump to the [Follow the Script](#follow-the-script) section below for further instructions. 
+Jump to the [Follow the Script](#follow-the-script) section below for further instructions.
 
 ### Running Locally
 
@@ -176,11 +179,13 @@ When ready to test the credentials exchange protocols, go to the Faber prompt, e
 
 You don't need to do anything with Alice's agent - her agent is implemented to automatically receive credentials and respond to proof requests.
 
+Note there is an option "2a" to initiate a connectionless proof - you can execute this option but it will only work end-to-end when [connecting to Faber from a mobile agent](AliceGetsAPhone.md).
+
 ## Additional Options in the Alice/Faber demo
 
-You can enable support for various aca-py features by providing additional command-line arguements when starting up `alice` or `faber`.
+You can enable support for various ACA-Py features by providing additional command-line arguements when starting up `alice` or `faber`.
 
-Note that when the controller starts up the agent, it prints out the aca-py startup command with *all* parameters - you can inspect this command to see what parameters are provided in each case.  For more details on the parameters, just start aca-py with the `--help` parameter, for example:
+Note that when the controller starts up the agent, it prints out the ACA-Py startup command with *all* parameters - you can inspect this command to see what parameters are provided in each case.  For more details on the parameters, just start ACA-Py with the `--help` parameter, for example:
 
 ```
 ./scripts/run_docker start --help
@@ -198,7 +203,7 @@ Note that you don't specify this option with `alice` because it's only applicabl
 
 You need to run a revocation registry in order to support revocation - the details are described in the [Alice gets a Phone](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/AliceGetsAPhone.md#run-an-instance-of-indy-tails-server) demo instructions.
 
-Faber will setup support for revocatiom automatically, and you will see an extra option in faber's menu to revoke a credential:
+Faber will setup support for revocation automatically, and you will see an extra option in faber's menu to revoke a credential:
 
 ```
     (1) Issue Credential
@@ -225,18 +230,30 @@ When you revoke a credential you will need to provide those values:
 
 Enter revocation registry ID: WGmUNAdH2ZfeGvacFoMVVP:4:WGmUNAdH2ZfeGvacFoMVVP:3:CL:38:Faber.Agent.degree_schema:CL_ACCUM:15ca49ed-1250-4608-9e8f-c0d52d7260c3
 Enter credential revocation ID: 1
-Publish now? [Y/N]: y 
+Publish now? [Y/N]: y
 ```
 
 Note that you need to Publish the revocation information to the ledger.  Once you've revoked a credential any proof which uses this credential will fail to verify.
 
 ### DID Exchange
 
-You can enable DID Exchange using the `--did-exchange` parameter for the `alice` and `faber` demo's.
+You can enable DID Exchange using the `--did-exchange` parameter for the `alice` and `faber` demos.
 
 This will use the new DID Exchange protocol when establishing connections between the agents, rather than the older Connection protocol.  There is no other affect on the operation of the agents.
 
 Note that you can't (currently) use the DID Exchange protocol to connect with any of the available mobile agents.
+
+### Endorser
+
+This is described in [Endorser.md](Endorser.md)
+
+### Run Askar Backend
+
+This runs using the askar libraries instead of indy-sdk:
+
+```bash
+./run_demo faber --wallet-type askar
+```
 
 ### Mediation
 
@@ -257,6 +274,16 @@ To enable support for multi-tenancy, run the `alice` or `faber` demo with the `-
 ```
 
 (This option can be used with both (or either) `alice` and/or `faber`.)
+
+### Multi-ledger
+
+To enable multiple ledger mode, run the `alice` or `faber` demo with the `--multi-ledger` option:
+
+```bash
+./run_demo faber --multi-ledger
+```
+
+The configuration file for setting up multiple ledgers (for the demo) can be found at `./demo/multiple_ledger_config.yml`.
 
 You will see an additional menu option to create new sub-wallets (or they can be considered to be "virtual agents").
 
@@ -281,7 +308,7 @@ Alice:
     (X) Exit?
 ```
 
-When you create a new wallet, you just need to provide the wallet name.  (If you provide the name of an existing wallet then the controller will "activate" that wallet and make it the current wallet.)
+When you create a new wallet, you just need to provide the wallet name. (If you provide the name of an existing wallet then the controller will "activate" that wallet and make it the current wallet.)
 
 ```
 [1/2/3/4/W/T/X] w
@@ -327,10 +354,10 @@ Note that with multi-tenancy enabled:
 
 - The "base" wallet will have access to this new "agency API" - the agent's admin key, if enabled, must be provided in a header
 - "Base wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L606)
-- The "sub-wallets" will have access to the "normal" aca-py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/runners/support/agent.py#L378))
+- The "sub-wallets" will have access to the "normal" ACA-Py admin API - to identify the sub-wallet, a JWT token must be provided, this token is created upon creation of the new wallet (see: [this code here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/demo/runners/support/agent.py#L378))
 - "Sub-wallet" API calls are handled [here](https://github.com/hyperledger/aries-cloudagent-python/blob/244194e68330835e5e2e53cc6c2993899d2437fb/demo/runners/support/agent.py#L632)
 
-Documentation on aca-py's multi-tenancy support can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md).
+Documentation on ACA-Py's multi-tenancy support can be found [here](https://github.com/hyperledger/aries-cloudagent-python/blob/master/Multitenancy.md).
 
 ### Multi-tenancy *with Mediation*!!!
 

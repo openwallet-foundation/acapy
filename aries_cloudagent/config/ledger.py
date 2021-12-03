@@ -4,6 +4,7 @@ from collections import OrderedDict
 import logging
 import re
 import sys
+import uuid
 
 import markdown
 import prompt_toolkit
@@ -54,6 +55,67 @@ async def get_genesis_transactions(settings: Settings) -> str:
         if txns:
             settings["ledger.genesis_transactions"] = txns
     return txns
+
+
+async def load_multiple_genesis_transactions_from_config(settings: Settings):
+    """Fetch genesis transactions for multiple ledger configuration."""
+
+    ledger_config_list = settings.get("ledger.ledger_config_list")
+    ledger_txns_list = []
+    write_ledger_set = False
+    for config in ledger_config_list:
+        txns = None
+        if "genesis_transactions" in config:
+            txns = config.get("genesis_transactions")
+        if not txns:
+            if "genesis_url" in config:
+                txns = await fetch_genesis_transactions(config.get("genesis_url"))
+            elif "genesis_file" in config:
+                try:
+                    genesis_path = config.get("genesis_file")
+                    LOGGER.info(
+                        "Reading ledger genesis transactions from: %s", genesis_path
+                    )
+                    with open(genesis_path, "r") as genesis_file:
+                        txns = genesis_file.read()
+                except IOError as e:
+                    raise ConfigError(
+                        "Error reading ledger genesis transactions"
+                    ) from e
+        is_write_ledger = (
+            False if config.get("is_write") is None else config.get("is_write")
+        )
+        ledger_id = config.get("id") or str(uuid.uuid4())
+        if is_write_ledger and write_ledger_set:
+            raise ConfigError("Only a single ledger can be is_write")
+        elif is_write_ledger:
+            write_ledger_set = True
+        ledger_txns_list.append(
+            {
+                "id": ledger_id,
+                "is_production": (
+                    True
+                    if config.get("is_production") is None
+                    else config.get("is_production")
+                ),
+                "is_write": is_write_ledger,
+                "genesis_transactions": txns,
+                "keepalive": int(config.get("keepalive", 5)),
+                "read_only": bool(config.get("read_only", False)),
+                "socks_proxy": config.get("socks_proxy"),
+                "pool_name": config.get("pool_name", ledger_id),
+            }
+        )
+    if not write_ledger_set and not (
+        settings.get("ledger.genesis_transactions")
+        or settings.get("ledger.genesis_file")
+        or settings.get("ledger.genesis_url")
+    ):
+        raise ConfigError(
+            "No is_write ledger set and no genesis_url,"
+            " genesis_file and genesis_transactions provided."
+        )
+    settings["ledger.ledger_config_list"] = ledger_txns_list
 
 
 async def ledger_config(

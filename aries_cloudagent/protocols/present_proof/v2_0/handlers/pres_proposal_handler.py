@@ -40,7 +40,8 @@ class V20PresProposalHandler(BaseHandler):
                 "No connection established for presentation proposal"
             )
 
-        pres_manager = V20PresManager(context.profile)
+        profile = context.profile
+        pres_manager = V20PresManager(profile)
         pres_ex_record = await pres_manager.receive_pres_proposal(
             context.message, context.connection_record
         )  # mgr only creates, saves record: on exception, saving state err is hopeless
@@ -67,7 +68,7 @@ class V20PresProposalHandler(BaseHandler):
             except (BaseModelError, LedgerError, StorageError) as err:
                 self._logger.exception(err)
                 if pres_ex_record:
-                    async with context.session() as session:
+                    async with profile.session() as session:
                         await pres_ex_record.save_error_state(
                             session,
                             reason=err.roll_up,  # us: be specific

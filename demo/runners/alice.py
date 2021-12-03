@@ -34,6 +34,8 @@ class AliceAgent(AriesAgent):
         http_port: int,
         admin_port: int,
         no_auto: bool = False,
+        aip: int = 20,
+        endorser_role: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -43,6 +45,8 @@ class AliceAgent(AriesAgent):
             prefix="Alice",
             no_auto=no_auto,
             seed=None,
+            aip=aip,
+            endorser_role=endorser_role,
             **kwargs,
         )
         self.connection_id = None
@@ -56,22 +60,6 @@ class AliceAgent(AriesAgent):
     @property
     def connection_ready(self):
         return self._connection_ready.done() and self._connection_ready.result()
-
-    async def handle_connections(self, message):
-        print(
-            self.ident, "handle_connections", message["state"], message["rfc23_state"]
-        )
-        conn_id = message["connection_id"]
-        if (not self.connection_id) and message["rfc23_state"] == "invitation-received":
-            print(self.ident, "set connection id", conn_id)
-            self.connection_id = conn_id
-        if (
-            message["connection_id"] == self.connection_id
-            and message["rfc23_state"] == "completed"
-            and (self._connection_ready and not self._connection_ready.done())
-        ):
-            self.log("Connected")
-            self._connection_ready.set_result(True)
 
 
 async def input_invitation(agent_container):
@@ -132,11 +120,16 @@ async def main(args):
             alice_agent.start_port,
             alice_agent.start_port + 1,
             genesis_data=alice_agent.genesis_txns,
+            genesis_txn_list=alice_agent.genesis_txn_list,
             no_auto=alice_agent.no_auto,
+            tails_server_base_url=alice_agent.tails_server_base_url,
+            revocation=alice_agent.revocation,
             timing=alice_agent.show_timing,
             multitenant=alice_agent.multitenant,
             mediation=alice_agent.mediation,
             wallet_type=alice_agent.wallet_type,
+            aip=alice_agent.aip,
+            endorser_role=alice_agent.endorser_role,
         )
 
         await alice_agent.initialize(the_agent=agent)
@@ -145,6 +138,8 @@ async def main(args):
         await input_invitation(alice_agent)
 
         options = "    (3) Send Message\n" "    (4) Input New Invitation\n"
+        if alice_agent.endorser_role and alice_agent.endorser_role == "author":
+            options += "    (D) Set Endorser's DID\n"
         if alice_agent.multitenant:
             options += "    (W) Create and/or Enable Wallet\n"
         options += "    (X) Exit?\n[3/4/{}X] ".format(
@@ -156,6 +151,13 @@ async def main(args):
 
             if option is None or option in "xX":
                 break
+
+            elif option in "dD" and alice_agent.endorser_role:
+                endorser_did = await prompt("Enter Endorser's DID: ")
+                await alice_agent.agent.admin_POST(
+                    f"/transactions/{alice_agent.agent.connection_id}/set-endorser-info",
+                    params={"endorser_did": endorser_did, "endorser_name": "endorser"},
+                )
 
             elif option in "wW" and alice_agent.multitenant:
                 target_wallet_name = await prompt("Enter wallet name: ")
@@ -178,7 +180,7 @@ async def main(args):
                 msg = await prompt("Enter message: ")
                 if msg:
                     await alice_agent.agent.admin_POST(
-                        f"/connections/{agent.connection_id}/send-message",
+                        f"/connections/{alice_agent.agent.connection_id}/send-message",
                         {"content": msg},
                     )
 

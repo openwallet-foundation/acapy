@@ -19,6 +19,7 @@ This demo also introduces revocation of credentials.
 - [Present the Proof](#present-the-proof)
 - [Review the Proof](#review-the-proof)
 - [Revoke the Credential and Send Another Proof Request](#revoke-the-credential-and-send-another-proof-request)
+- [Send a Connectionless Proof Request](#send-a-connectionless-proof-request)
 - [Conclusion](#conclusion)
 
 ## Getting Started
@@ -300,6 +301,18 @@ Once that is done, try sending another proof request and see what happens! Exper
     <summary>Click here to view screenshot</summary>
     <img src="./collateral/revocation-3-console.png" alt="Revocation">
 </details>
+
+## Send a Connectionless Proof Request
+
+A connectionless proof request works the same way as a regular proof request, however it does not require a connection to be established between the Verifier and Holder/Prover.
+
+This is supported in the Faber demo, however note that it will only work when running Faber on the Docker playground service [Play with Docker](https://labs.play-with-docker.com/) (or on [Play with VON](http://play-with-von.vonx.io)).  (This is because both the Faber agent *and* controller both need to be exposed to the mobile agent.)
+
+If you have gone through the above steps, you can delete the Faber connection in your mobile agent (however *do not* delete the credential that Faber issued to you).
+
+Then in the faber demo, select option `2a` - Faber will display a QR code which you can scan with your mobile agent.  You will see the same proof request displayed in your mobile agent, which you can respond to.
+
+Behind the scenes, the Faber controller delivers the proof request information (linked from the url encoded in the QR code) directly to your mobile agent, without establishing and agent-to-agent connection first.  If you are interested in the underlying mechanics, you can review the `faber.py` code in the repository.
 
 ## Conclusion
 

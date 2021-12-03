@@ -54,28 +54,33 @@ class AskarProfile(Profile):
         """Accessor for the opened Store instance."""
         return self.opened.store
 
+    async def remove(self):
+        """Remove the profile."""
+        if self.settings.get("multitenant.wallet_type") == "askar-profile":
+            await self.store.remove_profile(self.settings.get("wallet.askar_profile"))
+
     def init_ledger_pool(self):
         """Initialize the ledger pool."""
         if self.settings.get("ledger.disabled"):
             LOGGER.info("Ledger support is disabled")
             return
-
-        pool_name = self.settings.get("ledger.pool_name", "default")
-        keepalive = int(self.settings.get("ledger.keepalive", 5))
-        read_only = bool(self.settings.get("ledger.read_only", False))
-        socks_proxy = self.settings.get("ledger.socks_proxy")
-        if read_only:
-            LOGGER.error("Note: setting ledger to read-only mode")
-        genesis_transactions = self.settings.get("ledger.genesis_transactions")
-        cache = self.context.injector.inject_or(BaseCache)
-        self.ledger_pool = IndyVdrLedgerPool(
-            pool_name,
-            keepalive=keepalive,
-            cache=cache,
-            genesis_transactions=genesis_transactions,
-            read_only=read_only,
-            socks_proxy=socks_proxy,
-        )
+        if self.settings.get("ledger.genesis_transactions"):
+            pool_name = self.settings.get("ledger.pool_name", "default")
+            keepalive = int(self.settings.get("ledger.keepalive", 5))
+            read_only = bool(self.settings.get("ledger.read_only", False))
+            socks_proxy = self.settings.get("ledger.socks_proxy")
+            if read_only:
+                LOGGER.error("Note: setting ledger to read-only mode")
+            genesis_transactions = self.settings.get("ledger.genesis_transactions")
+            cache = self.context.injector.inject_or(BaseCache)
+            self.ledger_pool = IndyVdrLedgerPool(
+                pool_name,
+                keepalive=keepalive,
+                cache=cache,
+                genesis_transactions=genesis_transactions,
+                read_only=read_only,
+                socks_proxy=socks_proxy,
+            )
 
     def bind_providers(self):
         """Initialize the profile-level instance providers."""
@@ -113,6 +118,7 @@ class AskarProfile(Profile):
             injector.bind_provider(
                 BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))
             )
+        if self.ledger_pool or self.settings.get("ledger.ledger_config_list"):
             injector.bind_provider(
                 IndyVerifier,
                 ClassProvider(
@@ -154,10 +160,11 @@ class AskarProfileSession(ProfileSession):
     ):
         """Create a new IndySdkProfileSession instance."""
         super().__init__(profile=profile, context=context, settings=settings)
+        profile_id = profile.context.settings.get("wallet.askar_profile")
         if is_txn:
-            self._opener = self.profile.store.transaction()
+            self._opener = self.profile.store.transaction(profile_id)
         else:
-            self._opener = self.profile.store.session()
+            self._opener = self.profile.store.session(profile_id)
         self._handle: Session = None
         self._acquire_start: float = None
         self._acquire_end: float = None
