@@ -5,7 +5,7 @@ import json
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from uuid import UUID
 
 from .....connections.models.conn_record import ConnRecord
@@ -22,7 +22,7 @@ from .....indy.models.pres_preview import (
 )
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
-from .....messaging.util import str_to_epoch
+from .....messaging.util import str_to_epoch, datetime_now, datetime_to_str
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
@@ -1567,7 +1567,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 retrieve_invi_rec.return_value = InvitationRecord(
                     invi_msg_id="test_123"
                 )
-                await self.manager.receive_reuse_message(reuse_msg, receipt)
+                await self.manager.receive_reuse_message(
+                    reuse_msg, receipt, self.test_conn_rec
+                )
                 assert (
                     len(
                         await ConnRecord.query(
@@ -1622,43 +1624,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 retrieve_invi_rec.return_value = InvitationRecord(
                     invi_msg_id="test_123"
                 )
-                await self.manager.receive_reuse_message(reuse_msg, receipt)
+                await self.manager.receive_reuse_message(
+                    reuse_msg, receipt, self.test_conn_rec
+                )
                 assert len(self.responder.messages) == 0
-
-    async def test_receive_reuse_message_storage_not_found(self):
-        self.profile.context.update_settings({"public_invites": True})
-        receipt = MessageReceipt(
-            recipient_did=TestConfig.test_did,
-            recipient_did_public=False,
-            sender_did="test_did",
-        )
-        reuse_msg = HandshakeReuse()
-        reuse_msg.assign_thread_id(thid="test_123", pthid="test_123")
-
-        with async_mock.patch.object(
-            DIDXManager, "receive_invitation", autospec=True
-        ) as didx_mgr_receive_invitation, async_mock.patch(
-            "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
-            autospec=True,
-        ) as inv_message_cls, async_mock.patch.object(
-            OutOfBandManager,
-            "fetch_connection_targets",
-            autospec=True,
-        ) as oob_mgr_fetch_conn, async_mock.patch.object(
-            InvitationRecord,
-            "retrieve_by_tag_filter",
-            autospec=True,
-        ) as retrieve_invi_rec, async_mock.patch.object(
-            OutOfBandManager,
-            "find_existing_connection",
-            autospec=True,
-        ) as oob_mgr_find_existing_conn:
-            oob_mgr_find_existing_conn.side_effect = StorageNotFoundError()
-            with self.assertRaises(OutOfBandManagerError) as context:
-                await self.manager.receive_reuse_message(reuse_msg, receipt)
-            assert "No existing ConnRecord found for OOB Invitee" in str(
-                context.exception
-            )
 
     async def test_receive_reuse_message_problem_report_logic(self):
         async with self.profile.session() as session:
@@ -1685,7 +1654,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     recipient_keys=TestConfig.test_verkey,
                     sender_key=TestConfig.test_verkey,
                 )
-                await self.manager.receive_reuse_message(reuse_msg, receipt)
+                await self.manager.receive_reuse_message(
+                    reuse_msg, receipt, self.test_conn_rec
+                )
 
     async def test_receive_reuse_accepted(self):
         async with self.profile.session() as session:
@@ -3580,3 +3551,27 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 mock_logger_warning.assert_called_once()
                 assert conn_rec is not None
+
+    async def test_delete_stale_connection_by_invitation(self):
+        current_datetime = datetime_now()
+        older_datetime = current_datetime - timedelta(hours=4)
+        records = [
+            ConnRecord(
+                my_did=self.test_did,
+                their_did="FBmi5JLf5g58kDnNXMy4QM",
+                their_role=ConnRecord.Role.RESPONDER.rfc160,
+                state=ConnRecord.State.INVITATION.rfc160,
+                invitation_key="dummy2",
+                invitation_mode="once",
+                invitation_msg_id="test123",
+                updated_at=datetime_to_str(older_datetime),
+            )
+        ]
+        with async_mock.patch.object(
+            ConnRecord, "query", async_mock.CoroutineMock()
+        ) as mock_connrecord_query, async_mock.patch.object(
+            ConnRecord, "delete_record", async_mock.CoroutineMock()
+        ) as mock_connrecord_delete:
+            mock_connrecord_query.return_value = records
+            await self.manager.delete_stale_connection_by_invitation("test123")
+            mock_connrecord_delete.assert_called_once()

@@ -11,16 +11,34 @@ wallet.
 import hashlib
 import json
 import logging
+from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
+from ..askar.profile import AskarProfile
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
-from ..config.ledger import get_genesis_transactions, ledger_config
+from ..config.provider import ClassProvider
+from ..config.ledger import (
+    get_genesis_transactions,
+    ledger_config,
+    load_multiple_genesis_transactions_from_config,
+)
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
+from ..indy.sdk.profile import IndySdkProfile
+from ..indy.verifier import IndyVerifier
+from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
+from ..ledger.indy import IndySdkLedger
+from ..ledger.indy_vdr import IndyVdrLedger
+from ..ledger.multiple_ledger.base_manager import (
+    BaseMultipleLedgerManager,
+    MultipleLedgerManagerError,
+)
+from ..ledger.multiple_ledger.manager_provider import MultiIndyLedgerManagerProvider
+from ..ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager
 from ..multitenant.manager_provider import MultitenantManagerProvider
@@ -93,11 +111,64 @@ class Conductor:
         context = await self.context_builder.build_context()
 
         # Fetch genesis transactions if necessary
-        await get_genesis_transactions(context.settings)
+        if context.settings.get("ledger.ledger_config_list"):
+            await load_multiple_genesis_transactions_from_config(context.settings)
+        if (
+            context.settings.get("ledger.genesis_transactions")
+            or context.settings.get("ledger.genesis_file")
+            or context.settings.get("ledger.genesis_url")
+        ):
+            await get_genesis_transactions(context.settings)
 
         # Configure the root profile
         self.root_profile, self.setup_public_did = await wallet_config(context)
         context = self.root_profile.context
+
+        # Multiledger Setup
+        if (
+            context.settings.get("ledger.ledger_config_list")
+            and len(context.settings.get("ledger.ledger_config_list")) > 0
+        ):
+            context.injector.bind_provider(
+                BaseMultipleLedgerManager,
+                MultiIndyLedgerManagerProvider(self.root_profile),
+            )
+            if not (context.settings.get("ledger.genesis_transactions")):
+                ledger = (
+                    await context.injector.inject(
+                        BaseMultipleLedgerManager
+                    ).get_write_ledger()
+                )[1]
+                if isinstance(self.root_profile, AskarProfile) and isinstance(
+                    ledger, IndyVdrLedger
+                ):
+                    context.injector.bind_instance(BaseLedger, ledger)
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                elif isinstance(self.root_profile, IndySdkProfile) and isinstance(
+                    ledger, IndySdkLedger
+                ):
+                    context.injector.bind_instance(BaseLedger, ledger)
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                else:
+                    raise MultipleLedgerManagerError(
+                        "Multiledger is supported only for Indy SDK or Askar "
+                        "[Indy VDR] profile"
+                    )
+        context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(self.root_profile)
+        )
 
         # Configure the ledger
         if not await ledger_config(
@@ -287,6 +358,9 @@ class Conductor:
                 invite_url = invi_rec.invitation.to_url(base_url)
                 print("Invitation URL:")
                 print(invite_url, flush=True)
+                qr = QRCode(border=1)
+                qr.add_data(invite_url)
+                qr.print_ascii(invert=True)
                 del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
@@ -304,8 +378,12 @@ class Conductor:
                     ),
                 )
                 base_url = context.settings.get("invite_base_url")
+                invite_url = invite.to_url(base_url)
                 print("Invitation URL (Connections protocol):")
-                print(invite.to_url(base_url), flush=True)
+                print(invite_url, flush=True)
+                qr = QRCode(border=1)
+                qr.add_data(invite_url)
+                qr.print_ascii(invert=True)
                 del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
@@ -313,15 +391,15 @@ class Conductor:
         # mediation connection establishment
         provided_invite: str = context.settings.get("mediation.invite")
 
-        async with self.root_profile.session() as session:
-            try:
+        try:
+            async with self.root_profile.session() as session:
                 invite_store = MediationInviteStore(session.context.inject(BaseStorage))
                 mediation_invite_record = (
                     await invite_store.get_mediation_invite_record(provided_invite)
                 )
-            except Exception:
-                LOGGER.exception("Error retrieving mediator invitation")
-                mediation_invite_record = None
+        except Exception:
+            LOGGER.exception("Error retrieving mediator invitation")
+            mediation_invite_record = None
 
         # Accept mediation invitation if one was specified or stored
         if mediation_invite_record is not None:

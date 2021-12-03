@@ -198,7 +198,6 @@ async def wallet_did_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
     filter_did = request.query.get("did")
     filter_verkey = request.query.get("verkey")
     filter_method = DIDMethod.from_method(request.query.get("method"))

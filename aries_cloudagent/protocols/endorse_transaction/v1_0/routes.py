@@ -265,7 +265,10 @@ async def transaction_create_request(request: web.BaseRequest):
 
     transaction_mgr = TransactionManager(context.profile)
     try:
-        transaction_record, transaction_request = await transaction_mgr.create_request(
+        (
+            transaction_record,
+            transaction_request,
+        ) = await transaction_mgr.create_request(
             transaction=transaction_record,
             expires_time=expires_time,
             endorser_write_txn=endorser_write_txn,
@@ -436,7 +439,6 @@ async def cancel_transaction(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
@@ -471,7 +473,8 @@ async def cancel_transaction(request: web.BaseRequest):
             transaction,
             cancelled_transaction_response,
         ) = await transaction_mgr.cancel_transaction(
-            transaction=transaction, state=TransactionRecord.STATE_TRANSACTION_CANCELLED
+            transaction=transaction,
+            state=TransactionRecord.STATE_TRANSACTION_CANCELLED,
         )
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -501,7 +504,6 @@ async def transaction_resend(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
@@ -672,7 +674,6 @@ async def transaction_write(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
-
     transaction_id = request.match_info["tran_id"]
     try:
         async with context.profile.session() as session:
