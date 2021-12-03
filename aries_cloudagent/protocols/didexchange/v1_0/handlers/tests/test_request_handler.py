@@ -161,6 +161,28 @@ class TestDIDXRequestHandler(AsyncTestCase):
         assert not responder.messages
 
     @async_mock.patch.object(test_module, "DIDXManager")
+    async def test_called_with_auto_response(self, mock_didx_mgr):
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.accept = conn_record.ConnRecord.ACCEPT_AUTO
+        mock_conn_rec.save = async_mock.CoroutineMock()
+        mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock(
+            return_value=mock_conn_rec
+        )
+        mock_didx_mgr.return_value.create_response = async_mock.CoroutineMock()
+        self.ctx.message = DIDXRequest()
+        handler_inst = test_module.DIDXRequestHandler()
+        responder = MockResponder()
+        await handler_inst.handle(self.ctx, responder)
+
+        mock_didx_mgr.return_value.receive_request.assert_called_once_with(
+            request=self.ctx.message,
+            recipient_did=self.ctx.message_receipt.recipient_did,
+            recipient_verkey=None,
+            mediation_id=None,
+        )
+        assert responder.messages
+
+    @async_mock.patch.object(test_module, "DIDXManager")
     async def test_problem_report(self, mock_didx_mgr):
         mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
