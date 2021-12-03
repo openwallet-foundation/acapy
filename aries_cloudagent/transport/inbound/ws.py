@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import os
 
 from aiohttp import WSMessage, WSMsgType, web
 
@@ -12,10 +11,6 @@ from .base import BaseInboundTransport, InboundTransportSetupError
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-WS_HEARTBEAT_INT = int(os.environ.get("ACAPY_WS_HEARTBEAT_INTERVAL", "3"))
-WS_TIMEOUT_INT = int(os.environ.get("ACAPY_WS_TIMEOUT_INTERVAL", "15"))
 
 
 class WsTransport(BaseInboundTransport):
@@ -35,6 +30,12 @@ class WsTransport(BaseInboundTransport):
         self.host = host
         self.port = port
         self.site: web.BaseSite = None
+        self.heartbeat_interval: int = self.root_profile.settings.get_int(
+            "transport.ws.heartbeat_interval"
+        )
+        self.timout_interval: int = self.root_profile.settings.get_int(
+            "transport.ws.timout_interval"
+        )
 
         # TODO: set scheme dynamically based on SSL settings (ws/wss)
 
@@ -88,7 +89,9 @@ class WsTransport(BaseInboundTransport):
         """
 
         ws = web.WebSocketResponse(
-            autoping=True, heartbeat=WS_HEARTBEAT_INT, receive_timeout=WS_TIMEOUT_INT
+            autoping=True,
+            heartbeat=self.heartbeat_interval,
+            receive_timeout=self.timout_interval,
         )
         await ws.prepare(request)
         loop = asyncio.get_event_loop()
