@@ -22,7 +22,10 @@ class TestWsTransport(AioHTTPTestCase):
         self.message_results = []
         self.port = unused_port()
         self.session = None
-        self.transport = WsTransport("0.0.0.0", self.port, self.create_session)
+        self.profile = InMemoryProfile.test_profile()
+        self.transport = WsTransport(
+            "0.0.0.0", self.port, self.create_session, root_profile=self.profile
+        )
         self.transport.wire_format = JsonWireFormat()
         self.result_event = None
         super().setUp()
