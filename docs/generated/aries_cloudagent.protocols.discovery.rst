@@ -13,6 +13,7 @@ Subpackages
    :maxdepth: 4
 
    aries_cloudagent.protocols.discovery.v1_0
+   aries_cloudagent.protocols.discovery.v2_0
 
 Submodules
 ----------

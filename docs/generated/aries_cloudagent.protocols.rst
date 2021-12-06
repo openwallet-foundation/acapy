@@ -25,6 +25,7 @@ Subpackages
    aries_cloudagent.protocols.out_of_band
    aries_cloudagent.protocols.present_proof
    aries_cloudagent.protocols.problem_report
+   aries_cloudagent.protocols.revocation_notification
    aries_cloudagent.protocols.routing
    aries_cloudagent.protocols.trustping
 
