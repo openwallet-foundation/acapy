@@ -210,7 +210,7 @@ class Conductor:
             DocumentLoader, DocumentLoader(self.root_profile)
         )
 
-        self.outbound_queue = get_outbound_queue(context.settings)
+        self.outbound_queue = get_outbound_queue(self.root_profile)
 
         # Admin API
         if context.settings.get("admin.enabled"):
@@ -271,6 +271,13 @@ class Conductor:
         except Exception:
             LOGGER.exception("Unable to start outbound transports")
             raise
+
+        if self.outbound_queue:
+            try:
+                await self.outbound_queue.start()
+            except Exception:
+                LOGGER.exception("Unable to start outbound queue")
+                raise
 
         # Start up Admin server
         if self.admin_server:
@@ -459,6 +466,8 @@ class Conductor:
             shutdown.run(self.inbound_transport_manager.stop())
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
+        if self.outbound_queue:
+            shutdown.run(self.outbound_queue.stop())
 
         # close multitenant profiles
         multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
