@@ -5,7 +5,7 @@ from typing import Union
 import aioredis
 import msgpack
 
-from ....config.settings import Settings
+from ....core.profile import Profile
 from .base import BaseOutboundQueue, OutboundQueueConfigurationError, OutboundQueueError
 
 
@@ -14,10 +14,11 @@ class RedisOutboundQueue(BaseOutboundQueue):
 
     config_key = "redis_queue"
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
         try:
-            config = settings["plugin_config"][self.config_key]
+            plugin_config = root_profile.settings["plugin_config"] or {}
+            config = plugin_config[self.config_key]
             self.connection = config["connection"]
         except KeyError as error:
             raise OutboundQueueConfigurationError(

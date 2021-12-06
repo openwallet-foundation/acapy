@@ -1,5 +1,6 @@
 """Connection request handler under RFC 23 (DID exchange)."""
 
+from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ....problem_report.v1_0.message import ProblemReport
@@ -33,8 +34,10 @@ class DIDXRequestHandler(BaseHandler):
                 )
         else:
             mediation_metadata = {}
+
+        mediation_id = mediation_metadata.get("id")
         try:
-            await mgr.receive_request(
+            conn_rec = await mgr.receive_request(
                 request=context.message,
                 recipient_did=context.message_receipt.recipient_did,
                 recipient_verkey=(
@@ -42,8 +45,24 @@ class DIDXRequestHandler(BaseHandler):
                     if context.message_receipt.recipient_did_public
                     else context.message_receipt.recipient_verkey
                 ),
-                mediation_id=mediation_metadata.get("id"),
+                mediation_id=mediation_id,
             )
+
+            # Auto respond
+            if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
+                response = await mgr.create_response(
+                    conn_rec,
+                    mediation_id=mediation_id,
+                )
+                await responder.send_reply(
+                    response, connection_id=conn_rec.connection_id
+                )
+                conn_rec.state = ConnRecord.State.RESPONSE.rfc23
+                async with context.session() as session:
+                    await conn_rec.save(session, reason="Sent connection response")
+            else:
+                self._logger.debug("DID exchange request will await acceptance")
+
         except DIDXManagerError as e:
             self._logger.exception("Error receiving RFC 23 connection request")
             if e.error_code:

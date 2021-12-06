@@ -540,11 +540,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
                 assert conn_rec
 
-            messages = self.responder.messages
-            assert len(messages) == 2
-            (result, target) = messages[0]
-            assert "connection_id" in target
-
     async def test_receive_request_invi_not_found(self):
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock(
