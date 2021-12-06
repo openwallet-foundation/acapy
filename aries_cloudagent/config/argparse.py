@@ -1218,6 +1218,28 @@ class TransportGroup(ArgumentGroup):
                 "accumulated messages in message queue. Default value is 4."
             ),
         )
+        parser.add_argument(
+            "--ws-heartbeat-interval",
+            default=3,
+            type=BoundedInt(min=1),
+            env_var="ACAPY_WS_HEARTBEAT_INTERVAL",
+            metavar="<interval>",
+            help=(
+                "When using Websocket Inbound Transport, send WS pings every "
+                "<interval> seconds."
+            ),
+        )
+        parser.add_argument(
+            "--ws-timeout-interval",
+            default=15,
+            type=BoundedInt(min=1),
+            env_var="ACAPY_WS_TIMEOUT_INTERVAL",
+            metavar="<interval>",
+            help=(
+                "When using Websocket Inbound Transport, timeout the WS connection "
+                "after <interval> seconds without a heartbeat ping."
+            ),
+        )
 
     def get_settings(self, args: Namespace):
         """Extract transport settings."""
@@ -1250,6 +1272,10 @@ class TransportGroup(ArgumentGroup):
             settings["transport.max_message_size"] = args.max_message_size
         if args.max_outbound_retry:
             settings["transport.max_outbound_retry"] = args.max_outbound_retry
+        if args.ws_heartbeat_interval:
+            settings["transport.ws.heartbeat_interval"] = args.ws_heartbeat_interval
+        if args.ws_timeout_interval:
+            settings["transport.ws.timeout_interval"] = args.ws_timeout_interval
 
         return settings
 
