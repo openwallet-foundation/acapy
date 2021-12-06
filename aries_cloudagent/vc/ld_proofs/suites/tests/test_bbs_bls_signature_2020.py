@@ -21,6 +21,47 @@ from ...ld_proofs import sign, verify
 
 from ..bbs_bls_signature_2020 import BbsBlsSignature2020
 
+TEST_CRED_WITH_CRED_SCHEMA = {
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/citizenship/v1",
+        "https://w3id.org/security/bbs/v1",
+    ],
+    "type": ["VerifiableCredential", "PermanentResident"],
+    "id": "https://credential.example.com/residents/1234567890",
+    "issuer": "did:key:zUC7D5oH6hfJr96qZsU8r3XhwiN8BwhWpddV4pfDeKo4YyCDfLa7niUtGcEStMNGRAFyUbtxQfYVpzUN1ErpstFNNxiLQrFdGPD5XSHYqXTZP3xHuRxFyFP4DicuPdY7a6pQTxw",
+    "issuanceDate": "2020-01-01T12:00:00Z",
+    "credentialSchema": {
+        "id": "https://example.com/schema",
+        "type": "JsonSchemaValidator2020",
+    },
+    "credentialSubject": {
+        "id": "did:key:zUC71RG7iRDx8JmAciZmn4dWR5NGBRHaPAKrLzD2dmoaTWUzViJui6L3RZbQHVgtsQbcERzZUe1Vk6Khym6vpZqfXVXNLcdhgeuKDB4wHU5Fr1iX76jqjGVd7n7D7cRn2AFq8cT",
+        "type": ["PermanentResident"],
+        "givenName": "ALICE",
+        "familyName": "SMITH",
+        "gender": "Female",
+        "birthCountry": "Bahamas",
+        "birthDate": "1958-07-17",
+    },
+}
+
+EXPECTED_DOCUMENT_STATEMENTS = [
+    '<did:key:zUC71RG7iRDx8JmAciZmn4dWR5NGBRHaPAKrLzD2dmoaTWUzViJui6L3RZbQHVgtsQbcERzZUe1Vk6Khym6vpZqfXVXNLcdhgeuKDB4wHU5Fr1iX76jqjGVd7n7D7cRn2AFq8cT> <http://schema.org/birthDate> "1958-07-17"^^<http://www.w3.org/2001/XMLSchema#dateTime> .',
+    '<did:key:zUC71RG7iRDx8JmAciZmn4dWR5NGBRHaPAKrLzD2dmoaTWUzViJui6L3RZbQHVgtsQbcERzZUe1Vk6Khym6vpZqfXVXNLcdhgeuKDB4wHU5Fr1iX76jqjGVd7n7D7cRn2AFq8cT> <http://schema.org/familyName> "SMITH" .',
+    '<did:key:zUC71RG7iRDx8JmAciZmn4dWR5NGBRHaPAKrLzD2dmoaTWUzViJui6L3RZbQHVgtsQbcERzZUe1Vk6Khym6vpZqfXVXNLcdhgeuKDB4wHU5Fr1iX76jqjGVd7n7D7cRn2AFq8cT> <http://schema.org/gender> "Female" .',
+    '<did:key:zUC71RG7iRDx8JmAciZmn4dWR5NGBRHaPAKrLzD2dmoaTWUzViJui6L3RZbQHVgtsQbcERzZUe1Vk6Khym6vpZqfXVXNLcdhgeuKDB4wHU5Fr1iX76jqjGVd7n7D7cRn2AFq8cT> <http://schema.org/givenName> "ALICE" .',
+    "<did:key:zUC71RG7iRDx8JmAciZmn4dWR5NGBRHaPAKrLzD2dmoaTWUzViJui6L3RZbQHVgtsQbcERzZUe1Vk6Khym6vpZqfXVXNLcdhgeuKDB4wHU5Fr1iX76jqjGVd7n7D7cRn2AFq8cT> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/citizenship#PermanentResident> .",
+    '<did:key:zUC71RG7iRDx8JmAciZmn4dWR5NGBRHaPAKrLzD2dmoaTWUzViJui6L3RZbQHVgtsQbcERzZUe1Vk6Khym6vpZqfXVXNLcdhgeuKDB4wHU5Fr1iX76jqjGVd7n7D7cRn2AFq8cT> <https://w3id.org/citizenship#birthCountry> "Bahamas" .',
+    "<https://credential.example.com/residents/1234567890> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://w3id.org/citizenship#PermanentResident> .",
+    "<https://credential.example.com/residents/1234567890> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://www.w3.org/2018/credentials#VerifiableCredential> .",
+    "<https://credential.example.com/residents/1234567890> <https://www.w3.org/2018/credentials#credentialSchema> <https://example.com/schema> .",
+    "<https://credential.example.com/residents/1234567890> <https://www.w3.org/2018/credentials#credentialSubject> <did:key:zUC71RG7iRDx8JmAciZmn4dWR5NGBRHaPAKrLzD2dmoaTWUzViJui6L3RZbQHVgtsQbcERzZUe1Vk6Khym6vpZqfXVXNLcdhgeuKDB4wHU5Fr1iX76jqjGVd7n7D7cRn2AFq8cT> .",
+    '<https://credential.example.com/residents/1234567890> <https://www.w3.org/2018/credentials#issuanceDate> "2020-01-01T12:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> .',
+    "<https://credential.example.com/residents/1234567890> <https://www.w3.org/2018/credentials#issuer> <did:key:zUC7D5oH6hfJr96qZsU8r3XhwiN8BwhWpddV4pfDeKo4YyCDfLa7niUtGcEStMNGRAFyUbtxQfYVpzUN1ErpstFNNxiLQrFdGPD5XSHYqXTZP3xHuRxFyFP4DicuPdY7a6pQTxw> .",
+    "<https://example.com/schema> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://json-ld.org/playground/JsonSchemaValidator2020> .",
+]
+
 
 @pytest.mark.ursa_bbs_signatures
 class TestBbsBlsSignature2020(TestCase):
@@ -44,6 +85,16 @@ class TestBbsBlsSignature2020(TestCase):
         self.verify_key_pair = WalletKeyPair(
             wallet=self.wallet, key_type=KeyType.BLS12381G2
         )
+
+    async def test_create_verify_document_data(self):
+        suite = BbsBlsSignature2020(
+            key_pair=self.sign_key_pair,
+            verification_method=self.verification_method,
+        )
+        gen_doc_stms = suite._create_verify_document_data(
+            document=TEST_CRED_WITH_CRED_SCHEMA, document_loader=custom_document_loader
+        )
+        assert len(gen_doc_stms) == len(EXPECTED_DOCUMENT_STATEMENTS)
 
     async def test_sign_ld_proofs(self):
         signed = await sign(

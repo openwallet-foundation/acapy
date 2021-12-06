@@ -519,6 +519,11 @@ class DIFPresExchHandler:
                 "issuanceDate": {},
                 "issuer": {},
             }
+            if "credentialSchema" in credential_dict:
+                derived["credentialSchema"] = {
+                    "@requireAll": True,
+                    "@explicit": True,
+                }
             unflatten_dict = {}
             for field in constraints._fields:
                 for path in field.paths:
