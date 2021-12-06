@@ -19,6 +19,14 @@ Subpackages
 Submodules
 ----------
 
+aries\_cloudagent.protocols.coordinate\_mediation.v1\_0.controller module
+-------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.coordinate_mediation.v1_0.controller
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.protocols.coordinate\_mediation.v1\_0.manager module
 ----------------------------------------------------------------------
 
