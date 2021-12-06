@@ -549,27 +549,10 @@ class DIDXManager(BaseConnectionManager):
         # Send keylist updates to mediator
         mediation_record = await mediation_record_if_id(self.profile, mediation_id)
         if keylist_updates and mediation_record:
-            responder = self.profile.inject_or(BaseResponder)
+            responder = self.profile.inject(BaseResponder)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
-
-        if auto_accept:
-            response = await self.create_response(
-                conn_rec,
-                my_endpoint,
-                mediation_id=mediation_id,
-            )
-            responder = self.profile.inject_or(BaseResponder)
-            if responder:
-                await responder.send_reply(
-                    response, connection_id=conn_rec.connection_id
-                )
-                conn_rec.state = ConnRecord.State.RESPONSE.rfc23
-                async with self.profile.session() as session:
-                    await conn_rec.save(session, reason="Sent connection response")
-        else:
-            self._logger.debug("DID exchange request will await acceptance")
 
         return conn_rec
 

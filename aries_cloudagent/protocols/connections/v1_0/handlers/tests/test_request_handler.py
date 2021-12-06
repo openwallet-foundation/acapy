@@ -89,6 +89,24 @@ class TestRequestHandler:
 
     @pytest.mark.asyncio
     @async_mock.patch.object(handler, "ConnectionManager")
+    async def test_called_with_auto_response(self, mock_conn_mgr, request_context):
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.accept = ConnRecord.ACCEPT_AUTO
+        mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock(
+            return_value=mock_conn_rec
+        )
+        mock_conn_mgr.return_value.create_response = async_mock.CoroutineMock()
+        request_context.message = ConnectionRequest()
+        handler_inst = handler.ConnectionRequestHandler()
+        responder = MockResponder()
+        await handler_inst.handle(request_context, responder)
+        mock_conn_mgr.return_value.receive_request.assert_called_once_with(
+            request_context.message, request_context.message_receipt, mediation_id=None
+        )
+        assert responder.messages
+
+    @pytest.mark.asyncio
+    @async_mock.patch.object(handler, "ConnectionManager")
     async def test_connection_record_with_mediation_metadata(
         self, mock_conn_mgr, request_context, connection_record
     ):
