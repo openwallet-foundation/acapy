@@ -94,7 +94,8 @@ class TestBbsBlsSignature2020(TestCase):
         gen_doc_stms = suite._create_verify_document_data(
             document=TEST_CRED_WITH_CRED_SCHEMA, document_loader=custom_document_loader
         )
-        assert len(set(EXPECTED_DOCUMENT_STATEMENTS) - set(gen_doc_stms)) == 0
+        diff = list(set(EXPECTED_DOCUMENT_STATEMENTS) - set(gen_doc_stms))
+        assert len(diff) == 0
 
     async def test_sign_ld_proofs(self):
         signed = await sign(
