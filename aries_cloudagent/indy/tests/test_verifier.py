@@ -824,3 +824,71 @@ class TestIndySdkVerifier(AsyncTestCase):
                 ],
             },
         )
+        await self.verifier.pre_verify(
+            {
+                "nonce": "15606741555044336341559",
+                "name": "proof_req",
+                "version": "0.0",
+                "requested_attributes": {},
+                "requested_predicates": {
+                    "18_id_GE_uuid": {
+                        "name": "id",
+                        "p_type": ">=",
+                        "p_value": 4,
+                        "restrictions": [
+                            {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag"}
+                        ],
+                    },
+                    "18_id_LE_uuid": {
+                        "name": "id",
+                        "p_type": "<=",
+                        "p_value": 11198760,
+                        "restrictions": [
+                            {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag"}
+                        ],
+                    },
+                },
+            },
+            {
+                "proof": {
+                    "proofs": [
+                        {
+                            "primary_proof": {
+                                "eq_proof": {},
+                                "ge_proofs": [
+                                    {
+                                        "predicate": {
+                                            "attr_name": "id",
+                                            "value": 11198760,
+                                        }
+                                    },
+                                    {
+                                        "predicate": {
+                                            "attr_name": "id",
+                                            "value": 4,
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                },
+                "requested_proof": {
+                    "revealed_attrs": {},
+                    "self_attested_attrs": {},
+                    "unrevealed_attrs": {},
+                    "predicates": {
+                        "18_id_LE_uuid": {"sub_proof_index": 0},
+                        "18_id_GE_uuid": {"sub_proof_index": 0},
+                    },
+                },
+                "identifiers": [
+                    {
+                        "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
+                        "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
+                        "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
+                        "timestamp": 1579892963,
+                    }
+                ],
+            },
+        )
