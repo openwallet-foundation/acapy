@@ -260,7 +260,6 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                 for ge_proof in pres["proof"]["proofs"][
                     pres["requested_proof"]["predicates"][uuid]["sub_proof_index"]
                 ]["primary_proof"]["ge_proofs"]:
-                    print("ge_proof:", ge_proof)
                     pred = ge_proof["predicate"]
                     if pred["attr_name"] == canon_attr:
                         found = True
