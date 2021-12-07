@@ -260,6 +260,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                 for ge_proof in pres["proof"]["proofs"][
                     pres["requested_proof"]["predicates"][uuid]["sub_proof_index"]
                 ]["primary_proof"]["ge_proofs"]:
+                    print("ge_proof:", ge_proof)
                     pred = ge_proof["predicate"]
                     if pred["attr_name"] == canon_attr:
                         found = True
@@ -267,14 +268,11 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                             matched = True
                             break
                 if not matched:
-                    raise ValueError(
-                        f"Predicate value != p_value: {pred['attr_name']}"
-                    )
+                    raise ValueError(f"Predicate value != p_value: {pred['attr_name']}")
                     break
                 elif not found:
                     raise ValueError(f"Missing requested predicate '{uuid}'")
-            except (KeyError, TypeError) as e:
-                print(e)
+            except (KeyError, TypeError):
                 raise ValueError(f"Missing requested predicate '{uuid}'")
 
         revealed_attrs = pres["requested_proof"].get("revealed_attrs", {})

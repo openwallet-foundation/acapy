@@ -867,8 +867,8 @@ class TestIndySdkVerifier(AsyncTestCase):
                                             "attr_name": "id",
                                             "value": 4,
                                         }
-                                    }
-                                ]
+                                    },
+                                ],
                             }
                         }
                     ],
