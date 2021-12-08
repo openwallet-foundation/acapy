@@ -460,7 +460,7 @@ class OutOfBandManager(BaseConnectionManager):
         # Reuse Connection - only if started by an invitation with Public DID
         conn_rec = None
         if public_did is not None:  # invite has public DID: seek existing connection
-            async with self.profile.session() as session:
+            async with self._profile.session() as session:
                 conn_rec = await ConnRecord.find_existing_connection(
                     session=session, their_public_did=public_did
                 )
