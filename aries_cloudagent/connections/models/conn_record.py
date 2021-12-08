@@ -360,19 +360,14 @@ class ConnRecord(BaseRecord):
             their_public_did: Inviter public DID
         """
         tag_filter = {"their_public_did": their_public_did}
-        post_filter = {
-            "state": "active",
-        }
         conn_records = await cls.query(
             session,
             tag_filter=tag_filter,
-            post_filter_positive=post_filter,
-            alt=True,
         )
-        if len(conn_records) > 0:
-            return conn_records[0]
-        else:
-            return None
+        for conn_record in conn_records:
+            if conn_record.state == ConnRecord.State.COMPLETED:
+                return conn_record
+        return None
 
     @classmethod
     async def retrieve_by_request_id(

@@ -2190,8 +2190,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 retrieved_conn_records = await ConnRecord.query(
                     session=session,
                     tag_filter={"their_public_did": TestConfig.test_target_did},
-                    post_filter_positive={},
-                    alt=True,
                 )
                 assert (
                     retrieved_conn_records[0].state == ConnRecord.State.ABANDONED.rfc160
