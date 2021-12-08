@@ -492,7 +492,7 @@ class DIDXManager(BaseConnectionManager):
                 conn_rec.alias = alias
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
-            conn_rec.request_id = request._id
+            # conn_rec.request_id = request._id
             async with self.profile.session() as session:
                 await conn_rec.save(
                     session, reason="Received connection request from invitation"
@@ -533,7 +533,7 @@ class DIDXManager(BaseConnectionManager):
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
                 invitation_key=connection_key,
                 invitation_msg_id=None,
-                request_id=request._id,
+                # request_id=request._id,
                 state=ConnRecord.State.REQUEST.rfc23,
                 connection_protocol=DIDX_PROTO,
             )

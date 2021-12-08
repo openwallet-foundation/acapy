@@ -8,7 +8,11 @@ inbound-transport:
   - [http, 0.0.0.0, 8030]
   - [ws, 0.0.0.0, 8040]
 outbound-transport: http
-endpoint: http://192.168.0.48:8030
+endpoint: http://127.0.0.1:8030
 admin-insecure-mode: true
 admin: [0.0.0.0, 8031]
 no-ledger: true
+wallet-type: indy
+wallet-name: testwallet
+wallet-key: key
+auto-provision: true
