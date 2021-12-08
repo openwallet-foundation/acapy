@@ -603,14 +603,12 @@ class ConnectionManager(BaseConnectionManager):
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
             async with self.profile.session() as session:
-                conn_records = await ConnRecord.retrieve_by_invitation_msg_id(
+                connection = await ConnRecord.retrieve_by_invitation_msg_id(
                     session=session,
                     invitation_msg_id=request._thread.pthid,
                     their_role=ConnRecord.Role.REQUESTER.rfc160,
                 )
-            if len(conn_records) == 1:
-                connection = conn_records[0]
-            else:
+            if not connection:
                 connection = ConnRecord()
             connection.invitation_key = connection_key
             connection.my_did = my_info.did

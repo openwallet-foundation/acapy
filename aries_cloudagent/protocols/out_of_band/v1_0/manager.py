@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 
-from typing import Mapping, Sequence, Optional
+from typing import Mapping, Sequence
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
@@ -460,13 +460,10 @@ class OutOfBandManager(BaseConnectionManager):
         # Reuse Connection - only if started by an invitation with Public DID
         conn_rec = None
         if public_did is not None:  # invite has public DID: seek existing connection
-            tag_filter = {}
-            post_filter = {}
-            # post_filter["state"] = ConnRecord.State.COMPLETED.rfc160
-            post_filter["their_public_did"] = public_did
-            conn_rec = await self.find_existing_connection(
-                tag_filter=tag_filter, post_filter=post_filter
-            )
+            async with self.profile.session() as session:
+                conn_rec = await ConnRecord.find_existing_connection(
+                    session=session, their_public_did=public_did
+                )
         if conn_rec is not None:
             num_included_protocols = len(unq_handshake_protos)
             num_included_req_attachments = len(invitation.requests_attach)
@@ -892,38 +889,6 @@ class OutOfBandManager(BaseConnectionManager):
                     "respond automatically to credential offers"
                 )
             )
-
-    async def find_existing_connection(
-        self,
-        tag_filter: dict,
-        post_filter: dict,
-    ) -> Optional[ConnRecord]:
-        """
-        Find existing ConnRecord.
-
-        Args:
-            tag_filter: The filter dictionary to apply
-            post_filter: Additional value filters to apply matching positively,
-                with sequence values specifying alternatives to match (hit any)
-
-        Returns:
-            ConnRecord or None
-
-        """
-        async with self.profile.session() as session:
-            conn_records = await ConnRecord.query(
-                session,
-                tag_filter=tag_filter,
-                post_filter_positive=post_filter,
-                alt=True,
-            )
-        if not conn_records:
-            return None
-        else:
-            for conn_rec in conn_records:
-                if conn_rec.state == "active":
-                    return conn_rec
-            return None
 
     async def check_reuse_msg_state(
         self,
