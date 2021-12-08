@@ -977,13 +977,15 @@ class OutOfBandManager(BaseConnectionManager):
 
     async def delete_stale_connection_by_invitation(self, invi_msg_id: str):
         """Delete unused connections, using existing an active connection instead."""
+        tag_filter = {}
         post_filter = {}
-        post_filter["invitation_msg_id"] = invi_msg_id
+        tag_filter["invitation_msg_id"] = invi_msg_id
         post_filter["invitation_mode"] = "once"
         post_filter["state"] = "invitation"
         async with self.profile.session() as session:
             conn_records = await ConnRecord.query(
                 session,
+                tag_filter=tag_filter,
                 post_filter_positive=post_filter,
             )
             for conn_rec in conn_records:

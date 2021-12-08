@@ -1556,8 +1556,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     len(
                         await ConnRecord.query(
                             session=session,
-                            tag_filter={},
-                            post_filter_positive={"invitation_msg_id": "test_123"},
+                            tag_filter={"invitation_msg_id": "test_123"},
+                            post_filter_positive={},
                             alt=True,
                         )
                     )
@@ -1959,10 +1959,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 retrieved_conn_records = await ConnRecord.query(
                     session=session,
-                    tag_filter={},
-                    post_filter_positive={
+                    tag_filter={
                         "invitation_msg_id": "12345678-0123-4567-1234-567812345678"
                     },
+                    post_filter_positive={},
                     alt=True,
                 )
                 assert (
@@ -2065,10 +2065,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 retrieved_conn_records = await ConnRecord.query(
                     session=session,
-                    tag_filter={},
-                    post_filter_positive={
+                    tag_filter={
                         "invitation_msg_id": "12345678-0123-4567-1234-567812345678"
                     },
+                    post_filter_positive={},
                     alt=True,
                 )
                 assert (
@@ -2128,10 +2128,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 retrieved_conn_records = await ConnRecord.query(
                     session=session,
-                    tag_filter={},
-                    post_filter_positive={
+                    tag_filter={
                         "invitation_msg_id": "12345678-0123-4567-1234-567812345678"
                     },
+                    post_filter_positive={},
                     alt=True,
                 )
                 assert result.connection_id != retrieved_conn_records[0].connection_id
@@ -2189,10 +2189,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 retrieved_conn_records = await ConnRecord.query(
                     session=session,
-                    tag_filter={},
-                    post_filter_positive={
-                        "their_public_did": TestConfig.test_target_did
-                    },
+                    tag_filter={"their_public_did": TestConfig.test_target_did},
+                    post_filter_positive={},
                     alt=True,
                 )
                 assert (
