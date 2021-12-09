@@ -16,7 +16,6 @@ from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .util import notify_pending_cleared_event, notify_revocation_published_event
 from ..protocols.issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
-from ..protocols.issue_credential.v1_0.routes import credential_exchange_retrieve
 from ..protocols.issue_credential.v1_0.manager import CredentialManagerError
 
 
@@ -69,21 +68,21 @@ class RevocationManager:
                 f"credential exchange id {cred_ex_id}"
             ) from err
 
-        try:
-            async with self._profile.session() as session:
-                cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                    session, cred_ex_id
-                )
-        except StorageNotFoundError as err:
-            raise CredentialManagerError(
-                "No issuer credential exchange record found for "
-                f"credential exchange id {cred_ex_id}"
-            ) from err
+        if publish:
+            try:
+                async with self._profile.session() as session:
+                    cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                        session, cred_ex_id
+                    )
+            except StorageNotFoundError as err:
+                raise CredentialManagerError(
+                    "No issuer credential exchange record found for "
+                    f"credential exchange id {cred_ex_id}"
+                ) from err
 
-        cred_ex_record.state = V10CredentialExchange.STATE_CREDENTIAL_REVOKED
-        async with self._profile.session() as session:
-            # FIXME - re-fetch record to check state, apply transactional update
-            await cred_ex_record.save(session, reason="revoke credential")
+            cred_ex_record.state = V10CredentialExchange.STATE_CREDENTIAL_REVOKED
+            async with self._profile.session() as session:
+                await cred_ex_record.save(session, reason="revoke credential")
 
         return await self.revoke_credential(
             rev_reg_id=rec.rev_reg_id,
