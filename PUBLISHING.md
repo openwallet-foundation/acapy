@@ -23,4 +23,6 @@ Once ready to do a release, create a PR that includes the following updates:
 
 5. Create a new GitHub release. The tag name and title of the release should be the same as the version in [aries_cloudagent/version.py](aries_cloudagent/version.py). Include the additions to CHANGELOG.md in the release notes.
 
-6. Publish a new docker container on Docker Hub ([bcgovimages/aries-cloudagent](https://hub.docker.com/r/bcgovimages/aries-cloudagent/)) by following the instructions to create a PR for the release in the repository [https://github.com/bcgov/aries-cloudagent-container](https://github.com/bcgov/aries-cloudagent-container).
+6. Publish a new docker container on Docker Hub ([bcgovimages/aries-cloudagent](https://hub.docker.com/r/bcgovimages/aries-cloudagent/)) by following the instructions to create a PR for the release in the repository [https://github.com/bcgov/aries-cloudagent-container](https://github.com/bcgov/aries-cloudagent-container). Appropriate permissions are required to publish the image.
+
+7. Update the AC-Py Read The Docs site by building the new "latest" (main branch) and activating and building the new release. Appropriate permissions are required to publish the new documentation version.
