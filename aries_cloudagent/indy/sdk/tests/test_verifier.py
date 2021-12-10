@@ -334,7 +334,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_non_revox, async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = self.ledger
+            mock_get_ledger.return_value = (None, self.ledger)
             INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
             verified = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_X,
@@ -395,7 +395,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = self.ledger
+            mock_get_ledger.return_value = (None, self.ledger)
             mock_verify.return_value = True
             verified = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_NAME,
@@ -448,7 +448,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = self.ledger
+            mock_get_ledger.return_value = (None, self.ledger)
             verified = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_X,
@@ -501,7 +501,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = self.ledger
+            mock_get_ledger.return_value = (None, self.ledger)
             verified = await self.verifier.verify_presentation(
                 deepcopy(INDY_PROOF_REQ_PRED_NAMES),
                 INDY_PROOF_X,
@@ -522,7 +522,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = self.ledger
+            mock_get_ledger.return_value = (None, self.ledger)
             verified = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_X,
                 INDY_PROOF_PRED_NAMES,

@@ -17,7 +17,7 @@ from .endpoint_type import EndpointType
 class BaseLedger(ABC, metaclass=ABCMeta):
     """Base class for ledger."""
 
-    BACKEND_NAME = None
+    BACKEND_NAME: str = None
 
     async def __aenter__(self) -> "BaseLedger":
         """

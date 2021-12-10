@@ -1,11 +1,9 @@
 """Ledger Request Executor."""
-from typing import Tuple, Union, Optional
+from typing import Optional, Tuple
 
 from ...config.base import InjectionError
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
-from ...ledger.indy import IndySdkLedger
-from ...ledger.indy_vdr import IndyVdrLedger
 from ...ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
@@ -41,16 +39,11 @@ class IndyLedgerRequestsExecutor:
 
     async def get_ledger_for_identifier(
         self, identifier: str, txn_record_type: int
-    ) -> Union[
-        Optional[IndyVdrLedger],
-        Optional[IndySdkLedger],
-        Tuple[str, IndyVdrLedger],
-        Tuple[str, IndySdkLedger],
-    ]:
+    ) -> Tuple[Optional[str], Optional[BaseLedger]]:
         """Return ledger info given the record identifier."""
         # For seqNo
         if identifier.isdigit():
-            return self.profile.inject(BaseLedger)
+            return (None, self.profile.inject(BaseLedger))
         elif (
             self.profile.settings.get("ledger.ledger_config_list")
             and len(self.profile.settings.get("ledger.ledger_config_list")) > 0
@@ -66,6 +59,5 @@ class IndyLedgerRequestsExecutor:
                     extracted_did, cache_did=cache_did
                 )
             except (MultipleLedgerManagerError, InjectionError):
-                return self.profile.inject_or(BaseLedger)
-        else:
-            return self.profile.inject_or(BaseLedger)
+                pass
+        return (None, self.profile.inject_or(BaseLedger))

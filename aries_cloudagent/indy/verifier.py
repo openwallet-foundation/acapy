@@ -106,14 +106,12 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
             if ident.get("timestamp"):
                 cred_def_id = ident["cred_def_id"]
                 ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-                ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                    cred_def_id,
-                    txn_record_type=GET_CRED_DEF,
-                )
-                if isinstance(ledger_info, tuple):
-                    ledger = ledger_info[1]
-                else:
-                    ledger = ledger_info
+                ledger = (
+                    await ledger_exec_inst.get_ledger_for_identifier(
+                        cred_def_id,
+                        txn_record_type=GET_CRED_DEF,
+                    )
+                )[1]
                 async with ledger:
                     cred_def = await ledger.get_credential_definition(cred_def_id)
                     if not cred_def["value"].get("revocation"):

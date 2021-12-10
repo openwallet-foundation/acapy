@@ -311,7 +311,7 @@ class TestSchemaRoutes(AsyncTestCase):
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
                 get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=self.ledger
+                    return_value=(None, self.ledger)
                 )
             ),
         )
@@ -327,7 +327,9 @@ class TestSchemaRoutes(AsyncTestCase):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(return_value=None)
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=(None, None)
+                )
             ),
         )
         self.request.match_info = {"schema_id": SCHEMA_ID}
@@ -344,7 +346,7 @@ class TestSchemaRoutes(AsyncTestCase):
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
                 get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=self.ledger
+                    return_value=(None, self.ledger)
                 )
             ),
         )

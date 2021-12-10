@@ -33,14 +33,12 @@ class IndyRevocation:
     ) -> "IssuerRevRegRecord":
         """Create a new revocation registry record for a credential definition."""
         ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-            cred_def_id,
-            txn_record_type=GET_CRED_DEF,
-        )
-        if isinstance(ledger_info, tuple):
-            ledger = ledger_info[1]
-        else:
-            ledger = ledger_info
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+        )[1]
         async with ledger:
             cred_def = await ledger.get_credential_definition(cred_def_id)
         if not cred_def:
@@ -111,14 +109,12 @@ class IndyRevocation:
             return IndyRevocation.REV_REG_CACHE[revoc_reg_id]
 
         ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-            revoc_reg_id,
-            txn_record_type=GET_REVOC_REG_DEF,
-        )
-        if isinstance(ledger_info, tuple):
-            ledger = ledger_info[1]
-        else:
-            ledger = ledger_info
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                revoc_reg_id,
+                txn_record_type=GET_REVOC_REG_DEF,
+            )
+        )[1]
         async with ledger:
             rev_reg = RevocationRegistry.from_definition(
                 await ledger.get_revoc_reg_def(revoc_reg_id), True

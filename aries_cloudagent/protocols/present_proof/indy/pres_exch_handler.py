@@ -94,14 +94,12 @@ class IndyPresExchHandler:
         for credential in credentials.values():
             schema_id = credential["schema_id"]
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                schema_id,
-                txn_record_type=GET_SCHEMA,
-            )
-            if isinstance(ledger_info, tuple):
-                ledger = ledger_info[1]
-            else:
-                ledger = ledger_info
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    schema_id,
+                    txn_record_type=GET_SCHEMA,
+                )
+            )[1]
             async with ledger:
                 if schema_id not in schemas:
                     schemas[schema_id] = await ledger.get_schema(schema_id)
@@ -130,14 +128,12 @@ class IndyPresExchHandler:
                 continue
             rev_reg_id = credentials[credential_id]["rev_reg_id"]
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                rev_reg_id,
-                txn_record_type=GET_REVOC_REG_DELTA,
-            )
-            if isinstance(ledger_info, tuple):
-                ledger = ledger_info[1]
-            else:
-                ledger = ledger_info
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    rev_reg_id,
+                    txn_record_type=GET_REVOC_REG_DELTA,
+                )
+            )[1]
             async with ledger:
                 reft_non_revoc_interval = precis.get("non_revoked")
                 if reft_non_revoc_interval:
@@ -227,14 +223,12 @@ class IndyPresExchHandler:
             schema_ids.append(identifier["schema_id"])
             cred_def_ids.append(identifier["cred_def_id"])
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                identifier["schema_id"],
-                txn_record_type=GET_SCHEMA,
-            )
-            if isinstance(ledger_info, tuple):
-                ledger = ledger_info[1]
-            else:
-                ledger = ledger_info
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    identifier["schema_id"],
+                    txn_record_type=GET_SCHEMA,
+                )
+            )[1]
             async with ledger:
                 # Build schemas for anoncreds
                 if identifier["schema_id"] not in schemas:

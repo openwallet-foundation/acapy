@@ -242,18 +242,12 @@ async def get_nym_role(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
-    ledger_id = None
     async with context.profile.session() as session:
         ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
             did,
             txn_record_type=GET_NYM_ROLE,
         )
-        if isinstance(ledger_info, tuple):
-            ledger_id = ledger_info[0]
-            ledger = ledger_info[1]
-        else:
-            ledger = ledger_info
         if not ledger:
             reason = "No Indy ledger available"
             if not session.settings.get_value("wallet.type"):
@@ -269,6 +263,7 @@ async def get_nym_role(request: web.BaseRequest):
             raise web.HTTPNotFound(reason=err.roll_up)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up)
+
     if ledger_id:
         return web.json_response({"ledger_id": ledger_id, "role": role.name})
     else:
@@ -320,18 +315,12 @@ async def get_did_verkey(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
-    ledger_id = None
     async with context.profile.session() as session:
         ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
             did,
             txn_record_type=GET_KEY_FOR_DID,
         )
-        if isinstance(ledger_info, tuple):
-            ledger_id = ledger_info[0]
-            ledger = ledger_info[1]
-        else:
-            ledger = ledger_info
         if not ledger:
             reason = "No ledger available"
             if not session.settings.get_value("wallet.type"):
@@ -345,6 +334,7 @@ async def get_did_verkey(request: web.BaseRequest):
                 raise web.HTTPNotFound(reason=f"DID {did} is not on the ledger")
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     if ledger_id:
         return web.json_response({"ledger_id": ledger_id, "verkey": result})
     else:
@@ -370,18 +360,12 @@ async def get_did_endpoint(request: web.BaseRequest):
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
-    ledger_id = None
     async with context.profile.session() as session:
         ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+        ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
             did,
             txn_record_type=GET_ENDPOINT_FOR_DID,
         )
-        if isinstance(ledger_info, tuple):
-            ledger_id = ledger_info[0]
-            ledger = ledger_info[1]
-        else:
-            ledger = ledger_info
         if not ledger:
             reason = "No Indy ledger available"
             if not session.settings.get_value("wallet.type"):
@@ -396,6 +380,7 @@ async def get_did_endpoint(request: web.BaseRequest):
             r = await ledger.get_endpoint_for_did(did, endpoint_type)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     if ledger_id:
         return web.json_response({"ledger_id": ledger_id, "endpoint": r})
     else:
