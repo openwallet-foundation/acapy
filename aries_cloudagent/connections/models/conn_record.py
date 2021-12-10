@@ -3,7 +3,7 @@
 import json
 
 from enum import Enum
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from marshmallow import fields, validate
 
@@ -167,7 +167,14 @@ class ConnRecord(BaseRecord):
     RECORD_ID_NAME = "connection_id"
     RECORD_TOPIC = "connections"
     LOG_STATE_FLAG = "debug.connections"
-    TAG_NAMES = {"my_did", "their_did", "request_id", "invitation_key"}
+    TAG_NAMES = {
+        "my_did",
+        "their_did",
+        "request_id",
+        "invitation_key",
+        "their_public_did",
+        "invitation_msg_id",
+    }
 
     RECORD_TYPE = "connection"
     RECORD_TYPE_INVITATION = "connection_invitation"
@@ -265,12 +272,10 @@ class ConnRecord(BaseRecord):
                 "routing_state",
                 "accept",
                 "invitation_mode",
-                "invitation_msg_id",
                 "alias",
                 "error_msg",
                 "their_label",
                 "state",
-                "their_public_did",
                 "connection_protocol",
             )
         }
@@ -325,7 +330,7 @@ class ConnRecord(BaseRecord):
     @classmethod
     async def retrieve_by_invitation_msg_id(
         cls, session: ProfileSession, invitation_msg_id: str, their_role: str = None
-    ) -> "ConnRecord":
+    ) -> Optional["ConnRecord"]:
         """Retrieve a connection record by invitation_msg_id.
 
         Args:
@@ -333,13 +338,36 @@ class ConnRecord(BaseRecord):
             invitation_msg_id: Invitation message identifier
             initiator: Filter by the initiator value
         """
+        tag_filter = {"invitation_msg_id": invitation_msg_id}
         post_filter = {
             "state": cls.State.INVITATION.rfc160,
-            "invitation_msg_id": invitation_msg_id,
         }
         if their_role:
             post_filter["their_role"] = cls.Role.get(their_role).rfc160
-        return await cls.query(session, post_filter_positive=post_filter)
+        try:
+            return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
+        except StorageNotFoundError:
+            return None
+
+    @classmethod
+    async def find_existing_connection(
+        cls, session: ProfileSession, their_public_did: str
+    ) -> Optional["ConnRecord"]:
+        """Retrieve existing active connection records (public did).
+
+        Args:
+            session: The active profile session
+            their_public_did: Inviter public DID
+        """
+        tag_filter = {"their_public_did": their_public_did}
+        conn_records = await cls.query(
+            session,
+            tag_filter=tag_filter,
+        )
+        for conn_record in conn_records:
+            if conn_record.state == ConnRecord.State.COMPLETED:
+                return conn_record
+        return None
 
     @classmethod
     async def retrieve_by_request_id(
