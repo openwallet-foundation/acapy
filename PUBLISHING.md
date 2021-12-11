@@ -19,10 +19,12 @@ Once ready to do a release, create a PR that includes the following updates:
 
 3. Update the ReadTheDocs in the `/docs` folder by following the instructions in the `docs/README.md` file. That will likely add a number of new and modified files to the PR. Eliminate all of the errors in the generation process, either by mocking external dependencies or by fixing ACA-Py code. If necessary, create an issue with the errors and assign it to the appropriate developer. Experience has demonstrated to use that documentation generation errors should be fixed in the code.
 
-4. Update the version number listed in [aries_cloudagent/version.py](aries_cloudagent/version.py). The incremented version number should adhere to the [Semantic Versioning Specification](https://semver.org/#semantic-versioning-specification-semver) based on the changes since the last published release.
+4. Update the version number listed in [aries_cloudagent/version.py](aries_cloudagent/version.py) and in [open-api/openapi.json](open-api/openapi.json). The incremented version number should adhere to the [Semantic Versioning Specification](https://semver.org/#semantic-versioning-specification-semver) based on the changes since the last published release, for example "v0.7.2". For Release Candidates, the form of the tag is "v0.7.2-rc0".
+  
+5. An extra search of the repo for the existing tag is recommended to see if there are any other instances of the tag in the repo. If any are found to be required, finding a way to not need them is best, but if they are needed, please update this document to note where the tag can be found.
 
-5. Create a new GitHub release. The tag name and title of the release should be the same as the version in [aries_cloudagent/version.py](aries_cloudagent/version.py). Include the additions to CHANGELOG.md in the release notes.
+6. Create a new GitHub release. The tag name and title of the release should be the same as the version in [aries_cloudagent/version.py](aries_cloudagent/version.py). Include the additions to CHANGELOG.md in the release notes.
 
-6. Publish a new docker container on Docker Hub ([bcgovimages/aries-cloudagent](https://hub.docker.com/r/bcgovimages/aries-cloudagent/)) by following the instructions to create a PR for the release in the repository [https://github.com/bcgov/aries-cloudagent-container](https://github.com/bcgov/aries-cloudagent-container). Appropriate permissions are required to publish the image.
+7. Publish a new docker container on Docker Hub ([bcgovimages/aries-cloudagent](https://hub.docker.com/r/bcgovimages/aries-cloudagent/)) by following the instructions to create a PR for the release in the repository [https://github.com/bcgov/aries-cloudagent-container](https://github.com/bcgov/aries-cloudagent-container). Appropriate permissions are required to publish the image.
 
-7. Update the AC-Py Read The Docs site by building the new "latest" (main branch) and activating and building the new release. Appropriate permissions are required to publish the new documentation version.
+8. Update the ACA-Py Read The Docs site by building the new "latest" (main branch) and activating and building the new release. Appropriate permissions are required to publish the new documentation version.
