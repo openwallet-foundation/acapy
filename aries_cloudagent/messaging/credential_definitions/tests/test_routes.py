@@ -350,7 +350,9 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.profile_injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(return_value=None)
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=(None, None)
+                )
             ),
         )
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}

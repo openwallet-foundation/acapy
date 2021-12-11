@@ -267,7 +267,7 @@ class TestPresentationManager(AsyncTestCase):
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
                 get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=self.ledger
+                    return_value=(None, self.ledger)
                 )
             ),
         )
