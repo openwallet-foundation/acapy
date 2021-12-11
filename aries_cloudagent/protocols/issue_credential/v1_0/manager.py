@@ -910,8 +910,11 @@ class CredentialManager:
         cred_rev_ids: Sequence[str]
     ) -> None:
         """
-        Update credential state on revocation using
-        revocation registry ID and credential revocation IDs
+        Update credentials state to credential_revoked
+
+        Args:
+            rev_reg_id: revocation registry ID
+            cred_rev_ids: list of credential revocation IDs
 
         Returns:
             None

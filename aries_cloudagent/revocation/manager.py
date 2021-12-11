@@ -15,8 +15,9 @@ from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .util import notify_pending_cleared_event, notify_revocation_published_event
-from ..protocols.issue_credential.v1_0.manager import CredentialManager as V10CredManager
-
+from ..protocols.issue_credential.v1_0.manager import (
+    CredentialManager as V10CredManager,
+)
 
 class RevocationManagerError(BaseError):
     """Revocation manager error."""
@@ -134,7 +135,9 @@ class RevocationManager:
                 async with self._profile.session() as session:
                     await issuer_rr_rec.clear_pending(session)
                     credential_manager = V10CredManager(self._profile)
-                    await credential_manager.revoke_credentials(session, rev_reg_id, [cred_rev_id])
+                    await credential_manager.revoke_credentials(
+                        session, rev_reg_id, [cred_rev_id]
+                    )
                 await notify_revocation_published_event(
                     self._profile, rev_reg_id, [cred_rev_id]
                 )
@@ -202,7 +205,9 @@ class RevocationManager:
                     await txn.commit()
                     credential_manager = V10CredManager(self._profile)
                     async with self._profile.session() as session:
-                        await credential_manager.revoke_credentials(session, issuer_rr_rec.revoc_reg_id, crids)
+                        await credential_manager.revoke_credentials(
+                            session, issuer_rr_rec.revoc_reg_id, crids
+                        )
                     await notify_revocation_published_event(
                         self._profile, issuer_rr_rec.revoc_reg_id, crids
                     )
