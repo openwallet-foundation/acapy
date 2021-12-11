@@ -341,7 +341,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = self.ledger
+            mock_get_ledger.return_value = (None, self.ledger)
             await self.verifier.check_timestamps(
                 mock_profile,
                 INDY_PROOF_REQ_NAME,
@@ -353,13 +353,16 @@ class TestIndySdkVerifier(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = async_mock.MagicMock(
-                get_credential_definition=async_mock.CoroutineMock(
-                    return_value={
-                        "...": "...",
-                        "value": {"no": "revocation"},
-                    }
-                )
+            mock_get_ledger.return_value = (
+                None,
+                async_mock.MagicMock(
+                    get_credential_definition=async_mock.CoroutineMock(
+                        return_value={
+                            "...": "...",
+                            "value": {"no": "revocation"},
+                        }
+                    )
+                ),
             )
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
@@ -374,7 +377,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = self.ledger
+            mock_get_ledger.return_value = (None, self.ledger)
             proof_x = deepcopy(INDY_PROOF_NAME)
             proof_x["identifiers"][0]["timestamp"] = None
             proof_x["identifiers"][0]["rev_reg_id"] = None
@@ -420,7 +423,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_logger, async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = self.ledger
+            mock_get_ledger.return_value = (None, self.ledger)
             pre_logger_calls = mock_logger.info.call_count
             await self.verifier.check_timestamps(
                 mock_profile,
@@ -437,7 +440,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = self.ledger
+            mock_get_ledger.return_value = (None, self.ledger)
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
                     mock_profile,

@@ -4,17 +4,13 @@ import logging
 
 from collections import OrderedDict
 
-from ...askar.profile import AskarProfile
+from ...cache.base import BaseCache
 from ...config.provider import BaseProvider
 from ...config.settings import BaseSettings
 from ...config.injector import BaseInjector, InjectionError
-from ...cache.base import BaseCache
-from ...indy.sdk.profile import IndySdkProfile
+from ...core.profile import Profile
 from ...ledger.base import BaseLedger
-from ...utils.classloader import ClassLoader, ClassNotFoundError
-
-from ..indy import IndySdkLedgerPool, IndySdkLedger
-from ..indy_vdr import IndyVdrLedgerPool, IndyVdrLedger
+from ...utils.classloader import ClassNotFoundError, DeferLoad
 
 from .base_manager import MultipleLedgerManagerError
 
@@ -24,39 +20,53 @@ LOGGER = logging.getLogger(__name__)
 class MultiIndyLedgerManagerProvider(BaseProvider):
     """Multiple Indy ledger support manager provider."""
 
-    askar_manager_path = (
-        "aries_cloudagent.ledger.multiple_ledger."
-        "indy_vdr_manager.MultiIndyVDRLedgerManager"
-    )
-    basic_manager_path = (
-        "aries_cloudagent.ledger.multiple_ledger." "indy_manager.MultiIndyLedgerManager"
-    )
     MANAGER_TYPES = {
-        "basic": basic_manager_path,
-        "askar-profile": askar_manager_path,
+        "basic": (
+            DeferLoad(
+                "aries_cloudagent.ledger.multiple_ledger."
+                "indy_manager.MultiIndyLedgerManager"
+            )
+        ),
+        "askar-profile": (
+            DeferLoad(
+                "aries_cloudagent.ledger.multiple_ledger."
+                "indy_vdr_manager.MultiIndyVDRLedgerManager"
+            )
+        ),
+    }
+    LEDGER_TYPES = {
+        "basic": {
+            "pool": DeferLoad("aries_cloudagent.ledger.indy.IndySdkLedgerPool"),
+            "ledger": DeferLoad("aries_cloudagent.ledger.indy.IndySdkLedger"),
+        },
+        "askar-profile": {
+            "pool": DeferLoad("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool"),
+            "ledger": DeferLoad("aries_cloudagent.ledger.indy_vdr.IndyVdrLedger"),
+        },
     }
 
     def __init__(self, root_profile):
         """Initialize the multiple Indy ledger profile manager provider."""
         self._inst = {}
-        self.root_profile = root_profile
+        self.root_profile: Profile = root_profile
 
     def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create the multiple Indy ledger manager instance."""
 
-        if isinstance(self.root_profile, IndySdkProfile):
+        if self.root_profile.BACKEND_NAME == "indy":
             manager_type = "basic"
-        elif isinstance(self.root_profile, AskarProfile):
+        elif self.root_profile.BACKEND_NAME == "askar":
             manager_type = "askar-profile"
         else:
             raise MultipleLedgerManagerError(
-                "MultiIndyLedgerManagerProvider expects an IndySDKProfile [indy] "
+                "MultiIndyLedgerManagerProvider expects an IndySdkProfile [indy] "
                 " or AskarProfile [indy_vdr] as root_profile"
             )
 
-        manager_class = self.MANAGER_TYPES.get(manager_type)
-
-        if manager_class not in self._inst:
+        if manager_type not in self._inst:
+            manager_class = self.MANAGER_TYPES.get(manager_type)
+            pool_class = self.LEDGER_TYPES[manager_type]["pool"]
+            ledger_class = self.LEDGER_TYPES[manager_type]["ledger"]
             LOGGER.info("Create multiple Indy ledger manager: %s", manager_type)
             try:
                 if manager_type == "basic":
@@ -74,7 +84,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                         pool_name = config.get("pool_name")
                         ledger_is_production = config.get("is_production")
                         ledger_is_write = config.get("is_write")
-                        ledger_pool = IndySdkLedgerPool(
+                        ledger_pool = pool_class(
                             pool_name,
                             keepalive=keepalive,
                             cache=cache,
@@ -82,7 +92,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             read_only=read_only,
                             socks_proxy=socks_proxy,
                         )
-                        ledger_instance = IndySdkLedger(
+                        ledger_instance = ledger_class(
                             pool=ledger_pool,
                             profile=self.root_profile,
                         )
@@ -101,7 +111,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             indy_sdk_production_ledgers.move_to_end(
                                 ledger_id, last=False
                             )
-                    self._inst[manager_class] = ClassLoader.load_class(manager_class)(
+                    self._inst[manager_type] = manager_class(
                         self.root_profile,
                         production_ledgers=indy_sdk_production_ledgers,
                         non_production_ledgers=indy_sdk_non_production_ledgers,
@@ -122,7 +132,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                         pool_name = config.get("pool_name")
                         ledger_is_production = config.get("is_production")
                         ledger_is_write = config.get("is_write")
-                        ledger_pool = IndyVdrLedgerPool(
+                        ledger_pool = pool_class(
                             pool_name,
                             keepalive=keepalive,
                             cache=cache,
@@ -130,7 +140,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             read_only=read_only,
                             socks_proxy=socks_proxy,
                         )
-                        ledger_instance = IndyVdrLedger(
+                        ledger_instance = ledger_class(
                             pool=ledger_pool,
                             profile=self.root_profile,
                         )
@@ -149,7 +159,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             indy_vdr_non_production_ledgers.move_to_end(
                                 ledger_id, last=False
                             )
-                    self._inst[manager_class] = ClassLoader.load_class(manager_class)(
+                    self._inst[manager_type] = manager_class(
                         self.root_profile,
                         production_ledgers=indy_vdr_production_ledgers,
                         non_production_ledgers=indy_vdr_non_production_ledgers,
@@ -160,4 +170,4 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                     f"Unknown multiple Indy ledger manager type: {manager_type}"
                 ) from err
 
-        return self._inst[manager_class]
+        return self._inst[manager_type]

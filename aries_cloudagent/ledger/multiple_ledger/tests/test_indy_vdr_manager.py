@@ -1,5 +1,6 @@
 import asyncio
 import json
+import pytest
 
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -21,6 +22,7 @@ from ..base_manager import MultipleLedgerManagerError
 from ..indy_vdr_manager import MultiIndyVDRLedgerManager
 
 
+@pytest.mark.indy_vdr
 class TestMultiIndyVDRLedgerManager(AsyncTestCase):
     async def setUp(self):
         self.profile = InMemoryProfile.test_profile(bind={BaseCache: InMemoryCache()})

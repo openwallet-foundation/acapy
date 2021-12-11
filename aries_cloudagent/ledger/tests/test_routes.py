@@ -45,7 +45,9 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(return_value=None)
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=(None, None)
+                )
             ),
         )
         self.profile.context.injector.clear_binding(BaseLedger)
@@ -79,7 +81,7 @@ class TestLedgerRoutes(AsyncTestCase):
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
                 get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=self.ledger
+                    return_value=(None, self.ledger)
                 )
             ),
         )
@@ -141,7 +143,7 @@ class TestLedgerRoutes(AsyncTestCase):
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
                 get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=self.ledger
+                    return_value=(None, self.ledger)
                 )
             ),
         )
@@ -155,7 +157,7 @@ class TestLedgerRoutes(AsyncTestCase):
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
                 get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=self.ledger
+                    return_value=(None, self.ledger)
                 )
             ),
         )
@@ -269,7 +271,7 @@ class TestLedgerRoutes(AsyncTestCase):
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
                 get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=self.ledger
+                    return_value=(None, self.ledger)
                 )
             ),
         )
@@ -346,7 +348,7 @@ class TestLedgerRoutes(AsyncTestCase):
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
                 get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=self.ledger
+                    return_value=(None, self.ledger)
                 )
             ),
         )
