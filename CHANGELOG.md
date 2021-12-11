@@ -16,6 +16,15 @@ were involved in the creation of this PR, so we are not making this release a mi
 However, anyone else using an external queue should be aware of the impact of this PR that is
 included in the release.
 
+For those that have an existing deployment of ACA-Py with long-lasting connection records, some action
+may be required in order to use [RFC 434 Out of Band](https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband) and the "reuse connection" as the invitee. In PR #1453
+(details below) a performance improvement was made when finding a connection for reuse. The new approach
+(adding a tag to the connection to enable searching) applies only to connections made using this ACA-Py
+release and later, and "as-is" connections made using earlier releases of ACA-Py will not be found as reuse
+candidates. We don't think this will affect (m)any deployments and so have not implemented a migration
+approach. However, if this issue might affect your deployment, please submit an issue and the ACA-Py
+team will work with you to find a solution.
+
 The [Supported RFCs document](/SupportedRFCs.md) has been updated to reflect the addition of the
 AIP 2.0 RFCs for which support was added.
 
@@ -29,10 +38,13 @@ The following is an annotated list of PRs in the release, including a link to ea
   - Add Revocation notification support to alice/faber [#1527](https://github.com/hyperledger/aries-cloudagent-python/pull/1527)
 - **Other New Features**
   - Multiple Indy Ledger support and State Proof verification [#1425](https://github.com/hyperledger/aries-cloudagent-python/pull/1425)
+    - Remove required dependencies from multi-ledger code that was requiring the import of Aries Askar even when not being used[#1550](https://github.com/hyperledger/aries-cloudagent-python/pull/1550)
   - Outbound Queue - more usability improvements [#1501](https://github.com/hyperledger/aries-cloudagent-python/pull/1501) 
   - Display QR code when generating/displaying invites on startup [#1526](https://github.com/hyperledger/aries-cloudagent-python/pull/1526)
   - Enable WS Pings for WS Inbound Transport [#1530](https://github.com/hyperledger/aries-cloudagent-python/pull/1530)
     - Faster detection of lost Web Socket connections; implementation verified with an existing mediator.
+  - Performance Improvement when using connection reuse in OOB and there are many DID connections. ConnRecord tags - their_public_did and invitation_msg_id [#1543](https://github.com/hyperledger/aries-cloudagent-python/pull/1543)
+    - In previous releases, a "their_public_did" was not a tag, so to see if you can reuse a connection, all connections were retrieved from the database to see if a matching public DID can be found. Now, connections created after deploying this release will have a tag on the connection such that an indexed query can be used. See "Breaking Change" note above.
 - **Critical Fixes**
   - Fix connection record response for mobile [#1469](https://github.com/hyperledger/aries-cloudagent-python/pull/1469)
 - **Documentation Additions and Updates**
@@ -55,6 +67,8 @@ The following is an annotated list of PRs in the release, including a link to ea
     - Fix AttributeError when writing an Indy Cred Def record [#1516](https://github.com/hyperledger/aries-cloudagent-python/pull/1516)
     - Fix TypeError when calling credential_definitions_fix_cred_def_wallet… [#1515](https://github.com/hyperledger/aries-cloudagent-python/pull/1515)
     - Fix TypeError when writing a Schema record [#1494](https://github.com/hyperledger/aries-cloudagent-python/pull/1494)
+    - Fix validation for range checks [#1538](https://github.com/hyperledger/aries-cloudagent-python/pull/1538)
+      - Back out some of the validation checking for proof requests with predicates as they were preventing valid proof requests from being processed.
   - Aries Askar Related Fixes:
     - Fix bug when getting credentials on askar-profile [#1510](https://github.com/hyperledger/aries-cloudagent-python/pull/1510)
     - Fix error when removing a wallet on askar-profile [#1518](https://github.com/hyperledger/aries-cloudagent-python/pull/1518)
