@@ -15,8 +15,7 @@ from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .util import notify_pending_cleared_event, notify_revocation_published_event
-from ..protocols.issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
-from ..protocols.issue_credential.v1_0.manager import CredentialManagerError
+from ..protocols.issue_credential.v1_0.manager import CredentialManager as V10CredManager
 
 
 class RevocationManagerError(BaseError):
@@ -67,22 +66,6 @@ class RevocationManager:
                 "No issuer credential revocation record found for "
                 f"credential exchange id {cred_ex_id}"
             ) from err
-
-        if publish:
-            try:
-                async with self._profile.session() as session:
-                    cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                        session, cred_ex_id
-                    )
-            except StorageNotFoundError as err:
-                raise CredentialManagerError(
-                    "No issuer credential exchange record found for "
-                    f"credential exchange id {cred_ex_id}"
-                ) from err
-
-            cred_ex_record.state = V10CredentialExchange.STATE_CREDENTIAL_REVOKED
-            async with self._profile.session() as session:
-                await cred_ex_record.save(session, reason="revoke credential")
 
         return await self.revoke_credential(
             rev_reg_id=rec.rev_reg_id,
@@ -140,7 +123,6 @@ class RevocationManager:
         if publish:
             rev_reg = await revoc.get_ledger_registry(rev_reg_id)
             await rev_reg.get_or_fetch_local_tails_path()
-
             # pick up pending revocations on input revocation registry
             crids = list(set(issuer_rr_rec.pending_pub + [cred_rev_id]))
             (delta_json, _) = await issuer.revoke_credentials(
@@ -151,6 +133,8 @@ class RevocationManager:
                 await issuer_rr_rec.send_entry(self._profile)
                 async with self._profile.session() as session:
                     await issuer_rr_rec.clear_pending(session)
+                    credential_manager = V10CredManager(self._profile)
+                    await credential_manager.revoke_credentials(session, rev_reg_id, [cred_rev_id])
                 await notify_revocation_published_event(
                     self._profile, rev_reg_id, [cred_rev_id]
                 )
@@ -216,7 +200,9 @@ class RevocationManager:
                     result[issuer_rr_rec.revoc_reg_id] = published
                     await issuer_rr_rec.clear_pending(txn, published)
                     await txn.commit()
-
+                    credential_manager = V10CredManager(self._profile)
+                    async with self._profile.session() as session:
+                        await credential_manager.revoke_credentials(session, issuer_rr_rec.revoc_reg_id, crids)
                     await notify_revocation_published_event(
                         self._profile, issuer_rr_rec.revoc_reg_id, crids
                     )

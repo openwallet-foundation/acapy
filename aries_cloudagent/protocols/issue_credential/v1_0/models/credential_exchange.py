@@ -34,7 +34,7 @@ class V10CredentialExchange(BaseExchangeRecord):
     RECORD_TYPE = "credential_exchange_v10"
     RECORD_ID_NAME = "credential_exchange_id"
     RECORD_TOPIC = "issue_credential"
-    TAG_NAMES = {"~thread_id"} if UNENCRYPTED_TAGS else {"thread_id"}
+    TAG_NAMES = {"~thread_id" if UNENCRYPTED_TAGS else "thread_id", "revoc_reg_id", "revocation_id"}
 
     INITIATOR_SELF = "self"
     INITIATOR_EXTERNAL = "external"
@@ -274,6 +274,18 @@ class V10CredentialExchange(BaseExchangeRecord):
                 {"connection_id": connection_id} if connection_id else None,
             )
             await cls.set_cached_key(session, cache_key, record.credential_exchange_id)
+        return record
+
+    @classmethod
+    async def retrieve_by_revocation(
+        cls, session: ProfileSession, revoc_reg_id: str, revocation_id: str
+    ) -> "V10CredentialExchange":
+        """Retrieve a credential exchange record by revocation registry ID and credential revocation ID."""
+        record = await cls.retrieve_by_tag_filter(
+                session,
+                {"revoc_reg_id": revoc_reg_id},
+                {"revocation_id": revocation_id},
+        )
         return record
 
     def __eq__(self, other: Any) -> bool:
