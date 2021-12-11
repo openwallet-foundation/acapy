@@ -6,8 +6,6 @@ from copy import deepcopy
 
 from unittest import TestCase
 
-from aries_cloudagent.ledger.multiple_ledger.base_manager import T
-
 from ..domain_txn_handler import (
     _extract_attr_typed_value,
     parse_attr_txn,

@@ -357,18 +357,12 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
     context: AdminRequestContext = request["context"]
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger_id = None
     async with context.profile.session() as session:
         ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+    ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
         cred_def_id,
         txn_record_type=GET_CRED_DEF,
     )
-    if isinstance(ledger_info, tuple):
-        ledger_id = ledger_info[0]
-        ledger = ledger_info[1]
-    else:
-        ledger = ledger_info
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -407,19 +401,13 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
 
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger_id = None
     async with context.profile.session() as session:
         storage = session.inject(BaseStorage)
         ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
-    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
+    ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
         cred_def_id,
         txn_record_type=GET_CRED_DEF,
     )
-    if isinstance(ledger_info, tuple):
-        ledger_id = ledger_info[0]
-        ledger = ledger_info[1]
-    else:
-        ledger = ledger_info
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -445,6 +433,7 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
             await add_cred_def_non_secrets_record(
                 session.profile, schema_id, iss_did, cred_def_id
             )
+
     if ledger_id:
         return web.json_response(
             {"ledger_id": ledger_id, "credential_definition": cred_def}

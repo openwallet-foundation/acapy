@@ -709,7 +709,7 @@ class TestConnectionManager(AsyncTestCase):
             ), async_mock.patch.object(
                 ConnRecord, "retrieve_by_invitation_msg_id", async_mock.CoroutineMock()
             ) as mock_conn_retrieve_by_invitation_msg_id:
-                mock_conn_retrieve_by_invitation_msg_id.return_value = [ConnRecord()]
+                mock_conn_retrieve_by_invitation_msg_id.return_value = ConnRecord()
                 conn_rec = await self.manager.receive_request(mock_request, receipt)
                 assert conn_rec
 
@@ -745,7 +745,7 @@ class TestConnectionManager(AsyncTestCase):
             ), async_mock.patch.object(
                 ConnRecord, "retrieve_by_invitation_msg_id", async_mock.CoroutineMock()
             ) as mock_conn_retrieve_by_invitation_msg_id:
-                mock_conn_retrieve_by_invitation_msg_id.return_value = []
+                mock_conn_retrieve_by_invitation_msg_id.return_value = None
                 conn_rec = await self.manager.receive_request(mock_request, receipt)
                 assert conn_rec
 
@@ -836,7 +836,7 @@ class TestConnectionManager(AsyncTestCase):
             ) as mock_wallet_get_local_did, async_mock.patch.object(
                 ConnRecord, "retrieve_by_invitation_msg_id", async_mock.CoroutineMock()
             ) as mock_conn_retrieve_by_invitation_msg_id:
-                mock_conn_retrieve_by_invitation_msg_id.return_value = [ConnRecord()]
+                mock_conn_retrieve_by_invitation_msg_id.return_value = ConnRecord()
                 mock_wallet_create_local_did.return_value = DIDInfo(
                     new_info.did,
                     new_info.verkey,
@@ -979,7 +979,7 @@ class TestConnectionManager(AsyncTestCase):
             ), async_mock.patch.object(
                 ConnRecord, "retrieve_by_invitation_msg_id", async_mock.CoroutineMock()
             ) as mock_conn_retrieve_by_invitation_msg_id:
-                mock_conn_retrieve_by_invitation_msg_id.return_value = [ConnRecord()]
+                mock_conn_retrieve_by_invitation_msg_id.return_value = ConnRecord()
                 conn_rec = await self.manager.receive_request(mock_request, receipt)
                 assert conn_rec
 

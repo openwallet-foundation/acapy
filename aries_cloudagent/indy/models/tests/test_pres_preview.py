@@ -403,10 +403,13 @@ class TestIndyPresPreviewAsync(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = async_mock.MagicMock(
-                get_credential_definition=async_mock.CoroutineMock(
-                    return_value={"value": {"revocation": {"...": "..."}}}
-                )
+            mock_get_ledger.return_value = (
+                None,
+                async_mock.MagicMock(
+                    get_credential_definition=async_mock.CoroutineMock(
+                        return_value={"value": {"revocation": {"...": "..."}}}
+                    )
+                ),
             )
             indy_proof_req_revo = await pres_preview.indy_proof_request(
                 **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
@@ -443,10 +446,13 @@ class TestIndyPresPreviewAsync(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
-            mock_get_ledger.return_value = async_mock.MagicMock(
-                get_credential_definition=async_mock.CoroutineMock(
-                    return_value={"value": {"revocation": {"...": "..."}}}
-                )
+            mock_get_ledger.return_value = (
+                None,
+                async_mock.MagicMock(
+                    get_credential_definition=async_mock.CoroutineMock(
+                        return_value={"value": {"revocation": {"...": "..."}}}
+                    )
+                ),
             )
             indy_proof_req_revo = await pres_preview.indy_proof_request(
                 **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},

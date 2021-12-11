@@ -1,10 +1,11 @@
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+import pytest
 
-from aries_cloudagent.indy.sdk.profile import IndySdkProfile
+from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
 from ....core.in_memory import InMemoryProfile
+from ....indy.sdk.profile import IndySdkProfile
 from ....indy.sdk.wallet_setup import IndyOpenWallet, IndyWalletConfig
 from ....ledger.base import BaseLedger
 from ....ledger.indy import IndySdkLedgerPool, IndySdkLedger
@@ -62,6 +63,7 @@ class TestMultiIndyLedgerManagerProvider(AsyncTestCase):
         with self.assertRaises(MultipleLedgerManagerError):
             provider.provide(context.settings, context.injector)
 
+    @pytest.mark.indy
     async def test_provide_indy_manager(self):
         context = InjectionContext()
         profile = IndySdkProfile(
@@ -84,6 +86,7 @@ class TestMultiIndyLedgerManagerProvider(AsyncTestCase):
             "MultiIndyLedgerManager",
         )
 
+    @pytest.mark.askar
     async def test_provide_askar_manager(self):
         context = InjectionContext()
         profile = await AskarProfileManager().provision(

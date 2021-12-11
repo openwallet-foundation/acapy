@@ -80,7 +80,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
                 get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=mock_ledger
+                    return_value=(None, mock_ledger)
                 )
             ),
         )
