@@ -43,6 +43,8 @@ autodoc_mock_imports = [
     "dateutil",
     "jsonpath_ng",
     "unflatten",
+    "qrcode",
+    "rlp",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",
