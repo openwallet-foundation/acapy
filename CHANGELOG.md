@@ -1,6 +1,6 @@
 # 0.7.3-RC0
 
-## December 11, 2021
+## December 13, 2021
 
 This release includes some new AIP 2.0 features out (Revocation Notification and
 Discover Features 2.0), a major new feature for those using Indy ledger (multi-ledger support),
