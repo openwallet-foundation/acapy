@@ -96,6 +96,7 @@ class Conductor:
         self.root_profile: Profile = None
         self.setup_public_did: DIDInfo = None
         self.outbound_queue: BaseOutboundQueue = None
+        self.event_outbound_queue: BaseOutboundQueue = None
 
     @property
     def context(self) -> InjectionContext:
@@ -209,7 +210,12 @@ class Conductor:
             DocumentLoader, DocumentLoader(self.root_profile)
         )
 
-        self.outbound_queue = get_outbound_queue(self.root_profile)
+        self.outbound_queue = get_outbound_queue(
+            self.root_profile, "transport.outbound_queue"
+        )
+        self.event_outbound_queue = get_outbound_queue(
+            self.root_profile, "transport.event_outbound_queue"
+        )
 
         # Admin API
         if context.settings.get("admin.enabled"):
@@ -699,9 +705,19 @@ class Conductor:
             metadata: Additional metadata associated with the payload
         """
         try:
-            self.outbound_transport_manager.enqueue_webhook(
-                topic, payload, endpoint, max_attempts, metadata
-            )
+            if self.event_outbound_queue:
+                self.event_outbound_queue.enqueue_message(
+                    {
+                        "topic": topic,
+                        "payload": payload,
+                        "metadata": metadata,
+                    },
+                    endpoint,
+                )
+            else:
+                self.outbound_transport_manager.enqueue_webhook(
+                    topic, payload, endpoint, max_attempts, metadata
+                )
         except OutboundDeliveryError:
             LOGGER.warning(
                 "Cannot queue message webhook for delivery, no supported transport"

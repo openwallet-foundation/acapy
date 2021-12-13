@@ -6,6 +6,8 @@ from ..base import OutboundQueueConfigurationError
 from ..loader import get_outbound_queue
 from .fixtures import QueueClassValid
 
+outbound_queue_setting = "transport.outbound_queue"
+
 
 @pytest.fixture
 def profile():
@@ -17,7 +19,7 @@ def profile():
 
 
 def test_get_outbound_queue_valid(profile):
-    queue = get_outbound_queue(profile)
+    queue = get_outbound_queue(profile, outbound_queue_setting)
     assert isinstance(queue, QueueClassValid)
 
 
@@ -30,13 +32,13 @@ def test_get_outbound_queue_valid(profile):
 )
 def test_get_outbound_not_set(queue, profile):
     profile.settings["transport.outbound_queue"] = queue
-    assert get_outbound_queue(profile) is None
+    assert get_outbound_queue(profile, outbound_queue_setting) is None
 
 
 def test_get_outbound_x_no_class(profile):
     profile.settings["transport.outbound_queue"] = "invalid queue class path"
     with pytest.raises(ClassNotFoundError):
-        get_outbound_queue(profile)
+        get_outbound_queue(profile, outbound_queue_setting)
 
 
 def test_get_outbound_x_bad_instance(profile):
@@ -45,4 +47,4 @@ def test_get_outbound_x_bad_instance(profile):
         "QueueClassNoBaseClass"
     )
     with pytest.raises(OutboundQueueConfigurationError):
-        get_outbound_queue(profile)
+        get_outbound_queue(profile, outbound_queue_setting)

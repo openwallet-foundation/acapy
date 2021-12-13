@@ -802,7 +802,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             await conductor.stop()
             mock_logger.exception.assert_called_once()
 
-    async def test_webhook_router(self):
+    async def test_webhook_router_enqueue_webhook(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings(
             {"debug.print_invitation": True, "invite_base_url": "http://localhost"}
@@ -837,6 +837,30 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             mock_enqueue.assert_called_once_with(
                 test_topic, test_payload, test_endpoint, test_attempts, None
             )
+
+    async def test_webhook_router_event_outbound_queue(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+        topic = "test-topic"
+        payload = {"test": "payload"}
+        endpoint = "http://example"
+        metadata = {}
+        enqueue_event_outbound_message = async_mock.MagicMock()
+        await conductor.setup()
+        conductor.event_outbound_queue = async_mock.MagicMock(
+            enqueue_message=enqueue_event_outbound_message
+        )
+
+        conductor.webhook_router(topic, payload, endpoint, None, metadata)
+
+        enqueue_event_outbound_message.assert_called_once_with(
+            {
+                "topic": topic,
+                "payload": payload,
+                "metadata": metadata,
+            },
+            endpoint,
+        )
 
     async def test_shutdown_multitenant_profiles(self):
         builder: ContextBuilder = StubContextBuilder(
