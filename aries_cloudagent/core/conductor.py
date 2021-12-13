@@ -282,6 +282,12 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Unable to start outbound queue")
                 raise
+        if self.event_outbound_queue:
+            try:
+                await self.event_outbound_queue.start()
+            except Exception:
+                LOGGER.exception("Unable to start event outbound queue")
+                raise
 
         # Start up Admin server
         if self.admin_server:
@@ -472,6 +478,8 @@ class Conductor:
             shutdown.run(self.outbound_transport_manager.stop())
         if self.outbound_queue:
             shutdown.run(self.outbound_queue.stop())
+        if self.event_outbound_queue:
+            shutdown.run(self.event_outbound_queue.stop())
 
         # close multitenant profiles
         multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
