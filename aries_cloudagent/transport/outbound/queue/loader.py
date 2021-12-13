@@ -10,13 +10,28 @@ from .base import BaseOutboundQueue, OutboundQueueConfigurationError
 LOGGER = logging.getLogger(__name__)
 
 
-def get_outbound_queue(root_profile: Profile, path: str) -> Optional[BaseOutboundQueue]:
+def get_outbound_queue(root_profile: Profile) -> Optional[BaseOutboundQueue]:
     """Given settings, return instantiated outbound queue class."""
-    class_path = root_profile.settings.get(path)
+    class_path = root_profile.settings.get("transport.outbound_queue")
 
+    return get_queue(root_profile, class_path)
+
+
+def get_event_outbound_queue(root_profile: Profile) -> Optional[BaseOutboundQueue]:
+    """Given settings, return instantiated outbound queue class."""
+    class_path = root_profile.settings.get("transport.event_outbound_queue")
+
+    return get_queue(root_profile, class_path)
+
+
+def get_queue(
+    root_profile: Profile, class_path: Optional[object]
+) -> Optional[BaseOutboundQueue]:
     if not class_path:
         LOGGER.info("No outbound queue loaded")
+
         return None
+
     class_path = cast(str, class_path)
     klass = ClassLoader.load_class(class_path)
     instance = klass(root_profile)
@@ -24,4 +39,5 @@ def get_outbound_queue(root_profile: Profile, path: str) -> Optional[BaseOutboun
         raise OutboundQueueConfigurationError(
             "Configured class is not a subclass of BaseOutboundQueue"
         )
+
     return instance

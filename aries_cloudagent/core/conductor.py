@@ -56,7 +56,10 @@ from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.queue.base import BaseOutboundQueue
-from ..transport.outbound.queue.loader import get_outbound_queue
+from ..transport.outbound.queue.loader import (
+    get_outbound_queue,
+    get_event_outbound_queue,
+)
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
@@ -210,12 +213,8 @@ class Conductor:
             DocumentLoader, DocumentLoader(self.root_profile)
         )
 
-        self.outbound_queue = get_outbound_queue(
-            self.root_profile, "transport.outbound_queue"
-        )
-        self.event_outbound_queue = get_outbound_queue(
-            self.root_profile, "transport.event_outbound_queue"
-        )
+        self.outbound_queue = get_outbound_queue(self.root_profile)
+        self.event_outbound_queue = get_event_outbound_queue(self.root_profile)
 
         # Admin API
         if context.settings.get("admin.enabled"):
