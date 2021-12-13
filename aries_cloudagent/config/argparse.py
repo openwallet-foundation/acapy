@@ -20,6 +20,7 @@ from .util import BoundedInt, ByteSize
 
 CAT_PROVISION = "general"
 CAT_START = "start"
+CAT_UPGRADE = "upgrade"
 
 ENDORSER_AUTHOR = "author"
 ENDORSER_ENDORSER = "endorser"
@@ -460,7 +461,7 @@ class DebugGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_START, CAT_PROVISION)
+@group(CAT_START)
 class DiscoverFeaturesGroup(ArgumentGroup):
     """Discover Features settings."""
 
@@ -1826,3 +1827,37 @@ class EndorsementGroup(ArgumentGroup):
                 )
 
         return settings
+
+    @group(CAT_UPGRADE)
+    class UpgradeCmdGroup(ArgumentGroup):
+        """ACA-Py Upgrade process settings."""
+
+        GROUP_NAME = "Handle ACA-Py Upgrade process"
+
+        def add_arguments(self, parser: ArgumentParser):
+            """Add ACA-Py upgrade process specific command line arguments to the parser."""
+
+            parser.add_argument(
+                "--upgrade-config",
+                type=str,
+                dest="upgrade_config",
+                required=True,
+                env_var="ACAPY_UPGRADE_CONFIG",
+                help="Load YAML file path that specifies config to handle upgrade changes.",
+            )
+
+        def get_settings(self, args: Namespace) -> dict:
+            """Extract ACA-Py upgrade process settings."""
+            settings = {}
+            if args.upgrade_config:
+                with open(args.upgrade_config, "r") as stream:
+                    provided_config = yaml.safe_load(stream)
+                    recs_list = []
+                    if provided_config.get("resave").get("base_record_path"):
+                        recs_list.append(provided_config.get("resave").get("base_record_path"))
+                    if provided_config.get("resave").get("base_exch_record_path"):
+                        recs_list.append(
+                            provided_config.get("resave").get("base_exch_record_path")
+                        )
+                    settings["upgrade_resave_records"] = recs_list
+            return settings
