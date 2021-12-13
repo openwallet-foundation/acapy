@@ -45,6 +45,7 @@ The following is an annotated list of PRs in the release, including a link to ea
     - Faster detection of lost Web Socket connections; implementation verified with an existing mediator.
   - Performance Improvement when using connection reuse in OOB and there are many DID connections. ConnRecord tags - their_public_did and invitation_msg_id [#1543](https://github.com/hyperledger/aries-cloudagent-python/pull/1543)
     - In previous releases, a "their_public_did" was not a tag, so to see if you can reuse a connection, all connections were retrieved from the database to see if a matching public DID can be found. Now, connections created after deploying this release will have a tag on the connection such that an indexed query can be used. See "Breaking Change" note above.
+    - Follow up to [#1543](https://github.com/hyperledger/aries-cloudagent-python/pull/1543) - Adding invitation_msg_id and their_public_did back to record_value [#1553](https://github.com/hyperledger/aries-cloudagent-python/pull/1553)
 - **Critical Fixes**
   - Fix connection record response for mobile [#1469](https://github.com/hyperledger/aries-cloudagent-python/pull/1469)
 - **Documentation Additions and Updates**
@@ -53,11 +54,12 @@ The following is an annotated list of PRs in the release, including a link to ea
   - Fix warnings when generating ReadTheDocs [#1509](https://github.com/hyperledger/aries-cloudagent-python/pull/1509)
   - Remove Streetcred references [#1504](https://github.com/hyperledger/aries-cloudagent-python/pull/1504)
   - Add RTD configs to get generator working [#1496](https://github.com/hyperledger/aries-cloudagent-python/pull/1496)
-- **Key Fixes**
+- **Other Fixes**
   - Connection Handling / Out of Band Invitations Fixes
     - OOB: Fixes issues with multiple public explicit invitation and unused 0160 connection [#1525](https://github.com/hyperledger/aries-cloudagent-python/pull/1525)
     - Delete unused ConnRecord generated - OOB invitation (use_exising_connection) [#1521](https://github.com/hyperledger/aries-cloudagent-python/pull/1521)
       - When an invitee responded with a "reuse" message, the connection record associated with the invitation was not being deleted. Now it is.
+    - Await asyncio.sleeps to cleanup warnings in Python 3.8/3.9 [#1558](https://github.com/hyperledger/aries-cloudagent-python/pull/1558)
   - DIF Presentation Exchange Cleanups
     - Fix DIF Presentation Request Input Validation [#1517](https://github.com/hyperledger/aries-cloudagent-python/pull/1517)
       - Some validation checking of a DIF presentation request to prevent uncaught errors later in the process.
