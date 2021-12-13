@@ -56,6 +56,8 @@ from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
+from ..transport.outbound.queue.base import BaseOutboundQueue
+from ..transport.outbound.queue.loader import get_outbound_queue
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
@@ -96,6 +98,7 @@ class Conductor:
         self.outbound_transport_manager: OutboundTransportManager = None
         self.root_profile: Profile = None
         self.setup_public_did: DIDInfo = None
+        self.outbound_queue: BaseOutboundQueue = None
 
     @property
     def context(self) -> InjectionContext:
@@ -216,6 +219,8 @@ class Conductor:
             DocumentLoader, DocumentLoader(self.root_profile)
         )
 
+        self.outbound_queue = get_outbound_queue(self.root_profile)
+
         # Admin API
         if context.settings.get("admin.enabled"):
             try:
@@ -275,6 +280,13 @@ class Conductor:
         except Exception:
             LOGGER.exception("Unable to start outbound transports")
             raise
+
+        if self.outbound_queue:
+            try:
+                await self.outbound_queue.start()
+            except Exception:
+                LOGGER.exception("Unable to start outbound queue")
+                raise
 
         # Start up Admin server
         if self.admin_server:
@@ -484,6 +496,8 @@ class Conductor:
             shutdown.run(self.inbound_transport_manager.stop())
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
+        if self.outbound_queue:
+            shutdown.run(self.outbound_queue.stop())
 
         # close multitenant profiles
         multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
