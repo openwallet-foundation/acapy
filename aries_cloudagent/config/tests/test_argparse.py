@@ -94,6 +94,34 @@ class TestArgParse(AsyncTestCase):
             }
         ) in settings.get("ledger.ledger_config_list")
 
+    async def test_upgrade_config(self):
+        """Test upgrade command related argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.UpgradeGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--upgrade-config",
+                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
+            ]
+        )
+
+        assert (
+            result.upgrade_config
+            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml"
+        )
+
+        settings = group.get_settings(result)
+
+        assert len(settings.get("upgrade.resave_records")) == 1
+        assert not settings.get("upgrade.update_existing_records")
+
     async def test_outbound_is_required(self):
         """Test that either -ot or -oq are required"""
         parser = argparse.create_argument_parser()

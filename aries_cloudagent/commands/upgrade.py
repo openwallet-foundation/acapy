@@ -4,6 +4,7 @@ import asyncio
 from configargparse import ArgumentParser
 from typing import Sequence
 
+from ..core.profile import Profile
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.base import BaseError
@@ -31,13 +32,13 @@ async def upgrade(settings: dict):
     try:
         root_profile, public_did = await wallet_config(context)
         # Step 1 re-saving all BaseRecord and BaseExchangeRecord
-        resave_record_paths = settings.get("upgrade_resave_records")
+        resave_record_paths = settings.get("upgrade.resave_records")
         for record_path in resave_record_paths:
             try:
                 record_type = ClassLoader.load_class(record_path)
             except ClassNotFoundError as err:
-                raise UpgradeError(f"Unknown Record type: {record_path}") from err
-            if not isinstance(record_type, BaseRecord) and not isinstance(
+                raise UpgradeError(f"Unknown Record type {record_path}") from err
+            if not issubclass(record_type, BaseRecord) and not issubclass(
                 record_type, BaseExchangeRecord
             ):
                 raise UpgradeError(
@@ -50,9 +51,24 @@ async def upgrade(settings: dict):
                     await record.save(
                         session, reason="re-saving record during ACA-Py upgradation"
                     )
+                print(f"All records of {str(record_type)} successfully re-saved.")
+        # Step 2 Update existing records, if required
+        if settings.get("upgrade.update_existing_records"):
+            await update_existing_records(root_profile)
         await root_profile.close()
     except BaseError as e:
-        raise UpgradeError("Error during upgrade: ") from e
+        raise UpgradeError(f"Error during upgrade: {e}")
+
+
+async def update_existing_records(profile: Profile):
+    """
+    Handle addition of required attributes to Marshmallow schema.
+
+    Args:
+        profile: Root profile
+
+    """
+    pass
 
 
 def execute(argv: Sequence[str] = None):
