@@ -928,7 +928,7 @@ class OutOfBandManager(BaseConnectionManager):
                 conn_rec = await ConnRecord.retrieve_by_id(session, conn_rec_id)
                 if conn_rec.is_ready:
                     return conn_rec
-            asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
 
     async def create_handshake_reuse_message(
         self,

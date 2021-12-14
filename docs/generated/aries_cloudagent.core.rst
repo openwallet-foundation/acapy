@@ -49,6 +49,14 @@ aries\_cloudagent.core.event\_bus module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.core.goal\_code\_registry module
+--------------------------------------------------
+
+.. automodule:: aries_cloudagent.core.goal_code_registry
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.core.plugin\_registry module
 ----------------------------------------------
 

@@ -272,9 +272,11 @@ class ConnRecord(BaseRecord):
                 "routing_state",
                 "accept",
                 "invitation_mode",
+                "invitation_msg_id",
                 "alias",
                 "error_msg",
                 "their_label",
+                "their_public_did",
                 "state",
                 "connection_protocol",
             )

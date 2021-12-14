@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [Hyperledger Rocketchat](https://chat.hyperledger.org) or through an issue in this repo.
 
-**Last Update**: 2021-11-12, Release 0.7.2
+**Last Update**: 2021-12-06, Release 0.7.3
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/) and [Animo Solutions](https://animo.id/).
@@ -85,8 +85,8 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | Connection-less (non OOB protocol / AIP 1.0)               | :white_check_mark:        | Only for issue credential and present proof          |
 | Connection-less (OOB protocol / AIP 2.0)               | :white_check_mark:        | Only for present proof          |
 | Signed Attachments               | :white_check_mark:        | Used for OOB         |
-| Multi ledger support (with automatic detection) | :construction:        | [Pull Request](https://github.com/hyperledger/aries-cloudagent-python/pull/1425)   |
-| Persistence of mediated messages | :x:        | Messages are currently stored in an in-memory and so are subject to loss in the case of a sudden termination of an ACA-Py process. The in-memory queue is properly handled in the case of a graceful shutdown of an ACA-Py process (e.g. processing of the queue completes and no new messages are accepted). |
+| Multi Indy ledger support (with automatic detection) | :white_check_mark: | Support added in the 0.7.3 Release.   |
+| Persistence of mediated messages | :construction:        | Messages are currently stored in an in-memory and so are subject to loss in the case of a sudden termination of an ACA-Py process. The in-memory queue is properly handled in the case of a graceful shutdown of an ACA-Py process (e.g. processing of the queue completes and no new messages are accepted). Work is underway to add useful external queues handling, including support for multiple external queue implementations (e.g., redis and kafka). |
 | Storage Import & Export           | :warning:        | Supported by directly interacting with the indy-sdk or Aries Askar (e.g., no Admin API endpoint available for wallet import & export). Aries Askar support includes the ability to import storage exported from the Indy SDK's "indy-wallet" component. |
 
 ## Supported RFCs
@@ -108,13 +108,13 @@ are fully supported in ACA-Py **EXCEPT** as noted in the table below.
 
 | RFC | Supported | Notes |
  --- | :--: | -- |
-| [0023-did-exchange](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0023-did-exchange)   | :warning:   |     Not using DIDDoc conventions yet, still using DID format of 0160-connections (which is incorrect and outdated). Also using incorrect format for `did:peer`  (or not using a `did:` prefix at all) |
-| [0183-revocation-notification](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0183-revocation-notification)  | :construction:      |  [PR is in review](https://github.com/hyperledger/aries-cloudagent-python/pull/1464) |
-| [0211-route-coordination](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0211-route-coordination)   | :warning:        | Only pre-AIP 2.0 version. Must be updated to use `did:key` for full AIP 2.0 support  |
+| [0023-did-exchange](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0023-did-exchange)   | :warning:   |   Not using DIDDoc conventions yet, still using DID format of 0160-connections (which is incorrect and outdated). Also using incorrect format for `did:peer`  (or not using a `did:` prefix at all) |
+| [0183-revocation-notification](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0183-revocation-notification)  | :white_check_mark:      | :new: This was added in release 0.7.3 and will be removed from this list with the next update. |
+| [0211-route-coordination](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0211-route-coordination)   | :warning:  | Only pre-AIP 2.0 version. Must be updated to use `did:key` for full AIP 2.0 support  |
 | [0317-please-ack](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) |  :x: | |
 | [0360-use-did-key](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0360-use-did-key)     | :warning:  |  Creating and resolving `did:key` DIDs is supported, but not all protocols are updated yet to use `did:key`. This is a breaking change for AIP 1.0 -> AIP 2.0.                |
-| [0519-goal-codes](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/concepts/0519-goal-codes) | :x: | To be implemented as part of the work on RFC 0557 Discover Features V2 (below) |
-| [0557-discover-features-v2](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0557-discover-features-v2)  | :x:        | [Issue exists](https://github.com/hyperledger/aries-cloudagent-python/issues/1466) and is being implemented.  |
+| [0519-goal-codes](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/concepts/0519-goal-codes) | :white_check_mark: | :new:  This was added in release 0.7.3 and will be removed from this list with the next update. |
+| [0557-discover-features-v2](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0557-discover-features-v2)  | :white_check_mark:        | :new: This was added in release 0.7.3 and will be removed from this list with the next update. |
 | [0587-encryption-envelope-v2](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0587-encryption-envelope-v2) | :construction: | Support for the DIDComm V2 envelope format is a work in progress, including the PRs ([AIP-2 base64url consistency](https://github.com/hyperledger/aries-cloudagent-python/pull/1188) and [Small AIP-2 updates](https://github.com/hyperledger/aries-cloudagent-python/pull/1056)) |
 | [0627-static-peer-dids](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0627-static-peer-dids)          | :x:  |  |
 
@@ -122,6 +122,6 @@ are fully supported in ACA-Py **EXCEPT** as noted in the table below.
 
 | RFC | Supported | Notes |
 | --- | :--: | -- |
-| [0031-discover-features](https://github.com/hyperledger/aries-rfcs/blob/main/features/0031-discover-features/README.md)           | :warning:        | Rarely (never?) used, and in implementing the V2 version of the protocol, the V1 version was found to be incomplete. It will be updated as part of the V2 work.  |
+| [0031-discover-features](https://github.com/hyperledger/aries-rfcs/blob/main/features/0031-discover-features/README.md)           | :white_check_mark:        | Rarely (never?) used, and in implementing the V2 version of the protocol, the V1 version was found to be incomplete and was updated as part of Release 0.7.3  |
 | [0028-introduce](https://github.com/hyperledger/aries-rfcs/blob/main/features/0028-introduce/README.md)            | :white_check_mark:        |      |
 | [00509-action-menu](https://github.com/hyperledger/aries-rfcs/blob/main/features/0509-action-menu/README.md)       | :white_check_mark:        |      |
