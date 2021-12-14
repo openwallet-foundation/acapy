@@ -19,6 +19,14 @@ Subpackages
 Submodules
 ----------
 
+aries\_cloudagent.protocols.issue\_credential.v1\_0.controller module
+---------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.issue_credential.v1_0.controller
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.protocols.issue\_credential.v1\_0.manager module
 ------------------------------------------------------------------
 

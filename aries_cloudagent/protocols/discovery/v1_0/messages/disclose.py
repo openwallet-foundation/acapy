@@ -2,7 +2,7 @@
 
 from typing import Mapping, Sequence
 
-from marshmallow import EXCLUDE, fields, Schema, validate
+from marshmallow import EXCLUDE, fields, Schema
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -40,7 +40,6 @@ class ProtocolDescriptorSchema(Schema):
         fields.Str(
             description="Role: requester or responder",
             example="requester",
-            validate=validate.OneOf(["requester", "responder"]),
         ),
         required=False,
         allow_none=True,

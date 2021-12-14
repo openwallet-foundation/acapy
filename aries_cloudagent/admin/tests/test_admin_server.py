@@ -12,6 +12,7 @@ from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event
 from ...core.in_memory import InMemoryProfile
 from ...core.protocol_registry import ProtocolRegistry
+from ...core.goal_code_registry import GoalCodeRegistry
 from ...transport.outbound.message import OutboundMessage
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
@@ -187,6 +188,7 @@ class TestAdminServer(AsyncTestCase):
         # for routes with associated tests, this shouldn't make a difference in coverage
         context = InjectionContext()
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+        context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
         await DefaultContextBuilder().load_plugins(context)
         server = self.get_admin_server({"admin.admin_insecure_mode": True}, context)
         app = await server.make_application()
@@ -195,6 +197,7 @@ class TestAdminServer(AsyncTestCase):
         # imports all default admin routes
         context = InjectionContext()
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
+        context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
         profile = InMemoryProfile.test_profile()
         context.injector.bind_instance(
             test_module.BaseMultitenantManager,

@@ -6,7 +6,11 @@ from abc import ABC, ABCMeta, abstractmethod
 from time import time
 from typing import Mapping
 
-from ..ledger.base import BaseLedger
+from ..core.profile import Profile
+from ..ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    IndyLedgerRequestsExecutor,
+)
 from ..messaging.util import canon, encode
 
 from .models.xform import indy_proof_req2non_revoc_intervals
@@ -78,7 +82,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
 
     async def check_timestamps(
         self,
-        ledger: BaseLedger,
+        profile: Profile,
         pres_req: Mapping,
         pres: Mapping,
         rev_reg_defs: Mapping,
@@ -97,12 +101,18 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         """
         now = int(time())
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_req)
-
         # timestamp for irrevocable credential
-        async with ledger:
-            for (index, ident) in enumerate(pres["identifiers"]):
-                if ident.get("timestamp"):
-                    cred_def_id = ident["cred_def_id"]
+        for (index, ident) in enumerate(pres["identifiers"]):
+            if ident.get("timestamp"):
+                cred_def_id = ident["cred_def_id"]
+                ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
+                ledger = (
+                    await ledger_exec_inst.get_ledger_for_identifier(
+                        cred_def_id,
+                        txn_record_type=GET_CRED_DEF,
+                    )
+                )[1]
+                async with ledger:
                     cred_def = await ledger.get_credential_definition(cred_def_id)
                     if not cred_def["value"].get("revocation"):
                         raise ValueError(
@@ -243,17 +253,21 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         for (uuid, req_pred) in pres_req["requested_predicates"].items():
             try:
                 canon_attr = canon(req_pred["name"])
+                matched = False
+                found = False
                 for ge_proof in pres["proof"]["proofs"][
                     pres["requested_proof"]["predicates"][uuid]["sub_proof_index"]
                 ]["primary_proof"]["ge_proofs"]:
                     pred = ge_proof["predicate"]
                     if pred["attr_name"] == canon_attr:
-                        if pred["value"] != req_pred["p_value"]:
-                            raise ValueError(
-                                f"Predicate value != p_value: {pred['attr_name']}"
-                            )
-                        break
-                else:
+                        found = True
+                        if pred["value"] == req_pred["p_value"]:
+                            matched = True
+                            break
+                if not matched:
+                    raise ValueError(f"Predicate value != p_value: {pred['attr_name']}")
+                    break
+                elif not found:
                     raise ValueError(f"Missing requested predicate '{uuid}'")
             except (KeyError, TypeError):
                 raise ValueError(f"Missing requested predicate '{uuid}'")

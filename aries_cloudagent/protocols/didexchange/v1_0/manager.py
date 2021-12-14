@@ -22,6 +22,7 @@ from ....wallet.did_posture import DIDPosture
 from ....did.did_key import DIDKey
 
 from ...coordinate_mediation.v1_0.manager import MediationManager
+from ...discovery.v2_0.manager import V20DiscoveryMgr
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
@@ -374,6 +375,20 @@ class DIDXManager(BaseConnectionManager):
         # Determine what key will need to sign the response
         if recipient_verkey:  # peer DID
             connection_key = recipient_verkey
+            try:
+                async with self.profile.session() as session:
+                    conn_rec = await ConnRecord.retrieve_by_invitation_key(
+                        session=session,
+                        invitation_key=connection_key,
+                        their_role=ConnRecord.Role.REQUESTER.rfc23,
+                    )
+            except StorageNotFoundError:
+                if recipient_verkey:
+                    raise DIDXManagerError(
+                        "No explicit invitation found for pairwise connection "
+                        f"in state {ConnRecord.State.INVITATION.rfc23}: "
+                        "a prior connection request may have updated the connection state"
+                    )
         else:
             if not self.profile.settings.get("public_invites"):
                 raise DIDXManagerError(
@@ -390,19 +405,11 @@ class DIDXManager(BaseConnectionManager):
                 raise DIDXManagerError(f"Request DID {recipient_did} is not public")
             connection_key = my_info.verkey
 
-        try:
             async with self.profile.session() as session:
-                conn_rec = await ConnRecord.retrieve_by_invitation_key(
+                conn_rec = await ConnRecord.retrieve_by_invitation_msg_id(
                     session=session,
-                    invitation_key=connection_key,
+                    invitation_msg_id=request._thread.pthid,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
-                )
-        except StorageNotFoundError:
-            if recipient_verkey:
-                raise DIDXManagerError(
-                    "No explicit invitation found for pairwise connection "
-                    f"in state {ConnRecord.State.INVITATION.rfc23}: "
-                    "a prior connection request may have updated the connection state"
                 )
 
         if conn_rec:  # invitation was explicit
@@ -540,27 +547,10 @@ class DIDXManager(BaseConnectionManager):
         # Send keylist updates to mediator
         mediation_record = await mediation_record_if_id(self.profile, mediation_id)
         if keylist_updates and mediation_record:
-            responder = self.profile.inject_or(BaseResponder)
+            responder = self.profile.inject(BaseResponder)
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
-
-        if auto_accept:
-            response = await self.create_response(
-                conn_rec,
-                my_endpoint,
-                mediation_id=mediation_id,
-            )
-            responder = self.profile.inject_or(BaseResponder)
-            if responder:
-                await responder.send_reply(
-                    response, connection_id=conn_rec.connection_id
-                )
-                conn_rec.state = ConnRecord.State.RESPONSE.rfc23
-                async with self.profile.session() as session:
-                    await conn_rec.save(session, reason="Sent connection response")
-        else:
-            self._logger.debug("DID exchange request will await acceptance")
 
         return conn_rec
 
@@ -784,6 +774,11 @@ class DIDXManager(BaseConnectionManager):
             conn_rec.state = ConnRecord.State.COMPLETED.rfc23
             async with self.profile.session() as session:
                 await conn_rec.save(session, reason="Sent connection complete")
+                if session.settings.get("auto_disclose_features"):
+                    discovery_mgr = V20DiscoveryMgr(self._profile)
+                    await discovery_mgr.proactive_disclose_features(
+                        connection_id=conn_rec.connection_id
+                    )
 
         return conn_rec
 
@@ -827,6 +822,11 @@ class DIDXManager(BaseConnectionManager):
         conn_rec.state = ConnRecord.State.COMPLETED.rfc23
         async with self.profile.session() as session:
             await conn_rec.save(session, reason="Received connection complete")
+            if session.settings.get("auto_disclose_features"):
+                discovery_mgr = V20DiscoveryMgr(self._profile)
+                await discovery_mgr.proactive_disclose_features(
+                    connection_id=conn_rec.connection_id
+                )
 
         return conn_rec
 

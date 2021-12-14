@@ -24,6 +24,10 @@ from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
+from ...ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    IndyLedgerRequestsExecutor,
+)
 from ...protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
@@ -164,6 +168,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     """
     context: AdminRequestContext = request["context"]
+    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     create_transaction_for_endorser = json.loads(
@@ -193,7 +198,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     if not write_ledger:
         try:
-            async with context.session() as session:
+            async with profile.session() as session:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
@@ -202,8 +207,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         except BaseModelError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        session = await context.session()
-        endorser_info = await connection_record.metadata_get(session, "endorser_info")
+        async with profile.session() as session:
+            endorser_info = await connection_record.metadata_get(
+                session, "endorser_info"
+            )
         if not endorser_info:
             raise web.HTTPForbidden(
                 reason="Endorser Info is not set up in "
@@ -348,10 +355,14 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
 
     """
     context: AdminRequestContext = request["context"]
-
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger = context.inject_or(BaseLedger)
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
+        cred_def_id,
+        txn_record_type=GET_CRED_DEF,
+    )
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -361,7 +372,12 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
     async with ledger:
         cred_def = await ledger.get_credential_definition(cred_def_id)
 
-    return web.json_response({"credential_definition": cred_def})
+    if ledger_id:
+        return web.json_response(
+            {"ledger_id": ledger_id, "credential_definition": cred_def}
+        )
+    else:
+        return web.json_response({"credential_definition": cred_def})
 
 
 @docs(
@@ -383,12 +399,15 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
     """
     context: AdminRequestContext = request["context"]
 
-    session = await context.session()
-    storage = session.inject(BaseStorage)
-
     cred_def_id = request.match_info["cred_def_id"]
 
-    ledger = context.inject(BaseLedger, required=False)
+    async with context.profile.session() as session:
+        storage = session.inject(BaseStorage)
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+    ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
+        cred_def_id,
+        txn_record_type=GET_CRED_DEF,
+    )
     if not ledger:
         reason = "No ledger available"
         if not context.settings.get_value("wallet.type"):
@@ -411,11 +430,16 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
             },
         )
         if 0 == len(found):
-            await ledger.add_cred_def_non_secrets_record(
+            await add_cred_def_non_secrets_record(
                 session.profile, schema_id, iss_did, cred_def_id
             )
 
-    return web.json_response({"credential_definition": cred_def})
+    if ledger_id:
+        return web.json_response(
+            {"ledger_id": ledger_id, "credential_definition": cred_def}
+        )
+    else:
+        return web.json_response({"credential_definition": cred_def})
 
 
 def register_events(event_bus: EventBus):

@@ -10,6 +10,9 @@ from .. import handler as test_module
 
 from .......core.in_memory import InMemoryProfile
 from .......ledger.base import BaseLedger
+from .......ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 from .......indy.issuer import IndyIssuer
 from .......cache.in_memory import InMemoryCache
 from .......cache.base import BaseCache
@@ -214,7 +217,14 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             return_value=SCHEMA_ID
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
-
+        self.context.injector.bind_instance(
+            IndyLedgerRequestsExecutor,
+            async_mock.MagicMock(
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=(None, self.ledger)
+                )
+            ),
+        )
         # Context
         self.cache = InMemoryCache()
         self.context.injector.bind_instance(BaseCache, self.cache)

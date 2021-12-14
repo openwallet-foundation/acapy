@@ -7,6 +7,7 @@ import msgpack
 import pytest
 
 from .....config.settings import Settings
+from .....core.in_memory.profile import InMemoryProfile
 from ..base import OutboundQueueConfigurationError, OutboundQueueError
 from ..redis import RedisOutboundQueue
 
@@ -26,10 +27,10 @@ async def mock_redis():
 
 
 @pytest.fixture
-def settings():
-    def _settings_factory(connection=None, prefix=None):
-        return Settings(
-            values={
+def profile():
+    def _profile_factory(connection=None, prefix=None):
+        return InMemoryProfile.test_profile(
+            settings={
                 "plugin_config": {
                     RedisOutboundQueue.config_key: {
                         "connection": connection or "connection",
@@ -39,12 +40,12 @@ def settings():
             }
         )
 
-    yield _settings_factory
+    yield _profile_factory
 
 
 @pytest.fixture
-def queue(settings, mock_redis):
-    yield RedisOutboundQueue(settings())
+def queue(profile, mock_redis):
+    yield RedisOutboundQueue(profile())
 
 
 @pytest.fixture
@@ -58,16 +59,16 @@ def mock_rpush(queue):
     yield pushed
 
 
-def test_init(mock_redis, settings):
-    q = RedisOutboundQueue(settings())
+def test_init(mock_redis, profile):
+    q = RedisOutboundQueue(profile())
     q.prefix == "acapy"
     q.connection = "connection"
     assert str(q)
 
 
-def test_init_x(mock_redis, settings):
+def test_init_x(mock_redis):
     with pytest.raises(OutboundQueueConfigurationError):
-        RedisOutboundQueue(Settings())
+        RedisOutboundQueue(InMemoryProfile.test_profile())
 
 
 @pytest.mark.asyncio

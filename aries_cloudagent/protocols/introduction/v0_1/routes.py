@@ -72,13 +72,14 @@ async def introduction_start(request: web.BaseRequest):
         raise web.HTTPForbidden(reason="Introduction service not available")
 
     try:
-        await service.start_introduction(
-            init_connection_id,
-            target_connection_id,
-            message,
-            await context.session(),
-            outbound_handler,
-        )
+        async with context.profile.session() as session:
+            await service.start_introduction(
+                init_connection_id,
+                target_connection_id,
+                message,
+                session,
+                outbound_handler,
+            )
     except (IntroductionError, StorageError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 

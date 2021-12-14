@@ -1,13 +1,44 @@
 """DIF Proof Request Schema."""
-from marshmallow import fields
+from marshmallow import fields, INCLUDE
+from typing import Optional, Union
 
+from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.models.openapi import OpenAPISchema
 
-from .pres_exch import PresentationDefinitionSchema, DIFOptionsSchema
+from .pres_exch import (
+    PresentationDefinitionSchema,
+    PresentationDefinition,
+    DIFOptionsSchema,
+    DIFOptions,
+)
 
 
-class DIFProofRequestSchema(OpenAPISchema):
-    """Schema for DIF Proof request."""
+class DIFProofRequest(BaseModel):
+    """DIF presentation request input detail."""
+
+    class Meta:
+        """DIFProofRequest metadata."""
+
+        schema_class = "DIFProofRequestSchema"
+
+    def __init__(
+        self,
+        presentation_definition: Optional[Union[dict, PresentationDefinition]],
+        options: Optional[Union[dict, DIFOptions]] = None,
+    ) -> None:
+        """Initialize the DIFProofRequest instance."""
+        self.presentation_definition = presentation_definition
+        self.options = options
+
+
+class DIFProofRequestSchema(BaseModelSchema):
+    """Schema for DIF presentation request."""
+
+    class Meta:
+        """Accept parameter overload."""
+
+        unknown = INCLUDE
+        model_class = DIFProofRequest
 
     options = fields.Nested(
         DIFOptionsSchema(),

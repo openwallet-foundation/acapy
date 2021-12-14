@@ -173,3 +173,14 @@ class TestMultitenantManager(AsyncTestCase):
             assert profile.settings.get("mediation.invite") == "http://invite.com"
             assert profile.settings.get("mediation.default_id") == "24a96ef5"
             assert profile.settings.get("mediation.clear") == True
+
+    async def test_remove_wallet_profile(self):
+        test_profile = InMemoryProfile.test_profile(
+            settings={"wallet.id": "test"},
+        )
+        self.manager._instances["test"] = test_profile
+
+        with async_mock.patch.object(InMemoryProfile, "remove") as profile_remove:
+            await self.manager.remove_wallet_profile(test_profile)
+            assert "test" not in self.manager._instances
+            profile_remove.assert_called_once_with()

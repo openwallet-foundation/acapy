@@ -5,6 +5,9 @@ from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
 from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
+from ....ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 from ....storage.base import BaseStorage
 from ....tails.base import BaseTailsServer
 
@@ -322,20 +325,37 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
 
     async def test_get_credential_definition(self):
+        self.profile_injector.bind_instance(
+            IndyLedgerRequestsExecutor,
+            async_mock.MagicMock(
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=("test_ledger_id", self.ledger)
+                )
+            ),
+        )
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}
-
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.credential_definitions_get_credential_definition(
                 self.request
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
-                {"credential_definition": {"cred": "def", "signed_txn": "..."}}
+                {
+                    "ledger_id": "test_ledger_id",
+                    "credential_definition": {"cred": "def", "signed_txn": "..."},
+                }
             )
 
     async def test_get_credential_definition_no_ledger(self):
+        self.profile_injector.bind_instance(
+            IndyLedgerRequestsExecutor,
+            async_mock.MagicMock(
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=(None, None)
+                )
+            ),
+        )
         self.request.match_info = {"cred_def_id": CRED_DEF_ID}
-
         self.context.injector.clear_binding(BaseLedger)
         self.profile_injector.clear_binding(BaseLedger)
         with self.assertRaises(test_module.web.HTTPForbidden):

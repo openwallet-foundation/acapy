@@ -6,6 +6,11 @@ from time import time
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from ...core.in_memory import InMemoryProfile
+from ...ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
+
 from .. import verifier as test_module
 from ..verifier import IndyVerifier
 
@@ -328,26 +333,40 @@ class TestIndySdkVerifier(AsyncTestCase):
 
     async def test_check_timestamps(self):
         # all clear, with timestamps
-        await self.verifier.check_timestamps(
-            self.ledger,
-            INDY_PROOF_REQ_NAME,
-            INDY_PROOF_NAME,
-            REV_REG_DEFS,
+        mock_profile = InMemoryProfile.test_profile()
+        context = mock_profile.context
+        context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
         )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = (None, self.ledger)
+            await self.verifier.check_timestamps(
+                mock_profile,
+                INDY_PROOF_REQ_NAME,
+                INDY_PROOF_NAME,
+                REV_REG_DEFS,
+            )
 
         # timestamp for irrevocable credential
         with async_mock.patch.object(
-            self.ledger,
-            "get_credential_definition",
-            async_mock.CoroutineMock(),
-        ) as mock_get_cred_def:
-            mock_get_cred_def.return_value = {
-                "...": "...",
-                "value": {"no": "revocation"},
-            }
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = (
+                None,
+                async_mock.MagicMock(
+                    get_credential_definition=async_mock.CoroutineMock(
+                        return_value={
+                            "...": "...",
+                            "value": {"no": "revocation"},
+                        }
+                    )
+                ),
+            )
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    self.ledger,
+                    mock_profile,
                     INDY_PROOF_REQ_NAME,
                     INDY_PROOF_NAME,
                     REV_REG_DEFS,
@@ -355,41 +374,45 @@ class TestIndySdkVerifier(AsyncTestCase):
             assert "Timestamp in presentation identifier #" in str(context.exception)
 
         # all clear, no timestamps
-        proof_x = deepcopy(INDY_PROOF_NAME)
-        proof_x["identifiers"][0]["timestamp"] = None
-        proof_x["identifiers"][0]["rev_reg_id"] = None
-        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
-        proof_req_x.pop("non_revoked")
-        await self.verifier.check_timestamps(
-            self.ledger,
-            proof_req_x,
-            proof_x,
-            REV_REG_DEFS,
-        )
-
-        # timestamp in the future
-        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
-        proof_x = deepcopy(INDY_PROOF_NAME)
-        proof_x["identifiers"][0]["timestamp"] = int(time()) + 3600
-        with self.assertRaises(ValueError) as context:
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = (None, self.ledger)
+            proof_x = deepcopy(INDY_PROOF_NAME)
+            proof_x["identifiers"][0]["timestamp"] = None
+            proof_x["identifiers"][0]["rev_reg_id"] = None
+            proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
+            proof_req_x.pop("non_revoked")
             await self.verifier.check_timestamps(
-                self.ledger,
+                mock_profile,
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
             )
-        assert "in the future" in str(context.exception)
 
-        # timestamp in the distant past
-        proof_x["identifiers"][0]["timestamp"] = 1234567890
-        with self.assertRaises(ValueError) as context:
-            await self.verifier.check_timestamps(
-                self.ledger,
-                proof_req_x,
-                proof_x,
-                REV_REG_DEFS,
-            )
-        assert "predates rev reg" in str(context.exception)
+            # timestamp in the future
+            proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
+            proof_x = deepcopy(INDY_PROOF_NAME)
+            proof_x["identifiers"][0]["timestamp"] = int(time()) + 3600
+            with self.assertRaises(ValueError) as context:
+                await self.verifier.check_timestamps(
+                    mock_profile,
+                    proof_req_x,
+                    proof_x,
+                    REV_REG_DEFS,
+                )
+            assert "in the future" in str(context.exception)
+
+            # timestamp in the distant past
+            proof_x["identifiers"][0]["timestamp"] = 1234567890
+            with self.assertRaises(ValueError) as context:
+                await self.verifier.check_timestamps(
+                    mock_profile,
+                    proof_req_x,
+                    proof_x,
+                    REV_REG_DEFS,
+                )
+            assert "predates rev reg" in str(context.exception)
 
         # timestamp otherwise outside non-revocation interval: log and continue
         proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
@@ -397,10 +420,13 @@ class TestIndySdkVerifier(AsyncTestCase):
         proof_x["identifiers"][0]["timestamp"] = 1579890000
         with async_mock.patch.object(
             test_module, "LOGGER", async_mock.MagicMock()
-        ) as mock_logger:
+        ) as mock_logger, async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = (None, self.ledger)
             pre_logger_calls = mock_logger.info.call_count
             await self.verifier.check_timestamps(
-                self.ledger,
+                mock_profile,
                 proof_req_x,
                 proof_x,
                 REV_REG_DEFS,
@@ -411,89 +437,94 @@ class TestIndySdkVerifier(AsyncTestCase):
         proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
         proof_x = deepcopy(INDY_PROOF_NAME)
         proof_req_x.pop("non_revoked")
-        with self.assertRaises(ValueError) as context:
-            await self.verifier.check_timestamps(
-                self.ledger,
-                proof_req_x,
-                proof_x,
-                REV_REG_DEFS,
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = (None, self.ledger)
+            with self.assertRaises(ValueError) as context:
+                await self.verifier.check_timestamps(
+                    mock_profile,
+                    proof_req_x,
+                    proof_x,
+                    REV_REG_DEFS,
+                )
+            assert "superfluous" in str(context.exception)
+            # missing revealed attr
+            proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
+            proof_x = deepcopy(INDY_PROOF_NAME)
+            proof_x["requested_proof"]["revealed_attrs"] = {}
+            with self.assertRaises(ValueError) as context:
+                await self.verifier.check_timestamps(
+                    mock_profile,
+                    proof_req_x,
+                    proof_x,
+                    REV_REG_DEFS,
+                )
+            assert "Presentation attributes mismatch requested" in str(
+                context.exception
             )
-        assert "superfluous" in str(context.exception)
 
-        # missing revealed attr
-        proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
-        proof_x = deepcopy(INDY_PROOF_NAME)
-        proof_x["requested_proof"]["revealed_attrs"] = {}
-        with self.assertRaises(ValueError) as context:
+            # all clear, attribute group ('names')
             await self.verifier.check_timestamps(
-                self.ledger,
-                proof_req_x,
-                proof_x,
-                REV_REG_DEFS,
-            )
-        assert "Presentation attributes mismatch requested" in str(context.exception)
-
-        # all clear, attribute group ('names')
-        await self.verifier.check_timestamps(
-            self.ledger,
-            INDY_PROOF_REQ_PRED_NAMES,
-            INDY_PROOF_PRED_NAMES,
-            REV_REG_DEFS,
-        )
-
-        # missing revealed attr groups
-        proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
-        proof_x["requested_proof"].pop("revealed_attr_groups")
-        with self.assertRaises(ValueError) as context:
-            await self.verifier.check_timestamps(
-                self.ledger,
+                mock_profile,
                 INDY_PROOF_REQ_PRED_NAMES,
-                proof_x,
+                INDY_PROOF_PRED_NAMES,
                 REV_REG_DEFS,
             )
-        assert "Missing requested attribute group" in str(context.exception)
 
-        # superfluous timestamp, attr group
-        proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
-        proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
-        proof_req_x["requested_attributes"]["18_uuid"].pop("non_revoked")
-        proof_req_x["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
-        proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
-        with self.assertRaises(ValueError) as context:
-            await self.verifier.check_timestamps(
-                self.ledger,
-                proof_req_x,
-                proof_x,
-                REV_REG_DEFS,
-            )
-        assert "is superfluous vs. requested" in str(context.exception)
+            # missing revealed attr groups
+            proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
+            proof_x["requested_proof"].pop("revealed_attr_groups")
+            with self.assertRaises(ValueError) as context:
+                await self.verifier.check_timestamps(
+                    mock_profile,
+                    INDY_PROOF_REQ_PRED_NAMES,
+                    proof_x,
+                    REV_REG_DEFS,
+                )
+            assert "Missing requested attribute group" in str(context.exception)
 
-        # superfluous timestamp, predicates
-        proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
-        proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
-        proof_req_x["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
-        proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
-        with self.assertRaises(ValueError) as context:
-            await self.verifier.check_timestamps(
-                self.ledger,
-                proof_req_x,
-                proof_x,
-                REV_REG_DEFS,
-            )
-        assert "is superfluous vs. requested predicate" in str(context.exception)
+            # superfluous timestamp, attr group
+            proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
+            proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
+            proof_req_x["requested_attributes"]["18_uuid"].pop("non_revoked")
+            proof_req_x["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
+            proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
+            with self.assertRaises(ValueError) as context:
+                await self.verifier.check_timestamps(
+                    mock_profile,
+                    proof_req_x,
+                    proof_x,
+                    REV_REG_DEFS,
+                )
+            assert "is superfluous vs. requested" in str(context.exception)
 
-        # mismatched predicates and requested_predicates
-        proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
-        proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
-        proof_x["requested_proof"]["predicates"] = {}
-        with self.assertRaises(ValueError) as context:
-            await self.verifier.check_timestamps(
-                self.ledger,
-                proof_req_x,
-                proof_x,
-                REV_REG_DEFS,
-            )
-        assert "predicates mismatch requested predicate" in str(context.exception)
+            # superfluous timestamp, predicates
+            proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
+            proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
+            proof_req_x["requested_predicates"]["18_id_GE_uuid"].pop("non_revoked")
+            proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
+            with self.assertRaises(ValueError) as context:
+                await self.verifier.check_timestamps(
+                    mock_profile,
+                    proof_req_x,
+                    proof_x,
+                    REV_REG_DEFS,
+                )
+            assert "is superfluous vs. requested predicate" in str(context.exception)
+
+            # mismatched predicates and requested_predicates
+            proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
+            proof_req_x = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
+            proof_x["requested_proof"]["predicates"] = {}
+            with self.assertRaises(ValueError) as context:
+                await self.verifier.check_timestamps(
+                    mock_profile,
+                    proof_req_x,
+                    proof_x,
+                    REV_REG_DEFS,
+                )
+            assert "predicates mismatch requested predicate" in str(context.exception)
 
     async def test_non_revoc_intervals(self):
         big_pres_req = {
@@ -785,6 +816,74 @@ class TestIndySdkVerifier(AsyncTestCase):
                     "self_attested_attrs": {"19_uuid": "Chicken Hawk"},
                     "unrevealed_attrs": {},
                     "predicates": {},
+                },
+                "identifiers": [
+                    {
+                        "schema_id": "LjgpST2rjsoxYegQDRm7EL:2:non-revo:1579888926.0",
+                        "cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag",
+                        "rev_reg_id": "LjgpST2rjsoxYegQDRm7EL:4:LjgpST2rjsoxYegQDRm7EL:3:CL:18:tag:CL_ACCUM:0",
+                        "timestamp": 1579892963,
+                    }
+                ],
+            },
+        )
+        await self.verifier.pre_verify(
+            {
+                "nonce": "15606741555044336341559",
+                "name": "proof_req",
+                "version": "0.0",
+                "requested_attributes": {},
+                "requested_predicates": {
+                    "18_id_GE_uuid": {
+                        "name": "id",
+                        "p_type": ">=",
+                        "p_value": 4,
+                        "restrictions": [
+                            {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag"}
+                        ],
+                    },
+                    "18_id_LE_uuid": {
+                        "name": "id",
+                        "p_type": "<=",
+                        "p_value": 11198760,
+                        "restrictions": [
+                            {"cred_def_id": "LjgpST2rjsoxYegQDRm7EL:3:CL:19:tag"}
+                        ],
+                    },
+                },
+            },
+            {
+                "proof": {
+                    "proofs": [
+                        {
+                            "primary_proof": {
+                                "eq_proof": {},
+                                "ge_proofs": [
+                                    {
+                                        "predicate": {
+                                            "attr_name": "id",
+                                            "value": 11198760,
+                                        }
+                                    },
+                                    {
+                                        "predicate": {
+                                            "attr_name": "id",
+                                            "value": 4,
+                                        }
+                                    },
+                                ],
+                            }
+                        }
+                    ],
+                },
+                "requested_proof": {
+                    "revealed_attrs": {},
+                    "self_attested_attrs": {},
+                    "unrevealed_attrs": {},
+                    "predicates": {
+                        "18_id_LE_uuid": {"sub_proof_index": 0},
+                        "18_id_GE_uuid": {"sub_proof_index": 0},
+                    },
                 },
                 "identifiers": [
                     {

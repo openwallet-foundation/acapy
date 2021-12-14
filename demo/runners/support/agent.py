@@ -1,5 +1,6 @@
 import asyncio
 import asyncpg
+import base64
 import functools
 import json
 import logging
@@ -7,8 +8,9 @@ import os
 import random
 import subprocess
 import sys
+import yaml
+
 from timeit import default_timer
-import base64
 
 from aiohttp import (
     web,
@@ -119,6 +121,7 @@ class DemoAgent:
         internal_host: str = None,
         external_host: str = None,
         genesis_data: str = None,
+        genesis_txn_list: str = None,
         seed: str = None,
         label: str = None,
         color: str = None,
@@ -142,6 +145,7 @@ class DemoAgent:
         self.internal_host = internal_host or DEFAULT_INTERNAL_HOST
         self.external_host = external_host or DEFAULT_EXTERNAL_HOST
         self.genesis_data = genesis_data
+        self.genesis_txn_list = genesis_txn_list
         self.label = label or ident
         self.color = color
         self.prefix = prefix
@@ -149,6 +153,7 @@ class DemoAgent:
         self.timing_log = timing_log
         self.postgres = DEFAULT_POSTGRES if postgres is None else postgres
         self.tails_server_base_url = tails_server_base_url
+        self.revocation = revocation
         self.endorser_role = endorser_role
         self.endorser_did = None  # set this later
         self.endorser_invite = None  # set this later
@@ -205,6 +210,21 @@ class DemoAgent:
             self.agency_wallet_seed = self.seed
             self.agency_wallet_did = self.did
             self.agency_wallet_key = self.wallet_key
+
+        if self.genesis_txn_list:
+            updated_config_list = []
+            with open(self.genesis_txn_list, "r") as stream:
+                ledger_config_list = yaml.safe_load(stream)
+            for config in ledger_config_list:
+                if "genesis_url" in config and "/$LEDGER_HOST:" in config.get(
+                    "genesis_url"
+                ):
+                    config["genesis_url"] = config.get("genesis_url").replace(
+                        "$LEDGER_HOST", str(self.external_host)
+                    )
+                updated_config_list.append(config)
+            with open(self.genesis_txn_list, "w") as file:
+                documents = yaml.dump(updated_config_list, file)
 
     async def get_wallets(self):
         """Get registered wallets of agent (this is an agency call)."""
@@ -326,6 +346,8 @@ class DemoAgent:
             )
         if self.genesis_data:
             result.append(("--genesis-transactions", self.genesis_data))
+        if self.genesis_txn_list:
+            result.append(("--genesis-transactions-list", self.genesis_txn_list))
         if self.seed:
             result.append(("--seed", self.seed))
         if self.storage_type:
@@ -355,6 +377,12 @@ class DemoAgent:
                     ("--trace-label", self.label + ".trace"),
                 ]
             )
+
+        if self.revocation:
+            # turn on notifications if revocation is enabled
+            result.append("--notify-revocation")
+        # always enable notification webhooks
+        result.append("--monitor-revocation-notification")
 
         if self.tails_server_base_url:
             result.append(("--tails-server-base-url", self.tails_server_base_url))
@@ -1196,12 +1224,15 @@ class MediatorAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def start_mediator_agent(start_port, genesis):
+async def start_mediator_agent(
+    start_port, genesis: str = None, genesis_txn_list: str = None
+):
     # start mediator agent
     mediator_agent = MediatorAgent(
         start_port,
         start_port + 1,
         genesis_data=genesis,
+        genesis_txn_list=genesis_txn_list,
     )
     await mediator_agent.listen_webhooks(start_port + 2)
     await mediator_agent.start_process()
@@ -1312,12 +1343,18 @@ class EndorserAgent(DemoAgent):
         self.log("Received message:", message["content"])
 
 
-async def start_endorser_agent(start_port, genesis, use_did_exchange: bool = True):
+async def start_endorser_agent(
+    start_port,
+    genesis: str = None,
+    genesis_txn_list: str = None,
+    use_did_exchange: bool = True,
+):
     # start mediator agent
     endorser_agent = EndorserAgent(
         start_port,
         start_port + 1,
         genesis_data=genesis,
+        genesis_txn_list=genesis_txn_list,
     )
     await endorser_agent.register_did(cred_type=CRED_FORMAT_INDY)
     await endorser_agent.listen_webhooks(start_port + 2)

@@ -7,6 +7,9 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from ....askar.profile import AskarProfileManager
 from ....config.injection_context import InjectionContext
 from ....ledger.base import BaseLedger
+from ....ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 
 from .. import issuer, holder, verifier
 
@@ -73,6 +76,14 @@ class TestIndyCredxIssuance(AsyncTestCase):
             },
         )
         self.issuer_profile._context.injector.bind_instance(BaseLedger, mock_ledger)
+        self.issuer_profile._context.injector.bind_instance(
+            IndyLedgerRequestsExecutor,
+            async_mock.MagicMock(
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=(None, mock_ledger)
+                )
+            ),
+        )
 
         self.holder = holder.IndyCredxHolder(self.holder_profile)
         self.issuer = issuer.IndyCredxIssuer(self.issuer_profile)

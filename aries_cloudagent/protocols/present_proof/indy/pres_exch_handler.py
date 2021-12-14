@@ -9,7 +9,11 @@ from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.models.xform import indy_proof_req2non_revoc_intervals
-from ....ledger.base import BaseLedger
+from ....ledger.multiple_ledger.ledger_requests_executor import (
+    GET_SCHEMA,
+    GET_REVOC_REG_DELTA,
+    IndyLedgerRequestsExecutor,
+)
 from ....revocation.models.revocation_registry import RevocationRegistry
 
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
@@ -83,13 +87,20 @@ class IndyPresExchHandler:
                         f"{reft} for non-revocable credential {req_item['cred_id']}"
                     )
         # Get all schemas, credential definitions, and revocation registries in use
-        ledger = self._profile.inject(BaseLedger)
         schemas = {}
         cred_defs = {}
         revocation_registries = {}
-        async with ledger:
-            for credential in credentials.values():
-                schema_id = credential["schema_id"]
+
+        for credential in credentials.values():
+            schema_id = credential["schema_id"]
+            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    schema_id,
+                    txn_record_type=GET_SCHEMA,
+                )
+            )[1]
+            async with ledger:
                 if schema_id not in schemas:
                     schemas[schema_id] = await ledger.get_schema(schema_id)
                 cred_def_id = credential["cred_def_id"]
@@ -109,14 +120,21 @@ class IndyPresExchHandler:
         # of the presentation request or attributes
         epoch_now = int(time.time())
         revoc_reg_deltas = {}
-        async with ledger:
-            for precis in requested_referents.values():  # cred_id, non-revoc interval
-                credential_id = precis["cred_id"]
-                if not credentials[credential_id].get("rev_reg_id"):
-                    continue
-                if "timestamp" in precis:
-                    continue
-                rev_reg_id = credentials[credential_id]["rev_reg_id"]
+        for precis in requested_referents.values():  # cred_id, non-revoc interval
+            credential_id = precis["cred_id"]
+            if not credentials[credential_id].get("rev_reg_id"):
+                continue
+            if "timestamp" in precis:
+                continue
+            rev_reg_id = credentials[credential_id]["rev_reg_id"]
+            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    rev_reg_id,
+                    txn_record_type=GET_REVOC_REG_DELTA,
+                )
+            )[1]
+            async with ledger:
                 reft_non_revoc_interval = precis.get("non_revoked")
                 if reft_non_revoc_interval:
                     key = (
@@ -201,12 +219,17 @@ class IndyPresExchHandler:
         rev_reg_defs = {}
         rev_reg_entries = {}
 
-        ledger = self._profile.inject(BaseLedger)
-        async with ledger:
-            for identifier in identifiers:
-                schema_ids.append(identifier["schema_id"])
-                cred_def_ids.append(identifier["cred_def_id"])
-
+        for identifier in identifiers:
+            schema_ids.append(identifier["schema_id"])
+            cred_def_ids.append(identifier["cred_def_id"])
+            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    identifier["schema_id"],
+                    txn_record_type=GET_SCHEMA,
+                )
+            )[1]
+            async with ledger:
                 # Build schemas for anoncreds
                 if identifier["schema_id"] not in schemas:
                     schemas[identifier["schema_id"]] = await ledger.get_schema(

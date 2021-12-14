@@ -8,6 +8,10 @@ from unittest import TestCase
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from ....core.in_memory import InMemoryProfile
+from ....ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 from ....messaging.util import canon
 from ....protocols.didcomm_prefix import DIDCommPrefix
 
@@ -391,16 +395,26 @@ class TestIndyPresPreviewAsync(AsyncTestCase):
         copy_indy_proof_req = deepcopy(INDY_PROOF_REQ)
 
         pres_preview = deepcopy(PRES_PREVIEW)
-        mock_ledger = async_mock.MagicMock(
-            get_credential_definition=async_mock.CoroutineMock(
-                return_value={"value": {"revocation": {"...": "..."}}}
+        mock_profile = InMemoryProfile.test_profile()
+        context = mock_profile.context
+        context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = (
+                None,
+                async_mock.MagicMock(
+                    get_credential_definition=async_mock.CoroutineMock(
+                        return_value={"value": {"revocation": {"...": "..."}}}
+                    )
+                ),
             )
-        )
-
-        indy_proof_req_revo = await pres_preview.indy_proof_request(
-            **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
-            ledger=mock_ledger,
-        )
+            indy_proof_req_revo = await pres_preview.indy_proof_request(
+                **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
+                profile=mock_profile,
+            )
 
         for uuid, attr_spec in indy_proof_req_revo["requested_attributes"].items():
             assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}
@@ -423,20 +437,31 @@ class TestIndyPresPreviewAsync(AsyncTestCase):
         copy_indy_proof_req = deepcopy(INDY_PROOF_REQ)
 
         pres_preview = deepcopy(PRES_PREVIEW)
-        mock_ledger = async_mock.MagicMock(
-            get_credential_definition=async_mock.CoroutineMock(
-                return_value={"value": {"revocation": {"...": "..."}}}
+        mock_profile = InMemoryProfile.test_profile()
+        mock_profile.settings["ledger.ledger_config_list"] = [{"id": "test"}]
+        context = mock_profile.context
+        context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = (
+                None,
+                async_mock.MagicMock(
+                    get_credential_definition=async_mock.CoroutineMock(
+                        return_value={"value": {"revocation": {"...": "..."}}}
+                    )
+                ),
             )
-        )
-
-        indy_proof_req_revo = await pres_preview.indy_proof_request(
-            **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
-            ledger=mock_ledger,
-            non_revoc_intervals={
-                CD_ID[s_id]: IndyNonRevocationInterval(1234567890, EPOCH_NOW)
-                for s_id in S_ID
-            },
-        )
+            indy_proof_req_revo = await pres_preview.indy_proof_request(
+                **{k: INDY_PROOF_REQ[k] for k in ("name", "version", "nonce")},
+                profile=mock_profile,
+                non_revoc_intervals={
+                    CD_ID[s_id]: IndyNonRevocationInterval(1234567890, EPOCH_NOW)
+                    for s_id in S_ID
+                },
+            )
 
         for uuid, attr_spec in indy_proof_req_revo["requested_attributes"].items():
             assert set(attr_spec.get("non_revoked", {}).keys()) == {"from", "to"}

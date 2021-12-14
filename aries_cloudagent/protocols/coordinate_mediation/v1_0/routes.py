@@ -201,8 +201,8 @@ async def list_mediation_requests(request: web.BaseRequest):
         tag_filter["state"] = state
 
     try:
-        session = await context.session()
-        records = await MediationRecord.query(session, tag_filter)
+        async with context.profile.session() as session:
+            records = await MediationRecord.query(session, tag_filter)
         results = [record.serialize() for record in records]
         results.sort(key=mediation_sort_key)
     except (StorageError, BaseModelError) as err:
@@ -219,8 +219,10 @@ async def retrieve_mediation_request(request: web.BaseRequest):
 
     mediation_id = request.match_info["mediation_id"]
     try:
-        session = await context.session()
-        mediation_record = await MediationRecord.retrieve_by_id(session, mediation_id)
+        async with context.profile.session() as session:
+            mediation_record = await MediationRecord.retrieve_by_id(
+                session, mediation_id
+            )
         result = mediation_record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -239,9 +241,10 @@ async def delete_mediation_request(request: web.BaseRequest):
 
     mediation_id = request.match_info["mediation_id"]
     try:
-        session = await context.session()
-
-        mediation_record = await MediationRecord.retrieve_by_id(session, mediation_id)
+        async with context.profile.session() as session:
+            mediation_record = await MediationRecord.retrieve_by_id(
+                session, mediation_id
+            )
         result = mediation_record.serialize()
         await mediation_record.delete_record(session)
     except StorageNotFoundError as err:
@@ -370,7 +373,7 @@ async def get_keylist(request: web.BaseRequest):
         tag_filter["role"] = role
 
     try:
-        async with context.session() as session:
+        async with context.profile.session() as session:
             keylists = await RouteRecord.query(session, tag_filter)
         results = [record.serialize() for record in keylists]
     except (StorageError, BaseModelError) as err:

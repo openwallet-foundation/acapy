@@ -178,6 +178,64 @@ class TestConnRecord(AsyncTestCase):
                 their_role=ConnRecord.Role.REQUESTER.rfc23,
             )
 
+    async def test_retrieve_by_invitation_msg_id(self):
+        record = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.INVITATION.rfc160,
+            invitation_msg_id="test123",
+        )
+        await record.save(self.session)
+        result = await ConnRecord.retrieve_by_invitation_msg_id(
+            session=self.session,
+            invitation_msg_id="test123",
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+        )
+        assert result
+        assert result == record
+        result = await ConnRecord.retrieve_by_invitation_msg_id(
+            session=self.session,
+            invitation_msg_id="test123",
+            their_role=ConnRecord.Role.REQUESTER.rfc160,
+        )
+        assert not result
+
+    async def test_find_existing_connection(self):
+        record_a = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.COMPLETED.rfc160,
+            invitation_msg_id="test123",
+            their_public_did="test_did_1",
+        )
+        await record_a.save(self.session)
+        record_b = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.INVITATION.rfc160,
+            invitation_msg_id="test123",
+            their_public_did="test_did_1",
+        )
+        await record_b.save(self.session)
+        record_c = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.COMPLETED.rfc160,
+            invitation_msg_id="test123",
+        )
+        await record_c.save(self.session)
+        result = await ConnRecord.find_existing_connection(
+            session=self.session,
+            their_public_did="test_did_1",
+        )
+        assert result
+        assert result.state == "active"
+        assert result.their_public_did == "test_did_1"
+
     async def test_retrieve_by_request_id(self):
         record = ConnRecord(
             my_did=self.test_did,
