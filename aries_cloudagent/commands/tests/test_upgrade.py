@@ -1,4 +1,4 @@
-import pytest
+import asyncio
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
@@ -37,10 +37,15 @@ class TestUpgrade(AsyncTestCase):
         ) as mock_conn_save:
             await test_module.upgrade(
                 {
-                    "upgrade.resave_records": [
-                        "aries_cloudagent.connections.models.conn_record.ConnRecord"
-                    ],
-                    "upgrade.update_existing_records": True,
+                    "upgrade.config": {
+                        "0.7.2": {
+                            "resave_records": [
+                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                            ],
+                            "update_existing_records": True,
+                        }
+                    },
+                    "upgrade.from_version": "0.7.2",
                 }
             )
 
@@ -59,12 +64,49 @@ class TestUpgrade(AsyncTestCase):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
                     {
-                        "upgrade.resave_records": [
-                            "aries_cloudagent.connections.models.conn_record.Invalid"
-                        ],
+                        "upgrade.config": {
+                            "0.7.2": {
+                                "resave_records": [
+                                    "aries_cloudagent.connections.models.conn_record.Invalid"
+                                ],
+                            }
+                        },
+                        "upgrade.from_version": "0.7.2",
                     }
                 )
             assert "Unknown Record type" in str(ctx.exception)
+
+    async def test_execute(self):
+        profile = async_mock.MagicMock(close=async_mock.CoroutineMock())
+        with async_mock.patch.object(
+            test_module,
+            "wallet_config",
+            async_mock.CoroutineMock(
+                return_value=(
+                    profile,
+                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                )
+            ),
+        ) as mock_wallet_config, async_mock.patch.object(
+            ConnRecord,
+            "query",
+            async_mock.CoroutineMock(return_value=[ConnRecord()]),
+        ) as mock_conn_query, async_mock.patch.object(
+            ConnRecord, "save", async_mock.CoroutineMock()
+        ) as mock_conn_save, async_mock.patch.object(
+            asyncio, "get_event_loop", async_mock.MagicMock()
+        ) as mock_get_event_loop:
+            mock_get_event_loop.return_value = async_mock.MagicMock(
+                run_until_complete=async_mock.MagicMock(),
+            )
+            test_module.execute(
+                [
+                    "--upgrade-config",
+                    "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
+                    "--from-version",
+                    "0.7.2",
+                ]
+            )
 
     async def test_upgrade_x_invalid_record_type(self):
         profile = async_mock.MagicMock(close=async_mock.CoroutineMock())
@@ -81,9 +123,14 @@ class TestUpgrade(AsyncTestCase):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
                     {
-                        "upgrade.resave_records": [
-                            "aries_cloudagent.connections.models.connection_target.ConnectionTarget"
-                        ],
+                        "upgrade.config": {
+                            "0.7.2": {
+                                "resave_records": [
+                                    "aries_cloudagent.connections.models.connection_target.ConnectionTarget"
+                                ],
+                            }
+                        },
+                        "upgrade.from_version": "0.7.2",
                     }
                 )
             assert "Only BaseRecord and BaseExchangeRecord can be resaved" in str(

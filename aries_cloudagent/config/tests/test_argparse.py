@@ -109,6 +109,8 @@ class TestArgParse(AsyncTestCase):
             [
                 "--upgrade-config",
                 "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
+                "--from-version",
+                "0.7.2",
             ]
         )
 
@@ -119,8 +121,59 @@ class TestArgParse(AsyncTestCase):
 
         settings = group.get_settings(result)
 
-        assert len(settings.get("upgrade.resave_records")) == 1
-        assert not settings.get("upgrade.update_existing_records")
+        assert isinstance(settings.get("upgrade.config"), dict)
+        assert len(settings.get("upgrade.config")) == 2
+        assert (
+            len(settings.get("upgrade.config").get("0.7.2").get("resave_records")) == 2
+        )
+        assert (
+            not settings.get("upgrade.config")
+            .get("0.7.2")
+            .get("update_existing_records")
+        )
+
+    async def test_upgrade_config_x(self):
+        """Test upgrade command related parsing errors."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.UpgradeGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--upgrade-config",
+                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
+                "--from-version",
+                "0.7.4",
+            ]
+        )
+        with self.assertRaises(argparse.ConfigError):
+            settings = group.get_settings(result)
+
+        result = parser.parse_args(
+            [
+                "--upgrade-config",
+                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
+                "--from-version",
+                "0.7.2",
+            ]
+        )
+        with async_mock.patch.object(
+            argparse.yaml,
+            "safe_load",
+            async_mock.MagicMock(return_value={}),
+        ) as mock_safe_load:
+            with self.assertRaises(argparse.ConfigError):
+                settings = group.get_settings(result)
+
+        result = parser.parse_args(
+            [
+                "--upgrade-config",
+                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
+            ]
+        )
+        with self.assertRaises(argparse.ArgsParseError):
+            settings = group.get_settings(result)
 
     async def test_outbound_is_required(self):
         """Test that either -ot or -oq are required"""

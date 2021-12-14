@@ -15,6 +15,7 @@ from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
 from ..utils.tracing import trace_event
 
+from .base import ConfigError
 from .error import ArgsParseError
 from .util import BoundedInt, ByteSize
 
@@ -1850,28 +1851,56 @@ class UpgradeGroup(ArgumentGroup):
             ),
         )
 
+        parser.add_argument(
+            "--from-version",
+            type=str,
+            env_var="ACAPY_UPGRADE_FROM_VERSION",
+            help=(
+                "Specify which ACA-Py version to upgrade from, "
+                "this version should be supported/included in "
+                "the --upgrade-config file."
+            ),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
         if args.upgrade_config:
             with open(args.upgrade_config, "r") as stream:
-                provided_config = yaml.safe_load(stream)
-                recs_list = []
-                if provided_config.get("resave_records").get("base_record_path"):
-                    recs_list = recs_list + provided_config.get("resave_records").get(
-                        "base_record_path"
+                config_dict = yaml.safe_load(stream)
+                version_config_dict = {}
+                for version, provided_config in config_dict.items():
+                    recs_list = []
+                    version_config_dict[version] = {}
+                    if "resave_records" in provided_config:
+                        if provided_config.get("resave_records").get(
+                            "base_record_path"
+                        ):
+                            recs_list = recs_list + provided_config.get(
+                                "resave_records"
+                            ).get("base_record_path")
+                        if provided_config.get("resave_records").get(
+                            "base_exch_record_path"
+                        ):
+                            recs_list = recs_list + provided_config.get(
+                                "resave_records"
+                            ).get("base_exch_record_path")
+                    version_config_dict[version]["resave_records"] = recs_list
+                    version_config_dict[version]["update_existing_records"] = (
+                        provided_config.get("update_existing_records") or False
                     )
-                if provided_config.get("resave_records").get("base_exch_record_path"):
-                    recs_list = recs_list + provided_config.get("resave_records").get(
-                        "base_exch_record_path"
-                    )
-                settings["upgrade.resave_records"] = recs_list
-                settings["upgrade.update_existing_records"] = (
-                    provided_config.get("update_existing_records") or False
+                if version_config_dict == {}:
+                    raise ConfigError("No version configs found in --upgrade-config")
+                settings["upgrade.config"] = version_config_dict
+        if args.from_version:
+            if args.from_version not in settings.get("upgrade.config"):
+                raise ConfigError(
+                    "Specified --from-version not found in --upgrade-config"
                 )
-        else:
+            settings["upgrade.from_version"] = args.from_version
+        if not args.upgrade_config or not args.from_version:
             raise ArgsParseError(
-                "Parameter --upgrade-config must be"
+                "Parameter --upgrade-config and --from-version must be"
                 " provided for ACA-Py upgrade process"
             )
         return settings

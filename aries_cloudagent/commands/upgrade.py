@@ -31,8 +31,10 @@ async def upgrade(settings: dict):
     context = await context_builder.build_context()
     try:
         root_profile, public_did = await wallet_config(context)
+        upgrade_from_version = settings.get("upgrade.from_version")
+        upgrade_config = settings.get("upgrade.config").get(upgrade_from_version)
         # Step 1 re-saving all BaseRecord and BaseExchangeRecord
-        resave_record_paths = settings.get("upgrade.resave_records")
+        resave_record_paths = upgrade_config.get("resave_records")
         for record_path in resave_record_paths:
             try:
                 record_type = ClassLoader.load_class(record_path)
@@ -53,7 +55,7 @@ async def upgrade(settings: dict):
                     )
                 print(f"All records of {str(record_type)} successfully re-saved.")
         # Step 2 Update existing records, if required
-        if settings.get("upgrade.update_existing_records"):
+        if upgrade_config.get("update_existing_records"):
             await update_existing_records(root_profile)
         await root_profile.close()
     except BaseError as e:
