@@ -49,6 +49,35 @@ class TestUpgrade(AsyncTestCase):
                 }
             )
 
+    async def test_upgrade_callable_not_set(self):
+        profile = async_mock.MagicMock(close=async_mock.CoroutineMock())
+        with async_mock.patch.object(
+            test_module,
+            "wallet_config",
+            async_mock.CoroutineMock(
+                return_value=(
+                    profile,
+                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                )
+            ),
+        ) as mock_wallet_config:
+            with self.assertRaises(UpgradeError) as ctx:
+                await test_module.upgrade(
+                    {
+                        "upgrade.config": {
+                            "0.7.2": {
+                                "resave_records": [
+                                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                                ],
+                                "update_existing_records": True,
+                            },
+                            "0.6.0": {"update_existing_records": True},
+                        },
+                        "upgrade.from_version": "0.6.0",
+                    }
+                )
+            assert "No update_existing_records function specified" in str(ctx.exception)
+
     async def test_upgrade_x_class_not_found(self):
         profile = async_mock.MagicMock(close=async_mock.CoroutineMock())
         with async_mock.patch.object(
