@@ -1170,6 +1170,20 @@ class TransportGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "-eoq",
+            "--event-outbound-queue",
+            dest="event_outbound_queue",
+            type=str,
+            env_var="ACAPY_EVENT_OUTBOUND_TRANSPORT_QUEUE",
+            help=(
+                "Defines the location of the Outbound Queue Engine. This must be "
+                "a 'dotpath' to a Python module on the PYTHONPATH, followed by a "
+                "colon, followed by the name of a Python class that implements "
+                "BaseOutboundQueue. This commandline option is the official entry "
+                "point of ACA-py's pluggable queue interface."
+            ),
+        )
+        parser.add_argument(
             "-l",
             "--label",
             type=str,
@@ -1261,6 +1275,8 @@ class TransportGroup(ArgumentGroup):
             settings["transport.outbound_configs"] = args.outbound_transports
         if args.outbound_queue:
             settings["transport.outbound_queue"] = args.outbound_queue
+        if args.event_outbound_queue:
+            settings["transport.event_outbound_queue"] = args.event_outbound_queue
 
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
