@@ -714,11 +714,13 @@ class Conductor:
         try:
             if self.event_outbound_queue:
                 await self.event_outbound_queue.enqueue_message(
-                    json.dumps({
-                        "topic": topic,
-                        "payload": payload,
-                        "metadata": metadata,
-                    }),
+                    json.dumps(
+                        {
+                            "topic": topic,
+                            "payload": payload,
+                            "metadata": metadata,
+                        }
+                    ),
                     endpoint,
                 )
             else:

@@ -1,3 +1,4 @@
+import json
 from io import StringIO
 
 import asynctest
@@ -818,7 +819,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         with async_mock.patch.object(
             conductor.outbound_transport_manager, "enqueue_webhook"
         ) as mock_enqueue:
-            conductor.webhook_router(
+            await conductor.webhook_router(
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
@@ -831,7 +832,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             "enqueue_webhook",
             side_effect=OutboundDeliveryError,
         ) as mock_enqueue:
-            conductor.webhook_router(
+            await conductor.webhook_router(
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
@@ -845,20 +846,22 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         payload = {"test": "payload"}
         endpoint = "http://example"
         metadata = {}
-        enqueue_event_outbound_message = async_mock.MagicMock()
+        enqueue_event_message = async_mock.CoroutineMock()
         await conductor.setup()
         conductor.event_outbound_queue = async_mock.MagicMock(
-            enqueue_message=enqueue_event_outbound_message
+            enqueue_message=enqueue_event_message
         )
 
-        conductor.webhook_router(topic, payload, endpoint, None, metadata)
+        await conductor.webhook_router(topic, payload, endpoint, None, metadata)
 
-        enqueue_event_outbound_message.assert_called_once_with(
-            {
-                "topic": topic,
-                "payload": payload,
-                "metadata": metadata,
-            },
+        enqueue_event_message.assert_called_once_with(
+            json.dumps(
+                {
+                    "topic": topic,
+                    "payload": payload,
+                    "metadata": metadata,
+                }
+            ),
             endpoint,
         )
 

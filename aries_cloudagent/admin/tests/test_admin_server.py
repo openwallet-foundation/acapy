@@ -142,7 +142,7 @@ class TestAdminServer(AsyncTestCase):
     async def outbound_message_router(self, *args):
         self.message_results.append(args)
 
-    def webhook_router(self, *args):
+    async def webhook_router(self, *args):
         self.webhook_results.append(args)
 
     async def test_start_stop(self):
