@@ -713,7 +713,7 @@ class Conductor:
         """
         try:
             if self.event_outbound_queue:
-                self.event_outbound_queue.enqueue_message(
+                await self.event_outbound_queue.enqueue_message(
                     {
                         "topic": topic,
                         "payload": payload,
