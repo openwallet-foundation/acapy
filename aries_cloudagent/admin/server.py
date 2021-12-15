@@ -835,7 +835,7 @@ class AdminServer(BaseAdminServer):
 
         if self.webhook_router:
             for endpoint in webhook_urls:
-                await self.webhook_router(
+                self.webhook_router(
                     topic,
                     payload,
                     endpoint,

@@ -133,30 +133,6 @@ class TestArgParse(AsyncTestCase):
 
         assert settings.get("transport.outbound_queue") == "my_queue.mod.path"
 
-    async def test_event_outbound_queue(self):
-        """Test event outbound queue class path string."""
-        parser = argparse.create_argument_parser()
-        group = argparse.TransportGroup()
-        group.add_arguments(parser)
-        class_path = "event_outbound_queue.mod.path"
-
-        result = parser.parse_args(
-            [
-                "--inbound-transport",
-                "http",
-                "0.0.0.0",
-                "80",
-                "--outbound-queue",
-                "outbound_queue.mod.path",
-                "--event-outbound-queue",
-                class_path,
-            ]
-        )
-
-        settings = group.get_settings(result)
-
-        assert settings.get("transport.event_outbound_queue") == class_path
-
     async def test_general_settings_file(self):
         """Test file argument parsing."""
 

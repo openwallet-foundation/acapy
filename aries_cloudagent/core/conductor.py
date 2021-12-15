@@ -56,10 +56,7 @@ from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.queue.base import BaseOutboundQueue
-from ..transport.outbound.queue.loader import (
-    get_outbound_queue,
-    get_event_outbound_queue,
-)
+from ..transport.outbound.queue.loader import get_outbound_queue
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
@@ -99,7 +96,6 @@ class Conductor:
         self.root_profile: Profile = None
         self.setup_public_did: DIDInfo = None
         self.outbound_queue: BaseOutboundQueue = None
-        self.event_outbound_queue: BaseOutboundQueue = None
 
     @property
     def context(self) -> InjectionContext:
@@ -214,7 +210,6 @@ class Conductor:
         )
 
         self.outbound_queue = get_outbound_queue(self.root_profile)
-        self.event_outbound_queue = get_event_outbound_queue(self.root_profile)
 
         # Admin API
         if context.settings.get("admin.enabled"):
@@ -281,12 +276,6 @@ class Conductor:
                 await self.outbound_queue.start()
             except Exception:
                 LOGGER.exception("Unable to start outbound queue")
-                raise
-        if self.event_outbound_queue:
-            try:
-                await self.event_outbound_queue.start()
-            except Exception:
-                LOGGER.exception("Unable to start event outbound queue")
                 raise
 
         # Start up Admin server
@@ -478,8 +467,6 @@ class Conductor:
             shutdown.run(self.outbound_transport_manager.stop())
         if self.outbound_queue:
             shutdown.run(self.outbound_queue.stop())
-        if self.event_outbound_queue:
-            shutdown.run(self.event_outbound_queue.stop())
 
         # close multitenant profiles
         multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
@@ -693,7 +680,7 @@ class Conductor:
             else OutboundSendStatus.UNDELIVERABLE
         )
 
-    async def webhook_router(
+    def webhook_router(
         self,
         topic: str,
         payload: dict,
@@ -712,21 +699,9 @@ class Conductor:
             metadata: Additional metadata associated with the payload
         """
         try:
-            if self.event_outbound_queue:
-                await self.event_outbound_queue.enqueue_message(
-                    json.dumps(
-                        {
-                            "topic": topic,
-                            "payload": payload,
-                            "metadata": metadata,
-                        }
-                    ),
-                    endpoint,
-                )
-            else:
-                self.outbound_transport_manager.enqueue_webhook(
-                    topic, payload, endpoint, max_attempts, metadata
-                )
+            self.outbound_transport_manager.enqueue_webhook(
+                topic, payload, endpoint, max_attempts, metadata
+            )
         except OutboundDeliveryError:
             LOGGER.warning(
                 "Cannot queue message webhook for delivery, no supported transport"

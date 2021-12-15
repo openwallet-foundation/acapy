@@ -1,4 +1,3 @@
-import json
 from io import StringIO
 
 import asynctest
@@ -803,7 +802,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             await conductor.stop()
             mock_logger.exception.assert_called_once()
 
-    async def test_webhook_router_enqueue_webhook(self):
+    async def test_webhook_router(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         builder.update_settings(
             {"debug.print_invitation": True, "invite_base_url": "http://localhost"}
@@ -819,7 +818,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         with async_mock.patch.object(
             conductor.outbound_transport_manager, "enqueue_webhook"
         ) as mock_enqueue:
-            await conductor.webhook_router(
+            conductor.webhook_router(
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
@@ -832,38 +831,12 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             "enqueue_webhook",
             side_effect=OutboundDeliveryError,
         ) as mock_enqueue:
-            await conductor.webhook_router(
+            conductor.webhook_router(
                 test_topic, test_payload, test_endpoint, test_attempts
             )
             mock_enqueue.assert_called_once_with(
                 test_topic, test_payload, test_endpoint, test_attempts, None
             )
-
-    async def test_webhook_router_event_outbound_queue(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        conductor = test_module.Conductor(builder)
-        topic = "test-topic"
-        payload = {"test": "payload"}
-        endpoint = "http://example"
-        metadata = {}
-        enqueue_event_message = async_mock.CoroutineMock()
-        await conductor.setup()
-        conductor.event_outbound_queue = async_mock.MagicMock(
-            enqueue_message=enqueue_event_message
-        )
-
-        await conductor.webhook_router(topic, payload, endpoint, None, metadata)
-
-        enqueue_event_message.assert_called_once_with(
-            json.dumps(
-                {
-                    "topic": topic,
-                    "payload": payload,
-                    "metadata": metadata,
-                }
-            ),
-            endpoint,
-        )
 
     async def test_shutdown_multitenant_profiles(self):
         builder: ContextBuilder = StubContextBuilder(
