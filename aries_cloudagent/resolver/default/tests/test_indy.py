@@ -45,7 +45,9 @@ def profile(ledger):
     profile.context.injector.bind_instance(
         IndyLedgerRequestsExecutor,
         async_mock.MagicMock(
-            get_ledger_for_identifier=async_mock.CoroutineMock(return_value=ledger)
+            get_ledger_for_identifier=async_mock.CoroutineMock(
+                return_value=(None, ledger)
+            )
         ),
     )
     yield profile
@@ -71,7 +73,9 @@ class TestIndyResolver:
         profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(return_value=None)
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=(None, None)
+                )
             ),
         )
         with pytest.raises(ResolverError):

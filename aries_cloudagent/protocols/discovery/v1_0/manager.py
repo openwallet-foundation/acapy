@@ -133,7 +133,7 @@ class V10DiscoveryMgr:
                 )
             if ex_rec.disclose:
                 return ex_rec
-            asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
 
     async def create_and_send_query(
         self, query: str, comment: str = None, connection_id: str = None

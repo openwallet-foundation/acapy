@@ -265,14 +265,12 @@ class CredentialManager:
 
         # vet attributes
         ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-            cred_def_id,
-            txn_record_type=GET_CRED_DEF,
-        )
-        if isinstance(ledger_info, tuple):
-            ledger = ledger_info[1]
-        else:
-            ledger = ledger_info
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+        )[1]
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
@@ -405,14 +403,12 @@ class CredentialManager:
 
         async def _create():
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                credential_definition_id,
-                txn_record_type=GET_CRED_DEF,
-            )
-            if isinstance(ledger_info, tuple):
-                ledger = ledger_info[1]
-            else:
-                ledger = ledger_info
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    credential_definition_id,
+                    txn_record_type=GET_CRED_DEF,
+                )
+            )[1]
             async with ledger:
                 credential_definition = await ledger.get_credential_definition(
                     credential_definition_id
@@ -553,14 +549,12 @@ class CredentialManager:
             cred_offer_ser = cred_ex_record._credential_offer.ser
             cred_req_ser = cred_ex_record._credential_request.ser
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                schema_id,
-                txn_record_type=GET_SCHEMA,
-            )
-            if isinstance(ledger_info, tuple):
-                ledger = ledger_info[1]
-            else:
-                ledger = ledger_info
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    schema_id,
+                    txn_record_type=GET_SCHEMA,
+                )
+            )[1]
             async with ledger:
                 schema = await ledger.get_schema(schema_id)
                 credential_definition = await ledger.get_credential_definition(
@@ -767,14 +761,12 @@ class CredentialManager:
         raw_cred_serde = cred_ex_record._raw_credential
         revoc_reg_def = None
         ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-            raw_cred_serde.de.cred_def_id,
-            txn_record_type=GET_CRED_DEF,
-        )
-        if isinstance(ledger_info, tuple):
-            ledger = ledger_info[1]
-        else:
-            ledger = ledger_info
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                raw_cred_serde.de.cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+        )[1]
         async with ledger:
             credential_definition = await ledger.get_credential_definition(
                 raw_cred_serde.de.cred_def_id

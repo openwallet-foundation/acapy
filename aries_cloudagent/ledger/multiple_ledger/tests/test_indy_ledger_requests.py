@@ -54,7 +54,10 @@ class TestIndyLedgerRequestsExecutor(AsyncTestCase):
         assert ledger_inst.pool.name == "test_prod_1"
 
     async def test_get_ledger_for_identifier_is_digit(self):
-        ledger = await self.indy_ledger_requestor.get_ledger_for_identifier("123", 0)
+        ledger_id, ledger = await self.indy_ledger_requestor.get_ledger_for_identifier(
+            "123", 0
+        )
+        assert ledger_id is None
         assert ledger == self.ledger
 
     async def test_get_ledger_for_identifier_x(self):
@@ -70,17 +73,19 @@ class TestIndyLedgerRequestsExecutor(AsyncTestCase):
             ),
         )
         self.indy_ledger_requestor = IndyLedgerRequestsExecutor(self.profile)
-        ledger = await self.indy_ledger_requestor.get_ledger_for_identifier(
+        ledger_id, ledger = await self.indy_ledger_requestor.get_ledger_for_identifier(
             "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0", 0
         )
+        assert ledger_id is None
         assert ledger == self.ledger
 
     async def test_get_ledger_for_identifier_mult_ledger_not_set(self):
         self.profile.settings["ledger.ledger_config_list"] = None
         self.indy_ledger_requestor = IndyLedgerRequestsExecutor(self.profile)
-        ledger = await self.indy_ledger_requestor.get_ledger_for_identifier(
+        ledger_id, ledger = await self.indy_ledger_requestor.get_ledger_for_identifier(
             "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0", 0
         )
+        assert ledger_id is None
         assert ledger == self.ledger
 
     async def test_get_ledger_for_identifier_mult_ledger_not_cached(self):

@@ -352,14 +352,12 @@ class IndyPresPreview(BaseModel):
             if cd_id:
                 if profile:
                     ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-                    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                        cd_id,
-                        txn_record_type=GET_CRED_DEF,
-                    )
-                    if isinstance(ledger_info, tuple):
-                        ledger = ledger_info[1]
-                    else:
-                        ledger = ledger_info
+                    ledger = (
+                        await ledger_exec_inst.get_ledger_for_identifier(
+                            cd_id,
+                            txn_record_type=GET_CRED_DEF,
+                        )
+                    )[1]
                 if ledger:
                     async with ledger:
                         revoc_support = (await ledger.get_credential_definition(cd_id))[
@@ -413,14 +411,12 @@ class IndyPresPreview(BaseModel):
             if cd_id:
                 if profile:
                     ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-                    ledger_info = await ledger_exec_inst.get_ledger_for_identifier(
-                        cd_id,
-                        txn_record_type=GET_CRED_DEF,
-                    )
-                    if isinstance(ledger_info, tuple):
-                        ledger = ledger_info[1]
-                    else:
-                        ledger = ledger_info
+                    ledger = (
+                        await ledger_exec_inst.get_ledger_for_identifier(
+                            cd_id,
+                            txn_record_type=GET_CRED_DEF,
+                        )
+                    )[1]
                 if ledger:
                     async with ledger:
                         revoc_support = (await ledger.get_credential_definition(cd_id))[
