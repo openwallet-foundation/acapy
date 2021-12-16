@@ -904,13 +904,10 @@ class CredentialManager:
         return cred_ex_record
 
     async def revoke_credentials(
-        self,
-        session: ProfileSession,
-        rev_reg_id: str,
-        cred_rev_ids: Sequence[str]
+        self, session: ProfileSession, rev_reg_id: str, cred_rev_ids: Sequence[str]
     ) -> None:
         """
-        Update credentials state to credential_revoked
+        Update credentials state to credential_revoked.
 
         Args:
             rev_reg_id: revocation registry ID
@@ -924,9 +921,7 @@ class CredentialManager:
             try:
                 cred_ex_record = await (
                     V10CredentialExchange.retrieve_by_revocation(
-                        session,
-                        revoc_reg_id=rev_reg_id,
-                        revocation_id=cred_rev_id
+                        session, revoc_reg_id=rev_reg_id, revocation_id=cred_rev_id
                     )
                 )
                 cred_ex_record.state = V10CredentialExchange.STATE_CREDENTIAL_REVOKED

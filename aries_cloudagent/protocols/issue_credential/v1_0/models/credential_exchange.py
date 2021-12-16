@@ -37,7 +37,7 @@ class V10CredentialExchange(BaseExchangeRecord):
     TAG_NAMES = {
         "~thread_id" if UNENCRYPTED_TAGS else "thread_id",
         "revoc_reg_id",
-        "revocation_id"
+        "revocation_id",
     }
 
     INITIATOR_SELF = "self"
@@ -284,7 +284,7 @@ class V10CredentialExchange(BaseExchangeRecord):
     async def retrieve_by_revocation(
         cls, session: ProfileSession, revoc_reg_id: str, revocation_id: str
     ) -> "V10CredentialExchange":
-        """Retrieve a credential exchange record by revocation registry ID and credential revocation ID."""
+        """Retrieve a credential record by revocation registry and revocation ID."""
         record = await cls.retrieve_by_tag_filter(
             session,
             {"revoc_reg_id": revoc_reg_id},

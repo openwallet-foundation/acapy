@@ -19,6 +19,7 @@ from ..protocols.issue_credential.v1_0.manager import (
     CredentialManager as V10CredManager,
 )
 
+
 class RevocationManagerError(BaseError):
     """Revocation manager error."""
 
