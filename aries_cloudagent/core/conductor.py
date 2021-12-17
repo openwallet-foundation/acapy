@@ -25,7 +25,6 @@ from ..config.ledger import (
 )
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
-from ..commands.upgrade import RECORD_TYPE_ACAPY_VERSION
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
@@ -65,7 +64,7 @@ from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
-from ..version import __version__
+from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 from ..wallet.did_info import DIDInfo
 
 from .dispatcher import Dispatcher
@@ -315,14 +314,29 @@ class Conductor:
             storage = session.context.inject(BaseStorage)
             try:
                 record = await storage.find_record(
-                    RECORD_TYPE_ACAPY_VERSION,
+                    type_filter=RECORD_TYPE_ACAPY_VERSION,
+                    tag_query=None,
                 )
+                agent_version = f"v{__version__}"
+                if record.value != agent_version:
+                    LOGGER.exception(
+                        (
+                            f"Wallet storage version {record.value} "
+                            "does not match this ACA-Py agent "
+                            "version {agent_version}. Run aca-py "
+                            "upgrade command to fix this."
+                        )
+                    )
+                    raise
             except StorageNotFoundError:
-                record = StorageRecord(
-                    RECORD_TYPE_ACAPY_VERSION,
-                    f"v{__version__}",
+                LOGGER.exception(
+                    (
+                        "No wallet storage version found, Run aca-py "
+                        "upgrade command with --from-version argument "
+                        "to fix this."
+                    )
                 )
-                await storage.add_record(record)
+                raise
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):

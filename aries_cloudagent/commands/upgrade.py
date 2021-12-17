@@ -15,11 +15,9 @@ from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..utils.classloader import ClassLoader, ClassNotFoundError
-from ..version import __version__
+from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 
 from . import PROG
-
-RECORD_TYPE_ACAPY_VERSION = "acapy_version"
 
 
 class UpgradeError(BaseError):
@@ -68,7 +66,7 @@ async def upgrade(settings: dict):
             storage = session.inject(BaseStorage)
             try:
                 version_storage_record = await storage.find_record(
-                    RECORD_TYPE_ACAPY_VERSION,
+                    type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query=None
                 )
                 upgrade_from_version = version_storage_record.value
                 if "upgrade.from_version" in settings:
