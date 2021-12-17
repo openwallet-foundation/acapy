@@ -5,6 +5,10 @@ from typing import Tuple
 
 from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager
+from ..storage.base import BaseStorage
+from ..storage.error import StorageNotFoundError
+from ..storage.record import StorageRecord
+from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
 from ..wallet.crypto import seed_to_did
@@ -47,12 +51,14 @@ async def wallet_config(
 
     if provision:
         profile = await mgr.provision(context, profile_cfg)
+        await add_or_update_version_to_storage(profile)
     else:
         try:
             profile = await mgr.open(context, profile_cfg)
         except ProfileNotFoundError:
             if settings.get("auto_provision", False):
                 profile = await mgr.provision(context, profile_cfg)
+                await add_or_update_version_to_storage(profile)
             else:
                 raise
 
@@ -135,3 +141,21 @@ async def wallet_config(
     await txn.commit()
 
     return (profile, public_did_info)
+
+
+async def add_or_update_version_to_storage(root_profile: Profile):
+    """Add or update ACA-Py version StorageRecord."""
+    async with root_profile.session() as session:
+        storage = session.context.inject(BaseStorage)
+        try:
+            record = await storage.find_record(
+                type_filter=RECORD_TYPE_ACAPY_VERSION,
+                tag_query=None,
+            )
+            await storage.update_record(record, f"v{__version__}", {})
+        except StorageNotFoundError:
+            record = StorageRecord(
+                RECORD_TYPE_ACAPY_VERSION,
+                f"v{__version__}",
+            )
+            await storage.add_record(record)

@@ -1892,15 +1892,15 @@ class UpgradeGroup(ArgumentGroup):
                 if version_config_dict == {}:
                     raise ConfigError("No version configs found in --upgrade-config")
                 settings["upgrade.config"] = version_config_dict
+        else:
+            raise ArgsParseError(
+                "Parameter --upgrade-config must be"
+                " provided for ACA-Py upgrade process"
+            )
         if args.from_version:
             if args.from_version not in settings.get("upgrade.config"):
                 raise ConfigError(
                     "Specified --from-version not found in --upgrade-config"
                 )
             settings["upgrade.from_version"] = args.from_version
-        if not args.upgrade_config or not args.from_version:
-            raise ArgsParseError(
-                "Parameter --upgrade-config and --from-version must be"
-                " provided for ACA-Py upgrade process"
-            )
         return settings

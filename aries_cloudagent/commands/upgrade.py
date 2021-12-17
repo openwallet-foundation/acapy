@@ -11,7 +11,11 @@ from ..config.base import BaseError
 from ..config.util import common_config
 from ..config.wallet import wallet_config
 from ..messaging.models.base_record import BaseRecord, BaseExchangeRecord
+from ..storage.base import BaseStorage
+from ..storage.error import StorageNotFoundError
+from ..storage.record import StorageRecord
 from ..utils.classloader import ClassLoader, ClassNotFoundError
+from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 
 from . import PROG
 
@@ -57,7 +61,29 @@ async def upgrade(settings: dict):
     try:
         version_upgrade_config_inst = VersionUpgradeConfig(config_dict=CONFIG_v7_3)
         root_profile, public_did = await wallet_config(context)
-        upgrade_from_version = settings.get("upgrade.from_version")
+        version_storage_record = None
+        async with root_profile.session() as session:
+            storage = session.inject(BaseStorage)
+            try:
+                version_storage_record = await storage.find_record(
+                    type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query=None
+                )
+                upgrade_from_version = version_storage_record.value
+                if "upgrade.from_version" in settings:
+                    print(
+                        (
+                            f"version {upgrade_from_version} found in storage"
+                            ", --from-version will be ignored."
+                        )
+                    )
+            except StorageNotFoundError:
+                if "upgrade.from_version" in settings:
+                    upgrade_from_version = settings.get("upgrade.from_version")
+                else:
+                    raise UpgradeError(
+                        "ACA-Py version not found in storage and "
+                        "no --from-version specified."
+                    )
         upgrade_config = settings.get("upgrade.config").get(upgrade_from_version)
         # Step 1 re-saving all BaseRecord and BaseExchangeRecord
         if "resave_records" in upgrade_config:
@@ -94,6 +120,20 @@ async def upgrade(settings: dict):
                     f"specified for {upgrade_from_version}"
                 )
             await update_existing_recs_callable(root_profile)
+        # Update storage version
+        async with root_profile.session() as session:
+            storage = session.inject(BaseStorage)
+            if not version_storage_record:
+                await storage.add_record(
+                    StorageRecord(
+                        RECORD_TYPE_ACAPY_VERSION,
+                        f"v{__version__}",
+                    )
+                )
+            else:
+                await storage.update_record(
+                    version_storage_record, f"v{__version__}", {}
+                )
         await root_profile.close()
     except BaseError as e:
         raise UpgradeError(f"Error during upgrade: {e}")
@@ -130,7 +170,7 @@ def main():
 
 # Update every release
 CONFIG_v7_3 = {
-    "0.7.2": {
+    "v0.7.2": {
         "update_existing_function_inst": update_existing_records,
     },
 }

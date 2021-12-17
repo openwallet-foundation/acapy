@@ -110,7 +110,7 @@ class TestArgParse(AsyncTestCase):
                 "--upgrade-config",
                 "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
                 "--from-version",
-                "0.7.2",
+                "v0.7.2",
             ]
         )
 
@@ -124,11 +124,11 @@ class TestArgParse(AsyncTestCase):
         assert isinstance(settings.get("upgrade.config"), dict)
         assert len(settings.get("upgrade.config")) == 2
         assert (
-            len(settings.get("upgrade.config").get("0.7.2").get("resave_records")) == 2
+            len(settings.get("upgrade.config").get("v0.7.2").get("resave_records")) == 2
         )
         assert (
             not settings.get("upgrade.config")
-            .get("0.7.2")
+            .get("v0.7.2")
             .get("update_existing_records")
         )
 
@@ -144,7 +144,7 @@ class TestArgParse(AsyncTestCase):
                 "--upgrade-config",
                 "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
                 "--from-version",
-                "0.7.4",
+                "v0.7.4",
             ]
         )
         with self.assertRaises(argparse.ConfigError):
@@ -155,7 +155,7 @@ class TestArgParse(AsyncTestCase):
                 "--upgrade-config",
                 "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
                 "--from-version",
-                "0.7.2",
+                "v0.7.2",
             ]
         )
         with async_mock.patch.object(
@@ -168,8 +168,8 @@ class TestArgParse(AsyncTestCase):
 
         result = parser.parse_args(
             [
-                "--upgrade-config",
-                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
+                "--from-version",
+                "v0.7.2",
             ]
         )
         with self.assertRaises(argparse.ArgsParseError):
