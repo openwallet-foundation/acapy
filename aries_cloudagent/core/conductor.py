@@ -138,7 +138,7 @@ class Conductor:
                 )[1]
                 if (
                     self.root_profile.BACKEND_NAME == "askar"
-                    and ledger.BACKEND_NAME == "indy-vdr"
+                    and ledger.BACKEND_NAME == "indy_vdr"
                 ):
                     context.injector.bind_instance(BaseLedger, ledger)
                     context.injector.bind_provider(

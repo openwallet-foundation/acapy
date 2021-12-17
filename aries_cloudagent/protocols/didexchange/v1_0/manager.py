@@ -166,7 +166,6 @@ class DIDXManager(BaseConnectionManager):
         my_endpoint: str = None,
         mediation_id: str = None,
         use_public_did: bool = False,
-        alias: str = None,
     ) -> ConnRecord:
         """
         Create and send a request against a public DID only (no explicit invitation).
@@ -200,7 +199,7 @@ class DIDXManager(BaseConnectionManager):
             invitation_key=None,
             invitation_msg_id=None,
             accept=None,
-            alias=alias,
+            alias=my_label,
             their_public_did=their_public_did,
             connection_protocol=DIDX_PROTO,
         )

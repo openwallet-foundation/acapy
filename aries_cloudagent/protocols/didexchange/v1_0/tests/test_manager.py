@@ -235,7 +235,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     my_label=None,
                     my_endpoint=None,
                     mediation_id=mediation_record._id,
-                    alias="Tester",
                 )
 
                 assert conn_rec
@@ -261,7 +260,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 my_endpoint=None,
                 mediation_id=mediation_record._id,
                 use_public_did=True,
-                alias="Tester",
             )
 
             assert info_public.did == conn_rec.my_did
@@ -274,7 +272,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 my_endpoint=None,
                 mediation_id=None,
                 use_public_did=True,
-                alias="Tester",
             )
 
         assert "No public DID configured" in str(context.exception)
