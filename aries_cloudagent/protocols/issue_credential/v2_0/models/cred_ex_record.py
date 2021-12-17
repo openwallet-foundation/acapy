@@ -50,6 +50,7 @@ class V20CredExRecord(BaseExchangeRecord):
     STATE_ISSUED = "credential-issued"
     STATE_CREDENTIAL_RECEIVED = "credential-received"
     STATE_DONE = "done"
+    STATE_CREDENTIAL_REVOKED = "credential-revoked"
 
     def __init__(
         self,

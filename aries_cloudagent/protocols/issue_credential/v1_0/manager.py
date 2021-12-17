@@ -4,11 +4,11 @@ import asyncio
 import json
 import logging
 
-from typing import Mapping, Tuple, Sequence
+from typing import Mapping, Tuple
 
 from ....cache.base import BaseCache
 from ....core.error import BaseError
-from ....core.profile import Profile, ProfileSession
+from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
 from ....ledger.multiple_ledger.ledger_requests_executor import (
@@ -902,33 +902,6 @@ class CredentialManager:
                 await cred_ex_record.delete_record(session)  # all done: delete
 
         return cred_ex_record
-
-    async def revoke_credentials(
-        self, session: ProfileSession, rev_reg_id: str, cred_rev_ids: Sequence[str]
-    ) -> None:
-        """
-        Update credentials state to credential_revoked.
-
-        Args:
-            rev_reg_id: revocation registry ID
-            cred_rev_ids: list of credential revocation IDs
-
-        Returns:
-            None
-
-        """
-        for cred_rev_id in cred_rev_ids:
-            try:
-                cred_ex_record = await (
-                    V10CredentialExchange.retrieve_by_revocation(
-                        session, revoc_reg_id=rev_reg_id, revocation_id=cred_rev_id
-                    )
-                )
-                cred_ex_record.state = V10CredentialExchange.STATE_CREDENTIAL_REVOKED
-                await cred_ex_record.save(session, reason="revoke credential")
-
-            except StorageNotFoundError:
-                pass
 
     async def receive_problem_report(
         self, message: CredentialProblemReport, connection_id: str
