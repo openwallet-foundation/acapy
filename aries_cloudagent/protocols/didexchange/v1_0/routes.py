@@ -44,6 +44,11 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         description="Qualified public DID to which to request connection",
         **GENERIC_DID,
     )
+    alias = fields.Str(
+        description="Alias for connection",
+        required=False,
+        example="Barry",
+    )
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     my_label = fields.Str(
         description="Label for connection request", required=False, example="Broker"
@@ -183,6 +188,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
+    alias = request.query.get("alias") or None
     use_public_did = json.loads(request.query.get("use_public_did", "null"))
 
     profile = context.profile
@@ -194,6 +200,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
             use_public_did=use_public_did,
+            alias=alias,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

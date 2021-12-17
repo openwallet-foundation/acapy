@@ -166,6 +166,7 @@ class DIDXManager(BaseConnectionManager):
         my_endpoint: str = None,
         mediation_id: str = None,
         use_public_did: bool = False,
+        alias: str = None,
     ) -> ConnRecord:
         """
         Create and send a request against a public DID only (no explicit invitation).
@@ -199,7 +200,7 @@ class DIDXManager(BaseConnectionManager):
             invitation_key=None,
             invitation_msg_id=None,
             accept=None,
-            alias=my_label,
+            alias=alias,
             their_public_did=their_public_did,
             connection_protocol=DIDX_PROTO,
         )
@@ -406,13 +407,11 @@ class DIDXManager(BaseConnectionManager):
             connection_key = my_info.verkey
 
             async with self.profile.session() as session:
-                conn_records = await ConnRecord.retrieve_by_invitation_msg_id(
+                conn_rec = await ConnRecord.retrieve_by_invitation_msg_id(
                     session=session,
                     invitation_msg_id=request._thread.pthid,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
-            if len(conn_records) == 1:
-                conn_rec = conn_records[0]
 
         if conn_rec:  # invitation was explicit
             connection_key = conn_rec.invitation_key

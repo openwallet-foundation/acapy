@@ -1,5 +1,6 @@
 import asyncio
 from copy import deepcopy
+import pytest
 import json
 
 from asynctest import TestCase as AsyncTestCase
@@ -21,6 +22,7 @@ from ..base_manager import MultipleLedgerManagerError
 from ..indy_manager import MultiIndyLedgerManager
 
 
+@pytest.mark.indy
 class TestMultiIndyLedgerManager(AsyncTestCase):
     async def setUp(self):
         self.profile = InMemoryProfile.test_profile(bind={BaseCache: InMemoryCache()})

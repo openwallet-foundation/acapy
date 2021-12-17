@@ -15,7 +15,6 @@ from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
-from ..askar.profile import AskarProfile
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
@@ -27,12 +26,9 @@ from ..config.ledger import (
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
-from ..indy.sdk.profile import IndySdkProfile
 from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
-from ..ledger.indy import IndySdkLedger
-from ..ledger.indy_vdr import IndyVdrLedger
 from ..ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
@@ -67,6 +63,7 @@ from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..wallet.did_info import DIDInfo
+
 from .dispatcher import Dispatcher
 from .util import STARTUP_EVENT_TOPIC, SHUTDOWN_EVENT_TOPIC
 
@@ -139,8 +136,9 @@ class Conductor:
                         BaseMultipleLedgerManager
                     ).get_write_ledger()
                 )[1]
-                if isinstance(self.root_profile, AskarProfile) and isinstance(
-                    ledger, IndyVdrLedger
+                if (
+                    self.root_profile.BACKEND_NAME == "askar"
+                    and ledger.BACKEND_NAME == "indy-vdr"
                 ):
                     context.injector.bind_instance(BaseLedger, ledger)
                     context.injector.bind_provider(
@@ -150,8 +148,9 @@ class Conductor:
                             self.root_profile,
                         ),
                     )
-                elif isinstance(self.root_profile, IndySdkProfile) and isinstance(
-                    ledger, IndySdkLedger
+                elif (
+                    self.root_profile.BACKEND_NAME == "indy"
+                    and ledger.BACKEND_NAME == "indy"
                 ):
                     context.injector.bind_instance(BaseLedger, ledger)
                     context.injector.bind_provider(
