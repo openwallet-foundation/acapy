@@ -133,7 +133,9 @@ if [ ! -z "$DOCKERHOST" ]; then
   # provided via APPLICATION_URL environment variable
   export RUNMODE="docker"
 elif [ -z "${PWD_HOST_FQDN}" ]; then
-  DOCKERHOST=`docker run --rm --net=host eclipse/che-ip`
+  # getDockerHost; for details refer to https://github.com/bcgov/DITP-DevOps/tree/main/code/snippets#getdockerhost
+  . /dev/stdin <<<"$(cat <(curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost))" 
+  export DOCKERHOST=$(getDockerHost)
   export RUNMODE="docker"
 else
   PWD_HOST="${PWD_HOST_FQDN}"
