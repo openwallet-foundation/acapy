@@ -25,6 +25,7 @@ from ..config.ledger import (
 )
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
+from ..commands.upgrade import RECORD_TYPE_ACAPY_VERSION
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
@@ -50,6 +51,8 @@ from ..protocols.coordinate_mediation.mediation_invite_store import MediationInv
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ..storage.base import BaseStorage
+from ..storage.error import StorageNotFoundError
+from ..storage.record import StorageRecord
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -62,6 +65,7 @@ from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
+from ..version import __version__
 from ..wallet.did_info import DIDInfo
 
 from .dispatcher import Dispatcher
@@ -305,6 +309,20 @@ class Conductor:
             self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
+
+        # record ACA-Py version in Wallet, if needed
+        async with self.root_profile.session() as session:
+            storage = session.context.inject(BaseStorage)
+            try:
+                record = await storage.find_record(
+                    RECORD_TYPE_ACAPY_VERSION,
+                )
+            except StorageNotFoundError:
+                record = StorageRecord(
+                    RECORD_TYPE_ACAPY_VERSION,
+                    f"v{__version__}",
+                )
+                await storage.add_record(record)
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
