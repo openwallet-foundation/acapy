@@ -66,7 +66,7 @@ async def upgrade(settings: dict):
             storage = session.inject(BaseStorage)
             try:
                 version_storage_record = await storage.find_record(
-                    type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query=None
+                    type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
                 )
                 upgrade_from_version = version_storage_record.value
                 if "upgrade.from_version" in settings:
