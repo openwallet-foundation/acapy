@@ -27,7 +27,7 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
 
     RECORD_TYPE = "discovery_exchange_v20"
     RECORD_ID_NAME = "discovery_exchange_id"
-    RECORD_TOPIC = "dicover_feature"
+    RECORD_TOPIC = "discover_feature_v2_0"
     TAG_NAMES = {"~thread_id" if UNENCRYPTED_TAGS else "thread_id", "connection_id"}
 
     def __init__(
