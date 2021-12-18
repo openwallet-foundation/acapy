@@ -62,6 +62,7 @@ async def upgrade(settings: dict):
         version_upgrade_config_inst = VersionUpgradeConfig(config_dict=CONFIG_v7_3)
         root_profile, public_did = await wallet_config(context)
         version_storage_record = None
+        upgrade_to_version = f"v{__version__}"
         async with root_profile.session() as session:
             storage = session.inject(BaseStorage)
             try:
@@ -84,6 +85,16 @@ async def upgrade(settings: dict):
                         "ACA-Py version not found in storage and "
                         "no --from-version specified."
                     )
+        if upgrade_from_version == upgrade_to_version:
+            raise UpgradeError(
+                f"Version {upgrade_from_version} to upgrade from and "
+                f"current version to upgrade to {upgrade_to_version} "
+                "are same."
+            )
+        if upgrade_from_version not in settings.get("upgrade.config"):
+            raise UpgradeError(
+                f"No upgrade configuration found for {upgrade_from_version}"
+            )
         upgrade_config = settings.get("upgrade.config").get(upgrade_from_version)
         # Step 1 re-saving all BaseRecord and BaseExchangeRecord
         if "resave_records" in upgrade_config:
@@ -127,12 +138,12 @@ async def upgrade(settings: dict):
                 await storage.add_record(
                     StorageRecord(
                         RECORD_TYPE_ACAPY_VERSION,
-                        f"v{__version__}",
+                        upgrade_to_version,
                     )
                 )
             else:
                 await storage.update_record(
-                    version_storage_record, f"v{__version__}", {}
+                    version_storage_record, upgrade_to_version, {}
                 )
         await root_profile.close()
     except BaseError as e:
