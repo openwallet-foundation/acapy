@@ -428,6 +428,14 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
             )
             == "WgWxqztrNooG92RXvxSTWv"
         )
+        assert (
+            self.manager.extract_did_from_identifier("WgWxqztrNooG92RXvxSTWv")
+            == "WgWxqztrNooG92RXvxSTWv"
+        )
+        assert (
+            self.manager.extract_did_from_identifier("did:sov:WgWxqztrNooG92RXvxSTWv")
+            == "WgWxqztrNooG92RXvxSTWv"
+        )
 
     async def test_get_production_ledgers(self):
         assert len(await self.manager.get_prod_ledgers()) == 2
