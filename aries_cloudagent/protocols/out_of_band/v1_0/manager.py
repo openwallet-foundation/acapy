@@ -500,6 +500,10 @@ class OutOfBandManager(BaseConnectionManager):
                             await conn_rec.metadata_delete(
                                 session=session, key="reuse_msg_state"
                             )
+                            # refetch connection for accurate state after handshake
+                            conn_rec = await ConnRecord.retrieve_by_id(
+                                session=session, record_id=conn_rec.connection_id
+                            )
                 except asyncio.TimeoutError:
                     # If no reuse_accepted or problem_report message was received within
                     # the 15s timeout then a new connection to be created
