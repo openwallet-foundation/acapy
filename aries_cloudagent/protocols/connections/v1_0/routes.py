@@ -331,6 +331,7 @@ async def connections_list(request: web.BaseRequest):
         "my_did",
         "their_did",
         "request_id",
+        "invitation_key"
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]

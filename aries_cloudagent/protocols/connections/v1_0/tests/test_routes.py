@@ -1,5 +1,6 @@
 import json
 
+from unittest.mock import ANY
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
@@ -30,6 +31,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "invitation_id": "dummy",  # exercise tag filter assignment
             "their_role": ConnRecord.Role.REQUESTER.rfc160,
             "connection_protocol": ConnRecord.Protocol.RFC_0160.aries_protocol,
+            "invitation_key": "some-invitation-key"
         }
 
         STATE_COMPLETED = ConnRecord.State.COMPLETED
@@ -40,7 +42,7 @@ class TestConnectionRoutes(AsyncTestCase):
             test_module, "ConnRecord", autospec=True
         ) as mock_conn_rec:
             mock_conn_rec.query = async_mock.CoroutineMock()
-            mock_conn_rec.Role = async_mock.MagicMock(return_value=ROLE_REQUESTER)
+            mock_conn_rec.Role = ConnRecord.Role
             mock_conn_rec.State = async_mock.MagicMock(
                 COMPLETED=STATE_COMPLETED,
                 INVITATION=STATE_INVITATION,
@@ -85,6 +87,18 @@ class TestConnectionRoutes(AsyncTestCase):
                 test_module.web, "json_response"
             ) as mock_response:
                 await test_module.connections_list(self.request)
+                mock_conn_rec.query.assert_called_once_with(
+                    ANY,
+                    {
+                        "invitation_id": "dummy",
+                        "invitation_key": "some-invitation-key"
+                    },
+                    post_filter_positive={
+                        "their_role": [v for v in ConnRecord.Role.REQUESTER.value],
+                        "connection_protocol": ConnRecord.Protocol.RFC_0160.aries_protocol,
+                    },
+                    alt=True
+                )
                 mock_response.assert_called_once_with(
                     {
                         "results": [
