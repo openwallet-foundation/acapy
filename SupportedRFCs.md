@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [Hyperledger Rocketchat](https://chat.hyperledger.org) or through an issue in this repo.
 
-**Last Update**: 2021-12-06, Release 0.7.3
+**Last Update**: 2021-12-22, Release 0.7.3
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/) and [Animo Solutions](https://animo.id/).
