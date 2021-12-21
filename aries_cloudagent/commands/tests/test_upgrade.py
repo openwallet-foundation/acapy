@@ -321,9 +321,7 @@ class TestUpgrade(AsyncTestCase):
                         "upgrade.from_version": "v0.7.2",
                     }
                 )
-            assert "Only BaseRecord and BaseExchangeRecord can be resaved" in str(
-                ctx.exception
-            )
+            assert "Only BaseRecord can be resaved" in str(ctx.exception)
 
     def test_main(self):
         with async_mock.patch.object(
