@@ -10,7 +10,7 @@ from ..config.default_context import DefaultContextBuilder
 from ..config.base import BaseError
 from ..config.util import common_config
 from ..config.wallet import wallet_config
-from ..messaging.models.base_record import BaseRecord, BaseExchangeRecord
+from ..messaging.models.base_record import BaseRecord
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
