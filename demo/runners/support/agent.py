@@ -333,6 +333,7 @@ class DemoAgent:
             ("--wallet-key", self.wallet_key),
             "--preserve-exchange-records",
             "--auto-provision",
+            "--public-invites",
         ]
         if self.aip == 20:
             result.append("--emit-new-didcomm-prefix")
