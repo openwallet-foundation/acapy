@@ -31,7 +31,7 @@ class TestConnectionRoutes(AsyncTestCase):
             "invitation_id": "dummy",  # exercise tag filter assignment
             "their_role": ConnRecord.Role.REQUESTER.rfc160,
             "connection_protocol": ConnRecord.Protocol.RFC_0160.aries_protocol,
-            "invitation_key": "some-invitation-key"
+            "invitation_key": "some-invitation-key",
         }
 
         STATE_COMPLETED = ConnRecord.State.COMPLETED
@@ -89,15 +89,12 @@ class TestConnectionRoutes(AsyncTestCase):
                 await test_module.connections_list(self.request)
                 mock_conn_rec.query.assert_called_once_with(
                     ANY,
-                    {
-                        "invitation_id": "dummy",
-                        "invitation_key": "some-invitation-key"
-                    },
+                    {"invitation_id": "dummy", "invitation_key": "some-invitation-key"},
                     post_filter_positive={
                         "their_role": [v for v in ConnRecord.Role.REQUESTER.value],
                         "connection_protocol": ConnRecord.Protocol.RFC_0160.aries_protocol,
                     },
-                    alt=True
+                    alt=True,
                 )
                 mock_response.assert_called_once_with(
                     {
