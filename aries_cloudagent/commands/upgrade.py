@@ -106,8 +106,7 @@ async def upgrade(settings: dict):
                     raise UpgradeError(f"Unknown Record type {record_path}") from err
                 if not issubclass(record_type, BaseRecord):
                     raise UpgradeError(
-                        "Only BaseRecord and BaseExchangeRecord can be resaved"
-                        f", found: {str(record_type)}"
+                        "Only BaseRecord can be resaved" f", found: {str(record_type)}"
                     )
                 async with root_profile.session() as session:
                     all_records = await record_type.query(session)
