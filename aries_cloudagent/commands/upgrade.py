@@ -104,9 +104,7 @@ async def upgrade(settings: dict):
                     record_type = ClassLoader.load_class(record_path)
                 except ClassNotFoundError as err:
                     raise UpgradeError(f"Unknown Record type {record_path}") from err
-                if not issubclass(record_type, BaseRecord) and not issubclass(
-                    record_type, BaseExchangeRecord
-                ):
+                if not issubclass(record_type, BaseRecord):
                     raise UpgradeError(
                         "Only BaseRecord and BaseExchangeRecord can be resaved"
                         f", found: {str(record_type)}"
@@ -115,7 +113,8 @@ async def upgrade(settings: dict):
                     all_records = await record_type.query(session)
                     for record in all_records:
                         await record.save(
-                            session, reason="re-saving record during ACA-Py upgradation"
+                            session,
+                            reason="re-saving record during ACA-Py upgrade process",
                         )
                     print(f"All records of {str(record_type)} successfully re-saved.")
         # Step 2 Update existing records, if required
