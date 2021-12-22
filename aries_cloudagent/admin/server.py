@@ -293,8 +293,11 @@ class AdminServer(BaseAdminServer):
                 # browsers performing CORS requests will never include the original
                 # x-api-key header from the method that triggered the preflight
                 # OPTIONS check.
-                if (valid_key or is_unprotected_path(request.path)
-                        or (request.method == "OPTIONS")):
+                if (
+                    valid_key
+                    or is_unprotected_path(request.path)
+                    or (request.method == "OPTIONS")
+                ):
                     return await handler(request)
                 else:
                     raise web.HTTPUnauthorized()

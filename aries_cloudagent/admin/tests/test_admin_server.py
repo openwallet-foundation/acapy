@@ -344,21 +344,26 @@ class TestAdminServer(AsyncTestCase):
         # are allowed without a x-api-key even when x-api-key security is enabled
         async with self.client_session.options(
             f"http://127.0.0.1:{self.port}/status",
-            headers={"Access-Control-Request-Headers": "x-api-key",
-                    "Access-Control-Request-Method": "GET",
-                    "Connection": "keep-alive",
-                    "Host": f"http://127.0.0.1:{self.port}/status",
-                    "Origin": "http://localhost:3000",
-                    "Referer": "http://localhost:3000/",
-                    "Sec-Fetch-Dest": "empty",
-                    "Sec-Fetch-Mode": "cors",
-                    "Sec-Fetch-Site": "same-site"}
+            headers={
+                "Access-Control-Request-Headers": "x-api-key",
+                "Access-Control-Request-Method": "GET",
+                "Connection": "keep-alive",
+                "Host": f"http://127.0.0.1:{self.port}/status",
+                "Origin": "http://localhost:3000",
+                "Referer": "http://localhost:3000/",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-site"
+            }
         ) as response:
             assert response.status == 200
             assert response.headers["Access-Control-Allow-Credentials"] == "true"
             assert response.headers["Access-Control-Allow-Headers"] == "X-API-KEY"
             assert response.headers["Access-Control-Allow-Methods"] == "GET"
-            assert response.headers["Access-Control-Allow-Origin"] == "http://localhost:3000"
+            assert ( 
+                response.headers["Access-Control-Allow-Origin"] 
+                == "http://localhost:3000"
+            )
 
         async with self.client_session.ws_connect(
             f"http://127.0.0.1:{self.port}/ws", headers={"x-api-key": "test-api-key"}
