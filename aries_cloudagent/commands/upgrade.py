@@ -103,12 +103,13 @@ async def upgrade(settings: dict):
                 x.split(".")
             ),
         )
-        upgrade_from_version_index = (
-            sorted_versions_found_in_config.index(upgrade_from_version) - 1
+        upgrade_from_version_index = sorted_versions_found_in_config.index(
+            upgrade_from_version
         )
         for from_version_config in sorted_versions_found_in_config[
             upgrade_from_version_index:
         ]:
+            print(f"Running upgrade process for {from_version_config}")
             upgrade_config = settings.get("upgrade.config").get(from_version_config)
             # Step 1 re-saving all BaseRecord and BaseExchangeRecord
             if "resave_records" in upgrade_config:
