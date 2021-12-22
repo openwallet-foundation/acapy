@@ -353,15 +353,15 @@ class TestAdminServer(AsyncTestCase):
                 "Referer": "http://localhost:3000/",
                 "Sec-Fetch-Dest": "empty",
                 "Sec-Fetch-Mode": "cors",
-                "Sec-Fetch-Site": "same-site"
-            }
+                "Sec-Fetch-Site": "same-site",
+            },
         ) as response:
             assert response.status == 200
             assert response.headers["Access-Control-Allow-Credentials"] == "true"
             assert response.headers["Access-Control-Allow-Headers"] == "X-API-KEY"
             assert response.headers["Access-Control-Allow-Methods"] == "GET"
-            assert ( 
-                response.headers["Access-Control-Allow-Origin"] 
+            assert (
+                response.headers["Access-Control-Allow-Origin"]
                 == "http://localhost:3000"
             )
 
