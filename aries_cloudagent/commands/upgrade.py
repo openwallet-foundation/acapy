@@ -2,6 +2,7 @@
 
 import asyncio
 from configargparse import ArgumentParser
+from packaging import version as package_version
 from typing import Callable, Sequence, Optional
 
 from ..core.profile import Profile
@@ -98,10 +99,7 @@ async def upgrade(settings: dict):
         upgrade_configs = settings.get("upgrade.config")
         versions_found_in_config = upgrade_configs.keys()
         sorted_versions_found_in_config = sorted(
-            versions_found_in_config,
-            key=lambda x: (lambda y: (int(y[0][1:]), int(y[1]), int(y[2])))(
-                x.split(".")
-            ),
+            versions_found_in_config, key=lambda x: package_version.parse(x)
         )
         upgrade_from_version_index = sorted_versions_found_in_config.index(
             upgrade_from_version
