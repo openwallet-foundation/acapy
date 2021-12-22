@@ -289,7 +289,12 @@ class AdminServer(BaseAdminServer):
                 header_admin_api_key = request.headers.get("x-api-key")
                 valid_key = const_compare(self.admin_api_key, header_admin_api_key)
 
-                if valid_key or is_unprotected_path(request.path):
+                # We have to allow OPTIONS method access to paths without a key since
+                # browsers performing CORS requests will never include the original
+                # x-api-key header from the method that triggered the preflight
+                # OPTIONS check.
+                if (valid_key or is_unprotected_path(request.path)
+                        or (request.method == "OPTIONS")):
                     return await handler(request)
                 else:
                     raise web.HTTPUnauthorized()
