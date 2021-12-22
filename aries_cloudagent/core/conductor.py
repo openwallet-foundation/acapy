@@ -310,13 +310,13 @@ class Conductor:
 
         # record ACA-Py version in Wallet, if needed
         async with self.root_profile.session() as session:
+            storage: BaseStorage = session.context.inject(BaseStorage)
+            agent_version = f"v{__version__}"
             try:
-                storage: BaseStorage = session.context.inject(BaseStorage)
                 record = await storage.find_record(
                     type_filter=RECORD_TYPE_ACAPY_VERSION,
                     tag_query={},
                 )
-                agent_version = f"v{__version__}"
                 if record.value != agent_version:
                     LOGGER.exception(
                         (
@@ -328,14 +328,7 @@ class Conductor:
                     )
                     raise
             except StorageNotFoundError:
-                LOGGER.exception(
-                    (
-                        "No wallet storage version found, Run aca-py "
-                        "upgrade command with --from-version argument "
-                        "to fix this."
-                    )
-                )
-                raise
+                pass
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):

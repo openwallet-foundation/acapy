@@ -1253,6 +1253,4 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
 
             mock_inbound_mgr.return_value.registered_transports = {}
             mock_outbound_mgr.return_value.registered_transports = {}
-            with self.assertRaises(StorageNotFoundError):
-                await conductor.start()
-                mock_logger.exception.assert_called_once()
+            await conductor.start()

@@ -7,7 +7,6 @@ from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager, ProfileSession
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
-from ..storage.record import StorageRecord
 from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
@@ -51,16 +50,16 @@ async def wallet_config(
 
     if provision:
         profile = await mgr.provision(context, profile_cfg)
-        async with profile.session() as session:
-            await add_or_update_version_to_storage(session)
+        # async with profile.session() as session:
+        #     await add_or_update_version_to_storage(session)
     else:
         try:
             profile = await mgr.open(context, profile_cfg)
         except ProfileNotFoundError:
             if settings.get("auto_provision", False):
                 profile = await mgr.provision(context, profile_cfg)
-                async with profile.session() as session:
-                    await add_or_update_version_to_storage(session)
+                # async with profile.session() as session:
+                #     await add_or_update_version_to_storage(session)
             else:
                 raise
 
@@ -152,9 +151,10 @@ async def add_or_update_version_to_storage(session: ProfileSession):
         record = await storage.find_record(RECORD_TYPE_ACAPY_VERSION, {})
         await storage.update_record(record, f"v{__version__}", {})
     except StorageNotFoundError:
-        record = StorageRecord(
-            RECORD_TYPE_ACAPY_VERSION,
-            f"v{__version__}",
-            {},
+        raise ConfigError(
+            (
+                "No wallet storage version found, Run aca-py "
+                "upgrade command with --from-version argument "
+                "to fix this."
+            )
         )
-        await storage.add_record(record)

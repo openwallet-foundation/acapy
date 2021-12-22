@@ -302,9 +302,9 @@ class TestWalletConfig(AsyncTestCase):
         assert len(records) == 1
         assert records[0].value == f"v{__version__}"
 
-    async def test_add_version_to_storage(self):
+    async def test_version_record_not_found(self):
         session = InMemoryProfile.test_session()
         storage = session.inject(BaseStorage)
         assert (len(await storage.find_all_records(RECORD_TYPE_ACAPY_VERSION))) == 0
-        await test_module.add_or_update_version_to_storage(session)
-        assert (len(await storage.find_all_records(RECORD_TYPE_ACAPY_VERSION))) == 1
+        with self.assertRaises(test_module.ConfigError):
+            await test_module.add_or_update_version_to_storage(session)
