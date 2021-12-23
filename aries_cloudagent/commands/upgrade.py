@@ -137,13 +137,13 @@ async def upgrade(settings: dict):
             if "update_existing_records" in upgrade_config:
                 update_existing_recs_callable = (
                     version_upgrade_config_inst.get_update_existing_func(
-                        upgrade_from_version
+                        from_version_config
                     )
                 )
                 if not update_existing_recs_callable:
                     raise UpgradeError(
                         "No update_existing_records function "
-                        f"specified for {upgrade_from_version}"
+                        f"specified for {from_version_config}"
                     )
                 await update_existing_recs_callable(root_profile)
         # Update storage version

@@ -50,16 +50,12 @@ async def wallet_config(
 
     if provision:
         profile = await mgr.provision(context, profile_cfg)
-        # async with profile.session() as session:
-        #     await add_or_update_version_to_storage(session)
     else:
         try:
             profile = await mgr.open(context, profile_cfg)
         except ProfileNotFoundError:
             if settings.get("auto_provision", False):
                 profile = await mgr.provision(context, profile_cfg)
-                # async with profile.session() as session:
-                #     await add_or_update_version_to_storage(session)
             else:
                 raise
 
