@@ -134,7 +134,10 @@ async def upgrade(settings: dict):
                             f"All records of {str(record_type)} successfully re-saved."
                         )
             # Step 2 Update existing records, if required
-            if "update_existing_records" in upgrade_config:
+            if (
+                "update_existing_records" in upgrade_config
+                and upgrade_config.get("update_existing_records") is True
+            ):
                 update_existing_recs_callable = (
                     version_upgrade_config_inst.get_update_existing_func(
                         from_version_config
