@@ -775,6 +775,7 @@ class DemoAgent:
             handler = f"handle_{topic}"
             wallet_id = headers.get("x-wallet-id")
             method = getattr(self, handler, None)
+            print("Handling:", handler, payload)
             if method:
                 EVENT_LOGGER.debug(
                     "Agent called controller webhook: %s%s%s%s",
@@ -1145,21 +1146,36 @@ class DemoAgent:
     def reset_postgres_stats(self):
         self.wallet_stats.clear()
 
-    async def get_invite(self, use_did_exchange: bool, auto_accept: bool = True):
+    async def get_invite(
+        self,
+        use_did_exchange: bool,
+        auto_accept: bool = True,
+        reuse_connections: bool = False,
+    ):
         self.connection_id = None
         if use_did_exchange:
             # TODO can mediation be used with DID exchange connections?
+            invi_params = {
+                "auto_accept": json.dumps(auto_accept),
+            }
+            payload = {
+                "handshake_protocols": ["rfc23"],
+                "use_public_did": reuse_connections,
+            }
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
-                {"handshake_protocols": ["rfc23"]},
-                params={"auto_accept": json.dumps(auto_accept)},
+                payload,
+                params=invi_params,
             )
         else:
             if self.mediation:
+                invi_params = {
+                    "auto_accept": json.dumps(auto_accept),
+                }
                 invi_rec = await self.admin_POST(
                     "/connections/create-invitation",
                     {"mediation_id": self.mediator_request_id},
-                    params={"auto_accept": json.dumps(auto_accept)},
+                    params=invi_params,
                 )
             else:
                 invi_rec = await self.admin_POST("/connections/create-invitation")
@@ -1170,13 +1186,16 @@ class DemoAgent:
         if self.endorser_role and self.endorser_role == "author":
             params = {"alias": "endorser"}
         else:
-            params = None
+            params = {}
         if "/out-of-band/" in invite.get("@type", ""):
+            # always reuse connections if possible
+            params["use_existing_connection"] = "true"
             connection = await self.admin_POST(
                 "/out-of-band/receive-invitation",
                 invite,
                 params=params,
             )
+            print("Received invite connection:", json.dumps(connection))
         else:
             connection = await self.admin_POST(
                 "/connections/receive-invitation",
