@@ -53,6 +53,8 @@ from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
 
 LOGGER = logging.getLogger(__name__)
+REUSE_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse"
+REUSE_ACCEPTED_WEBHOOK_TOPIC = "acapy::webhook:connection_reuse_accepted"
 
 
 class OutOfBandManagerError(BaseError):
@@ -508,6 +510,9 @@ class OutOfBandManager(BaseConnectionManager):
                     # If no reuse_accepted or problem_report message was received within
                     # the 15s timeout then a new connection to be created
                     async with self.profile.session() as session:
+                        sent_reuse_msg_id = await conn_rec.metadata_get(
+                            session=session, key="reuse_msg_id"
+                        )
                         await conn_rec.metadata_delete(
                             session=session, key="reuse_msg_id"
                         )
@@ -515,7 +520,23 @@ class OutOfBandManager(BaseConnectionManager):
                             session=session, key="reuse_msg_state"
                         )
                         conn_rec.state = ConnRecord.State.ABANDONED.rfc160
-                        await conn_rec.save(session, reason="Sent connection request")
+                        await conn_rec.save(
+                            session, reason="No HandshakeReuseAccept message received"
+                        )
+                    # Emit webhook
+                    await self.profile.notify(
+                        REUSE_ACCEPTED_WEBHOOK_TOPIC,
+                        {
+                            "thread_id": sent_reuse_msg_id,
+                            "connection_id": conn_rec.connection_id,
+                            "state": "rejected",
+                            "comment": (
+                                "No HandshakeReuseAccept message received, "
+                                f"connection {conn_rec.connection_id} ",
+                                f"and invitation {invitation._id}",
+                            ),
+                        },
+                    )
                     conn_rec = None
             # Inverse of the following cases
             # Handshake_Protocol not included
@@ -1035,6 +1056,18 @@ class OutOfBandManager(BaseConnectionManager):
             await conn_rec.save(session, reason="Assigning new invitation_msg_id")
         # Delete the ConnRecord created; re-use existing connection
         await self.delete_stale_connection_by_invitation(invi_msg_id)
+        # Emit webhook
+        await self.profile.notify(
+            REUSE_WEBHOOK_TOPIC,
+            {
+                "thread_id": reuse_msg_id,
+                "connection_id": conn_rec.connection_id,
+                "comment": (
+                    f"Connection {conn_rec.connection_id} is being reused ",
+                    f"for invitation {invi_msg_id}",
+                ),
+            },
+        )
 
     async def receive_reuse_accepted_message(
         self,
@@ -1059,9 +1092,9 @@ class OutOfBandManager(BaseConnectionManager):
             HandshakeReuseAccept message
 
         """
+        invi_msg_id = reuse_accepted_msg._thread.pthid
+        thread_reuse_msg_id = reuse_accepted_msg._thread.thid
         try:
-            invi_msg_id = reuse_accepted_msg._thread.pthid
-            thread_reuse_msg_id = reuse_accepted_msg._thread.thid
             async with self.profile.session() as session:
                 conn_reuse_msg_id = await conn_record.metadata_get(
                     session=session, key="reuse_msg_id"
@@ -1074,7 +1107,34 @@ class OutOfBandManager(BaseConnectionManager):
                 await conn_record.save(
                     session, reason="Assigning new invitation_msg_id"
                 )
+            # Emit webhook
+            await self.profile.notify(
+                REUSE_ACCEPTED_WEBHOOK_TOPIC,
+                {
+                    "thread_id": thread_reuse_msg_id,
+                    "connection_id": conn_record.connection_id,
+                    "state": "accepted",
+                    "comment": (
+                        f"Connection {conn_record.connection_id} is being reused ",
+                        f"for invitation {invi_msg_id}",
+                    ),
+                },
+            )
         except Exception as e:
+            # Emit webhook
+            await self.profile.notify(
+                REUSE_ACCEPTED_WEBHOOK_TOPIC,
+                {
+                    "thread_id": thread_reuse_msg_id,
+                    "connection_id": conn_record.connection_id,
+                    "state": "rejected",
+                    "comment": (
+                        "Unable to process HandshakeReuseAccept message, "
+                        f"connection {conn_record.connection_id} ",
+                        f"and invitation {invi_msg_id}",
+                    ),
+                },
+            )
             raise OutOfBandManagerError(
                 (
                     (
