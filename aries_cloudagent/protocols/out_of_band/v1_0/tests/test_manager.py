@@ -1537,7 +1537,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 InvitationRecord,
                 "retrieve_by_tag_filter",
                 autospec=True,
-            ) as retrieve_invi_rec:
+            ) as retrieve_invi_rec, async_mock.patch.object(
+                self.profile, "notify", autospec=True
+            ) as mock_notify:
                 oob_mgr_find_existing_conn.return_value = self.test_conn_rec
                 oob_mgr_fetch_conn.return_value = ConnectionTarget(
                     did=TestConfig.test_did,
@@ -1552,6 +1554,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_reuse_message(
                     reuse_msg, receipt, self.test_conn_rec
                 )
+                mock_notify.assert_called_once()
                 assert (
                     len(
                         await ConnRecord.query(
@@ -1594,7 +1597,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ConnRecord,
                 "find_existing_connection",
                 async_mock.CoroutineMock(),
-            ) as oob_mgr_find_existing_conn:
+            ) as oob_mgr_find_existing_conn, async_mock.patch.object(
+                self.profile, "notify", autospec=True
+            ) as mock_notify:
                 oob_mgr_find_existing_conn.return_value = None
                 oob_mgr_fetch_conn.return_value = ConnectionTarget(
                     did=TestConfig.test_did,
@@ -1609,6 +1614,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_reuse_message(
                     reuse_msg, receipt, self.test_conn_rec
                 )
+                mock_notify.assert_called_once()
                 assert len(self.responder.messages) == 0
 
     async def test_receive_reuse_message_problem_report_logic(self):
@@ -1629,7 +1635,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 OutOfBandManager,
                 "fetch_connection_targets",
                 autospec=True,
-            ) as oob_mgr_fetch_conn:
+            ) as oob_mgr_fetch_conn, async_mock.patch.object(
+                self.profile, "notify", autospec=True
+            ) as mock_notify:
                 oob_mgr_fetch_conn.return_value = ConnectionTarget(
                     did=TestConfig.test_did,
                     endpoint=TestConfig.test_endpoint,
@@ -1639,6 +1647,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 await self.manager.receive_reuse_message(
                     reuse_msg, receipt, self.test_conn_rec
                 )
+                mock_notify.assert_called_once()
 
     async def test_receive_reuse_accepted(self):
         async with self.profile.session() as session:
@@ -1664,11 +1673,14 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 OutOfBandManager,
                 "fetch_connection_targets",
                 autospec=True,
-            ) as oob_mgr_fetch_conn:
+            ) as oob_mgr_fetch_conn, async_mock.patch.object(
+                self.profile, "notify", autospec=True
+            ) as mock_notify:
 
                 await self.manager.receive_reuse_accepted_message(
                     reuse_msg_accepted, receipt, self.test_conn_rec
                 )
+                mock_notify.assert_called_once()
                 assert (
                     await self.test_conn_rec.metadata_get(session, "reuse_msg_state")
                     == "accepted"
@@ -1698,11 +1710,14 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 OutOfBandManager,
                 "fetch_connection_targets",
                 autospec=True,
-            ) as oob_mgr_fetch_conn:
+            ) as oob_mgr_fetch_conn, async_mock.patch.object(
+                self.profile, "notify", autospec=True
+            ) as mock_notify:
 
                 await self.manager.receive_reuse_accepted_message(
                     reuse_msg_accepted, receipt, self.test_conn_rec
                 )
+                mock_notify.assert_called_once()
                 assert (
                     await self.test_conn_rec.metadata_get(session, "reuse_msg_state")
                     == "accepted"
@@ -1732,11 +1747,14 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             OutOfBandManager,
             "fetch_connection_targets",
             autospec=True,
-        ) as oob_mgr_fetch_conn:
+        ) as oob_mgr_fetch_conn, async_mock.patch.object(
+            self.profile, "notify", autospec=True
+        ) as mock_notify:
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.receive_reuse_accepted_message(
                     reuse_msg_accepted, receipt, test_invalid_conn
                 )
+            mock_notify.assert_called_once()
             assert "Error processing reuse accepted message" in str(context.exception)
 
     async def test_receive_reuse_accepted_message_catch_exception(self):
@@ -1759,11 +1777,14 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 self.test_conn_rec,
                 "metadata_set",
                 async_mock.CoroutineMock(side_effect=StorageNotFoundError),
-            ):
+            ), async_mock.patch.object(
+                self.profile, "notify", autospec=True
+            ) as mock_notify:
                 with self.assertRaises(OutOfBandManagerError) as context:
                     await self.manager.receive_reuse_accepted_message(
                         reuse_msg_accepted, receipt, self.test_conn_rec
                     )
+                mock_notify.assert_called_once()
                 assert "Error processing reuse accepted message" in str(
                     context.exception
                 )
@@ -2172,7 +2193,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 OutOfBandManager,
                 "check_reuse_msg_state",
                 autospec=True,
-            ) as oob_mgr_check_reuse_state:
+            ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+                self.profile, "notify", autospec=True
+            ) as mock_notify:
                 oob_mgr_find_existing_conn.return_value = test_exist_conn
                 oob_mgr_check_reuse_state.side_effect = asyncio.TimeoutError
                 mock_oob_invi = async_mock.MagicMock(
@@ -2187,6 +2210,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 result = await self.manager.receive_invitation(
                     mock_oob_invi, use_existing_connection=True
                 )
+                mock_notify.assert_called()
                 retrieved_conn_records = await ConnRecord.query(
                     session=session,
                     tag_filter={"their_public_did": TestConfig.test_target_did},
