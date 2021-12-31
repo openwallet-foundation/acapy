@@ -28,9 +28,6 @@ class TestUpgrade(AsyncTestCase):
         await self.storage.add_record(record)
 
     def test_bad_calls(self):
-        with self.assertRaises(ArgsParseError):
-            test_module.execute([])
-
         with self.assertRaises(SystemExit):
             test_module.execute(["bad"])
 
@@ -53,14 +50,7 @@ class TestUpgrade(AsyncTestCase):
         ):
             await test_module.upgrade(
                 {
-                    "upgrade.config": {
-                        "v0.7.2": {
-                            "resave_records": [
-                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
-                            ],
-                            "update_existing_records": True,
-                        }
-                    },
+                    "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
                     "upgrade.from_version": "v0.7.2",
                 }
             )
@@ -82,18 +72,7 @@ class TestUpgrade(AsyncTestCase):
         ), async_mock.patch.object(
             ConnRecord, "save", async_mock.CoroutineMock()
         ):
-            await test_module.upgrade(
-                {
-                    "upgrade.config": {
-                        "v0.7.2": {
-                            "resave_records": [
-                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
-                            ],
-                            "update_existing_records": True,
-                        }
-                    },
-                }
-            )
+            await test_module.upgrade({})
 
     async def test_upgrade_from_version(self):
         with async_mock.patch.object(
@@ -114,14 +93,38 @@ class TestUpgrade(AsyncTestCase):
         ):
             await test_module.upgrade(
                 {
-                    "upgrade.config": {
-                        "v0.7.2": {
-                            "resave_records": [
+                    "upgrade.from_version": "v0.7.2",
+                }
+            )
+
+    async def test_upgrade_callable(self):
+        with async_mock.patch.object(
+            test_module,
+            "wallet_config",
+            async_mock.CoroutineMock(
+                return_value=(
+                    self.profile,
+                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                )
+            ),
+        ), async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.7.2": {
+                        "resave_records": {
+                            "base_record_path": [
                                 "aries_cloudagent.connections.models.conn_record.ConnRecord"
-                            ],
-                            "update_existing_records": True,
-                        }
+                            ]
+                        },
+                        "update_existing_records": True,
                     },
+                }
+            ),
+        ):
+            await test_module.upgrade(
+                {
                     "upgrade.from_version": "v0.7.2",
                 }
             )
@@ -144,43 +147,11 @@ class TestUpgrade(AsyncTestCase):
             with self.assertRaises(UpgradeError):
                 await test_module.upgrade(
                     {
-                        "upgrade.config": {
-                            "v0.7.2": {
-                                "resave_records": [
-                                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
-                                ],
-                                "update_existing_records": True,
-                            }
-                        }
+                        "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
                     }
                 )
 
-    async def test_upgrade_x_storage_version_not_in_config(self):
-        with async_mock.patch.object(
-            test_module,
-            "wallet_config",
-            async_mock.CoroutineMock(
-                return_value=(
-                    self.profile_storage,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
-            ),
-        ):
-            with self.assertRaises(UpgradeError):
-                await test_module.upgrade(
-                    {
-                        "upgrade.config": {
-                            "v0.7.3": {
-                                "resave_records": [
-                                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
-                                ],
-                                "update_existing_records": True,
-                            }
-                        }
-                    }
-                )
-
-    async def test_upgrade_x_missing_from_version(self):
+    async def test_upgrade_missing_from_version(self):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
@@ -197,20 +168,11 @@ class TestUpgrade(AsyncTestCase):
         ), async_mock.patch.object(
             ConnRecord, "save", async_mock.CoroutineMock()
         ):
-            with self.assertRaises(UpgradeError) as ctx:
-                await test_module.upgrade(
-                    {
-                        "upgrade.config": {
-                            "v0.7.2": {
-                                "resave_records": [
-                                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
-                                ],
-                                "update_existing_records": True,
-                            }
-                        },
-                    }
-                )
-            assert "ACA-Py version not found in storage and" in str(ctx.exception)
+            await test_module.upgrade(
+                {
+                    "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
+                }
+            )
 
     async def test_upgrade_x_callable_not_set(self):
         with async_mock.patch.object(
@@ -222,19 +184,26 @@ class TestUpgrade(AsyncTestCase):
                     async_mock.CoroutineMock(did="public DID", verkey="verkey"),
                 )
             ),
+        ), async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.7.2": {
+                        "resave_records": {
+                            "base_record_path": [
+                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                            ]
+                        },
+                        "update_existing_records": True,
+                    },
+                    "v0.6.0": {"update_existing_records": True},
+                }
+            ),
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
                     {
-                        "upgrade.config": {
-                            "v0.7.2": {
-                                "resave_records": [
-                                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
-                                ],
-                                "update_existing_records": True,
-                            },
-                            "v0.6.0": {"update_existing_records": True},
-                        },
                         "upgrade.from_version": "v0.6.0",
                     }
                 )
@@ -250,17 +219,24 @@ class TestUpgrade(AsyncTestCase):
                     async_mock.CoroutineMock(did="public DID", verkey="verkey"),
                 )
             ),
+        ), async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.7.2": {
+                        "resave_records": {
+                            "base_record_path": [
+                                "aries_cloudagent.connections.models.conn_record.Invalid"
+                            ],
+                        }
+                    },
+                }
+            ),
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
                     {
-                        "upgrade.config": {
-                            "v0.7.2": {
-                                "resave_records": [
-                                    "aries_cloudagent.connections.models.conn_record.Invalid"
-                                ],
-                            }
-                        },
                         "upgrade.from_version": "v0.7.2",
                     }
                 )
@@ -307,21 +283,57 @@ class TestUpgrade(AsyncTestCase):
                     async_mock.CoroutineMock(did="public DID", verkey="verkey"),
                 )
             ),
+        ), async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.7.2": {
+                        "resave_records": {
+                            "base_exch_record_path": [
+                                "aries_cloudagent.connections.models.connection_target.ConnectionTarget"
+                            ],
+                        }
+                    }
+                }
+            ),
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
                     {
-                        "upgrade.config": {
-                            "v0.7.2": {
-                                "resave_records": [
-                                    "aries_cloudagent.connections.models.connection_target.ConnectionTarget"
-                                ],
-                            }
-                        },
                         "upgrade.from_version": "v0.7.2",
                     }
                 )
             assert "Only BaseRecord can be resaved" in str(ctx.exception)
+
+    async def test_upgrade_x_invalid_config(self):
+        with async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(return_value={}),
+        ):
+            with self.assertRaises(UpgradeError) as ctx:
+                await test_module.upgrade({})
+            assert "No version configs found in" in str(ctx.exception)
+
+    async def test_upgrade_x_from_version_not_in_config(self):
+        with async_mock.patch.object(
+            test_module,
+            "wallet_config",
+            async_mock.CoroutineMock(
+                return_value=(
+                    self.profile,
+                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
+                )
+            ),
+        ):
+            with self.assertRaises(UpgradeError) as ctx:
+                await test_module.upgrade(
+                    {
+                        "upgrade.from_version": "v1.2.3",
+                    }
+                )
+            assert "No upgrade configuration found for" in str(ctx.exception)
 
     def test_main(self):
         with async_mock.patch.object(
