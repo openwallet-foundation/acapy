@@ -175,9 +175,12 @@ async def upgrade(settings: dict):
                                 session,
                                 reason="re-saving record during ACA-Py upgrade process",
                             )
-                        print(
-                            f"All records of {str(record_type)} successfully re-saved."
-                        )
+                        if len(all_records) == 0:
+                            print(f"No records of {str(record_type)} found")
+                        else:
+                            print(
+                                f"All records of {str(record_type)} successfully re-saved"
+                            )
             # Step 2 Update existing records, if required
             if (
                 "update_existing_records" in upgrade_config
