@@ -15,7 +15,7 @@ from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.error import WalletError
+from ....wallet.error import WalletError, WalletNotFoundError
 from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
 from ....wallet.did_posture import DIDPosture
@@ -71,6 +71,7 @@ class DIDXManager(BaseConnectionManager):
         auto_accept: bool = None,
         alias: str = None,
         mediation_id: str = None,
+        peer_did: str = None,
     ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band
         """
         Create a new connection record to track a received invitation.
@@ -130,6 +131,15 @@ class DIDXManager(BaseConnectionManager):
         )
 
         async with self.profile.session() as session:
+            if peer_did:
+                wallet = session.inject(BaseWallet)
+                try:
+                    my_info = await wallet.get_local_did(peer_did)
+                    conn_rec.my_did = my_info.did
+                except (WalletError, WalletNotFoundError) as err:
+                    raise DIDXManagerError(
+                        f"Specified peer DID {peer_did} not found: {str(err)}"
+                    )
             await conn_rec.save(
                 session,
                 reason="Created new connection record from invitation",

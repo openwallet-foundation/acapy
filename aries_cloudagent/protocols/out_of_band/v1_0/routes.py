@@ -12,7 +12,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUID4
+from ....messaging.valid import UUID4, INDY_DID
 from ....storage.error import StorageError, StorageNotFoundError
 
 from ...didcomm_prefix import DIDCommPrefix
@@ -126,6 +126,11 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
         description="Identifier for active mediation record to be used",
         **UUID4,
     )
+    peer_did = fields.Str(
+        required=False,
+        description="Existing peer DID to use as connection my_did",
+        **INDY_DID,
+    )
 
 
 @docs(
@@ -216,6 +221,7 @@ async def invitation_receive(request: web.BaseRequest):
     # By default, try to use an existing connection
     use_existing_conn = json.loads(request.query.get("use_existing_connection", "true"))
     mediation_id = request.query.get("mediation_id")
+    peer_did = request.query.get("peer_did")
     try:
         invitation = InvitationMessage.deserialize(body)
         result = await oob_mgr.receive_invitation(
@@ -224,6 +230,7 @@ async def invitation_receive(request: web.BaseRequest):
             alias=alias,
             use_existing_connection=use_existing_conn,
             mediation_id=mediation_id,
+            peer_did=peer_did,
         )
     except (DIDXManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

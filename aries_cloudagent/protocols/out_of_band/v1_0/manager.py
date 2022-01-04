@@ -385,6 +385,7 @@ class OutOfBandManager(BaseConnectionManager):
         auto_accept: bool = None,
         alias: str = None,
         mediation_id: str = None,
+        peer_did: str = None,
     ) -> ConnRecord:
         """
         Receive an out of band invitation message.
@@ -573,6 +574,7 @@ class OutOfBandManager(BaseConnectionManager):
                         auto_accept=auto_accept,
                         alias=alias,
                         mediation_id=mediation_id,
+                        peer_did=peer_did,
                     )
                 elif proto is HSProto.RFC160:
                     service.recipient_keys = [
@@ -600,6 +602,7 @@ class OutOfBandManager(BaseConnectionManager):
                         auto_accept=auto_accept,
                         alias=alias,
                         mediation_id=mediation_id,
+                        peer_did=peer_did,
                     )
                 if conn_rec is not None:
                     break

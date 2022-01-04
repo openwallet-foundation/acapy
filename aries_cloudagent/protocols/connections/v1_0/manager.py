@@ -21,7 +21,7 @@ from ....wallet.did_info import DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
-from ....wallet.error import WalletNotFoundError
+from ....wallet.error import WalletError, WalletNotFoundError
 from ....wallet.util import bytes_to_b58
 from ...routing.v1_0.manager import RoutingManager
 from ...coordinate_mediation.v1_0.manager import MediationManager
@@ -284,6 +284,7 @@ class ConnectionManager(BaseConnectionManager):
         alias: str = None,
         mediation_id: str = None,
         mediation_record: MediationRecord = None,
+        peer_did: str = None,
     ) -> ConnRecord:
         """
         Create a new connection record to track a received invitation.
@@ -333,6 +334,15 @@ class ConnectionManager(BaseConnectionManager):
         )
 
         async with self.profile.session() as session:
+            if peer_did:
+                wallet = session.inject(BaseWallet)
+                try:
+                    my_info = await wallet.get_local_did(peer_did)
+                    connection.my_did = my_info.did
+                except (WalletError, WalletNotFoundError) as err:
+                    raise ConnectionManagerError(
+                        f"Specified peer DID {peer_did} not found: {str(err)}"
+                    )
             await connection.save(
                 session,
                 reason="Created new connection record from invitation",

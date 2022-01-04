@@ -115,7 +115,7 @@ class CreateInvitationRequestSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **MEDIATION_ID_SCHEMA,
     )
 
 
@@ -239,7 +239,12 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **MEDIATION_ID_SCHEMA,
+    )
+    peer_did = fields.Str(
+        required=False,
+        description="Existing peer DID to use as connection my_did",
+        **INDY_DID,
     )
 
 
@@ -253,7 +258,7 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **MEDIATION_ID_SCHEMA,
     )
 
 
@@ -573,8 +578,13 @@ async def connections_receive_invitation(request: web.BaseRequest):
         auto_accept = json.loads(request.query.get("auto_accept", "null"))
         alias = request.query.get("alias")
         mediation_id = request.query.get("mediation_id")
+        peer_did = request.query.get("peer_did")
         connection = await connection_mgr.receive_invitation(
-            invitation, auto_accept=auto_accept, alias=alias, mediation_id=mediation_id
+            invitation,
+            auto_accept=auto_accept,
+            alias=alias,
+            mediation_id=mediation_id,
+            peer_did=peer_did,
         )
         result = connection.serialize()
     except (ConnectionManagerError, StorageError, BaseModelError) as err:
