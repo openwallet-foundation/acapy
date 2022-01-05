@@ -470,6 +470,29 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         detail = LDProofVCDetail.deserialize(detail_dict)
         detail = await self._prepare_detail(detail)
 
+        # Check if credential type is valid
+        cred_dict = detail.credential.serialize()
+        expanded = jsonld.expand(cred_dict)
+        expanded_types = JsonLdProcessor.get_values(
+            expanded[0],
+            "@type",
+        )
+        context_urls = []
+        for ctx in cred_dict["@context"]:
+            if isinstance(ctx, dict):
+                context_urls.append(list(ctx.items())[0][1]["@id"])
+            else:
+                context_urls.append(ctx)
+        for expanded_type in expanded_types:
+            if any(expanded_type.split("#")[0] not in s for s in context_urls):
+                invalid_type = (
+                    expanded_type.split("#")[1]
+                    if len(expanded_type.split("#")) > 1
+                    else expanded_type
+                )
+                raise V20CredFormatError(
+                    f"type {invalid_type} is not defined in the context."
+                )
         # Get signature suite, proof purpose and document loader
         suite = await self._get_suite_for_detail(detail)
         proof_purpose = self._get_proof_purpose(
@@ -481,7 +504,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         # issue the credential
         vc = await issue(
-            credential=detail.credential.serialize(),
+            credential=cred_dict,
             suite=suite,
             document_loader=document_loader,
             purpose=proof_purpose,
