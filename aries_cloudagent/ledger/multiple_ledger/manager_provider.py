@@ -156,7 +156,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                         indy_vdr_production_ledgers[ledger_id] = ledger_instance
                         if not write_ledger_info:
                             write_ledger_info = (ledger_id, ledger_instance)
-                            indy_vdr_non_production_ledgers.move_to_end(
+                            indy_vdr_production_ledgers.move_to_end(
                                 ledger_id, last=False
                             )
                     self._inst[manager_type] = manager_class(

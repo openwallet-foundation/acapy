@@ -496,9 +496,11 @@ async def present_proof_credentials_list(request: web.BaseRequest):
         )
         if dif_pres_request:
             input_descriptors_list = dif_pres_request.get(
-                "presentation_definition"
+                "presentation_definition", {}
             ).get("input_descriptors")
-            claim_fmt = dif_pres_request.get("presentation_definition").get("format")
+            claim_fmt = dif_pres_request.get("presentation_definition", {}).get(
+                "format"
+            )
             if claim_fmt and len(claim_fmt.keys()) > 0:
                 claim_fmt = ClaimFormat.deserialize(claim_fmt)
             input_descriptors = []
