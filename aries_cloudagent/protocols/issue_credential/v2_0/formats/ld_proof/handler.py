@@ -478,6 +478,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             "@type",
         )
         context_urls = []
+        cred_type = cred_dict["type"]
         for ctx in cred_dict["@context"]:
             if isinstance(ctx, dict):
                 context_urls.append(list(ctx.items())[0][1]["@id"])
@@ -485,14 +486,19 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 context_urls.append(ctx)
         for expanded_type in expanded_types:
             if any(expanded_type.split("#")[0] not in s for s in context_urls):
-                invalid_type = (
-                    expanded_type.split("#")[1]
-                    if len(expanded_type.split("#")) > 1
-                    else expanded_type
-                )
-                raise V20CredFormatError(
-                    f"type {invalid_type} is not defined in the context."
-                )
+                if len(expanded_type.split("#")) > 1 and (
+                    expanded_type.split("#")[1] == s for s in cred_type
+                ):
+                    pass
+                else:
+                    invalid_type = (
+                        expanded_type.split("#")[1]
+                        if len(expanded_type.split("#")) > 1
+                        else expanded_type
+                    )
+                    raise V20CredFormatError(
+                        f"Invalid type {invalid_type} found in $.type."
+                    )
         # Get signature suite, proof purpose and document loader
         suite = await self._get_suite_for_detail(detail)
         proof_purpose = self._get_proof_purpose(

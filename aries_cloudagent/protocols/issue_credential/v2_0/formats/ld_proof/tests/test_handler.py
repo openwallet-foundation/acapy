@@ -606,6 +606,89 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             # assert data is encoded as base64
             assert attachment.data.base64
 
+    async def test_issue_credential_type_context_dict_check(self):
+        test_cred = deepcopy(LD_PROOF_VC_DETAIL)
+        test_cred["credential"]["@context"].append(
+            {
+                "Organization": {
+                    "@id": "http://hl7.org/fhir/Organization",
+                    "@context": [
+                        None,
+                        "https://fhircat.org/fhir-r5/rdf-r5/contexts/organization.context.jsonld",
+                    ],
+                }
+            }
+        )
+        test_cred["credential"]["type"][1] = "Passport"
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(test_cred, ident="0")],
+        )
+
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_request=cred_request,
+        )
+
+        with async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_suite_for_detail",
+            async_mock.CoroutineMock(),
+        ) as mock_get_suite, async_mock.patch.object(
+            test_module, "issue", async_mock.CoroutineMock(return_value=LD_PROOF_VC)
+        ) as mock_issue, async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_proof_purpose",
+        ) as mock_get_proof_purpose:
+            with self.assertRaises(V20CredFormatError) as ctx:
+                (cred_format, attachment) = await self.handler.issue_credential(
+                    cred_ex_record
+                )
+            assert "Invalid type Passport found in $.type." in str(ctx.exception)
+
+    async def test_issue_credential_type_context_check(self):
+        test_cred = deepcopy(LD_PROOF_VC_DETAIL)
+        test_cred["credential"]["type"][1] = "Passport"
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(test_cred, ident="0")],
+        )
+
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_request=cred_request,
+        )
+
+        with async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_suite_for_detail",
+            async_mock.CoroutineMock(),
+        ) as mock_get_suite, async_mock.patch.object(
+            test_module, "issue", async_mock.CoroutineMock(return_value=LD_PROOF_VC)
+        ) as mock_issue, async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_proof_purpose",
+        ) as mock_get_proof_purpose:
+            with self.assertRaises(V20CredFormatError) as ctx:
+                (cred_format, attachment) = await self.handler.issue_credential(
+                    cred_ex_record
+                )
+            assert "Invalid type Passport found in $.type." in str(ctx.exception)
+
     async def test_issue_credential_adds_bbs_context(self):
         cred_request = V20CredRequest(
             formats=[
