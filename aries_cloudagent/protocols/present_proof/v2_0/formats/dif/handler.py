@@ -181,8 +181,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             reveal_doc_frame = pres_spec_payload.get("reveal_doc")
         if not pres_definition:
             if "options" in proof_request:
-                challenge = proof_request.get("options").get("challenge")
-                domain = proof_request.get("options").get("domain")
+                challenge = proof_request["options"].get("challenge")
+                domain = proof_request["options"].get("domain")
             pres_definition = PresentationDefinition.deserialize(
                 proof_request.get("presentation_definition")
             )
@@ -460,7 +460,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 DIFPresFormatHandler.format
             )
             if "options" in pres_request:
-                challenge = pres_request.get("options").get("challenge")
+                challenge = pres_request["options"].get("challenge")
             else:
                 raise V20PresFormatHandlerError(
                     "No options [challenge] set for the presentation request"
