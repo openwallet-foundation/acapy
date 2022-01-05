@@ -144,15 +144,15 @@ def prepare_get_attr_for_state(reply):
 
 def prepare_attr_for_state(txn, path_only=False):
     """Return key, value pair for state from ATTR."""
-    txn_data = txn.get(TXN).get(DATA)
+    txn_data = txn.get(TXN, {}).get(DATA)
     nym = txn_data.get(DEST)
     attr_type, attr_key, value = parse_attr_txn(txn_data)
     path = make_state_path_for_attr(nym, attr_key, attr_type == HASH)
     if path_only:
         return path
     hashed_value = hash_of(value) if value else ""
-    seq_no = txn.get(TXN_METADATA).get(SEQ_NO)
-    txn_time = txn.get(TXN_METADATA).get(TXN_TIME)
+    seq_no = txn[TXN_METADATA].get(SEQ_NO)
+    txn_time = txn[TXN_METADATA].get(TXN_TIME)
     value_bytes = encode_state_value(hashed_value, seq_no, txn_time)
     return path, value_bytes.encode()
 
@@ -164,7 +164,7 @@ def make_state_path_for_nym(did) -> bytes:
 
 def prepare_nym_for_state(txn):
     """Return encoded state path from NYM."""
-    txn_data = txn.get(TXN).get(DATA)
+    txn_data = txn.get(TXN, {}).get(DATA)
     nym = txn_data.get(DEST)
     path = make_state_path_for_nym(nym)
     return hexlify(path).decode()
@@ -185,7 +185,7 @@ def prepare_get_nym_for_state(reply):
 def prepare_get_schema_for_state(reply):
     """Return value for state from GET_SCHEMA."""
     value_bytes = None
-    attr_names = reply.get(DATA).get(ATTR_NAMES)
+    attr_names = reply[DATA].get(ATTR_NAMES)
     if attr_names:
         data = {ATTR_NAMES: attr_names}
         seq_no = reply.get(SEQ_NO)
@@ -206,15 +206,15 @@ def make_state_path_for_schema(authors_did, schema_name, schema_version) -> byte
 
 def prepare_schema_for_state(txn, path_only=False):
     """Return key-value pair for state from SCHEMA."""
-    origin = txn.get(TXN).get(METADATA).get(FROM)
-    schema_name = txn.get(TXN).get(DATA).get(DATA).get(NAME)
-    schema_version = txn.get(TXN).get(DATA).get(DATA).get(VERSION)
-    value = {ATTR_NAMES: txn.get(TXN).get(DATA).get(DATA).get(ATTR_NAMES)}
+    origin = txn[TXN].get(METADATA, {}).get(FROM)
+    schema_name = txn[TXN][DATA][DATA].get(NAME)
+    schema_version = txn[TXN][DATA][DATA].get(VERSION)
+    value = {ATTR_NAMES: txn[TXN][DATA][DATA].get(ATTR_NAMES)}
     path = make_state_path_for_schema(origin, schema_name, schema_version)
     if path_only:
         return path
-    seq_no = txn.get(TXN_METADATA).get(SEQ_NO)
-    txn_time = txn.get(TXN_METADATA).get(TXN_TIME)
+    seq_no = txn[TXN_METADATA].get(SEQ_NO)
+    txn_time = txn[TXN_METADATA].get(TXN_TIME)
     value_bytes = encode_state_value(value, seq_no, txn_time)
     return path, value_bytes.encode()
 
@@ -246,20 +246,20 @@ def make_state_path_for_claim_def(authors_did, schema_seq_no, signature_type, ta
 
 def prepare_claim_def_for_state(txn, path_only=False):
     """Return key-value pair for state from CLAIM_DEF."""
-    origin = txn.get(TXN).get(METADATA).get(FROM)
-    schema_seq_no = txn.get(TXN).get(DATA).get(REF)
+    origin = txn[TXN].get(METADATA, {}).get(FROM)
+    schema_seq_no = txn[TXN][DATA].get(REF)
     if schema_seq_no is None:
         raise ValueError("ref field is absent, but it must contain schema seq no")
-    data = txn.get(TXN).get(DATA).get(DATA)
+    data = txn[TXN][DATA].get(DATA)
     if data is None:
         raise ValueError("data field is absent, but it must contain components of keys")
-    signature_type = txn.get(TXN).get(DATA).get("signature_type", "CL")
-    tag = txn.get(TXN).get(DATA).get(TAG, "tag")
+    signature_type = txn[TXN][DATA].get("signature_type", "CL")
+    tag = txn[TXN][DATA].get(TAG, "tag")
     path = make_state_path_for_claim_def(origin, schema_seq_no, signature_type, tag)
     if path_only:
         return path
-    seq_no = txn.get(TXN_METADATA).get(SEQ_NO)
-    txn_time = txn.get(TXN_METADATA).get(TXN_TIME)
+    seq_no = txn[TXN_METADATA].get(SEQ_NO)
+    txn_time = txn[TXN_METADATA].get(TXN_TIME)
     value_bytes = encode_state_value(data, seq_no, txn_time)
     return path, value_bytes.encode()
 
@@ -287,8 +287,8 @@ def make_state_path_for_revoc_def(
 
 def prepare_revoc_def_for_state(txn, path_only=False):
     """Return key-value pair for state from REVOC_DEF."""
-    author_did = txn.get(TXN).get(METADATA).get(FROM, None)
-    txn_data = txn.get(TXN).get(DATA)
+    author_did = txn[TXN].get(METADATA, {}).get(FROM, None)
+    txn_data = txn[TXN].get(DATA)
     cred_def_id = txn_data.get(CRED_DEF_ID)
     revoc_def_type = txn_data.get(REVOC_DEF_TYPE)
     revoc_def_tag = txn_data.get(TAG)
@@ -297,8 +297,8 @@ def prepare_revoc_def_for_state(txn, path_only=False):
     )
     if path_only:
         return path
-    seq_no = txn.get(TXN_METADATA).get(SEQ_NO)
-    txn_time = txn.get(TXN_METADATA).get(TXN_TIME)
+    seq_no = txn[TXN_METADATA].get(SEQ_NO)
+    txn_time = txn[TXN_METADATA].get(TXN_TIME)
     value_bytes = encode_state_value(txn_data, seq_no, txn_time)
     return path, value_bytes.encode()
 
@@ -324,19 +324,19 @@ def make_state_path_for_revoc_reg_entry(revoc_reg_def_id) -> bytes:
 
 def prepare_get_revoc_reg_delta_for_state(reply):
     """Return value for state from GET_REVOC_REG_DELTA."""
-    if STATE_PROOF_FROM in reply.get(DATA):
-        accum_to_seq_no = reply.get(DATA).get(VALUE).get(ACCUM_TO).get(SEQ_NO)
-        accum_to_txn_time = reply.get(DATA).get(VALUE).get(ACCUM_TO).get(TXN_TIME)
-        accum_from_seq_no = reply.get(DATA).get(VALUE).get(ACCUM_FROM).get(SEQ_NO)
-        accum_from_txn_time = reply.get(DATA).get(VALUE).get(ACCUM_FROM).get(TXN_TIME)
+    if STATE_PROOF_FROM in reply[DATA]:
+        accum_to_seq_no = reply[DATA][VALUE].get(ACCUM_TO, {}).get(SEQ_NO)
+        accum_to_txn_time = reply[DATA][VALUE].get(ACCUM_TO, {}).get(TXN_TIME)
+        accum_from_seq_no = reply[DATA][VALUE].get(ACCUM_FROM, {}).get(SEQ_NO)
+        accum_from_txn_time = reply[DATA][VALUE].get(ACCUM_FROM, {}).get(TXN_TIME)
         return (
             encode_state_value(
-                reply.get(DATA).get(VALUE).get(ACCUM_TO),
+                reply[DATA][VALUE].get(ACCUM_TO),
                 accum_to_seq_no,
                 accum_to_txn_time,
             ),
             encode_state_value(
-                reply.get(DATA).get(VALUE).get(ACCUM_FROM),
+                reply[DATA][VALUE].get(ACCUM_FROM),
                 accum_from_seq_no,
                 accum_from_txn_time,
             ),
@@ -344,20 +344,18 @@ def prepare_get_revoc_reg_delta_for_state(reply):
     else:
         seq_no = reply.get(SEQ_NO)
         txn_time = reply.get(TXN_TIME)
-        return encode_state_value(
-            reply.get(DATA).get(VALUE).get(ACCUM_TO), seq_no, txn_time
-        )
+        return encode_state_value(reply[DATA][VALUE].get(ACCUM_TO), seq_no, txn_time)
 
 
 def prepare_revoc_reg_entry_for_state(txn, path_only=False):
     """Return key-value pair for state from REVOC_REG_ENTRY."""
-    txn_data = txn.get(TXN).get(DATA)
+    txn_data = txn[TXN].get(DATA)
     revoc_reg_def_id = txn_data.get(REVOC_DEF_TYPE_ID)
     path = make_state_path_for_revoc_reg_entry(revoc_reg_def_id=revoc_reg_def_id)
     if path_only:
         return path
-    seq_no = txn.get(TXN_METADATA).get(SEQ_NO)
-    txn_time = txn.get(TXN_METADATA).get(TXN_TIME)
+    seq_no = txn[TXN_METADATA].get(SEQ_NO)
+    txn_time = txn[TXN_METADATA].get(TXN_TIME)
     txn_data = deepcopy(txn_data)
     txn_data[SEQ_NO] = seq_no
     txn_data[TXN_TIME] = txn_time
@@ -386,10 +384,10 @@ def prepare_revoc_reg_entry_accum_for_state(txn):
         result = txn.get(RESULT)
     else:
         result = txn
-    txn_data = result.get(TXN).get(DATA)
+    txn_data = result[TXN].get(DATA)
     revoc_reg_def_id = txn_data.get(REVOC_DEF_TYPE_ID)
-    seq_no = result.get(TXN_METADATA).get(SEQ_NO)
-    txn_time = result.get(TXN_METADATA).get(TXN_TIME)
+    seq_no = result[TXN_METADATA].get(SEQ_NO)
+    txn_time = result[TXN_METADATA].get(TXN_TIME)
     path = make_state_path_for_revoc_reg_entry_accum(revoc_reg_def_id=revoc_reg_def_id)
     txn_data = deepcopy(txn_data)
     txn_data[SEQ_NO] = seq_no
@@ -402,7 +400,7 @@ def extract_params_write_request(data):
     """Return tree_size, leaf_index, audit_path, expected_root_hash from reply."""
     if RESULT in data.keys():
         data = data.get(RESULT)
-    tree_size = data.get(TXN_METADATA).get(SEQ_NO)
+    tree_size = data[TXN_METADATA].get(SEQ_NO)
     leaf_index = tree_size - 1
     audit_path = data.get(AUDIT_PATH)
     audit_path = audit_path[:]
@@ -420,13 +418,13 @@ def get_proof_nodes(reply):
     if RESULT in reply.keys():
         reply = reply.get(RESULT)
     if reply.get("type") == GET_REVOC_REG_DELTA and STATE_PROOF_FROM in reply.get(DATA):
-        proof_nodes_accum_to = reply.get(STATE_PROOF).get(PROOF_NODES)
-        proof_nodes_accum_from = reply.get(DATA).get(STATE_PROOF_FROM).get(PROOF_NODES)
+        proof_nodes_accum_to = reply[STATE_PROOF].get(PROOF_NODES)
+        proof_nodes_accum_from = reply[DATA].get(STATE_PROOF_FROM, {}).get(PROOF_NODES)
         return base64.b64decode(proof_nodes_accum_to), base64.b64decode(
             proof_nodes_accum_from
         )
     else:
-        b64_encoded_nodes = reply.get(STATE_PROOF).get(PROOF_NODES)
+        b64_encoded_nodes = reply[STATE_PROOF].get(PROOF_NODES)
         return base64.b64decode(b64_encoded_nodes)
 
 
@@ -448,7 +446,7 @@ def prepare_for_state_read(reply):
     if request_type == GET_REVOC_REG_ENTRY:
         return prepare_get_revoc_reg_entry_accum_for_state(reply=reply)
     if request_type == GET_REVOC_REG_DELTA:
-        if "issued" in reply.get(DATA).get("value"):
+        if "issued" in reply[DATA].get("value"):
             return prepare_get_revoc_reg_delta_for_state(reply=reply)
         else:
             return prepare_get_revoc_reg_entry_accum_for_state(reply=reply)
@@ -461,7 +459,7 @@ def prepare_for_state_write(reply):
     """Return state key, value pair from write requests reply."""
     if RESULT in reply.keys():
         reply = reply.get(RESULT)
-    request_type = reply.get(TXN).get("type")
+    request_type = reply[TXN].get("type")
     if request_type == NYM:
         return prepare_nym_for_state(txn=reply)
     if request_type == ATTRIB:

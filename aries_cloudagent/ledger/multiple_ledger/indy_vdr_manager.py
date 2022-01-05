@@ -99,7 +99,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
                 else:
                     response = json.loads(response_json)
                 if "result" in response.keys():
-                    data = response.get("result").get("data")
+                    data = response.get("result", {}).get("data")
                 else:
                     data = response.get("data")
                 if not data:
