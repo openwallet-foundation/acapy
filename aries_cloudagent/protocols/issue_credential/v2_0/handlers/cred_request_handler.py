@@ -10,6 +10,7 @@ from .....storage.error import StorageError
 from .....utils.tracing import trace_event, get_timer
 
 from .. import problem_report_for_record
+from ..formats.handler import V20CredFormatError
 from ..manager import V20CredManager, V20CredManagerError
 from ..messages.cred_problem_report import ProblemReportReason
 from ..messages.cred_request import V20CredRequest
@@ -70,6 +71,7 @@ class V20CredRequestHandler(BaseHandler):
                 LedgerError,
                 StorageError,
                 V20CredManagerError,
+                V20CredFormatError,
             ) as err:
                 self._logger.exception(err)
                 async with profile.session() as session:
