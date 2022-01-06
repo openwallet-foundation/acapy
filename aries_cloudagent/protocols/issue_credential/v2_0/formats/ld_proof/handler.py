@@ -406,11 +406,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         offer_data = cred_proposal_message.attachment(LDProofCredFormatHandler.format)
         detail = LDProofVCDetail.deserialize(offer_data)
         detail = await self._prepare_detail(detail)
-
+        cred_dict = detail.credential.serialize()
+        await self.expanded_type_validity_check(cred_dict)
         document_loader = self.profile.inject(DocumentLoader)
-        missing_properties = get_properties_without_context(
-            detail.credential.serialize(), document_loader
-        )
+        missing_properties = get_properties_without_context(cred_dict, document_loader)
 
         if len(missing_properties) > 0:
             raise LinkedDataProofException(
@@ -461,25 +460,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
     ) -> None:
         """Receive linked data proof request."""
 
-    async def issue_credential(
-        self, cred_ex_record: V20CredExRecord, retries: int = 5
-    ) -> CredFormatAttachment:
-        """Issue linked data proof credential."""
-        if not cred_ex_record.cred_request:
-            raise V20CredFormatError(
-                "Cannot issue credential without credential request"
-            )
-
-        detail_dict = cred_ex_record.cred_request.attachment(
-            LDProofCredFormatHandler.format
-        )
-        detail = LDProofVCDetail.deserialize(detail_dict)
-        detail = await self._prepare_detail(detail)
-
-        # Check if credential type is valid
+    async def expanded_type_validity_check(self, cred_dict: dict) -> None:
+        """Extract credential expanded type and validate it."""
         document_loader = self.profile.inject(DocumentLoader)
         cache = self.profile.inject_or(BaseCache)
-        cred_dict = detail.credential.serialize()
         expanded = jsonld.expand(cred_dict)
         expanded_types = JsonLdProcessor.get_values(
             expanded[0],
@@ -531,6 +515,8 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                             document = await cache.get(cache_key)
                         if not document:
                             document = document_loader(context_url, {})
+                            if cache:
+                                await cache.set(cache_key, document, 300)
                         document_ctx = document["document"].get("@context", {})
                         cred_expanded_type = unquote(split_expanded_type[1])
                         if isinstance(document_ctx, list):
@@ -554,6 +540,25 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                     raise V20CredFormatError(
                         f"Invalid type {invalid_type} found in $.type."
                     )
+
+    async def issue_credential(
+        self, cred_ex_record: V20CredExRecord, retries: int = 5
+    ) -> CredFormatAttachment:
+        """Issue linked data proof credential."""
+        if not cred_ex_record.cred_request:
+            raise V20CredFormatError(
+                "Cannot issue credential without credential request"
+            )
+
+        detail_dict = cred_ex_record.cred_request.attachment(
+            LDProofCredFormatHandler.format
+        )
+        detail = LDProofVCDetail.deserialize(detail_dict)
+        detail = await self._prepare_detail(detail)
+
+        cred_dict = detail.credential.serialize()
+        await self.expanded_type_validity_check(cred_dict)
+
         # Get signature suite, proof purpose and document loader
         suite = await self._get_suite_for_detail(detail)
         proof_purpose = self._get_proof_purpose(
@@ -561,6 +566,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             challenge=detail.options.challenge,
             domain=detail.options.domain,
         )
+        document_loader = self.profile.inject(DocumentLoader)
 
         # issue the credential
         vc = await issue(

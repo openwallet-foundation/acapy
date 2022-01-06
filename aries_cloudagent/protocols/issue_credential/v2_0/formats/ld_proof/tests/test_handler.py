@@ -7,6 +7,8 @@ from marshmallow import ValidationError
 
 from .. import handler as test_module
 
+from .......cache.base import BaseCache
+from .......cache.in_memory import InMemoryCache
 from .......core.in_memory import InMemoryProfile
 from .......storage.vc_holder.base import VCHolder
 from .......wallet.base import DIDInfo
@@ -25,6 +27,8 @@ from .......vc.ld_proofs import (
     BbsBlsSignature2020,
 )
 from .......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
+from .......vc.tests.contexts.citizenship_v1 import CITIZENSHIP_V1
+from .......vc.tests.contexts.examples_v1 import EXAMPLES_V1
 from .......vc.tests.document_loader import custom_document_loader
 from .......wallet.key_type import KeyType
 from .......wallet.error import WalletNotFoundError
@@ -105,6 +109,28 @@ LD_PROOF_VC = {
         "jws": "eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..Q6amIrxGiSbM7Ce6DxlfwLCjVcYyclas8fMxaecspXFUcFW9DAAxKzgHx93FWktnlZjM_biitkMgZdStgvivAQ",
     },
 }
+TEST_W3C_CREDENTIAL = {
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://w3id.org/citizenship/v1",
+        "https://w3id.org/security/bbs/v1",
+    ],
+    "id": "https://issuer.oidp.uscis.gov/credentials/83627465",
+    "type": ["PermanentResidentCard", "VerifiableCredential"],
+    "description": "Government of Example Permanent Resident Card.",
+    "identifier": "83627465",
+    "name": "Permanent Resident Card",
+    "credentialSubject": {
+        "id": "did:example:b34ca6cd37bbf23",
+        "type": ["Person", "PermanentResident"],
+        "familyName": "SMITH",
+        "gender": "Male",
+        "givenName": "JOHN",
+    },
+    "expirationDate": "2029-12-03T12:19:52Z",
+    "issuanceDate": "2019-12-03T12:19:52Z",
+    "issuer": TEST_DID_KEY,
+}
 
 
 class TestV20LDProofCredFormatHandler(AsyncTestCase):
@@ -125,7 +151,8 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
 
         self.handler = LDProofCredFormatHandler(self.profile)
-
+        self.cache = InMemoryCache()
+        self.context.injector.bind_instance(BaseCache, self.cache)
         self.cred_proposal = V20CredProposal(
             formats=[
                 V20CredFormat(
@@ -410,6 +437,15 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             async_mock.CoroutineMock(),
         ) as mock_can_issue, patch.object(
             test_module, "get_properties_without_context", return_value=[]
+        ), patch.object(
+            DocumentLoader,
+            "__call__",
+            return_value={
+                "contentType": "application/ld+json",
+                "contextUrl": None,
+                "document": EXAMPLES_V1,
+                "documentUrl": "https://www.w3.org/2018/credentials/examples/v1",
+            },
         ):
             (cred_format, attachment) = await self.handler.create_offer(
                 self.cred_proposal
@@ -448,7 +484,18 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             LDProofCredFormatHandler,
             "_assert_can_issue_with_id_and_proof_type",
             async_mock.CoroutineMock(),
-        ), patch.object(test_module, "get_properties_without_context", return_value=[]):
+        ), patch.object(
+            test_module, "get_properties_without_context", return_value=[]
+        ), patch.object(
+            DocumentLoader,
+            "__call__",
+            return_value={
+                "contentType": "application/ld+json",
+                "contextUrl": None,
+                "document": EXAMPLES_V1,
+                "documentUrl": "https://www.w3.org/2018/credentials/examples/v1",
+            },
+        ):
             (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
         # assert BBS url added to context
@@ -473,7 +520,16 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             return_value=missing_properties,
         ), self.assertRaises(
             LinkedDataProofException
-        ) as context:
+        ) as context, patch.object(
+            DocumentLoader,
+            "__call__",
+            return_value={
+                "contentType": "application/ld+json",
+                "contextUrl": None,
+                "document": EXAMPLES_V1,
+                "documentUrl": "https://www.w3.org/2018/credentials/examples/v1",
+            },
+        ):
             await self.handler.create_offer(self.cred_proposal)
 
         assert (
@@ -582,7 +638,16 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         ) as mock_issue, async_mock.patch.object(
             LDProofCredFormatHandler,
             "_get_proof_purpose",
-        ) as mock_get_proof_purpose:
+        ) as mock_get_proof_purpose, patch.object(
+            DocumentLoader,
+            "__call__",
+            return_value={
+                "contentType": "application/ld+json",
+                "contextUrl": None,
+                "document": EXAMPLES_V1,
+                "documentUrl": "https://www.w3.org/2018/credentials/examples/v1",
+            },
+        ):
             (cred_format, attachment) = await self.handler.issue_credential(
                 cred_ex_record
             )
@@ -605,6 +670,62 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
             # assert data is encoded as base64
             assert attachment.data.base64
+
+    async def test_expanded_type_validity_check(self):
+        test_cred = deepcopy(LD_PROOF_VC_DETAIL)
+        test_cred = test_cred["credential"]
+        with async_mock.patch.object(
+            test_module.jsonld,
+            "expand",
+            async_mock.MagicMock(
+                return_value=[
+                    {
+                        "@type": [
+                            "https://www.w3.org/2018/credentials#VerifiableCredential",
+                            "https://example.org/examples#InvalidUniversityDegreeCredential",
+                        ],
+                    }
+                ]
+            ),
+        ):
+            with self.assertRaises(V20CredFormatError) as ctx:
+                await self.handler.expanded_type_validity_check(test_cred)
+            assert (
+                "Invalid type InvalidUniversityDegreeCredential found in $.type."
+                in str(ctx.exception)
+            )
+
+    async def test_expanded_type_validity_check_jsonld_doc_load(self):
+        test_cred = deepcopy(TEST_W3C_CREDENTIAL)
+        test_ctx = deepcopy(CITIZENSHIP_V1)
+        del test_ctx["@context"]["PermanentResidentCard"]
+        cache_key = "json_ld_document_resolver::https://w3id.org/citizenship/v1"
+        ctx_document = {
+            "contentType": "application/ld+json",
+            "contextUrl": None,
+            "document": test_ctx,
+            "documentUrl": "https://w3id.org/citizenship/v1",
+        }
+        await self.cache.set(cache_key, ctx_document)
+        with async_mock.patch.object(
+            test_module.jsonld,
+            "expand",
+            async_mock.MagicMock(
+                return_value=[
+                    {
+                        "@type": [
+                            "https://www.w3.org/2018/credentials#VerifiableCredential",
+                            "https://w3id.org/citizenship#PermanentResidentCard",
+                        ],
+                    }
+                ]
+            ),
+        ):
+            with self.assertRaises(V20CredFormatError) as ctx:
+                await self.handler.expanded_type_validity_check(test_cred)
+            assert "Invalid type PermanentResidentCard found in $.type." in str(
+                ctx.exception
+            )
 
     async def test_issue_credential_type_context_dict_check(self):
         test_cred = deepcopy(LD_PROOF_VC_DETAIL)
@@ -646,7 +767,16 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         ) as mock_issue, async_mock.patch.object(
             LDProofCredFormatHandler,
             "_get_proof_purpose",
-        ) as mock_get_proof_purpose:
+        ) as mock_get_proof_purpose, patch.object(
+            DocumentLoader,
+            "__call__",
+            return_value={
+                "contentType": "application/ld+json",
+                "contextUrl": None,
+                "document": EXAMPLES_V1,
+                "documentUrl": "https://www.w3.org/2018/credentials/examples/v1",
+            },
+        ):
             with self.assertRaises(V20CredFormatError) as ctx:
                 (cred_format, attachment) = await self.handler.issue_credential(
                     cred_ex_record
@@ -682,7 +812,16 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         ) as mock_issue, async_mock.patch.object(
             LDProofCredFormatHandler,
             "_get_proof_purpose",
-        ) as mock_get_proof_purpose:
+        ) as mock_get_proof_purpose, patch.object(
+            DocumentLoader,
+            "__call__",
+            return_value={
+                "contentType": "application/ld+json",
+                "contextUrl": None,
+                "document": EXAMPLES_V1,
+                "documentUrl": "https://www.w3.org/2018/credentials/examples/v1",
+            },
+        ):
             with self.assertRaises(V20CredFormatError) as ctx:
                 (cred_format, attachment) = await self.handler.issue_credential(
                     cred_ex_record
@@ -718,7 +857,16 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         ) as mock_issue, async_mock.patch.object(
             LDProofCredFormatHandler,
             "_get_proof_purpose",
-        ) as mock_get_proof_purpose:
+        ) as mock_get_proof_purpose, patch.object(
+            DocumentLoader,
+            "__call__",
+            return_value={
+                "contentType": "application/ld+json",
+                "contextUrl": None,
+                "document": EXAMPLES_V1,
+                "documentUrl": "https://www.w3.org/2018/credentials/examples/v1",
+            },
+        ):
             (cred_format, attachment) = await self.handler.issue_credential(
                 cred_ex_record
             )
