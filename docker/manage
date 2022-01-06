@@ -77,6 +77,10 @@ provision)
   exportEnvironment "$@"
   ../scripts/run_docker provision $(getStartupParams "$@")
   ;;
+upgrade)
+  exportEnvironment "$@"
+  ../scripts/run_docker upgrade $(getStartupParams "$@")
+  ;;
 demo)
   exportEnvironment "$@"
   ../demo/run_demo $(getStartupParams "$@")
