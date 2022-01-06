@@ -10,7 +10,9 @@ from marshmallow import EXCLUDE, INCLUDE
 
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
+from urllib.parse import unquote
 
+from ......cache.base import BaseCache
 from ......did.did_key import DIDKey
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.vc_holder.base import VCHolder
@@ -32,7 +34,11 @@ from ......vc.ld_proofs import (
     ProofPurpose,
     WalletKeyPair,
 )
-from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
+from ......vc.ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V1_URL,
+    SECURITY_CONTEXT_BBS_URL,
+    VERIFIABLE_CREDENTIAL_TYPE,
+)
 from ......wallet.base import BaseWallet, DIDInfo
 from ......wallet.error import WalletNotFoundError
 from ......wallet.key_type import KeyType
@@ -471,6 +477,8 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         detail = await self._prepare_detail(detail)
 
         # Check if credential type is valid
+        document_loader = self.profile.inject(DocumentLoader)
+        cache = self.profile.inject_or(BaseCache)
         cred_dict = detail.credential.serialize()
         expanded = jsonld.expand(cred_dict)
         expanded_types = JsonLdProcessor.get_values(
@@ -478,22 +486,69 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             "@type",
         )
         context_urls = []
-        cred_type = cred_dict["type"]
-        for ctx in cred_dict["@context"]:
+        cred_contexts = cred_dict["@context"]
+        cred_types = cred_dict["type"]
+        cred_expanded_type_list = []
+        for expanded_type in expanded_types:
+            if len(expanded_type.split("#")) > 1:
+                cred_expanded_type_list.append(unquote(expanded_type.split("#")[1]))
+            else:
+                cred_expanded_type_list.append(unquote(expanded_type))
+        for ctx in cred_contexts:
             if isinstance(ctx, dict):
                 context_urls.append(list(ctx.items())[0][1]["@id"])
             else:
                 context_urls.append(ctx)
         for expanded_type in expanded_types:
-            if any(expanded_type.split("#")[0] not in s for s in context_urls):
-                if len(expanded_type.split("#")) > 1 and (
-                    expanded_type.split("#")[1] == s for s in cred_type
-                ):
-                    pass
-                else:
+            invalid_type_found = False
+            split_expanded_type = expanded_type.split("#")
+            if (
+                len(split_expanded_type) > 1
+                and split_expanded_type[1] == VERIFIABLE_CREDENTIAL_TYPE
+            ):
+                continue
+            context_url_check = any(
+                split_expanded_type[0] not in s for s in context_urls
+            )
+            type_check = True
+            for cred_type in cred_types:
+                if cred_type not in cred_expanded_type_list:
+                    type_check = False
+                    break
+            if context_url_check:
+                if not (len(split_expanded_type) > 1 and type_check):
+                    invalid_type_found = True
+                elif len(split_expanded_type) > 1:
+                    for context_url in cred_contexts:
+                        if context_url in [
+                            CREDENTIALS_CONTEXT_V1_URL,
+                            SECURITY_CONTEXT_BBS_URL,
+                        ]:
+                            continue
+                        cache_key = f"json_ld_document_resolver::{context_url}"
+                        document = None
+                        if cache:
+                            document = await cache.get(cache_key)
+                        if not document:
+                            document = document_loader(context_url, {})
+                        document_ctx = document["document"].get("@context", {})
+                        cred_expanded_type = unquote(split_expanded_type[1])
+                        if isinstance(document_ctx, list):
+                            invalid_type_found = True
+                            for document_ctx_item in document_ctx:
+                                if (
+                                    isinstance(document_ctx_item, dict)
+                                    and cred_expanded_type in document_ctx_item.keys()
+                                ):
+                                    invalid_type_found = False
+                                    break
+                        elif isinstance(document_ctx, dict):
+                            if cred_expanded_type not in document_ctx.keys():
+                                invalid_type_found = True
+                if invalid_type_found:
                     invalid_type = (
-                        expanded_type.split("#")[1]
-                        if len(expanded_type.split("#")) > 1
+                        split_expanded_type[1]
+                        if len(split_expanded_type) > 1
                         else expanded_type
                     )
                     raise V20CredFormatError(
@@ -506,7 +561,6 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             challenge=detail.options.challenge,
             domain=detail.options.domain,
         )
-        document_loader = self.profile.inject(DocumentLoader)
 
         # issue the credential
         vc = await issue(
