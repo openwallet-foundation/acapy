@@ -20,6 +20,7 @@ from .util import BoundedInt, ByteSize
 
 CAT_PROVISION = "general"
 CAT_START = "start"
+CAT_UPGRADE = "upgrade"
 
 ENDORSER_AUTHOR = "author"
 ENDORSER_ENDORSER = "endorser"
@@ -460,7 +461,7 @@ class DebugGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_START, CAT_PROVISION)
+@group(CAT_START)
 class DiscoverFeaturesGroup(ArgumentGroup):
     """Discover Features settings."""
 
@@ -1377,7 +1378,7 @@ class MediationGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_PROVISION, CAT_START)
+@group(CAT_PROVISION, CAT_START, CAT_UPGRADE)
 class WalletGroup(ArgumentGroup):
     """Wallet settings."""
 
@@ -1825,4 +1826,46 @@ class EndorsementGroup(ArgumentGroup):
                     "for transaction Authors"
                 )
 
+        return settings
+
+
+@group(CAT_UPGRADE)
+class UpgradeGroup(ArgumentGroup):
+    """ACA-Py Upgrade process settings."""
+
+    GROUP_NAME = "Upgrade"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add ACA-Py upgrade process specific arguments to the parser."""
+
+        parser.add_argument(
+            "--upgrade-config-path",
+            type=str,
+            dest="upgrade_config_path",
+            required=False,
+            env_var="ACAPY_UPGRADE_CONFIG_PATH",
+            help=(
+                "YAML file path that specifies config to handle upgrade changes."
+                "Default: ./aries_cloudagent/commands/default_version_upgrade_config.yml"
+            ),
+        )
+
+        parser.add_argument(
+            "--from-version",
+            type=str,
+            env_var="ACAPY_UPGRADE_FROM_VERSION",
+            help=(
+                "Specify which ACA-Py version to upgrade from, "
+                "this version should be supported/included in "
+                "the --upgrade-config file."
+            ),
+        )
+
+    def get_settings(self, args: Namespace) -> dict:
+        """Extract ACA-Py upgrade process settings."""
+        settings = {}
+        if args.upgrade_config_path:
+            settings["upgrade.config_path"] = args.upgrade_config_path
+        if args.from_version:
+            settings["upgrade.from_version"] = args.from_version
         return settings

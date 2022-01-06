@@ -20,6 +20,15 @@ for arg in "$@"; do
   if [ "$arg" = "--debug" ]; then
     ENABLE_PTVSD=1
   fi
+  if [ "$arg" = "upgrade" ]; then
+    echo "Backing up database before running aca-py upgrade is highly recommended. Do you wish to proceed"
+    select yn in "Yes" "No"; do
+      case $yn in
+      Yes) break ;;
+      No) exit ;;
+      esac
+    done
+  fi
 done
 if [ -n "${ENABLE_PTVSD}" ]; then
   ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"

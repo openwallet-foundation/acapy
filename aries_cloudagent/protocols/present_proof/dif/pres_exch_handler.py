@@ -545,9 +545,9 @@ class DIFPresExchHandler:
             # Fix issue related to credentialSubject type property
             if "credentialSubject" in derived.keys():
                 if "type" in credential_dict.get("credentialSubject"):
-                    derived["credentialSubject"]["type"] = credential_dict.get(
+                    derived["credentialSubject"]["type"] = credential_dict[
                         "credentialSubject"
-                    ).get("type")
+                    ].get("type")
             return derived
         else:
             return self.reveal_doc_frame
@@ -1350,7 +1350,7 @@ class DIFPresExchHandler:
             pres: received VerifiablePresentation
             pd: PresentationDefinition
         """
-        descriptor_map_list = pres.get("presentation_submission").get("descriptor_map")
+        descriptor_map_list = pres["presentation_submission"].get("descriptor_map")
         input_descriptors = pd.input_descriptors
         inp_desc_id_contraint_map = {}
         inp_desc_id_schema_one_of_filter = set()
