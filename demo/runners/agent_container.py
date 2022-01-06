@@ -99,6 +99,16 @@ class AriesAgent(DemoAgent):
         print("handle_oob_invitation():", json.dumps(message))
         pass
 
+    async def handle_connection_reuse(self, message):
+        print("handle_connection_reuse():", json.dumps(message))
+        # TODO we are reusing an existing connection, set our status to the existing connection
+        pass
+
+    async def handle_connection_reuse_accepted(self, message):
+        print("handle_connection_reuse_accepted():", json.dumps(message))
+        # TODO we are reusing an existing connection, set our status to the existing connection
+        pass
+
     async def handle_connections(self, message):
         # a bit of a hack, but for the mediator connection self._connection_ready
         # will be None

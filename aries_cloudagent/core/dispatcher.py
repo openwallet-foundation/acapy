@@ -321,4 +321,5 @@ class DispatcherResponder(BaseResponder):
             "responder.send_webhook is deprecated; please use the event bus instead.",
             DeprecationWarning,
         )
+        print("Sending webhook for topic:", topic)
         await self._context.profile.notify("acapy::webhook::" + topic, payload)
