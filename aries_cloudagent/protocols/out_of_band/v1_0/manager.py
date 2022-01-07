@@ -54,7 +54,7 @@ from .models.invitation import InvitationRecord
 
 LOGGER = logging.getLogger(__name__)
 REUSE_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse"
-REUSE_ACCEPTED_WEBHOOK_TOPIC = "acapy::webhook:connection_reuse_accepted"
+REUSE_ACCEPTED_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse_accepted"
 
 
 class OutOfBandManagerError(BaseError):
