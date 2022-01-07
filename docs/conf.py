@@ -41,6 +41,7 @@ autodoc_mock_imports = [
     "ecdsa",
     "indy_credx",
     "dateutil",
+    "packaging",
     "jsonpath_ng",
     "unflatten",
     "qrcode",
