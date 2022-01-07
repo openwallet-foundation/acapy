@@ -1194,7 +1194,6 @@ class DemoAgent:
                 invite,
                 params=params,
             )
-            print("Received invite connection:", json.dumps(connection))
         else:
             connection = await self.admin_POST(
                 "/connections/receive-invitation",

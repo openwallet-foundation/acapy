@@ -96,7 +96,7 @@ class AriesAgent(DemoAgent):
         return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_oob_invitation(self, message):
-        print("handle_oob_invitation():", json.dumps(message))
+        print("handle_oob_invitation()")
         pass
 
     async def handle_connection_reuse(self, message):
@@ -624,7 +624,6 @@ class AgentContainer:
         self.multitenant = multitenant
         self.mediation = mediation
         self.use_did_exchange = use_did_exchange
-        print("Setting use_did_exchange:", self.use_did_exchange)
         self.wallet_type = wallet_type
         self.public_did = public_did
         self.seed = seed
@@ -827,13 +826,10 @@ class AgentContainer:
         for cred_attr in cred_attrs:
             if cred_attr["name"] in wallet_attrs:
                 if wallet_attrs[cred_attr["name"]] != cred_attr["value"]:
-                    print("Value doesn't match for:", cred_attr["name"])
                     matched = False
             else:
-                print("Attribute not found for:", cred_attr["name"])
                 matched = False
 
-        print("Matching credential received")
         return matched
 
     async def request_proof(self, proof_request):
@@ -885,12 +881,10 @@ class AgentContainer:
 
         if self.cred_type == CRED_FORMAT_INDY:
             # return verified status
-            print("Received proof:", self.agent.last_proof_received["verified"])
             return self.agent.last_proof_received["verified"]
 
         elif self.cred_type == CRED_FORMAT_JSON_LD:
             # return verified status
-            print("Received proof:", self.agent.last_proof_received["verified"])
             return self.agent.last_proof_received["verified"]
 
         else:
