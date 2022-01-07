@@ -96,7 +96,22 @@ class AriesAgent(DemoAgent):
         return self._connection_ready.done() and self._connection_ready.result()
 
     async def handle_oob_invitation(self, message):
+        print("handle_oob_invitation()")
         pass
+
+    async def handle_connection_reuse(self, message):
+        # we are reusing an existing connection, set our status to the existing connection
+        if not self._connection_ready.done():
+            self.connection_id = message["connection_id"]
+            self.log("Connected")
+            self._connection_ready.set_result(True)
+
+    async def handle_connection_reuse_accepted(self, message):
+        # we are reusing an existing connection, set our status to the existing connection
+        if not self._connection_ready.done():
+            self.connection_id = message["connection_id"]
+            self.log("Connected")
+            self._connection_ready.set_result(True)
 
     async def handle_connections(self, message):
         # a bit of a hack, but for the mediator connection self._connection_ready
@@ -506,6 +521,7 @@ class AriesAgent(DemoAgent):
         use_did_exchange: bool,
         auto_accept: bool = True,
         display_qr: bool = False,
+        reuse_connections: bool = False,
         wait: bool = False,
     ):
         self._connection_ready = asyncio.Future()
@@ -514,7 +530,11 @@ class AriesAgent(DemoAgent):
             log_status(
                 "#7 Create a connection to alice and print out the invite details"
             )
-            invi_rec = await self.get_invite(use_did_exchange, auto_accept)
+            invi_rec = await self.get_invite(
+                use_did_exchange,
+                auto_accept=auto_accept,
+                reuse_connections=reuse_connections,
+            )
 
         if display_qr:
             qr = QRCode(border=1)
@@ -589,6 +609,7 @@ class AgentContainer:
         aip: int = 20,
         arg_file: str = None,
         endorser_role: str = None,
+        reuse_connections: bool = False,
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -603,7 +624,6 @@ class AgentContainer:
         self.multitenant = multitenant
         self.mediation = mediation
         self.use_did_exchange = use_did_exchange
-        print("Setting use_did_exchange:", self.use_did_exchange)
         self.wallet_type = wallet_type
         self.public_did = public_did
         self.seed = seed
@@ -616,6 +636,7 @@ class AgentContainer:
                 self.public_did = True
                 self.cred_type = CRED_FORMAT_INDY
 
+        self.reuse_connections = reuse_connections
         self.exchange_tracing = False
 
         # local agent(s)
@@ -805,13 +826,10 @@ class AgentContainer:
         for cred_attr in cred_attrs:
             if cred_attr["name"] in wallet_attrs:
                 if wallet_attrs[cred_attr["name"]] != cred_attr["value"]:
-                    print("Value doesn't match for:", cred_attr["name"])
                     matched = False
             else:
-                print("Attribute not found for:", cred_attr["name"])
                 matched = False
 
-        print("Matching credential received")
         return matched
 
     async def request_proof(self, proof_request):
@@ -863,12 +881,10 @@ class AgentContainer:
 
         if self.cred_type == CRED_FORMAT_INDY:
             # return verified status
-            print("Received proof:", self.agent.last_proof_received["verified"])
             return self.agent.last_proof_received["verified"]
 
         elif self.cred_type == CRED_FORMAT_JSON_LD:
             # return verified status
-            print("Received proof:", self.agent.last_proof_received["verified"])
             return self.agent.last_proof_received["verified"]
 
         else:
@@ -897,10 +913,18 @@ class AgentContainer:
         return terminated
 
     async def generate_invitation(
-        self, auto_accept: bool = True, display_qr: bool = False, wait: bool = False
+        self,
+        auto_accept: bool = True,
+        display_qr: bool = False,
+        reuse_connections: bool = False,
+        wait: bool = False,
     ):
         return await self.agent.generate_invitation(
-            self.use_did_exchange, auto_accept, display_qr, wait
+            self.use_did_exchange,
+            auto_accept=auto_accept,
+            display_qr=display_qr,
+            reuse_connections=reuse_connections,
+            wait=wait,
         )
 
     async def input_invitation(self, invite_details: dict, wait: bool = False):
@@ -1087,6 +1111,15 @@ def arg_parser(ident: str = None, port: int = 8020):
             "directly."
         ),
     )
+    if (not ident) or (ident != "alice"):
+        parser.add_argument(
+            "--reuse-connections",
+            action="store_true",
+            help=(
+                "Reuse connections by using Faber public key in the invite. "
+                "Only applicable for AIP 2.0 (OOB) connections."
+            ),
+        )
     parser.add_argument(
         "--arg-file",
         type=str,
@@ -1169,6 +1202,10 @@ async def create_agent_with_args(args, ident: str = None):
         f"Initializing demo agent {agent_ident} with AIP {aip} and credential type {cred_type}"
     )
 
+    reuse_connections = "reuse_connections" in args and args.reuse_connections
+    if reuse_connections and aip != 20:
+        raise Exception("Can only specify `--reuse-connections` with AIP 2.0")
+
     agent = AgentContainer(
         genesis_txns=genesis,
         genesis_txn_list=multi_ledger_config_path,
@@ -1188,6 +1225,7 @@ async def create_agent_with_args(args, ident: str = None):
         arg_file=arg_file,
         aip=aip,
         endorser_role=args.endorser_role,
+        reuse_connections=reuse_connections,
     )
 
     return agent
