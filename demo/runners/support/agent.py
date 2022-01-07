@@ -775,7 +775,6 @@ class DemoAgent:
             handler = f"handle_{topic}"
             wallet_id = headers.get("x-wallet-id")
             method = getattr(self, handler, None)
-            print("Handling:", handler, payload)
             if method:
                 EVENT_LOGGER.debug(
                     "Agent called controller webhook: %s%s%s%s",
