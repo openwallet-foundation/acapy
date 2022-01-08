@@ -1081,7 +1081,7 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
     try:
         tails_base_url = profile.settings.get("tails_server_base_url")
         if not tails_base_url:
-            raise RevocationError(reason="tails_server_base_url not configured")
+            raise RevocationError("tails_server_base_url not configured")
 
         # Create registry
         revoc = IndyRevocation(profile)
@@ -1103,7 +1103,7 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
                 endorser_did=endorser_did,
             )
     except RevocationError as e:
-        raise RevocationError(reason=e.message) from e
+        raise RevocationError(e.message) from e
     except RevocationNotSupportedError as e:
         raise RevocationNotSupportedError(reason=e.message) from e
 
@@ -1179,7 +1179,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
     try:
         tails_base_url = profile.settings.get("tails_server_base_url")
         if not tails_base_url:
-            raise RevocationError(reason="tails_server_base_url not configured")
+            raise RevocationError("tails_server_base_url not configured")
 
         revoc = IndyRevocation(profile)
         registry_record = await revoc.get_issuer_rev_reg_record(rev_reg_id)
@@ -1189,9 +1189,9 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
             endorser_did=endorser_did,
         )
     except RevocationError as e:
-        raise RevocationError(reason=e.message) from e
+        raise RevocationError(e.message) from e
     except RevocationNotSupportedError as e:
-        raise RevocationError(reason=e.message) from e
+        raise RevocationError(e.message) from e
 
     if not create_transaction_for_endorser:
         meta_data = event.payload
@@ -1210,7 +1210,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
                 meta_data=event.payload,
             )
         except StorageError as err:
-            raise RevocationError(reason=err.roll_up) from err
+            raise RevocationError(err.roll_up) from err
 
         # if auto-request, send the request to the endorser
         if profile.settings.get_value("endorser.auto_request"):
@@ -1225,7 +1225,7 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
                     # endorser_write_txn=endorser_write_txn,
                 )
             except (StorageError, TransactionManagerError) as err:
-                raise RevocationError(reason=err.roll_up) from err
+                raise RevocationError(err.roll_up) from err
 
             async with profile.session() as session:
                 responder = session.inject_or(BaseResponder)
@@ -1246,7 +1246,7 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
     """Handle revocation tails file event."""
     tails_base_url = profile.settings.get("tails_server_base_url")
     if not tails_base_url:
-        raise RevocationError(reason="tails_server_base_url not configured")
+        raise RevocationError("tails_server_base_url not configured")
 
     tails_server = profile.inject(BaseTailsServer)
     revoc_reg_id = event.payload["context"]["rev_reg_id"]
@@ -1261,9 +1261,7 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
     )
     if not upload_success:
         raise RevocationError(
-            reason=(
-                f"Tails file for rev reg {revoc_reg_id} " f"failed to upload: {reason}"
-            )
+            f"Tails file for rev reg {revoc_reg_id} failed to upload: {reason}"
         )
 
     # create a "pending" registry if one is requested
