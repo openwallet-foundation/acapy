@@ -270,8 +270,7 @@ class BaseMultitenantManager:
             {"wallet.key": wallet_key},
         )
 
-        del self._instances[wallet_id]
-        await profile.remove()
+        await self.remove_wallet_profile(profile)
 
         # Remove all routing records associated with wallet
         async with self._profile.session() as session:
@@ -281,6 +280,15 @@ class BaseMultitenantManager:
             )
 
             await wallet.delete_record(session)
+
+    @abstractmethod
+    async def remove_wallet_profile(self, profile: Profile):
+        """Remove the wallet profile instance.
+
+        Args:
+            profile: The wallet profile instance
+
+        """
 
     async def add_key(
         self, wallet_id: str, recipient_key: str, *, skip_if_exists: bool = False

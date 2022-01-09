@@ -11,16 +11,30 @@ wallet.
 import hashlib
 import json
 import logging
+from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
-from ..config.ledger import get_genesis_transactions, ledger_config
+from ..config.provider import ClassProvider
+from ..config.ledger import (
+    get_genesis_transactions,
+    ledger_config,
+    load_multiple_genesis_transactions_from_config,
+)
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
+from ..indy.verifier import IndyVerifier
+from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
+from ..ledger.multiple_ledger.base_manager import (
+    BaseMultipleLedgerManager,
+    MultipleLedgerManagerError,
+)
+from ..ledger.multiple_ledger.manager_provider import MultiIndyLedgerManagerProvider
+from ..ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager
 from ..multitenant.manager_provider import MultitenantManagerProvider
@@ -36,6 +50,7 @@ from ..protocols.coordinate_mediation.mediation_invite_store import MediationInv
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ..storage.base import BaseStorage
+from ..storage.error import StorageNotFoundError
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -48,7 +63,9 @@ from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
+from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 from ..wallet.did_info import DIDInfo
+
 from .dispatcher import Dispatcher
 from .util import STARTUP_EVENT_TOPIC, SHUTDOWN_EVENT_TOPIC
 
@@ -93,11 +110,66 @@ class Conductor:
         context = await self.context_builder.build_context()
 
         # Fetch genesis transactions if necessary
-        await get_genesis_transactions(context.settings)
+        if context.settings.get("ledger.ledger_config_list"):
+            await load_multiple_genesis_transactions_from_config(context.settings)
+        if (
+            context.settings.get("ledger.genesis_transactions")
+            or context.settings.get("ledger.genesis_file")
+            or context.settings.get("ledger.genesis_url")
+        ):
+            await get_genesis_transactions(context.settings)
 
         # Configure the root profile
         self.root_profile, self.setup_public_did = await wallet_config(context)
         context = self.root_profile.context
+
+        # Multiledger Setup
+        if (
+            context.settings.get("ledger.ledger_config_list")
+            and len(context.settings.get("ledger.ledger_config_list")) > 0
+        ):
+            context.injector.bind_provider(
+                BaseMultipleLedgerManager,
+                MultiIndyLedgerManagerProvider(self.root_profile),
+            )
+            if not (context.settings.get("ledger.genesis_transactions")):
+                ledger = (
+                    await context.injector.inject(
+                        BaseMultipleLedgerManager
+                    ).get_write_ledger()
+                )[1]
+                if (
+                    self.root_profile.BACKEND_NAME == "askar"
+                    and ledger.BACKEND_NAME == "indy-vdr"
+                ):
+                    context.injector.bind_instance(BaseLedger, ledger)
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                elif (
+                    self.root_profile.BACKEND_NAME == "indy"
+                    and ledger.BACKEND_NAME == "indy"
+                ):
+                    context.injector.bind_instance(BaseLedger, ledger)
+                    context.injector.bind_provider(
+                        IndyVerifier,
+                        ClassProvider(
+                            "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                            self.root_profile,
+                        ),
+                    )
+                else:
+                    raise MultipleLedgerManagerError(
+                        "Multiledger is supported only for Indy SDK or Askar "
+                        "[Indy VDR] profile"
+                    )
+        context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(self.root_profile)
+        )
 
         # Configure the ledger
         if not await ledger_config(
@@ -139,7 +211,7 @@ class Conductor:
             DocumentLoader, DocumentLoader(self.root_profile)
         )
 
-        self.outbound_queue = get_outbound_queue(context.settings)
+        self.outbound_queue = get_outbound_queue(self.root_profile)
 
         # Admin API
         if context.settings.get("admin.enabled"):
@@ -201,6 +273,13 @@ class Conductor:
             LOGGER.exception("Unable to start outbound transports")
             raise
 
+        if self.outbound_queue:
+            try:
+                await self.outbound_queue.start()
+            except Exception:
+                LOGGER.exception("Unable to start outbound queue")
+                raise
+
         # Start up Admin server
         if self.admin_server:
             try:
@@ -228,6 +307,28 @@ class Conductor:
             self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
+
+        # record ACA-Py version in Wallet, if needed
+        async with self.root_profile.session() as session:
+            storage: BaseStorage = session.context.inject(BaseStorage)
+            agent_version = f"v{__version__}"
+            try:
+                record = await storage.find_record(
+                    type_filter=RECORD_TYPE_ACAPY_VERSION,
+                    tag_query={},
+                )
+                if record.value != agent_version:
+                    LOGGER.exception(
+                        (
+                            f"Wallet storage version {record.value} "
+                            "does not match this ACA-Py agent "
+                            f"version {agent_version}. Run aca-py "
+                            "upgrade command to fix this."
+                        )
+                    )
+                    raise
+            except StorageNotFoundError:
+                pass
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
@@ -280,6 +381,9 @@ class Conductor:
                 invite_url = invi_rec.invitation.to_url(base_url)
                 print("Invitation URL:")
                 print(invite_url, flush=True)
+                qr = QRCode(border=1)
+                qr.add_data(invite_url)
+                qr.print_ascii(invert=True)
                 del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
@@ -297,8 +401,12 @@ class Conductor:
                     ),
                 )
                 base_url = context.settings.get("invite_base_url")
+                invite_url = invite.to_url(base_url)
                 print("Invitation URL (Connections protocol):")
-                print(invite.to_url(base_url), flush=True)
+                print(invite_url, flush=True)
+                qr = QRCode(border=1)
+                qr.add_data(invite_url)
+                qr.print_ascii(invert=True)
                 del mgr
             except Exception:
                 LOGGER.exception("Error creating invitation")
@@ -306,15 +414,15 @@ class Conductor:
         # mediation connection establishment
         provided_invite: str = context.settings.get("mediation.invite")
 
-        async with self.root_profile.session() as session:
-            try:
+        try:
+            async with self.root_profile.session() as session:
                 invite_store = MediationInviteStore(session.context.inject(BaseStorage))
                 mediation_invite_record = (
                     await invite_store.get_mediation_invite_record(provided_invite)
                 )
-            except Exception:
-                LOGGER.exception("Error retrieving mediator invitation")
-                mediation_invite_record = None
+        except Exception:
+            LOGGER.exception("Error retrieving mediator invitation")
+            mediation_invite_record = None
 
         # Accept mediation invitation if one was specified or stored
         if mediation_invite_record is not None:
@@ -381,6 +489,8 @@ class Conductor:
             shutdown.run(self.inbound_transport_manager.stop())
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
+        if self.outbound_queue:
+            shutdown.run(self.outbound_queue.stop())
 
         # close multitenant profiles
         multitenant_mgr = self.context.inject_or(BaseMultitenantManager)

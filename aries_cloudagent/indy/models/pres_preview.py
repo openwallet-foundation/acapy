@@ -6,7 +6,11 @@ from typing import Mapping, Sequence
 
 from marshmallow import EXCLUDE, fields
 
-from ...ledger.base import BaseLedger
+from ...core.profile import Profile
+from ...ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    IndyLedgerRequestsExecutor,
+)
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.util import canon
 from ...messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
@@ -291,10 +295,10 @@ class IndyPresPreview(BaseModel):
 
     async def indy_proof_request(
         self,
+        profile: Profile = None,
         name: str = None,
         version: str = None,
         nonce: str = None,
-        ledger: BaseLedger = None,
         non_revoc_intervals: Mapping[str, IndyNonRevocationInterval] = None,
     ) -> dict:
         """
@@ -326,7 +330,7 @@ class IndyPresPreview(BaseModel):
             )
 
         epoch_now = int(time())
-
+        ledger = None
         proof_req = {
             "name": name or "proof-request",
             "version": version or "1.0",
@@ -346,6 +350,14 @@ class IndyPresPreview(BaseModel):
             cd_id = attr_spec.cred_def_id
             revoc_support = False
             if cd_id:
+                if profile:
+                    ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
+                    ledger = (
+                        await ledger_exec_inst.get_ledger_for_identifier(
+                            cd_id,
+                            txn_record_type=GET_CRED_DEF,
+                        )
+                    )[1]
                 if ledger:
                     async with ledger:
                         revoc_support = (await ledger.get_credential_definition(cd_id))[
@@ -397,6 +409,14 @@ class IndyPresPreview(BaseModel):
             cd_id = pred_spec.cred_def_id
             revoc_support = False
             if cd_id:
+                if profile:
+                    ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
+                    ledger = (
+                        await ledger_exec_inst.get_ledger_for_identifier(
+                            cd_id,
+                            txn_record_type=GET_CRED_DEF,
+                        )
+                    )[1]
                 if ledger:
                     async with ledger:
                         revoc_support = (await ledger.get_credential_definition(cd_id))[

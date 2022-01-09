@@ -439,6 +439,7 @@ class ConnectionManager(BaseConnectionManager):
             connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
             image_url=self.profile.settings.get("image_url"),
         )
+        request.assign_thread_id(thid=request._id, pthid=connection.invitation_msg_id)
 
         # Update connection state
         connection.request_id = request._id
@@ -601,21 +602,26 @@ class ConnectionManager(BaseConnectionManager):
             # Add mapping for multitenant relay
             if multitenant_mgr and wallet_id:
                 await multitenant_mgr.add_key(wallet_id, my_info.verkey)
-
-            connection = ConnRecord(
-                invitation_key=connection_key,
-                my_did=my_info.did,
-                their_role=ConnRecord.Role.RESPONDER.rfc160,
-                their_did=request.connection.did,
-                their_label=request.label,
-                accept=(
-                    ConnRecord.ACCEPT_AUTO
-                    if self.profile.settings.get("debug.auto_accept_requests")
-                    else ConnRecord.ACCEPT_MANUAL
-                ),
-                state=ConnRecord.State.REQUEST.rfc160,
-                connection_protocol=CONN_PROTO,
+            async with self.profile.session() as session:
+                connection = await ConnRecord.retrieve_by_invitation_msg_id(
+                    session=session,
+                    invitation_msg_id=request._thread.pthid,
+                    their_role=ConnRecord.Role.REQUESTER.rfc160,
+                )
+            if not connection:
+                connection = ConnRecord()
+            connection.invitation_key = connection_key
+            connection.my_did = my_info.did
+            connection.their_role = ConnRecord.Role.RESPONDER.rfc160
+            connection.their_did = request.connection.did
+            connection.their_label = request.label
+            connection.accept = (
+                ConnRecord.ACCEPT_AUTO
+                if self.profile.settings.get("debug.auto_accept_requests")
+                else ConnRecord.ACCEPT_MANUAL
             )
+            connection.state = ConnRecord.State.REQUEST.rfc160
+            connection.connection_protocol = CONN_PROTO
             async with self.profile.session() as session:
                 await connection.save(
                     session, reason="Received connection request from public DID"
@@ -632,21 +638,6 @@ class ConnectionManager(BaseConnectionManager):
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
-
-        if connection.accept == ConnRecord.ACCEPT_AUTO:
-            response = await self.create_response(connection, mediation_id=mediation_id)
-            responder = self.profile.inject_or(BaseResponder)
-            if responder:
-                await responder.send_reply(
-                    response, connection_id=connection.connection_id
-                )
-                async with self.profile.session() as session:
-                    # refetch connection for accurate state
-                    connection = await ConnRecord.retrieve_by_id(
-                        session, connection.connection_id
-                    )
-        else:
-            self._logger.debug("Connection request will await acceptance")
 
         return connection
 

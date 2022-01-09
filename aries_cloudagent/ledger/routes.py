@@ -2,7 +2,6 @@
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
-
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
@@ -18,6 +17,19 @@ from ..storage.error import StorageError
 from ..wallet.error import WalletError, WalletNotFoundError
 
 from .base import BaseLedger, Role as LedgerRole
+from .multiple_ledger.base_manager import (
+    BaseMultipleLedgerManager,
+)
+from .multiple_ledger.ledger_requests_executor import (
+    GET_NYM_ROLE,
+    GET_KEY_FOR_DID,
+    GET_ENDPOINT_FOR_DID,
+    IndyLedgerRequestsExecutor,
+)
+from .multiple_ledger.ledger_config_schema import (
+    LedgerConfigListSchema,
+    WriteLedgerRequestSchema,
+)
 from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 
@@ -169,13 +181,13 @@ async def register_ledger_nym(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger = session.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     verkey = request.query.get("verkey")
@@ -225,17 +237,22 @@ async def get_nym_role(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
+
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+        ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
+            did,
+            txn_record_type=GET_NYM_ROLE,
+        )
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     async with ledger:
         try:
@@ -246,7 +263,11 @@ async def get_nym_role(request: web.BaseRequest):
             raise web.HTTPNotFound(reason=err.roll_up)
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up)
-    return web.json_response({"role": role.name})
+
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "role": role.name})
+    else:
+        return web.json_response({"role": role.name})
 
 
 @docs(tags=["ledger"], summary="Rotate key pair for public DID.")
@@ -259,13 +280,13 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger = session.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
     async with ledger:
         try:
             await ledger.rotate_public_did_keypair()  # do not take seed over the wire
@@ -289,17 +310,22 @@ async def get_did_verkey(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
+
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+        ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
+            did,
+            txn_record_type=GET_KEY_FOR_DID,
+        )
+        if not ledger:
+            reason = "No ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     async with ledger:
         try:
@@ -309,7 +335,10 @@ async def get_did_verkey(request: web.BaseRequest):
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"verkey": result})
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "verkey": result})
+    else:
+        return web.json_response({"verkey": result})
 
 
 @docs(
@@ -326,21 +355,25 @@ async def get_did_endpoint(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
 
     did = request.query.get("did")
+    if not did:
+        raise web.HTTPBadRequest(reason="Request query must include DID")
+
+    async with context.profile.session() as session:
+        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+        ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
+            did,
+            txn_record_type=GET_ENDPOINT_FOR_DID,
+        )
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
     endpoint_type = EndpointType.get(
         request.query.get("endpoint_type", EndpointType.ENDPOINT.w3c)
     )
-
-    if not did:
-        raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with ledger:
         try:
@@ -348,7 +381,10 @@ async def get_did_endpoint(request: web.BaseRequest):
         except LedgerError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    return web.json_response({"endpoint": r})
+    if ledger_id:
+        return web.json_response({"ledger_id": ledger_id, "endpoint": r})
+    else:
+        return web.json_response({"endpoint": r})
 
 
 @docs(tags=["ledger"], summary="Fetch the current transaction author agreement, if any")
@@ -365,13 +401,13 @@ async def ledger_get_taa(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger = session.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     async with ledger:
         try:
@@ -406,13 +442,13 @@ async def ledger_accept_taa(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    session = await context.session()
-    ledger = session.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No Indy ledger available"
-        if not session.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise web.HTTPForbidden(reason=reason)
+    async with context.profile.session() as session:
+        ledger = session.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No Indy ledger available"
+            if not session.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise web.HTTPForbidden(reason=reason)
 
     accept_input = await request.json()
     async with ledger:
@@ -438,6 +474,79 @@ async def ledger_accept_taa(request: web.BaseRequest):
     return web.json_response({})
 
 
+@docs(tags=["ledger"], summary="Fetch the current write ledger")
+@response_schema(WriteLedgerRequestSchema, 200, description="")
+async def get_write_ledger(request: web.BaseRequest):
+    """
+    Request handler for fetching the currently set write ledger.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The write ledger identifier
+
+    """
+    context: AdminRequestContext = request["context"]
+    async with context.profile.session() as session:
+        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
+    if not multiledger_mgr:
+        reason = "Multiple ledger support not enabled"
+        raise web.HTTPForbidden(reason=reason)
+    ledger_id = (await multiledger_mgr.get_write_ledger())[0]
+    return web.json_response({"ledger_id": ledger_id})
+
+
+@docs(
+    tags=["ledger"], summary="Fetch the multiple ledger configuration currently in use"
+)
+@response_schema(LedgerConfigListSchema, 200, description="")
+async def get_ledger_config(request: web.BaseRequest):
+    """
+    Request handler for fetching the ledger configuration list in use.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Ledger configuration list
+
+    """
+    context: AdminRequestContext = request["context"]
+    async with context.profile.session() as session:
+        multiledger_mgr = session.inject_or(BaseMultipleLedgerManager)
+        if not multiledger_mgr:
+            reason = "Multiple ledger support not enabled"
+            raise web.HTTPForbidden(reason=reason)
+        ledger_config_list = session.settings.get_value("ledger.ledger_config_list")
+        config_ledger_dict = {"production_ledgers": [], "non_production_ledgers": []}
+        production_ledger_keys = (await multiledger_mgr.get_prod_ledgers()).keys()
+        non_production_ledger_keys = (
+            await multiledger_mgr.get_nonprod_ledgers()
+        ).keys()
+        config_ledger_ids_set = set()
+        for config in ledger_config_list:
+            ledger_id = config.get("id")
+            config_ledger_ids_set.add(ledger_id)
+            # removing genesis_transactions
+            config = {
+                key: val for key, val in config.items() if key != "genesis_transactions"
+            }
+            if ledger_id in production_ledger_keys:
+                config_ledger_dict.get("production_ledgers").append(config)
+            if ledger_id in non_production_ledger_keys:
+                config_ledger_dict.get("non_production_ledgers").append(config)
+        diff_prod_ledger_ids_set = set(production_ledger_keys) - config_ledger_ids_set
+        for diff_prod_ledger_id in diff_prod_ledger_ids_set:
+            config_ledger_dict.get("production_ledgers").append(
+                {
+                    "id": diff_prod_ledger_id,
+                    "desc": "ledger configured outside --genesis-transactions-list",
+                }
+            )
+    return web.json_response(config_ledger_dict)
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -450,6 +559,10 @@ async def register(app: web.Application):
             web.get("/ledger/did-endpoint", get_did_endpoint, allow_head=False),
             web.get("/ledger/taa", ledger_get_taa, allow_head=False),
             web.post("/ledger/taa/accept", ledger_accept_taa),
+            web.get(
+                "/ledger/multiple/get-write-ledger", get_write_ledger, allow_head=False
+            ),
+            web.get("/ledger/multiple/config", get_ledger_config, allow_head=False),
         ]
     )
 

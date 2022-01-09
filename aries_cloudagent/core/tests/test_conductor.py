@@ -27,6 +27,8 @@ from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
 )
 from ...resolver.did_resolver import DIDResolver, DIDResolverRegistry
 from ...multitenant.base import BaseMultitenantManager
+from ...storage.base import BaseStorage
+from ...storage.error import StorageNotFoundError
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.base import OutboundDeliveryError
@@ -35,6 +37,7 @@ from ...transport.outbound.message import OutboundMessage
 from ...transport.wire_format import BaseWireFormat
 from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
+from ...version import __version__
 from ...wallet.base import BaseWallet
 from ...wallet.key_type import KeyType
 from ...wallet.did_method import DIDMethod
@@ -110,7 +113,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, async_mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger:
+        ) as mock_logger, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
 
             await conductor.setup()
 
@@ -168,7 +177,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             test_module, "OutboundTransportManager", autospec=True
         ) as mock_outbound_mgr, async_mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
-        ) as mock_logger:
+        ) as mock_logger, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
 
             await conductor.setup()
 
@@ -533,7 +548,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             admin, "start", autospec=True
         ) as admin_start, async_mock.patch.object(
             admin, "stop", autospec=True
-        ) as admin_stop:
+        ) as admin_stop, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
             await conductor.start()
             admin_start.assert_awaited_once_with()
 
@@ -570,7 +591,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             test_module, "OutOfBandManager"
         ) as oob_mgr, async_mock.patch.object(
             test_module, "ConnectionManager"
-        ) as conn_mgr:
+        ) as conn_mgr, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
             admin_start.side_effect = KeyError("trouble")
             oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
                 side_effect=KeyError("double trouble")
@@ -603,7 +630,15 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         builder.update_settings({"debug.test_suite_endpoint": True})
         conductor = test_module.Conductor(builder)
 
-        with async_mock.patch.object(test_module, "ConnectionManager") as mock_mgr:
+        with async_mock.patch.object(
+            test_module, "ConnectionManager"
+        ) as mock_mgr, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
             await conductor.setup()
 
             session = await conductor.root_profile.session()
@@ -724,7 +759,15 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         await conductor.setup()
 
-        with async_mock.patch("sys.stdout", new=StringIO()) as captured:
+        with async_mock.patch(
+            "sys.stdout", new=StringIO()
+        ) as captured, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
             await conductor.setup()
 
             session = await conductor.root_profile.session()
@@ -753,7 +796,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             return_value=async_mock.MagicMock(
                 clear_default_mediator=async_mock.CoroutineMock()
             ),
-        ) as mock_mgr:
+        ) as mock_mgr, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
             await conductor.start()
             await conductor.stop()
             mock_mgr.return_value.clear_default_mediator.assert_called_once()
@@ -781,6 +830,12 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
                     side_effect=Exception("This method should not have been called")
                 )
             ),
+        ), async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
         ):
             await conductor.start()
             await conductor.stop()
@@ -797,7 +852,15 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             MediationRecord,
             "retrieve_by_id",
             async_mock.CoroutineMock(side_effect=Exception()),
-        ), async_mock.patch.object(test_module, "LOGGER") as mock_logger:
+        ), async_mock.patch.object(
+            test_module, "LOGGER"
+        ) as mock_logger, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
             await conductor.start()
             await conductor.stop()
             mock_logger.exception.assert_called_once()
@@ -921,6 +984,12 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             ),
         ) as mock_mgr, async_mock.patch.object(
             mock_conn_record, "metadata_set", async_mock.CoroutineMock()
+        ), async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
         ):
             await conductor.start()
             await conductor.stop()
@@ -957,7 +1026,13 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
                     )
                 )
             ),
-        ) as mock_mgr:
+        ) as mock_mgr, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
             await conductor.start()
             await conductor.stop()
             mock_from_url.assert_called_once_with("test-invite")
@@ -999,6 +1074,12 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             mock_conn_record, "metadata_set", async_mock.CoroutineMock()
         ), async_mock.patch.object(
             test_module, "MediationManager", return_value=mock_mediation_manager
+        ), async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
         ):
             await conductor.start()
             await conductor.stop()
@@ -1030,14 +1111,22 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             receive_invitation=async_mock.CoroutineMock()
         )
         patched_connection_manager.return_value = connection_manager_mock
+        with async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
+            # when
+            await conductor.start()
+            await conductor.stop()
 
-        # when
-        await conductor.start()
-        await conductor.stop()
-
-        # then
-        invite_store_mock.get_mediation_invite_record.assert_called_with(invite_string)
-        connection_manager_mock.receive_invitation.assert_not_called()
+            # then
+            invite_store_mock.get_mediation_invite_record.assert_called_with(
+                invite_string
+            )
+            connection_manager_mock.receive_invitation.assert_not_called()
 
     @asynctest.patch.object(
         test_module,
@@ -1056,8 +1145,112 @@ class TestConductorMediationSetup(AsyncTestCase, Config):
             async_mock.MagicMock(side_effect=Exception()),
         ) as mock_from_url, async_mock.patch.object(
             test_module, "LOGGER"
-        ) as mock_logger:
+        ) as mock_logger, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v{__version__}")
+            ),
+        ):
             await conductor.start()
             await conductor.stop()
             mock_from_url.assert_called_once_with("test-invite")
             mock_logger.exception.assert_called_once()
+
+    async def test_setup_ledger_both_multiple_and_base(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"ledger.genesis_transactions": "..."})
+        builder.update_settings({"ledger.ledger_config_list": [{"...": "..."}]})
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module,
+            "load_multiple_genesis_transactions_from_config",
+            async_mock.CoroutineMock(),
+        ) as mock_multiple_genesis_load, async_mock.patch.object(
+            test_module, "get_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_genesis_load:
+            await conductor.setup()
+            mock_multiple_genesis_load.assert_called_once()
+            mock_genesis_load.assert_called_once()
+
+    async def test_setup_ledger_only_base(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"ledger.genesis_transactions": "..."})
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "get_genesis_transactions", async_mock.CoroutineMock()
+        ) as mock_genesis_load:
+            await conductor.setup()
+            mock_genesis_load.assert_called_once()
+
+    async def test_startup_x_version_mismatch(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, async_mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr, async_mock.patch.object(
+            test_module, "LOGGER"
+        ) as mock_logger, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(value=f"v0.6.0")
+            ),
+        ):
+
+            await conductor.setup()
+
+            session = await conductor.root_profile.session()
+
+            wallet = session.inject(BaseWallet)
+            await wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
+
+            mock_inbound_mgr.return_value.setup.assert_awaited_once()
+            mock_outbound_mgr.return_value.setup.assert_awaited_once()
+
+            mock_inbound_mgr.return_value.registered_transports = {}
+            mock_outbound_mgr.return_value.registered_transports = {}
+            with self.assertRaises(RuntimeError):
+                await conductor.start()
+                mock_logger.exception.assert_called_once()
+
+    async def test_startup_x_no_storage_version(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+
+        with async_mock.patch.object(
+            test_module, "InboundTransportManager", autospec=True
+        ) as mock_inbound_mgr, async_mock.patch.object(
+            test_module, "OutboundTransportManager", autospec=True
+        ) as mock_outbound_mgr, async_mock.patch.object(
+            test_module, "LOGGER"
+        ) as mock_logger, async_mock.patch.object(
+            BaseStorage,
+            "find_record",
+            async_mock.CoroutineMock(side_effect=StorageNotFoundError()),
+        ):
+
+            await conductor.setup()
+
+            session = await conductor.root_profile.session()
+
+            wallet = session.inject(BaseWallet)
+            await wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
+
+            mock_inbound_mgr.return_value.setup.assert_awaited_once()
+            mock_outbound_mgr.return_value.setup.assert_awaited_once()
+
+            mock_inbound_mgr.return_value.registered_transports = {}
+            mock_outbound_mgr.return_value.registered_transports = {}
+            await conductor.start()

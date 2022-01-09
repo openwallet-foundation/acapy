@@ -235,6 +235,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     my_label=None,
                     my_endpoint=None,
                     mediation_id=mediation_record._id,
+                    alias="Tester",
                 )
 
                 assert conn_rec
@@ -260,6 +261,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 my_endpoint=None,
                 mediation_id=mediation_record._id,
                 use_public_did=True,
+                alias="Tester",
             )
 
             assert info_public.did == conn_rec.my_did
@@ -272,6 +274,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 my_endpoint=None,
                 mediation_id=None,
                 use_public_did=True,
+                alias="Tester",
             )
 
         assert "No public DID configured" in str(context.exception)
@@ -507,8 +510,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(save=async_mock.CoroutineMock())
                 )
-                mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
-                    return_value=mock_conn_record
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = (
+                    async_mock.CoroutineMock(return_value=mock_conn_record)
                 )
                 mock_conn_rec_cls.return_value = mock_conn_record
 
@@ -539,11 +542,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     mediation_id=None,
                 )
                 assert conn_rec
-
-            messages = self.responder.messages
-            assert len(messages) == 2
-            (result, target) = messages[0]
-            assert "connection_id" in target
 
     async def test_receive_request_invi_not_found(self):
         async with self.profile.session() as session:
@@ -783,8 +781,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     save=async_mock.CoroutineMock(),
                 )
                 mock_conn_rec_cls.return_value = mock_conn_record
-                mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
-                    return_value=mock_conn_record
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = (
+                    async_mock.CoroutineMock(return_value=mock_conn_record)
                 )
 
                 mock_did_posture.get = async_mock.MagicMock(
@@ -890,8 +888,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     save=async_mock.CoroutineMock(),
                 )
                 mock_conn_rec_cls.return_value = mock_conn_record
-                mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
-                    return_value=mock_conn_record
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = (
+                    async_mock.CoroutineMock(return_value=mock_conn_record)
                 )
                 mock_did_doc_from_json.return_value = async_mock.MagicMock(
                     did="wrong-did"
@@ -950,8 +948,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     save=async_mock.CoroutineMock(),
                 )
                 mock_conn_rec_cls.return_value = mock_conn_record
-                mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
-                    return_value=mock_conn_record
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = (
+                    async_mock.CoroutineMock(return_value=mock_conn_record)
                 )
 
                 mock_did_posture.get = async_mock.MagicMock(
@@ -1068,8 +1066,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     save=async_mock.CoroutineMock(),
                 )
                 mock_conn_rec_cls.return_value = mock_conn_record
-                mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
-                    return_value=mock_conn_record
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = (
+                    async_mock.CoroutineMock(return_value=mock_conn_record)
                 )
 
                 mock_did_posture.get = async_mock.MagicMock(
@@ -1306,8 +1304,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     retrieve_request=async_mock.CoroutineMock(),
                 )
                 mock_conn_rec_cls.return_value = mock_conn_rec
-                mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
-                    side_effect=StorageNotFoundError()
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = (
+                    async_mock.CoroutineMock(return_value=[])
                 )
 
                 mock_did_posture.get = async_mock.MagicMock(

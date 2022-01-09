@@ -11,7 +11,11 @@ from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
-from ....ledger.base import BaseLedger
+from ....ledger.multiple_ledger.ledger_requests_executor import (
+    GET_CRED_DEF,
+    GET_SCHEMA,
+    IndyLedgerRequestsExecutor,
+)
 from ....messaging.credential_definitions.util import (
     CRED_DEF_TAGS,
     CRED_DEF_SENT_RECORD_TYPE,
@@ -34,7 +38,9 @@ from .messages.credential_problem_report import (
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
 from .messages.inner.credential_preview import CredentialPreview
-from .models.credential_exchange import V10CredentialExchange
+from .models.credential_exchange import (
+    V10CredentialExchange,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -260,7 +266,13 @@ class CredentialManager:
         credential_preview = credential_proposal_message.credential_proposal
 
         # vet attributes
-        ledger = self._profile.inject(BaseLedger)
+        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+        )[1]
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
@@ -392,7 +404,13 @@ class CredentialManager:
         cred_offer_ser = cred_ex_record._credential_offer.ser
 
         async def _create():
-            ledger = self._profile.inject(BaseLedger)
+            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    credential_definition_id,
+                    txn_record_type=GET_CRED_DEF,
+                )
+            )[1]
             async with ledger:
                 credential_definition = await ledger.get_credential_definition(
                     credential_definition_id
@@ -532,8 +550,13 @@ class CredentialManager:
         else:
             cred_offer_ser = cred_ex_record._credential_offer.ser
             cred_req_ser = cred_ex_record._credential_request.ser
-
-            ledger = self._profile.inject(BaseLedger)
+            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    schema_id,
+                    txn_record_type=GET_SCHEMA,
+                )
+            )[1]
             async with ledger:
                 schema = await ledger.get_schema(schema_id)
                 credential_definition = await ledger.get_credential_definition(
@@ -739,7 +762,13 @@ class CredentialManager:
 
         raw_cred_serde = cred_ex_record._raw_credential
         revoc_reg_def = None
-        ledger = self._profile.inject(BaseLedger)
+        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        ledger = (
+            await ledger_exec_inst.get_ledger_for_identifier(
+                raw_cred_serde.de.cred_def_id,
+                txn_record_type=GET_CRED_DEF,
+            )
+        )[1]
         async with ledger:
             credential_definition = await ledger.get_credential_definition(
                 raw_cred_serde.de.cred_def_id

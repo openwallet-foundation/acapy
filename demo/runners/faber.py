@@ -45,6 +45,7 @@ class FaberAgent(AriesAgent):
         admin_port: int,
         no_auto: bool = False,
         endorser_role: str = None,
+        revocation: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -54,6 +55,7 @@ class FaberAgent(AriesAgent):
             prefix="Faber",
             no_auto=no_auto,
             endorser_role=endorser_role,
+            revocation=revocation,
             **kwargs,
         )
         self.connection_id = None
@@ -387,8 +389,10 @@ async def main(args):
             faber_agent.start_port,
             faber_agent.start_port + 1,
             genesis_data=faber_agent.genesis_txns,
+            genesis_txn_list=faber_agent.genesis_txn_list,
             no_auto=faber_agent.no_auto,
             tails_server_base_url=faber_agent.tails_server_base_url,
+            revocation=faber_agent.revocation,
             timing=faber_agent.show_timing,
             multitenant=faber_agent.multitenant,
             mediation=faber_agent.mediation,
@@ -423,7 +427,9 @@ async def main(args):
             raise Exception("Invalid credential type:" + faber_agent.cred_type)
 
         # generate an invitation for Alice
-        await faber_agent.generate_invitation(display_qr=True, wait=True)
+        await faber_agent.generate_invitation(
+            display_qr=True, reuse_connections=faber_agent.reuse_connections, wait=True
+        )
 
         exchange_tracing = False
         options = (
@@ -679,7 +685,11 @@ async def main(args):
                     "Creating a new invitation, please receive "
                     "and accept this invitation using Alice agent"
                 )
-                await faber_agent.generate_invitation(display_qr=True, wait=True)
+                await faber_agent.generate_invitation(
+                    display_qr=True,
+                    reuse_connections=faber_agent.reuse_connections,
+                    wait=True,
+                )
 
             elif option == "5" and faber_agent.revocation:
                 rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
@@ -694,6 +704,10 @@ async def main(args):
                             "rev_reg_id": rev_reg_id,
                             "cred_rev_id": cred_rev_id,
                             "publish": publish,
+                            "connection_id": faber_agent.agent.connection_id,
+                            # leave out thread_id, let aca-py generate
+                            # "thread_id": "12345678-4444-4444-4444-123456789012",
+                            "comment": "Revocation reason goes here ...",
                         },
                     )
                 except ClientError:

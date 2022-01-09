@@ -26,11 +26,11 @@ class KeylistHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Received keylist message from inactive connection")
 
-        session = await context.session()
         try:
-            await MediationRecord.retrieve_by_connection_id(
-                session, context.connection_record.connection_id
-            )
+            async with context.profile.session() as session:
+                await MediationRecord.retrieve_by_connection_id(
+                    session, context.connection_record.connection_id
+                )
         except StorageNotFoundError as err:
             LOG.warning(
                 "Received keylist from connection that is not acting as mediator: %s",

@@ -257,6 +257,391 @@ class TestLedgerConfig(AsyncTestCase):
                 test_module.EndpointType.PROFILE,
             )
 
+    async def test_load_multiple_genesis_transactions_from_config_a(self):
+        TEST_GENESIS_TXNS = {
+            "reqSignature": {},
+            "txn": {
+                "data": {
+                    "data": {
+                        "alias": "Node1",
+                        "blskey": "4N8aUNHSgjQVgkpm8nhNEfDf6txHznoYREg9kirmJrkivgL4oSEimFF6nsQ6M41QvhM2Z33nves5vfSn9n1UwNFJBYtWVnHYMATn76vLuL3zU88KyeAYcHfsih3He6UHcXDxcaecHVz6jhCYz1P2UZn2bDVruL5wXpehgBfBaLKm3Ba",
+                        "blskey_pop": "RahHYiCvoNCtPTrVtP7nMC5eTYrsUA8WjXbdhNc8debh1agE9bGiJxWBXYNFbnJXoXhWFMvyqhqhRoq737YQemH5ik9oL7R4NTTCz2LEZhkgLJzB3QRQqJyBNyv7acbdHrAT8nQ9UkLbaVL9NBpnWXBTw4LEMePaSHEw66RzPNdAX1",
+                        "client_ip": "192.168.65.3",
+                        "client_port": 9702,
+                        "node_ip": "192.168.65.3",
+                        "node_port": 9701,
+                        "services": ["VALIDATOR"],
+                    },
+                    "dest": "Gw6pDLhcBcoQesN72qfotTgFa7cbuqZpkX3Xo6pLhPhv",
+                },
+                "metadata": {"from": "Th7MpTaRZVRYnPiabds81Y"},
+                "type": "0",
+            },
+            "txnMetadata": {
+                "seqNo": 1,
+                "txnId": "fea82e10e894419fe2bea7d96296a6d46f50f93f9eeda954ec461b2ed2950b62",
+            },
+            "ver": "1",
+        }
+        TEST_MULTIPLE_LEDGER_CONFIG_LIST = [
+            {
+                "id": "sovrinMain",
+                "is_production": True,
+                "genesis_transactions": TEST_GENESIS_TXNS,
+                "is_write": True,
+                "keepalive": 5,
+                "read_only": False,
+                "socks_proxy": None,
+                "pool_name": "sovrinMain",
+            },
+            {
+                "id": "sovrinStaging",
+                "is_production": True,
+                "genesis_transactions": TEST_GENESIS_TXNS,
+                "is_write": False,
+                "keepalive": 5,
+                "read_only": False,
+                "socks_proxy": None,
+                "pool_name": "sovrinStaging",
+            },
+            {
+                "id": "sovrinTest",
+                "is_production": True,
+                "genesis_transactions": TEST_GENESIS_TXNS,
+                "is_write": False,
+                "keepalive": 5,
+                "read_only": False,
+                "socks_proxy": None,
+                "pool_name": "sovrinTest",
+            },
+        ]
+        settings = {
+            "ledger.ledger_config_list": [
+                {
+                    "id": "sovrinMain",
+                    "is_production": True,
+                    "is_write": True,
+                    "genesis_transactions": TEST_GENESIS_TXNS,
+                },
+                {
+                    "id": "sovrinStaging",
+                    "is_production": True,
+                    "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
+                },
+                {
+                    "id": "sovrinTest",
+                    "is_production": True,
+                    "genesis_url": "http://localhost:9000/genesis",
+                },
+            ],
+        }
+        with async_mock.patch.object(
+            test_module,
+            "fetch_genesis_transactions",
+            async_mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+        ) as mock_fetch, async_mock.patch(
+            "builtins.open", async_mock.MagicMock()
+        ) as mock_open:
+            mock_open.return_value = async_mock.MagicMock(
+                __enter__=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        read=async_mock.MagicMock(return_value=TEST_GENESIS_TXNS)
+                    )
+                )
+            )
+            await test_module.load_multiple_genesis_transactions_from_config(settings)
+        self.assertEqual(
+            settings["ledger.ledger_config_list"], TEST_MULTIPLE_LEDGER_CONFIG_LIST
+        )
+
+    async def test_load_multiple_genesis_transactions_from_config_b(self):
+        TEST_GENESIS_TXNS = {
+            "reqSignature": {},
+            "txn": {
+                "data": {
+                    "data": {
+                        "alias": "Node1",
+                        "blskey": "4N8aUNHSgjQVgkpm8nhNEfDf6txHznoYREg9kirmJrkivgL4oSEimFF6nsQ6M41QvhM2Z33nves5vfSn9n1UwNFJBYtWVnHYMATn76vLuL3zU88KyeAYcHfsih3He6UHcXDxcaecHVz6jhCYz1P2UZn2bDVruL5wXpehgBfBaLKm3Ba",
+                        "blskey_pop": "RahHYiCvoNCtPTrVtP7nMC5eTYrsUA8WjXbdhNc8debh1agE9bGiJxWBXYNFbnJXoXhWFMvyqhqhRoq737YQemH5ik9oL7R4NTTCz2LEZhkgLJzB3QRQqJyBNyv7acbdHrAT8nQ9UkLbaVL9NBpnWXBTw4LEMePaSHEw66RzPNdAX1",
+                        "client_ip": "192.168.65.3",
+                        "client_port": 9702,
+                        "node_ip": "192.168.65.3",
+                        "node_port": 9701,
+                        "services": ["VALIDATOR"],
+                    },
+                    "dest": "Gw6pDLhcBcoQesN72qfotTgFa7cbuqZpkX3Xo6pLhPhv",
+                },
+                "metadata": {"from": "Th7MpTaRZVRYnPiabds81Y"},
+                "type": "0",
+            },
+            "txnMetadata": {
+                "seqNo": 1,
+                "txnId": "fea82e10e894419fe2bea7d96296a6d46f50f93f9eeda954ec461b2ed2950b62",
+            },
+            "ver": "1",
+        }
+        TEST_MULTIPLE_LEDGER_CONFIG_LIST = [
+            {
+                "id": "sovrinMain",
+                "is_production": True,
+                "genesis_transactions": TEST_GENESIS_TXNS,
+                "is_write": False,
+                "keepalive": 5,
+                "read_only": False,
+                "socks_proxy": None,
+                "pool_name": "sovrinMain",
+            },
+            {
+                "id": "sovrinStaging",
+                "is_production": True,
+                "genesis_transactions": TEST_GENESIS_TXNS,
+                "is_write": False,
+                "keepalive": 5,
+                "read_only": False,
+                "socks_proxy": None,
+                "pool_name": "sovrinStaging",
+            },
+            {
+                "id": "sovrinTest",
+                "is_production": True,
+                "genesis_transactions": TEST_GENESIS_TXNS,
+                "is_write": False,
+                "keepalive": 5,
+                "read_only": False,
+                "socks_proxy": None,
+                "pool_name": "sovrinTest",
+            },
+        ]
+        settings = {
+            "ledger.ledger_config_list": [
+                {
+                    "id": "sovrinMain",
+                    "is_production": True,
+                    "genesis_transactions": TEST_GENESIS_TXNS,
+                },
+                {
+                    "id": "sovrinStaging",
+                    "is_production": True,
+                    "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
+                },
+                {
+                    "id": "sovrinTest",
+                    "is_production": True,
+                    "genesis_url": "http://localhost:9001/genesis",
+                },
+            ],
+            "ledger.genesis_url": "http://localhost:9000/genesis",
+        }
+        with async_mock.patch.object(
+            test_module,
+            "fetch_genesis_transactions",
+            async_mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+        ) as mock_fetch, async_mock.patch(
+            "builtins.open", async_mock.MagicMock()
+        ) as mock_open:
+            mock_open.return_value = async_mock.MagicMock(
+                __enter__=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        read=async_mock.MagicMock(return_value=TEST_GENESIS_TXNS)
+                    )
+                )
+            )
+            await test_module.load_multiple_genesis_transactions_from_config(settings)
+        self.assertEqual(
+            settings["ledger.ledger_config_list"], TEST_MULTIPLE_LEDGER_CONFIG_LIST
+        )
+
+    async def test_load_multiple_genesis_transactions_config_error_a(self):
+        TEST_GENESIS_TXNS = {
+            "reqSignature": {},
+            "txn": {
+                "data": {
+                    "data": {
+                        "alias": "Node1",
+                        "blskey": "4N8aUNHSgjQVgkpm8nhNEfDf6txHznoYREg9kirmJrkivgL4oSEimFF6nsQ6M41QvhM2Z33nves5vfSn9n1UwNFJBYtWVnHYMATn76vLuL3zU88KyeAYcHfsih3He6UHcXDxcaecHVz6jhCYz1P2UZn2bDVruL5wXpehgBfBaLKm3Ba",
+                        "blskey_pop": "RahHYiCvoNCtPTrVtP7nMC5eTYrsUA8WjXbdhNc8debh1agE9bGiJxWBXYNFbnJXoXhWFMvyqhqhRoq737YQemH5ik9oL7R4NTTCz2LEZhkgLJzB3QRQqJyBNyv7acbdHrAT8nQ9UkLbaVL9NBpnWXBTw4LEMePaSHEw66RzPNdAX1",
+                        "client_ip": "192.168.65.3",
+                        "client_port": 9702,
+                        "node_ip": "192.168.65.3",
+                        "node_port": 9701,
+                        "services": ["VALIDATOR"],
+                    },
+                    "dest": "Gw6pDLhcBcoQesN72qfotTgFa7cbuqZpkX3Xo6pLhPhv",
+                },
+                "metadata": {"from": "Th7MpTaRZVRYnPiabds81Y"},
+                "type": "0",
+            },
+            "txnMetadata": {
+                "seqNo": 1,
+                "txnId": "fea82e10e894419fe2bea7d96296a6d46f50f93f9eeda954ec461b2ed2950b62",
+            },
+            "ver": "1",
+        }
+        settings = {
+            "ledger.ledger_config_list": [
+                {
+                    "id": "sovrinMain",
+                    "is_production": True,
+                    "genesis_transactions": TEST_GENESIS_TXNS,
+                },
+                {
+                    "id": "sovrinStaging",
+                    "is_production": True,
+                    "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
+                },
+                {
+                    "id": "sovrinTest",
+                    "is_production": True,
+                    "genesis_url": "http://localhost:9001/genesis",
+                },
+            ],
+        }
+        with async_mock.patch.object(
+            test_module,
+            "fetch_genesis_transactions",
+            async_mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+        ) as mock_fetch, async_mock.patch(
+            "builtins.open", async_mock.MagicMock()
+        ) as mock_open:
+            mock_open.return_value = async_mock.MagicMock(
+                __enter__=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        read=async_mock.MagicMock(return_value=TEST_GENESIS_TXNS)
+                    )
+                )
+            )
+            with self.assertRaises(test_module.ConfigError) as cm:
+                await test_module.load_multiple_genesis_transactions_from_config(
+                    settings
+                )
+            assert "No is_write ledger set" in str(cm.exception)
+
+    async def test_load_multiple_genesis_transactions_config_error_b(self):
+        TEST_GENESIS_TXNS = {
+            "reqSignature": {},
+            "txn": {
+                "data": {
+                    "data": {
+                        "alias": "Node1",
+                        "blskey": "4N8aUNHSgjQVgkpm8nhNEfDf6txHznoYREg9kirmJrkivgL4oSEimFF6nsQ6M41QvhM2Z33nves5vfSn9n1UwNFJBYtWVnHYMATn76vLuL3zU88KyeAYcHfsih3He6UHcXDxcaecHVz6jhCYz1P2UZn2bDVruL5wXpehgBfBaLKm3Ba",
+                        "blskey_pop": "RahHYiCvoNCtPTrVtP7nMC5eTYrsUA8WjXbdhNc8debh1agE9bGiJxWBXYNFbnJXoXhWFMvyqhqhRoq737YQemH5ik9oL7R4NTTCz2LEZhkgLJzB3QRQqJyBNyv7acbdHrAT8nQ9UkLbaVL9NBpnWXBTw4LEMePaSHEw66RzPNdAX1",
+                        "client_ip": "192.168.65.3",
+                        "client_port": 9702,
+                        "node_ip": "192.168.65.3",
+                        "node_port": 9701,
+                        "services": ["VALIDATOR"],
+                    },
+                    "dest": "Gw6pDLhcBcoQesN72qfotTgFa7cbuqZpkX3Xo6pLhPhv",
+                },
+                "metadata": {"from": "Th7MpTaRZVRYnPiabds81Y"},
+                "type": "0",
+            },
+            "txnMetadata": {
+                "seqNo": 1,
+                "txnId": "fea82e10e894419fe2bea7d96296a6d46f50f93f9eeda954ec461b2ed2950b62",
+            },
+            "ver": "1",
+        }
+        settings = {
+            "ledger.ledger_config_list": [
+                {
+                    "id": "sovrinMain",
+                    "is_production": True,
+                    "is_write": True,
+                    "genesis_transactions": TEST_GENESIS_TXNS,
+                },
+                {
+                    "id": "sovrinStaging",
+                    "is_production": True,
+                    "is_write": True,
+                    "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
+                },
+                {
+                    "id": "sovrinTest",
+                    "is_production": True,
+                    "genesis_url": "http://localhost:9001/genesis",
+                },
+            ],
+            "ledger.genesis_url": "http://localhost:9000/genesis",
+        }
+        with async_mock.patch.object(
+            test_module,
+            "fetch_genesis_transactions",
+            async_mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+        ) as mock_fetch, async_mock.patch(
+            "builtins.open", async_mock.MagicMock()
+        ) as mock_open:
+            mock_open.return_value = async_mock.MagicMock(
+                __enter__=async_mock.MagicMock(
+                    return_value=async_mock.MagicMock(
+                        read=async_mock.MagicMock(return_value=TEST_GENESIS_TXNS)
+                    )
+                )
+            )
+            with self.assertRaises(test_module.ConfigError) as cm:
+                await test_module.load_multiple_genesis_transactions_from_config(
+                    settings
+                )
+            assert "Only a single ledger can be" in str(cm.exception)
+
+    async def test_load_multiple_genesis_transactions_from_config_io_x(self):
+        TEST_GENESIS_TXNS = {
+            "reqSignature": {},
+            "txn": {
+                "data": {
+                    "data": {
+                        "alias": "Node1",
+                        "blskey": "4N8aUNHSgjQVgkpm8nhNEfDf6txHznoYREg9kirmJrkivgL4oSEimFF6nsQ6M41QvhM2Z33nves5vfSn9n1UwNFJBYtWVnHYMATn76vLuL3zU88KyeAYcHfsih3He6UHcXDxcaecHVz6jhCYz1P2UZn2bDVruL5wXpehgBfBaLKm3Ba",
+                        "blskey_pop": "RahHYiCvoNCtPTrVtP7nMC5eTYrsUA8WjXbdhNc8debh1agE9bGiJxWBXYNFbnJXoXhWFMvyqhqhRoq737YQemH5ik9oL7R4NTTCz2LEZhkgLJzB3QRQqJyBNyv7acbdHrAT8nQ9UkLbaVL9NBpnWXBTw4LEMePaSHEw66RzPNdAX1",
+                        "client_ip": "192.168.65.3",
+                        "client_port": 9702,
+                        "node_ip": "192.168.65.3",
+                        "node_port": 9701,
+                        "services": ["VALIDATOR"],
+                    },
+                    "dest": "Gw6pDLhcBcoQesN72qfotTgFa7cbuqZpkX3Xo6pLhPhv",
+                },
+                "metadata": {"from": "Th7MpTaRZVRYnPiabds81Y"},
+                "type": "0",
+            },
+            "txnMetadata": {
+                "seqNo": 1,
+                "txnId": "fea82e10e894419fe2bea7d96296a6d46f50f93f9eeda954ec461b2ed2950b62",
+            },
+            "ver": "1",
+        }
+        settings = {
+            "ledger.ledger_config_list": [
+                {
+                    "id": "sovrinMain",
+                    "is_production": True,
+                    "genesis_transactions": TEST_GENESIS_TXNS,
+                },
+                {
+                    "id": "sovrinStaging",
+                    "is_production": True,
+                    "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
+                },
+                {
+                    "id": "sovrinTest",
+                    "is_production": True,
+                    "genesis_url": "http://localhost:9000/genesis",
+                },
+            ],
+        }
+        with async_mock.patch.object(
+            test_module,
+            "fetch_genesis_transactions",
+            async_mock.CoroutineMock(return_value=TEST_GENESIS_TXNS),
+        ) as mock_fetch, async_mock.patch(
+            "builtins.open", async_mock.MagicMock()
+        ) as mock_open:
+            mock_open.side_effect = IOError("no read permission")
+            with self.assertRaises(test_module.ConfigError):
+                await test_module.load_multiple_genesis_transactions_from_config(
+                    settings
+                )
+
     @async_mock.patch("sys.stdout")
     async def test_ledger_accept_taa_not_tty(self, mock_stdout):
         mock_stdout.isatty = async_mock.MagicMock(return_value=False)

@@ -19,6 +19,14 @@ Subpackages
 Submodules
 ----------
 
+aries\_cloudagent.protocols.out\_of\_band.v1\_0.controller module
+-----------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.out_of_band.v1_0.controller
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.protocols.out\_of\_band.v1\_0.manager module
 --------------------------------------------------------------
 

@@ -192,7 +192,7 @@ class V20DiscoveryMgr:
                 )
             if ex_rec.disclosures:
                 return ex_rec
-            asyncio.sleep(0.5)
+            await asyncio.sleep(0.5)
 
     async def create_and_send_query(
         self,

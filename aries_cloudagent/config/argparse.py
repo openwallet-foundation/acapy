@@ -20,6 +20,7 @@ from .util import BoundedInt, ByteSize
 
 CAT_PROVISION = "general"
 CAT_START = "start"
+CAT_UPGRADE = "upgrade"
 
 ENDORSER_AUTHOR = "author"
 ENDORSER_ENDORSER = "endorser"
@@ -460,7 +461,7 @@ class DebugGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_START, CAT_PROVISION)
+@group(CAT_START)
 class DiscoverFeaturesGroup(ArgumentGroup):
     """Discover Features settings."""
 
@@ -603,23 +604,6 @@ class GeneralGroup(ArgumentGroup):
             env_var="ACAPY_READ_ONLY_LEDGER",
             help="Sets ledger to read-only to prevent updates. Default: false.",
         )
-        parser.add_argument(
-            "--tails-server-base-url",
-            type=str,
-            metavar="<tails-server-base-url>",
-            env_var="ACAPY_TAILS_SERVER_BASE_URL",
-            help="Sets the base url of the tails server in use.",
-        )
-        parser.add_argument(
-            "--tails-server-upload-url",
-            type=str,
-            metavar="<tails-server-upload-url>",
-            env_var="ACAPY_TAILS_SERVER_UPLOAD_URL",
-            help=(
-                "Sets the base url of the tails server for upload, defaulting to the "
-                "tails server base url."
-            ),
-        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -656,11 +640,67 @@ class GeneralGroup(ArgumentGroup):
 
         if args.read_only_ledger:
             settings["read_only_ledger"] = True
+        return settings
+
+
+@group(CAT_START, CAT_PROVISION)
+class RevocationGroup(ArgumentGroup):
+    """Revocation settings."""
+
+    GROUP_NAME = "Revocation"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add revocation arguments to the parser."""
+        parser.add_argument(
+            "--tails-server-base-url",
+            type=str,
+            metavar="<tails-server-base-url>",
+            env_var="ACAPY_TAILS_SERVER_BASE_URL",
+            help="Sets the base url of the tails server in use.",
+        )
+        parser.add_argument(
+            "--tails-server-upload-url",
+            type=str,
+            metavar="<tails-server-upload-url>",
+            env_var="ACAPY_TAILS_SERVER_UPLOAD_URL",
+            help=(
+                "Sets the base url of the tails server for upload, defaulting to the "
+                "tails server base url."
+            ),
+        )
+        parser.add_argument(
+            "--notify-revocation",
+            action="store_true",
+            env_var="ACAPY_NOTIFY_REVOCATION",
+            help=(
+                "Specifies that aca-py will notify credential recipients when "
+                "revoking a credential it issued."
+            ),
+        )
+        parser.add_argument(
+            "--monitor-revocation-notification",
+            action="store_true",
+            env_var="ACAPY_NOTIFY_REVOCATION",
+            help=(
+                "Specifies that aca-py will emit webhooks on notification of "
+                "revocation received."
+            ),
+        )
+
+    def get_settings(self, args: Namespace) -> dict:
+        """Extract revocation settings."""
+        settings = {}
         if args.tails_server_base_url:
             settings["tails_server_base_url"] = args.tails_server_base_url
             settings["tails_server_upload_url"] = args.tails_server_base_url
         if args.tails_server_upload_url:
             settings["tails_server_upload_url"] = args.tails_server_upload_url
+        if args.notify_revocation:
+            settings["revocation.notify"] = args.notify_revocation
+        if args.monitor_revocation_notification:
+            settings[
+                "revocation.monitor_notification"
+            ] = args.monitor_revocation_notification
         return settings
 
 
@@ -748,6 +788,18 @@ class LedgerGroup(ArgumentGroup):
                 "connect to the public (outside of corporate network) ledger pool"
             ),
         )
+        parser.add_argument(
+            "--genesis-transactions-list",
+            type=str,
+            required=False,
+            dest="genesis_transactions_list",
+            metavar="<genesis-transactions-list>",
+            env_var="ACAPY_GENESIS_TRANSACTIONS_LIST",
+            help=(
+                "Load YAML configuration for connecting to multiple"
+                " HyperLedger Indy ledgers."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
@@ -755,17 +807,30 @@ class LedgerGroup(ArgumentGroup):
         if args.no_ledger:
             settings["ledger.disabled"] = True
         else:
+            configured = False
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
+                configured = True
             elif args.genesis_file:
                 settings["ledger.genesis_file"] = args.genesis_file
+                configured = True
             elif args.genesis_transactions:
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
-            else:
+                configured = True
+            if args.genesis_transactions_list:
+                with open(args.genesis_transactions_list, "r") as stream:
+                    txn_config_list = yaml.safe_load(stream)
+                    ledger_config_list = []
+                    for txn_config in txn_config_list:
+                        ledger_config_list.append(txn_config)
+                    settings["ledger.ledger_config_list"] = ledger_config_list
+                    configured = True
+            if not configured:
                 raise ArgsParseError(
-                    "One of --genesis-url --genesis-file or --genesis-transactions "
-                    "must be specified (unless --no-ledger is specified to "
-                    "explicitly configure aca-py to run with no ledger)."
+                    "One of --genesis-url --genesis-file, --genesis-transactions "
+                    "or --genesis-transactions-list must be specified (unless "
+                    "--no-ledger is specified to explicitly configure aca-py to"
+                    " run with no ledger)."
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
@@ -1154,6 +1219,28 @@ class TransportGroup(ArgumentGroup):
                 "accumulated messages in message queue. Default value is 4."
             ),
         )
+        parser.add_argument(
+            "--ws-heartbeat-interval",
+            default=3,
+            type=BoundedInt(min=1),
+            env_var="ACAPY_WS_HEARTBEAT_INTERVAL",
+            metavar="<interval>",
+            help=(
+                "When using Websocket Inbound Transport, send WS pings every "
+                "<interval> seconds."
+            ),
+        )
+        parser.add_argument(
+            "--ws-timeout-interval",
+            default=15,
+            type=BoundedInt(min=1),
+            env_var="ACAPY_WS_TIMEOUT_INTERVAL",
+            metavar="<interval>",
+            help=(
+                "When using Websocket Inbound Transport, timeout the WS connection "
+                "after <interval> seconds without a heartbeat ping."
+            ),
+        )
 
     def get_settings(self, args: Namespace):
         """Extract transport settings."""
@@ -1186,6 +1273,10 @@ class TransportGroup(ArgumentGroup):
             settings["transport.max_message_size"] = args.max_message_size
         if args.max_outbound_retry:
             settings["transport.max_outbound_retry"] = args.max_outbound_retry
+        if args.ws_heartbeat_interval:
+            settings["transport.ws.heartbeat_interval"] = args.ws_heartbeat_interval
+        if args.ws_timeout_interval:
+            settings["transport.ws.timeout_interval"] = args.ws_timeout_interval
 
         return settings
 
@@ -1287,7 +1378,7 @@ class MediationGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_PROVISION, CAT_START)
+@group(CAT_PROVISION, CAT_START, CAT_UPGRADE)
 class WalletGroup(ArgumentGroup):
     """Wallet settings."""
 
@@ -1735,4 +1826,46 @@ class EndorsementGroup(ArgumentGroup):
                     "for transaction Authors"
                 )
 
+        return settings
+
+
+@group(CAT_UPGRADE)
+class UpgradeGroup(ArgumentGroup):
+    """ACA-Py Upgrade process settings."""
+
+    GROUP_NAME = "Upgrade"
+
+    def add_arguments(self, parser: ArgumentParser):
+        """Add ACA-Py upgrade process specific arguments to the parser."""
+
+        parser.add_argument(
+            "--upgrade-config-path",
+            type=str,
+            dest="upgrade_config_path",
+            required=False,
+            env_var="ACAPY_UPGRADE_CONFIG_PATH",
+            help=(
+                "YAML file path that specifies config to handle upgrade changes."
+                "Default: ./aries_cloudagent/commands/default_version_upgrade_config.yml"
+            ),
+        )
+
+        parser.add_argument(
+            "--from-version",
+            type=str,
+            env_var="ACAPY_UPGRADE_FROM_VERSION",
+            help=(
+                "Specify which ACA-Py version to upgrade from, "
+                "this version should be supported/included in "
+                "the --upgrade-config file."
+            ),
+        )
+
+    def get_settings(self, args: Namespace) -> dict:
+        """Extract ACA-Py upgrade process settings."""
+        settings = {}
+        if args.upgrade_config_path:
+            settings["upgrade.config_path"] = args.upgrade_config_path
+        if args.from_version:
+            settings["upgrade.from_version"] = args.from_version
         return settings

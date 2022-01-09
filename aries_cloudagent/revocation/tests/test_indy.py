@@ -4,6 +4,9 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
+from ...ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 from ...storage.error import StorageNotFoundError
 
 from ..error import (
@@ -28,7 +31,14 @@ class TestIndyRevocation(AsyncTestCase):
         )
         self.ledger.get_revoc_reg_def = async_mock.CoroutineMock()
         self.context.injector.bind_instance(BaseLedger, self.ledger)
-
+        self.context.injector.bind_instance(
+            IndyLedgerRequestsExecutor,
+            async_mock.MagicMock(
+                get_ledger_for_identifier=async_mock.CoroutineMock(
+                    return_value=(None, self.ledger)
+                )
+            ),
+        )
         self.revoc = IndyRevocation(self.profile)
 
         self.test_did = "sample-did"

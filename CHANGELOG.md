@@ -1,3 +1,83 @@
+# 0.7.3-RC0
+
+## December 13, 2021
+
+This release includes some new AIP 2.0 features out (Revocation Notification and
+Discover Features 2.0), a major new feature for those using Indy ledger (multi-ledger support),
+and a fix for a critical bug in some mediator scenarios. The release also includes several new
+pieces of documentation (storage database information and logging) and some other documentation
+updates that make the ACA-Py [Read The Docs site](https://aries-cloud-agent-python.readthedocs.io/en/latest/)
+useful again. And of course, some recent bug fixes and cleanups are included.
+
+There is a **BREAKING CHANGE** for those deploying ACA-Py with an external outbound queue
+implementation (see [PR #1501](https://github.com/hyperledger/aries-cloudagent-python/pull/1501)).
+As far as we know, there is only one organization that has such an implementation and they
+were involved in the creation of this PR, so we are not making this release a minor or major update.
+However, anyone else using an external queue should be aware of the impact of this PR that is
+included in the release.
+
+For those that have an existing deployment of ACA-Py with long-lasting connection records, some action
+may be required in order to use [RFC 434 Out of Band](https://github.com/hyperledger/aries-rfcs/tree/main/features/0434-outofband) and the "reuse connection" as the invitee. In PR #1453
+(details below) a performance improvement was made when finding a connection for reuse. The new approach
+(adding a tag to the connection to enable searching) applies only to connections made using this ACA-Py
+release and later, and "as-is" connections made using earlier releases of ACA-Py will not be found as reuse
+candidates. We don't think this will affect (m)any deployments and so have not implemented a migration
+approach. However, if this issue might affect your deployment, please submit an issue and the ACA-Py
+team will work with you to find a solution.
+
+The [Supported RFCs document](/SupportedRFCs.md) has been updated to reflect the addition of the
+AIP 2.0 RFCs for which support was added.
+
+The following is an annotated list of PRs in the release, including a link to each PR.
+
+- **AIP 2.0 Features**
+  - Discover Features Protocol: v1_0 refactoring and v2_0 implementation [[#1500](https://github.com/hyperledger/aries-cloudagent-python/pull/1500)](https://github.com/hyperledger/aries-cloudagent-python/pull/1500)
+    - Updates the Discover Features 1.0 (AIP 1.0) implementation and implements the new 2.0 version. In doing so, adds generalized support for goal codes to ACA-Py.
+  - Implement Revocation Notification v1.0 [#1464](https://github.com/hyperledger/aries-cloudagent-python/pull/1464)
+  - Fix integration tests (revocation notifications) [#1528](https://github.com/hyperledger/aries-cloudagent-python/pull/1528)
+  - Add Revocation notification support to alice/faber [#1527](https://github.com/hyperledger/aries-cloudagent-python/pull/1527)
+- **Other New Features**
+  - Multiple Indy Ledger support and State Proof verification [#1425](https://github.com/hyperledger/aries-cloudagent-python/pull/1425)
+    - Remove required dependencies from multi-ledger code that was requiring the import of Aries Askar even when not being used[#1550](https://github.com/hyperledger/aries-cloudagent-python/pull/1550)
+  - Outbound Queue - more usability improvements [#1501](https://github.com/hyperledger/aries-cloudagent-python/pull/1501) 
+  - Display QR code when generating/displaying invites on startup [#1526](https://github.com/hyperledger/aries-cloudagent-python/pull/1526)
+  - Enable WS Pings for WS Inbound Transport [#1530](https://github.com/hyperledger/aries-cloudagent-python/pull/1530)
+    - Faster detection of lost Web Socket connections; implementation verified with an existing mediator.
+  - Performance Improvement when using connection reuse in OOB and there are many DID connections. ConnRecord tags - their_public_did and invitation_msg_id [#1543](https://github.com/hyperledger/aries-cloudagent-python/pull/1543)
+    - In previous releases, a "their_public_did" was not a tag, so to see if you can reuse a connection, all connections were retrieved from the database to see if a matching public DID can be found. Now, connections created after deploying this release will have a tag on the connection such that an indexed query can be used. See "Breaking Change" note above.
+    - Follow up to [#1543](https://github.com/hyperledger/aries-cloudagent-python/pull/1543) - Adding invitation_msg_id and their_public_did back to record_value [#1553](https://github.com/hyperledger/aries-cloudagent-python/pull/1553)
+- **Critical Fixes**
+  - Fix connection record response for mobile [#1469](https://github.com/hyperledger/aries-cloudagent-python/pull/1469)
+- **Documentation Additions and Updates**
+  - added documentation for wallet storage databases [#1523](https://github.com/hyperledger/aries-cloudagent-python/pull/1523)
+  - added logging documentation [#1519](https://github.com/hyperledger/aries-cloudagent-python/pull/1519)
+  - Fix warnings when generating ReadTheDocs [#1509](https://github.com/hyperledger/aries-cloudagent-python/pull/1509)
+  - Remove Streetcred references [#1504](https://github.com/hyperledger/aries-cloudagent-python/pull/1504)
+  - Add RTD configs to get generator working [#1496](https://github.com/hyperledger/aries-cloudagent-python/pull/1496)
+- **Other Fixes**
+  - Connection Handling / Out of Band Invitations Fixes
+    - OOB: Fixes issues with multiple public explicit invitation and unused 0160 connection [#1525](https://github.com/hyperledger/aries-cloudagent-python/pull/1525)
+    - Delete unused ConnRecord generated - OOB invitation (use_exising_connection) [#1521](https://github.com/hyperledger/aries-cloudagent-python/pull/1521)
+      - When an invitee responded with a "reuse" message, the connection record associated with the invitation was not being deleted. Now it is.
+    - Await asyncio.sleeps to cleanup warnings in Python 3.8/3.9 [#1558](https://github.com/hyperledger/aries-cloudagent-python/pull/1558)
+  - DIF Presentation Exchange Cleanups
+    - Fix DIF Presentation Request Input Validation [#1517](https://github.com/hyperledger/aries-cloudagent-python/pull/1517)
+      - Some validation checking of a DIF presentation request to prevent uncaught errors later in the process.
+    - DIF PresExch - ProblemReport and "is_holder" [#1493](https://github.com/hyperledger/aries-cloudagent-python/pull/1493)
+      - Cleanups related to when "is_holder" is or is not required. Related to [Issue #1486](https://github.com/hyperledger/aries-cloudagent-python/issues/1486)
+  - Indy SDK Related Fixes
+    - Fix AttributeError when writing an Indy Cred Def record [#1516](https://github.com/hyperledger/aries-cloudagent-python/pull/1516)
+    - Fix TypeError when calling credential_definitions_fix_cred_def_wallet… [#1515](https://github.com/hyperledger/aries-cloudagent-python/pull/1515)
+    - Fix TypeError when writing a Schema record [#1494](https://github.com/hyperledger/aries-cloudagent-python/pull/1494)
+    - Fix validation for range checks [#1538](https://github.com/hyperledger/aries-cloudagent-python/pull/1538)
+      - Back out some of the validation checking for proof requests with predicates as they were preventing valid proof requests from being processed.
+  - Aries Askar Related Fixes:
+    - Fix bug when getting credentials on askar-profile [#1510](https://github.com/hyperledger/aries-cloudagent-python/pull/1510)
+    - Fix error when removing a wallet on askar-profile [#1518](https://github.com/hyperledger/aries-cloudagent-python/pull/1518)
+    - Fix error when connection request is received (askar, public invitation) [#1508](https://github.com/hyperledger/aries-cloudagent-python/pull/1508)
+  - Release Adminstration:
+    - Changelog and RTD updates for the pending 0.7.3 release [#1553](https://github.com/hyperledger/aries-cloudagent-python/pull/1553)
+  
 # 0.7.2
 
 ## November 15, 2021

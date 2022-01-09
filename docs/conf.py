@@ -41,8 +41,11 @@ autodoc_mock_imports = [
     "ecdsa",
     "indy_credx",
     "dateutil",
+    "packaging",
     "jsonpath_ng",
     "unflatten",
+    "qrcode",
+    "rlp",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",

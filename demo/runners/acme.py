@@ -126,6 +126,7 @@ async def main(args):
             acme_agent.start_port,
             acme_agent.start_port + 1,
             genesis_data=acme_agent.genesis_txns,
+            genesis_txn_list=acme_agent.genesis_txn_list,
             no_auto=acme_agent.no_auto,
             tails_server_base_url=acme_agent.tails_server_base_url,
             timing=acme_agent.show_timing,

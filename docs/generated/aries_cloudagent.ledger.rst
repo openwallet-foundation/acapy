@@ -6,6 +6,15 @@ aries\_cloudagent.ledger package
    :undoc-members:
    :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   aries_cloudagent.ledger.merkel_validation
+   aries_cloudagent.ledger.multiple_ledger
+
 Submodules
 ----------
 

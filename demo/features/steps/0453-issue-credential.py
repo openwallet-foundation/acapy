@@ -88,6 +88,7 @@ def step_impl(context, holder):
     context.cred_exchange = cred_exchange
     print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
     print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
+    print("connection_id:", cred_exchange["cred_ex_record"]["connection_id"])
 
     # revoke the credential
     revoke_status = agent_container_POST(
@@ -97,6 +98,7 @@ def step_impl(context, holder):
             "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
             "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
             "publish": "Y",
+            "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
         },
     )
 

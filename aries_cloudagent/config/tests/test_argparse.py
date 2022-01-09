@@ -3,7 +3,6 @@ from configargparse import ArgumentTypeError
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from .. import argparse
-from ..error import ArgsParseError
 from ..util import BoundedInt, ByteSize
 
 
@@ -53,6 +52,79 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("transport.inbound_configs") == [["http", "0.0.0.0", "80"]]
         assert settings.get("transport.outbound_configs") == ["http"]
         assert result.max_outbound_retry == 5
+
+    async def test_get_genesis_transactions_list_with_ledger_selection(self):
+        """Test multiple ledger support related argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.LedgerGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--genesis-transactions-list",
+                "./aries_cloudagent/config/tests/test-ledger-args.yaml",
+            ]
+        )
+
+        assert (
+            result.genesis_transactions_list
+            == "./aries_cloudagent/config/tests/test-ledger-args.yaml"
+        )
+
+        settings = group.get_settings(result)
+
+        assert len(settings.get("ledger.ledger_config_list")) == 3
+        assert (
+            {
+                "id": "sovrinStaging",
+                "is_production": True,
+                "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
+            }
+        ) in settings.get("ledger.ledger_config_list")
+        assert (
+            {
+                "id": "sovrinTest",
+                "is_production": False,
+                "genesis_url": "http://localhost:9000/genesis",
+            }
+        ) in settings.get("ledger.ledger_config_list")
+
+    async def test_upgrade_config(self):
+        """Test upgrade command related argument parsing."""
+
+        parser = argparse.create_argument_parser()
+        group = argparse.UpgradeGroup()
+        group.add_arguments(parser)
+
+        with async_mock.patch.object(parser, "exit") as exit_parser:
+            parser.parse_args(["-h"])
+            exit_parser.assert_called_once()
+
+        result = parser.parse_args(
+            [
+                "--upgrade-config-path",
+                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml",
+                "--from-version",
+                "v0.7.2",
+            ]
+        )
+
+        assert (
+            result.upgrade_config_path
+            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+        )
+
+        settings = group.get_settings(result)
+
+        assert (
+            settings.get("upgrade.config_path")
+            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
+        )
 
     async def test_outbound_is_required(self):
         """Test that either -ot or -oq are required"""
