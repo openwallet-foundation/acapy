@@ -32,3 +32,11 @@ aries\_cloudagent.commands.start module
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.commands.upgrade module
+-----------------------------------------
+
+.. automodule:: aries_cloudagent.commands.upgrade
+   :members:
+   :undoc-members:
+   :show-inheritance:
