@@ -50,6 +50,7 @@ from ..protocols.coordinate_mediation.mediation_invite_store import MediationInv
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ..storage.base import BaseStorage
+from ..storage.error import StorageNotFoundError
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.base import OutboundDeliveryError
@@ -62,6 +63,7 @@ from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
+from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 from ..wallet.did_info import DIDInfo
 
 from .dispatcher import Dispatcher
@@ -138,7 +140,7 @@ class Conductor:
                 )[1]
                 if (
                     self.root_profile.BACKEND_NAME == "askar"
-                    and ledger.BACKEND_NAME == "indy_vdr"
+                    and ledger.BACKEND_NAME == "indy-vdr"
                 ):
                     context.injector.bind_instance(BaseLedger, ledger)
                     context.injector.bind_provider(
@@ -305,6 +307,28 @@ class Conductor:
             self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
         )
+
+        # record ACA-Py version in Wallet, if needed
+        async with self.root_profile.session() as session:
+            storage: BaseStorage = session.context.inject(BaseStorage)
+            agent_version = f"v{__version__}"
+            try:
+                record = await storage.find_record(
+                    type_filter=RECORD_TYPE_ACAPY_VERSION,
+                    tag_query={},
+                )
+                if record.value != agent_version:
+                    LOGGER.exception(
+                        (
+                            f"Wallet storage version {record.value} "
+                            "does not match this ACA-Py agent "
+                            f"version {agent_version}. Run aca-py "
+                            "upgrade command to fix this."
+                        )
+                    )
+                    raise
+            except StorageNotFoundError:
+                pass
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):

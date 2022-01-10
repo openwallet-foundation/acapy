@@ -38,7 +38,9 @@ from .messages.credential_problem_report import (
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
 from .messages.inner.credential_preview import CredentialPreview
-from .models.credential_exchange import V10CredentialExchange
+from .models.credential_exchange import (
+    V10CredentialExchange,
+)
 
 LOGGER = logging.getLogger(__name__)
 

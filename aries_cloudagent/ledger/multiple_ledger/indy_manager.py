@@ -95,7 +95,7 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
                     indy_sdk_ledger.submit_get_nym_request(request), 10
                 )
                 response = json.loads(response_json)
-                data = response.get("result").get("data")
+                data = response.get("result", {}).get("data")
                 if not data:
                     LOGGER.warning(f"Did {did} not posted to ledger {ledger_id}")
                     return None
