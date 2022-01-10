@@ -148,6 +148,7 @@ class TestDomainTxnHandler(TestCase):
                 },
             }
         }
+        txn = txn.get("result")
         path, value_bytes = prepare_attr_for_state(txn)
         assert (
             path
@@ -173,6 +174,7 @@ class TestDomainTxnHandler(TestCase):
                 },
             }
         }
+        txn = txn.get("result")
         assert prepare_nym_for_state(txn)
 
     def test_prepare_schema_for_state(self):
@@ -211,6 +213,7 @@ class TestDomainTxnHandler(TestCase):
                 },
             }
         }
+        txn = txn.get("result")
         path, value_bytes = prepare_schema_for_state(txn)
         assert path == b"L5AD5g65TDQr1PPHHRoiGf:2:Degree:1.0"
         assert (
@@ -226,19 +229,19 @@ class TestDomainTxnHandler(TestCase):
             assert "ref field is absent, but it must contain schema seq no" in cm
 
     def test_prepare_claim_def_for_state(self):
-        txn = deepcopy(CLAIM_DEF_TXN)
-        txn.get("result").get("txn").get("data").pop("ref")
+        txn = deepcopy(CLAIM_DEF_TXN.get("result"))
+        txn.get("txn").get("data").pop("ref")
         with self.assertRaises(ValueError) as cm:
             prepare_claim_def_for_state(txn)
             assert "ref field is absent, but it must contain schema seq no" in cm
 
-        txn = deepcopy(CLAIM_DEF_TXN)
-        txn.get("result").get("txn").get("data").pop("data")
+        txn = deepcopy(CLAIM_DEF_TXN.get("result"))
+        txn.get("txn").get("data").pop("data")
         with self.assertRaises(ValueError) as cm:
             prepare_claim_def_for_state(txn)
             assert "data field is absent, but it must contain components of keys" in cm
 
-        txn = deepcopy(CLAIM_DEF_TXN)
+        txn = deepcopy(CLAIM_DEF_TXN.get("result"))
         path, value_bytes = prepare_claim_def_for_state(txn)
         assert path == b"L5AD5g65TDQr1PPHHRoiGf:3:CL:10:some_tag"
         assert (
@@ -281,6 +284,7 @@ class TestDomainTxnHandler(TestCase):
                 },
             },
         }
+        txn = txn.get("result")
         path, value_bytes = prepare_revoc_def_for_state(txn)
         assert (
             path
@@ -293,20 +297,32 @@ class TestDomainTxnHandler(TestCase):
 
     def test_prepare_get_revoc_reg_entry_for_state(self):
         assert prepare_get_revoc_reg_entry_for_state(REVOC_REG_ENTRY_TXN)
+        assert prepare_get_revoc_reg_entry_for_state(REVOC_REG_ENTRY_TXN.get("result"))
 
     def test_prepare_revoc_reg_entry_for_state(self):
-        path, value_bytes = prepare_revoc_reg_entry_for_state(REVOC_REG_ENTRY_TXN)
+        path, value_bytes = prepare_revoc_reg_entry_for_state(
+            REVOC_REG_ENTRY_TXN.get("result")
+        )
         assert (
             path
             == b"5:L5AD5g65TDQr1PPHHRoiGf:3:FC4aWomrA13YyvYC1Mxw7:3:CL:14:some_tag:CL_ACCUM:tag1"
         )
         assert (
-            prepare_revoc_reg_entry_for_state(REVOC_REG_ENTRY_TXN, path_only=True)
+            prepare_revoc_reg_entry_for_state(
+                REVOC_REG_ENTRY_TXN.get("result"), path_only=True
+            )
             == b"5:L5AD5g65TDQr1PPHHRoiGf:3:FC4aWomrA13YyvYC1Mxw7:3:CL:14:some_tag:CL_ACCUM:tag1"
         )
 
     def test_prepare_revoc_reg_entry_accum_for_state(self):
         path, value_bytes = prepare_revoc_reg_entry_accum_for_state(REVOC_REG_ENTRY_TXN)
+        assert (
+            path
+            == b"6:L5AD5g65TDQr1PPHHRoiGf:3:FC4aWomrA13YyvYC1Mxw7:3:CL:14:some_tag:CL_ACCUM:tag1"
+        )
+        path, value_bytes = prepare_revoc_reg_entry_accum_for_state(
+            REVOC_REG_ENTRY_TXN.get("result")
+        )
         assert (
             path
             == b"6:L5AD5g65TDQr1PPHHRoiGf:3:FC4aWomrA13YyvYC1Mxw7:3:CL:14:some_tag:CL_ACCUM:tag1"
@@ -388,6 +404,20 @@ class TestDomainTxnHandler(TestCase):
         expected_hash = base58.b58decode(
             "4aM6yCpamk82Uqb414mNRpEdYkwdSMhi3HkXgN7YvRaX".encode("utf-8")
         )
+        assert tree_size == 75335
+        assert leaf_index == 75334
+        assert expected_root_hash == expected_hash
+        assert decoded_audit_path == expected_audit_path
+
+        txn = deepcopy(write_request)
+        txn = txn.get("result")
+        (
+            tree_size,
+            leaf_index,
+            decoded_audit_path,
+            expected_root_hash,
+        ) = extract_params_write_request(txn)
+
         assert tree_size == 75335
         assert leaf_index == 75334
         assert expected_root_hash == expected_hash

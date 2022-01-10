@@ -427,7 +427,9 @@ async def main(args):
             raise Exception("Invalid credential type:" + faber_agent.cred_type)
 
         # generate an invitation for Alice
-        await faber_agent.generate_invitation(display_qr=True, wait=True)
+        await faber_agent.generate_invitation(
+            display_qr=True, reuse_connections=faber_agent.reuse_connections, wait=True
+        )
 
         exchange_tracing = False
         options = (
@@ -683,7 +685,11 @@ async def main(args):
                     "Creating a new invitation, please receive "
                     "and accept this invitation using Alice agent"
                 )
-                await faber_agent.generate_invitation(display_qr=True, wait=True)
+                await faber_agent.generate_invitation(
+                    display_qr=True,
+                    reuse_connections=faber_agent.reuse_connections,
+                    wait=True,
+                )
 
             elif option == "5" and faber_agent.revocation:
                 rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
