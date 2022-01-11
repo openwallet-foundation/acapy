@@ -146,7 +146,7 @@ class RevocationRegistry:
         if self._tails_local_path:
             return self._tails_local_path
 
-        tails_dir = indy_client_dir(join("tails", self.registry_id), create=False)
+        tails_dir = indy_client_dir(join("tails", self.registry_id).replace(" ", "%20"), create=False)
         return join(tails_dir, self._tails_hash)
 
     def has_local_tails_file(self) -> bool:

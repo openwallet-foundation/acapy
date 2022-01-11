@@ -57,7 +57,7 @@ class TestIndyUtils(AsyncTestCase):
         tails_local_path = tails_path("rev-reg-id")
         assert tails_local_path is None
 
-        tails_rr_dir = indy_client_dir(join("tails", "rev-reg-id"), create=True)
+        tails_rr_dir = indy_client_dir(join("tails", "rev-reg-id").replace(" ", "%20"), create=True)
         tails_local_path = tails_path("rev-reg-id")
         assert tails_local_path is None
 

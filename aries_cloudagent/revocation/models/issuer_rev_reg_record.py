@@ -201,7 +201,7 @@ class IssuerRevRegRecord(BaseRecord):
         self.state = IssuerRevRegRecord.STATE_GENERATED
         self.tails_hash = self.revoc_reg_def.value.tails_hash
 
-        tails_dir = indy_client_dir(join("tails", self.revoc_reg_id), create=True)
+        tails_dir = indy_client_dir(join("tails", self.revoc_reg_id).replace(" ", "%20"), create=True)
         tails_path = join(tails_dir, self.tails_hash)
         move(join(tails_hopper_dir, self.tails_hash), tails_path)
         self.tails_local_path = tails_path

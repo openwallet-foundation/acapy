@@ -111,7 +111,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         assert rec.state == IssuerRevRegRecord.STATE_GENERATED
         assert rec.tails_hash == TAILS_HASH
         assert rec.tails_local_path == join(
-            indy_client_dir(join("tails", REV_REG_ID)), rec.tails_hash
+            indy_client_dir(join("tails", REV_REG_ID).replace(" ","%20")), rec.tails_hash
         )
         with self.assertRaises(RevocationError):
             await rec.set_tails_file_public_uri(self.profile, "dummy")
