@@ -293,9 +293,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     use_public_did=True,
                     alias="Tester",
                 )
-            assert "Failed to resolve public DID in invitation" in str(
-                ctx.exception
-            )
+            assert "Failed to resolve public DID in invitation" in str(ctx.exception)
 
     async def test_create_request_implicit_no_public_did(self):
         with self.assertRaises(WalletError) as context:
