@@ -1,6 +1,7 @@
 import json
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from pydid import DIDDocument
 
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
@@ -18,6 +19,9 @@ from .....messaging.responder import BaseResponder, MockResponder
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
+from .....resolver.base import ResolverError
+from .....resolver.did_resolver import DIDResolver
+from .....resolver.tests import DOC
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo
@@ -102,6 +106,10 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             return_value=TestConfig.test_endpoint
         )
         self.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.resolver = async_mock.MagicMock()
+        did_doc = DIDDocument.deserialize(DOC)
+        self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+        self.context.injector.bind_instance(DIDResolver, self.resolver)
 
         self.multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         self.context.injector.bind_instance(
@@ -266,6 +274,29 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             assert info_public.did == conn_rec.my_did
 
+    async def test_create_request_implicit_resolver_error(self):
+        async with self.profile.session() as session:
+            await session.wallet.create_public_did(
+                DIDMethod.SOV,
+                KeyType.ED25519,
+            )
+        with async_mock.patch.object(
+            self.resolver,
+            "resolve",
+            async_mock.CoroutineMock(side_effect=ResolverError()),
+        ):
+            with self.assertRaises(DIDXManagerError) as ctx:
+                conn_rec = await self.manager.create_request_implicit(
+                    their_public_did=TestConfig.test_target_did,
+                    my_label=None,
+                    my_endpoint=None,
+                    use_public_did=True,
+                    alias="Tester",
+                )
+            assert "Failed to resolve public DID in invitation" in str(
+                ctx.exception
+            )
+
     async def test_create_request_implicit_no_public_did(self):
         with self.assertRaises(WalletError) as context:
             await self.manager.create_request_implicit(
@@ -292,6 +323,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
             ),
             save=async_mock.CoroutineMock(),
+            their_public_did=None,
         )
 
         with async_mock.patch.object(
@@ -345,6 +377,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                         )
                     ),
                     save=async_mock.CoroutineMock(),
+                    their_public_did=None,
                 )
             )
 
@@ -419,6 +452,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 )
             ),
             save=async_mock.CoroutineMock(),
+            their_public_did=None,
         )
 
         with async_mock.patch.object(

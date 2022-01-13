@@ -2,6 +2,9 @@
 
 import json
 import logging
+import pydid
+
+from pydid import BaseDIDDocument as ResolvedDocument
 
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.diddoc import DIDDoc
@@ -12,6 +15,8 @@ from ....core.profile import Profile
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
+from ....resolver.base import ResolverError
+from ....resolver.did_resolver import DIDResolver
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -296,14 +301,22 @@ class DIDXManager(BaseConnectionManager):
                 filter(None, [base_mediation_record, mediation_record])
             ),
         )
-        if (
-            conn_rec.their_public_did is not None
-            and conn_rec.their_public_did.startswith("did:")
-        ):
+        if conn_rec.their_public_did is not None:
             qualified_did = conn_rec.their_public_did
-        else:
-            qualified_did = f"did:sov:{conn_rec.their_public_did}"
-        pthid = conn_rec.invitation_msg_id or qualified_did
+            if not conn_rec.their_public_did.startswith("did:"):
+                qualified_did = f"did:sov:{conn_rec.their_public_did}"
+            resolver = self._profile.inject(DIDResolver)
+            try:
+                doc_dict: dict = await resolver.resolve(self._profile, qualified_did)
+                doc: ResolvedDocument = pydid.deserialize_document(
+                    doc_dict, strict=True
+                )
+                did_url = doc.service[0].id
+            except ResolverError as error:
+                raise DIDXManagerError(
+                    "Failed to resolve public DID in invitation"
+                ) from error
+        pthid = conn_rec.invitation_msg_id or did_url
         attach = AttachDecorator.data_base64(did_doc.serialize())
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
