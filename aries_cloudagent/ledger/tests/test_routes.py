@@ -1,4 +1,5 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
+from typing import Tuple
 
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
@@ -228,11 +229,11 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            self.ledger.register_nym.return_value = True
+            success: bool = True
+            txn: dict = None
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (success, txn)
             result = await test_module.register_ledger_nym(self.request)
-            json_response.assert_called_once_with(
-                {"success": self.ledger.register_nym.return_value}
-            )
+            json_response.assert_called_once_with({"success": success})
             assert result is json_response.return_value
 
     async def test_register_nym_bad_request(self):

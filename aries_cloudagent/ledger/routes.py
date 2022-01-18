@@ -1,10 +1,14 @@
 """Ledger admin routes."""
 
+import json
+
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
+from ..connections.models.conn_record import ConnRecord
+from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     ENDPOINT,
@@ -12,8 +16,21 @@ from ..messaging.valid import (
     INDY_DID,
     INDY_RAW_PUBLIC_KEY,
     INT_EPOCH,
+    UUIDFour,
 )
-from ..storage.error import StorageError
+
+# from ..protocols.endorse_transaction.v1_0.manager import (
+#     TransactionManager,
+#     TransactionManagerError,
+# )
+from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
+    TransactionRecordSchema,
+)
+from ..protocols.endorse_transaction.v1_0.util import (
+    is_author_role,
+    get_endorser_connection_id,
+)
+from ..storage.error import StorageError, StorageNotFoundError
 from ..wallet.error import WalletError, WalletNotFoundError
 
 from .base import BaseLedger, Role as LedgerRole
@@ -109,6 +126,23 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     )
 
 
+class CreateDidTxnForEndorserOptionSchema(OpenAPISchema):
+    """Class for user to input whether to create a transaction for endorser or not."""
+
+    create_transaction_for_endorser = fields.Boolean(
+        description="Create Transaction For Endorser's signature",
+        required=False,
+    )
+
+
+class SchemaConnIdMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking connection id."""
+
+    conn_id = fields.Str(
+        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+    )
+
+
 class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
@@ -128,12 +162,18 @@ class QueryStringEndpointSchema(OpenAPISchema):
     )
 
 
-class RegisterLedgerNymResponseSchema(OpenAPISchema):
+class TxnOrRegisterLedgerNymResponseSchema(OpenAPISchema):
     """Response schema for ledger nym registration."""
 
     success = fields.Bool(
         description="Success of nym registration operation",
         example=True,
+    )
+
+    txn = fields.Nested(
+        TransactionRecordSchema(),
+        required=False,
+        description="DID transaction to endorse",
     )
 
 
@@ -172,7 +212,9 @@ class GetDIDEndpointResponseSchema(OpenAPISchema):
     summary="Send a NYM registration to the ledger.",
 )
 @querystring_schema(RegisterLedgerNymQueryStringSchema())
-@response_schema(RegisterLedgerNymResponseSchema(), 200, description="")
+@querystring_schema(CreateDidTxnForEndorserOptionSchema())
+@querystring_schema(SchemaConnIdMatchInfoSchema())
+@response_schema(TxnOrRegisterLedgerNymResponseSchema(), 200, description="")
 async def register_ledger_nym(request: web.BaseRequest):
     """
     Request handler for registering a NYM with the ledger.
@@ -201,11 +243,63 @@ async def register_ledger_nym(request: web.BaseRequest):
     if role == "reset":  # indy: empty to reset, null for regular user
         role = ""  # visually: confusing - correct 'reset' to empty string here
 
+    create_transaction_for_endorser = json.loads(
+        request.query.get("create_transaction_for_endorser", "false")
+    )
+    write_ledger = not create_transaction_for_endorser
+    endorser_did = None
+    connection_id = request.query.get("conn_id")
+
+    # check if we need to endorse
+    if is_author_role(context.profile):
+        # authors cannot write to the ledger
+        write_ledger = False
+        create_transaction_for_endorser = True
+        if not connection_id:
+            # author has not provided a connection id, so determine which to use
+            connection_id = await get_endorser_connection_id(context.profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
+
+    if not write_ledger:
+        try:
+            async with context.profile.session() as session:
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, connection_id
+                )
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        except BaseModelError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        async with context.profile.session() as session:
+            endorser_info = await connection_record.metadata_get(
+                session, "endorser_info"
+            )
+        if not endorser_info:
+            raise web.HTTPForbidden(
+                reason="Endorser Info is not set up in "
+                "connection metadata for this connection record"
+            )
+        if "endorser_did" not in endorser_info.keys():
+            raise web.HTTPForbidden(
+                reason=' "endorser_did" is not set in "endorser_info"'
+                " in connection metadata for this connection record"
+            )
+        endorser_did = endorser_info["endorser_did"]
+
     success = False
+    txn = None
     async with ledger:
         try:
-            await ledger.register_nym(did, verkey, alias, role)
-            success = True
+            (success, txn) = await ledger.register_nym(
+                did,
+                verkey,
+                alias,
+                role,
+                write_ledger=write_ledger,
+                endorser_did=endorser_did,
+            )
         except LedgerTransactionError as err:
             raise web.HTTPForbidden(reason=err.roll_up)
         except LedgerError as err:
@@ -220,7 +314,10 @@ async def register_ledger_nym(request: web.BaseRequest):
                 )
             )
 
-    return web.json_response({"success": success})
+    if write_ledger:
+        return web.json_response({"success": success})
+    else:
+        return web.json_response({"success": success, "txn": txn})
 
 
 @docs(
