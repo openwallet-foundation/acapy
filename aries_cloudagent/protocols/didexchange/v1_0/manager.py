@@ -4,7 +4,7 @@ import json
 import logging
 import pydid
 
-from pydid import BaseDIDDocument as ResolvedDocument
+from pydid import BaseDIDDocument as ResolvedDocument, DIDCommService
 
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.diddoc import DIDDoc
@@ -146,7 +146,13 @@ class DIDXManager(BaseConnectionManager):
 
             # Save the invitation for later processing
             await conn_rec.attach_invitation(session, invitation)
-
+            if not conn_rec.invitation_key and conn_rec.their_public_did:
+                did_document = await self.get_resolved_did_document(
+                    conn_rec.their_public_did
+                )
+                conn_rec.invitation_key = did_document.verification_method[
+                    0
+                ].public_key_base58
         if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
             request = await self.create_request(conn_rec, mediation_id=mediation_id)
             responder = self.profile.inject_or(BaseResponder)
@@ -303,19 +309,8 @@ class DIDXManager(BaseConnectionManager):
         )
         if conn_rec.their_public_did is not None:
             qualified_did = conn_rec.their_public_did
-            if not conn_rec.their_public_did.startswith("did:"):
-                qualified_did = f"did:sov:{conn_rec.their_public_did}"
-            resolver = self._profile.inject(DIDResolver)
-            try:
-                doc_dict: dict = await resolver.resolve(self._profile, qualified_did)
-                doc: ResolvedDocument = pydid.deserialize_document(
-                    doc_dict, strict=True
-                )
-                did_url = doc.service[0].id
-            except ResolverError as error:
-                raise DIDXManagerError(
-                    "Failed to resolve public DID in invitation"
-                ) from error
+            did_document = await self.get_resolved_did_document(qualified_did)
+            did_url = await self.get_first_applicable_didcomm_service(did_document)
         pthid = conn_rec.invitation_msg_id or did_url
         attach = AttachDecorator.data_base64(did_doc.serialize())
         async with self.profile.session() as session:
@@ -481,9 +476,7 @@ class DIDXManager(BaseConnectionManager):
             )
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
-            if not await request.did_doc_attach.data.verify(wallet):
-                raise DIDXManagerError("DID Doc signature failed verification")
-        conn_did_doc = DIDDoc.from_json(request.did_doc_attach.data.signed.decode())
+            conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
         if request.did != conn_did_doc.did:
             raise DIDXManagerError(
                 (
@@ -753,7 +746,9 @@ class DIDXManager(BaseConnectionManager):
             raise DIDXManagerError("No DIDDoc attached; cannot connect to public DID")
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
-            conn_did_doc = await self.verify_diddoc(wallet, response.did_doc_attach)
+            conn_did_doc = await self.verify_diddoc(
+                wallet, response.did_doc_attach, conn_rec.invitation_key
+            )
         if their_did != conn_did_doc.did:
             raise DIDXManagerError(
                 f"Connection DID {their_did} "
@@ -848,12 +843,53 @@ class DIDXManager(BaseConnectionManager):
         self,
         wallet: BaseWallet,
         attached: AttachDecorator,
+        invi_key: str = None,
     ) -> DIDDoc:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
         if not signed_diddoc_bytes:
             raise DIDXManagerError("DID doc attachment is not signed.")
-        if not await attached.data.verify(wallet):
+        if not await attached.data.verify(wallet, invi_key):
             raise DIDXManagerError("DID doc attachment signature failed verification")
 
         return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
+
+    async def get_resolved_did_document(self, qualified_did: str) -> ResolvedDocument:
+        """Return resolved DID document."""
+        resolver = self._profile.inject(DIDResolver)
+        if not qualified_did.startswith("did:"):
+            qualified_did = f"did:sov:{qualified_did}"
+        try:
+            doc_dict: dict = await resolver.resolve(self._profile, qualified_did)
+            doc = pydid.deserialize_document(doc_dict, strict=True)
+            return doc
+        except ResolverError as error:
+            raise DIDXManagerError(
+                "Failed to resolve public DID in invitation"
+            ) from error
+
+    async def get_first_applicable_didcomm_service(
+        self, did_doc: ResolvedDocument
+    ) -> str:
+        """Return first applicable DIDComm service url with highest priority."""
+        if not did_doc.service:
+            raise DIDXManagerError(
+                "Cannot connect via public DID that has no associated services"
+            )
+
+        didcomm_services = sorted(
+            [
+                service
+                for service in did_doc.service
+                if isinstance(service, DIDCommService)
+            ],
+            key=lambda service: service.priority,
+        )
+
+        if not didcomm_services:
+            raise DIDXManagerError(
+                "Cannot connect via public DID that has no associated DIDComm services"
+            )
+
+        first_didcomm_service, *_ = didcomm_services
+        return first_didcomm_service.id

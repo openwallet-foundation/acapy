@@ -414,7 +414,7 @@ class AttachDecoratorData(BaseModel):
                 )
             self.jws_ = AttachDecoratorDataJWS.deserialize(jws)
 
-    async def verify(self, wallet: BaseWallet) -> bool:
+    async def verify(self, wallet: BaseWallet, signer_verkey: str = None) -> bool:
         """
         Verify the signature(s).
 
@@ -428,7 +428,7 @@ class AttachDecoratorData(BaseModel):
         assert self.jws
 
         b64_payload = unpad(set_urlsafe_b64(self.base64, True))
-
+        verkey_list = []
         for sig in [self.jws] if self.signatures == 1 else self.jws.signatures:
             b64_protected = sig.protected
             b64_sig = sig.signature
@@ -438,10 +438,13 @@ class AttachDecoratorData(BaseModel):
             sign_input = (b64_protected + "." + b64_payload).encode("ascii")
             b_sig = b64_to_bytes(b64_sig, urlsafe=True)
             verkey = bytes_to_b58(b64_to_bytes(protected["jwk"]["x"], urlsafe=True))
+            verkey_list.append(verkey)
             if not await wallet.verify_message(
                 sign_input, b_sig, verkey, KeyType.ED25519
             ):
                 return False
+        if signer_verkey and signer_verkey not in verkey_list:
+            return False
         return True
 
     def __eq__(self, other):
