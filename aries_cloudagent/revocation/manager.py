@@ -15,6 +15,12 @@ from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .util import notify_pending_cleared_event, notify_revocation_published_event
+from ..protocols.issue_credential.v1_0.models.credential_exchange import (
+    V10CredentialExchange,
+)
+from ..protocols.issue_credential.v2_0.models.cred_ex_record import (
+    V20CredExRecord,
+)
 
 
 class RevocationManagerError(BaseError):
@@ -65,6 +71,7 @@ class RevocationManager:
                 "No issuer credential revocation record found for "
                 f"credential exchange id {cred_ex_id}"
             ) from err
+
         return await self.revoke_credential(
             rev_reg_id=rec.rev_reg_id,
             cred_rev_id=rec.cred_rev_id,
@@ -121,7 +128,6 @@ class RevocationManager:
         if publish:
             rev_reg = await revoc.get_ledger_registry(rev_reg_id)
             await rev_reg.get_or_fetch_local_tails_path()
-
             # pick up pending revocations on input revocation registry
             crids = list(set(issuer_rr_rec.pending_pub + [cred_rev_id]))
             (delta_json, _) = await issuer.revoke_credentials(
@@ -132,6 +138,7 @@ class RevocationManager:
                 await issuer_rr_rec.send_entry(self._profile)
                 async with self._profile.session() as session:
                     await issuer_rr_rec.clear_pending(session)
+                await self.set_cred_revoked_state(rev_reg_id, [cred_rev_id])
                 await notify_revocation_published_event(
                     self._profile, rev_reg_id, [cred_rev_id]
                 )
@@ -197,7 +204,7 @@ class RevocationManager:
                     result[issuer_rr_rec.revoc_reg_id] = published
                     await issuer_rr_rec.clear_pending(txn, published)
                     await txn.commit()
-
+                    await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
                     await notify_revocation_published_event(
                         self._profile, issuer_rr_rec.revoc_reg_id, crids
                     )
@@ -247,3 +254,50 @@ class RevocationManager:
             await txn.commit()
 
         return result
+
+    async def set_cred_revoked_state(
+        self, rev_reg_id: str, cred_rev_ids: Sequence[str]
+    ) -> None:
+        """
+        Update credentials state to credential_revoked.
+
+        Args:
+            rev_reg_id: revocation registry ID
+            cred_rev_ids: list of credential revocation IDs
+
+        Returns:
+            None
+
+        """
+        for cred_rev_id in cred_rev_ids:
+            async with self._profile.session() as session:
+                try:
+                    rev_rec = await IssuerCredRevRecord.retrieve_by_ids(
+                        session, rev_reg_id, cred_rev_id
+                    )
+                    try:
+                        cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                            session, rev_rec.cred_ex_id
+                        )
+                        cred_ex_record.state = (
+                            V10CredentialExchange.STATE_CREDENTIAL_REVOKED
+                        )
+                        await cred_ex_record.save(session, reason="revoke credential")
+
+                    except StorageNotFoundError:
+                        try:
+                            cred_ex_record = await V20CredExRecord.retrieve_by_id(
+                                session, rev_rec.cred_ex_id
+                            )
+                            cred_ex_record.state = (
+                                V20CredExRecord.STATE_CREDENTIAL_REVOKED
+                            )
+                            await cred_ex_record.save(
+                                session, reason="revoke credential"
+                            )
+
+                        except StorageNotFoundError:
+                            pass
+
+                except StorageNotFoundError:
+                    pass

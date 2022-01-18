@@ -279,63 +279,67 @@ class IndyCredxIssuer(IndyIssuer):
 
         if revoc_reg_id:
             try:
-                txn = await self._profile.transaction()
-                rev_reg = await txn.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
-                rev_reg_info = await txn.handle.fetch(
-                    CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
-                )
-                rev_reg_def = await txn.handle.fetch(CATEGORY_REV_REG_DEF, revoc_reg_id)
-                rev_key = await txn.handle.fetch(
-                    CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
-                )
-                if not rev_reg:
-                    raise IndyIssuerError("Revocation registry not found")
-                if not rev_reg_info:
-                    raise IndyIssuerError("Revocation registry metadata not found")
-                if not rev_reg_def:
-                    raise IndyIssuerError("Revocation registry definition not found")
-                if not rev_key:
-                    raise IndyIssuerError(
-                        "Revocation registry definition private data not found"
+                async with self._profile.transaction() as txn:
+                    rev_reg = await txn.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
+                    rev_reg_info = await txn.handle.fetch(
+                        CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                     )
-                # NOTE: we increment the index ahead of time to keep the
-                # transaction short. The revocation registry itself will NOT
-                # be updated because we always use ISSUANCE_BY_DEFAULT.
-                # If something goes wrong later, the index will be skipped.
-                # FIXME - double check issuance type in case of upgraded wallet?
-                rev_info = rev_reg_info.value_json
-                rev_reg_index = rev_info["curr_id"] + 1
-                try:
-                    rev_reg_def = RevocationRegistryDefinition.load(
-                        rev_reg_def.raw_value
+                    rev_reg_def = await txn.handle.fetch(
+                        CATEGORY_REV_REG_DEF, revoc_reg_id
                     )
-                except CredxError as err:
-                    raise IndyIssuerError(
-                        "Error loading revocation registry definition"
-                    ) from err
-                if rev_reg_index > rev_reg_def.max_cred_num:
-                    raise IndyIssuerRevocationRegistryFullError(
-                        "Revocation registry is full"
+                    rev_key = await txn.handle.fetch(
+                        CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
                     )
-                rev_info["curr_id"] = rev_reg_index
-                await txn.handle.replace(
-                    CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
-                )
+                    if not rev_reg:
+                        raise IndyIssuerError("Revocation registry not found")
+                    if not rev_reg_info:
+                        raise IndyIssuerError("Revocation registry metadata not found")
+                    if not rev_reg_def:
+                        raise IndyIssuerError(
+                            "Revocation registry definition not found"
+                        )
+                    if not rev_key:
+                        raise IndyIssuerError(
+                            "Revocation registry definition private data not found"
+                        )
+                    # NOTE: we increment the index ahead of time to keep the
+                    # transaction short. The revocation registry itself will NOT
+                    # be updated because we always use ISSUANCE_BY_DEFAULT.
+                    # If something goes wrong later, the index will be skipped.
+                    # FIXME - double check issuance type in case of upgraded wallet?
+                    rev_info = rev_reg_info.value_json
+                    rev_reg_index = rev_info["curr_id"] + 1
+                    try:
+                        rev_reg_def = RevocationRegistryDefinition.load(
+                            rev_reg_def.raw_value
+                        )
+                    except CredxError as err:
+                        raise IndyIssuerError(
+                            "Error loading revocation registry definition"
+                        ) from err
+                    if rev_reg_index > rev_reg_def.max_cred_num:
+                        raise IndyIssuerRevocationRegistryFullError(
+                            "Revocation registry is full"
+                        )
+                    rev_info["curr_id"] = rev_reg_index
+                    await txn.handle.replace(
+                        CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
+                    )
 
-                issuer_cr_rec = IssuerCredRevRecord(
-                    state=IssuerCredRevRecord.STATE_ISSUED,
-                    cred_ex_id=cred_ex_id,
-                    rev_reg_id=revoc_reg_id,
-                    cred_rev_id=str(rev_reg_index),
-                )
-                await issuer_cr_rec.save(
-                    txn,
-                    reason=(
-                        "Created issuer cred rev record for "
-                        f"rev reg id {revoc_reg_id}, {rev_reg_index}"
-                    ),
-                )
-                await txn.commit()
+                    issuer_cr_rec = IssuerCredRevRecord(
+                        state=IssuerCredRevRecord.STATE_ISSUED,
+                        cred_ex_id=cred_ex_id,
+                        rev_reg_id=revoc_reg_id,
+                        cred_rev_id=str(rev_reg_index),
+                    )
+                    await issuer_cr_rec.save(
+                        txn,
+                        reason=(
+                            "Created issuer cred rev record for "
+                            f"rev reg id {revoc_reg_id}, {rev_reg_index}"
+                        ),
+                    )
+                    await txn.commit()
             except AskarError as err:
                 raise IndyIssuerError(
                     "Error updating revocation registry index"

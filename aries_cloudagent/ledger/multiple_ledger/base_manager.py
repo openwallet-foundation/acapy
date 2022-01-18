@@ -6,6 +6,7 @@ from typing import Optional, Tuple, Mapping
 from ...core.error import BaseError
 from ...core.profile import Profile
 from ...ledger.base import BaseLedger
+from ...messaging.valid import IndyDID
 
 
 class MultipleLedgerManagerError(BaseError):
@@ -44,4 +45,7 @@ class BaseMultipleLedgerManager(ABC):
 
     def extract_did_from_identifier(self, identifier: str) -> str:
         """Return did from record identifier (REV_REG_ID, CRED_DEF_ID, SCHEMA_ID)."""
-        return identifier.split(":")[0]
+        if bool(IndyDID.PATTERN.match(identifier)):
+            return identifier.split(":")[-1]
+        else:
+            return identifier.split(":")[0]

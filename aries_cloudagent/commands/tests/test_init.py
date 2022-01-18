@@ -6,7 +6,7 @@ from ... import commands as test_module
 class TestInit(AsyncTestCase):
     def test_available(self):
         avail = test_module.available_commands()
-        assert len(avail) == 3
+        assert len(avail) == 4
 
     def test_run(self):
         with async_mock.patch.object(
