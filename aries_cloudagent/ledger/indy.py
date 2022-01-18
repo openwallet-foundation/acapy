@@ -963,6 +963,10 @@ class IndySdkLedger(BaseLedger):
                 request_json = await indy.ledger.build_nym_request(
                     public_info.did, did, verkey, alias, role
                 )
+            if endorser_did and not write_ledger:
+                request_json = await indy.ledger.append_request_endorser(
+                    request_json, endorser_did
+                )
             resp = await self._submit(
                 request_json, sign=True, sign_did=public_info, write_ledger=write_ledger
             )  # let ledger raise on insufficient privilege

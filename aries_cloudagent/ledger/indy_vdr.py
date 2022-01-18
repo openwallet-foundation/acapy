@@ -971,6 +971,9 @@ class IndyVdrLedger(BaseLedger):
         except VdrError as err:
             raise LedgerError("Exception when building nym request") from err
 
+        if endorser_did and not write_ledger:
+            nym_req.set_endorser(endorser_did)
+
         resp = await self._submit(
             nym_req, sign=True, sign_did=public_info, write_ledger=write_ledger
         )

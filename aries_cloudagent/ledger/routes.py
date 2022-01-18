@@ -19,10 +19,10 @@ from ..messaging.valid import (
     UUIDFour,
 )
 
-# from ..protocols.endorse_transaction.v1_0.manager import (
-#     TransactionManager,
-#     TransactionManagerError,
-# )
+from ..protocols.endorse_transaction.v1_0.manager import (
+    TransactionManager,
+    TransactionManagerError,
+)
 from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
@@ -49,6 +49,7 @@ from .multiple_ledger.ledger_config_schema import (
 )
 from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
+from .util import notify_did_event
 
 
 class LedgerModulesResultSchema(OpenAPISchema):
@@ -223,6 +224,7 @@ async def register_ledger_nym(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
+    outbound_handler = request["outbound_message_router"]
     async with context.profile.session() as session:
         ledger = session.inject_or(BaseLedger)
         if not ledger:
@@ -314,9 +316,36 @@ async def register_ledger_nym(request: web.BaseRequest):
                 )
             )
 
-    if write_ledger:
+    meta_data = {"verkey": verkey, "alias": alias, "role": role}
+    if not create_transaction_for_endorser:
+        # Notify event
+        await notify_did_event(context.profile, did, meta_data)
         return web.json_response({"success": success})
     else:
+        transaction_mgr = TransactionManager(context.profile)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=txn["signed_txn"],
+                connection_id=connection_id,
+                meta_data=meta_data,
+            )
+        except StorageError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+        # if auto-request, send the request to the endorser
+        if context.settings.get_value("endorser.auto_request"):
+            try:
+                transaction, transaction_request = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+            await outbound_handler(transaction_request, connection_id=connection_id)
+
         return web.json_response({"success": success, "txn": txn})
 
 
