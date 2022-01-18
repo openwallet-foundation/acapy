@@ -1,18 +1,18 @@
-"""Redis outbound transport."""
-
-from typing import Union
-
-import aioredis
+"""Kafka outbound transport."""
 import msgpack
+
+from aiokafka import AIOKafkaProducer
+from typing import Union
+from uuid import uuid4
 
 from ....core.profile import Profile
 from .base import BaseOutboundQueue, OutboundQueueConfigurationError, OutboundQueueError
 
 
-class RedisOutboundQueue(BaseOutboundQueue):
-    """Redis outbound transport class."""
+class KafkaOutboundQueue(BaseOutboundQueue):
+    """Kafka outbound transport class."""
 
-    config_key = "redis_outbound_queue"
+    config_key = "kafka_outbound_queue"
 
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
@@ -20,21 +20,23 @@ class RedisOutboundQueue(BaseOutboundQueue):
             plugin_config = root_profile.settings["plugin_config"] or {}
             config = plugin_config[self.config_key]
             self.connection = config["connection"]
+            if not isinstance(self.connection, list):
+                self.connection = [self.connection]
+            self.txn_id = config["transaction_id"] or str(uuid4())
         except KeyError as error:
             raise OutboundQueueConfigurationError(
                 "Configuration missing for redis queue"
             ) from error
 
         self.prefix = config.get("prefix", "acapy")
-        self.pool = aioredis.ConnectionPool.from_url(
-            self.connection, max_connections=10
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self.connection, transactional_id=self.txn_id
         )
-        self.redis = aioredis.Redis(connection_pool=self.pool)
 
     def __str__(self):
         """Return string representation of the outbound queue."""
         return (
-            f"RedisOutboundQueue("
+            f"KafkaOutboundQueue("
             f"connection={self.connection}, "
             f"prefix={self.prefix}"
             f")"
@@ -42,25 +44,11 @@ class RedisOutboundQueue(BaseOutboundQueue):
 
     async def start(self):
         """Start the transport."""
-        # aioredis will lazily connect but we can eagerly trigger connection with:
-        # await self.redis.ping()
-        # Calling this on enter to `async with` just before another queue
-        # operation is made does not make sense and we should just let aioredis
-        # do lazy connection.
+        await self.producer.start()
 
     async def stop(self):
         """Stop the transport."""
-        # aioredis cleans up automatically but we can clean up manually with:
-        # await self.pool.disconnect()
-        # However, calling this on exit of `async with` does not make sense and
-        # we should just let aioredis handle the connection lifecycle.
-
-    async def push(self, key: bytes, message: bytes):
-        """Push a ``message`` to redis on ``key``."""
-        try:
-            return await self.redis.rpush(key, message)
-        except aioredis.RedisError as error:
-            raise OutboundQueueError("Unexpected redis client exception") from error
+        await self.producer.stop()
 
     async def enqueue_message(
         self,
@@ -87,5 +75,6 @@ class RedisOutboundQueue(BaseOutboundQueue):
                 "payload": payload,
             }
         )
-        key = f"{self.prefix}.outbound_transport".encode()
-        return await self.push(key, message)
+        key = f"{self.prefix}.outbound_transport"
+        async with self.producer.transaction():
+            await self.producer.send(key, value=message, timestamp_ms=1000)

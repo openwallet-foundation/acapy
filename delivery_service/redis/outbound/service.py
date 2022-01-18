@@ -1,12 +1,11 @@
 import asyncio
+import aiohttp
+import aioredis
+import msgpack
 import urllib
 import sys
 
 from time import time
-
-import aiohttp
-import aioredis
-import msgpack
 
 
 def log_error(*args):
@@ -128,8 +127,8 @@ if __name__ == "__main__":
     if len(args) <= 1:
         raise SystemExit("Pass redis host URL as the first parameter")
     if len(args) > 2:
-        topic = args[2]
+        prefix = args[2]
     else:
-        topic = "acapy"
+        prefix = "acapy"
 
-    asyncio.get_event_loop().run_until_complete(main(args[1], topic))
+    asyncio.get_event_loop().run_until_complete(main(args[1], prefix))
