@@ -44,6 +44,7 @@ if [ "$OSTYPE" == "msys" ]; then
   CONTAINER_RUNTIME="winpty docker"
 fi
 
+. ./run_delivery_service
 RAND_NAME=$(env LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1)
 $CONTAINER_RUNTIME run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" \
     $ARGS aries-cloudagent-run "$@"
