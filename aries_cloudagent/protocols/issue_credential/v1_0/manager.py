@@ -915,7 +915,7 @@ class CredentialManager:
                 )
             )
 
-            cred_ex_record.state = None
+            cred_ex_record.state = V10CredentialExchange.STATE_ABANDONED
             code = message.description.get(
                 "code",
                 ProblemReportReason.ISSUANCE_ABANDONED.value,

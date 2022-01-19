@@ -4,6 +4,10 @@ from time import time
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
+from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange import (
+    V10CredentialExchange,
+)
+
 from .....core.in_memory import InMemoryProfile
 from .....indy.holder import IndyHolder, IndyHolderError
 from .....indy.issuer import IndyIssuer
@@ -1327,7 +1331,7 @@ class TestPresentationManager(AsyncTestCase):
             )
             save_ex.assert_called_once()
 
-            assert ret_exchange.state is None
+            assert ret_exchange.state == V10CredentialExchange.STATE_ABANDONED
 
     async def test_receive_problem_report_x(self):
         connection_id = "connection-id"
