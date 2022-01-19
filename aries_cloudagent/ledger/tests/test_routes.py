@@ -15,6 +15,7 @@ from ...ledger.multiple_ledger.base_manager import (
 
 from .. import routes as test_module
 from ..indy import Role
+from ...connections.models.conn_record import ConnRecord
 
 
 class TestLedgerRoutes(AsyncTestCase):
@@ -266,6 +267,184 @@ class TestLedgerRoutes(AsyncTestCase):
         self.ledger.register_nym.side_effect = test_module.WalletError("Error")
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.register_ledger_nym(self.request)
+
+    async def test_register_nym_create_transaction_for_endorser(self):
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "ENDORSER",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve, async_mock.patch.object(
+            test_module, "TransactionManager", async_mock.MagicMock()
+        ) as mock_txn_mgr, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_txn_mgr.return_value = async_mock.MagicMock(
+                create_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        serialize=async_mock.MagicMock(return_value={"...": "..."})
+                    )
+                )
+            )
+            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
+                metadata_get=async_mock.CoroutineMock(
+                    return_value={
+                        "endorser_did": ("did"),
+                        "endorser_name": ("name"),
+                    }
+                )
+            )
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
+                True,
+                {"signed_txn": {"...": "..."}},
+            )
+
+            result = await test_module.register_ledger_nym(self.request)
+            assert result == mock_response.return_value
+            mock_response.assert_called_once_with(
+                {"success": True, "txn": {"signed_txn": {"...": "..."}}}
+            )
+
+    async def test_register_nym_create_transaction_for_endorser_storage_x(self):
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "ENDORSER",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve, async_mock.patch.object(
+            test_module, "TransactionManager", async_mock.MagicMock()
+        ) as mock_txn_mgr:
+
+            mock_txn_mgr.return_value = async_mock.MagicMock(
+                create_record=async_mock.CoroutineMock(
+                    side_effect=test_module.StorageError()
+                )
+            )
+            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
+                metadata_get=async_mock.CoroutineMock(
+                    return_value={
+                        "endorser_did": ("did"),
+                        "endorser_name": ("name"),
+                    }
+                )
+            )
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
+                True,
+                {"signed_txn": {"...": "..."}},
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.register_ledger_nym(self.request)
+
+    async def test_register_nym_create_transaction_for_endorser_not_found_x(self):
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "ENDORSER",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve:
+            mock_conn_rec_retrieve.side_effect = test_module.StorageNotFoundError()
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
+                True,
+                {"signed_txn": {"...": "..."}},
+            )
+
+            with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.register_ledger_nym(self.request)
+
+    async def test_register_nym_create_transaction_for_endorser_base_model_x(self):
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "ENDORSER",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve:
+            mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
+                True,
+                {"signed_txn": {"...": "..."}},
+            )
+
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.register_ledger_nym(self.request)
+
+    async def test_register_nym_create_transaction_for_endorser_no_endorser_info_x(
+        self,
+    ):
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "ENDORSER",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve:
+            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
+                metadata_get=async_mock.CoroutineMock(return_value=None)
+            )
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
+                True,
+                {"signed_txn": {"...": "..."}},
+            )
+
+            with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.register_ledger_nym(self.request)
+
+    async def test_register_nym_create_transaction_for_endorser_no_endorser_did_x(self):
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "ENDORSER",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve:
+            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
+                metadata_get=async_mock.CoroutineMock(
+                    return_value={
+                        "endorser_name": ("name"),
+                    }
+                )
+            )
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
+                True,
+                {"signed_txn": {"...": "..."}},
+            )
+
+            with self.assertRaises(test_module.web.HTTPForbidden):
+                await test_module.register_ledger_nym(self.request)
 
     async def test_get_nym_role_a(self):
         self.profile.context.injector.bind_instance(
