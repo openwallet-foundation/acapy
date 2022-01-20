@@ -1,0 +1,22 @@
+FROM python:3.10-slim
+ENV ENABLE_PTVSD 0
+
+WORKDIR cloudagent
+ADD aries_cloudagent ./aries_cloudagent
+ADD requirements*.txt ./
+ADD bin ./bin
+ADD README.md ./
+ADD setup.py ./
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir \
+    -r requirements.txt \
+    -r requirements.askar.txt \
+    -r requirements.bbs.txt \
+    ddtrace \
+    datadog \
+    boto3[crt] \
+    -e .
+
+ENTRYPOINT ["aca-py"]
+CMD [""]
+
