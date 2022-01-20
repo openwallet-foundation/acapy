@@ -732,7 +732,7 @@ class V20CredManager:
                 )
             )
 
-            cred_ex_record.state = None
+            cred_ex_record.state = V20CredExRecord.STATE_ABANDONED
             code = message.description.get(
                 "code",
                 ProblemReportReason.ISSUANCE_ABANDONED.value,
