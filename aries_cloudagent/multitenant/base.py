@@ -354,6 +354,9 @@ class BaseMultitenantManager(ABC):
             extra_settings["wallet.key"] = wallet_key
 
         if wallet.jwt_iat and wallet.jwt_iat != iat:
+            LOGGER.info(
+                f" wallet_id: {wallet_id} wallet.jwt_iat: {wallet.jwt_iat}, iat: {iat}, token: {token}"
+            )
             raise MultitenantManagerError("Token not valid")
 
         profile = await self.get_wallet_profile(context, wallet, extra_settings)

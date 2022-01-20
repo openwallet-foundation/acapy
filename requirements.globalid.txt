@@ -1,0 +1,5 @@
+ddtrace==1.2.2
+datadog==0.44.0
+boto3[crt]==1.24.30
+cryptography==37.0.4
+pika~=1.2.1
