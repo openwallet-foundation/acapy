@@ -1,5 +1,4 @@
 """Redis inbound transport."""
-import asyncio
 import aioredis
 import msgpack
 import logging
@@ -7,6 +6,9 @@ import logging
 from threading import Thread
 
 from ....core.profile import Profile
+
+from ...wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
+
 from .base import BaseInboundQueue, InboundQueueConfigurationError, InboundQueueError
 
 
@@ -18,16 +20,22 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
         self._logger = logging.getLogger(__name__)
+        self._profile = root_profile
         try:
             plugin_config = root_profile.settings["plugin_config"] or {}
-            config = plugin_config[self.config_key]
-            self.connection = config["connection"]
+            config = plugin_config.get(self.config_key, {})
+            self.connection = (
+                self._profile.settings.get("transport.inbound_queue")
+                or config["connection"]
+            )
         except KeyError as error:
             raise InboundQueueConfigurationError(
                 "Configuration missing for redis queue"
             ) from error
 
-        self.prefix = config.get("prefix", "acapy")
+        self.prefix = self._profile.settings.get(
+            "transport.inbound_queue_prefix"
+        ) or config.get("prefix", "acapy")
         self.pool = aioredis.ConnectionPool.from_url(
             self.connection, max_connections=10
         )
@@ -61,30 +69,43 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
         self,
     ):
         """Recieve message from inbound queue and handle it."""
-        topic = f"{self.prefix}.inbound_transport"
+        inbound_topic = f"{self.prefix}.inbound_transport"
+        direct_response_topic = f"{self.prefix}.inbound_direct_responses"
         while True:
             try:
-                msg = await self.redis.blpop(topic, 0)
+                msg = await self.redis.blpop(inbound_topic, 0)
             except aioredis.RedisError as error:
                 raise InboundQueueError("Unexpected redis client exception") from error
             msg = msgpack.unpackb(msg)
             if not isinstance(msg, dict):
                 self._logger.error("Received non-dict message")
                 continue
-            elif "transport_type" not in msg and msg["transport_type"] not in [
-                "http",
-                "ws",
-            ]:
-                self._logger.error(
-                    "Received message with invalid transport type specified"
-                )
-                continue
             client_info = {"host": msg["host"], "remote": msg["remote"]}
             session = await self.create_session(
                 accept_undelivered=True, can_respond=True, client_info=client_info
             )
+            direct_reponse_requested = True if "txn_id" in msg else False
             async with session:
-                if msg["transport_type"] == "ws":
-                    await session.receive(msg["data"])
-                elif msg["transport_type"] == "http":
-                    await session.receive(msg["body"])
+                await session.receive(msg["data"].decode("utf-8"))
+                if direct_reponse_requested:
+                    txn_id = msg["txn_id"]
+                    transport_type = msg["transport_type"]
+                    response = await session.wait_response()
+                    response_data = {}
+                    if transport_type == "http" and response:
+                        if isinstance(response, bytes):
+                            if session.profile.settings.get(
+                                "emit_new_didcomm_mime_type"
+                            ):
+                                response_data["content-type"] = DIDCOMM_V1_MIME_TYPE
+                            else:
+                                response_data["content-type"] = DIDCOMM_V0_MIME_TYPE
+                        else:
+                            response_data["content-type"] = "application/json"
+                    response_data["response"] = response.encode("utf-8")
+                    message = {}
+                    message["txn_id"] = txn_id
+                    message["response_data"] = response_data
+                    await self.redis.rpush(
+                        direct_response_topic, msgpack.dumps(message)
+                    )

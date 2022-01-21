@@ -1,4 +1,5 @@
 """Kafka outbound transport."""
+import logging
 import msgpack
 
 from aiokafka import AIOKafkaProducer
@@ -16,19 +17,24 @@ class KafkaOutboundQueue(BaseOutboundQueue):
 
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
+        self._logger = logging.getLogger(__name__)
+        self._profile = root_profile
         try:
             plugin_config = root_profile.settings["plugin_config"] or {}
-            config = plugin_config[self.config_key]
-            self.connection = config["connection"]
-            if not isinstance(self.connection, list):
-                self.connection = [self.connection]
+            config = plugin_config.get(self.config_key, {})
+            self.connection = (
+                self._profile.settings.get("transport.outbound_queue")
+                or config["connection"]
+            )
             self.txn_id = config["transaction_id"] or str(uuid4())
         except KeyError as error:
             raise OutboundQueueConfigurationError(
                 "Configuration missing for redis queue"
             ) from error
 
-        self.prefix = config.get("prefix", "acapy")
+        self.prefix = self._profile.settings.get(
+            "transport.outbound_queue_prefix"
+        ) or config.get("prefix", "acapy")
         self.producer = AIOKafkaProducer(
             bootstrap_servers=self.connection, transactional_id=self.txn_id
         )

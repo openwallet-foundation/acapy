@@ -1,6 +1,6 @@
-FROM bcgovimages/von-image:py36-1.15-1
+FROM python:3.8-slim
 ADD requirements.txt ./
 RUN pip3 install --no-cache-dir \
     -r requirements.txt
 ADD ../service.py ./
-ENTRYPOINT  ["python3", "./service.py"]
+ENTRYPOINT  ["python3", "./service.py \"$@\""]

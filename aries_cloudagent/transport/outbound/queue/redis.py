@@ -1,11 +1,12 @@
 """Redis outbound transport."""
+import aioredis
+import logging
+import msgpack
 
 from typing import Union
 
-import aioredis
-import msgpack
-
 from ....core.profile import Profile
+
 from .base import BaseOutboundQueue, OutboundQueueConfigurationError, OutboundQueueError
 
 
@@ -16,16 +17,23 @@ class RedisOutboundQueue(BaseOutboundQueue):
 
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
+        self._logger = logging.getLogger(__name__)
+        self._profile = root_profile
         try:
             plugin_config = root_profile.settings["plugin_config"] or {}
-            config = plugin_config[self.config_key]
-            self.connection = config["connection"]
+            config = plugin_config.get(self.config_key, {})
+            self.connection = (
+                self._profile.settings.get("transport.outbound_queue")
+                or config["connection"]
+            )
         except KeyError as error:
             raise OutboundQueueConfigurationError(
                 "Configuration missing for redis queue"
             ) from error
 
-        self.prefix = config.get("prefix", "acapy")
+        self.prefix = self._profile.settings.get(
+            "transport.outbound_queue_prefix"
+        ) or config.get("prefix", "acapy")
         self.pool = aioredis.ConnectionPool.from_url(
             self.connection, max_connections=10
         )

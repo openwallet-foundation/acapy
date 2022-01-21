@@ -6,12 +6,16 @@ import logging
 import json
 import pathlib
 
-from aiokafka import AIOKafkaConsumer, ConsumerRebalanceListener
+from aiokafka import AIOKafkaConsumer, AIOKafkaProducer, ConsumerRebalanceListener
 from aiokafka.errors import OffsetOutOfRangeError
 from collections import Counter
 from threading import Thread
+from uuid import uuid4
 
 from ....core.profile import Profile
+
+from ...wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
+
 from .base import BaseInboundQueue, InboundQueueConfigurationError
 
 OFFSET_LOCAL_FILE = os.path.join(
@@ -103,21 +107,32 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
         self._logger = logging.getLogger(__name__)
+        self._profile = root_profile
         try:
             plugin_config = root_profile.settings["plugin_config"] or {}
-            config = plugin_config[self.config_key]
-            self.connection = config["connection"]
+            config = plugin_config.get(self.config_key, {})
+            self.connection = (
+                self._profile.settings.get("transport.inbound_queue")
+                or config["connection"]
+            )
+            self.txn_id = config["transaction_id"] or str(uuid4())
         except KeyError as error:
             raise InboundQueueConfigurationError(
                 "Configuration missing for Kafka queue"
             ) from error
 
-        self.prefix = config.get("prefix", "acapy")
+        self.prefix = self._profile.settings.get(
+            "transport.inbound_queue_prefix"
+        ) or config.get("prefix", "acapy")
         self.consumer = AIOKafkaConsumer(
             bootstrap_servers=self.connection,
             group_id="my_group",
             enable_auto_commit=False,
             auto_offset_reset="none",
+            isolation_level="read_committed",
+        )
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self.connection, transactional_id=self.txn_id
         )
 
     def __str__(self):
@@ -131,18 +146,13 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
 
     async def start(self):
         """Start the transport."""
-        # aioredis will lazily connect but we can eagerly trigger connection with:
-        # await self.redis.ping()
-        # Calling this on enter to `async with` just before another queue
-        # operation is made does not make sense and we should just let aioredis
-        # do lazy connection.
+        await self.producer.start()
+        await self.consumer.start()
 
     async def stop(self):
         """Stop the transport."""
-        # aioredis cleans up automatically but we can clean up manually with:
-        # await self.pool.disconnect()
-        # However, calling this on exit of `async with` does not make sense and
-        # we should just let aioredis handle the connection lifecycle.
+        await self.producer.stop()
+        await self.consumer.stop()
 
     async def save_state_every_second(self, local_state):
         """Update local state."""
@@ -157,11 +167,11 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         self,
     ):
         """Recieve message from inbound queue and handle it."""
-        await self.consumer.start()
-        topic = f"{self.prefix}.inbound_transport"
+        inbound_topic = f"{self.prefix}.inbound_transport"
+        direct_response_topic = f"{self.prefix}.inbound_direct_responses"
         local_state = LocalState()
         listener = RebalanceListener(self.consumer, local_state)
-        self.consumer.subscribe(topics=[topic], listener=listener)
+        self.consumer.subscribe(topics=[inbound_topic], listener=listener)
         save_task = asyncio.create_task(self.save_state_every_second(local_state))
         session = await self.create_session(accept_undelivered=True, can_respond=False)
         try:
@@ -181,18 +191,40 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                         if not isinstance(msg, dict):
                             self._logger.error("Received non-dict message")
                             continue
-                        elif "transport_type" not in msg and msg[
-                            "transport_type"
-                        ] not in ["http", "ws"]:
-                            self._logger.error(
-                                "Received message with invalid transport type specified"
-                            )
-                            continue
+                        direct_reponse_requested = True if "txn_id" in msg else False
                         async with session:
-                            if msg["transport_type"] == "ws":
-                                await session.receive(msg["data"])
-                            elif msg["transport_type"] == "http":
-                                await session.receive(msg["body"])
+                            await session.receive(msg["data"].decode("utf-8"))
+                            if direct_reponse_requested:
+                                txn_id = msg["txn_id"]
+                                transport_type = msg["transport_type"]
+                                response = await session.wait_response()
+                                response_data = {}
+                                if transport_type == "http" and response:
+                                    if isinstance(response, bytes):
+                                        if session.profile.settings.get(
+                                            "emit_new_didcomm_mime_type"
+                                        ):
+                                            response_data[
+                                                "content-type"
+                                            ] = DIDCOMM_V1_MIME_TYPE
+                                        else:
+                                            response_data[
+                                                "content-type"
+                                            ] = DIDCOMM_V0_MIME_TYPE
+                                    else:
+                                        response_data[
+                                            "content-type"
+                                        ] = "application/json"
+                                response_data["response"] = response.encode("utf-8")
+                                message = {}
+                                message["txn_id"] = txn_id
+                                message["response_data"] = response_data
+                                async with self.producer.transaction():
+                                    await self.producer.send(
+                                        direct_response_topic,
+                                        value=msgpack.dumps(message),
+                                        timestamp_ms=1000,
+                                    )
                         counts[msg.key] += 1
                     local_state.add_counts(tp, counts, msg.offset)
         finally:

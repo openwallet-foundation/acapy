@@ -4,13 +4,27 @@ cd "$(dirname "$0")" || exit 1
 # external queue setup, if needed
 inboundQueueArgs=()
 outboundQueueArgs=()
+ENABLE_REDIS_INBOUND=0
+ENABLE_KAFKA_INBOUND=0
+ENABLE_REDIS_OUTBOUND=0
+ENABLE_KAFKA_OUTBOUND=0
+REDIS_INBOUND_CLASS_KEYWORD="RedisInboundQueue"
+KAFKA_INBOUND_CLASS_KEYWORD="KafkaInboundQueue"
+REDIS_OUTBOUND_CLASS_KEYWORD="RedisOutboundQueue"
+KAFKA_OUTBOUND_CLASS_KEYWORD="KafkaOutboundQueue"
 declare -a acapyArgs=($@)
 for (( i = 0; i < ${#acapyArgs[*]}; ++ i ))
 do
   	# outbound transport queue
 	if [[ "${acapyArgs[$i]}" == "--outbound-queue-class" || "${acapyArgs[$i]}" == "-oqc" ]]; then
-		outboundQueueArgs+=("${acapyArgs[$i]}")
-		outboundQueueArgs+=("${acapyArgs[$i+1]}")
+    if echo "${acapyArgs[$i+1]}" | grep -q "$REDIS_OUTBOUND_CLASS_KEYWORD"; then
+      ENABLE_REDIS_OUTBOUND=1
+      ENABLE_KAFKA_OUTBOUND=0
+    fi
+    if echo "${acapyArgs[$i+1]}" | grep -q "$KAFKA_OUTBOUND_CLASS_KEYWORD"; then
+      ENABLE_REDIS_OUTBOUND=0
+      ENABLE_KAFKA_OUTBOUND=1
+    fi
 	fi
 	if [[ "${acapyArgs[$i]}" == "--outbound-queue" || "${acapyArgs[$i]}" == "-oq" ]]; then
 		outboundQueueArgs+=("${acapyArgs[$i]}")
@@ -22,8 +36,14 @@ do
 	fi
 	# inbound transport queue
 	if [[ "${acapyArgs[$i]}" == "--inbound-queue-class" || "${acapyArgs[$i]}" == "-iqc" ]]; then
-		inboundQueueArgs+=("${acapyArgs[$i]}")
-		inboundQueueArgs+=("${acapyArgs[$i+1]}")
+		if echo "${acapyArgs[$i+1]}" | grep -q "$REDIS_INBOUND_CLASS_KEYWORD"; then
+      ENABLE_REDIS_INBOUND=1
+      ENABLE_KAFKA_INBOUND=0
+    fi
+    if echo "${acapyArgs[$i+1]}" | grep -q "$KAFKA_INBOUND_CLASS_KEYWORD"; then
+      ENABLE_REDIS_INBOUND=0
+      ENABLE_KAFKA_INBOUND=1
+    fi
 	fi
 	if [[ "${acapyArgs[$i]}" == "--inbound-queue" || "${acapyArgs[$i]}" == "-iq" ]]; then
 		inboundQueueArgs+=("${acapyArgs[$i]}")
@@ -38,47 +58,19 @@ do
 		inboundQueueArgs+=("${acapyArgs[$i+1]}")
 	fi
 done
-if [[ "${inboundQueueArgs[*]}" =~ "--inbound-queue" || "${inboundQueueArgs[*]}" =~ "-iq" ]]; then
-  REDIS_CLASS="aries_cloudagent.transport.inbound.queue.redis:RedisInboundQueue"
-  ENABLE_REDIS=0
-  KAFKA_CLASS="aries_cloudagent.transport.inbound.queue.kafka:KafkaInboundQueue"
-  ENABLE_KAFKA=0
-  for i in "${!inboundQueueArgs[@]}"; do
-    if [[ "${inboundQueueArgs[$i]}" == "$REDIS_CLASS" ]]; then
-        $ENABLE_REDIS = 1
-    fi
-    if [[ "${inboundQueueArgs[$i]}" == "$KAFKA_CLASS" ]]; then
-        $ENABLE_KAFKA = 1
-    fi
-  done
-  if [[ $ENABLE_REDIS = 1 ]]; then
-    echo "Starting Redis Inbound Message Service."
-    . ../delivery_service/redis/inbound/scripts/run.sh ${inboundQueueArgs[@]}
-  fi
-  if [[ $ENABLE_KAFKA = 1 ]]; then
-    echo "Starting Kafka Inbound Message Service."
-    . ../delivery_service/kafka/inbound/scripts/run.sh ${inboundQueueArgs[@]}
-  fi
+if [[ "$ENABLE_REDIS_INBOUND" == 1 ]]; then
+  echo "Starting Redis Inbound Message Service."
+  . ../delivery_service/redis/inbound/scripts/run.sh ${inboundQueueArgs[@]}
 fi
-if [[ "${outboundQueueArgs[*]}" =~ "--outbound-queue" || "${outboundQueueArgs[*]}" =~ "-oq" ]]; then
-    REDIS_CLASS="aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue"
-    ENABLE_REDIS=0
-    KAFKA_CLASS="aries_cloudagent.transport.outbound.queue.kafka:KafkaOutboundQueue"
-    ENABLE_KAFKA=0
-    for i in "${!outboundQueueArgs[@]}"; do
-    if [[ "${outboundQueueArgs[$i]}" == "$REDIS_CLASS" ]]; then
-        $ENABLE_REDIS = 1
-    fi
-    if [[ "${outboundQueueArgs[$i]}" == "$KAFKA_CLASS" ]]; then
-        $ENABLE_KAFKA = 1
-    fi
-  done
-  if [[ $ENABLE_REDIS = 1 ]]; then
-    echo "Starting Redis Outbound Message Service."
-    . ../delivery_service/redis/outbound/scripts/run.sh ${outboundQueueArgs[@]}
-  fi
-  if [[ $ENABLE_KAFKA = 1 ]]; then
-    echo "Starting Kafka Outbound Message Service."
-    . ../delivery_service/kafka/outbound/scripts/run.sh ${outboundQueueArgs[@]}
-  fi
+if [[ "$ENABLE_KAFKA_INBOUND" == 1 ]]; then
+  echo "Starting Kafka Inbound Message Service."
+  . ../delivery_service/kafka/inbound/scripts/run.sh ${inboundQueueArgs[@]}
+fi
+if [[ "$ENABLE_REDIS_OUTBOUND" == 1 ]]; then
+  echo "Starting Redis Outbound Message Service."
+  . ../delivery_service/redis/outbound/scripts/run.sh ${outboundQueueArgs[@]}
+fi
+if [[ $ENABLE_KAFKA_OUTBOUND = 1 ]]; then
+  echo "Starting Kafka Outbound Message Service."
+  . ../delivery_service/kafka/outbound/scripts/run.sh ${outboundQueueArgs[@]}
 fi

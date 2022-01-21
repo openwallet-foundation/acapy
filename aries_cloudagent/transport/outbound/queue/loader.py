@@ -12,7 +12,7 @@ LOGGER = logging.getLogger(__name__)
 
 def get_outbound_queue(root_profile: Profile) -> Optional[BaseOutboundQueue]:
     """Given settings, return instantiated outbound queue class."""
-    class_path = root_profile.settings.get("transport.outbound_queue")
+    class_path = root_profile.settings.get("transport.outbound_queue_class")
     if not class_path:
         LOGGER.info("No outbound queue loaded")
         return None

@@ -1,19 +1,23 @@
-import asyncio
+"""Kafka Outbound Delivery Service."""
 import aiohttp
-import msgpack
-import sys
+import argparse
+import asyncio
 import json
+import msgpack
 import os
 import pathlib
+import sys
 import urllib
 
 from aiokafka import AIOKafkaConsumer, ConsumerRebalanceListener, AIOKafkaProducer
 from aiokafka.errors import OffsetOutOfRangeError
 from collections import Counter
+from time import time
 from uuid import uuid4
 
 
 def log_error(*args):
+    """Print log error."""
     print(*args, file=sys.stderr)
 
 
@@ -99,30 +103,40 @@ class LocalState:
 
 
 class KafkaHandler:
-    def __init__(self, host: str, prefix: str, retry_timedelay_s: int = 15):
+    """Kafka outbound delivery."""
+
+    def __init__(self, host: str, prefix: str):
+        """Initialize KafkaHandler."""
         self._host = host
         self.consumer = None
+        self.consumer_retry = None
+        self.producer = None
         self.prefix = prefix
-        self.retry_timedelay_s = retry_timedelay_s
+        self.retry_interval = 5
+        self.retry_backoff = 0.25
+        self.outbound_topic = f"{self.prefix}.outbound_transport"
+        self.retry_topic = f"{self.prefix}.outbound_retry"
 
     async def run(self):
+        """Run the service."""
         self.consumer = AIOKafkaConsumer(
             bootstrap_servers=self._host,
             group_id="my_group",
             enable_auto_commit=False,
             auto_offset_reset="none",
+            isolation_level="read_committed",
         )
         self.consumer_retry = AIOKafkaConsumer(
             bootstrap_servers=self._host,
             group_id="my_group",
             enable_auto_commit=False,
             auto_offset_reset="none",
+            isolation_level="read_committed",
         )
         self.producer = AIOKafkaProducer(
-            bootstrap_servers=self.connection, transactional_id=str(uuid4())
+            bootstrap_servers=self._host, transactional_id=str(uuid4())
         )
         await self.consumer.start()
-        await self.consumer_retry.start()
         await self.producer.start()
         await asyncio.gather(self.process_delivery(), self.process_retries())
 
@@ -136,12 +150,11 @@ class KafkaHandler:
             local_state.dump_local_state()
 
     async def process_delivery(self):
+        """Process delivery of outbound messages."""
         http_client = aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar())
-        print("Listening for messages..")
-        topic = f"{self.prefix}.outbound_transport"
         local_state = LocalState()
         listener = RebalanceListener(self.consumer, local_state)
-        self.consumer.subscribe(topics=[topic], listener=listener)
+        self.consumer.subscribe(topics=[self.outbound_topic], listener=listener)
         save_task = asyncio.create_task(self.save_state_every_second(local_state))
         try:
             while True:
@@ -159,19 +172,19 @@ class KafkaHandler:
                         msg = msgpack.unpackb(msg)
                         if not isinstance(msg, dict):
                             log_error("Received non-dict message")
-                        elif b"endpoint" not in msg:
+                        elif "endpoint" not in msg:
                             log_error("No endpoint provided")
-                        elif b"payload" not in msg:
+                        elif "payload" not in msg:
                             log_error("No payload provided")
                         else:
                             headers = {}
-                            if b"headers" in msg:
-                                for hname, hval in msg[b"headers"].items():
+                            if "headers" in msg:
+                                for hname, hval in msg["headers"].items():
                                     if isinstance(hval, bytes):
                                         hval = hval.decode("utf-8")
                                     headers[hname.decode("utf-8")] = hval
-                            endpoint = msg[b"endpoint"].decode("utf-8")
-                            payload = msg[b"payload"]
+                            endpoint = msg["endpoint"].decode("utf-8")
+                            payload = msg["payload"]
                             parsed = urllib.parse.urlparse(endpoint)
                             if parsed.scheme == "http" or parsed.scheme == "https":
                                 print(f"Dispatch message to {endpoint}")
@@ -193,13 +206,14 @@ class KafkaHandler:
                                         )
                                         failed = True
                                 if failed:
-                                    retries = msg.get(b"retries") or 0
+                                    retries = msg.get("retries") or 0
                                     if retries < 5:
                                         await self.add_retry(
                                             {
                                                 "endpoint": endpoint,
                                                 "headers": headers,
                                                 "payload": payload,
+                                                "retries": retries + 1,
                                             }
                                         )
                                     else:
@@ -214,19 +228,25 @@ class KafkaHandler:
             await save_task
 
     async def add_retry(self, message: dict):
+        """Add undelivered message for future retries."""
+        wait_interval = pow(
+            self.retry_interval, 1 + (self.retry_backoff * (message["retries"] - 1))
+        )
+        retry_time = int(time() + wait_interval)
+        message["retry_time"] = retry_time
         async with self.producer.transaction():
             await self.producer.send(
-                f"{self.prefix}.outbound_retry",
+                self.retry_topic,
                 value=msgpack.dumps(message),
                 timestamp_ms=1000,
             )
 
     async def process_retries(self):
-        outbound_topic = f"{self.prefix}.outbound_transport"
-        retry_topic = f"{self.prefix}.outbound_retry"
+        """Process retries."""
+        await self.consumer_retry.start()
         local_state = LocalState()
         listener = RebalanceListener(self.consumer_retry, local_state)
-        self.consumer_retry.subscribe(topics=[retry_topic], listener=listener)
+        self.consumer_retry.subscribe(topics=[self.retry_topic], listener=listener)
         save_task = asyncio.create_task(self.save_state_every_second(local_state))
         try:
             while True:
@@ -241,10 +261,16 @@ class KafkaHandler:
                 for tp, msgs in msg_set.items():
                     counts = Counter()
                     for msg in msgs:
-                        async with self.producer.transaction():
-                            await self.producer.send(
-                                outbound_topic, value=msg, timestamp_ms=1000
-                            )
+                        msg = msgpack.unpackb(msg)
+                        retry_time = msg["retry_time"]
+                        if int(time()) > retry_time:
+                            del msg["retry_time"]
+                            async with self.producer.transaction():
+                                await self.producer.send(
+                                    self.outbound_topic,
+                                    value=msgpack.dumps(msg),
+                                    timestamp_ms=1000,
+                                )
                         counts[msg.key] += 1
                     local_state.add_counts(tp, counts, msg.offset)
         finally:
@@ -254,18 +280,27 @@ class KafkaHandler:
             await save_task
 
 
-async def main(host: str, topic: str):
-    handler = KafkaHandler(host, topic)
+async def main():
+    """Start services."""
+    parser = argparse.ArgumentParser(description="Kafka Outbound Delivery Service.")
+    parser.add_argument(
+        "-oq",
+        "--outbound-queue",
+        dest="outbound_queue",
+        type=str,
+    )
+    parser.add_argument(
+        "-oqp",
+        "--outbound-queue-prefix",
+        dest="outbound_queue_prefix",
+        type=str,
+    )
+    args = parser.parse_args()
+    host = args.outbound_queue
+    prefix = args.outbound_queue_prefix
+    handler = KafkaHandler(host, prefix)
     await handler.run()
 
 
 if __name__ == "__main__":
-    args = sys.argv
-    if len(args) <= 1:
-        raise SystemExit("Pass redis host URL as the first parameter")
-    if len(args) > 2:
-        topic = args[2]
-    else:
-        topic = "acapy"
-
-    asyncio.get_event_loop().run_until_complete(main(args[1], topic))
+    asyncio.get_event_loop().run_until_complete(main())

@@ -1161,13 +1161,83 @@ class TransportGroup(ArgumentGroup):
             type=str,
             env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE",
             help=(
+                "Specifies outbound queue connection details/host. The input for "
+                "this option takes the form `[protocol]://[host]:[port]`. So for "
+                "example, to use Redis on host `myredis.mydomain.com` the input "
+                "should be `redis://myredis.mydomain.com:port`. Currently, support "
+                "Redis and Kafka backend only."
+            ),
+        )
+        parser.add_argument(
+            "-oqc",
+            "--outbound-queue-class",
+            dest="outbound_queue_class",
+            type=str,
+            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_CLASS",
+            help=(
                 "Defines the location of the Outbound Queue Engine. This must be "
                 "a 'dotpath' to a Python module on the PYTHONPATH, followed by a "
                 "colon, followed by the name of a Python class that implements "
                 "BaseOutboundQueue. This commandline option is the official entry "
                 "point of ACA-py's pluggable queue interface. The default value is: "
                 "'aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue'."
-                ""
+            ),
+        )
+        parser.add_argument(
+            "-oqp",
+            "--outbound-queue-prefix",
+            dest="outbound_queue_prefix",
+            type=str,
+            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX",
+            help=(
+                "Specifies the queue topic prefix. The queue topic is generated "
+                "in the following form: 'prefix.outbound_transport'. The default value"
+                "is the value `acapy`, so a queue key of 'acapy.outbound_transport' "
+                "is generated in the case of the default settings. ACA-py will send "
+                "messages to the queue using this generated key as the topic."
+            ),
+        )
+        parser.add_argument(
+            "-iq",
+            "--inbound-queue",
+            dest="inbound_queue",
+            type=str,
+            env_var="ACAPY_INBOUND_TRANSPORT_QUEUE",
+            help=(
+                "Specifies inbound queue connection details/host. The input for "
+                "this option takes the form `[protocol]://[host]:[port]`. So for "
+                "example, to use Redis on host `myredis.mydomain.com` the input "
+                "should be `redis://myredis.mydomain.com:port`. Currently, support "
+                "Redis and Kafka backend only."
+            ),
+        )
+        parser.add_argument(
+            "-iqc",
+            "--inbound-queue-class",
+            dest="inbound_queue_class",
+            type=str,
+            env_var="ACAPY_INBOUND_TRANSPORT_QUEUE_CLASS",
+            help=(
+                "Defines the location of the Inbound Queue Engine. This must be "
+                "a 'dotpath' to a Python module on the PYTHONPATH, followed by a "
+                "colon, followed by the name of a Python class that implements "
+                "BaseInboundQueue. This commandline option is the official entry "
+                "point of ACA-py's pluggable queue interface. The default value is: "
+                "'aries_cloudagent.transport.inbound.queue.redis:RedisInboundQueue'."
+            ),
+        )
+        parser.add_argument(
+            "-iqp",
+            "--inbound-queue-prefix",
+            dest="inbound_queue_prefix",
+            type=str,
+            env_var="ACAPY_INBOUND_TRANSPORT_QUEUE_PREFIX",
+            help=(
+                "Specifies the queue topic prefix. The queue topic is generated "
+                "in the following form: 'prefix.inbound_transport'. The default value"
+                "is the value `acapy`, so a queue key of 'acapy.inbound_transport' "
+                "is generated in the case of the default settings. ACA-py will send "
+                "messages to the queue using this generated key as the topic."
             ),
         )
         parser.add_argument(
@@ -1262,6 +1332,16 @@ class TransportGroup(ArgumentGroup):
             settings["transport.outbound_configs"] = args.outbound_transports
         if args.outbound_queue:
             settings["transport.outbound_queue"] = args.outbound_queue
+        if args.outbound_queue_class:
+            settings["transport.outbound_queue_class"] = args.outbound_queue_class
+        if args.outbound_queue_prefix:
+            settings["transport.outbound_queue_prefix"] = args.outbound_queue_prefix
+        if args.inbound_queue:
+            settings["transport.inbound_queue"] = args.inbound_queue
+        if args.inbound_queue_class:
+            settings["transport.inbound_queue_class"] = args.inbound_queue_class
+        if args.inbound_queue_prefix:
+            settings["transport.inbound_queue_prefix"] = args.inbound_queue_prefix
 
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 

@@ -1,6 +1,8 @@
-import asyncio
+"""Redis Outbound Delivery Service."""
 import aiohttp
 import aioredis
+import argparse
+import asyncio
 import msgpack
 import urllib
 import sys
@@ -9,28 +11,34 @@ from time import time
 
 
 def log_error(*args):
+    """Print log error."""
     print(*args, file=sys.stderr)
 
 
 class RedisHandler:
-    def __init__(self, host: str, topic: str):
+    """Redis outbound delivery."""
+
+    def __init__(self, host: str, prefix: str):
+        """Initialize RedisHandler."""
         self._host = host
         self._pool = None
-        self._topic = topic
+        self.prefix = prefix
         self.retry_interval = 5
         self.retry_backoff = 0.25
+        self.outbound_topic = f"{self.prefix}.outbound_transport"
+        self.retry_topic = f"{self.prefix}.outbound_retry"
 
     async def run(self):
+        """Run the service."""
         self._pool = await aioredis.create_pool(self._host)
         await asyncio.gather(self.process_delivery(), self.process_retries())
 
     async def process_delivery(self):
+        """Process delivery of outbound messages."""
         http_client = aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar())
-        print("Listening for messages..")
-        topic = f"{self._topic}.outbound_transport"
         async with self._pool.get() as conn:
             while True:
-                (_, msg) = await conn.execute("BLPOP", topic, 0)
+                (_, msg) = await conn.execute("BLPOP", self.outbound_topic, 0)
                 msg = msgpack.unpackb(msg)
                 if not isinstance(msg, dict):
                     log_error("Received non-dict message")
@@ -79,6 +87,7 @@ class RedisHandler:
                         log_error(f"Unsupported scheme: {parsed.scheme}")
 
     async def add_retry(self, message: dict):
+        """Add undelivered message for future retries."""
         wait_interval = pow(
             self.retry_interval, 1 + (self.retry_backoff * (message["retries"] - 1))
         )
@@ -88,14 +97,13 @@ class RedisHandler:
         )
 
     async def process_retries(self):
-        outbound_topic = f"{self._topic}.outbound_transport"
-        retry_topic = f"{self._topic}.outbound_retry"
+        """Process retries."""
         async with self._pool.get() as conn:
             while True:
                 max_score = int(time())
                 rows = await conn.execute(
                     "ZRANGEBYSCORE",
-                    retry_topic,
+                    self.retry_topic,
                     0,
                     max_score,
                     "LIMIT",
@@ -106,29 +114,38 @@ class RedisHandler:
                     for message in rows:
                         count = await conn.execute(
                             "ZREM",
-                            retry_topic,
+                            self.retry_topic,
                             message,
                         )
                         if count == 0:
                             # message removed by another process
                             continue
-                        await conn.execute("RPUSH", outbound_topic, message)
+                        await conn.execute("RPUSH", self.outbound_topic, message)
                 else:
                     await asyncio.sleep(1)
 
 
-async def main(host: str, topic: str):
-    handler = RedisHandler(host, topic)
+async def main():
+    """Start services."""
+    parser = argparse.ArgumentParser(description="Redis Outbound Delivery Service.")
+    parser.add_argument(
+        "-oq",
+        "--outbound-queue",
+        dest="outbound_queue",
+        type=str,
+    )
+    parser.add_argument(
+        "-oqp",
+        "--outbound-queue-prefix",
+        dest="outbound_queue_prefix",
+        type=str,
+    )
+    args = parser.parse_args()
+    host = args.outbound_queue
+    prefix = args.outbound_queue_prefix
+    handler = RedisHandler(host, prefix)
     await handler.run()
 
 
 if __name__ == "__main__":
-    args = sys.argv
-    if len(args) <= 1:
-        raise SystemExit("Pass redis host URL as the first parameter")
-    if len(args) > 2:
-        prefix = args[2]
-    else:
-        prefix = "acapy"
-
-    asyncio.get_event_loop().run_until_complete(main(args[1], prefix))
+    asyncio.get_event_loop().run_until_complete(main())
