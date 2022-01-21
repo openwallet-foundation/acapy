@@ -7,7 +7,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
+import logging
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
@@ -37,6 +37,8 @@ from .did_method import DIDMethod
 from .error import WalletError, WalletNotFoundError
 from .key_type import KeyType
 from .util import EVENT_LISTENER_PATTERN
+
+LOGGER = logging.getLogger(__name__)
 
 
 class WalletModuleResponseSchema(OpenAPISchema):
@@ -392,52 +394,68 @@ async def wallet_set_public_did(request: web.BaseRequest):
     did = request.query.get("did")
     if not did:
         raise web.HTTPBadRequest(reason="Request query must include DID")
-    wallet_id = context.settings.get("wallet.id")
 
     info: DIDInfo = None
     try:
-        ledger = context.profile.inject_or(BaseLedger)
-        if not ledger:
-            reason = "No ledger available"
-            if not context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise web.HTTPForbidden(reason=reason)
-
-        async with ledger:
-            if not await ledger.get_key_for_did(did):
-                raise web.HTTPNotFound(reason=f"DID {did} is not posted to the ledger")
-        did_info: DIDInfo = None
-        async with context.session() as session:
-            wallet = session.inject_or(BaseWallet)
-            did_info = await wallet.get_local_did(did)
-            info = await wallet.set_public_did(did_info)
-        if info:
-            # Publish endpoint if necessary
-            endpoint = did_info.metadata.get("endpoint")
-
-            if not endpoint:
-                async with context.session() as session:
-                    wallet = session.inject_or(BaseWallet)
-                    endpoint = context.settings.get("default_endpoint")
-                    await wallet.set_did_endpoint(info.did, endpoint, ledger)
-
-            async with ledger:
-                await ledger.update_endpoint_for_did(info.did, endpoint)
-
-            # Multitenancy setup
-            multitenant_mgr = context.profile.inject_or(BaseMultitenantManager)
-            # Add multitenant relay mapping so implicit invitations are still routed
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(
-                    wallet_id, info.verkey, skip_if_exists=True
-                )
-
+        info = await promote_wallet_public_did(
+            context.profile, context, context.session, did
+        )
+    except LookupError as err:
+        raise web.HTTPNotFound(reason=str(err)) from err
+    except PermissionError as err:
+        raise web.HTTPForbidden(reason=str(err)) from err
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (LedgerError, WalletError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"result": format_did_info(info)})
+
+
+async def promote_wallet_public_did(
+    profile: Profile, context: AdminRequestContext, session_fn, did: str
+) -> DIDInfo:
+    """Promote supplied DID to the wallet public DID."""
+
+    # if running in multitenant mode this will be the sub-wallet
+    wallet_id = context.settings.get("wallet.id")
+
+    info: DIDInfo = None
+    ledger = profile.inject_or(BaseLedger)
+    if not ledger:
+        reason = "No ledger available"
+        if not context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise PermissionError(reason)
+
+    async with ledger:
+        if not await ledger.get_key_for_did(did):
+            raise LookupError(f"DID {did} is not posted to the ledger")
+    did_info: DIDInfo = None
+    async with session_fn() as session:
+        wallet = session.inject_or(BaseWallet)
+        did_info = await wallet.get_local_did(did)
+        info = await wallet.set_public_did(did_info)
+    if info:
+        # Publish endpoint if necessary
+        endpoint = did_info.metadata.get("endpoint")
+
+        if not endpoint:
+            async with session_fn() as session:
+                wallet = session.inject_or(BaseWallet)
+                endpoint = context.settings.get("default_endpoint")
+                await wallet.set_did_endpoint(info.did, endpoint, ledger)
+
+        async with ledger:
+            await ledger.update_endpoint_for_did(info.did, endpoint)
+
+        # Multitenancy setup
+        multitenant_mgr = profile.inject_or(BaseMultitenantManager)
+        # Add multitenant relay mapping so implicit invitations are still routed
+        if multitenant_mgr and wallet_id:
+            await multitenant_mgr.add_key(wallet_id, info.verkey, skip_if_exists=True)
+
+    return info
 
 
 @docs(
@@ -559,16 +577,20 @@ async def on_register_nym_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
 
     # after the nym record is written, promote to wallet public DID
-    if is_author_role(profile) and profile.context.settings.get_value("endorser.auto_promote_author_did"):
+    if is_author_role(profile) and profile.context.settings.get_value(
+        "endorser.auto_promote_author_did"
+    ):
         did = event.payload["did"]
-        await promote_wallet_public_did(profile, did)
-
-
-async def promote_wallet_public_did(profile: Profile, did: str):
-    """Promote supplied DID to the wallet public DID."""
-
-    # TODO
-    pass
+        try:
+            await promote_wallet_public_did(
+                profile, profile.context, profile.session, did
+            )
+        except Exception as e:
+            # log the error, but continue
+            LOGGER.exception(
+                "Error accepting endorser invitation/configuring endorser connection: %s",
+                str(e),
+            )
 
 
 async def register(app: web.Application):
