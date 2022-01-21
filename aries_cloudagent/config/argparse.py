@@ -1189,6 +1189,7 @@ class TransportGroup(ArgumentGroup):
             dest="outbound_queue_prefix",
             type=str,
             env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX",
+            default="acapy",
             help=(
                 "Specifies the queue topic prefix. The queue topic is generated "
                 "in the following form: 'prefix.outbound_transport'. The default value"
@@ -1232,6 +1233,7 @@ class TransportGroup(ArgumentGroup):
             dest="inbound_queue_prefix",
             type=str,
             env_var="ACAPY_INBOUND_TRANSPORT_QUEUE_PREFIX",
+            default="acapy",
             help=(
                 "Specifies the queue topic prefix. The queue topic is generated "
                 "in the following form: 'prefix.inbound_transport'. The default value"

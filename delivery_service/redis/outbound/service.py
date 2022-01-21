@@ -139,6 +139,7 @@ async def main():
         "--outbound-queue-prefix",
         dest="outbound_queue_prefix",
         type=str,
+        default="acapy",
     )
     args = parser.parse_args()
     host = args.outbound_queue

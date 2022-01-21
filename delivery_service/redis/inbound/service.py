@@ -319,6 +319,7 @@ async def main():
         "--inbound-queue-prefix",
         dest="inbound_queue_prefix",
         type=str,
+        default="acapy",
     )
     parser.add_argument(
         "-it",

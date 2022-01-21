@@ -96,7 +96,12 @@ class TestLoggingConfigurator:
                 mock_admin_server,
             )
             test_module.LoggingConfigurator.print_banner(
-                test_label, {"in": mock_http}, {}, mock_inbound_queue, mock_outbound_queue, test_did
+                test_label,
+                {"in": mock_http},
+                {},
+                mock_inbound_queue,
+                mock_outbound_queue,
+                test_did,
             )
         output = stdout.getvalue()
         assert "mocked queue text" in output
