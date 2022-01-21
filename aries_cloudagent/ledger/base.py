@@ -86,8 +86,14 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def register_nym(
-        self, did: str, verkey: str, alias: str = None, role: str = None
-    ):
+        self,
+        did: str,
+        verkey: str,
+        alias: str = None,
+        role: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ) -> Tuple[bool, dict]:
         """
         Register a nym on the ledger.
 

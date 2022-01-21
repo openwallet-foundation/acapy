@@ -1400,7 +1400,7 @@ class TestV20CredManager(AsyncTestCase):
             )
             save_ex.assert_called_once()
 
-            assert ret_exchange.state is None
+            assert ret_exchange.state == V20CredExRecord.STATE_ABANDONED
 
     async def test_receive_problem_report_x(self):
         connection_id = "connection-id"
