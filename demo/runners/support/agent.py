@@ -1341,7 +1341,8 @@ class EndorserAgent(DemoAgent):
         # author responds to a multi-use invitation
         if message["state"] == "request":
             self.endorser_connection_id = message["connection_id"]
-            self._connection_ready = asyncio.Future()
+            if not self._connection_ready:
+                self._connection_ready = asyncio.Future()
 
         # finish off the connection
         if message["connection_id"] == self.endorser_connection_id:
@@ -1418,10 +1419,10 @@ async def connect_wallet_to_endorser(agent, endorser_agent):
     # Generate an invitation
     log_msg("Generate endorser invite ...")
     endorser_agent._connection_ready = asyncio.Future()
-    endorser_connection = await endorser_agent.admin_POST(
-        "/connections/create-invitation"
+    endorser_agent.endorser_connection_id = None
+    endorser_connection = await endorser_agent.get_invite(
+        use_did_exchange=endorser_agent.use_did_exchange,
     )
-    endorser_agent.endorser_connection_id = endorser_connection["connection_id"]
 
     # accept the invitation
     log_msg("Accept endorser invite ...")
