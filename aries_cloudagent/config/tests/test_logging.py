@@ -67,19 +67,21 @@ class TestLoggingConfigurator:
                 {"in": mock_http},
                 {"out": mock_https},
                 None,
+                None,
                 test_did,
                 mock_admin_server,
             )
             test_module.LoggingConfigurator.print_banner(
-                test_label, {"in": mock_http}, {"out": mock_https}, None, test_did
+                test_label, {"in": mock_http}, {"out": mock_https}, None, None, test_did
             )
         output = stdout.getvalue()
         assert test_did in output
 
-    def test_banner_outbound_queue(self):
+    def test_banner_persistent_queue(self):
         stdout = StringIO()
         mock_http = async_mock.MagicMock(scheme="http", host="1.2.3.4", port=8081)
-        mock_queue = "mocked queue text"
+        mock_outbound_queue = "mocked queue text"
+        mock_inbound_queue = "mocked queue text"
         mock_admin_server = async_mock.MagicMock(host="1.2.3.4", port=8091)
         with contextlib.redirect_stdout(stdout):
             test_label = "Aries Cloud Agent"
@@ -88,12 +90,13 @@ class TestLoggingConfigurator:
                 test_label,
                 {"in": mock_http},
                 {},
-                mock_queue,
+                mock_inbound_queue,
+                mock_outbound_queue,
                 test_did,
                 mock_admin_server,
             )
             test_module.LoggingConfigurator.print_banner(
-                test_label, {"in": mock_http}, {}, mock_queue, test_did
+                test_label, {"in": mock_http}, {}, mock_inbound_queue, mock_outbound_queue, test_did
             )
         output = stdout.getvalue()
         assert "mocked queue text" in output

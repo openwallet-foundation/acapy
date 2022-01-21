@@ -83,6 +83,7 @@ class LoggingConfigurator:
         agent_label,
         inbound_transports,
         outbound_transports,
+        inbound_queue,
         outbound_queue,
         public_did,
         admin_server=None,
@@ -96,6 +97,7 @@ class LoggingConfigurator:
             agent_label: Agent Label
             inbound_transports: Configured inbound transports
             outbound_transports: Configured outbound transports
+            inbound_queue: The inbound queue engine instance
             outbound_queue: The outbound queue engine instance
             admin_server: Admin server info
             public_did: Public DID
@@ -132,6 +134,17 @@ class LoggingConfigurator:
             banner.print_subtitle("Outbound Transports")
             banner.print_spacer()
             banner.print_list([f"{scheme}" for scheme in sorted(schemes)])
+            banner.print_spacer()
+
+        # Inbound queue
+        if inbound_queue:
+            banner.print_subtitle("Inbound Queue")
+            banner.print_spacer()
+            banner.print_list(
+                [
+                    f"{inbound_queue}",
+                ]
+            )
             banner.print_spacer()
 
         # Outbound queue

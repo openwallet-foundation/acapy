@@ -53,6 +53,8 @@ from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
+from ..transport.inbound.queue.base import BaseInboundQueue
+from ..transport.inbound.queue.loader import get_inbound_queue
 from ..transport.outbound.base import OutboundDeliveryError
 from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboundMessage
 from ..transport.outbound.message import OutboundMessage
@@ -97,6 +99,7 @@ class Conductor:
         self.outbound_transport_manager: OutboundTransportManager = None
         self.root_profile: Profile = None
         self.setup_public_did: DIDInfo = None
+        self.inbound_queue: BaseInboundQueue = None
         self.outbound_queue: BaseOutboundQueue = None
 
     @property
@@ -210,7 +213,7 @@ class Conductor:
         context.injector.bind_instance(
             DocumentLoader, DocumentLoader(self.root_profile)
         )
-
+        self.inbound_queue = get_inbound_queue(self.root_profile)
         self.outbound_queue = get_outbound_queue(self.root_profile)
 
         # Admin API
@@ -273,6 +276,13 @@ class Conductor:
             LOGGER.exception("Unable to start outbound transports")
             raise
 
+        if self.inbound_queue:
+            try:
+                await self.inbound_queue.start()
+            except Exception:
+                LOGGER.exception("Unable to start inbound queue")
+                raise
+
         if self.outbound_queue:
             try:
                 await self.outbound_queue.start()
@@ -303,6 +313,7 @@ class Conductor:
             default_label,
             self.inbound_transport_manager.registered_transports,
             self.outbound_transport_manager.registered_transports,
+            self.inbound_queue,
             self.outbound_queue,
             self.setup_public_did and self.setup_public_did.did,
             self.admin_server,
@@ -489,6 +500,8 @@ class Conductor:
             shutdown.run(self.inbound_transport_manager.stop())
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
+        if self.inbound_queue:
+            shutdown.run(self.inbound_queue.stop())
         if self.outbound_queue:
             shutdown.run(self.outbound_queue.stop())
 

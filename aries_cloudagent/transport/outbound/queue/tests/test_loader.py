@@ -11,7 +11,7 @@ from .fixtures import QueueClassValid
 def profile():
     yield InMemoryProfile.test_profile(
         settings={
-            "transport.outbound_queue": "aries_cloudagent.transport.outbound.queue.tests.fixtures.QueueClassValid"
+            "transport.outbound_queue_class": "aries_cloudagent.transport.outbound.queue.tests.fixtures.QueueClassValid"
         }
     )
 
@@ -29,18 +29,18 @@ def test_get_outbound_queue_valid(profile):
     ],
 )
 def test_get_outbound_not_set(queue, profile):
-    profile.settings["transport.outbound_queue"] = queue
+    profile.settings["transport.outbound_queue_class"] = queue
     assert get_outbound_queue(profile) is None
 
 
 def test_get_outbound_x_no_class(profile):
-    profile.settings["transport.outbound_queue"] = "invalid queue class path"
+    profile.settings["transport.outbound_queue_class"] = "invalid queue class path"
     with pytest.raises(ClassNotFoundError):
         get_outbound_queue(profile)
 
 
 def test_get_outbound_x_bad_instance(profile):
-    profile.settings["transport.outbound_queue"] = (
+    profile.settings["transport.outbound_queue_class"] = (
         "aries_cloudagent.transport.outbound.queue.tests.fixtures."
         "QueueClassNoBaseClass"
     )
