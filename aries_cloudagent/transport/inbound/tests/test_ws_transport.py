@@ -67,7 +67,6 @@ class TestWsTransport(AioHTTPTestCase):
         if self.result_event:
             self.result_event.set()
 
-    @unittest_run_loop
     async def test_start_x(self):
         with async_mock.patch.object(
             test_module.web, "TCPSite", async_mock.MagicMock()
@@ -78,7 +77,6 @@ class TestWsTransport(AioHTTPTestCase):
             with pytest.raises(test_module.InboundTransportSetupError):
                 await self.transport.start()
 
-    @unittest_run_loop
     async def test_message_and_response(self):
         await self.transport.start()
 
