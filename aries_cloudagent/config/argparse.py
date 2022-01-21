@@ -1733,6 +1733,13 @@ class EndorsementGroup(ArgumentGroup):
             " the controller must invoke the endpoints required to create the"
             " revocation registry and assign to the cred def.)",
         )
+        parser.add_argument(
+            "--auto-promote-author-did",
+            action="store_true",
+            env_var="ACAPY_PROMOTE-AUTHOR-DID",
+            help="For Authors, specify whether to automatically promote"
+            " a DID to the wallet public DID after writing to the ledger.",
+        )
 
     def get_settings(self, args: Namespace):
         """Extract endorser settings."""
@@ -1742,6 +1749,7 @@ class EndorsementGroup(ArgumentGroup):
         settings["endorser.auto_endorse"] = False
         settings["endorser.auto_write"] = False
         settings["endorser.auto_create_rev_reg"] = False
+        settings["endorser.auto_promote_author_did"] = False
 
         if args.endorser_protocol_role:
             if args.endorser_protocol_role == ENDORSER_AUTHOR:
@@ -1823,6 +1831,16 @@ class EndorsementGroup(ArgumentGroup):
                 pass
                 raise ArgsParseError(
                     "Parameter --auto-create-revocation-transactions should only be set "
+                    "for transaction Authors"
+                )
+
+        if args.auto_promote_author_did:
+            if settings["endorser.author"]:
+                settings["endorser.auto_promote_author_did"] = True
+            else:
+                pass
+                raise ArgsParseError(
+                    "Parameter --auto-promote-author-did should only be set "
                     "for transaction Authors"
                 )
 

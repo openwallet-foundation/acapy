@@ -11,6 +11,8 @@ from aiohttp_apispec import (
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
+from ..core.event_bus import Event, EventBus
+from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
@@ -24,6 +26,9 @@ from ..messaging.valid import (
     INDY_RAW_PUBLIC_KEY,
 )
 from ..multitenant.base import BaseMultitenantManager
+from ..protocols.endorse_transaction.v1_0.util import (
+    is_author_role,
+)
 
 from .base import BaseWallet
 from .did_info import DIDInfo
@@ -31,6 +36,7 @@ from .did_posture import DIDPosture
 from .did_method import DIDMethod
 from .error import WalletError, WalletNotFoundError
 from .key_type import KeyType
+from .util import EVENT_LISTENER_PATTERN
 
 
 class WalletModuleResponseSchema(OpenAPISchema):
@@ -542,6 +548,27 @@ async def wallet_rotate_did_keypair(request: web.BaseRequest):
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({})
+
+
+def register_events(event_bus: EventBus):
+    """Subscribe to any events we need to support."""
+    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_register_nym_event)
+
+
+async def on_register_nym_event(profile: Profile, event: Event):
+    """Handle any events we need to support."""
+
+    # after the nym record is written, promote to wallet public DID
+    if is_author_role(profile) and profile.context.settings.get_value("endorser.auto_promote_author_did"):
+        did = event.payload["did"]
+        await promote_wallet_public_did(profile, did)
+
+
+async def promote_wallet_public_did(profile: Profile, did: str):
+    """Promote supplied DID to the wallet public DID."""
+
+    # TODO
+    pass
 
 
 async def register(app: web.Application):

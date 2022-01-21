@@ -426,6 +426,7 @@ class DemoAgent:
                         ("--auto-request-endorsement",),
                         ("--auto-write-transactions",),
                         ("--auto-create-revocation-transactions",),
+                        ("--auto-promote-author-did"),
                         ("--endorser-alias", "endorser"),
                     ]
                 )
