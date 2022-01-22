@@ -1351,6 +1351,7 @@ class IndyVdrLedger(BaseLedger):
     async def txn_endorse(
         self,
         request_json: str,
+        endorse_did: DIDInfo = None,
     ) -> str:
         """Endorse (sign) the provided transaction."""
         try:
@@ -1360,7 +1361,7 @@ class IndyVdrLedger(BaseLedger):
 
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
-            sign_did = await wallet.get_public_did()
+            sign_did = endorse_did if endorse_did else await wallet.get_public_did()
             if not sign_did:
                 raise BadLedgerRequestError(
                     "Cannot endorse transaction without a public DID"

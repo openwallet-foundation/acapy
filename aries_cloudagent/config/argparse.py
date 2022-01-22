@@ -1691,6 +1691,17 @@ class EndorsementGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--endorser-endorse-with-did",
+            type=str,
+            metavar="<endorser-endorse-with-did>",
+            env_var="ACAPY_ENDORSER_ENDORSE_WITH_DID",
+            help=(
+                "For transaction Endorsers, specify the  DID to use to endorse "
+                "transactions.  The default (if not specified) is to use the "
+                "Endorser's Public DID."
+            ),
+        )
+        parser.add_argument(
             "--endorser-alias",
             type=str,
             metavar="<endorser-alias>",
@@ -1764,6 +1775,17 @@ class EndorsementGroup(ArgumentGroup):
                 raise ArgsParseError(
                     "Parameter --endorser-public-did should only be set for transaction "
                     "Authors"
+                )
+
+        if args.endorser_endorse_with_did:
+            if settings["endorser.endorser"]:
+                settings[
+                    "endorser.endorser_endorse_with_did"
+                ] = args.endorser_endorse_with_did
+            else:
+                raise ArgsParseError(
+                    "Parameter --endorser-endorse-with-did should only be set for "
+                    "transaction Endorsers"
                 )
 
         if args.endorser_alias:
