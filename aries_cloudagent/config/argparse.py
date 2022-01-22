@@ -1820,7 +1820,6 @@ class EndorsementGroup(ArgumentGroup):
             if settings["endorser.author"]:
                 settings["endorser.auto_request"] = True
             else:
-                pass
                 raise ArgsParseError(
                     "Parameter --auto-request-endorsement should only be set for "
                     "transaction Authors"
@@ -1830,7 +1829,6 @@ class EndorsementGroup(ArgumentGroup):
             if settings["endorser.endorser"]:
                 settings["endorser.auto_endorse"] = True
             else:
-                pass
                 raise ArgsParseError(
                     "Parameter --auto-endorser-transactions should only be set for "
                     "transaction Endorsers"
@@ -1840,7 +1838,6 @@ class EndorsementGroup(ArgumentGroup):
             if settings["endorser.author"]:
                 settings["endorser.auto_write"] = True
             else:
-                pass
                 raise ArgsParseError(
                     "Parameter --auto-write-transactions should only be set for "
                     "transaction Authors"
@@ -1850,7 +1847,6 @@ class EndorsementGroup(ArgumentGroup):
             if settings["endorser.author"]:
                 settings["endorser.auto_create_rev_reg"] = True
             else:
-                pass
                 raise ArgsParseError(
                     "Parameter --auto-create-revocation-transactions should only be set "
                     "for transaction Authors"
@@ -1860,7 +1856,6 @@ class EndorsementGroup(ArgumentGroup):
             if settings["endorser.author"]:
                 settings["endorser.auto_promote_author_did"] = True
             else:
-                pass
                 raise ArgsParseError(
                     "Parameter --auto-promote-author-did should only be set "
                     "for transaction Authors"
