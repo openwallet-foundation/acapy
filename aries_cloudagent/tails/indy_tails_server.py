@@ -2,6 +2,7 @@
 
 from typing import Tuple
 
+from ..core.profile import Profile
 from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..utils.http import put_file, PutError
 
@@ -31,8 +32,10 @@ class IndyTailsServer(BaseTailsServer):
             backoff: exponential backoff in retry interval
             max_attempts: maximum number of attempts to make
         """
-
+        tails_server_upload_url = context.settings.get("tails_server_upload_url")
         if not (context.settings.get("ledger.genesis_transactions")):
+            if isinstance(context, Profile):
+                context = context.context
             genesis_transactions = (
                 await context.injector.inject(
                     BaseMultipleLedgerManager
@@ -40,7 +43,6 @@ class IndyTailsServer(BaseTailsServer):
             )[1].pool.genesis_transactions
         else:
             genesis_transactions = context.settings.get("ledger.genesis_transactions")
-        tails_server_upload_url = context.settings.get("tails_server_upload_url")
 
         if not tails_server_upload_url:
             raise TailsServerNotConfiguredError(

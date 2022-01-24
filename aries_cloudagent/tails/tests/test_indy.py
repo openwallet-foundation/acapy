@@ -42,8 +42,7 @@ class TestIndyTailsServer(AsyncTestCase):
 
     async def test_upload_b(self):
         profile = InMemoryProfile.test_profile()
-        context = profile.context
-        context.settings["tails_server_upload_url"] = "http://1.2.3.4:8088"
+        profile.settings["tails_server_upload_url"] = "http://1.2.3.4:8088"
         profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             async_mock.MagicMock(
@@ -64,7 +63,7 @@ class TestIndyTailsServer(AsyncTestCase):
         ) as mock_put:
             mock_put.return_value = "tails-hash"
             (ok, text) = await indy_tails.upload_tails_file(
-                context,
+                profile,
                 REV_REG_ID,
                 "/tmp/dummy/path",
             )
