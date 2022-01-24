@@ -800,11 +800,10 @@ async def on_startup_event(profile: Profile, event: Event):
                 value = {"endorser_did": endorser_did, "endorser_name": endorser_alias}
             await conn_record.metadata_set(session, key="endorser_info", value=value)
 
-    except Exception as e:
+    except Exception:
         # log the error, but continue
         LOGGER.exception(
             "Error accepting endorser invitation/configuring endorser connection: %s",
-            str(e),
         )
 
 

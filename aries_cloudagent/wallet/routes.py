@@ -585,11 +585,10 @@ async def on_register_nym_event(profile: Profile, event: Event):
             await promote_wallet_public_did(
                 profile, profile.context, profile.session, did
             )
-        except Exception as e:
+        except Exception:
             # log the error, but continue
             LOGGER.exception(
                 "Error accepting endorser invitation/configuring endorser connection: %s",
-                str(e),
             )
 
 
