@@ -42,7 +42,7 @@ class TestIndyTailsServer(AsyncTestCase):
 
     async def test_upload_b(self):
         profile = InMemoryProfile.test_profile()
-        context = self.profile.context
+        context = profile.context
         context.settings["tails_server_upload_url"] = "http://1.2.3.4:8088"
         profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
