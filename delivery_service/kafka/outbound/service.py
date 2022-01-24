@@ -8,6 +8,7 @@ import os
 import pathlib
 import sys
 import urllib
+import yaml
 
 from aiokafka import AIOKafkaConsumer, ConsumerRebalanceListener, AIOKafkaProducer
 from aiokafka.errors import OffsetOutOfRangeError
@@ -296,9 +297,31 @@ async def main():
         type=str,
         default="acapy",
     )
+    parser.add_argument(
+        "--plugin-config",
+        dest="plugin_config",
+        type=str,
+        required=False,
+        help="Load YAML file path that defines external plugin configuration.",
+    )
     args = parser.parse_args()
-    host = args.outbound_queue
-    prefix = args.outbound_queue_prefix
+    config = None
+    if args.plugin_config:
+        with open(args.plugin_config, "r") as stream:
+            loaded_plugin_config = yaml.safe_load(stream)
+        config = loaded_plugin_config.get("kafka_outbound_queue")
+    if args.outbound_queue:
+        host = args.outbound_queue
+    elif config:
+        host = config["connection"]
+    else:
+        raise SystemExit("No Kafka bootsrap server or host provided.")
+    if config:
+        prefix = config.get("prefix", "acapy")
+    elif args.outbound_queue_prefix:
+        prefix = args.outbound_queue_prefix
+    else:
+        prefix = "acapy"
     handler = KafkaHandler(host, prefix)
     await handler.run()
 

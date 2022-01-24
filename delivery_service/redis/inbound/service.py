@@ -5,6 +5,7 @@ import argparse
 import msgpack
 import sys
 import json
+import yaml
 
 from aiohttp import WSMessage, WSMsgType, web
 from uuid import uuid4
@@ -330,9 +331,31 @@ async def main():
         nargs=3,
         metavar=("<module>", "<host>", "<port>"),
     )
+    parser.add_argument(
+        "--plugin-config",
+        dest="plugin_config",
+        type=str,
+        required=False,
+        help="Load YAML file path that defines external plugin configuration.",
+    )
     args = parser.parse_args()
-    host = args.inbound_queue
-    prefix = args.inbound_queue_prefix
+    config = None
+    if args.plugin_config:
+        with open(args.plugin_config, "r") as stream:
+            loaded_plugin_config = yaml.safe_load(stream)
+        config = loaded_plugin_config.get("redis_inbound_queue")
+    if args.inbound_queue:
+        host = args.inbound_queue
+    elif config:
+        host = config["connection"]
+    else:
+        raise SystemExit("No Redis host/connection provided.")
+    if config:
+        prefix = config.get("prefix", "acapy")
+    elif args.inbound_queue_prefix:
+        prefix = args.inbound_queue_prefix
+    else:
+        prefix = "acapy"
     tasks = []
     for inbound_transport in args.inbound_transports:
         transport_type, site_host, site_port = inbound_transport

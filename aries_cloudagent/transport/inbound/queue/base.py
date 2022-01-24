@@ -41,7 +41,7 @@ class BaseInboundQueue(ABC):
         """Stop the queue."""
 
     @abstractmethod
-    async def recieve_message(
+    async def receive_message(
         self,
     ):
         """Receive and send message to internal message router."""

@@ -57,6 +57,12 @@ do
 		inboundQueueArgs+=("${acapyArgs[$i]}")
 		inboundQueueArgs+=("${acapyArgs[$i+1]}")
 	fi
+	if [[ "${acapyArgs[$i]}" == "--plugin-config" ]]; then
+		inboundQueueArgs+=("${acapyArgs[$i]}")
+		inboundQueueArgs+=("${acapyArgs[$i+1]}")
+		outboundQueueArgs+=("${acapyArgs[$i]}")
+		outboundQueueArgs+=("${acapyArgs[$i+1]}")
+	fi
 done
 if [[ "$ENABLE_REDIS_INBOUND" == 1 ]]; then
   echo "Starting Redis Inbound Message Service."

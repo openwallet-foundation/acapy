@@ -115,7 +115,7 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                 self._profile.settings.get("transport.inbound_queue")
                 or config["connection"]
             )
-            self.txn_id = config["transaction_id"] or str(uuid4())
+            self.txn_id = config.get("transaction_id", str(uuid4()))
         except KeyError as error:
             raise InboundQueueConfigurationError(
                 "Configuration missing for Kafka queue"
@@ -124,16 +124,8 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         self.prefix = self._profile.settings.get(
             "transport.inbound_queue_prefix"
         ) or config.get("prefix", "acapy")
-        self.consumer = AIOKafkaConsumer(
-            bootstrap_servers=self.connection,
-            group_id="my_group",
-            enable_auto_commit=False,
-            auto_offset_reset="none",
-            isolation_level="read_committed",
-        )
-        self.producer = AIOKafkaProducer(
-            bootstrap_servers=self.connection, transactional_id=self.txn_id
-        )
+        self.consumer = None
+        self.producer = None
 
     def __str__(self):
         """Return string representation of the outbound queue."""
@@ -146,6 +138,16 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
 
     async def start(self):
         """Start the transport."""
+        self.consumer = AIOKafkaConsumer(
+            bootstrap_servers=self.connection,
+            group_id="my_group",
+            enable_auto_commit=False,
+            auto_offset_reset="none",
+            isolation_level="read_committed",
+        )
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self.connection, transactional_id=self.txn_id
+        )
         await self.producer.start()
         await self.consumer.start()
 

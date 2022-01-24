@@ -26,18 +26,16 @@ class KafkaOutboundQueue(BaseOutboundQueue):
                 self._profile.settings.get("transport.outbound_queue")
                 or config["connection"]
             )
-            self.txn_id = config["transaction_id"] or str(uuid4())
+            self.txn_id = config.get("transaction_id", str(uuid4()))
         except KeyError as error:
             raise OutboundQueueConfigurationError(
-                "Configuration missing for redis queue"
+                "Configuration missing for kafka"
             ) from error
 
         self.prefix = self._profile.settings.get(
             "transport.outbound_queue_prefix"
         ) or config.get("prefix", "acapy")
-        self.producer = AIOKafkaProducer(
-            bootstrap_servers=self.connection, transactional_id=self.txn_id
-        )
+        self.producer = None
 
     def __str__(self):
         """Return string representation of the outbound queue."""
@@ -50,6 +48,9 @@ class KafkaOutboundQueue(BaseOutboundQueue):
 
     async def start(self):
         """Start the transport."""
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self.connection, transactional_id=self.txn_id
+        )
         await self.producer.start()
 
     async def stop(self):
