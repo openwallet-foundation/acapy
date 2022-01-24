@@ -36,11 +36,15 @@ class IndyTailsServer(BaseTailsServer):
         if not (context.settings.get("ledger.genesis_transactions")):
             if isinstance(context, Profile):
                 context = context.context
-            genesis_transactions = (
+            pool = (
                 await context.injector.inject(
                     BaseMultipleLedgerManager
                 ).get_write_ledger()
-            )[1].pool.genesis_transactions
+            )[1].pool
+            try:
+                genesis_transactions = pool.genesis_transactions
+            except AttributeError:
+                genesis_transactions = pool.genesis_txns_cache
         else:
             genesis_transactions = context.settings.get("ledger.genesis_transactions")
 

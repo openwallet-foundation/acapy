@@ -40,7 +40,7 @@ class TestIndyTailsServer(AsyncTestCase):
             assert ok
             assert text == "tails-hash"
 
-    async def test_upload_b(self):
+    async def test_upload_indy_sdk(self):
         profile = InMemoryProfile.test_profile()
         profile.settings["tails_server_upload_url"] = "http://1.2.3.4:8088"
         profile.context.injector.bind_instance(
@@ -51,6 +51,36 @@ class TestIndyTailsServer(AsyncTestCase):
                         "test_ledger_id",
                         async_mock.MagicMock(
                             pool=async_mock.MagicMock(genesis_transactions="dummy")
+                        ),
+                    )
+                )
+            ),
+        )
+        indy_tails = test_module.IndyTailsServer()
+
+        with async_mock.patch.object(
+            test_module, "put_file", async_mock.CoroutineMock()
+        ) as mock_put:
+            mock_put.return_value = "tails-hash"
+            (ok, text) = await indy_tails.upload_tails_file(
+                profile,
+                REV_REG_ID,
+                "/tmp/dummy/path",
+            )
+            assert ok
+            assert text == "tails-hash"
+
+    async def test_upload_indy_vdr(self):
+        profile = InMemoryProfile.test_profile()
+        profile.settings["tails_server_upload_url"] = "http://1.2.3.4:8088"
+        profile.context.injector.bind_instance(
+            BaseMultipleLedgerManager,
+            async_mock.MagicMock(
+                get_write_ledger=async_mock.CoroutineMock(
+                    return_value=(
+                        "test_ledger_id",
+                        async_mock.MagicMock(
+                            pool=async_mock.MagicMock(genesis_txns_cache="dummy")
                         ),
                     )
                 )
