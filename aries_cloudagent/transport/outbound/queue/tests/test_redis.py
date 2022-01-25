@@ -13,7 +13,7 @@ from ..redis import RedisOutboundQueue
 
 
 ENDPOINT = "http://localhost:9000"
-KEYNAME = "acapy.outbound_transport"
+KEYNAME = "acapy.redis_outbound_transport"
 
 REDIS_CONF = os.environ.get("TEST_REDIS_CONFIG", None)
 

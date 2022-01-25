@@ -20,7 +20,7 @@ class RedisOutboundQueue(BaseOutboundQueue):
         self._logger = logging.getLogger(__name__)
         self._profile = root_profile
         try:
-            plugin_config = root_profile.settings["plugin_config"] or {}
+            plugin_config = root_profile.settings.get("plugin_config", {})
             config = plugin_config.get(self.config_key, {})
             self.connection = (
                 self._profile.settings.get("transport.outbound_queue")
