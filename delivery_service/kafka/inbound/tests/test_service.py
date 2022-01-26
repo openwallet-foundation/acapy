@@ -74,6 +74,7 @@ class TestKafkaHTTPHandler(AsyncTestCase):
     async def test_message_handler(self):
         pass
 
+
 class TestKafkaWSHandler(AsyncTestCase):
     def setUp(self):
         self.host = "test"

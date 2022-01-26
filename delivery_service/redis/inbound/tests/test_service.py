@@ -46,6 +46,7 @@ class TestRedisHTTPHandler(AsyncTestCase):
     async def test_message_handler(self):
         pass
 
+
 class TestRedisWSHandler(AsyncTestCase):
     def setUp(self):
         self.host = "test"
