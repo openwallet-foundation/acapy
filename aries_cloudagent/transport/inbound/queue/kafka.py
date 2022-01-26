@@ -3,6 +3,7 @@ import asyncio
 import os
 import msgpack
 import json
+import logging
 import pathlib
 
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer, ConsumerRebalanceListener
@@ -111,6 +112,7 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         """Set initial state."""
         Thread.__init__(self)
         self._profile = root_profile
+        self.logger = logging.getLogger(__name__)
         try:
             plugin_config = root_profile.settings.get("plugin_config", {})
             config = plugin_config.get(self.config_key, {})
@@ -161,7 +163,7 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
 
     async def save_state_every_second(self, local_state):
         """Update local state."""
-        while True:
+        while self.RUNNING:
             try:
                 await asyncio.sleep(1)
             except asyncio.CancelledError:
@@ -180,7 +182,8 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         local_state = LocalState()
         listener = RebalanceListener(self.consumer, local_state)
         self.consumer.subscribe(topics=[inbound_topic], listener=listener)
-        save_task = asyncio.create_task(self.save_state_every_second(local_state))
+        loop = asyncio.get_event_loop()
+        save_task = loop.create_task(self.save_state_every_second(local_state))
         session = await transport_manager.create_session(
             accept_undelivered=True, can_respond=False
         )
@@ -197,19 +200,21 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                 for tp, msgs in msg_set.items():
                     counts = Counter()
                     for msg in msgs:
-                        msg = msgpack.unpackb(msg)
-                        if not isinstance(msg, dict):
-                            self._logger.error("Received non-dict message")
+                        msg_data = msgpack.unpackb(msg.value)
+                        if not isinstance(msg_data, dict):
+                            self.logger.error("Received non-dict message")
                             continue
-                        direct_reponse_requested = True if "txn_id" in msg else False
+                        direct_reponse_requested = (
+                            True if "txn_id" in msg_data else False
+                        )
                         async with session:
                             try:
-                                await session.receive(msg["data"].decode("utf-8"))
+                                await session.receive(msg_data["data"].decode("utf-8"))
                             except UnicodeDecodeError:
-                                await session.receive(msg["data"])
+                                await session.receive(msg_data["data"])
                             if direct_reponse_requested:
-                                txn_id = msg["txn_id"]
-                                transport_type = msg["transport_type"]
+                                txn_id = msg_data["txn_id"]
+                                transport_type = msg_data["transport_type"]
                                 response = await session.wait_response()
                                 response_data = {}
                                 if transport_type == "http" and response:
@@ -245,5 +250,5 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                     local_state.add_counts(tp, counts, msg.offset)
         finally:
             await self.consumer.stop()
-            save_task.cancel()
-            await save_task
+            if not save_task.done():
+                save_task.cancel()

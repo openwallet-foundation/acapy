@@ -156,7 +156,8 @@ class KafkaHandler:
         local_state = LocalState()
         listener = RebalanceListener(self.consumer, local_state)
         self.consumer.subscribe(topics=[self.outbound_topic], listener=listener)
-        save_task = asyncio.create_task(self.save_state_every_second(local_state))
+        loop = asyncio.get_event_loop()
+        save_task = loop.create_task(self.save_state_every_second(local_state))
         try:
             while True:
                 try:
@@ -170,22 +171,22 @@ class KafkaHandler:
                 for tp, msgs in msg_set.items():
                     counts = Counter()
                     for msg in msgs:
-                        msg = msgpack.unpackb(msg)
-                        if not isinstance(msg, dict):
+                        msg_data = msgpack.unpackb(msg.value)
+                        if not isinstance(msg_data, dict):
                             log_error("Received non-dict message")
-                        elif "endpoint" not in msg:
+                        elif "endpoint" not in msg_data:
                             log_error("No endpoint provided")
-                        elif "payload" not in msg:
+                        elif "payload" not in msg_data:
                             log_error("No payload provided")
                         else:
                             headers = {}
-                            if "headers" in msg:
-                                for hname, hval in msg["headers"].items():
+                            if "headers" in msg_data:
+                                for hname, hval in msg_data["headers"].items():
                                     if isinstance(hval, bytes):
                                         hval = hval.decode("utf-8")
                                     headers[hname.decode("utf-8")] = hval
-                            endpoint = msg["endpoint"].decode("utf-8")
-                            payload = msg["payload"]
+                            endpoint = msg_data["endpoint"].decode("utf-8")
+                            payload = msg_data["payload"]
                             parsed = urllib.parse.urlparse(endpoint)
                             if parsed.scheme == "http" or parsed.scheme == "https":
                                 print(f"Dispatch message to {endpoint}")
@@ -207,7 +208,7 @@ class KafkaHandler:
                                         )
                                         failed = True
                                 if failed:
-                                    retries = msg.get("retries") or 0
+                                    retries = msg_data.get("retries") or 0
                                     if retries < 5:
                                         await self.add_retry(
                                             {
@@ -225,8 +226,8 @@ class KafkaHandler:
                     local_state.add_counts(tp, counts, msg.offset)
         finally:
             await self.consumer.stop()
-            save_task.cancel()
-            await save_task
+            if not save_task.done():
+                save_task.cancel()
 
     async def add_retry(self, message: dict):
         """Add undelivered message for future retries."""
@@ -248,7 +249,8 @@ class KafkaHandler:
         local_state = LocalState()
         listener = RebalanceListener(self.consumer_retry, local_state)
         self.consumer_retry.subscribe(topics=[self.retry_topic], listener=listener)
-        save_task = asyncio.create_task(self.save_state_every_second(local_state))
+        loop = asyncio.get_event_loop()
+        save_task = loop.create_task(self.save_state_every_second(local_state))
         try:
             while True:
                 await asyncio.sleep(self.retry_timedelay_s)
@@ -262,14 +264,14 @@ class KafkaHandler:
                 for tp, msgs in msg_set.items():
                     counts = Counter()
                     for msg in msgs:
-                        msg = msgpack.unpackb(msg)
-                        retry_time = msg["retry_time"]
+                        msg_data = msgpack.unpackb(msg.value)
+                        retry_time = msg_data["retry_time"]
                         if int(time()) > retry_time:
-                            del msg["retry_time"]
+                            del msg_data["retry_time"]
                             async with self.producer.transaction():
                                 await self.producer.send(
                                     self.outbound_topic,
-                                    value=msgpack.dumps(msg),
+                                    value=msgpack.dumps(msg_data),
                                     timestamp_ms=1000,
                                 )
                         counts[msg.key] += 1
@@ -277,8 +279,8 @@ class KafkaHandler:
         finally:
             await self.consumer_retry.stop()
             await self.producer.stop()
-            save_task.cancel()
-            await save_task
+            if not save_task.done():
+                save_task.cancel()
 
 
 async def main():

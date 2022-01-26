@@ -1,6 +1,7 @@
 """Redis inbound transport."""
 import aioredis
 import msgpack
+import logging
 
 from threading import Thread
 
@@ -24,6 +25,7 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
         """Set initial state."""
         Thread.__init__(self)
         self._profile = root_profile
+        self.logger = logging.getLogger(__name__)
         try:
             plugin_config = root_profile.settings.get("plugin_config", {})
             config = plugin_config.get(self.config_key, {})
@@ -84,7 +86,7 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
                 raise InboundQueueError("Unexpected redis client exception") from error
             msg = msgpack.unpackb(msg)
             if not isinstance(msg, dict):
-                self._logger.error("Received non-dict message")
+                self.logger.error("Received non-dict message")
                 continue
             client_info = {"host": msg["host"], "remote": msg["remote"]}
             session = await transport_manager.create_session(

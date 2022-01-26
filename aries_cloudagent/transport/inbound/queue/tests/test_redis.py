@@ -22,41 +22,42 @@ KEYNAME = "acapy.redis_inbound_transport"
 REDIS_CONF = os.environ.get("TEST_REDIS_CONFIG", None)
 
 
-def mock_blpop(response_reqd=False):
-    if not response_reqd:
-        return msgpack.packb(
-            {
-                "host": "test1",
-                "remote": "http://localhost:9000",
-                "data": (string.digits + string.ascii_letters).encode(encoding="utf-8"),
-            }
-        )
-    else:
-        index = round(random.random())
-        if index == 0:
-            return msgpack.packb(
-                {
-                    "host": "test2",
-                    "remote": "http://localhost:9000",
-                    "data": bytes(range(0, 256)),
-                    "txn_id": "test123",
-                    "transport_type": "http",
-                }
-            )
-        else:
-            return msgpack.packb(
-                {
-                    "host": "test2",
-                    "remote": "http://localhost:9000",
-                    "data": bytes(range(0, 256)),
-                    "txn_id": "test123",
-                    "transport_type": "ws",
-                }
-            )
-
-
-def decode_func(value):
-    return value.decode("utf-8")
+test_msg_a = msgpack.packb(
+    {
+        "host": "test1",
+        "remote": "http://localhost:9000",
+        "data": (string.digits + string.ascii_letters).encode(encoding="utf-8"),
+    }
+)
+test_msg_b = msgpack.packb(
+    {
+        "host": "test2",
+        "remote": "http://localhost:9000",
+        "data": bytes(range(0, 256)),
+        "txn_id": "test123",
+        "transport_type": "http",
+    }
+)
+test_msg_c = msgpack.packb(
+    {
+        "host": "test2",
+        "remote": "http://localhost:9000",
+        "data": bytes(range(0, 256)),
+        "txn_id": "test123",
+        "transport_type": "ws",
+    }
+)
+test_msg_d = msgpack.packb(
+    """{
+        "host": "test2",
+        "remote": "http://localhost:9000",
+        "data": bytes(range(0, 256)),
+        "txn_id": "test123",
+        "transport_type": "http",
+    }""".encode(
+        "utf-8"
+    )
+)
 
 
 class TestRedisInbound(AsyncTestCase):
@@ -88,7 +89,10 @@ class TestRedisInbound(AsyncTestCase):
         self.profile.settings["transport.inbound_queue"] = "connection"
         mock_inbound_mgr = async_mock.MagicMock(
             create_session=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(receive=async_mock.CoroutineMock())
+                return_value=async_mock.MagicMock(
+                    receive=async_mock.CoroutineMock(),
+                    profile=self.profile,
+                ),
             ),
         )
         with async_mock.patch(
@@ -98,7 +102,9 @@ class TestRedisInbound(AsyncTestCase):
             "aioredis.Redis",
             async_mock.MagicMock(),
         ) as mock_redis:
-            mock_redis.blpop = async_mock.CoroutineMock(return_value=mock_blpop())
+            mock_redis.blpop = async_mock.CoroutineMock(
+                side_effect=[test_msg_a, test_msg_a]
+            )
             mock_redis.rpush = async_mock.CoroutineMock()
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
@@ -116,7 +122,10 @@ class TestRedisInbound(AsyncTestCase):
         self.profile.settings["transport.inbound_queue"] = "connection"
         mock_inbound_mgr = async_mock.MagicMock(
             create_session=async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(receive=async_mock.CoroutineMock())
+                return_value=async_mock.MagicMock(
+                    receive=async_mock.CoroutineMock(),
+                    profile=self.profile,
+                ),
             ),
         )
         with async_mock.patch(
@@ -139,7 +148,7 @@ class TestRedisInbound(AsyncTestCase):
             with self.assertRaises(InboundQueueError):
                 await queue.receive_messages()
 
-    async def test_receive_message_direct_response(self):
+    async def test_receive_message_direct_response_a(self):
         self.profile.settings["plugin_config"] = {
             "redis_inbound_queue": {
                 "connection": "connection",
@@ -153,6 +162,7 @@ class TestRedisInbound(AsyncTestCase):
                     wait_response=async_mock.CoroutineMock(
                         side_effect=[b"test_response", "response", "response"]
                     ),
+                    profile=self.profile,
                 )
             ),
         )
@@ -164,7 +174,7 @@ class TestRedisInbound(AsyncTestCase):
             async_mock.MagicMock(),
         ) as mock_redis:
             mock_redis.blpop = async_mock.CoroutineMock(
-                return_value=mock_blpop(response_reqd=True)
+                side_effect=[test_msg_b, test_msg_b, test_msg_c]
             )
             mock_redis.rpush = async_mock.CoroutineMock()
             self.context.injector.bind_instance(
@@ -178,6 +188,41 @@ class TestRedisInbound(AsyncTestCase):
             await queue.receive_messages()
         assert mock_redis.blpop.call_count == 3
         assert mock_redis.rpush.call_count == 3
+
+    async def test_receive_message_direct_response_b(self):
+        self.profile.settings["transport.inbound_queue"] = "connection"
+        self.profile.settings["emit_new_didcomm_mime_type"] = True
+        mock_inbound_mgr = async_mock.MagicMock(
+            create_session=async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    receive=async_mock.CoroutineMock(),
+                    wait_response=async_mock.CoroutineMock(
+                        side_effect=[b"test_response"]
+                    ),
+                    profile=self.profile,
+                )
+            ),
+        )
+        with async_mock.patch(
+            "aioredis.ConnectionPool.from_url",
+            async_mock.MagicMock(),
+        ), async_mock.patch(
+            "aioredis.Redis",
+            async_mock.MagicMock(),
+        ) as mock_redis:
+            mock_redis.blpop = async_mock.CoroutineMock(
+                side_effect=[test_msg_b, test_msg_d]
+            )
+            mock_redis.rpush = async_mock.CoroutineMock()
+            self.context.injector.bind_instance(
+                InboundTransportManager, mock_inbound_mgr
+            )
+            sentinel = PropertyMock(side_effect=[True, True, False])
+            RedisInboundQueue.RUNNING = sentinel
+            queue = RedisInboundQueue(self.profile)
+            queue.redis = mock_redis
+            await queue.start()
+            await queue.receive_messages()
 
     async def test_receive_message_direct_response_x(self):
         self.profile.settings["plugin_config"] = {
@@ -193,6 +238,7 @@ class TestRedisInbound(AsyncTestCase):
                     wait_response=async_mock.CoroutineMock(
                         side_effect=[b"test_response"]
                     ),
+                    profile=self.profile,
                 )
             ),
         )
@@ -203,9 +249,7 @@ class TestRedisInbound(AsyncTestCase):
             "aioredis.Redis",
             async_mock.MagicMock(),
         ) as mock_redis:
-            mock_redis.blpop = async_mock.CoroutineMock(
-                return_value=mock_blpop(response_reqd=True)
-            )
+            mock_redis.blpop = async_mock.CoroutineMock(side_effect=[test_msg_b])
             mock_redis.rpush = async_mock.CoroutineMock(side_effect=aioredis.RedisError)
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr

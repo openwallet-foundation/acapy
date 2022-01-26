@@ -7,10 +7,7 @@ class QueueClassNoBaseClass:
 
 
 class QueueClassValid(BaseInboundQueue):
-    async def receive_message(self):
-        pass
-
-    async def push(self, key, message):
+    async def receive_messages(self):
         pass
 
     async def start(self):
