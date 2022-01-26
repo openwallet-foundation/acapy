@@ -1,13 +1,14 @@
 """Redis inbound transport."""
 import aioredis
 import msgpack
-import logging
 
 from threading import Thread
 
 from ....core.profile import Profile
 
 from ...wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
+
+from ..manager import InboundTransportManager
 
 from .base import BaseInboundQueue, InboundQueueConfigurationError, InboundQueueError
 
@@ -16,10 +17,12 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
     """Redis outbound transport class."""
 
     config_key = "redis_inbound_queue"
+    # for unit testing
+    RUNNING = True
 
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
-        self._logger = logging.getLogger(__name__)
+        Thread.__init__(self)
         self._profile = root_profile
         try:
             plugin_config = root_profile.settings.get("plugin_config", {})
@@ -65,13 +68,16 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
         # However, calling this on exit of `async with` does not make sense and
         # we should just let aioredis handle the connection lifecycle.
 
-    async def recieve_messages(
+    async def receive_messages(
         self,
     ):
         """Recieve message from inbound queue and handle it."""
         inbound_topic = f"{self.prefix}.inbound_transport"
         direct_response_topic = f"{self.prefix}.inbound_direct_responses"
-        while True:
+        transport_manager = self._profile.context.injector.inject(
+            InboundTransportManager
+        )
+        while self.RUNNING:
             try:
                 msg = await self.redis.blpop(inbound_topic, 0)
             except aioredis.RedisError as error:
@@ -81,12 +87,15 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
                 self._logger.error("Received non-dict message")
                 continue
             client_info = {"host": msg["host"], "remote": msg["remote"]}
-            session = await self.create_session(
+            session = await transport_manager.create_session(
                 accept_undelivered=True, can_respond=True, client_info=client_info
             )
             direct_reponse_requested = True if "txn_id" in msg else False
             async with session:
-                await session.receive(msg["data"].decode("utf-8"))
+                try:
+                    await session.receive(msg["data"].decode("utf-8"))
+                except UnicodeDecodeError:
+                    await session.receive(msg["data"])
                 if direct_reponse_requested:
                     txn_id = msg["txn_id"]
                     transport_type = msg["transport_type"]
@@ -102,10 +111,18 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
                                 response_data["content-type"] = DIDCOMM_V0_MIME_TYPE
                         else:
                             response_data["content-type"] = "application/json"
-                    response_data["response"] = response.encode("utf-8")
+                    if isinstance(response, bytes):
+                        response_data["response"] = response
+                    else:
+                        response_data["response"] = response.encode("utf-8")
                     message = {}
                     message["txn_id"] = txn_id
                     message["response_data"] = response_data
-                    await self.redis.rpush(
-                        direct_response_topic, msgpack.dumps(message)
-                    )
+                    try:
+                        await self.redis.rpush(
+                            direct_response_topic, msgpack.dumps(message)
+                        )
+                    except aioredis.RedisError as error:
+                        raise InboundQueueError(
+                            "Unexpected redis client exception"
+                        ) from error

@@ -1,5 +1,4 @@
 """Kafka outbound transport."""
-import logging
 import msgpack
 
 from aiokafka import AIOKafkaProducer
@@ -17,7 +16,6 @@ class KafkaOutboundQueue(BaseOutboundQueue):
 
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
-        self._logger = logging.getLogger(__name__)
         self._profile = root_profile
         try:
             plugin_config = root_profile.settings.get("plugin_config", {})

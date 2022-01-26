@@ -2,7 +2,6 @@
 import asyncio
 import os
 import msgpack
-import logging
 import json
 import pathlib
 
@@ -15,6 +14,8 @@ from uuid import uuid4
 from ....core.profile import Profile
 
 from ...wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
+
+from ..manager import InboundTransportManager
 
 from .base import BaseInboundQueue, InboundQueueConfigurationError
 
@@ -103,10 +104,12 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
     """Kafka outbound transport class."""
 
     config_key = "kafka_inbound_queue"
+    # for unit testing
+    RUNNING = True
 
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
-        self._logger = logging.getLogger(__name__)
+        Thread.__init__(self)
         self._profile = root_profile
         try:
             plugin_config = root_profile.settings.get("plugin_config", {})
@@ -165,19 +168,24 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                 break
             local_state.dump_local_state()
 
-    async def recieve_messages(
+    async def receive_messages(
         self,
     ):
         """Recieve message from inbound queue and handle it."""
         inbound_topic = f"{self.prefix}.inbound_transport"
         direct_response_topic = f"{self.prefix}.inbound_direct_responses"
+        transport_manager = self._profile.context.injector.inject(
+            InboundTransportManager
+        )
         local_state = LocalState()
         listener = RebalanceListener(self.consumer, local_state)
         self.consumer.subscribe(topics=[inbound_topic], listener=listener)
         save_task = asyncio.create_task(self.save_state_every_second(local_state))
-        session = await self.create_session(accept_undelivered=True, can_respond=False)
+        session = await transport_manager.create_session(
+            accept_undelivered=True, can_respond=False
+        )
         try:
-            while True:
+            while self.RUNNING:
                 try:
                     msg_set = await self.consumer.getmany(timeout_ms=1000)
                 except OffsetOutOfRangeError as err:
@@ -195,7 +203,10 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                             continue
                         direct_reponse_requested = True if "txn_id" in msg else False
                         async with session:
-                            await session.receive(msg["data"].decode("utf-8"))
+                            try:
+                                await session.receive(msg["data"].decode("utf-8"))
+                            except UnicodeDecodeError:
+                                await session.receive(msg["data"])
                             if direct_reponse_requested:
                                 txn_id = msg["txn_id"]
                                 transport_type = msg["transport_type"]
@@ -217,7 +228,10 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                                         response_data[
                                             "content-type"
                                         ] = "application/json"
-                                response_data["response"] = response.encode("utf-8")
+                                if isinstance(response, bytes):
+                                    response_data["response"] = response
+                                else:
+                                    response_data["response"] = response.encode("utf-8")
                                 message = {}
                                 message["txn_id"] = txn_id
                                 message["response_data"] = response_data

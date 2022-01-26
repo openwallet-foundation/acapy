@@ -20,13 +20,13 @@ class BaseInboundQueue(ABC):
 
     async def __aenter__(self):
         """Async context manager enter."""
-        await self.open()
+        await self.start()
 
     async def __aexit__(self, err_type, err_value, err_t):
         """Async context manager exit."""
         if err_type and err_type != asyncio.CancelledError:
-            self.logger.exception("Exception in outbound queue")
-        await self.close()
+            self.logger.exception("Exception in inbound queue")
+        await self.stop()
 
     async def start(self):
         """Start the queue."""
@@ -34,14 +34,8 @@ class BaseInboundQueue(ABC):
     async def stop(self):
         """Stop the queue."""
 
-    async def open(self):
-        """Start the queue."""
-
-    async def close(self):
-        """Stop the queue."""
-
     @abstractmethod
-    async def receive_message(
+    async def receive_messages(
         self,
     ):
         """Receive and send message to internal message router."""
