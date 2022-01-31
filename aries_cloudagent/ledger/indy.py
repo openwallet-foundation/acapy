@@ -886,7 +886,12 @@ class IndySdkLedger(BaseLedger):
         return address
 
     async def update_endpoint_for_did(
-        self, did: str, endpoint: str, endpoint_type: EndpointType = None, write_ledger: bool = True, endorser_did: str = None
+        self,
+        did: str,
+        endpoint: str,
+        endpoint_type: EndpointType = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 
@@ -897,8 +902,10 @@ class IndySdkLedger(BaseLedger):
         """
         public_info = await self.get_wallet_public_did()
         if not public_info:
-            raise BadLedgerRequestError("Cannot update endpoint at ledger without a public DID")        
-        
+            raise BadLedgerRequestError(
+                "Cannot update endpoint at ledger without a public DID"
+            )
+
         if not endpoint_type:
             endpoint_type = EndpointType.ENDPOINT
 
@@ -933,7 +940,10 @@ class IndySdkLedger(BaseLedger):
                         request_json, endorser_did
                     )
                     resp = await self._submit(
-                        request_json, True, sign_did=public_info, write_ledger=write_ledger
+                        request_json,
+                        True,
+                        sign_did=public_info,
+                        write_ledger=write_ledger,
                     )
                     if not write_ledger:
                         return {"signed_txn": resp}

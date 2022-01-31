@@ -28,12 +28,15 @@ from ..messaging.valid import (
     INDY_RAW_PUBLIC_KEY,
 )
 from ..multitenant.base import BaseMultitenantManager
-from ..protocols.endorse_transaction.v1_0.manager import (TransactionManager, TransactionManagerError)
+from ..protocols.endorse_transaction.v1_0.manager import (
+    TransactionManager,
+    TransactionManagerError,
+)
 from ..protocols.endorse_transaction.v1_0.util import (
     is_author_role,
-    get_endorser_connection_id
+    get_endorser_connection_id,
 )
-from ..storage.error import ( StorageNotFoundError, StorageError)
+from ..storage.error import StorageNotFoundError, StorageError
 
 from .base import BaseWallet
 from .did_info import DIDInfo
@@ -180,18 +183,21 @@ class DIDCreateSchema(OpenAPISchema):
         description="To define a key type for a did:key",
     )
 
+
 class CreateAttribTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
+
     create_transaction_for_endorser = fields.Boolean(
         description="Create Transaction For Endorser's signature",
         required=False,
     )
 
+
 class AttribConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
-    conn_id = fields.Str(
-        description="Connection identifier", required=False
-    )
+
+    conn_id = fields.Str(description="Connection identifier", required=False)
+
 
 def format_did_info(info: DIDInfo):
     """Serialize a DIDInfo object."""
@@ -446,7 +452,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
                 connection_id = await get_endorser_connection_id(context.profile)
                 if not connection_id:
                     raise web.HTTPBadRequest(reason="No endorser connection found")
-        
+
         if not write_ledger:
             try:
                 async with profile.session() as session:
@@ -482,14 +488,17 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
             if not endpoint:
                 endpoint = session.settings.get("default_endpoint")
-                attrib_def = await wallet.set_did_endpoint(info.did, endpoint, ledger,
-                                              write_ledger=write_ledger,
-                                              endorser_did=endorser_did)
-
+                attrib_def = await wallet.set_did_endpoint(
+                    info.did,
+                    endpoint,
+                    ledger,
+                    write_ledger=write_ledger,
+                    endorser_did=endorser_did,
+                )
 
             # Commented the below lines as the function set_did_endpoint
             # was calling update_endpoint_for_did of ledger
-            #async with ledger:
+            # async with ledger:
             #    await ledger.update_endpoint_for_did(info.did, endpoint)
 
             # Multitenancy setup
@@ -507,13 +516,12 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     if not create_transaction_for_endorser:
         return web.json_response({"result": format_did_info(info)})
-    
+
     else:
         transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=attrib_def["signed_txn"],
-                connection_id=connection_id
+                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -535,7 +543,6 @@ async def wallet_set_public_did(request: web.BaseRequest):
         return web.json_response({"txn": transaction.serialize()})
 
 
-
 @docs(
     tags=["wallet"], summary="Update endpoint in wallet and on ledger if posted to it"
 )
@@ -551,7 +558,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-    
+
     profile = context.profile
     session = await context.session()
 
@@ -563,7 +570,6 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
     endpoint_type = EndpointType.get(
         body.get("endpoint_type", EndpointType.ENDPOINT.w3c)
     )
-
 
     create_transaction_for_endorser = json.loads(
         request.query.get("create_transaction_for_endorser", "false")
@@ -577,7 +583,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
-    
+
             # check if we need to endorse
     if is_author_role(context.profile):
         # authors cannot write to the ledger
@@ -588,7 +594,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
             connection_id = await get_endorser_connection_id(context.profile)
             if not connection_id:
                 raise web.HTTPBadRequest(reason="No endorser connection found")
-        
+
     if not write_ledger:
         try:
             async with profile.session() as session:
@@ -618,9 +624,14 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
 
         try:
             ledger = context.profile.inject_or(BaseLedger)
-            attrib_def = await wallet.set_did_endpoint(did, endpoint, ledger, endpoint_type, 
-                                            write_ledger=write_ledger,
-                                            endorser_did=endorser_did)
+            attrib_def = await wallet.set_did_endpoint(
+                did,
+                endpoint,
+                ledger,
+                endpoint_type,
+                write_ledger=write_ledger,
+                endorser_did=endorser_did,
+            )
         except WalletNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
         except LedgerConfigError as err:
@@ -634,8 +645,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=attrib_def["signed_txn"],
-                connection_id=connection_id
+                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
