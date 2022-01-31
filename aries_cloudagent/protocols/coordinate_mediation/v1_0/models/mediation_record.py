@@ -19,6 +19,7 @@ class MediationRecord(BaseRecord):
         schema_class = "MediationRecordSchema"
 
     RECORD_TYPE = "mediation_requests"
+    RECORD_TOPIC = "mediation"
     RECORD_ID_NAME = "mediation_id"
     TAG_NAMES = {"state", "role", "connection_id"}
 
