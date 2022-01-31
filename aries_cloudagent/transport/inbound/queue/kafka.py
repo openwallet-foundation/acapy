@@ -20,10 +20,6 @@ from ..manager import InboundTransportManager
 
 from .base import BaseInboundQueue, InboundQueueConfigurationError
 
-OFFSET_LOCAL_FILE = os.path.join(
-    os.path.dirname(__file__), "partition-state-inbound_queue.json"
-)
-
 
 class RebalanceListener(ConsumerRebalanceListener):
     """Listener to control actions before and after rebalance."""
@@ -51,6 +47,10 @@ class RebalanceListener(ConsumerRebalanceListener):
 class LocalState:
     """Handle local json storage file for storing offsets."""
 
+    OFFSET_LOCAL_FILE = os.path.join(
+        os.path.dirname(__file__), "partition-state-inbound_queue.json"
+    )
+
     def __init__(self):
         """Initialize LocalState."""
         self._counts = {}
@@ -59,7 +59,7 @@ class LocalState:
     def dump_local_state(self):
         """Dump local state."""
         for tp in self._counts:
-            fpath = pathlib.Path(OFFSET_LOCAL_FILE)
+            fpath = pathlib.Path(self.OFFSET_LOCAL_FILE)
             with fpath.open("w+") as f:
                 json.dump(
                     {
@@ -74,7 +74,7 @@ class LocalState:
         self._counts.clear()
         self._offsets.clear()
         for tp in partitions:
-            fpath = pathlib.Path(OFFSET_LOCAL_FILE)
+            fpath = pathlib.Path(self.OFFSET_LOCAL_FILE)
             state = {"last_offset": -1, "counts": {}}  # Non existing, will reset
             if fpath.exists():
                 with fpath.open("r+") as f:
@@ -208,10 +208,7 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                             True if "txn_id" in msg_data else False
                         )
                         async with session:
-                            try:
-                                await session.receive(msg_data["data"].decode("utf-8"))
-                            except UnicodeDecodeError:
-                                await session.receive(msg_data["data"])
+                            await session.receive(msg_data["data"])
                             if direct_reponse_requested:
                                 txn_id = msg_data["txn_id"]
                                 transport_type = msg_data["transport_type"]
@@ -233,10 +230,7 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                                         response_data[
                                             "content-type"
                                         ] = "application/json"
-                                if isinstance(response, bytes):
-                                    response_data["response"] = response
-                                else:
-                                    response_data["response"] = response.encode("utf-8")
+                                response_data["response"] = response
                                 message = {}
                                 message["txn_id"] = txn_id
                                 message["response_data"] = response_data
@@ -250,5 +244,5 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                     local_state.add_counts(tp, counts, msg.offset)
         finally:
             await self.consumer.stop()
-            if not save_task.done():
-                save_task.cancel()
+            save_task.cancel()
+            await save_task

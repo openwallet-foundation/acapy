@@ -19,6 +19,10 @@ def log_error(*args):
 class KafkaHTTPHandler:
     """Kafka inbound delivery service for HTTP."""
 
+    # for unit testing
+    RUNNING = True
+    RUNNING_DIRECT_RESP = True
+
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaHTTPHandler."""
         self._host = host
@@ -30,6 +34,8 @@ class KafkaHTTPHandler:
         self.direct_response_txn_request_map = {}
         self.direct_resp_topic = f"{self.prefix}.inbound_direct_responses"
         self.inbound_transport_key = f"{self.prefix}.inbound_transport"
+        self.site = None
+        self.timedelay_s = 1
 
     async def run(self):
         """Run the service."""
@@ -66,28 +72,31 @@ class KafkaHTTPHandler:
     async def process_direct_responses(self):
         """Process inbound_direct_responses and update direct_response_txn_request_map."""
         await self.consumer_direct_response.start()
-        while True:
+        while self.RUNNING_DIRECT_RESP:
             data = await self.consumer_direct_response.getmany(timeout_ms=10000)
             for tp, messages in data.items():
                 for msg in messages:
-                    msg = msgpack.unpackb(msg)
+                    msg = msgpack.unpackb(msg.value)
                     if not isinstance(msg, dict):
                         log_error("Received non-dict message")
-                    elif "response" not in msg:
+                        continue
+                    elif "response_data" not in msg:
                         log_error("No response provided")
+                        continue
                     elif "txn_id" not in msg:
                         log_error("No txn_id provided")
+                        continue
                     txn_id = msg["txn_id"]
                     response_data = msg["response_data"]
                     self.direct_response_txn_request_map[txn_id] = response_data
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(self.timedelay_s)
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while True:
+        while self.RUNNING:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
-            await asyncio.sleep(1)
+            await asyncio.sleep(self.timedelay_s)
 
     async def invite_handler(self, request):
         """Handle inbound invitation."""
@@ -120,7 +129,7 @@ class KafkaHTTPHandler:
                 {
                     "host": request.host,
                     "remote": request.remote,
-                    "data": body.encode("utf-8"),
+                    "data": body,
                     "txn_id": txn_id,
                     "transport_type": "http",
                 }
@@ -138,7 +147,7 @@ class KafkaHTTPHandler:
                     ),
                     15,
                 )
-                response = response_data["response"].decode("utf-8")
+                response = response_data["response"]
                 content_type = response_data.get("content_type", "application/json")
                 if response:
                     return web.Response(
@@ -153,7 +162,7 @@ class KafkaHTTPHandler:
                 {
                     "host": request.host,
                     "remote": request.remote,
-                    "data": body.encode("utf-8"),
+                    "data": body,
                 }
             )
             async with self.producer.transaction():
@@ -168,19 +177,23 @@ class KafkaHTTPHandler:
 class KafkaWSHandler:
     """Kafka Inbound Delivery Service for WebSockets."""
 
+    # for unit testing
+    RUNNING = True
+    RUNNING_DIRECT_RESP = True
+
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaWSHandler."""
         self._host = host
         self.prefix = prefix
         self.site_host = site_host
         self.site_port = site_port
-        self.producer = AIOKafkaProducer(
-            bootstrap_servers=self._host, transactional_id=str(uuid4())
-        )
+        self.producer = None
         self.consumer_direct_response = None
         self.direct_response_txn_request_map = {}
         self.direct_resp_topic = f"{self.prefix}.inbound_direct_responses"
         self.inbound_transport_key = f"{self.prefix}.inbound_transport"
+        self.site = None
+        self.timedelay_s = 1
 
     async def run(self):
         """Run the service."""
@@ -216,28 +229,31 @@ class KafkaWSHandler:
     async def process_direct_responses(self):
         """Process inbound_direct_responses and update direct_response_txn_request_map."""
         await self.consumer_direct_response.start()
-        while True:
+        while self.RUNNING_DIRECT_RESP:
             data = await self.consumer_direct_response.getmany(timeout_ms=10000)
             for tp, messages in data.items():
                 for msg in messages:
-                    msg = msgpack.unpackb(msg)
+                    msg = msgpack.unpackb(msg.value)
                     if not isinstance(msg, dict):
                         log_error("Received non-dict message")
+                        continue
                     elif "response_data" not in msg:
                         log_error("No response provided")
+                        continue
                     elif "txn_id" not in msg:
                         log_error("No txn_id provided")
+                        continue
                     txn_id = msg["txn_id"]
                     response_data = msg["response_data"]
                     self.direct_response_txn_request_map[txn_id] = response_data
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(self.timedelay_s)
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while True:
+        while self.RUNNING_DIRECT_RESP:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
-            await asyncio.sleep(1)
+            await asyncio.sleep(self.timedelay_s)
 
     async def message_handler(self, request):
         """Message handler for inbound messages."""
@@ -268,7 +284,7 @@ class KafkaWSHandler:
                             {
                                 "host": request.host,
                                 "remote": request.remote,
-                                "data": msg.data.encode("utf-8"),
+                                "data": msg.data,
                                 "txn_id": txn_id,
                                 "transport_type": "ws",
                             }
@@ -286,7 +302,7 @@ class KafkaWSHandler:
                                 ),
                                 15,
                             )
-                            response = response_data["response"].decode("utf-8")
+                            response = response_data["response"]
                             if response:
                                 if isinstance(response, bytes):
                                     await ws.send_bytes(response)
@@ -299,7 +315,7 @@ class KafkaWSHandler:
                             {
                                 "host": request.host,
                                 "remote": request.remote,
-                                "data": msg.data.encode("utf-8"),
+                                "data": msg.data,
                             }
                         )
                         async with self.producer.transaction():
@@ -330,8 +346,43 @@ class KafkaWSHandler:
         return ws
 
 
-async def main():
+async def main(args):
     """Start services."""
+    args = argument_parser(args)
+    config = None
+    if args.plugin_config:
+        with open(args.plugin_config, "r") as stream:
+            loaded_plugin_config = yaml.safe_load(stream)
+        config = loaded_plugin_config.get("kafka_inbound_queue")
+    if args.inbound_queue:
+        host = args.inbound_queue
+    elif config:
+        host = config["connection"]
+    else:
+        raise SystemExit("No Kafka bootsrap server or host provided.")
+    if config:
+        prefix = config.get("prefix", "acapy")
+    elif args.inbound_queue_prefix:
+        prefix = args.inbound_queue_prefix
+    else:
+        prefix = "acapy"
+    tasks = []
+    if not args.inbound_transports:
+        raise SystemExit("No inbound transport config provided.")
+    for inbound_transport in args.inbound_transports:
+        transport_type, site_host, site_port = inbound_transport
+        if transport_type == "ws":
+            handler = KafkaWSHandler(host, prefix, site_host, site_port)
+        elif transport_type == "http":
+            handler = KafkaHTTPHandler(host, prefix, site_host, site_port)
+        else:
+            raise SystemExit("Only ws and http transport type are supported.")
+        tasks.append(handler.run())
+    await asyncio.gather(*tasks)
+
+
+def argument_parser(args):
+    """Argument parser."""
     parser = argparse.ArgumentParser(description="kafka Inbound Delivery Service.")
     parser.add_argument(
         "-iq",
@@ -362,36 +413,8 @@ async def main():
         required=False,
         help="Load YAML file path that defines external plugin configuration.",
     )
-    args = parser.parse_args()
-    config = None
-    if args.plugin_config:
-        with open(args.plugin_config, "r") as stream:
-            loaded_plugin_config = yaml.safe_load(stream)
-        config = loaded_plugin_config.get("kafka_inbound_queue")
-    if args.inbound_queue:
-        host = args.inbound_queue
-    elif config:
-        host = config["connection"]
-    else:
-        raise SystemExit("No Kafka bootsrap server or host provided.")
-    if config:
-        prefix = config.get("prefix", "acapy")
-    elif args.inbound_queue_prefix:
-        prefix = args.inbound_queue_prefix
-    else:
-        prefix = "acapy"
-    tasks = []
-    for inbound_transport in args.inbound_transports:
-        transport_type, site_host, site_port = inbound_transport
-        if transport_type == "ws":
-            handler = KafkaWSHandler(host, prefix, site_host, site_port)
-        elif transport_type == "http":
-            handler = KafkaHTTPHandler(host, prefix, site_host, site_port)
-        else:
-            raise SystemExit("Only ws and http transport type are supported.")
-        tasks.append(handler.run())
-    await asyncio.gather(*tasks)
+    return parser.parse_args(args)
 
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main())
+    asyncio.get_event_loop().run_until_complete(main(sys.argv[1:]))

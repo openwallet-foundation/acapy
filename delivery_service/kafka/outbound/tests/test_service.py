@@ -1,16 +1,154 @@
-import asyncio
 import msgpack
+import os
 import pytest
 import random
 import string
 
+import aiohttp
+import asyncio
 from asynctest import TestCase as AsyncTestCase, mock as async_mock, PropertyMock
 from aiokafka.errors import OffsetOutOfRangeError
 from aiokafka.structs import TopicPartition
 from collections import Counter
+from pathlib import Path
+from time import time
 
 from .. import service as test_module
-from ..service import KafkaHandler, LocalState, RebalanceListener
+from ..service import KafkaHandler, LocalState, RebalanceListener, main, argument_parser
+
+test_msg_sets_a = {
+    "acapy.outbound_transport": [
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
+                    "headers": {"content-type": "test"},
+                    "endpoint": "http://localhost:9000",
+                    "payload": (string.digits + string.ascii_letters).encode(
+                        encoding="utf-8"
+                    ),
+                }
+            ),
+            key="test_random_2",
+            offsets=1003,
+        ),
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
+                    "headers": {"content-type": b"test1"},
+                    "endpoint": "http://localhost:9000",
+                    "payload": (string.digits + string.ascii_letters).encode(
+                        encoding="utf-8"
+                    ),
+                }
+            ),
+            key="test_random_3",
+            offsets=1002,
+        ),
+    ]
+}
+test_msg_sets_b = {
+    "acapy.outbound_transport": [
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
+                    "headers": {"content-type": "test1"},
+                    "endpoint": "http://localhost:9000",
+                    "payload": (bytes(range(0, 256))),
+                }
+            ),
+            key="test_random_1",
+            offsets=1001,
+        )
+    ]
+}
+test_msg_sets_c = {
+    "acapy.outbound_transport": [
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
+                    "headers": {"content-type": "test1"},
+                    "endpoint": "http://localhost:9000",
+                    "payload": (bytes(range(0, 256))),
+                    "retries": 6,
+                }
+            ),
+            key="test_random_1",
+            offsets=1001,
+        )
+    ]
+}
+test_msg_sets_d = {
+    "acapy.outbound_transport": [
+        async_mock.MagicMock(
+            value=msgpack.packb(["invalid", "list", "require", "dict"]),
+            key="test_random_1",
+            offsets=1001,
+        ),
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
+                    "headers": {"content-type": "test1"},
+                    "payload": (bytes(range(0, 256))),
+                }
+            ),
+            key="test_random_1",
+            offsets=1001,
+        ),
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
+                    "headers": {"content-type": "test1"},
+                    "endpoint": "http://localhost:9000",
+                    "payload": (bytes(range(0, 256))),
+                    "retries": 6,
+                }
+            ),
+            key="test_random_1",
+            offsets=1001,
+        ),
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
+                    "headers": {"content-type": "test1"},
+                    "endpoint": "ws://localhost:9000",
+                    "payload": (bytes(range(0, 256))),
+                }
+            ),
+            key="test_random_1",
+            offsets=1001,
+        ),
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
+                    "headers": {"content-type": "test1"},
+                    "endpoint": "http://localhost:9000",
+                }
+            ),
+            key="test_random_1",
+            offsets=1001,
+        ),
+    ]
+}
+test_msg_sets_e = {
+    "acapy.outbound_retry": [
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
+                    "headers": {"content-type": "test1"},
+                    "endpoint": "http://localhost:9000",
+                    "payload": (bytes(range(0, 256))),
+                    "retry_time": int(time()),
+                }
+            ),
+            key="test_random_1",
+            offsets=1001,
+        )
+    ]
+}
+offset_local_path = os.path.join(
+    os.path.dirname(__file__),
+    "test-partition-state-inbound_queue.json",
+)
 
 
 class TestRebalanceListener(AsyncTestCase):
@@ -49,6 +187,7 @@ class TestRebalanceListener(AsyncTestCase):
 class TestLocalState(AsyncTestCase):
     def setUp(self):
         self.local_state = LocalState()
+        self.local_state.OFFSET_LOCAL_FILE = offset_local_path
         assert self.local_state._counts == {}
         assert self.local_state._offsets == {}
         test_partition = {
@@ -93,60 +232,198 @@ class TestLocalState(AsyncTestCase):
 
 
 class TestKafkaHandler(AsyncTestCase):
-    def setUp(self):
-        self.host = "test"
-        self.prefix = "acapy"
-
-    async def test_init(self):
+    async def test_main(self):
+        KafkaHandler.RUNNING = PropertyMock(side_effect=[True, True, False])
         with async_mock.patch(
             "aiokafka.AIOKafkaProducer.start",
             async_mock.CoroutineMock(),
         ), async_mock.patch(
-            "aiokafka.AIOKafkaProducer.stop",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaProducer.transaction",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaProducer.send",
-            async_mock.CoroutineMock(),
-        ) as mock_send, async_mock.patch(
             "aiokafka.AIOKafkaProducer",
             async_mock.MagicMock(),
         ), async_mock.patch(
             "aiokafka.AIOKafkaConsumer.start",
             async_mock.CoroutineMock(),
         ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer.stop",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer.subscribe",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer.getmany",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer.seek_to_beginning",
-            async_mock.CoroutineMock(),
-        ) as mock_seek_to_beginning, async_mock.patch(
             "aiokafka.AIOKafkaConsumer",
             async_mock.MagicMock(),
+        ), async_mock.patch.object(
+            KafkaHandler, "process_delivery", autospec=True
+        ), async_mock.patch.object(
+            KafkaHandler, "process_retries", autospec=True
+        ), async_mock.patch.object(
+            Path, "open", async_mock.MagicMock()
         ):
-            queue = KafkaHandler()
-            queue.prefix == "acapy"
-            queue.connection = "connection"
-            assert str(queue)
-            await queue.start()
-            await queue.stop()
+            await main(
+                [
+                    "-oq",
+                    "test",
+                ]
+            )
+
+    async def test_main_x(self):
+        with self.assertRaises(SystemExit):
+            await main([])
+
+    async def test_main_plugin_config(self):
+        KafkaHandler.RUNNING = PropertyMock(side_effect=[True, True, False])
+        with async_mock.patch(
+            "aiokafka.AIOKafkaProducer.start",
+            async_mock.CoroutineMock(),
+        ), async_mock.patch(
+            "aiokafka.AIOKafkaProducer",
+            async_mock.MagicMock(),
+        ), async_mock.patch(
+            "aiokafka.AIOKafkaConsumer.start",
+            async_mock.CoroutineMock(),
+        ), async_mock.patch(
+            "aiokafka.AIOKafkaConsumer",
+            async_mock.MagicMock(),
+        ), async_mock.patch.object(
+            KafkaHandler, "process_delivery", autospec=True
+        ), async_mock.patch.object(
+            KafkaHandler, "process_retries", autospec=True
+        ), async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={"kafka_outbound_queue": {"connection": "test"}}
+            ),
+        ), async_mock.patch.object(
+            Path, "open", async_mock.MagicMock()
+        ), async_mock.patch(
+            "builtins.open", async_mock.MagicMock()
+        ) as mock_open:
+            await main(
+                [
+                    "--plugin-config",
+                    "test_yaml_path.yml",
+                ]
+            )
 
     async def test_save_state_every_second(self):
-        pass
+        sentinel = PropertyMock(side_effect=[True, True, True, False])
+        KafkaHandler.RUNNING = sentinel
+        service = KafkaHandler("test", "acapy")
+        with async_mock.patch.object(
+            test_module, "LocalState", autospec=True
+        ) as mock_local_state, async_mock.patch.object(
+            test_module.asyncio,
+            "sleep",
+            async_mock.CoroutineMock(
+                side_effect=[None, None, test_module.asyncio.CancelledError]
+            ),
+        ):
+            await service.save_state_every_second(mock_local_state)
+        assert mock_local_state.dump_local_state.call_count == 2
 
     async def test_process_delivery(self):
-        pass
+        sentinel = PropertyMock(side_effect=[True, True, False])
+        KafkaHandler.RUNNING = sentinel
+        service = KafkaHandler("test", "acapy")
+        with async_mock.patch.object(
+            aiohttp.ClientSession,
+            "post",
+            async_mock.CoroutineMock(return_value=async_mock.MagicMock(status=200)),
+        ), async_mock.patch.object(
+            test_module, "LocalState", autospec=True
+        ) as mock_local_state, async_mock.patch.object(
+            KafkaHandler, "save_state_every_second", autospec=True
+        ), async_mock.patch.object(
+            service, "process_retries", async_mock.CoroutineMock()
+        ):
+            mock_producer = async_mock.MagicMock(
+                start=async_mock.CoroutineMock(),
+                stop=async_mock.CoroutineMock(),
+                transaction=async_mock.MagicMock(),
+                send=async_mock.CoroutineMock(),
+            )
 
-    async def test_add_retry(self):
-        pass
+            mock_consumer = async_mock.MagicMock(
+                start=async_mock.CoroutineMock(),
+                stop=async_mock.CoroutineMock(),
+                subscribe=async_mock.CoroutineMock(),
+                getmany=async_mock.CoroutineMock(
+                    side_effect=[
+                        test_msg_sets_a,
+                        test_msg_sets_b,
+                    ]
+                ),
+                seek_to_beginning=async_mock.CoroutineMock(),
+            )
+            service.consumer = mock_consumer
+            service.producer = mock_producer
+            await service.process_delivery()
+
+    async def test_process_delivery_x(self):
+        sentinel = PropertyMock(side_effect=[True, True, True, False])
+        KafkaHandler.RUNNING = sentinel
+        service = KafkaHandler("test", "acapy")
+        with async_mock.patch.object(
+            aiohttp.ClientSession,
+            "post",
+            async_mock.CoroutineMock(
+                side_effect=[async_mock.MagicMock(status=400), aiohttp.ClientError]
+            ),
+        ), async_mock.patch.object(
+            test_module, "LocalState", autospec=True
+        ) as mock_local_state, async_mock.patch.object(
+            KafkaHandler, "save_state_every_second", autospec=True
+        ), async_mock.patch.object(
+            service, "process_retries", async_mock.CoroutineMock()
+        ):
+            mock_producer = async_mock.MagicMock(
+                start=async_mock.CoroutineMock(),
+                stop=async_mock.CoroutineMock(),
+                transaction=async_mock.MagicMock(),
+                send=async_mock.CoroutineMock(),
+            )
+
+            mock_consumer = async_mock.MagicMock(
+                start=async_mock.CoroutineMock(),
+                stop=async_mock.CoroutineMock(),
+                subscribe=async_mock.CoroutineMock(),
+                getmany=async_mock.CoroutineMock(
+                    side_effect=[
+                        OffsetOutOfRangeError({}),
+                        test_msg_sets_d,
+                        test_msg_sets_b,
+                    ]
+                ),
+                seek_to_beginning=async_mock.CoroutineMock(),
+            )
+            service.consumer = mock_consumer
+            service.producer = mock_producer
+            await service.process_delivery()
 
     async def test_process_retries(self):
-        pass
+        sentinel = PropertyMock(side_effect=[True, True, False])
+        KafkaHandler.RUNNING_RETRY = sentinel
+        service = KafkaHandler("test", "acapy")
+        service.retry_timedelay_s = 0.1
+        with async_mock.patch.object(
+            test_module, "LocalState", autospec=True
+        ) as mock_local_state, async_mock.patch.object(
+            KafkaHandler, "save_state_every_second", autospec=True
+        ):
+            mock_producer = async_mock.MagicMock(
+                start=async_mock.CoroutineMock(),
+                stop=async_mock.CoroutineMock(),
+                transaction=async_mock.MagicMock(),
+                send=async_mock.CoroutineMock(),
+            )
+
+            mock_consumer = async_mock.MagicMock(
+                start=async_mock.CoroutineMock(),
+                stop=async_mock.CoroutineMock(),
+                subscribe=async_mock.CoroutineMock(),
+                getmany=async_mock.CoroutineMock(
+                    side_effect=[
+                        OffsetOutOfRangeError({}),
+                        test_msg_sets_e,
+                    ]
+                ),
+                seek_to_beginning=async_mock.CoroutineMock(),
+            )
+            service.consumer_retry = mock_consumer
+            service.producer = mock_producer
+            await service.process_retries()

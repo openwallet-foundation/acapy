@@ -94,10 +94,7 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
             )
             direct_reponse_requested = True if "txn_id" in msg else False
             async with session:
-                try:
-                    await session.receive(msg["data"].decode("utf-8"))
-                except UnicodeDecodeError:
-                    await session.receive(msg["data"])
+                await session.receive(msg["data"])
                 if direct_reponse_requested:
                     txn_id = msg["txn_id"]
                     transport_type = msg["transport_type"]
@@ -113,10 +110,7 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
                                 response_data["content-type"] = DIDCOMM_V0_MIME_TYPE
                         else:
                             response_data["content-type"] = "application/json"
-                    if isinstance(response, bytes):
-                        response_data["response"] = response
-                    else:
-                        response_data["response"] = response.encode("utf-8")
+                    response_data["response"] = response
                     message = {}
                     message["txn_id"] = txn_id
                     message["response_data"] = response_data

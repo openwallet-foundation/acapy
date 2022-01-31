@@ -1,5 +1,6 @@
 import asyncio
 import msgpack
+import os
 import pytest
 import random
 import string
@@ -139,6 +140,10 @@ test_msg_sets_e = {
         )
     ]
 }
+offset_local_path = os.path.join(
+    os.path.dirname(__file__),
+    "test-partition-state-inbound_queue.json",
+)
 
 
 class TestRebalanceListener(AsyncTestCase):
@@ -177,6 +182,7 @@ class TestRebalanceListener(AsyncTestCase):
 class TestLocalState(AsyncTestCase):
     def setUp(self):
         self.local_state = LocalState()
+        self.local_state.OFFSET_LOCAL_FILE = offset_local_path
         assert self.local_state._counts == {}
         assert self.local_state._offsets == {}
         test_partition = {

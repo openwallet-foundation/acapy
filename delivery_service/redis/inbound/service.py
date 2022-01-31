@@ -19,6 +19,9 @@ def log_error(*args):
 class RedisHTTPHandler:
     """Redis inbound delivery service for HTTP."""
 
+    # for unit testing
+    RUNNING = True
+
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaHTTPHandler."""
         self._host = host
@@ -54,7 +57,7 @@ class RedisHTTPHandler:
 
     async def process_direct_responses(self):
         """Process inbound_direct_responses and update direct_response_txn_request_map."""
-        while True:
+        while self.RUNNING:
             try:
                 msg = await self.redis.blpop(self.direct_resp_topic, 0)
             except aioredis.RedisError as err:
@@ -73,7 +76,7 @@ class RedisHTTPHandler:
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while True:
+        while self.RUNNING:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
             await asyncio.sleep(1)
@@ -157,6 +160,10 @@ class RedisHTTPHandler:
 class RedisWSHandler:
     """Redis inbound delivery service for WebSockets."""
 
+    # for unit testing
+    RUNNING = True
+    RUNNING_DIRECT_RESP = True
+
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaHTTPHandler."""
         self._host = host
@@ -191,7 +198,7 @@ class RedisWSHandler:
 
     async def process_direct_responses(self):
         """Process inbound_direct_responses and update direct_response_txn_request_map."""
-        while True:
+        while self.RUNNING_DIRECT_RESP:
             try:
                 msg = await self.redis.blpop(self.direct_resp_topic, 0)
             except aioredis.RedisError as err:
@@ -210,7 +217,7 @@ class RedisWSHandler:
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while True:
+        while self.RUNNING_DIRECT_RESP:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
             await asyncio.sleep(1)
@@ -306,39 +313,9 @@ class RedisWSHandler:
         return ws
 
 
-async def main():
+async def main(args):
     """Start services."""
-    parser = argparse.ArgumentParser(description="Redis Inbound Delivery Service.")
-    parser.add_argument(
-        "-iq",
-        "--inbound-queue",
-        dest="inbound_queue",
-        type=str,
-    )
-    parser.add_argument(
-        "-iqp",
-        "--inbound-queue-prefix",
-        dest="inbound_queue_prefix",
-        type=str,
-        default="acapy",
-    )
-    parser.add_argument(
-        "-it",
-        "--inbound-transports",
-        dest="inbound_transports",
-        type=str,
-        action="append",
-        nargs=3,
-        metavar=("<module>", "<host>", "<port>"),
-    )
-    parser.add_argument(
-        "--plugin-config",
-        dest="plugin_config",
-        type=str,
-        required=False,
-        help="Load YAML file path that defines external plugin configuration.",
-    )
-    args = parser.parse_args()
+    args = argument_parser(args)
     config = None
     if args.plugin_config:
         with open(args.plugin_config, "r") as stream:
@@ -369,5 +346,40 @@ async def main():
     await asyncio.gather(*tasks)
 
 
+def argument_parser(args):
+    """Argument parser."""
+    parser = argparse.ArgumentParser(description="Redis Inbound Delivery Service.")
+    parser.add_argument(
+        "-iq",
+        "--inbound-queue",
+        dest="inbound_queue",
+        type=str,
+    )
+    parser.add_argument(
+        "-iqp",
+        "--inbound-queue-prefix",
+        dest="inbound_queue_prefix",
+        type=str,
+        default="acapy",
+    )
+    parser.add_argument(
+        "-it",
+        "--inbound-transports",
+        dest="inbound_transports",
+        type=str,
+        action="append",
+        nargs=3,
+        metavar=("<module>", "<host>", "<port>"),
+    )
+    parser.add_argument(
+        "--plugin-config",
+        dest="plugin_config",
+        type=str,
+        required=False,
+        help="Load YAML file path that defines external plugin configuration.",
+    )
+    return parser.parse_args(args)
+
+
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main())
+    asyncio.get_event_loop().run_until_complete(main(sys.argv[1:]))

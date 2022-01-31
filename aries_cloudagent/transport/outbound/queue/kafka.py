@@ -72,7 +72,6 @@ class KafkaOutboundQueue(BaseOutboundQueue):
             content_type = "application/ssi-agent-wire"
         else:
             content_type = "application/json"
-            payload = payload.encode(encoding="utf-8")
         message = msgpack.packb(
             {
                 "headers": {"Content-Type": content_type},

@@ -22,11 +22,6 @@ def log_error(*args):
     print(*args, file=sys.stderr)
 
 
-OFFSET_LOCAL_FILE = os.path.join(
-    os.path.dirname(__file__), "partition-state-inbound_queue.json"
-)
-
-
 class RebalanceListener(ConsumerRebalanceListener):
     """Listener to control actions before and after rebalance."""
 
@@ -53,6 +48,10 @@ class RebalanceListener(ConsumerRebalanceListener):
 class LocalState:
     """Handle local json storage file for storing offsets."""
 
+    OFFSET_LOCAL_FILE = os.path.join(
+        os.path.dirname(__file__), "partition-state-inbound_queue.json"
+    )
+
     def __init__(self):
         """Initialize LocalState."""
         self._counts = {}
@@ -61,7 +60,7 @@ class LocalState:
     def dump_local_state(self):
         """Dump local state."""
         for tp in self._counts:
-            fpath = pathlib.Path(OFFSET_LOCAL_FILE)
+            fpath = pathlib.Path(self.OFFSET_LOCAL_FILE)
             with fpath.open("w+") as f:
                 json.dump(
                     {
@@ -76,7 +75,7 @@ class LocalState:
         self._counts.clear()
         self._offsets.clear()
         for tp in partitions:
-            fpath = pathlib.Path(OFFSET_LOCAL_FILE)
+            fpath = pathlib.Path(self.OFFSET_LOCAL_FILE)
             state = {"last_offset": -1, "counts": {}}  # Non existing, will reset
             if fpath.exists():
                 with fpath.open("r+") as f:
@@ -106,6 +105,10 @@ class LocalState:
 class KafkaHandler:
     """Kafka outbound delivery."""
 
+    # for unit testing
+    RUNNING = True
+    RUNNING_RETRY = True
+
     def __init__(self, host: str, prefix: str):
         """Initialize KafkaHandler."""
         self._host = host
@@ -117,6 +120,7 @@ class KafkaHandler:
         self.retry_backoff = 0.25
         self.outbound_topic = f"{self.prefix}.outbound_transport"
         self.retry_topic = f"{self.prefix}.outbound_retry"
+        self.retry_timedelay_s = 3
 
     async def run(self):
         """Run the service."""
@@ -143,7 +147,7 @@ class KafkaHandler:
 
     async def save_state_every_second(self, local_state):
         """Update local state."""
-        while True:
+        while self.RUNNING:
             try:
                 await asyncio.sleep(1)
             except asyncio.CancelledError:
@@ -159,7 +163,7 @@ class KafkaHandler:
         loop = asyncio.get_event_loop()
         save_task = loop.create_task(self.save_state_every_second(local_state))
         try:
-            while True:
+            while self.RUNNING:
                 try:
                     msg_set = await self.consumer.getmany(timeout_ms=1000)
                 except OffsetOutOfRangeError as err:
@@ -184,8 +188,8 @@ class KafkaHandler:
                                 for hname, hval in msg_data["headers"].items():
                                     if isinstance(hval, bytes):
                                         hval = hval.decode("utf-8")
-                                    headers[hname.decode("utf-8")] = hval
-                            endpoint = msg_data["endpoint"].decode("utf-8")
+                                    headers[hname] = hval
+                            endpoint = msg_data["endpoint"]
                             payload = msg_data["payload"]
                             parsed = urllib.parse.urlparse(endpoint)
                             if parsed.scheme == "http" or parsed.scheme == "https":
@@ -226,8 +230,9 @@ class KafkaHandler:
                     local_state.add_counts(tp, counts, msg.offset)
         finally:
             await self.consumer.stop()
-            if not save_task.done():
-                save_task.cancel()
+            await http_client.close()
+            save_task.cancel()
+            await save_task
 
     async def add_retry(self, message: dict):
         """Add undelivered message for future retries."""
@@ -252,7 +257,7 @@ class KafkaHandler:
         loop = asyncio.get_event_loop()
         save_task = loop.create_task(self.save_state_every_second(local_state))
         try:
-            while True:
+            while self.RUNNING_RETRY:
                 await asyncio.sleep(self.retry_timedelay_s)
                 try:
                     msg_set = await self.consumer_retry.getmany(timeout_ms=1000)
@@ -279,12 +284,34 @@ class KafkaHandler:
         finally:
             await self.consumer_retry.stop()
             await self.producer.stop()
-            if not save_task.done():
-                save_task.cancel()
+            save_task.cancel()
+            await save_task
 
 
-async def main():
+async def main(args):
     """Start services."""
+    args = argument_parser(args)
+    config = None
+    if args.plugin_config:
+        with open(args.plugin_config, "r") as stream:
+            loaded_plugin_config = yaml.safe_load(stream)
+        config = loaded_plugin_config.get("kafka_outbound_queue")
+    if args.outbound_queue:
+        host = args.outbound_queue
+    elif config:
+        host = config["connection"]
+    else:
+        raise SystemExit("No Kafka bootsrap server or host provided.")
+    if config:
+        prefix = config.get("prefix", "acapy")
+    elif args.outbound_queue_prefix:
+        prefix = args.outbound_queue_prefix
+    handler = KafkaHandler(host, prefix)
+    await handler.run()
+
+
+def argument_parser(args):
+    """Argument parser."""
     parser = argparse.ArgumentParser(description="Kafka Outbound Delivery Service.")
     parser.add_argument(
         "-oq",
@@ -306,27 +333,8 @@ async def main():
         required=False,
         help="Load YAML file path that defines external plugin configuration.",
     )
-    args = parser.parse_args()
-    config = None
-    if args.plugin_config:
-        with open(args.plugin_config, "r") as stream:
-            loaded_plugin_config = yaml.safe_load(stream)
-        config = loaded_plugin_config.get("kafka_outbound_queue")
-    if args.outbound_queue:
-        host = args.outbound_queue
-    elif config:
-        host = config["connection"]
-    else:
-        raise SystemExit("No Kafka bootsrap server or host provided.")
-    if config:
-        prefix = config.get("prefix", "acapy")
-    elif args.outbound_queue_prefix:
-        prefix = args.outbound_queue_prefix
-    else:
-        prefix = "acapy"
-    handler = KafkaHandler(host, prefix)
-    await handler.run()
+    return parser.parse_args(args)
 
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main())
+    asyncio.get_event_loop().run_until_complete(main(sys.argv[1:]))
