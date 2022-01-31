@@ -21,6 +21,7 @@ class RedisHTTPHandler:
 
     # for unit testing
     RUNNING = True
+    RUNNING_DIRECT_RESP = True
 
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaHTTPHandler."""
@@ -33,6 +34,8 @@ class RedisHTTPHandler:
         self.direct_response_txn_request_map = {}
         self.direct_resp_topic = f"{self.prefix}.inbound_direct_responses"
         self.inbound_transport_key = f"{self.prefix}.inbound_transport"
+        self.site = None
+        self.timedelay_s = 1
 
     async def run(self):
         """Run the service."""
@@ -57,29 +60,33 @@ class RedisHTTPHandler:
 
     async def process_direct_responses(self):
         """Process inbound_direct_responses and update direct_response_txn_request_map."""
-        while self.RUNNING:
+        while self.RUNNING_DIRECT_RESP:
             try:
                 msg = await self.redis.blpop(self.direct_resp_topic, 0)
             except aioredis.RedisError as err:
                 log_error(f"Unexpected redis client exception, {err}")
+                continue
             msg = msgpack.unpackb(msg)
             if not isinstance(msg, dict):
                 log_error("Received non-dict message")
-            elif "response" not in msg:
+                continue
+            elif "response_data" not in msg:
                 log_error("No response provided")
+                continue
             elif "txn_id" not in msg:
                 log_error("No txn_id provided")
+                continue
             txn_id = msg["txn_id"]
             response_data = msg["response_data"]
             self.direct_response_txn_request_map[txn_id] = response_data
-            await asyncio.sleep(1)
+            await asyncio.sleep(self.timedelay_s)
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while self.RUNNING:
+        while self.RUNNING_DIRECT_RESP:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
-            await asyncio.sleep(1)
+            await asyncio.sleep(self.timedelay_s)
 
     async def invite_handler(self, request):
         """Handle inbound invitation."""
@@ -112,13 +119,13 @@ class RedisHTTPHandler:
                 {
                     "host": request.host,
                     "remote": request.remote,
-                    "data": body.encode("utf-8"),
+                    "data": body,
                     "txn_id": txn_id,
                     "transport_type": "http",
                 }
             )
             try:
-                return await self.redis.rpush(self.inbound_transport_key, message)
+                await self.redis.rpush(self.inbound_transport_key, message)
             except aioredis.RedisError as err:
                 log_error(f"Unexpected redis client exception, {err}")
             try:
@@ -128,7 +135,7 @@ class RedisHTTPHandler:
                     ),
                     15,
                 )
-                response = response_data["response"].decode("utf-8")
+                response = response_data["response"]
                 content_type = (
                     response_data["content_type"]
                     if "content_type" in response_data
@@ -147,11 +154,11 @@ class RedisHTTPHandler:
                 {
                     "host": request.host,
                     "remote": request.remote,
-                    "data": body.encode("utf-8"),
+                    "data": body,
                 }
             )
             try:
-                return await self.redis.rpush(self.inbound_transport_key, message)
+                await self.redis.rpush(self.inbound_transport_key, message)
             except aioredis.RedisError as err:
                 log_error(f"Unexpected redis client exception, {err}")
             return web.Response(status=200)
@@ -175,6 +182,8 @@ class RedisWSHandler:
         self.direct_response_txn_request_map = {}
         self.direct_resp_topic = f"{self.prefix}.inbound_direct_responses"
         self.inbound_transport_key = f"{self.prefix}.inbound_transport"
+        self.site = None
+        self.timedelay_s = 1
 
     async def run(self):
         """Run the service."""
@@ -203,24 +212,28 @@ class RedisWSHandler:
                 msg = await self.redis.blpop(self.direct_resp_topic, 0)
             except aioredis.RedisError as err:
                 log_error(f"Unexpected redis client exception, {err}")
+                continue
             msg = msgpack.unpackb(msg)
             if not isinstance(msg, dict):
                 log_error("Received non-dict message")
-            elif "response" not in msg:
+                continue
+            elif "response_data" not in msg:
                 log_error("No response provided")
+                continue
             elif "txn_id" not in msg:
                 log_error("No txn_id provided")
+                continue
             txn_id = msg["txn_id"]
             response_data = msg["response_data"]
             self.direct_response_txn_request_map[txn_id] = response_data
-            await asyncio.sleep(2)
+            await asyncio.sleep(self.timedelay_s)
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
         while self.RUNNING_DIRECT_RESP:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
-            await asyncio.sleep(1)
+            await asyncio.sleep(self.timedelay_s)
 
     async def message_handler(self, request):
         """Message handler for inbound messages."""
@@ -233,7 +246,7 @@ class RedisWSHandler:
         loop = asyncio.get_event_loop()
         inbound = loop.create_task(ws.receive())
         while not ws.closed:
-            await inbound
+            await asyncio.wait((inbound), return_when=asyncio.FIRST_COMPLETED)
             if inbound.done():
                 msg: WSMessage = inbound.result()
                 if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
@@ -251,17 +264,16 @@ class RedisWSHandler:
                             {
                                 "host": request.host,
                                 "remote": request.remote,
-                                "data": msg.data.encode("utf-8"),
+                                "data": msg.data,
                                 "txn_id": txn_id,
                                 "transport_type": "ws",
                             }
                         )
                         try:
-                            return await self.redis.rpush(
-                                self.inbound_transport_key, message
-                            )
+                            await self.redis.rpush(self.inbound_transport_key, message)
                         except aioredis.RedisError as err:
                             log_error(f"Unexpected redis client exception, {err}")
+                            continue
                         try:
                             response_data = await asyncio.wait_for(
                                 self.get_direct_responses(
@@ -269,7 +281,7 @@ class RedisWSHandler:
                                 ),
                                 15,
                             )
-                            response = response_data["response"].decode("utf-8")
+                            response = response_data["response"]
                             if response:
                                 if isinstance(response, bytes):
                                     await ws.send_bytes(response)
@@ -282,15 +294,14 @@ class RedisWSHandler:
                             {
                                 "host": request.host,
                                 "remote": request.remote,
-                                "data": msg.data.encode("utf-8"),
+                                "data": msg.data,
                             }
                         )
                         try:
-                            return await self.redis.rpush(
-                                self.inbound_transport_key, message
-                            )
+                            await self.redis.rpush(self.inbound_transport_key, message)
                         except aioredis.RedisError as err:
                             log_error(f"Unexpected redis client exception, {err}")
+                            continue
                 elif msg.type == WSMsgType.ERROR:
                     log_error(
                         "Websocket connection closed with exception: %s",
@@ -331,9 +342,9 @@ async def main(args):
         prefix = config.get("prefix", "acapy")
     elif args.inbound_queue_prefix:
         prefix = args.inbound_queue_prefix
-    else:
-        prefix = "acapy"
     tasks = []
+    if not args.inbound_transports:
+        raise SystemExit("No inbound transport config provided.")
     for inbound_transport in args.inbound_transports:
         transport_type, site_host, site_port = inbound_transport
         if transport_type == "ws":

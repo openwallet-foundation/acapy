@@ -93,7 +93,7 @@ class KafkaHTTPHandler:
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while self.RUNNING:
+        while self.RUNNING_DIRECT_RESP:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
             await asyncio.sleep(self.timedelay_s)
@@ -266,7 +266,7 @@ class KafkaWSHandler:
         loop = asyncio.get_event_loop()
         inbound = loop.create_task(ws.receive())
         while not ws.closed:
-            await inbound
+            await asyncio.wait((inbound), return_when=asyncio.FIRST_COMPLETED)
             if inbound.done():
                 msg: WSMessage = inbound.result()
                 if msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
@@ -364,8 +364,6 @@ async def main(args):
         prefix = config.get("prefix", "acapy")
     elif args.inbound_queue_prefix:
         prefix = args.inbound_queue_prefix
-    else:
-        prefix = "acapy"
     tasks = []
     if not args.inbound_transports:
         raise SystemExit("No inbound transport config provided.")

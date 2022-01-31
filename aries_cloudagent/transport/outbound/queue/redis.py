@@ -61,7 +61,7 @@ class RedisOutboundQueue(BaseOutboundQueue):
         # However, calling this on exit of `async with` does not make sense and
         # we should just let aioredis handle the connection lifecycle.
 
-    async def push(self, key: bytes, message: bytes):
+    async def push(self, key: str, message: bytes):
         """Push a ``message`` to redis on ``key``."""
         try:
             return await self.redis.rpush(key, message)
@@ -92,5 +92,5 @@ class RedisOutboundQueue(BaseOutboundQueue):
                 "payload": payload,
             }
         )
-        key = f"{self.prefix}.outbound_transport".encode()
+        key = f"{self.prefix}.outbound_transport"
         return await self.push(key, message)
