@@ -226,7 +226,7 @@ def step_impl(context, holder):
 )
 def step_impl(context, holder, schema_name, credential_data, issuer):
     context.execute_steps(
-        u'''
+        '''
         Given "'''
         + issuer
         + """" is ready to issue a json-ld credential for """
@@ -255,7 +255,7 @@ def step_impl(context, holder, schema_name, credential_data, issuer):
 )
 def step_impl(context, holder, schema_name, credential_data, issuer):
     context.execute_steps(
-        u'''
+        '''
         Given "'''
         + issuer
         + """" is ready to issue a credential for """

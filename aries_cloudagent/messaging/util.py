@@ -11,7 +11,7 @@ from typing import Any, Union
 
 
 LOGGER = logging.getLogger(__name__)
-I32_BOUND = 2 ** 31
+I32_BOUND = 2**31
 
 
 def datetime_to_str(dt: Union[str, datetime]) -> str:

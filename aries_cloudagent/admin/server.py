@@ -151,14 +151,10 @@ class AdminResponder(BaseResponder):
 async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     """Only continue if application is ready to take work."""
 
-    if (
-        str(request.rel_url).rstrip("/")
-        in (
-            "/status/live",
-            "/status/ready",
-        )
-        or request.app._state.get("ready")
-    ):
+    if str(request.rel_url).rstrip("/") in (
+        "/status/live",
+        "/status/ready",
+    ) or request.app._state.get("ready"):
         try:
             return await handler(request)
         except (LedgerConfigError, LedgerTransactionError) as e:
@@ -267,18 +263,14 @@ class AdminServer(BaseAdminServer):
         assert self.admin_insecure_mode ^ bool(self.admin_api_key)
 
         def is_unprotected_path(path: str):
-            return (
-                path
-                in [
-                    "/api/doc",
-                    "/api/docs/swagger.json",
-                    "/favicon.ico",
-                    "/ws",  # ws handler checks authentication
-                    "/status/live",
-                    "/status/ready",
-                ]
-                or path.startswith("/static/swagger/")
-            )
+            return path in [
+                "/api/doc",
+                "/api/docs/swagger.json",
+                "/favicon.ico",
+                "/ws",  # ws handler checks authentication
+                "/status/live",
+                "/status/ready",
+            ] or path.startswith("/static/swagger/")
 
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
