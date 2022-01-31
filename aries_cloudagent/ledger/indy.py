@@ -928,8 +928,14 @@ class IndySdkLedger(BaseLedger):
         return False
 
     async def register_nym(
-        self, did: str, verkey: str, alias: str = None, role: str = None
-    ):
+        self,
+        did: str,
+        verkey: str,
+        alias: str = None,
+        role: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ) -> Tuple[bool, dict]:
         """
         Register a nym on the ledger.
 
@@ -957,10 +963,15 @@ class IndySdkLedger(BaseLedger):
                 request_json = await indy.ledger.build_nym_request(
                     public_info.did, did, verkey, alias, role
                 )
-            await self._submit(
-                request_json
+            if endorser_did and not write_ledger:
+                request_json = await indy.ledger.append_request_endorser(
+                    request_json, endorser_did
+                )
+            resp = await self._submit(
+                request_json, sign=True, sign_did=public_info, write_ledger=write_ledger
             )  # let ledger raise on insufficient privilege
-
+            if not write_ledger:
+                return True, {"signed_txn": resp}
             try:
                 did_info = await wallet.get_local_did(did)
             except WalletNotFoundError:
@@ -968,6 +979,7 @@ class IndySdkLedger(BaseLedger):
             else:
                 metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
                 await wallet.replace_local_did_metadata(did, metadata)
+            return True, None
 
     async def get_nym_role(self, did: str) -> Role:
         """
