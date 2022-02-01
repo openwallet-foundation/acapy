@@ -232,7 +232,7 @@ class KafkaHandler:
             await self.consumer.stop()
             await http_client.close()
             save_task.cancel()
-            await save_task
+            await asyncio.wait([save_task], return_when=asyncio.FIRST_COMPLETED)
 
     async def add_retry(self, message: dict):
         """Add undelivered message for future retries."""
@@ -285,7 +285,7 @@ class KafkaHandler:
             await self.consumer_retry.stop()
             await self.producer.stop()
             save_task.cancel()
-            await save_task
+            await asyncio.wait([save_task], return_when=asyncio.FIRST_COMPLETED)
 
 
 async def main(args):

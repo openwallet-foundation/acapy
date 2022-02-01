@@ -161,9 +161,7 @@ class TestKafkaHTTPHandler(AsyncTestCase):
             )
             service.producer = mock_producer
             service.consumer_direct_response = mock_consumer
-            service.site=async_mock.MagicMock(
-                stop=async_mock.CoroutineMock()
-            )
+            service.site = async_mock.MagicMock(stop=async_mock.CoroutineMock())
             await service.stop()
 
     async def test_start(self):
@@ -410,9 +408,7 @@ class TestKafkaWSHandler(AsyncTestCase):
             )
             service.producer = mock_producer
             service.consumer_direct_response = mock_consumer
-            service.site=async_mock.MagicMock(
-                stop=async_mock.CoroutineMock()
-            )
+            service.site = async_mock.MagicMock(stop=async_mock.CoroutineMock())
             await service.stop()
 
     async def test_start(self):

@@ -63,9 +63,7 @@ class TestKafkaOutbound(AsyncTestCase):
                 {
                     "headers": {"Content-Type": "application/json"},
                     "endpoint": ENDPOINT,
-                    "payload": (string.ascii_letters + string.digits).encode(
-                        encoding="utf-8"
-                    ),
+                    "payload": (string.ascii_letters + string.digits),
                 }
             )
             mock_send.assert_called_once_with(

@@ -286,9 +286,14 @@ class TestKafkaInbound(AsyncTestCase):
                 return_value=async_mock.MagicMock(receive=async_mock.CoroutineMock())
             ),
         )
+        sentinel = PropertyMock(side_effect=[True, True, False])
+        KafkaInboundQueue.RUNNING = sentinel
+        queue = KafkaInboundQueue(self.profile)
         with async_mock.patch.object(
             asyncio, "get_event_loop", async_mock.MagicMock()
         ) as mock_get_event_loop, async_mock.patch.object(
+            asyncio, "wait", async_mock.CoroutineMock()
+        ) as mock_wait, async_mock.patch.object(
             test_module, "RebalanceListener", autospec=True
         ) as mock_rebalance_listener, async_mock.patch.object(
             test_module, "LocalState", autospec=True
@@ -362,9 +367,14 @@ class TestKafkaInbound(AsyncTestCase):
                 )
             ),
         )
+        sentinel = PropertyMock(side_effect=[True, True, False])
+        KafkaInboundQueue.RUNNING = sentinel
+        queue = KafkaInboundQueue(self.profile)
         with async_mock.patch.object(
             asyncio, "get_event_loop", async_mock.MagicMock()
         ) as mock_get_event_loop, async_mock.patch.object(
+            asyncio, "wait", async_mock.CoroutineMock()
+        ) as mock_wait, async_mock.patch.object(
             test_module, "RebalanceListener", autospec=True
         ) as mock_rebalance_listener, async_mock.patch.object(
             test_module, "LocalState", autospec=True
@@ -414,9 +424,6 @@ class TestKafkaInbound(AsyncTestCase):
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
-            sentinel = PropertyMock(side_effect=[True, True, False])
-            KafkaInboundQueue.RUNNING = sentinel
-            queue = KafkaInboundQueue(self.profile)
             await queue.start()
             await queue.receive_messages()
         assert mock_get_many.call_count == 2
@@ -443,9 +450,14 @@ class TestKafkaInbound(AsyncTestCase):
                 )
             ),
         )
+        sentinel = PropertyMock(side_effect=[True, True, True, False])
+        KafkaInboundQueue.RUNNING = sentinel
+        queue = KafkaInboundQueue(self.profile)
         with async_mock.patch.object(
             asyncio, "get_event_loop", async_mock.MagicMock()
         ) as mock_get_event_loop, async_mock.patch.object(
+            asyncio, "wait", async_mock.CoroutineMock()
+        ) as mock_wait, async_mock.patch.object(
             test_module, "RebalanceListener", autospec=True
         ) as mock_rebalance_listener, async_mock.patch.object(
             test_module, "LocalState", autospec=True
@@ -501,9 +513,6 @@ class TestKafkaInbound(AsyncTestCase):
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
-            sentinel = PropertyMock(side_effect=[True, True, True, False])
-            KafkaInboundQueue.RUNNING = sentinel
-            queue = KafkaInboundQueue(self.profile)
             await queue.start()
             await queue.receive_messages()
 

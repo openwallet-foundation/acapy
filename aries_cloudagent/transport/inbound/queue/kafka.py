@@ -245,4 +245,4 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         finally:
             await self.consumer.stop()
             save_task.cancel()
-            await save_task
+            await asyncio.wait([save_task], return_when=asyncio.FIRST_COMPLETED)
