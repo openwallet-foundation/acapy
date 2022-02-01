@@ -37,10 +37,7 @@ class KafkaOutboundQueue(BaseOutboundQueue):
 
     def __str__(self):
         """Return string representation of the outbound queue."""
-        return (
-            f"KafkaOutboundQueue({self.prefix}, "
-            f"{self.connection})"
-        )
+        return f"KafkaOutboundQueue({self.prefix}, " f"{self.connection})"
 
     async def start(self):
         """Start the transport."""
