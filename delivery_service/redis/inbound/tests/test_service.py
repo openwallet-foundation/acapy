@@ -562,16 +562,17 @@ class TestRedisWSHandler(AsyncTestCase):
         ) as mock_get_event_loop, async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
-            test_module.asyncio,
-            "wait_for",
-            async_mock.CoroutineMock(return_value={"response": b"..."}),
-        ) as mock_wait_for, async_mock.patch(
+            RedisWSHandler,
+            "get_direct_responses",
+            autospec=True,
+        ) as mock_get_direct_responses, async_mock.patch(
             "aioredis.ConnectionPool.from_url",
             async_mock.MagicMock(),
         ), async_mock.patch(
             "aioredis.Redis",
             async_mock.MagicMock(),
         ) as mock_redis:
+            mock_get_direct_responses.return_value = {"response": b"..."}
             service = RedisWSHandler("test", "acapy", "test", "8080")
             service.timedelay_s = 0.1
             mock_redis.blpop = async_mock.CoroutineMock()
@@ -634,16 +635,17 @@ class TestRedisWSHandler(AsyncTestCase):
         ) as mock_get_event_loop, async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
-            test_module.asyncio,
-            "wait_for",
-            async_mock.CoroutineMock(return_value={"response": "..."}),
-        ) as mock_wait_for, async_mock.patch(
+            RedisWSHandler,
+            "get_direct_responses",
+            autospec=True,
+        ) as mock_get_direct_responses, async_mock.patch(
             "aioredis.ConnectionPool.from_url",
             async_mock.MagicMock(),
         ), async_mock.patch(
             "aioredis.Redis",
             async_mock.MagicMock(),
         ) as mock_redis:
+            mock_get_direct_responses.return_value = {"response": "..."}
             service = RedisWSHandler("test", "acapy", "test", "8080")
             service.timedelay_s = 0.1
             mock_redis.blpop = async_mock.CoroutineMock()
@@ -706,10 +708,10 @@ class TestRedisWSHandler(AsyncTestCase):
         ) as mock_get_event_loop, async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
-            test_module.asyncio,
-            "wait_for",
-            async_mock.CoroutineMock(),
-        ) as mock_wait_for, async_mock.patch(
+            RedisWSHandler,
+            "get_direct_responses",
+            autospec=True,
+        ) as mock_get_direct_responses, async_mock.patch(
             "aioredis.ConnectionPool.from_url",
             async_mock.MagicMock(),
         ), async_mock.patch(
@@ -778,16 +780,17 @@ class TestRedisWSHandler(AsyncTestCase):
         ) as mock_get_event_loop, async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
-            test_module.asyncio,
-            "wait_for",
-            async_mock.CoroutineMock(side_effect=test_module.asyncio.TimeoutError),
-        ) as mock_wait_for, async_mock.patch(
+            RedisWSHandler,
+            "get_direct_responses",
+            autospec=True,
+        ) as mock_get_direct_responses, async_mock.patch(
             "aioredis.ConnectionPool.from_url",
             async_mock.MagicMock(),
         ), async_mock.patch(
             "aioredis.Redis",
             async_mock.MagicMock(),
         ) as mock_redis:
+            mock_get_direct_responses.side_effect = test_module.asyncio.TimeoutError
             service = RedisWSHandler("test", "acapy", "test", "8080")
             service.timedelay_s = 0.1
             mock_redis.blpop = async_mock.CoroutineMock()
@@ -845,10 +848,10 @@ class TestRedisWSHandler(AsyncTestCase):
         ) as mock_get_event_loop, async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
-            test_module.asyncio,
-            "wait_for",
-            async_mock.CoroutineMock(),
-        ) as mock_wait_for, async_mock.patch(
+            RedisWSHandler,
+            "get_direct_responses",
+            autospec=True,
+        ) as mock_get_direct_responses, async_mock.patch(
             "aioredis.ConnectionPool.from_url",
             async_mock.MagicMock(),
         ), async_mock.patch(

@@ -530,10 +530,11 @@ class TestKafkaWSHandler(AsyncTestCase):
         ) as mock_get_event_loop, async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
-            test_module.asyncio,
-            "wait_for",
-            async_mock.CoroutineMock(return_value={"response": b"..."}),
-        ) as mock_wait_for:
+            KafkaWSHandler,
+            "get_direct_responses",
+            autospec=True,
+        ) as mock_get_direct_responses:
+            mock_get_direct_responses.return_value = {"response": b"..."}
             mock_producer = async_mock.MagicMock(
                 start=async_mock.CoroutineMock(),
                 stop=async_mock.CoroutineMock(),
@@ -600,10 +601,11 @@ class TestKafkaWSHandler(AsyncTestCase):
         ) as mock_get_event_loop, async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
-            test_module.asyncio,
-            "wait_for",
-            async_mock.CoroutineMock(return_value={"response": "..."}),
-        ) as mock_wait_for:
+            KafkaWSHandler,
+            "get_direct_responses",
+            autospec=True,
+        ) as mock_get_direct_responses:
+            mock_get_direct_responses.return_value = {"response": "..."}
             mock_producer = async_mock.MagicMock(
                 start=async_mock.CoroutineMock(),
                 stop=async_mock.CoroutineMock(),
@@ -670,10 +672,10 @@ class TestKafkaWSHandler(AsyncTestCase):
         ) as mock_get_event_loop, async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
-            test_module.asyncio,
-            "wait_for",
-            async_mock.CoroutineMock(),
-        ) as mock_wait_for:
+            KafkaWSHandler,
+            "get_direct_responses",
+            autospec=True,
+        ) as mock_get_direct_responses:
             mock_producer = async_mock.MagicMock(
                 start=async_mock.CoroutineMock(),
                 stop=async_mock.CoroutineMock(),
@@ -740,10 +742,11 @@ class TestKafkaWSHandler(AsyncTestCase):
         ) as mock_get_event_loop, async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
-            test_module.asyncio,
-            "wait_for",
-            async_mock.CoroutineMock(side_effect=test_module.asyncio.TimeoutError),
-        ) as mock_wait_for:
+            KafkaWSHandler,
+            "get_direct_responses",
+            autospec=True,
+        ) as mock_get_direct_responses:
+            mock_get_direct_responses.side_effect = test_module.asyncio.TimeoutError
             mock_producer = async_mock.MagicMock(
                 start=async_mock.CoroutineMock(),
                 stop=async_mock.CoroutineMock(),
