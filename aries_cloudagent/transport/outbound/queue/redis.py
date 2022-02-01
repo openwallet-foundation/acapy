@@ -40,10 +40,8 @@ class RedisOutboundQueue(BaseOutboundQueue):
     def __str__(self):
         """Return string representation of the outbound queue."""
         return (
-            f"RedisOutboundQueue("
-            f"connection={self.connection}, "
-            f"prefix={self.prefix}"
-            f")"
+            f"RedisOutboundQueue(prefix={self.prefix}, "
+            f"connection={self.connection})"
         )
 
     async def start(self):

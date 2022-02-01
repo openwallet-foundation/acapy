@@ -49,10 +49,8 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
     def __str__(self):
         """Return string representation of the outbound queue."""
         return (
-            f"RedisInboundQueue("
-            f"connection={self.connection}, "
-            f"prefix={self.prefix}"
-            f")"
+            f"RedisInboundQueue(prefix={self.prefix}, "
+            f"connection={self.connection})"
         )
 
     async def start(self):
@@ -84,7 +82,7 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
                 msg = await self.redis.blpop(inbound_topic, 0)
             except aioredis.RedisError as error:
                 raise InboundQueueError("Unexpected redis client exception") from error
-            msg = msgpack.unpackb(msg)
+            msg = msgpack.unpackb(msg[1])
             if not isinstance(msg, dict):
                 self.logger.error("Received non-dict message")
                 continue

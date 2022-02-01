@@ -66,7 +66,7 @@ class RedisHTTPHandler:
             except aioredis.RedisError as err:
                 log_error(f"Unexpected redis client exception, {err}")
                 continue
-            msg = msgpack.unpackb(msg)
+            msg = msgpack.unpackb(msg[1])
             if not isinstance(msg, dict):
                 log_error("Received non-dict message")
                 continue
@@ -213,7 +213,7 @@ class RedisWSHandler:
             except aioredis.RedisError as err:
                 log_error(f"Unexpected redis client exception, {err}")
                 continue
-            msg = msgpack.unpackb(msg)
+            msg = msgpack.unpackb(msg[1])
             if not isinstance(msg, dict):
                 log_error("Received non-dict message")
                 continue

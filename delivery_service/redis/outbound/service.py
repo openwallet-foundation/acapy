@@ -46,22 +46,22 @@ class RedisHandler:
         try:
             while self.RUNNING:
                 msg = await self.redis.blpop(self.outbound_topic, 0)
-                msg = msgpack.unpackb(msg)
+                msg = msgpack.unpackb(msg[1])
                 if not isinstance(msg, dict):
                     log_error("Received non-dict message")
-                elif "endpoint" not in msg:
+                elif b"endpoint" not in msg:
                     log_error("No endpoint provided")
-                elif "payload" not in msg:
+                elif b"payload" not in msg:
                     log_error("No payload provided")
                 else:
                     headers = {}
-                    if "headers" in msg:
-                        for hname, hval in msg["headers"].items():
+                    if b"headers" in msg:
+                        for hname, hval in msg[b"headers"].items():
                             if isinstance(hval, bytes):
                                 hval = hval.decode("utf-8")
-                            headers[hname] = hval
-                    endpoint = msg["endpoint"]
-                    payload = msg["payload"]
+                            headers[hname.decode("utf-8")] = hval
+                    endpoint = msg[b"endpoint"].decode("utf-8")
+                    payload = msg[b"payload"].decode("utf-8")
                     parsed = urllib.parse.urlparse(endpoint)
                     if parsed.scheme == "http" or parsed.scheme == "https":
                         print(f"Dispatch message to {endpoint}")
@@ -78,7 +78,7 @@ class RedisHandler:
                                 log_error("Invalid response code:", response.status)
                                 failed = True
                         if failed:
-                            retries = msg.get("retries") or 0
+                            retries = msg.get(b"retries") or 0
                             if retries < 5:
                                 await self.add_retry(
                                     {
@@ -110,12 +110,11 @@ class RedisHandler:
         while self.RUNNING_RETRY:
             max_score = int(time())
             rows = await self.redis.zrangebyscore(
-                self.retry_topic,
-                0,
-                max_score,
-                "LIMIT",
-                0,
-                10,
+                name=self.retry_topic,
+                min=0,
+                max=max_score,
+                start=0,
+                num=10,
             )
             if rows:
                 for message in rows:

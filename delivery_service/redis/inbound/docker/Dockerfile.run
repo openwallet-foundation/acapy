@@ -1,6 +1,6 @@
 FROM bcgovimages/von-image:py36-1.15-1
-ADD requirements.txt ./
+ADD delivery_service/redis/inbound/requirements.txt requirements.txt
 RUN pip3 install --no-cache-dir \
     -r requirements.txt
-ADD ../service.py ./
-ENTRYPOINT  ["python3", "./service.py \"$@\""]
+ADD delivery_service/redis/inbound/service.py service.py
+ENTRYPOINT ["python3", "./service.py"]

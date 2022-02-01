@@ -1145,6 +1145,7 @@ class TransportGroup(ArgumentGroup):
             dest="outbound_transports",
             type=str,
             action="append",
+            required=False,
             metavar="<module>",
             env_var="ACAPY_OUTBOUND_TRANSPORT",
             help=(
@@ -1180,7 +1181,7 @@ class TransportGroup(ArgumentGroup):
                 "colon, followed by the name of a Python class that implements "
                 "BaseOutboundQueue. This commandline option is the official entry "
                 "point of ACA-py's pluggable queue interface. The default value is: "
-                "'aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue'."
+                "'aries_cloudagent.transport.outbound.queue.redis.RedisOutboundQueue'."
             ),
         )
         parser.add_argument(
@@ -1224,7 +1225,7 @@ class TransportGroup(ArgumentGroup):
                 "colon, followed by the name of a Python class that implements "
                 "BaseInboundQueue. This commandline option is the official entry "
                 "point of ACA-py's pluggable queue interface. The default value is: "
-                "'aries_cloudagent.transport.inbound.queue.redis:RedisInboundQueue'."
+                "'aries_cloudagent.transport.inbound.queue.redis.RedisInboundQueue'."
             ),
         )
         parser.add_argument(

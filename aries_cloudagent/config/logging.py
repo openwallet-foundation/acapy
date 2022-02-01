@@ -142,7 +142,11 @@ class LoggingConfigurator:
             banner.print_spacer()
             banner.print_list(
                 [
-                    f"{inbound_queue}",
+                    "RedisInboundQueue"
+                    if ("Redis" in inbound_queue.__class__.__name__)
+                    else "KafkaInboundQueue",
+                    f"prefix: {inbound_queue.prefix}",
+                    f"{inbound_queue.connection}",
                 ]
             )
             banner.print_spacer()
@@ -153,7 +157,11 @@ class LoggingConfigurator:
             banner.print_spacer()
             banner.print_list(
                 [
-                    f"{outbound_queue}",
+                    "RedisOutboundQueue"
+                    if ("Redis" in outbound_queue.__class__.__name__)
+                    else "KafkaOutboundQueue",
+                    f"prefix: {outbound_queue.prefix}",
+                    f"{outbound_queue.connection}",
                 ]
             )
             banner.print_spacer()
