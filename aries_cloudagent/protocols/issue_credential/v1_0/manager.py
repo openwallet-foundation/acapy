@@ -850,7 +850,9 @@ class CredentialManager:
                     await cred_ex_record.delete_record(session)  # all done: delete
 
         except StorageError as err:
-            LOGGER.exception(err)  # holder still owes an ack: carry on
+            LOGGER.exception(
+                "Error updating credential exchange"
+            )  # holder still owes an ack: carry on
 
         responder = self._profile.inject_or(BaseResponder)
         if responder:

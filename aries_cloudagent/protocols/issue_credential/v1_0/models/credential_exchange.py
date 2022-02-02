@@ -219,7 +219,7 @@ class V10CredentialExchange(BaseExchangeRecord):
                 log_override=log_override,
             )
         except StorageError as err:
-            LOGGER.exception(err)
+            LOGGER.exception("Error saving credential exchange error state")
 
     @property
     def record_value(self) -> dict:

@@ -62,7 +62,7 @@ class CredentialIssueHandler(BaseHandler):
                 StorageError,
             ) as err:
                 # treat failure to store as mangled on receipt hence protocol error
-                self._logger.exception(err)
+                self._logger.exception("Error storing issued credential")
                 if cred_ex_record:
                     async with profile.session() as session:
                         await cred_ex_record.save_error_state(

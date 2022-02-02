@@ -74,7 +74,7 @@ class CredentialRequestHandler(BaseHandler):
                     LedgerError,
                     StorageError,
                 ) as err:
-                    self._logger.exception(err)
+                    self._logger.exception("Error responding to credential request")
                     if cred_ex_record:
                         async with profile.session() as session:
                             await cred_ex_record.save_error_state(

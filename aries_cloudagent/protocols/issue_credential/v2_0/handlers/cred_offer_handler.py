@@ -68,7 +68,7 @@ class V20CredOfferHandler(BaseHandler):
                 StorageError,
                 V20CredManagerError,
             ) as err:
-                self._logger.exception(err)
+                self._logger.exception("Error responding to credential offer")
                 if cred_ex_record:
                     async with profile.session() as session:
                         await cred_ex_record.save_error_state(

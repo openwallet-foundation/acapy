@@ -646,11 +646,13 @@ class V20CredManager:
                 # FIXME - re-fetch record to check state, apply transactional update
                 await cred_ex_record.save(session, reason="store credential v2.0")
 
-                if cred_ex_record.auto_remove:
-                    await cred_ex_record.delete_record(session)  # all done: delete
+            if cred_ex_record.auto_remove:
+                await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
         except StorageError as err:
-            LOGGER.exception(err)  # holder still owes an ack: carry on
+            LOGGER.exception(
+                "Error sending credential ack"
+            )  # holder still owes an ack: carry on
 
         responder = self._profile.inject_or(BaseResponder)
         if responder:
