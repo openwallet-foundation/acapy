@@ -649,7 +649,7 @@ class V20CredManager:
             if cred_ex_record.auto_remove:
                 await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
-        except StorageError as err:
+        except StorageError:
             LOGGER.exception(
                 "Error sending credential ack"
             )  # holder still owes an ack: carry on

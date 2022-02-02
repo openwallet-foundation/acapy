@@ -849,7 +849,7 @@ class CredentialManager:
                 if cred_ex_record.auto_remove:
                     await cred_ex_record.delete_record(session)  # all done: delete
 
-        except StorageError as err:
+        except StorageError:
             LOGGER.exception(
                 "Error updating credential exchange"
             )  # holder still owes an ack: carry on

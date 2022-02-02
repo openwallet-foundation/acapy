@@ -218,7 +218,7 @@ class V10CredentialExchange(BaseExchangeRecord):
                 log_params=log_params,
                 log_override=log_override,
             )
-        except StorageError as err:
+        except StorageError:
             LOGGER.exception("Error saving credential exchange error state")
 
     @property
