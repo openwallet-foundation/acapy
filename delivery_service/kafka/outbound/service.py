@@ -3,6 +3,7 @@ import aiohttp
 import argparse
 import asyncio
 import json
+import logging
 import msgpack
 import os
 import pathlib
@@ -14,12 +15,13 @@ from aiokafka import AIOKafkaConsumer, ConsumerRebalanceListener, AIOKafkaProduc
 from aiokafka.errors import OffsetOutOfRangeError
 from collections import Counter
 from time import time
-from uuid import uuid4
 
-
-def log_error(*args):
-    """Print log error."""
-    print(*args, file=sys.stderr)
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s: %(message)s",
+    level=logging.INFO,
+    filename="kafka_outbound.log",
+    filemode="w",
+)
 
 
 class RebalanceListener(ConsumerRebalanceListener):
@@ -112,18 +114,13 @@ class KafkaHandler:
     def __init__(self, host: str, prefix: str):
         """Initialize KafkaHandler."""
         self._host = host
-        self.consumer = None
         self.consumer_retry = None
-        self.producer = None
         self.prefix = prefix
         self.retry_interval = 5
         self.retry_backoff = 0.25
         self.outbound_topic = f"{self.prefix}.outbound_transport"
         self.retry_topic = f"{self.prefix}.outbound_retry"
         self.retry_timedelay_s = 3
-
-    async def run(self):
-        """Run the service."""
         self.consumer = AIOKafkaConsumer(
             bootstrap_servers=self._host,
             group_id="my_group",
@@ -139,8 +136,11 @@ class KafkaHandler:
             isolation_level="read_committed",
         )
         self.producer = AIOKafkaProducer(
-            bootstrap_servers=self._host, transactional_id=str(uuid4())
+            bootstrap_servers=self._host, enable_idempotence=True
         )
+
+    async def run(self):
+        """Run the service."""
         await self.consumer.start()
         await self.producer.start()
         await asyncio.gather(self.process_delivery(), self.process_retries())
@@ -177,11 +177,11 @@ class KafkaHandler:
                     for msg in msgs:
                         msg_data = msgpack.unpackb(msg.value)
                         if not isinstance(msg_data, dict):
-                            log_error("Received non-dict message")
+                            logging.error("Received non-dict message")
                         elif "endpoint" not in msg_data:
-                            log_error("No endpoint provided")
+                            logging.error("No endpoint provided")
                         elif "payload" not in msg_data:
-                            log_error("No payload provided")
+                            logging.error("No payload provided")
                         else:
                             headers = {}
                             if "headers" in msg_data:
@@ -193,7 +193,7 @@ class KafkaHandler:
                             payload = msg_data["payload"]
                             parsed = urllib.parse.urlparse(endpoint)
                             if parsed.scheme == "http" or parsed.scheme == "https":
-                                print(f"Dispatch message to {endpoint}")
+                                logging.info(f"Dispatch message to {endpoint}")
                                 failed = False
                                 try:
                                     response = await http_client.post(
@@ -203,11 +203,11 @@ class KafkaHandler:
                                         timeout=10,
                                     )
                                 except aiohttp.ClientError as err:
-                                    log_error("Delivery error:", err)
+                                    logging.error("Delivery error:", err)
                                     failed = True
                                 else:
                                     if response.status < 200 or response.status >= 300:
-                                        log_error(
+                                        logging.error(
                                             "Invalid response code:", response.status
                                         )
                                         failed = True
@@ -223,9 +223,11 @@ class KafkaHandler:
                                             }
                                         )
                                     else:
-                                        log_error("Exceeded max retries for", endpoint)
+                                        logging.error(
+                                            "Exceeded max retries for", endpoint
+                                        )
                             else:
-                                log_error(f"Unsupported scheme: {parsed.scheme}")
+                                logging.error(f"Unsupported scheme: {parsed.scheme}")
                         counts[msg.key] += 1
                     local_state.add_counts(tp, counts, msg.offset)
         finally:
@@ -241,12 +243,10 @@ class KafkaHandler:
         )
         retry_time = int(time() + wait_interval)
         message["retry_time"] = retry_time
-        async with self.producer.transaction():
-            await self.producer.send(
-                self.retry_topic,
-                value=msgpack.dumps(message),
-                timestamp_ms=1000,
-            )
+        await self.producer.send(
+            self.retry_topic,
+            value=msgpack.packb(message),
+        )
 
     async def process_retries(self):
         """Process retries."""
@@ -273,12 +273,10 @@ class KafkaHandler:
                         retry_time = msg_data["retry_time"]
                         if int(time()) > retry_time:
                             del msg_data["retry_time"]
-                            async with self.producer.transaction():
-                                await self.producer.send(
-                                    self.outbound_topic,
-                                    value=msgpack.dumps(msg_data),
-                                    timestamp_ms=1000,
-                                )
+                            await self.producer.send(
+                                self.outbound_topic,
+                                value=msgpack.packb(msg_data),
+                            )
                         counts[msg.key] += 1
                     local_state.add_counts(tp, counts, msg.offset)
         finally:

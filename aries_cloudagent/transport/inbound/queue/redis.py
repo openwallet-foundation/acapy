@@ -1,5 +1,6 @@
 """Redis inbound transport."""
 import aioredis
+import asyncio
 import msgpack
 import logging
 
@@ -11,7 +12,7 @@ from ...wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
 
 from ..manager import InboundTransportManager
 
-from .base import BaseInboundQueue, InboundQueueConfigurationError, InboundQueueError
+from .base import BaseInboundQueue, InboundQueueConfigurationError
 
 
 class RedisInboundQueue(BaseInboundQueue, Thread):
@@ -41,10 +42,16 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
         self.prefix = self._profile.settings.get(
             "transport.inbound_queue_prefix"
         ) or config.get("prefix", "acapy")
-        self.pool = aioredis.ConnectionPool.from_url(
-            self.connection, max_connections=10
+        self.redis = None
+        self.inbound_topic = f"{self.prefix}.inbound_transport"
+        self.direct_response_topic = f"{self.prefix}.inbound_direct_responses"
+        self.listener_config = self._profile.settings.get(
+            "transport.inbound_queue_transports", []
         )
-        self.redis = aioredis.Redis(connection_pool=self.pool)
+        self.listener_urls = []
+        for transport in self.listener_config:
+            module, host, port = transport
+            self.listener_urls.append(f"{module}://{host}:{port}")
 
     def __str__(self):
         """Return string representation of the outbound queue."""
@@ -52,49 +59,49 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
             f"RedisInboundQueue(prefix={self.prefix}, " f"connection={self.connection})"
         )
 
-    async def start(self):
+    async def open(self):
         """Start the transport."""
-        # aioredis will lazily connect but we can eagerly trigger connection with:
-        # await self.redis.ping()
-        # Calling this on enter to `async with` just before another queue
-        # operation is made does not make sense and we should just let aioredis
-        # do lazy connection.
+        self.daemon = True
+        self.start()
+        loop = asyncio.get_event_loop()
+        asyncio.ensure_future(self.receive_messages(), loop=loop)
 
-    async def stop(self):
+    async def close(self):
         """Stop the transport."""
-        # aioredis cleans up automatically but we can clean up manually with:
-        # await self.pool.disconnect()
-        # However, calling this on exit of `async with` does not make sense and
-        # we should just let aioredis handle the connection lifecycle.
 
-    async def receive_messages(
-        self,
-    ):
+    async def receive_messages(self):
         """Recieve message from inbound queue and handle it."""
-        inbound_topic = f"{self.prefix}.inbound_transport"
-        direct_response_topic = f"{self.prefix}.inbound_direct_responses"
+        self.redis = aioredis.from_url(self.connection)
         transport_manager = self._profile.context.injector.inject(
             InboundTransportManager
         )
         while self.RUNNING:
-            try:
-                msg = await self.redis.blpop(inbound_topic, 0)
-            except aioredis.RedisError as error:
-                raise InboundQueueError("Unexpected redis client exception") from error
+            msg_received = False
+            response_sent = False
+            while not msg_received:
+                try:
+                    msg = await self.redis.blpop(self.inbound_topic, 0)
+                    msg_received = True
+                except aioredis.RedisError as err:
+                    await asyncio.sleep(1)
+                    self.logger.warning(f"Unexpected exception {str(err)}")
             msg = msgpack.unpackb(msg[1])
             if not isinstance(msg, dict):
                 self.logger.error("Received non-dict message")
                 continue
             client_info = {"host": msg["host"], "remote": msg["remote"]}
+            transport_type = msg.get("transport_type")
             session = await transport_manager.create_session(
-                accept_undelivered=True, can_respond=True, client_info=client_info
+                transport_type=transport_type,
+                accept_undelivered=True,
+                can_respond=True,
+                client_info=client_info,
             )
             direct_reponse_requested = True if "txn_id" in msg else False
             async with session:
-                await session.receive(msg["data"])
+                await session.receive(msg["data"].encode("utf-8"))
                 if direct_reponse_requested:
                     txn_id = msg["txn_id"]
-                    transport_type = msg["transport_type"]
                     response = await session.wait_response()
                     response_data = {}
                     if transport_type == "http" and response:
@@ -111,11 +118,12 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
                     message = {}
                     message["txn_id"] = txn_id
                     message["response_data"] = response_data
-                    try:
-                        await self.redis.rpush(
-                            direct_response_topic, msgpack.dumps(message)
-                        )
-                    except aioredis.RedisError as error:
-                        raise InboundQueueError(
-                            "Unexpected redis client exception"
-                        ) from error
+                    while not response_sent:
+                        try:
+                            await self.redis.rpush(
+                                self.direct_response_topic, msgpack.packb(message)
+                            )
+                            response_sent = True
+                        except aioredis.RedisError as err:
+                            await asyncio.sleep(1)
+                            self.logger.warning(f"Unexpected exception {str(err)}")

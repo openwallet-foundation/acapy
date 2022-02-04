@@ -3,6 +3,7 @@ import aiohttp
 import aioredis
 import argparse
 import asyncio
+import logging
 import msgpack
 import urllib
 import sys
@@ -10,10 +11,12 @@ import yaml
 
 from time import time
 
-
-def log_error(*args):
-    """Print log error."""
-    print(*args, file=sys.stderr)
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s: %(message)s",
+    level=logging.INFO,
+    filename="redis_outbound.log",
+    filemode="w",
+)
 
 
 class RedisHandler:
@@ -26,14 +29,12 @@ class RedisHandler:
     def __init__(self, host: str, prefix: str):
         """Initialize RedisHandler."""
         self._host = host
-        self._pool = None
         self.prefix = prefix
         self.retry_interval = 5
         self.retry_backoff = 0.25
         self.outbound_topic = f"{self.prefix}.outbound_transport"
         self.retry_topic = f"{self.prefix}.outbound_retry"
-        self.pool = aioredis.ConnectionPool.from_url(self._host, max_connections=10)
-        self.redis = aioredis.Redis(connection_pool=self.pool)
+        self.redis = aioredis.from_url(self._host)
         self.retry_timedelay_s = 1
 
     async def run(self):
@@ -45,14 +46,23 @@ class RedisHandler:
         http_client = aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar())
         try:
             while self.RUNNING:
-                msg = await self.redis.blpop(self.outbound_topic, 0)
+                msg_received = False
+                while not msg_received:
+                    try:
+                        msg = await self.redis.blpop(self.outbound_topic, 0)
+                        msg_received = True
+                    except aioredis.RedisError as err:
+                        await asyncio.sleep(1)
+                        logging.exception(
+                            f"Unexpected redis client exception (blpop): {str(err)}"
+                        )
                 msg = msgpack.unpackb(msg[1])
                 if not isinstance(msg, dict):
-                    log_error("Received non-dict message")
+                    logging.error("Received non-dict message")
                 elif b"endpoint" not in msg:
-                    log_error("No endpoint provided")
+                    logging.error("No endpoint provided")
                 elif b"payload" not in msg:
-                    log_error("No payload provided")
+                    logging.error("No payload provided")
                 else:
                     headers = {}
                     if b"headers" in msg:
@@ -64,20 +74,21 @@ class RedisHandler:
                     payload = msg[b"payload"].decode("utf-8")
                     parsed = urllib.parse.urlparse(endpoint)
                     if parsed.scheme == "http" or parsed.scheme == "https":
-                        print(f"Dispatch message to {endpoint}")
+                        logging.info(f"Dispatch message to {endpoint}")
                         failed = False
                         try:
                             response = await http_client.post(
                                 endpoint, data=payload, headers=headers, timeout=10
                             )
                         except aiohttp.ClientError as err:
-                            log_error("Delivery error:", err)
+                            logging.error("Delivery error:", err)
                             failed = True
                         else:
                             if response.status < 200 or response.status >= 300:
-                                log_error("Invalid response code:", response.status)
+                                logging.error("Invalid response code:", response.status)
                                 failed = True
                         if failed:
+                            logging.exception(f"Delivery failed for {endpoint}")
                             retries = msg.get(b"retries") or 0
                             if retries < 5:
                                 await self.add_retry(
@@ -89,43 +100,80 @@ class RedisHandler:
                                     }
                                 )
                             else:
-                                log_error("Exceeded max retries for", endpoint)
+                                logging.error("Exceeded max retries for", endpoint)
                     else:
-                        log_error(f"Unsupported scheme: {parsed.scheme}")
+                        logging.error(f"Unsupported scheme: {parsed.scheme}")
         finally:
             await http_client.close()
 
     async def add_retry(self, message: dict):
         """Add undelivered message for future retries."""
-        wait_interval = pow(
-            self.retry_interval, 1 + (self.retry_backoff * (message["retries"] - 1))
-        )
-        retry_time = int(time() + wait_interval)
-        await self.redis.zadd(
-            f"{self.prefix}.outbound_retry", retry_time, msgpack.dumps(message)
-        )
+        zadd_sent = False
+        while not zadd_sent:
+            try:
+                wait_interval = pow(
+                    self.retry_interval,
+                    1 + (self.retry_backoff * (message["retries"] - 1)),
+                )
+                retry_time = int(time() + wait_interval)
+                await self.redis.zadd(
+                    f"{self.prefix}.outbound_retry", retry_time, msgpack.packb(message)
+                )
+                zadd_sent = True
+            except aioredis.RedisError as err:
+                await asyncio.sleep(1)
+                logging.exception(
+                    f"Unexpected redis client exception (zadd): {str(err)}"
+                )
 
     async def process_retries(self):
         """Process retries."""
         while self.RUNNING_RETRY:
-            max_score = int(time())
-            rows = await self.redis.zrangebyscore(
-                name=self.retry_topic,
-                min=0,
-                max=max_score,
-                start=0,
-                num=10,
-            )
+            zrangebyscore_rec = False
+            while not zrangebyscore_rec:
+                max_score = int(time())
+                try:
+                    rows = await self.redis.zrangebyscore(
+                        name=self.retry_topic,
+                        min=0,
+                        max=max_score,
+                        start=0,
+                        num=10,
+                    )
+                    zrangebyscore_rec = True
+                except aioredis.RedisError as err:
+                    await asyncio.sleep(1)
+                    logging.exception(
+                        f"Unexpected redis client exception (zrangebyscore): {str(err)}"
+                    )
             if rows:
                 for message in rows:
-                    count = await self.redis.zrem(
-                        self.retry_topic,
-                        message,
-                    )
+                    zrem_rec = False
+                    while not zrem_rec:
+                        try:
+                            count = await self.redis.zrem(
+                                self.retry_topic,
+                                message,
+                            )
+                            zrem_rec = True
+                        except aioredis.RedisError as err:
+                            await asyncio.sleep(1)
+                            logging.exception(
+                                f"Unexpected redis client exception (zrem): {str(err)}"
+                            )
                     if count == 0:
                         # message removed by another process
                         continue
-                    await self.redis.rpush(self.outbound_topic, message)
+                    msg_sent = False
+                    while not msg_sent:
+                        try:
+                            await self.redis.rpush(self.outbound_topic, message)
+                            msg_sent = True
+                        except aioredis.RedisError as err:
+                            await asyncio.sleep(1)
+                            logging.exception(
+                                f"Unexpected redis client exception (rpush): {str(err)}"
+                            )
             else:
                 await asyncio.sleep(self.retry_timedelay_s)
 

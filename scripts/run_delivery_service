@@ -52,7 +52,7 @@ do
 		inboundQueueArgs+=("${acapyArgs[$i]}")
 		inboundQueueArgs+=("${acapyArgs[$i+1]}")
 	fi
-	if [[ "${acapyArgs[$i]}" == "--inbound-transport" || "${acapyArgs[$i]}" == "-it" ]]; then
+	if [[ "${acapyArgs[$i]}" == "--inbound-queue-transport" || "${acapyArgs[$i]}" == "-iqt" ]]; then
 		inboundQueueArgs+=("${acapyArgs[$i]}")
 		inboundQueueArgs+=("${acapyArgs[$i+1]}")
 		inboundQueueArgs+=("${acapyArgs[$i+2]}")

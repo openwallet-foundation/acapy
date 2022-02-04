@@ -10,7 +10,6 @@ from aiokafka import AIOKafkaConsumer, AIOKafkaProducer, ConsumerRebalanceListen
 from aiokafka.errors import OffsetOutOfRangeError
 from collections import Counter
 from threading import Thread
-from uuid import uuid4
 
 from ....core.profile import Profile
 
@@ -120,7 +119,6 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                 self._profile.settings.get("transport.inbound_queue")
                 or config["connection"]
             )
-            self.txn_id = config.get("transaction_id", str(uuid4()))
         except KeyError as error:
             raise InboundQueueConfigurationError(
                 "Configuration missing for Kafka queue"
@@ -129,15 +127,15 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         self.prefix = self._profile.settings.get(
             "transport.inbound_queue_prefix"
         ) or config.get("prefix", "acapy")
-        self.consumer = None
-        self.producer = None
-
-    def __str__(self):
-        """Return string representation of the outbound queue."""
-        return f"KafkaInboundQueue({self.prefix}, " f"{self.connection})"
-
-    async def start(self):
-        """Start the transport."""
+        self.inbound_topic = f"{self.prefix}.inbound_transport"
+        self.direct_response_topic = f"{self.prefix}.inbound_direct_responses"
+        self.listener_config = self._profile.settings.get(
+            "transport.inbound_queue_transports", []
+        )
+        self.listener_urls = []
+        for transport in self.listener_config:
+            module, host, port = transport
+            self.listener_urls.append(f"{module}://{host}:{port}")
         self.consumer = AIOKafkaConsumer(
             bootstrap_servers=self.connection,
             group_id="my_group",
@@ -145,13 +143,22 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
             auto_offset_reset="none",
             isolation_level="read_committed",
         )
-        self.producer = AIOKafkaProducer(
-            bootstrap_servers=self.connection, transactional_id=self.txn_id
-        )
+        self.producer = AIOKafkaProducer(bootstrap_servers=self.connection)
+
+    def __str__(self):
+        """Return string representation of the outbound queue."""
+        return f"KafkaInboundQueue({self.prefix}, " f"{self.connection})"
+
+    async def open(self):
+        """Start the transport."""
+        self.daemon = True
+        self.start()
         await self.producer.start()
         await self.consumer.start()
+        loop = asyncio.get_event_loop()
+        asyncio.ensure_future(self.receive_messages(), loop=loop)
 
-    async def stop(self):
+    async def close(self):
         """Stop the transport."""
         await self.producer.stop()
         await self.consumer.stop()
@@ -169,21 +176,17 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         self,
     ):
         """Recieve message from inbound queue and handle it."""
-        inbound_topic = f"{self.prefix}.inbound_transport"
-        direct_response_topic = f"{self.prefix}.inbound_direct_responses"
         transport_manager = self._profile.context.injector.inject(
             InboundTransportManager
         )
         local_state = LocalState()
         listener = RebalanceListener(self.consumer, local_state)
-        self.consumer.subscribe(topics=[inbound_topic], listener=listener)
+        self.consumer.subscribe(topics=[self.inbound_topic], listener=listener)
         loop = asyncio.get_event_loop()
         save_task = loop.create_task(self.save_state_every_second(local_state))
-        session = await transport_manager.create_session(
-            accept_undelivered=True, can_respond=False
-        )
         try:
             while self.RUNNING:
+                await asyncio.sleep(0.1)
                 try:
                     msg_set = await self.consumer.getmany(timeout_ms=1000)
                 except OffsetOutOfRangeError as err:
@@ -199,6 +202,14 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                         if not isinstance(msg_data, dict):
                             self.logger.error("Received non-dict message")
                             continue
+                        client_info = {"host": msg["host"], "remote": msg["remote"]}
+                        transport_type = msg_data["transport_type"]
+                        session = await transport_manager.create_session(
+                            transport_type=transport_type,
+                            accept_undelivered=True,
+                            can_respond=True,
+                            client_info=client_info,
+                        )
                         direct_reponse_requested = (
                             True if "txn_id" in msg_data else False
                         )
@@ -206,7 +217,6 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                             await session.receive(msg_data["data"])
                             if direct_reponse_requested:
                                 txn_id = msg_data["txn_id"]
-                                transport_type = msg_data["transport_type"]
                                 response = await session.wait_response()
                                 response_data = {}
                                 if transport_type == "http" and response:
@@ -229,12 +239,10 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                                 message = {}
                                 message["txn_id"] = txn_id
                                 message["response_data"] = response_data
-                                async with self.producer.transaction():
-                                    await self.producer.send(
-                                        direct_response_topic,
-                                        value=msgpack.dumps(message),
-                                        timestamp_ms=1000,
-                                    )
+                                await self.producer.send(
+                                    self.direct_response_topic,
+                                    value=msgpack.packb(message),
+                                )
                         counts[msg.key] += 1
                     local_state.add_counts(tp, counts, msg.offset)
         finally:

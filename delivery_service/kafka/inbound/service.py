@@ -1,6 +1,7 @@
 """Kafka Inbound Delivery Service."""
 import asyncio
 import argparse
+import logging
 import msgpack
 import json
 import sys
@@ -10,10 +11,12 @@ from aiohttp import WSMessage, WSMsgType, web
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from uuid import uuid4
 
-
-def log_error(*args):
-    """Print log error."""
-    print(*args, file=sys.stderr)
+logging.basicConfig(
+    format="%(asctime)s | %(levelname)s: %(message)s",
+    level=logging.INFO,
+    filename="kafka_inbound.log",
+    filemode="w",
+)
 
 
 class KafkaHTTPHandler:
@@ -40,7 +43,7 @@ class KafkaHTTPHandler:
     async def run(self):
         """Run the service."""
         self.producer = AIOKafkaProducer(
-            bootstrap_servers=self._host, transactional_id=str(uuid4())
+            bootstrap_servers=self._host, enable_idempotence=True
         )
         self.consumer_direct_response = AIOKafkaConsumer(
             self.direct_resp_topic,
@@ -55,11 +58,12 @@ class KafkaHTTPHandler:
         """Construct the aiohttp application."""
         await self.producer.start()
         app = web.Application()
-        app.add_routes([web.get("/", self.message_handler)])
-        app.add_routes([web.post("/", self.invite_handler)])
+        app.add_routes([web.get("/", self.invite_handler)])
+        app.add_routes([web.post("/", self.message_handler)])
         runner = web.AppRunner(app)
         await runner.setup()
         self.site = web.TCPSite(runner, host=self.site_host, port=self.site_port)
+        await self.site.start()
 
     async def stop(self) -> None:
         """Shutdown."""
@@ -78,13 +82,13 @@ class KafkaHTTPHandler:
                 for msg in messages:
                     msg = msgpack.unpackb(msg.value)
                     if not isinstance(msg, dict):
-                        log_error("Received non-dict message")
+                        logging.error("Received non-dict message")
                         continue
                     elif "response_data" not in msg:
-                        log_error("No response provided")
+                        logging.error("No response provided")
                         continue
                     elif "txn_id" not in msg:
-                        log_error("No txn_id provided")
+                        logging.error("No txn_id provided")
                         continue
                     txn_id = msg["txn_id"]
                     response_data = msg["response_data"]
@@ -124,6 +128,10 @@ class KafkaHTTPHandler:
                 direct_response_request = True
         txn_id = str(uuid4())
         if direct_response_request:
+            logging.info(
+                f"Direct response requested for message ({txn_id})"
+                f" received from {request.remote}"
+            )
             self.direct_response_txn_request_map[txn_id] = request
             message = msgpack.packb(
                 {
@@ -134,12 +142,10 @@ class KafkaHTTPHandler:
                     "transport_type": "http",
                 }
             )
-            async with self.producer.transaction():
-                await self.producer.send(
-                    self.inbound_transport_key,
-                    value=message,
-                    timestamp_ms=1000,
-                )
+            await self.producer.send(
+                self.inbound_transport_key,
+                value=message,
+            )
             try:
                 response_data = await asyncio.wait_for(
                     self.get_direct_responses(
@@ -147,6 +153,7 @@ class KafkaHTTPHandler:
                     ),
                     15,
                 )
+                logging.info(f"Direct response recieved for message ({txn_id})")
                 response = response_data["response"]
                 content_type = response_data.get("content_type", "application/json")
                 if response:
@@ -158,19 +165,19 @@ class KafkaHTTPHandler:
             except asyncio.TimeoutError:
                 return web.Response(status=200)
         else:
+            logging.info(f"Message received from {request.remote}")
             message = msgpack.packb(
                 {
                     "host": request.host,
                     "remote": request.remote,
                     "data": body,
+                    "transport_type": "http",
                 }
             )
-            async with self.producer.transaction():
-                await self.producer.send(
-                    self.inbound_transport_key,
-                    value=message,
-                    timestamp_ms=1000,
-                )
+            await self.producer.send(
+                self.inbound_transport_key,
+                value=message,
+            )
             return web.Response(status=200)
 
 
@@ -198,7 +205,7 @@ class KafkaWSHandler:
     async def run(self):
         """Run the service."""
         self.producer = AIOKafkaProducer(
-            bootstrap_servers=self._host, transactional_id=str(uuid4())
+            bootstrap_servers=self._host, enable_idempotence=True
         )
         self.consumer_direct_response = AIOKafkaConsumer(
             self.direct_resp_topic,
@@ -235,13 +242,13 @@ class KafkaWSHandler:
                 for msg in messages:
                     msg = msgpack.unpackb(msg.value)
                     if not isinstance(msg, dict):
-                        log_error("Received non-dict message")
+                        logging.error("Received non-dict message")
                         continue
                     elif "response_data" not in msg:
-                        log_error("No response provided")
+                        logging.error("No response provided")
                         continue
                     elif "txn_id" not in msg:
-                        log_error("No txn_id provided")
+                        logging.error("No txn_id provided")
                         continue
                     txn_id = msg["txn_id"]
                     response_data = msg["response_data"]
@@ -279,6 +286,10 @@ class KafkaWSHandler:
                             direct_response_request = True
                     txn_id = str(uuid4())
                     if direct_response_request:
+                        logging.info(
+                            f"Direct response requested for message ({txn_id})"
+                            f" received from {request.remote}"
+                        )
                         self.direct_response_txn_request_map[txn_id] = request
                         message = msgpack.packb(
                             {
@@ -289,18 +300,19 @@ class KafkaWSHandler:
                                 "transport_type": "ws",
                             }
                         )
-                        async with self.producer.transaction():
-                            await self.producer.send(
-                                self.inbound_transport_key,
-                                value=message,
-                                timestamp_ms=1000,
-                            )
+                        await self.producer.send(
+                            self.inbound_transport_key,
+                            value=message,
+                        )
                         try:
                             response_data = await asyncio.wait_for(
                                 self.get_direct_responses(
                                     txn_id=txn_id,
                                 ),
                                 15,
+                            )
+                            logging.info(
+                                f"Direct response recieved for message ({txn_id})"
                             )
                             response = response_data["response"]
                             if response:
@@ -311,26 +323,26 @@ class KafkaWSHandler:
                         except asyncio.TimeoutError:
                             pass
                     else:
+                        logging.info(f"Message received from {request.remote}")
                         message = msgpack.packb(
                             {
                                 "host": request.host,
                                 "remote": request.remote,
                                 "data": msg.data,
+                                "transport_type": "ws",
                             }
                         )
-                        async with self.producer.transaction():
-                            await self.producer.send(
-                                self.inbound_transport_key,
-                                value=message,
-                                timestamp_ms=1000,
-                            )
+                        await self.producer.send(
+                            self.inbound_transport_key,
+                            value=message,
+                        )
                 elif msg.type == WSMsgType.ERROR:
-                    log_error(
+                    logging.error(
                         "Websocket connection closed with exception: %s",
                         ws.exception(),
                     )
                 else:
-                    log_error(
+                    logging.error(
                         "Unexpected Websocket message type received: %s: %s, %s",
                         msg.type,
                         msg.data,
@@ -342,7 +354,7 @@ class KafkaWSHandler:
             inbound.cancel()
         if not ws.closed:
             await ws.close()
-        log_error("Websocket connection closed")
+        logging.error("Websocket connection closed")
         return ws
 
 
@@ -365,9 +377,9 @@ async def main(args):
     elif args.inbound_queue_prefix:
         prefix = args.inbound_queue_prefix
     tasks = []
-    if not args.inbound_transports:
+    if not args.inbound_queue_transports:
         raise SystemExit("No inbound transport config provided.")
-    for inbound_transport in args.inbound_transports:
+    for inbound_transport in args.inbound_queue_transports:
         transport_type, site_host, site_port = inbound_transport
         if transport_type == "ws":
             handler = KafkaWSHandler(host, prefix, site_host, site_port)
@@ -396,9 +408,9 @@ def argument_parser(args):
         default="acapy",
     )
     parser.add_argument(
-        "-it",
-        "--inbound-transports",
-        dest="inbound_transports",
+        "-iqt",
+        "--inbound-queue-transports",
+        dest="inbound_queue_transports",
         type=str,
         action="append",
         nargs=3,

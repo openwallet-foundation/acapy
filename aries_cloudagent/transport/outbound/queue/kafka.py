@@ -3,7 +3,6 @@ import msgpack
 
 from aiokafka import AIOKafkaProducer
 from typing import Union
-from uuid import uuid4
 
 from ....core.profile import Profile
 from .base import BaseOutboundQueue, OutboundQueueConfigurationError, OutboundQueueError
@@ -24,7 +23,6 @@ class KafkaOutboundQueue(BaseOutboundQueue):
                 self._profile.settings.get("transport.outbound_queue")
                 or config["connection"]
             )
-            self.txn_id = config.get("transaction_id", str(uuid4()))
         except KeyError as error:
             raise OutboundQueueConfigurationError(
                 "Configuration missing for kafka"
@@ -33,7 +31,8 @@ class KafkaOutboundQueue(BaseOutboundQueue):
         self.prefix = self._profile.settings.get(
             "transport.outbound_queue_prefix"
         ) or config.get("prefix", "acapy")
-        self.producer = None
+        self.producer = AIOKafkaProducer(bootstrap_servers=self.connection)
+        self.outbound_topic = f"{self.prefix}.outbound_transport"
 
     def __str__(self):
         """Return string representation of the outbound queue."""
@@ -41,9 +40,6 @@ class KafkaOutboundQueue(BaseOutboundQueue):
 
     async def start(self):
         """Start the transport."""
-        self.producer = AIOKafkaProducer(
-            bootstrap_servers=self.connection, transactional_id=self.txn_id
-        )
         await self.producer.start()
 
     async def stop(self):
@@ -74,6 +70,4 @@ class KafkaOutboundQueue(BaseOutboundQueue):
                 "payload": payload,
             }
         )
-        key = f"{self.prefix}.outbound_transport"
-        async with self.producer.transaction():
-            await self.producer.send(key, value=message, timestamp_ms=1000)
+        await self.producer.send(self.outbound_topic, value=message)

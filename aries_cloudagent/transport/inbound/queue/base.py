@@ -4,7 +4,7 @@ import asyncio
 import logging
 
 from ....core.profile import Profile
-from ...error import BaseError, TransportError
+from ...error import BaseError
 
 
 class BaseInboundQueue(ABC):
@@ -28,10 +28,10 @@ class BaseInboundQueue(ABC):
             self.logger.exception("Exception in inbound queue")
         await self.stop()
 
-    async def start(self):
+    async def open(self):
         """Start the queue."""
 
-    async def stop(self):
+    async def close(self):
         """Stop the queue."""
 
     @abstractmethod
@@ -39,10 +39,6 @@ class BaseInboundQueue(ABC):
         self,
     ):
         """Receive and send message to internal message router."""
-
-
-class InboundQueueError(TransportError):
-    """Generic inbound transport error."""
 
 
 class InboundQueueConfigurationError(BaseError):

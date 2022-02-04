@@ -32,6 +32,13 @@ class Banner:
         spacer = " " * (self.length - len(title))
         print(self.lr_pad(f"{title}{spacer}"))
 
+    def print_subsubtitle(self, title):
+        """Print a subtitle for a subsection."""
+        title += ":"
+        left_part = "  "
+        spacer = " " * (self.length - len(title) - 2)
+        print(self.lr_pad(f"{left_part}{title}{spacer}"))
+
     def print_list(self, items):
         """Print a list of items, prepending a dash to each item."""
         for item in items:

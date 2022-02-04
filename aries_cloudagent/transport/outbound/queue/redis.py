@@ -1,5 +1,6 @@
 """Redis outbound transport."""
 import aioredis
+import asyncio
 import msgpack
 
 from typing import Union
@@ -32,10 +33,8 @@ class RedisOutboundQueue(BaseOutboundQueue):
         self.prefix = self._profile.settings.get(
             "transport.outbound_queue_prefix"
         ) or config.get("prefix", "acapy")
-        self.pool = aioredis.ConnectionPool.from_url(
-            self.connection, max_connections=10
-        )
-        self.redis = aioredis.Redis(connection_pool=self.pool)
+        self.redis = None
+        self.outbound_topic = f"{self.prefix}.outbound_transport"
 
     def __str__(self):
         """Return string representation of the outbound queue."""
@@ -46,25 +45,18 @@ class RedisOutboundQueue(BaseOutboundQueue):
 
     async def start(self):
         """Start the transport."""
-        # aioredis will lazily connect but we can eagerly trigger connection with:
-        # await self.redis.ping()
-        # Calling this on enter to `async with` just before another queue
-        # operation is made does not make sense and we should just let aioredis
-        # do lazy connection.
+        self.redis = aioredis.from_url(self.connection)
+        await self.redis.ping()
 
     async def stop(self):
         """Stop the transport."""
-        # aioredis cleans up automatically but we can clean up manually with:
-        # await self.pool.disconnect()
-        # However, calling this on exit of `async with` does not make sense and
-        # we should just let aioredis handle the connection lifecycle.
 
     async def push(self, key: str, message: bytes):
         """Push a ``message`` to redis on ``key``."""
         try:
-            return await self.redis.rpush(key, message)
-        except aioredis.RedisError as error:
-            raise OutboundQueueError("Unexpected redis client exception") from error
+            await self.redis.rpush(key, message)
+        except aioredis.RedisError as err:
+            raise OutboundQueueError(f"Unexpected exception {str(err)}")
 
     async def enqueue_message(
         self,
@@ -90,5 +82,13 @@ class RedisOutboundQueue(BaseOutboundQueue):
                 "payload": payload,
             }
         )
-        key = f"{self.prefix}.outbound_transport"
-        return await self.push(key, message)
+        message_sent = False
+        while not message_sent:
+            try:
+                await self.push(self.outbound_topic, message)
+                message_sent = True
+            except OutboundQueueError as err:
+                await asyncio.sleep(1)
+                self.logger.warning(f"Resetting Redis connection pool, {str(err)}")
+                self.redis = aioredis.from_url(self.connection)
+                await self.redis.ping()

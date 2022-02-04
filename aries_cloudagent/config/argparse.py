@@ -1128,6 +1128,7 @@ class TransportGroup(ArgumentGroup):
             type=str,
             action="append",
             nargs=3,
+            required=False,
             metavar=("<module>", "<host>", "<port>"),
             env_var="ACAPY_INBOUND_TRANSPORT",
             help=(
@@ -1244,6 +1245,24 @@ class TransportGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "-iqt",
+            "--inbound-queue-transport",
+            dest="inbound_queue_transports",
+            type=str,
+            action="append",
+            nargs=3,
+            required=False,
+            metavar=("<module>", "<host>", "<port>"),
+            env_var="ACAPY_INBOUND_QUEUE_TRANSPORT",
+            help=(
+                "REQUIRED. Defines the inbound queue transport(s) on which the inbound "
+                "delivery_service agent listens for receiving messages from other "
+                "agents. This parameter can be specified multiple times to create "
+                "multiple interfaces. Built-in inbound transport types include "
+                "'http' and 'ws'."
+            ),
+        )
+        parser.add_argument(
             "-l",
             "--label",
             type=str,
@@ -1320,7 +1339,7 @@ class TransportGroup(ArgumentGroup):
         settings = {}
         if args.inbound_transports:
             settings["transport.inbound_configs"] = args.inbound_transports
-        else:
+        elif not args.inbound_queue_transports and not args.inbound_queue:
             raise ArgsParseError("-it/--inbound-transport is required")
         if not args.outbound_transports and not args.outbound_queue:
             raise ArgsParseError(
@@ -1340,7 +1359,16 @@ class TransportGroup(ArgumentGroup):
         if args.outbound_queue_prefix:
             settings["transport.outbound_queue_prefix"] = args.outbound_queue_prefix
         if args.inbound_queue:
-            settings["transport.inbound_queue"] = args.inbound_queue
+            if not args.inbound_queue_transports:
+                raise ArgsParseError(
+                    "-iq/--inbound-queue and -iqt/--inbound-queue-transport"
+                    " are both required"
+                )
+            else:
+                settings["transport.inbound_queue"] = args.inbound_queue
+                settings[
+                    "transport.inbound_queue_transports"
+                ] = args.inbound_queue_transports
         if args.inbound_queue_class:
             settings["transport.inbound_queue_class"] = args.inbound_queue_class
         if args.inbound_queue_prefix:

@@ -116,15 +116,15 @@ class LoggingConfigurator:
         banner.print_spacer()
 
         # Inbound transports
-        banner.print_subtitle("Inbound Transports")
-        banner.print_spacer()
-        banner.print_list(
-            [
-                f"{transport.scheme}://{transport.host}:{transport.port}"
-                for transport in inbound_transports.values()
-            ]
-        )
-        banner.print_spacer()
+        configured_inbound_transports = [
+            f"{transport.scheme}://{transport.host}:{transport.port}"
+            for transport in inbound_transports.values()
+        ]
+        if len(configured_inbound_transports) > 0:
+            banner.print_subtitle("Inbound Transports")
+            banner.print_spacer()
+            banner.print_list(configured_inbound_transports)
+            banner.print_spacer()
 
         # Outbound transports
         schemes = set().union(
@@ -145,10 +145,12 @@ class LoggingConfigurator:
                     "RedisInboundQueue"
                     if ("Redis" in inbound_queue.__class__.__name__)
                     else "KafkaInboundQueue",
-                    f"prefix: {inbound_queue.prefix}",
+                    f"topic: {inbound_queue.inbound_topic}",
                     f"{inbound_queue.connection}",
                 ]
             )
+            banner.print_subsubtitle("Listeners")
+            banner.print_list([f"{uri}" for uri in inbound_queue.listener_urls])
             banner.print_spacer()
 
         # Outbound queue
@@ -160,7 +162,7 @@ class LoggingConfigurator:
                     "RedisOutboundQueue"
                     if ("Redis" in outbound_queue.__class__.__name__)
                     else "KafkaOutboundQueue",
-                    f"prefix: {outbound_queue.prefix}",
+                    f"topic: {outbound_queue.outbound_topic}",
                     f"{outbound_queue.connection}",
                 ]
             )

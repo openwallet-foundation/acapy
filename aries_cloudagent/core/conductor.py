@@ -180,6 +180,10 @@ class Conductor:
         ):
             LOGGER.warning("No ledger configured")
 
+        # External Queues
+        self.inbound_queue = get_inbound_queue(self.root_profile)
+        self.outbound_queue = get_outbound_queue(self.root_profile)
+
         # Register all inbound transports
         self.inbound_transport_manager = InboundTransportManager(
             self.root_profile, self.inbound_message_router, self.handle_not_returned
@@ -213,8 +217,6 @@ class Conductor:
         context.injector.bind_instance(
             DocumentLoader, DocumentLoader(self.root_profile)
         )
-        self.inbound_queue = get_inbound_queue(self.root_profile)
-        self.outbound_queue = get_outbound_queue(self.root_profile)
 
         # Admin API
         if context.settings.get("admin.enabled"):
@@ -278,7 +280,7 @@ class Conductor:
 
         if self.inbound_queue:
             try:
-                await self.inbound_queue.start()
+                await self.inbound_queue.open()
             except Exception:
                 LOGGER.exception("Unable to start inbound queue")
                 raise
@@ -501,7 +503,7 @@ class Conductor:
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
         if self.inbound_queue:
-            shutdown.run(self.inbound_queue.stop())
+            shutdown.run(self.inbound_queue.close())
         if self.outbound_queue:
             shutdown.run(self.outbound_queue.stop())
 
