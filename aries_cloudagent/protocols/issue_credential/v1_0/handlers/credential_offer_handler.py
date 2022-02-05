@@ -52,7 +52,9 @@ class CredentialOfferHandler(BaseHandler):
         )
 
         # If auto respond is turned on, automatically reply with credential request
-        if context.settings.get("debug.auto_respond_credential_offer"):
+        if cred_ex_record and context.settings.get(
+            "debug.auto_respond_credential_offer"
+        ):
             credential_request_message = None
             try:
                 (

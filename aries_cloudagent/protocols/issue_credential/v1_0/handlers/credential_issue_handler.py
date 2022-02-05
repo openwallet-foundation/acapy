@@ -50,7 +50,7 @@ class CredentialIssueHandler(BaseHandler):
         )
 
         # Automatically move to next state if flag is set
-        if context.settings.get("debug.auto_store_credential"):
+        if cred_ex_record and context.settings.get("debug.auto_store_credential"):
             try:
                 cred_ex_record = await credential_manager.store_credential(
                     cred_ex_record

@@ -52,7 +52,7 @@ class CredentialRequestHandler(BaseHandler):
         )
 
         # If auto_issue is enabled, respond immediately
-        if cred_ex_record.auto_issue:
+        if cred_ex_record and cred_ex_record.auto_issue:
             if (
                 cred_ex_record.credential_proposal_dict
                 and cred_ex_record.credential_proposal_dict.credential_proposal
