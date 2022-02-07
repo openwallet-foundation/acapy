@@ -28,7 +28,7 @@ BDD_EXTRA_AGENT_ARGS = os.getenv("BDD_EXTRA_AGENT_ARGS")
 
 
 @given("{n} agents")
-@given(u"we have {n} agents")
+@given("we have {n} agents")
 def step_impl(context, n):
     """Startup 'n' agents based on the options provided in the context table parameters."""
 
@@ -112,7 +112,7 @@ def step_impl(context, agent_name):
 @given('"{sender}" and "{receiver}" have an existing connection')
 def step_impl(context, sender, receiver):
     context.execute_steps(
-        u'''
+        '''
         When "'''
         + sender
         + '''" generates a connection invitation
