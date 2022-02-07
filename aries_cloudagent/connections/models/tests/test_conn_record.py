@@ -30,9 +30,10 @@ class TestConnRecord(AsyncTestCase):
             their_did=self.test_target_did,
             their_role=ConnRecord.Role.REQUESTER.rfc23,
             state=ConnRecord.State.COMPLETED.rfc23,
+            connection_protocol="didexchange/1.0",
         )
-        assert self.test_conn_record.their_role == ConnRecord.Role.REQUESTER.rfc160
-        assert self.test_conn_record.state == ConnRecord.State.COMPLETED.rfc160
+        assert self.test_conn_record.their_role == ConnRecord.Role.REQUESTER.rfc23
+        assert self.test_conn_record.state == ConnRecord.State.COMPLETED.rfc23
         assert self.test_conn_record.rfc23_state == ConnRecord.State.COMPLETED.rfc23
 
     def test_get_protocol(self):
@@ -115,19 +116,21 @@ class TestConnRecord(AsyncTestCase):
             state=ConnRecord.State.INIT,  # exercise init State by enum
             my_did=self.test_did,
             their_role=ConnRecord.Role.REQUESTER,  # exercise init Role by enum
+            connection_protocol="didexchange/1.0",
         )
         connection_id = await record.save(self.session)
         fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
         assert fetched and fetched == record
-        assert fetched.state is ConnRecord.State.INIT.rfc160
+        assert fetched.state is ConnRecord.State.INIT.rfc23
         assert ConnRecord.State.get(fetched.state) is ConnRecord.State.INIT
-        assert fetched.their_role is ConnRecord.Role.REQUESTER.rfc160
+        assert fetched.their_role is ConnRecord.Role.REQUESTER.rfc23
         assert ConnRecord.Role.get(fetched.their_role) is ConnRecord.Role.REQUESTER
 
         record160 = ConnRecord(
             state=ConnRecord.State.INIT.rfc23,
             my_did=self.test_did,
-            their_role=ConnRecord.Role.REQUESTER.rfc23,
+            their_role=ConnRecord.Role.REQUESTER,
+            connection_protocol="connections/1.0",
         )
         record160._id = record._id
         record160.created_at = record.created_at
@@ -140,13 +143,14 @@ class TestConnRecord(AsyncTestCase):
             their_did=self.test_target_did,
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.COMPLETED.rfc23,
+            connection_protocol="didexchange/1.0",
         )
         rec_id = await record.save(self.session)
         result = await ConnRecord.retrieve_by_did(
             session=self.session,
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
         )
         assert result == record
 
@@ -160,9 +164,10 @@ class TestConnRecord(AsyncTestCase):
         record = ConnRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.INVITATION.rfc23,
             invitation_key="dummy",
+            connection_protocol="didexchange/1.0",
         )
         await record.save(self.session)
         result = await ConnRecord.retrieve_by_invitation_key(
@@ -185,6 +190,7 @@ class TestConnRecord(AsyncTestCase):
             their_role=ConnRecord.Role.RESPONDER.rfc160,
             state=ConnRecord.State.INVITATION.rfc160,
             invitation_msg_id="test123",
+            connection_protocol="connections/1.0",
         )
         await record.save(self.session)
         result = await ConnRecord.retrieve_by_invitation_msg_id(
@@ -205,27 +211,30 @@ class TestConnRecord(AsyncTestCase):
         record_a = ConnRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc160,
-            state=ConnRecord.State.COMPLETED.rfc160,
+            their_role=ConnRecord.Role.RESPONDER,
+            state=ConnRecord.State.COMPLETED,
             invitation_msg_id="test123",
             their_public_did="test_did_1",
+            connection_protocol="connections/1.0",
         )
         await record_a.save(self.session)
         record_b = ConnRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc160,
-            state=ConnRecord.State.INVITATION.rfc160,
+            their_role=ConnRecord.Role.RESPONDER,
+            state=ConnRecord.State.INVITATION,
             invitation_msg_id="test123",
             their_public_did="test_did_1",
+            connection_protocol="connections/1.0",
         )
         await record_b.save(self.session)
         record_c = ConnRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc160,
-            state=ConnRecord.State.COMPLETED.rfc160,
+            their_role=ConnRecord.Role.RESPONDER,
+            state=ConnRecord.State.COMPLETED,
             invitation_msg_id="test123",
+            connection_protocol="connections/1.0",
         )
         await record_c.save(self.session)
         result = await ConnRecord.find_existing_connection(
@@ -243,6 +252,7 @@ class TestConnRecord(AsyncTestCase):
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.COMPLETED.rfc23,
             request_id="abc123",
+            connection_protocol="didexchange/1.0",
         )
         await record.save(self.session)
         result = await ConnRecord.retrieve_by_request_id(
@@ -297,6 +307,7 @@ class TestConnRecord(AsyncTestCase):
         record = ConnRecord(
             my_did=self.test_did,
             state=ConnRecord.State.INVITATION.rfc23,
+            connection_protocol="didexchange/1.0",
         )
         connection_id = await record.save(self.session)
 
@@ -313,6 +324,7 @@ class TestConnRecord(AsyncTestCase):
         record = ConnRecord(
             my_did=self.test_did,
             state=ConnRecord.State.INVITATION.rfc23,
+            connection_protocol="didexchange/1.0",
         )
         connection_id = await record.save(self.session)
 

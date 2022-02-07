@@ -2166,6 +2166,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 their_public_did=TestConfig.test_target_did,
                 invitation_msg_id="12345678-0123-4567-1234-567812345678",
                 their_role=ConnRecord.Role.REQUESTER,
+                connection_protocol="didexchange/1.0",
             )
             await test_exist_conn.save(session)
             await test_exist_conn.metadata_set(session, "reuse_msg_state", "initial")
@@ -2216,7 +2217,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     tag_filter={"their_public_did": TestConfig.test_target_did},
                 )
                 assert (
-                    retrieved_conn_records[0].state == ConnRecord.State.ABANDONED.rfc160
+                    retrieved_conn_records[0].state == ConnRecord.State.ABANDONED.rfc23
                 )
 
     async def test_existing_conn_record_public_did_timeout_no_handshake_protocol(self):

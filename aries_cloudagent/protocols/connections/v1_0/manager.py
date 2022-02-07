@@ -620,8 +620,8 @@ class ConnectionManager(BaseConnectionManager):
                 if self.profile.settings.get("debug.auto_accept_requests")
                 else ConnRecord.ACCEPT_MANUAL
             )
-            connection.state = ConnRecord.State.REQUEST.rfc160
             connection.connection_protocol = CONN_PROTO
+            connection.state = ConnRecord.State.REQUEST.rfc160
             async with self.profile.session() as session:
                 await connection.save(
                     session, reason="Received connection request from public DID"

@@ -220,19 +220,11 @@ class ConnRecord(BaseRecord):
         """Initialize a new ConnRecord."""
         super().__init__(
             connection_id,
-            state=(ConnRecord.State.get(state) or ConnRecord.State.INIT).rfc160,
             **kwargs,
         )
         self.my_did = my_did
         self.their_did = their_did
         self.their_label = their_label
-        self.their_role = (
-            ConnRecord.Role.get(their_role).rfc160
-            if isinstance(their_role, str)
-            else None
-            if their_role is None
-            else their_role.rfc160
-        )
         self.invitation_key = invitation_key
         self.invitation_msg_id = invitation_msg_id
         self.request_id = request_id
@@ -250,6 +242,31 @@ class ConnRecord(BaseRecord):
             if connection_protocol is None
             else connection_protocol.aries_protocol
         )
+        self.set_state(ConnRecord.State.get(state) or ConnRecord.State.INIT)
+        if their_role:
+            self.set_their_role(their_role)
+        else:
+            self.their_role = None
+
+    def set_state(self, given_state):
+        """Set ConnRecord state based upon connection_protocol."""
+        if self.connection_protocol == ConnRecord.Protocol.RFC_0023.aries_protocol:
+            self.state = given_state.rfc23
+        elif self.connection_protocol == ConnRecord.Protocol.RFC_0160.aries_protocol:
+            self.state = given_state.rfc160
+        else:
+            self.state = given_state.rfc23
+
+    def set_their_role(self, given_role):
+        """Set ConnRecord their_role upon connection_protocol."""
+        if isinstance(given_role, str):
+            given_role = ConnRecord.Role.get(given_role)
+        if self.connection_protocol == ConnRecord.Protocol.RFC_0023.aries_protocol:
+            self.their_role = given_role.rfc23
+        elif self.connection_protocol == ConnRecord.Protocol.RFC_0160.aries_protocol:
+            self.their_role = given_role.rfc160
+        else:
+            self.their_role = given_role.rfc23
 
     @property
     def connection_id(self) -> str:
