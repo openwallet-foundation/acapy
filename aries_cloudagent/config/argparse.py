@@ -1691,6 +1691,17 @@ class EndorsementGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--endorser-endorse-with-did",
+            type=str,
+            metavar="<endorser-endorse-with-did>",
+            env_var="ACAPY_ENDORSER_ENDORSE_WITH_DID",
+            help=(
+                "For transaction Endorsers, specify the  DID to use to endorse "
+                "transactions.  The default (if not specified) is to use the "
+                "Endorser's Public DID."
+            ),
+        )
+        parser.add_argument(
             "--endorser-alias",
             type=str,
             metavar="<endorser-alias>",
@@ -1733,6 +1744,13 @@ class EndorsementGroup(ArgumentGroup):
             " the controller must invoke the endpoints required to create the"
             " revocation registry and assign to the cred def.)",
         )
+        parser.add_argument(
+            "--auto-promote-author-did",
+            action="store_true",
+            env_var="ACAPY_PROMOTE-AUTHOR-DID",
+            help="For Authors, specify whether to automatically promote"
+            " a DID to the wallet public DID after writing to the ledger.",
+        )
 
     def get_settings(self, args: Namespace):
         """Extract endorser settings."""
@@ -1742,6 +1760,7 @@ class EndorsementGroup(ArgumentGroup):
         settings["endorser.auto_endorse"] = False
         settings["endorser.auto_write"] = False
         settings["endorser.auto_create_rev_reg"] = False
+        settings["endorser.auto_promote_author_did"] = False
 
         if args.endorser_protocol_role:
             if args.endorser_protocol_role == ENDORSER_AUTHOR:
@@ -1756,6 +1775,17 @@ class EndorsementGroup(ArgumentGroup):
                 raise ArgsParseError(
                     "Parameter --endorser-public-did should only be set for transaction "
                     "Authors"
+                )
+
+        if args.endorser_endorse_with_did:
+            if settings["endorser.endorser"]:
+                settings[
+                    "endorser.endorser_endorse_with_did"
+                ] = args.endorser_endorse_with_did
+            else:
+                raise ArgsParseError(
+                    "Parameter --endorser-endorse-with-did should only be set for "
+                    "transaction Endorsers"
                 )
 
         if args.endorser_alias:
@@ -1790,7 +1820,6 @@ class EndorsementGroup(ArgumentGroup):
             if settings["endorser.author"]:
                 settings["endorser.auto_request"] = True
             else:
-                pass
                 raise ArgsParseError(
                     "Parameter --auto-request-endorsement should only be set for "
                     "transaction Authors"
@@ -1800,7 +1829,6 @@ class EndorsementGroup(ArgumentGroup):
             if settings["endorser.endorser"]:
                 settings["endorser.auto_endorse"] = True
             else:
-                pass
                 raise ArgsParseError(
                     "Parameter --auto-endorser-transactions should only be set for "
                     "transaction Endorsers"
@@ -1810,7 +1838,6 @@ class EndorsementGroup(ArgumentGroup):
             if settings["endorser.author"]:
                 settings["endorser.auto_write"] = True
             else:
-                pass
                 raise ArgsParseError(
                     "Parameter --auto-write-transactions should only be set for "
                     "transaction Authors"
@@ -1820,9 +1847,17 @@ class EndorsementGroup(ArgumentGroup):
             if settings["endorser.author"]:
                 settings["endorser.auto_create_rev_reg"] = True
             else:
-                pass
                 raise ArgsParseError(
                     "Parameter --auto-create-revocation-transactions should only be set "
+                    "for transaction Authors"
+                )
+
+        if args.auto_promote_author_did:
+            if settings["endorser.author"]:
+                settings["endorser.auto_promote_author_did"] = True
+            else:
+                raise ArgsParseError(
+                    "Parameter --auto-promote-author-did should only be set "
                     "for transaction Authors"
                 )
 
