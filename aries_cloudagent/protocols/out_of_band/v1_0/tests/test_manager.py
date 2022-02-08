@@ -372,6 +372,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             their_role=None,
             state=ConnRecord.State.COMPLETED,
             their_public_did=self.their_public_did,
+            connection_protocol="didexchange/1.0",
         )
 
         self.test_mediator_routing_keys = [
@@ -3368,7 +3369,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.side_effect = [conn_rec_request, conn_rec_active]
             conn_rec = await self.manager.conn_rec_is_active(connection_id)
-            assert conn_rec.state == "active"
+            assert conn_rec.state == "completed"
 
     async def test_request_attach_cred_offer_v1_check_conn_rec_active_timeout(self):
         async with self.profile.session() as session:

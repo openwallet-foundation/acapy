@@ -220,6 +220,7 @@ class ConnRecord(BaseRecord):
         """Initialize a new ConnRecord."""
         super().__init__(
             connection_id,
+            state=state,
             **kwargs,
         )
         self.my_did = my_did
@@ -242,36 +243,50 @@ class ConnRecord(BaseRecord):
             if connection_protocol is None
             else connection_protocol.aries_protocol
         )
-        self.set_state(ConnRecord.State.get(state) or ConnRecord.State.INIT)
-        if their_role:
-            self.set_their_role(their_role)
-        else:
-            self.their_role = None
-
-    def set_state(self, given_state):
-        """Set ConnRecord state based upon connection_protocol."""
-        if self.connection_protocol == ConnRecord.Protocol.RFC_0023.aries_protocol:
-            self.state = given_state.rfc23
-        elif self.connection_protocol == ConnRecord.Protocol.RFC_0160.aries_protocol:
-            self.state = given_state.rfc160
-        else:
-            self.state = given_state.rfc23
-
-    def set_their_role(self, given_role):
-        """Set ConnRecord their_role upon connection_protocol."""
-        if isinstance(given_role, str):
-            given_role = ConnRecord.Role.get(given_role)
-        if self.connection_protocol == ConnRecord.Protocol.RFC_0023.aries_protocol:
-            self.their_role = given_role.rfc23
-        elif self.connection_protocol == ConnRecord.Protocol.RFC_0160.aries_protocol:
-            self.their_role = given_role.rfc160
-        else:
-            self.their_role = given_role.rfc23
+        self.their_role = their_role
 
     @property
     def connection_id(self) -> str:
         """Accessor for the ID associated with this connection."""
         return self._id
+
+    @property
+    def state(self) -> str:
+        """Accessor for the state based on connection_protocol."""
+        if self.connection_protocol == ConnRecord.Protocol.RFC_0023.aries_protocol:
+            return ConnRecord.State.get(self._state).rfc23
+        elif self.connection_protocol == ConnRecord.Protocol.RFC_0160.aries_protocol:
+            return ConnRecord.State.get(self._state).rfc160
+        else:
+            return ConnRecord.State.get(self._state).rfc160
+
+    @state.setter
+    def state(self, state):
+        """Setter for the state for this connection."""
+        self._state = (ConnRecord.State.get(state) or ConnRecord.State.INIT).rfc23
+
+    @property
+    def their_role(self) -> Optional[str]:
+        """Accessor for their_role based on connection_protocol."""
+        if not self._their_role:
+            return None
+        if self.connection_protocol == ConnRecord.Protocol.RFC_0023.aries_protocol:
+            return ConnRecord.Role.get(self._their_role).rfc23
+        elif self.connection_protocol == ConnRecord.Protocol.RFC_0160.aries_protocol:
+            return ConnRecord.Role.get(self._their_role).rfc160
+        else:
+            return ConnRecord.Role.get(self._their_role).rfc160
+
+    @their_role.setter
+    def their_role(self, their_role):
+        """Setter for their_role for this connection."""
+        self._their_role = (
+            ConnRecord.Role.get(their_role).rfc23
+            if isinstance(their_role, str)
+            else None
+            if their_role is None
+            else their_role.rfc23
+        )
 
     @property
     def rfc23_state(self) -> str:
@@ -322,10 +337,14 @@ class ConnRecord(BaseRecord):
             tag_filter["my_did"] = my_did
 
         post_filter = {}
-        if their_role:
-            post_filter["their_role"] = cls.Role.get(their_role).rfc160
-
-        return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
+        try:
+            if their_role:
+                post_filter["their_role"] = cls.Role.get(their_role).rfc23
+            return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
+        except StorageNotFoundError:
+            if their_role:
+                post_filter["their_role"] = cls.Role.get(their_role).rfc160
+            return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
 
     @classmethod
     async def retrieve_by_invitation_key(
@@ -339,12 +358,16 @@ class ConnRecord(BaseRecord):
             initiator: Filter by the initiator value
         """
         tag_filter = {"invitation_key": invitation_key}
-        post_filter = {"state": cls.State.INVITATION.rfc160}
-
-        if their_role:
-            post_filter["their_role"] = cls.Role.get(their_role).rfc160
-
-        return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
+        try:
+            post_filter = {"state": cls.State.INVITATION.rfc23}
+            if their_role:
+                post_filter["their_role"] = cls.Role.get(their_role).rfc23
+            return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
+        except StorageNotFoundError:
+            post_filter = {"state": cls.State.INVITATION.rfc160}
+            if their_role:
+                post_filter["their_role"] = cls.Role.get(their_role).rfc160
+            return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
 
     @classmethod
     async def retrieve_by_invitation_msg_id(
@@ -358,15 +381,25 @@ class ConnRecord(BaseRecord):
             initiator: Filter by the initiator value
         """
         tag_filter = {"invitation_msg_id": invitation_msg_id}
-        post_filter = {
-            "state": cls.State.INVITATION.rfc160,
-        }
-        if their_role:
-            post_filter["their_role"] = cls.Role.get(their_role).rfc160
         try:
+            post_filter = {
+                "state": cls.State.INVITATION.rfc23,
+            }
+            if their_role:
+                post_filter["their_role"] = cls.Role.get(their_role).rfc23
             return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
         except StorageNotFoundError:
-            return None
+            try:
+                post_filter = {
+                    "state": cls.State.INVITATION.rfc160,
+                }
+                if their_role:
+                    post_filter["their_role"] = cls.Role.get(their_role).rfc160
+                return await cls.retrieve_by_tag_filter(
+                    session, tag_filter, post_filter
+                )
+            except StorageNotFoundError:
+                return None
 
     @classmethod
     async def find_existing_connection(

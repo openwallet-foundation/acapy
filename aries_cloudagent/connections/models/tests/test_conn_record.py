@@ -101,7 +101,7 @@ class TestConnRecord(AsyncTestCase):
         )
 
     async def test_save_retrieve_compare(self):
-        record = ConnRecord(my_did=self.test_did)
+        record = ConnRecord(my_did=self.test_did, connection_protocol="didexchange/1.0")
         connection_id = await record.save(self.session)
         fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
         assert fetched and fetched == record
@@ -116,21 +116,19 @@ class TestConnRecord(AsyncTestCase):
             state=ConnRecord.State.INIT,  # exercise init State by enum
             my_did=self.test_did,
             their_role=ConnRecord.Role.REQUESTER,  # exercise init Role by enum
-            connection_protocol="didexchange/1.0",
         )
         connection_id = await record.save(self.session)
         fetched = await ConnRecord.retrieve_by_id(self.session, connection_id)
         assert fetched and fetched == record
-        assert fetched.state is ConnRecord.State.INIT.rfc23
+        assert fetched.state is ConnRecord.State.INIT.rfc160
         assert ConnRecord.State.get(fetched.state) is ConnRecord.State.INIT
-        assert fetched.their_role is ConnRecord.Role.REQUESTER.rfc23
+        assert fetched.their_role is ConnRecord.Role.REQUESTER.rfc160
         assert ConnRecord.Role.get(fetched.their_role) is ConnRecord.Role.REQUESTER
 
         record160 = ConnRecord(
             state=ConnRecord.State.INIT.rfc23,
             my_did=self.test_did,
-            their_role=ConnRecord.Role.REQUESTER,
-            connection_protocol="connections/1.0",
+            their_role=ConnRecord.Role.REQUESTER.rfc23,
         )
         record160._id = record._id
         record160.created_at = record.created_at
@@ -143,14 +141,13 @@ class TestConnRecord(AsyncTestCase):
             their_did=self.test_target_did,
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.COMPLETED.rfc23,
-            connection_protocol="didexchange/1.0",
         )
         rec_id = await record.save(self.session)
         result = await ConnRecord.retrieve_by_did(
             session=self.session,
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
         )
         assert result == record
 
@@ -164,10 +161,9 @@ class TestConnRecord(AsyncTestCase):
         record = ConnRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
             state=ConnRecord.State.INVITATION.rfc23,
             invitation_key="dummy",
-            connection_protocol="didexchange/1.0",
         )
         await record.save(self.session)
         result = await ConnRecord.retrieve_by_invitation_key(
@@ -190,7 +186,6 @@ class TestConnRecord(AsyncTestCase):
             their_role=ConnRecord.Role.RESPONDER.rfc160,
             state=ConnRecord.State.INVITATION.rfc160,
             invitation_msg_id="test123",
-            connection_protocol="connections/1.0",
         )
         await record.save(self.session)
         result = await ConnRecord.retrieve_by_invitation_msg_id(
@@ -207,36 +202,27 @@ class TestConnRecord(AsyncTestCase):
         )
         assert not result
 
-    async def test_find_existing_connection(self):
+    async def test_find_existing_connection_a(self):
         record_a = ConnRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER,
-            state=ConnRecord.State.COMPLETED,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
             invitation_msg_id="test123",
             their_public_did="test_did_1",
-            connection_protocol="connections/1.0",
+            connection_protocol="didexchange/1.0",
         )
         await record_a.save(self.session)
         record_b = ConnRecord(
             my_did=self.test_did,
             their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER,
-            state=ConnRecord.State.INVITATION,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.COMPLETED.rfc160,
             invitation_msg_id="test123",
             their_public_did="test_did_1",
             connection_protocol="connections/1.0",
         )
         await record_b.save(self.session)
-        record_c = ConnRecord(
-            my_did=self.test_did,
-            their_did=self.test_target_did,
-            their_role=ConnRecord.Role.RESPONDER,
-            state=ConnRecord.State.COMPLETED,
-            invitation_msg_id="test123",
-            connection_protocol="connections/1.0",
-        )
-        await record_c.save(self.session)
         result = await ConnRecord.find_existing_connection(
             session=self.session,
             their_public_did="test_did_1",
@@ -245,6 +231,43 @@ class TestConnRecord(AsyncTestCase):
         assert result.state == "active"
         assert result.their_public_did == "test_did_1"
 
+    async def test_find_existing_connection_b(self):
+        record_a = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.INVITATION.rfc23,
+            invitation_msg_id="test123",
+            their_public_did="test_did_2",
+            connection_protocol="didexchange/1.0",
+        )
+        await record_a.save(self.session)
+        record_b = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc160,
+            state=ConnRecord.State.COMPLETED.rfc160,
+            invitation_msg_id="test123",
+        )
+        await record_b.save(self.session)
+        record_c = ConnRecord(
+            my_did=self.test_did,
+            their_did=self.test_target_did,
+            their_role=ConnRecord.Role.RESPONDER.rfc23,
+            state=ConnRecord.State.COMPLETED.rfc23,
+            invitation_msg_id="test123",
+            their_public_did="test_did_2",
+            connection_protocol="didexchange/1.0",
+        )
+        await record_c.save(self.session)
+        result = await ConnRecord.find_existing_connection(
+            session=self.session,
+            their_public_did="test_did_2",
+        )
+        assert result
+        assert result.state == "completed"
+        assert result.their_public_did == "test_did_2"
+
     async def test_retrieve_by_request_id(self):
         record = ConnRecord(
             my_did=self.test_did,
@@ -252,7 +275,6 @@ class TestConnRecord(AsyncTestCase):
             their_role=ConnRecord.Role.RESPONDER.rfc23,
             state=ConnRecord.State.COMPLETED.rfc23,
             request_id="abc123",
-            connection_protocol="didexchange/1.0",
         )
         await record.save(self.session)
         result = await ConnRecord.retrieve_by_request_id(
@@ -307,7 +329,6 @@ class TestConnRecord(AsyncTestCase):
         record = ConnRecord(
             my_did=self.test_did,
             state=ConnRecord.State.INVITATION.rfc23,
-            connection_protocol="didexchange/1.0",
         )
         connection_id = await record.save(self.session)
 
@@ -324,7 +345,6 @@ class TestConnRecord(AsyncTestCase):
         record = ConnRecord(
             my_did=self.test_did,
             state=ConnRecord.State.INVITATION.rfc23,
-            connection_protocol="didexchange/1.0",
         )
         connection_id = await record.save(self.session)
 
