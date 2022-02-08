@@ -16,7 +16,7 @@ from .....core.in_memory.profile import InMemoryProfile
 from ...manager import InboundTransportManager
 
 from .. import kafka as test_module
-from ..base import InboundQueueConfigurationError, InboundQueueError
+from ..base import InboundQueueConfigurationError
 from ..kafka import KafkaInboundQueue, LocalState, RebalanceListener
 
 
@@ -272,8 +272,8 @@ class TestKafkaInbound(AsyncTestCase):
             queue.prefix == "acapy"
             queue.connection = "connection"
             assert str(queue)
-            await queue.start()
-            await queue.stop()
+            await queue.open()
+            await queue.close()
 
     def test_init_x(self):
         with pytest.raises(InboundQueueConfigurationError):
@@ -340,7 +340,7 @@ class TestKafkaInbound(AsyncTestCase):
             sentinel = PropertyMock(side_effect=[True, True, False])
             KafkaInboundQueue.RUNNING = sentinel
             queue = KafkaInboundQueue(self.profile)
-            await queue.start()
+            await queue.open()
             await queue.receive_messages()
         assert mock_get_many.call_count == 2
         assert mock_send.call_count == 0
@@ -424,7 +424,7 @@ class TestKafkaInbound(AsyncTestCase):
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
-            await queue.start()
+            await queue.open()
             await queue.receive_messages()
         assert mock_get_many.call_count == 2
         assert mock_send.call_count == 3
@@ -513,7 +513,7 @@ class TestKafkaInbound(AsyncTestCase):
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
-            await queue.start()
+            await queue.open()
             await queue.receive_messages()
 
     async def test_save_state_every_second(self):

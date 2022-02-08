@@ -1,6 +1,7 @@
 """Redis outbound transport."""
 import aioredis
 import asyncio
+import logging
 import msgpack
 
 from typing import Union
@@ -18,6 +19,7 @@ class RedisOutboundQueue(BaseOutboundQueue):
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
         self._profile = root_profile
+        self.logger = logging.getLogger(__name__)
         try:
             plugin_config = root_profile.settings.get("plugin_config", {})
             config = plugin_config.get(self.config_key, {})

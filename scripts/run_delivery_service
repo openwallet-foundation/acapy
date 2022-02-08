@@ -3,6 +3,8 @@
 # external queue setup, if needed
 inboundQueueArgs=()
 outboundQueueArgs=()
+ACAPY_RAND_NAME=""
+ACAPY_NETWORK_NAME=""
 ENABLE_REDIS_INBOUND=0
 ENABLE_KAFKA_INBOUND=0
 ENABLE_REDIS_OUTBOUND=0
@@ -16,14 +18,14 @@ for (( i = 0; i < ${#acapyArgs[*]}; ++ i ))
 do
   	# outbound transport queue
 	if [[ "${acapyArgs[$i]}" == "--outbound-queue-class" || "${acapyArgs[$i]}" == "-oqc" ]]; then
-    if echo "${acapyArgs[$i+1]}" | grep -q "$REDIS_OUTBOUND_CLASS_KEYWORD"; then
-      ENABLE_REDIS_OUTBOUND=1
-      ENABLE_KAFKA_OUTBOUND=0
-    fi
-    if echo "${acapyArgs[$i+1]}" | grep -q "$KAFKA_OUTBOUND_CLASS_KEYWORD"; then
-      ENABLE_REDIS_OUTBOUND=0
-      ENABLE_KAFKA_OUTBOUND=1
-    fi
+		if echo "${acapyArgs[$i+1]}" | grep -q "$REDIS_OUTBOUND_CLASS_KEYWORD"; then
+			ENABLE_REDIS_OUTBOUND=1
+			ENABLE_KAFKA_OUTBOUND=0
+		fi
+		if echo "${acapyArgs[$i+1]}" | grep -q "$KAFKA_OUTBOUND_CLASS_KEYWORD"; then
+			ENABLE_REDIS_OUTBOUND=0
+			ENABLE_KAFKA_OUTBOUND=1
+		fi
 	fi
 	if [[ "${acapyArgs[$i]}" == "--outbound-queue" || "${acapyArgs[$i]}" == "-oq" ]]; then
 		outboundQueueArgs+=("${acapyArgs[$i]}")
@@ -36,13 +38,13 @@ do
 	# inbound transport queue
 	if [[ "${acapyArgs[$i]}" == "--inbound-queue-class" || "${acapyArgs[$i]}" == "-iqc" ]]; then
 		if echo "${acapyArgs[$i+1]}" | grep -q "$REDIS_INBOUND_CLASS_KEYWORD"; then
-      ENABLE_REDIS_INBOUND=1
-      ENABLE_KAFKA_INBOUND=0
-    fi
-    if echo "${acapyArgs[$i+1]}" | grep -q "$KAFKA_INBOUND_CLASS_KEYWORD"; then
-      ENABLE_REDIS_INBOUND=0
-      ENABLE_KAFKA_INBOUND=1
-    fi
+			ENABLE_REDIS_INBOUND=1
+			ENABLE_KAFKA_INBOUND=0
+		fi
+		if echo "${acapyArgs[$i+1]}" | grep -q "$KAFKA_INBOUND_CLASS_KEYWORD"; then
+			ENABLE_REDIS_INBOUND=0
+			ENABLE_KAFKA_INBOUND=1
+		fi
 	fi
 	if [[ "${acapyArgs[$i]}" == "--inbound-queue" || "${acapyArgs[$i]}" == "-iq" ]]; then
 		inboundQueueArgs+=("${acapyArgs[$i]}")
@@ -64,20 +66,26 @@ do
 		outboundQueueArgs+=("${acapyArgs[$i]}")
 		outboundQueueArgs+=("${acapyArgs[$i+1]}")
 	fi
+	if [[ "${acapyArgs[$i]}" == "rand-name" ]]; then
+        ACAPY_RAND_NAME="${acapyArgs[$i+1]}"
+	fi
+    if [[ "${acapyArgs[$i]}" == "network-name" ]]; then
+        ACAPY_NETWORK_NAME="${acapyArgs[$i+1]}"
+    fi
 done
 if [[ "$ENABLE_REDIS_INBOUND" == 1 ]]; then
   echo "Starting Redis Inbound Message Service."
-  . ../delivery_service/redis/inbound/scripts/run.sh ${inboundQueueArgs[@]}
+  . ../delivery_service/redis/inbound/scripts/run.sh ${inboundQueueArgs[@]} rand-name $ACAPY_RAND_NAME network-name $ACAPY_NETWORK_NAME
 fi
 if [[ "$ENABLE_KAFKA_INBOUND" == 1 ]]; then
   echo "Starting Kafka Inbound Message Service."
-  . ../delivery_service/kafka/inbound/scripts/run.sh ${inboundQueueArgs[@]}
+  . ../delivery_service/kafka/inbound/scripts/run.sh ${inboundQueueArgs[@]} rand-name $ACAPY_RAND_NAME network-name $ACAPY_NETWORK_NAME
 fi
 if [[ "$ENABLE_REDIS_OUTBOUND" == 1 ]]; then
   echo "Starting Redis Outbound Message Service."
-  . ../delivery_service/redis/outbound/scripts/run.sh ${outboundQueueArgs[@]}
+  . ../delivery_service/redis/outbound/scripts/run.sh ${outboundQueueArgs[@]} rand-name $ACAPY_RAND_NAME network-name $ACAPY_NETWORK_NAME
 fi
 if [[ $ENABLE_KAFKA_OUTBOUND = 1 ]]; then
   echo "Starting Kafka Outbound Message Service."
-  . ../delivery_service/kafka/outbound/scripts/run.sh ${outboundQueueArgs[@]}
+  . ../delivery_service/kafka/outbound/scripts/run.sh ${outboundQueueArgs[@]} rand-name $ACAPY_RAND_NAME network-name $ACAPY_NETWORK_NAME
 fi

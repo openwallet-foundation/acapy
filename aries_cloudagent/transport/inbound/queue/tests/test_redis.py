@@ -12,7 +12,7 @@ from .....core.in_memory.profile import InMemoryProfile
 
 from ...manager import InboundTransportManager
 
-from ..base import InboundQueueConfigurationError, InboundQueueError
+from ..base import InboundQueueConfigurationError
 from ..redis import RedisInboundQueue
 
 
@@ -145,8 +145,7 @@ class TestRedisInbound(AsyncTestCase):
             queue = RedisInboundQueue(self.profile)
             queue.redis = mock_redis
             await queue.start()
-            with self.assertRaises(InboundQueueError):
-                await queue.receive_messages()
+            await queue.receive_messages()
 
     async def test_receive_message_direct_response_a(self):
         self.profile.settings["plugin_config"] = {
@@ -259,5 +258,4 @@ class TestRedisInbound(AsyncTestCase):
             queue = RedisInboundQueue(self.profile)
             queue.redis = mock_redis
             await queue.start()
-            with self.assertRaises(InboundQueueError):
-                await queue.receive_messages()
+            await queue.receive_messages()

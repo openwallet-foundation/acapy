@@ -14,8 +14,6 @@ from uuid import uuid4
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s: %(message)s",
     level=logging.INFO,
-    filename="kafka_inbound.log",
-    filemode="w",
 )
 
 

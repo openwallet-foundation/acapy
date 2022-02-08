@@ -14,8 +14,6 @@ from time import time
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s: %(message)s",
     level=logging.INFO,
-    filename="redis_outbound.log",
-    filemode="w",
 )
 
 

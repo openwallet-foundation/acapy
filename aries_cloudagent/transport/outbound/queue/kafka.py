@@ -1,4 +1,6 @@
 """Kafka outbound transport."""
+import asyncio
+import logging
 import msgpack
 
 from aiokafka import AIOKafkaProducer
@@ -16,6 +18,7 @@ class KafkaOutboundQueue(BaseOutboundQueue):
     def __init__(self, root_profile: Profile) -> None:
         """Set initial state."""
         self._profile = root_profile
+        self.logger = logging.getLogger(__name__)
         try:
             plugin_config = root_profile.settings.get("plugin_config", {})
             config = plugin_config.get(self.config_key, {})
@@ -31,7 +34,7 @@ class KafkaOutboundQueue(BaseOutboundQueue):
         self.prefix = self._profile.settings.get(
             "transport.outbound_queue_prefix"
         ) or config.get("prefix", "acapy")
-        self.producer = AIOKafkaProducer(bootstrap_servers=self.connection)
+        self.producer = None
         self.outbound_topic = f"{self.prefix}.outbound_transport"
 
     def __str__(self):
@@ -40,11 +43,15 @@ class KafkaOutboundQueue(BaseOutboundQueue):
 
     async def start(self):
         """Start the transport."""
+        self.producer = AIOKafkaProducer(
+            loop=asyncio.get_event_loop(),
+            bootstrap_servers=self.connection,
+            enable_idempotence=True,
+        )
         await self.producer.start()
 
     async def stop(self):
         """Stop the transport."""
-        await self.producer.stop()
 
     async def enqueue_message(
         self,
@@ -70,4 +77,8 @@ class KafkaOutboundQueue(BaseOutboundQueue):
                 "payload": payload,
             }
         )
-        await self.producer.send(self.outbound_topic, value=message)
+        try:
+            if self.producer._closed:
+                await self.producer.start()
+        finally:
+            await self.producer.send(self.outbound_topic, value=message)

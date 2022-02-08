@@ -19,8 +19,6 @@ from time import time
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s: %(message)s",
     level=logging.INFO,
-    filename="kafka_outbound.log",
-    filemode="w",
 )
 
 
@@ -178,19 +176,19 @@ class KafkaHandler:
                         msg_data = msgpack.unpackb(msg.value)
                         if not isinstance(msg_data, dict):
                             logging.error("Received non-dict message")
-                        elif "endpoint" not in msg_data:
+                        elif b"endpoint" not in msg_data:
                             logging.error("No endpoint provided")
-                        elif "payload" not in msg_data:
+                        elif b"payload" not in msg_data:
                             logging.error("No payload provided")
                         else:
                             headers = {}
-                            if "headers" in msg_data:
-                                for hname, hval in msg_data["headers"].items():
+                            if b"headers" in msg_data:
+                                for hname, hval in msg_data[b"headers"].items():
                                     if isinstance(hval, bytes):
                                         hval = hval.decode("utf-8")
-                                    headers[hname] = hval
-                            endpoint = msg_data["endpoint"]
-                            payload = msg_data["payload"]
+                                    headers[hname.decode("utf-8")] = hval
+                            endpoint = msg_data[b"endpoint"].decode("utf-8")
+                            payload = msg_data[b"payload"].decode("utf-8")
                             parsed = urllib.parse.urlparse(endpoint)
                             if parsed.scheme == "http" or parsed.scheme == "https":
                                 logging.info(f"Dispatch message to {endpoint}")
@@ -212,7 +210,8 @@ class KafkaHandler:
                                         )
                                         failed = True
                                 if failed:
-                                    retries = msg_data.get("retries") or 0
+                                    logging.exception(f"Delivery failed for {endpoint}")
+                                    retries = msg_data.get(b"retries") or 0
                                     if retries < 5:
                                         await self.add_retry(
                                             {
@@ -270,9 +269,9 @@ class KafkaHandler:
                     counts = Counter()
                     for msg in msgs:
                         msg_data = msgpack.unpackb(msg.value)
-                        retry_time = msg_data["retry_time"]
+                        retry_time = msg_data[b"retry_time"]
                         if int(time()) > retry_time:
-                            del msg_data["retry_time"]
+                            del msg_data[b"retry_time"]
                             await self.producer.send(
                                 self.outbound_topic,
                                 value=msgpack.packb(msg_data),
