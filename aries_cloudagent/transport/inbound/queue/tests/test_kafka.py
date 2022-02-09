@@ -31,9 +31,8 @@ test_msg_sets_a = {
                 {
                     "host": "test1",
                     "remote": "http://localhost:9000",
-                    "data": (string.digits + string.ascii_letters).encode(
-                        encoding="utf-8"
-                    ),
+                    "data": (string.digits + string.ascii_letters),
+                    "transport_type": "http",
                 }
             ),
             key="test_random_2",
@@ -44,9 +43,8 @@ test_msg_sets_a = {
                 {
                     "host": "test1",
                     "remote": "http://localhost:9000",
-                    "data": (string.digits + string.ascii_letters).encode(
-                        encoding="utf-8"
-                    ),
+                    "data": (string.digits + string.ascii_letters),
+                    "transport_type": "http",
                 }
             ),
             key="test_random_3",
@@ -61,9 +59,8 @@ test_msg_sets_b = {
                 {
                     "host": "test1",
                     "remote": "http://localhost:9000",
-                    "data": (string.digits + string.ascii_letters).encode(
-                        encoding="utf-8"
-                    ),
+                    "data": (string.digits + string.ascii_letters),
+                    "transport_type": "ws",
                 }
             ),
             key="test_random_1",
@@ -79,7 +76,7 @@ test_msg_sets_c = {
                 {
                     "host": "test1",
                     "remote": "http://localhost:9000",
-                    "data": bytes(range(0, 256)),
+                    "data": (string.digits + string.ascii_letters),
                     "txn_id": "test123",
                     "transport_type": "http",
                 }
@@ -97,7 +94,7 @@ test_msg_sets_d = {
                 {
                     "host": "test2",
                     "remote": "http://localhost:9000",
-                    "data": bytes(range(0, 256)),
+                    "data": (string.digits + string.ascii_letters),
                     "txn_id": "test123",
                     "transport_type": "ws",
                 }
@@ -110,7 +107,7 @@ test_msg_sets_d = {
                 {
                     "host": "test3",
                     "remote": "http://localhost:9000",
-                    "data": bytes(range(0, 256)),
+                    "data": (string.digits + string.ascii_letters),
                     "txn_id": "test123",
                     "transport_type": "http",
                 }
@@ -128,7 +125,7 @@ test_msg_sets_e = {
                 """{
                     "host": "test1",
                     "remote": "http://localhost:9000",
-                    "data": bytes(range(0, 256)),
+                    "data": (string.digits + string.ascii_letters),
                     "txn_id": "test123",
                     "transport_type": "http",
                 }""".encode(
@@ -272,8 +269,8 @@ class TestKafkaInbound(AsyncTestCase):
             queue.prefix == "acapy"
             queue.connection = "connection"
             assert str(queue)
-            await queue.open()
-            await queue.close()
+            await queue.start_queue()
+            await queue.stop_queue()
 
     def test_init_x(self):
         with pytest.raises(InboundQueueConfigurationError):
@@ -290,10 +287,12 @@ class TestKafkaInbound(AsyncTestCase):
         KafkaInboundQueue.RUNNING = sentinel
         queue = KafkaInboundQueue(self.profile)
         with async_mock.patch.object(
-            asyncio, "get_event_loop", async_mock.MagicMock()
+            test_module.asyncio, "get_event_loop", async_mock.MagicMock()
         ) as mock_get_event_loop, async_mock.patch.object(
-            asyncio, "wait", async_mock.CoroutineMock()
+            test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
+            test_module.asyncio, "sleep", async_mock.CoroutineMock()
+        ) as mock_sleep, async_mock.patch.object(
             test_module, "RebalanceListener", autospec=True
         ) as mock_rebalance_listener, async_mock.patch.object(
             test_module, "LocalState", autospec=True
@@ -340,7 +339,7 @@ class TestKafkaInbound(AsyncTestCase):
             sentinel = PropertyMock(side_effect=[True, True, False])
             KafkaInboundQueue.RUNNING = sentinel
             queue = KafkaInboundQueue(self.profile)
-            await queue.open()
+            await queue.start_queue()
             await queue.receive_messages()
         assert mock_get_many.call_count == 2
         assert mock_send.call_count == 0
@@ -367,14 +366,23 @@ class TestKafkaInbound(AsyncTestCase):
                 )
             ),
         )
-        sentinel = PropertyMock(side_effect=[True, True, False])
-        KafkaInboundQueue.RUNNING = sentinel
-        queue = KafkaInboundQueue(self.profile)
         with async_mock.patch.object(
-            asyncio, "get_event_loop", async_mock.MagicMock()
-        ) as mock_get_event_loop, async_mock.patch.object(
-            asyncio, "wait", async_mock.CoroutineMock()
+            test_module.asyncio,
+            "get_event_loop",
+            async_mock.MagicMock(
+                create_task=async_mock.MagicMock(
+                    side_effect=[
+                        async_mock.MagicMock(
+                            done=async_mock.MagicMock(return_value=True),
+                        ),
+                    ]
+                )
+            ),
+        ), async_mock.patch.object(
+            test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
+            test_module.asyncio, "sleep", async_mock.CoroutineMock()
+        ) as mock_sleep, async_mock.patch.object(
             test_module, "RebalanceListener", autospec=True
         ) as mock_rebalance_listener, async_mock.patch.object(
             test_module, "LocalState", autospec=True
@@ -412,19 +420,13 @@ class TestKafkaInbound(AsyncTestCase):
             "aiokafka.AIOKafkaConsumer",
             async_mock.MagicMock(),
         ):
-            mock_get_event_loop.return_value = async_mock.MagicMock(
-                create_task=async_mock.MagicMock(
-                    side_effect=[
-                        async_mock.MagicMock(
-                            done=async_mock.MagicMock(return_value=True),
-                        ),
-                    ]
-                )
-            )
+            sentinel = PropertyMock(side_effect=[True, True, False])
+            KafkaInboundQueue.RUNNING = sentinel
+            queue = KafkaInboundQueue(self.profile)
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
-            await queue.open()
+            await queue.start_queue()
             await queue.receive_messages()
         assert mock_get_many.call_count == 2
         assert mock_send.call_count == 3
@@ -450,14 +452,23 @@ class TestKafkaInbound(AsyncTestCase):
                 )
             ),
         )
-        sentinel = PropertyMock(side_effect=[True, True, True, False])
-        KafkaInboundQueue.RUNNING = sentinel
-        queue = KafkaInboundQueue(self.profile)
         with async_mock.patch.object(
-            asyncio, "get_event_loop", async_mock.MagicMock()
-        ) as mock_get_event_loop, async_mock.patch.object(
-            asyncio, "wait", async_mock.CoroutineMock()
+            test_module.asyncio,
+            "get_event_loop",
+            async_mock.MagicMock(
+                create_task=async_mock.MagicMock(
+                    side_effect=[
+                        async_mock.MagicMock(
+                            done=async_mock.MagicMock(return_value=False),
+                        ),
+                    ]
+                )
+            ),
+        ), async_mock.patch.object(
+            test_module.asyncio, "wait", async_mock.CoroutineMock()
         ) as mock_wait, async_mock.patch.object(
+            test_module.asyncio, "sleep", async_mock.CoroutineMock()
+        ) as mock_sleep, async_mock.patch.object(
             test_module, "RebalanceListener", autospec=True
         ) as mock_rebalance_listener, async_mock.patch.object(
             test_module, "LocalState", autospec=True
@@ -501,19 +512,13 @@ class TestKafkaInbound(AsyncTestCase):
             "aiokafka.AIOKafkaConsumer",
             async_mock.MagicMock(),
         ):
-            mock_get_event_loop.return_value = async_mock.MagicMock(
-                create_task=async_mock.MagicMock(
-                    side_effect=[
-                        async_mock.MagicMock(
-                            done=async_mock.MagicMock(return_value=False),
-                        ),
-                    ]
-                )
-            )
+            sentinel = PropertyMock(side_effect=[True, True, True, False])
+            KafkaInboundQueue.RUNNING = sentinel
+            queue = KafkaInboundQueue(self.profile)
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
-            await queue.open()
+            await queue.start_queue()
             await queue.receive_messages()
 
     async def test_save_state_every_second(self):

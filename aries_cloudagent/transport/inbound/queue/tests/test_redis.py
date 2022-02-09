@@ -12,7 +12,8 @@ from .....core.in_memory.profile import InMemoryProfile
 
 from ...manager import InboundTransportManager
 
-from ..base import InboundQueueConfigurationError
+from .. import redis as test_module
+from ..base import InboundQueueConfigurationError, InboundQueueError
 from ..redis import RedisInboundQueue
 
 
@@ -22,41 +23,54 @@ KEYNAME = "acapy.redis_inbound_transport"
 REDIS_CONF = os.environ.get("TEST_REDIS_CONFIG", None)
 
 
-test_msg_a = msgpack.packb(
-    {
-        "host": "test1",
-        "remote": "http://localhost:9000",
-        "data": (string.digits + string.ascii_letters).encode(encoding="utf-8"),
-    }
+test_msg_a = (
+    None,
+    msgpack.packb(
+        {
+            "host": "test1",
+            "remote": "http://localhost:9000",
+            "data": (string.digits + string.ascii_letters),
+            "transport_type": "ws",
+        }
+    ),
 )
-test_msg_b = msgpack.packb(
-    {
+test_msg_b = (
+    None,
+    msgpack.packb(
+        {
+            "host": "test2",
+            "remote": "http://localhost:9000",
+            "data": (string.digits + string.ascii_letters),
+            "txn_id": "test123",
+            "transport_type": "http",
+        }
+    ),
+)
+test_msg_c = (
+    None,
+    msgpack.packb(
+        {
+            "host": "test2",
+            "remote": "http://localhost:9000",
+            "data": (string.digits + string.ascii_letters),
+            "txn_id": "test123",
+            "transport_type": "ws",
+        }
+    ),
+)
+test_msg_d = (
+    None,
+    msgpack.packb(
+        """{
         "host": "test2",
         "remote": "http://localhost:9000",
-        "data": bytes(range(0, 256)),
-        "txn_id": "test123",
-        "transport_type": "http",
-    }
-)
-test_msg_c = msgpack.packb(
-    {
-        "host": "test2",
-        "remote": "http://localhost:9000",
-        "data": bytes(range(0, 256)),
-        "txn_id": "test123",
-        "transport_type": "ws",
-    }
-)
-test_msg_d = msgpack.packb(
-    """{
-        "host": "test2",
-        "remote": "http://localhost:9000",
-        "data": bytes(range(0, 256)),
+        "data": (string.digits + string.ascii_letters),
         "txn_id": "test123",
         "transport_type": "http",
     }""".encode(
-        "utf-8"
-    )
+            "utf-8"
+        )
+    ),
 )
 
 
@@ -69,17 +83,17 @@ class TestRedisInbound(AsyncTestCase):
     async def test_init(self):
         self.profile.settings["transport.inbound_queue"] = "connection"
         with async_mock.patch(
-            "aioredis.ConnectionPool.from_url",
+            "aioredis.from_url",
             async_mock.MagicMock(),
         ), async_mock.patch(
-            "aioredis.Redis",
+            "aioredis.ConnectionPool",
             async_mock.MagicMock(),
         ):
             queue = RedisInboundQueue(self.profile)
             queue.prefix == "acapy"
             queue.connection = "connection"
             assert str(queue)
-            await queue.start()
+            await queue.start_queue()
 
     def test_init_x(self):
         with pytest.raises(InboundQueueConfigurationError):
@@ -95,17 +109,18 @@ class TestRedisInbound(AsyncTestCase):
                 ),
             ),
         )
-        with async_mock.patch(
-            "aioredis.ConnectionPool.from_url",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aioredis.Redis",
-            async_mock.MagicMock(),
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(
+                        side_effect=[test_msg_a, test_msg_a]
+                    ),
+                    rpush=async_mock.CoroutineMock(),
+                )
+            ),
         ) as mock_redis:
-            mock_redis.blpop = async_mock.CoroutineMock(
-                side_effect=[test_msg_a, test_msg_a]
-            )
-            mock_redis.rpush = async_mock.CoroutineMock()
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
@@ -113,10 +128,10 @@ class TestRedisInbound(AsyncTestCase):
             RedisInboundQueue.RUNNING = sentinel
             queue = RedisInboundQueue(self.profile)
             queue.redis = mock_redis
-            await queue.start()
+            await queue.start_queue()
             await queue.receive_messages()
-        assert mock_redis.blpop.call_count == 2
-        assert mock_redis.rpush.call_count == 0
+        assert mock_redis.return_value.blpop.call_count == 2
+        assert mock_redis.return_value.rpush.call_count == 0
 
     async def test_receive_message_x(self):
         self.profile.settings["transport.inbound_queue"] = "connection"
@@ -128,15 +143,18 @@ class TestRedisInbound(AsyncTestCase):
                 ),
             ),
         )
-        with async_mock.patch(
-            "aioredis.ConnectionPool.from_url",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aioredis.Redis",
-            async_mock.MagicMock(),
-        ) as mock_redis:
-            mock_redis.blpop = async_mock.CoroutineMock(side_effect=aioredis.RedisError)
-            mock_redis.rpush = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(side_effect=aioredis.RedisError),
+                    rpush=async_mock.CoroutineMock(),
+                )
+            ),
+        ) as mock_redis, async_mock.patch.object(
+            test_module.asyncio, "sleep", async_mock.CoroutineMock()
+        ) as mock_sleep:
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
@@ -144,8 +162,9 @@ class TestRedisInbound(AsyncTestCase):
             RedisInboundQueue.RUNNING = sentinel
             queue = RedisInboundQueue(self.profile)
             queue.redis = mock_redis
-            await queue.start()
-            await queue.receive_messages()
+            await queue.start_queue()
+            with self.assertRaises(InboundQueueError):
+                await queue.receive_messages()
 
     async def test_receive_message_direct_response_a(self):
         self.profile.settings["plugin_config"] = {
@@ -165,17 +184,18 @@ class TestRedisInbound(AsyncTestCase):
                 )
             ),
         )
-        with async_mock.patch(
-            "aioredis.ConnectionPool.from_url",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aioredis.Redis",
-            async_mock.MagicMock(),
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(
+                        side_effect=[test_msg_b, test_msg_b, test_msg_c]
+                    ),
+                    rpush=async_mock.CoroutineMock(),
+                )
+            ),
         ) as mock_redis:
-            mock_redis.blpop = async_mock.CoroutineMock(
-                side_effect=[test_msg_b, test_msg_b, test_msg_c]
-            )
-            mock_redis.rpush = async_mock.CoroutineMock()
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
@@ -183,10 +203,10 @@ class TestRedisInbound(AsyncTestCase):
             RedisInboundQueue.RUNNING = sentinel
             queue = RedisInboundQueue(self.profile)
             queue.redis = mock_redis
-            await queue.start()
+            await queue.start_queue()
             await queue.receive_messages()
-        assert mock_redis.blpop.call_count == 3
-        assert mock_redis.rpush.call_count == 3
+        assert mock_redis.return_value.blpop.call_count == 3
+        assert mock_redis.return_value.rpush.call_count == 3
 
     async def test_receive_message_direct_response_b(self):
         self.profile.settings["transport.inbound_queue"] = "connection"
@@ -202,17 +222,18 @@ class TestRedisInbound(AsyncTestCase):
                 )
             ),
         )
-        with async_mock.patch(
-            "aioredis.ConnectionPool.from_url",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aioredis.Redis",
-            async_mock.MagicMock(),
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(
+                        side_effect=[test_msg_b, test_msg_d]
+                    ),
+                    rpush=async_mock.CoroutineMock(),
+                )
+            ),
         ) as mock_redis:
-            mock_redis.blpop = async_mock.CoroutineMock(
-                side_effect=[test_msg_b, test_msg_d]
-            )
-            mock_redis.rpush = async_mock.CoroutineMock()
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
@@ -220,7 +241,7 @@ class TestRedisInbound(AsyncTestCase):
             RedisInboundQueue.RUNNING = sentinel
             queue = RedisInboundQueue(self.profile)
             queue.redis = mock_redis
-            await queue.start()
+            await queue.start_queue()
             await queue.receive_messages()
 
     async def test_receive_message_direct_response_x(self):
@@ -241,15 +262,16 @@ class TestRedisInbound(AsyncTestCase):
                 )
             ),
         )
-        with async_mock.patch(
-            "aioredis.ConnectionPool.from_url",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aioredis.Redis",
-            async_mock.MagicMock(),
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(side_effect=[test_msg_b]),
+                    rpush=async_mock.CoroutineMock(side_effect=[aioredis.RedisError]),
+                )
+            ),
         ) as mock_redis:
-            mock_redis.blpop = async_mock.CoroutineMock(side_effect=[test_msg_b])
-            mock_redis.rpush = async_mock.CoroutineMock(side_effect=aioredis.RedisError)
             self.context.injector.bind_instance(
                 InboundTransportManager, mock_inbound_mgr
             )
@@ -257,5 +279,6 @@ class TestRedisInbound(AsyncTestCase):
             RedisInboundQueue.RUNNING = sentinel
             queue = RedisInboundQueue(self.profile)
             queue.redis = mock_redis
-            await queue.start()
-            await queue.receive_messages()
+            await queue.start_queue()
+            with self.assertRaises(InboundQueueError):
+                await queue.receive_messages()

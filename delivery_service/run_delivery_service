@@ -1,6 +1,15 @@
 #!/bin/bash
 
-# external queue setup, if needed
+# outbound transport queue arguments
+# --outbound-queue-class, -oqc : to decide whether Redis or Kafka delivery agents be setup
+# --outbound-queue, -oq
+# --outbound-queue-prefix , -oqp
+# inbound transport queue arguments
+# --inbound-queue-class, -iqp : to decide whether Redis or Kafka delivery agents be setup
+# --inbound-queue, -iq
+# --inbound-queue-prefix, -iqp
+# --inbound-queue-transport, -iqt
+cd "$(dirname "$0")" || exit 1
 inboundQueueArgs=()
 outboundQueueArgs=()
 ACAPY_RAND_NAME=""
@@ -66,26 +75,38 @@ do
 		outboundQueueArgs+=("${acapyArgs[$i]}")
 		outboundQueueArgs+=("${acapyArgs[$i+1]}")
 	fi
-	if [[ "${acapyArgs[$i]}" == "rand-name" ]]; then
-        ACAPY_RAND_NAME="${acapyArgs[$i+1]}"
-	fi
-    if [[ "${acapyArgs[$i]}" == "network-name" ]]; then
-        ACAPY_NETWORK_NAME="${acapyArgs[$i+1]}"
-    fi
 done
+ACAPY_NETWORK_NAME="${ACAPY_DOCKER_NETWORK}"
+RAND_NAME=$(env LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1)
 if [[ "$ENABLE_REDIS_INBOUND" == 1 ]]; then
-  echo "Starting Redis Inbound Message Service."
-  . ../delivery_service/redis/inbound/scripts/run.sh ${inboundQueueArgs[@]} rand-name $ACAPY_RAND_NAME network-name $ACAPY_NETWORK_NAME
+	echo "Starting Redis Inbound Message Service."
+	if [ -z "$ACAPY_DOCKER_NETWORK" ]; then
+		. ../delivery_service/redis/inbound/scripts/run.sh ${inboundQueueArgs[@]} rand-name $RAND_NAME
+  	else
+		. ../delivery_service/redis/inbound/scripts/run.sh ${inboundQueueArgs[@]} rand-name $RAND_NAME network-name $ACAPY_NETWORK_NAME
+  	fi
 fi
 if [[ "$ENABLE_KAFKA_INBOUND" == 1 ]]; then
+  if [ -z "$ACAPY_DOCKER_NETWORK" ]; then
+	echo "Invalid ACAPY_DOCKER_NETWORK ${ACAPY_DOCKER_NETWORK} specified!"
+    exit 1
+  fi
   echo "Starting Kafka Inbound Message Service."
-  . ../delivery_service/kafka/inbound/scripts/run.sh ${inboundQueueArgs[@]} rand-name $ACAPY_RAND_NAME network-name $ACAPY_NETWORK_NAME
+  . ../delivery_service/kafka/inbound/scripts/run.sh ${inboundQueueArgs[@]} rand-name $RAND_NAME network-name $ACAPY_NETWORK_NAME
 fi
 if [[ "$ENABLE_REDIS_OUTBOUND" == 1 ]]; then
-  echo "Starting Redis Outbound Message Service."
-  . ../delivery_service/redis/outbound/scripts/run.sh ${outboundQueueArgs[@]} rand-name $ACAPY_RAND_NAME network-name $ACAPY_NETWORK_NAME
+  	echo "Starting Redis Outbound Message Service."
+	if [ -z "$ACAPY_DOCKER_NETWORK" ]; then
+  		. ../delivery_service/redis/outbound/scripts/run.sh ${outboundQueueArgs[@]} rand-name $RAND_NAME
+  	else
+  		. ../delivery_service/redis/outbound/scripts/run.sh ${outboundQueueArgs[@]} rand-name $RAND_NAME network-name $ACAPY_NETWORK_NAME
+  	fi
 fi
 if [[ $ENABLE_KAFKA_OUTBOUND = 1 ]]; then
+  if [ -z "$ACAPY_DOCKER_NETWORK" ]; then
+	echo "Invalid ACAPY_DOCKER_NETWORK ${ACAPY_DOCKER_NETWORK} specified!"
+    exit 1
+  fi
   echo "Starting Kafka Outbound Message Service."
-  . ../delivery_service/kafka/outbound/scripts/run.sh ${outboundQueueArgs[@]} rand-name $ACAPY_RAND_NAME network-name $ACAPY_NETWORK_NAME
+  . ../delivery_service/kafka/outbound/scripts/run.sh ${outboundQueueArgs[@]} rand-name $RAND_NAME network-name $ACAPY_NETWORK_NAME
 fi

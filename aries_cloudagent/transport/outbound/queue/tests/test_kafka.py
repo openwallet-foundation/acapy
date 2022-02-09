@@ -67,7 +67,9 @@ class TestKafkaOutbound(AsyncTestCase):
                 }
             )
             mock_send.assert_called_once_with(
-                "acapy.outbound_transport", value=message, timestamp_ms=1000
+                "acapy.outbound_transport",
+                value=message,
+                key=b"acapy.outbound_transport",
             )
 
     async def test_enqueue_message_bytes(self):
@@ -105,5 +107,7 @@ class TestKafkaOutbound(AsyncTestCase):
                 }
             )
             mock_send.assert_called_once_with(
-                "acapy.outbound_transport", value=message, timestamp_ms=1000
+                "acapy.outbound_transport",
+                value=message,
+                key=b"acapy.outbound_transport",
             )

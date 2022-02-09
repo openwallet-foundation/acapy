@@ -2,12 +2,14 @@ import os
 import string
 
 import aioredis
-from asynctest import mock as async_mock
+from asynctest import TestCase as AsyncTestCase, mock as async_mock
 import msgpack
 import pytest
 
 from .....config.settings import Settings
 from .....core.in_memory.profile import InMemoryProfile
+
+from .. import redis as test_module
 from ..base import OutboundQueueConfigurationError, OutboundQueueError
 from ..redis import RedisOutboundQueue
 
@@ -18,94 +20,141 @@ KEYNAME = "acapy.redis_outbound_transport"
 REDIS_CONF = os.environ.get("TEST_REDIS_CONFIG", None)
 
 
-@pytest.fixture
-async def mock_redis():
-    with async_mock.patch(
-        "aioredis.ConnectionPool.from_url", async_mock.MagicMock()
-    ), async_mock.patch("aioredis.Redis", async_mock.MagicMock()):
-        yield
+class TestRedisOutbound(AsyncTestCase):
+    def setUp(self):
+        self.session = InMemoryProfile.test_session()
+        self.profile = self.session.profile
+        self.context = self.profile.context
 
+    async def test_init(self):
+        self.profile.settings["transport.outbound_queue"] = "connection"
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(),
+                    rpush=async_mock.CoroutineMock(),
+                    ping=async_mock.CoroutineMock(),
+                )
+            ),
+        ) as mock_redis:
+            queue = RedisOutboundQueue(self.profile)
+            queue.redis = mock_redis
+            queue.prefix == "acapy"
+            queue.connection = "connection"
+            assert str(queue)
+            await queue.start()
 
-@pytest.fixture
-def profile():
-    def _profile_factory(connection=None, prefix=None):
-        return InMemoryProfile.test_profile(
-            settings={
-                "plugin_config": {
-                    RedisOutboundQueue.config_key: {
-                        "connection": connection or "connection",
-                        "prefix": prefix or "acapy",
-                    }
+    def test_init_x(self):
+        with pytest.raises(OutboundQueueConfigurationError):
+            RedisOutboundQueue(self.profile)
+
+    async def test_enqueue_message_str(self):
+        self.profile.settings["transport.outbound_queue"] = "connection"
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(),
+                    rpush=async_mock.CoroutineMock(),
+                    ping=async_mock.CoroutineMock(),
+                )
+            ),
+        ) as mock_redis:
+            queue = RedisOutboundQueue(self.profile)
+            queue.redis = mock_redis
+            await queue.start()
+            await queue.enqueue_message(
+                payload=string.ascii_letters + string.digits,
+                endpoint=ENDPOINT,
+            )
+            message = msgpack.packb(
+                {
+                    "headers": {"Content-Type": "application/json"},
+                    "endpoint": ENDPOINT,
+                    "payload": (string.ascii_letters + string.digits),
                 }
+            )
+            mock_redis.return_value.rpush.assert_called_once_with(
+                "acapy.outbound_transport", message
+            )
+
+    async def test_enqueue_message_bytes(self):
+        self.profile.settings["plugin_config"] = {
+            "redis_outbound_queue": {
+                "connection": "connection",
+                "prefix": "acapy",
             }
-        )
+        }
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(),
+                    rpush=async_mock.CoroutineMock(),
+                    ping=async_mock.CoroutineMock(),
+                )
+            ),
+        ) as mock_redis:
+            queue = RedisOutboundQueue(self.profile)
+            queue.redis = mock_redis
+            bytes_payload = bytes(range(0, 256))
+            await queue.start()
+            await queue.enqueue_message(
+                payload=bytes_payload,
+                endpoint=ENDPOINT,
+            )
+            message = msgpack.packb(
+                {
+                    "headers": {"Content-Type": "application/ssi-agent-wire"},
+                    "endpoint": ENDPOINT,
+                    "payload": bytes_payload,
+                }
+            )
+            mock_redis.return_value.rpush.assert_called_once_with(
+                "acapy.outbound_transport", message
+            )
 
-    yield _profile_factory
+    async def test_enqueue_message_x_redis_error(self):
+        self.profile.settings["transport.outbound_queue"] = "connection"
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(),
+                    rpush=async_mock.CoroutineMock(
+                        side_effect=[aioredis.RedisError, None]
+                    ),
+                    ping=async_mock.CoroutineMock(),
+                )
+            ),
+        ) as mock_redis:
+            queue = RedisOutboundQueue(self.profile)
+            queue.redis = mock_redis
+            await queue.start()
+            await queue.enqueue_message(payload="", endpoint=ENDPOINT)
 
-
-@pytest.fixture
-def queue(profile, mock_redis):
-    yield RedisOutboundQueue(profile())
-
-
-@pytest.fixture
-def mock_rpush(queue):
-    pushed = []
-
-    async def _mock_rpush(key, message):
-        pushed.append((key, message))
-
-    queue.redis.rpush = _mock_rpush
-    yield pushed
-
-
-def test_init(mock_redis, profile):
-    q = RedisOutboundQueue(profile())
-    q.prefix == "acapy"
-    q.connection = "connection"
-    assert str(q)
-
-
-def test_init_x(mock_redis):
-    with pytest.raises(OutboundQueueConfigurationError):
-        RedisOutboundQueue(InMemoryProfile.test_profile())
-
-
-@pytest.mark.asyncio
-async def test_enqueue_message_str(queue, mock_rpush):
-    await queue.enqueue_message(
-        payload=string.ascii_letters + string.digits,
-        endpoint=ENDPOINT,
-    )
-    [(key, message)] = mock_rpush
-    assert (
-        msgpack.unpackb(message).get("headers", {}).get("Content-Type")
-        == "application/json"
-    )
-
-
-@pytest.mark.asyncio
-async def test_enqueue_message_bytes(queue, mock_rpush):
-    await queue.enqueue_message(
-        payload=bytes(range(0, 256)),
-        endpoint=ENDPOINT,
-    )
-    [(key, message)] = mock_rpush
-    assert (
-        msgpack.unpackb(message).get("headers", {}).get("Content-Type")
-        == "application/ssi-agent-wire"
-    )
-
-
-@pytest.mark.asyncio
-async def test_enqueue_message_x_redis_error(queue):
-    queue.redis.rpush = async_mock.CoroutineMock(side_effect=aioredis.RedisError)
-    with pytest.raises(OutboundQueueError):
-        await queue.enqueue_message(payload="", endpoint=ENDPOINT)
-
-
-@pytest.mark.asyncio
-async def test_enqueue_message_x_no_endpoint(queue):
-    queue.redis.rpush = async_mock.CoroutineMock(side_effect=aioredis.RedisError)
-    with pytest.raises(OutboundQueueError):
-        await queue.enqueue_message(payload="", endpoint=None)
+    async def test_enqueue_message_x_no_endpoint(self):
+        self.profile.settings["transport.outbound_queue"] = "connection"
+        with async_mock.patch.object(
+            test_module.aioredis,
+            "from_url",
+            async_mock.MagicMock(
+                return_value=async_mock.MagicMock(
+                    blpop=async_mock.CoroutineMock(),
+                    rpush=async_mock.CoroutineMock(
+                        side_effect=[aioredis.RedisError, None]
+                    ),
+                    ping=async_mock.CoroutineMock(),
+                )
+            ),
+        ) as mock_redis:
+            queue = RedisOutboundQueue(self.profile)
+            queue.redis = mock_redis
+            await queue.start()
+            with pytest.raises(OutboundQueueError):
+                await queue.enqueue_message(payload="", endpoint=None)

@@ -280,7 +280,7 @@ class Conductor:
 
         if self.inbound_queue:
             try:
-                await self.inbound_queue.open()
+                await self.inbound_queue.start_queue()
             except Exception:
                 LOGGER.exception("Unable to start inbound queue")
                 raise
@@ -503,7 +503,7 @@ class Conductor:
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
         if self.inbound_queue:
-            shutdown.run(self.inbound_queue.close())
+            shutdown.run(self.inbound_queue.stop_queue())
         if self.outbound_queue:
             shutdown.run(self.outbound_queue.stop())
 

@@ -143,20 +143,19 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         """Return string representation of the outbound queue."""
         return f"KafkaInboundQueue({self.prefix}, " f"{self.connection})"
 
-    async def open(self):
+    async def start_queue(self):
         """Start the transport."""
         self.daemon = True
         self.start()
         self.consumer = AIOKafkaConsumer(
-            loop=asyncio.get_event_loop(),
             bootstrap_servers=self.connection,
             group_id="my_group",
             enable_auto_commit=False,
             auto_offset_reset="none",
             isolation_level="read_committed",
+            key_deserializer=lambda key: key.decode("utf-8") if key else "",
         )
         self.producer = AIOKafkaProducer(
-            loop=asyncio.get_event_loop(),
             bootstrap_servers=self.connection,
             enable_idempotence=True,
         )
@@ -165,8 +164,10 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         loop = asyncio.get_event_loop()
         asyncio.ensure_future(self.receive_messages(), loop=loop)
 
-    async def close(self):
+    async def stop_queue(self):
         """Stop the transport."""
+        await self.producer.stop()
+        await self.consumer.stop()
 
     async def save_state_every_second(self, local_state):
         """Update local state."""
@@ -176,6 +177,14 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
             except asyncio.CancelledError:
                 break
             local_state.dump_local_state()
+
+    async def open(self):
+        """Kafka connection context manager enter."""
+
+    async def close(self):
+        """Kafka connection context manager exit."""
+        if not self.producer._closed:
+            await self.producer.start()
 
     async def receive_messages(
         self,
@@ -191,11 +200,6 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         save_task = loop.create_task(self.save_state_every_second(local_state))
         try:
             while self.RUNNING:
-                await asyncio.sleep(0.1)
-                if self.producer._closed:
-                    await self.producer.start()
-                if self.consumer._closed:
-                    await self.consumer.start()
                 try:
                     msg_set = await self.consumer.getmany(timeout_ms=1000)
                 except OffsetOutOfRangeError as err:
@@ -254,6 +258,7 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                                 await self.producer.send(
                                     self.direct_response_topic,
                                     value=msgpack.packb(message),
+                                    key=self.direct_response_topic.encode("utf-8"),
                                 )
                         counts[msg.key] += 1
                     local_state.add_counts(tp, counts, msg.offset)

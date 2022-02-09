@@ -52,7 +52,6 @@ if [ -z "$ACAPY_DOCKER_NETWORK" ]; then
     $ARGS aries-cloudagent-run "$@"
 else
   echo "${ACAPY_NETWORK_NAME} Docker network specified."
-  . ./run_delivery_service "$@" rand-name $RAND_NAME network-name $ACAPY_NETWORK_NAME
   $CONTAINER_RUNTIME run --rm -ti --network $ACAPY_NETWORK_NAME --name "aries-cloudagent-runner_${RAND_NAME}" \
     $ARGS aries-cloudagent-run "$@"
 fi

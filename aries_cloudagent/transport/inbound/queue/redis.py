@@ -12,7 +12,7 @@ from ...wire_format import DIDCOMM_V0_MIME_TYPE, DIDCOMM_V1_MIME_TYPE
 
 from ..manager import InboundTransportManager
 
-from .base import BaseInboundQueue, InboundQueueConfigurationError
+from .base import BaseInboundQueue, InboundQueueConfigurationError, InboundQueueError
 
 
 class RedisInboundQueue(BaseInboundQueue, Thread):
@@ -59,14 +59,14 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
             f"RedisInboundQueue(prefix={self.prefix}, " f"connection={self.connection})"
         )
 
-    async def open(self):
+    async def start_queue(self):
         """Start the transport."""
         self.daemon = True
         self.start()
         loop = asyncio.get_event_loop()
         asyncio.ensure_future(self.receive_messages(), loop=loop)
 
-    async def close(self):
+    async def stop_queue(self):
         """Stop the transport."""
 
     async def receive_messages(self):
@@ -77,14 +77,18 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
         )
         while self.RUNNING:
             msg_received = False
-            response_sent = False
+            retry_pop_count = 0
             while not msg_received:
                 try:
                     msg = await self.redis.blpop(self.inbound_topic, 0)
                     msg_received = True
+                    retry_pop_count = 0
                 except aioredis.RedisError as err:
                     await asyncio.sleep(1)
-                    self.logger.warning(f"Unexpected exception {str(err)}")
+                    self.logger.warning(err)
+                    retry_pop_count = retry_pop_count + 1
+                    if retry_pop_count > 5:
+                        raise InboundQueueError(f"Unexpected exception {str(err)}")
             msg = msgpack.unpackb(msg[1])
             if not isinstance(msg, dict):
                 self.logger.error("Received non-dict message")
@@ -118,12 +122,9 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
                     message = {}
                     message["txn_id"] = txn_id
                     message["response_data"] = response_data
-                    while not response_sent:
-                        try:
-                            await self.redis.rpush(
-                                self.direct_response_topic, msgpack.packb(message)
-                            )
-                            response_sent = True
-                        except aioredis.RedisError as err:
-                            await asyncio.sleep(1)
-                            self.logger.warning(f"Unexpected exception {str(err)}")
+                    try:
+                        await self.redis.rpush(
+                            self.direct_response_topic, msgpack.packb(message)
+                        )
+                    except aioredis.RedisError as err:
+                        raise InboundQueueError(f"Unexpected exception {str(err)}")

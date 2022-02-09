@@ -22,5 +22,10 @@ do
     fi
 done
 $CONTAINER_RUNTIME build -t redis-inbound-delivery-service -f ../delivery_service/redis/inbound/docker/Dockerfile.run .. || exit 1
-$CONTAINER_RUNTIME run --rm -it -d --network $ACAPY_NETWORK_NAME -p "$EXPOSE_PORT:$EXPOSE_PORT" --name "redis-inbound-delivery-service-runner_${ACAPY_RAND_NAME}" \
+if [ -z "$ACAPY_DOCKER_NETWORK" ]; then
+    $CONTAINER_RUNTIME run --rm -it -d -p "$EXPOSE_PORT:$EXPOSE_PORT" --name "redis-inbound-delivery-service-runner_${ACAPY_RAND_NAME}" \
     redis-inbound-delivery-service ${DeliveryServiceArgs[@]}
+else
+    $CONTAINER_RUNTIME run --rm -it -d --network $ACAPY_NETWORK_NAME -p "$EXPOSE_PORT:$EXPOSE_PORT" --name "redis-inbound-delivery-service-runner_${ACAPY_RAND_NAME}" \
+    redis-inbound-delivery-service ${DeliveryServiceArgs[@]}
+fi

@@ -1,5 +1,4 @@
 """Kafka outbound transport."""
-import asyncio
 import logging
 import msgpack
 
@@ -44,7 +43,6 @@ class KafkaOutboundQueue(BaseOutboundQueue):
     async def start(self):
         """Start the transport."""
         self.producer = AIOKafkaProducer(
-            loop=asyncio.get_event_loop(),
             bootstrap_servers=self.connection,
             enable_idempotence=True,
         )
@@ -52,6 +50,15 @@ class KafkaOutboundQueue(BaseOutboundQueue):
 
     async def stop(self):
         """Stop the transport."""
+        await self.producer.stop()
+
+    async def open(self):
+        """Kafka connection context manager enter."""
+
+    async def close(self):
+        """Kafka connection context manager exit."""
+        if not self.producer._closed:
+            await self.producer.start()
 
     async def enqueue_message(
         self,
@@ -77,8 +84,6 @@ class KafkaOutboundQueue(BaseOutboundQueue):
                 "payload": payload,
             }
         )
-        try:
-            if self.producer._closed:
-                await self.producer.start()
-        finally:
-            await self.producer.send(self.outbound_topic, value=message)
+        await self.producer.send(
+            self.outbound_topic, value=message, key=self.outbound_topic.encode("utf-8")
+        )

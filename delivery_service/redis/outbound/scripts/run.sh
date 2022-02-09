@@ -18,5 +18,10 @@ do
     fi
 done
 $CONTAINER_RUNTIME build -t redis-outbound-delivery-service -f ../delivery_service/redis/outbound/docker/Dockerfile.run .. || exit 1
-$CONTAINER_RUNTIME run --rm -it -d --network $ACAPY_NETWORK_NAME --name "redis-outbound-delivery-service-runner_${ACAPY_RAND_NAME}" \
+if [ -z "$ACAPY_DOCKER_NETWORK" ]; then
+    $CONTAINER_RUNTIME run --rm -it -d --name "redis-outbound-delivery-service-runner_${ACAPY_RAND_NAME}" \
     redis-outbound-delivery-service ${DeliveryServiceArgs[@]}
+else
+    $CONTAINER_RUNTIME run --rm -it -d --network $ACAPY_NETWORK_NAME --name "redis-outbound-delivery-service-runner_${ACAPY_RAND_NAME}" \
+    redis-outbound-delivery-service ${DeliveryServiceArgs[@]}
+fi

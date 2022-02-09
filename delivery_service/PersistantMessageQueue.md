@@ -1,4 +1,4 @@
-# ACA-PY
+# ACA-PY Persistent Queue
 
 ```
 │    
@@ -27,6 +27,7 @@
 ## Steps
 - Specifically for Kafka, the kafka instance, ACA-Py agent and delivery service agents will have to run in the same docker network. Create a docker network, `docker network create NETWORK_NAME`
 - `export ACAPY_DOCKER_NETWORK=NETWORK_NAME`
+<br/>To reset and run ACA-Py in default bridge network(as previously), execute `export ACAPY_DOCKER_NETWORK=""` 
 - Start a Kafka or Redis instance (`docker-compose.yml` included below)
 - Startup ACA-Py agent, `run_docker` script manages the delivery_agents automatically.
 ```
@@ -37,40 +38,40 @@ PORTS="5002" ./scripts/run_docker start --admin 0.0.0.0 5002 --admin-insecure-mo
 ```
 ## Startup arugments
 ### Inbound
-- `-iq or --inbound-queue`
+- `-iq or --inbound-queue`<br/>
 Specifies inbound queue connection details/host. The input for this option takes the form `[protocol]://[host]:[port]`. So for 
 example,  `redis://myredis.mydomaincom:port` or `kafka:9092`. Currently, support Redis and Kafka backend only.
-- `-iqc or --inbound-queue-class`
+- `-iqc or --inbound-queue-class`<br/>
 Defines the location of the Inbound Queue Engine. This must be 
 a 'dotpath' to a Python module on the PYTHONPATH, followed by a 
 colon, followed by the name of a Python class that implements 
 BaseInboundQueue. This commandline option is the official entry 
 point of ACA-py's pluggable queue interface. The default value is: 
 'aries_cloudagent.transport.inbound.queue.redis.RedisInboundQueue
-- `-iqp or --inbound-queue-prefix`
+- `-iqp or --inbound-queue-prefix`<br/>
 Specifies the queue topic prefix. The queue topic is generated 
 in the following form: 'prefix.inbound_transport'. The default value
 is the value `acapy`, so a queue key of 'acapy.inbound_transport' 
 is generated in the case of the default settings. ACA-py will send 
 messages to the queue using this generated key as the topic.
-- `-iqt or --inbound-queue-transport`
+- `-iqt or --inbound-queue-transport`<br/>
 REQUIRED. Defines the inbound queue transport(s) on which the inbound 
 delivery_service agent listens for receiving messages from other 
 agents. This parameter can be specified multiple times to create 
 multiple interfaces. Built-in inbound transport types include 
 'http' and 'ws'
 ### Outbound
-- `-oq or --outbound-queue`
+- `-oq or --outbound-queue`<br/>
 Specifies outbound queue connection details/host. The input for this option takes the form `[protocol]://[host]:[port]`. So for 
 example,  `redis://myredis.mydomaincom:port` or `kafka:9092`. Currently, support Redis and Kafka backend only.
-- `-oqc or --outbound-queue-class`
+- `-oqc or --outbound-queue-class`<br/>
 Defines the location of the Outbound Queue Engine. This must be 
 a 'dotpath' to a Python module on the PYTHONPATH, followed by a 
 colon, followed by the name of a Python class that implements 
 BaseOutboundQueue. This commandline option is the official entry 
 point of ACA-py's pluggable queue interface. The default value is: 
 'aries_cloudagent.transport.outbound.queue.redis.RedisOutboundQueue
-- `-oqp or --outbound-queue-prefix`
+- `-oqp or --outbound-queue-prefix`<br/>
 Specifies the queue topic prefix. The queue topic is generated 
 in the following form: 'prefix.outbound_transport'. The default value
 is the value `acapy`, so a queue key of 'acapy.outbound_transport' 

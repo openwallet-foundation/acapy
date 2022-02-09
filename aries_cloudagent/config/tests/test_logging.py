@@ -80,8 +80,14 @@ class TestLoggingConfigurator:
     def test_banner_persistent_queue(self):
         stdout = StringIO()
         mock_http = async_mock.MagicMock(scheme="http", host="1.2.3.4", port=8081)
-        mock_outbound_queue = "mocked queue text"
-        mock_inbound_queue = "mocked queue text"
+        mock_outbound_queue = async_mock.MagicMock(
+            inbound_topic="mocked queue text",
+            connection="test",
+        )
+        mock_inbound_queue = async_mock.MagicMock(
+            inbound_topic="mocked queue text",
+            connection="test",
+        )
         mock_admin_server = async_mock.MagicMock(host="1.2.3.4", port=8091)
         with contextlib.redirect_stdout(stdout):
             test_label = "Aries Cloud Agent"

@@ -49,6 +49,7 @@ class KafkaHTTPHandler:
             group_id="my_group",
             auto_offset_reset="earliest",
             isolation_level="read_committed",
+            key_deserializer=lambda key: key.decode("utf-8") if key else "",
         )
         await asyncio.gather(self.start(), self.process_direct_responses())
 
@@ -143,6 +144,7 @@ class KafkaHTTPHandler:
             await self.producer.send(
                 self.inbound_transport_key,
                 value=message,
+                key=self.inbound_transport_key.encode("utf-8"),
             )
             try:
                 response_data = await asyncio.wait_for(
@@ -175,6 +177,7 @@ class KafkaHTTPHandler:
             await self.producer.send(
                 self.inbound_transport_key,
                 value=message,
+                key=self.inbound_transport_key.encode("utf-8"),
             )
             return web.Response(status=200)
 
@@ -211,6 +214,7 @@ class KafkaWSHandler:
             group_id="my_group",
             auto_offset_reset="earliest",
             isolation_level="read_committed",
+            key_deserializer=lambda key: key.decode("utf-8") if key else "",
         )
         await asyncio.gather(self.start(), self.process_direct_responses())
 
@@ -301,6 +305,7 @@ class KafkaWSHandler:
                         await self.producer.send(
                             self.inbound_transport_key,
                             value=message,
+                            key=self.inbound_transport_key.encode("utf-8"),
                         )
                         try:
                             response_data = await asyncio.wait_for(
@@ -333,6 +338,7 @@ class KafkaWSHandler:
                         await self.producer.send(
                             self.inbound_transport_key,
                             value=message,
+                            key=self.inbound_transport_key.encode("utf-8"),
                         )
                 elif msg.type == WSMsgType.ERROR:
                     logging.error(

@@ -125,6 +125,7 @@ class KafkaHandler:
             enable_auto_commit=False,
             auto_offset_reset="none",
             isolation_level="read_committed",
+            key_deserializer=lambda key: key.decode("utf-8") if key else "",
         )
         self.consumer_retry = AIOKafkaConsumer(
             bootstrap_servers=self._host,
@@ -132,6 +133,7 @@ class KafkaHandler:
             enable_auto_commit=False,
             auto_offset_reset="none",
             isolation_level="read_committed",
+            key_deserializer=lambda key: key.decode("utf-8") if key else "",
         )
         self.producer = AIOKafkaProducer(
             bootstrap_servers=self._host, enable_idempotence=True
@@ -245,6 +247,7 @@ class KafkaHandler:
         await self.producer.send(
             self.retry_topic,
             value=msgpack.packb(message),
+            key=self.retry_topic.encode("utf-8"),
         )
 
     async def process_retries(self):
@@ -275,6 +278,7 @@ class KafkaHandler:
                             await self.producer.send(
                                 self.outbound_topic,
                                 value=msgpack.packb(msg_data),
+                                key=self.outbound_topic.encode("utf-8"),
                             )
                         counts[msg.key] += 1
                     local_state.add_counts(tp, counts, msg.offset)
