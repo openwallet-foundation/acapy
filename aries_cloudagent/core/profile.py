@@ -21,8 +21,8 @@ LOGGER = logging.getLogger(__name__)
 class Profile(ABC):
     """Base abstraction for handling identity-related state."""
 
-    BACKEND_NAME: str = None
-    DEFAULT_NAME: str = "default"
+    BACKEND_NAME = None
+    DEFAULT_NAME = "default"
 
     def __init__(
         self,

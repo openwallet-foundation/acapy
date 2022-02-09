@@ -50,8 +50,6 @@ class V10CredentialExchange(BaseExchangeRecord):
     STATE_ISSUED = "credential_issued"
     STATE_CREDENTIAL_RECEIVED = "credential_received"
     STATE_ACKED = "credential_acked"
-    STATE_CREDENTIAL_REVOKED = "credential_revoked"
-    STATE_ABANDONED = "abandoned"
 
     def __init__(
         self,
@@ -70,7 +68,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         ] = None,  # aries message: ..._dict for historic compat on all aries msgs
         credential_offer_dict: Union[Mapping, CredentialOffer] = None,  # aries message
         credential_offer: Union[Mapping, IndyCredAbstract] = None,  # indy artifact
-        credential_request: Union[Mapping, IndyCredRequest] = None,  # indy artifact
+        credential_request: [Mapping, IndyCredRequest] = None,  # indy artifact
         credential_request_metadata: Mapping = None,
         credential_id: str = None,
         raw_credential: Union[Mapping, IndyCredential] = None,  # indy cred as received
@@ -189,7 +187,6 @@ class V10CredentialExchange(BaseExchangeRecord):
         self,
         session: ProfileSession,
         *,
-        state: str = None,
         reason: str = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
@@ -204,10 +201,10 @@ class V10CredentialExchange(BaseExchangeRecord):
             override: Override configured logging regimen, print to stderr instead
         """
 
-        if self._last_state == state:  # already done
+        if self._last_state is None:  # already done
             return
 
-        self.state = state or V10CredentialExchange.STATE_ABANDONED
+        self.state = None
         if reason:
             self.error_msg = reason
 

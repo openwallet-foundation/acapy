@@ -6,11 +6,7 @@ from abc import ABC, ABCMeta, abstractmethod
 from time import time
 from typing import Mapping
 
-from ..core.profile import Profile
-from ..ledger.multiple_ledger.ledger_requests_executor import (
-    GET_CRED_DEF,
-    IndyLedgerRequestsExecutor,
-)
+from ..ledger.base import BaseLedger
 from ..messaging.util import canon, encode
 
 from .models.xform import indy_proof_req2non_revoc_intervals
@@ -31,7 +27,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         """
         return "<{}>".format(self.__class__.__name__)
 
-    def non_revoc_intervals(self, pres_req: dict, pres: dict, cred_defs: dict):
+    def non_revoc_intervals(self, pres_req: dict, pres: dict):
         """
         Remove superfluous non-revocation intervals in presentation request.
 
@@ -51,14 +47,10 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         }.items():
             for (uuid, spec) in pres["requested_proof"].get(req_proof_key, {}).items():
                 if (
-                    "revocation"
-                    not in cred_defs[
-                        pres["identifiers"][spec["sub_proof_index"]]["cred_def_id"]
-                    ]["value"]
+                    pres["identifiers"][spec["sub_proof_index"]].get("timestamp")
+                    is None
                 ):
-                    if uuid in pres_req[pres_key] and pres_req[pres_key][uuid].pop(
-                        "non_revoked", None
-                    ):
+                    if pres_req[pres_key][uuid].pop("non_revoked", None):
                         LOGGER.info(
                             (
                                 "Amended presentation request (nonce=%s): removed "
@@ -82,7 +74,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
 
     async def check_timestamps(
         self,
-        profile: Profile,
+        ledger: BaseLedger,
         pres_req: Mapping,
         pres: Mapping,
         rev_reg_defs: Mapping,
@@ -101,18 +93,12 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         """
         now = int(time())
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_req)
+
         # timestamp for irrevocable credential
-        for (index, ident) in enumerate(pres["identifiers"]):
-            if ident.get("timestamp"):
-                cred_def_id = ident["cred_def_id"]
-                ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-                ledger = (
-                    await ledger_exec_inst.get_ledger_for_identifier(
-                        cred_def_id,
-                        txn_record_type=GET_CRED_DEF,
-                    )
-                )[1]
-                async with ledger:
+        async with ledger:
+            for (index, ident) in enumerate(pres["identifiers"]):
+                if ident.get("timestamp"):
+                    cred_def_id = ident["cred_def_id"]
                     cred_def = await ledger.get_credential_definition(cred_def_id)
                     if not cred_def["value"].get("revocation"):
                         raise ValueError(
@@ -130,14 +116,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
 
             if timestamp > now + 300:  # allow 5 min for clock skew
                 raise ValueError(f"Timestamp {timestamp} is in the future")
-            reg_def = rev_reg_defs.get(rev_reg_id)
-            if not reg_def:
-                raise ValueError(f"Missing registry definition for '{rev_reg_id}'")
-            if "txnTime" not in reg_def:
-                raise ValueError(
-                    f"Missing txnTime for registry definition '{rev_reg_id}'"
-                )
-            if timestamp < reg_def["txnTime"]:
+            if timestamp < rev_reg_defs[rev_reg_id]["txnTime"]:
                 raise ValueError(
                     f"Timestamp {timestamp} predates rev reg {rev_reg_id} creation"
                 )
@@ -253,21 +232,17 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         for (uuid, req_pred) in pres_req["requested_predicates"].items():
             try:
                 canon_attr = canon(req_pred["name"])
-                matched = False
-                found = False
                 for ge_proof in pres["proof"]["proofs"][
                     pres["requested_proof"]["predicates"][uuid]["sub_proof_index"]
                 ]["primary_proof"]["ge_proofs"]:
                     pred = ge_proof["predicate"]
                     if pred["attr_name"] == canon_attr:
-                        found = True
-                        if pred["value"] == req_pred["p_value"]:
-                            matched = True
-                            break
-                if not matched:
-                    raise ValueError(f"Predicate value != p_value: {pred['attr_name']}")
-                    break
-                elif not found:
+                        if pred["value"] != req_pred["p_value"]:
+                            raise ValueError(
+                                f"Predicate value != p_value: {pred['attr_name']}"
+                            )
+                        break
+                else:
                     raise ValueError(f"Missing requested predicate '{uuid}'")
             except (KeyError, TypeError):
                 raise ValueError(f"Missing requested predicate '{uuid}'")

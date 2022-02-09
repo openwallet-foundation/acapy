@@ -29,7 +29,8 @@ class TransactionCancelHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established")
 
-        mgr = TransactionManager(context.profile)
+        profile_session = await context.session()
+        mgr = TransactionManager(profile_session)
         try:
             await mgr.receive_cancel_transaction(
                 context.message, context.connection_record.connection_id

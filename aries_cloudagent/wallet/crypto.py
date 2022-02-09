@@ -1,7 +1,5 @@
 """Cryptography functions used by BasicWallet."""
 
-import re
-
 from collections import OrderedDict
 from typing import Callable, Optional, Sequence, Tuple, Union, List
 
@@ -80,24 +78,6 @@ def seed_to_did(seed: str) -> str:
     verkey, _ = create_ed25519_keypair(seed)
     did = bytes_to_b58(verkey[:16])
     return did
-
-
-def did_is_self_certified(did: str, verkey: str) -> bool:
-    """
-    Check if the DID is self certified.
-
-    Args:
-        did: DID string
-        verkey: VERKEY string
-    """
-    ABBREVIATED_VERKEY_REGEX = "^~[1-9A-HJ-NP-Za-km-z]{21,22}$"
-    if re.search(ABBREVIATED_VERKEY_REGEX, verkey):
-        return True
-    verkey_bytes = b58_to_bytes(verkey)
-    did_from_verkey = bytes_to_b58(verkey_bytes[:16])
-    if did == did_from_verkey:
-        return True
-    return False
 
 
 def sign_pk_from_sk(secret: bytes) -> bytes:
@@ -361,7 +341,7 @@ def encode_pack_message(
         The encoded message
 
     """
-    wrapper = JweEnvelope(with_protected_recipients=True, with_flatten_recipients=False)
+    wrapper = JweEnvelope()
     cek = nacl.bindings.crypto_secretstream_xchacha20poly1305_keygen()
     add_pack_recipients(wrapper, cek, to_verkeys, from_secret)
     wrapper.set_protected(
@@ -372,6 +352,7 @@ def encode_pack_message(
                 ("alg", "Authcrypt" if from_secret else "Anoncrypt"),
             ]
         ),
+        auto_flatten=False,
     )
     ciphertext, nonce, tag = encrypt_plaintext(message, wrapper.protected_bytes, cek)
     wrapper.set_payload(ciphertext, nonce, tag)
@@ -433,8 +414,7 @@ def decode_pack_message_outer(enc_message: bytes) -> Tuple[dict, dict, bool]:
     """
     try:
         wrapper = JweEnvelope.from_json(enc_message)
-    except ValidationError as err:
-        print(err)
+    except ValidationError:
         raise ValueError("Invalid packed message")
 
     alg = wrapper.protected.get("alg")
@@ -442,7 +422,7 @@ def decode_pack_message_outer(enc_message: bytes) -> Tuple[dict, dict, bool]:
     if not is_authcrypt and alg != "Anoncrypt":
         raise ValueError("Unsupported pack algorithm: {}".format(alg))
 
-    recips = extract_pack_recipients(wrapper.recipients)
+    recips = extract_pack_recipients(wrapper.recipients())
     return wrapper, recips, is_authcrypt
 
 

@@ -27,8 +27,8 @@ class ForwardInvitationHandler(BaseHandler):
             )
 
         # Store invitation
-        profile = context.profile
-        connection_mgr = ConnectionManager(profile)
+        session = await context.session()
+        connection_mgr = ConnectionManager(session)
 
         try:
             await connection_mgr.receive_invitation(context.message.invitation)

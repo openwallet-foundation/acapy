@@ -11,7 +11,7 @@ from typing import Any, Union
 
 
 LOGGER = logging.getLogger(__name__)
-I32_BOUND = 2**31
+I32_BOUND = 2 ** 31
 
 
 def datetime_to_str(dt: Union[str, datetime]) -> str:
@@ -21,7 +21,7 @@ def datetime_to_str(dt: Union[str, datetime]) -> str:
         dt: May be a string or datetime to allow automatic conversion
     """
     if isinstance(dt, datetime):
-        dt = dt.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
+        dt = dt.replace(tzinfo=timezone.utc).isoformat(" ").replace("+00:00", "Z")
     return dt
 
 

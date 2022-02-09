@@ -1,10 +1,6 @@
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ...core.in_memory import InMemoryProfile
-from ...core.profile import ProfileManager, ProfileSession
-from ...storage.base import BaseStorage
-from ...storage.record import StorageRecord
-from ...version import __version__, RECORD_TYPE_ACAPY_VERSION
+from ...core.profile import Profile, ProfileManager, ProfileSession
 from ...wallet.base import BaseWallet
 
 from .. import wallet as test_module
@@ -69,9 +65,7 @@ class TestWalletConfig(AsyncTestCase):
 
         with async_mock.patch.object(
             test_module, "seed_to_did", async_mock.MagicMock()
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
-        ):
+        ) as mock_seed_to_did:
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
             await test_module.wallet_config(self.context, provision=True)
@@ -108,9 +102,7 @@ class TestWalletConfig(AsyncTestCase):
 
         with async_mock.patch.object(
             test_module, "seed_to_did", async_mock.MagicMock()
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
-        ):
+        ) as mock_seed_to_did:
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
             await test_module.wallet_config(self.context, provision=True)
@@ -137,9 +129,7 @@ class TestWalletConfig(AsyncTestCase):
 
         with async_mock.patch.object(
             MockManager, "open", async_mock.CoroutineMock()
-        ) as mock_mgr_open, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
-        ):
+        ) as mock_mgr_open:
             mock_mgr_open.side_effect = test_module.ProfileNotFoundError()
 
             with self.assertRaises(test_module.ProfileNotFoundError):
@@ -161,11 +151,9 @@ class TestWalletConfig(AsyncTestCase):
             ),
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
-        with async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
-        ):
-            with self.assertRaises(test_module.ConfigError):
-                await test_module.wallet_config(self.context, provision=True)
+
+        with self.assertRaises(test_module.ConfigError):
+            await test_module.wallet_config(self.context, provision=True)
 
     async def test_wallet_config_bad_seed_x(self):
         self.context.update_settings(
@@ -184,9 +172,7 @@ class TestWalletConfig(AsyncTestCase):
             test_module,
             "seed_to_did",
             async_mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
-        ):
+        ) as mock_seed_to_did:
 
             with self.assertRaises(test_module.ConfigError):
                 await test_module.wallet_config(self.context, provision=True)
@@ -209,9 +195,7 @@ class TestWalletConfig(AsyncTestCase):
 
         with async_mock.patch.object(
             test_module, "seed_to_did", async_mock.MagicMock()
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
-        ):
+        ) as mock_seed_to_did:
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
             await test_module.wallet_config(self.context, provision=True)
@@ -235,9 +219,7 @@ class TestWalletConfig(AsyncTestCase):
             test_module,
             "seed_to_did",
             async_mock.MagicMock(return_value="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
-        ):
+        ) as mock_seed_to_did:
             await test_module.wallet_config(self.context, provision=True)
 
     async def test_wallet_config_seed_no_public_did(self):
@@ -252,9 +234,7 @@ class TestWalletConfig(AsyncTestCase):
 
         with async_mock.patch.object(
             test_module, "seed_to_did", async_mock.MagicMock()
-        ) as mock_seed_to_did, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
-        ):
+        ) as mock_seed_to_did:
             mock_seed_to_did.return_value = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
             await test_module.wallet_config(self.context, provision=True)
@@ -278,9 +258,7 @@ class TestWalletConfig(AsyncTestCase):
 
         with async_mock.patch.object(
             MockManager, "provision", async_mock.CoroutineMock()
-        ) as mock_mgr_provision, async_mock.patch.object(
-            test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
-        ):
+        ) as mock_mgr_provision:
             mock_mgr_provision.return_value = self.profile
 
             await test_module.wallet_config(self.context, provision=True)
@@ -288,23 +266,3 @@ class TestWalletConfig(AsyncTestCase):
             mock_mgr_provision.assert_called_once_with(
                 self.context, {"key_derivation_method": "derivation_method"}
             )
-
-    async def test_update_version_to_storage(self):
-        session = InMemoryProfile.test_session()
-        storage = session.inject(BaseStorage)
-        record = StorageRecord(
-            "acapy_version",
-            "v0.7.2",
-        )
-        await storage.add_record(record)
-        await test_module.add_or_update_version_to_storage(session)
-        records = await storage.find_all_records(RECORD_TYPE_ACAPY_VERSION)
-        assert len(records) == 1
-        assert records[0].value == f"v{__version__}"
-
-    async def test_version_record_not_found(self):
-        session = InMemoryProfile.test_session()
-        storage = session.inject(BaseStorage)
-        assert (len(await storage.find_all_records(RECORD_TYPE_ACAPY_VERSION))) == 0
-        with self.assertRaises(test_module.ConfigError):
-            await test_module.add_or_update_version_to_storage(session)

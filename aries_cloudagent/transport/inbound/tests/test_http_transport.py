@@ -71,6 +71,7 @@ class TestHttpTransport(AioHTTPTestCase):
     def get_application(self):
         return self.transport.make_application()
 
+    @unittest_run_loop
     async def test_start_x(self):
         with async_mock.patch.object(
             test_module.web, "TCPSite", async_mock.MagicMock()
@@ -81,6 +82,7 @@ class TestHttpTransport(AioHTTPTestCase):
             with pytest.raises(test_module.InboundTransportSetupError):
                 await self.transport.start()
 
+    @unittest_run_loop
     async def test_send_message(self):
         await self.transport.start()
 
@@ -95,6 +97,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
         await self.transport.stop()
 
+    @unittest_run_loop
     async def test_send_receive_message(self):
         await self.transport.start()
 
@@ -109,6 +112,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
         await self.transport.stop()
 
+    @unittest_run_loop
     async def test_send_message_outliers(self):
         await self.transport.start()
 
@@ -145,6 +149,7 @@ class TestHttpTransport(AioHTTPTestCase):
 
         await self.transport.stop()
 
+    @unittest_run_loop
     async def test_invite_message_handler(self):
         await self.transport.start()
 

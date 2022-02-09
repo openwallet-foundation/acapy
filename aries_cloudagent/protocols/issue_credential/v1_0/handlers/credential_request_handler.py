@@ -28,7 +28,7 @@ class CredentialRequestHandler(BaseHandler):
 
         """
         r_time = get_timer()
-        profile = context.profile
+
         self._logger.debug("CredentialRequestHandler called with context %s", context)
         assert isinstance(context.message, CredentialRequest)
         self._logger.info(
@@ -39,7 +39,7 @@ class CredentialRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for credential request")
 
-        credential_manager = CredentialManager(profile)
+        credential_manager = CredentialManager(context.profile)
         cred_ex_record = await credential_manager.receive_request(
             context.message, context.connection_record.connection_id
         )  # mgr only finds, saves record: on exception, saving state null is hopeless
@@ -76,7 +76,7 @@ class CredentialRequestHandler(BaseHandler):
                 ) as err:
                     self._logger.exception(err)
                     if cred_ex_record:
-                        async with profile.session() as session:
+                        async with context.session() as session:
                             await cred_ex_record.save_error_state(
                                 session,
                                 reason=err.roll_up,  # us: be specific

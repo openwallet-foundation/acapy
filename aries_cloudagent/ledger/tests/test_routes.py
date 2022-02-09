@@ -1,31 +1,19 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
-from typing import Tuple
 
 from ...admin.request_context import AdminRequestContext
-from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...ledger.endpoint_type import EndpointType
-from ...ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
-from ...ledger.multiple_ledger.base_manager import (
-    BaseMultipleLedgerManager,
-    MultipleLedgerManagerError,
-)
 
 from .. import routes as test_module
 from ..indy import Role
-from ...connections.models.conn_record import ConnRecord
 
 
 class TestLedgerRoutes(AsyncTestCase):
     def setUp(self):
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.pool_name = "pool.0"
-        self.profile = InMemoryProfile.test_profile()
-        self.context = self.profile.context
-        setattr(self.context, "profile", self.profile)
-        self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
+        self.session_inject = {BaseLedger: self.ledger}
+        self.context = AdminRequestContext.test_context(self.session_inject)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -44,23 +32,12 @@ class TestLedgerRoutes(AsyncTestCase):
         self.test_endpoint_type_profile = "http://company.com/profile"
 
     async def test_missing_ledger(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, None)
-                )
-            ),
-        )
-        self.profile.context.injector.clear_binding(BaseLedger)
+        self.session_inject[BaseLedger] = None
+
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.register_ledger_nym(self.request)
 
-        with self.assertRaises(test_module.web.HTTPBadRequest):
-            await test_module.get_nym_role(self.request)
-
         with self.assertRaises(test_module.web.HTTPForbidden):
-            self.request.query["did"] = "test"
             await test_module.get_nym_role(self.request)
 
         with self.assertRaises(test_module.web.HTTPForbidden):
@@ -78,15 +55,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.ledger_get_taa(self.request)
 
-    async def test_get_verkey_a(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
-        )
+    async def test_get_verkey(self):
         self.request.query = {"did": self.test_did}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
@@ -98,71 +67,24 @@ class TestLedgerRoutes(AsyncTestCase):
             )
             assert result is json_response.return_value
 
-    async def test_get_verkey_b(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
-        self.request.query = {"did": self.test_did}
-        with async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
-        ) as json_response:
-            self.ledger.get_key_for_did.return_value = self.test_verkey
-            result = await test_module.get_did_verkey(self.request)
-            json_response.assert_called_once_with(
-                {
-                    "ledger_id": "test_ledger_id",
-                    "verkey": self.ledger.get_key_for_did.return_value,
-                }
-            )
-            assert result is json_response.return_value
-
     async def test_get_verkey_no_did(self):
         self.request.query = {"no": "did"}
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.get_did_verkey(self.request)
 
     async def test_get_verkey_did_not_public(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
         self.request.query = {"did": self.test_did}
         self.ledger.get_key_for_did.return_value = None
         with self.assertRaises(test_module.web.HTTPNotFound):
             await test_module.get_did_verkey(self.request)
 
     async def test_get_verkey_x(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
-        )
         self.request.query = {"did": self.test_did}
         self.ledger.get_key_for_did.side_effect = test_module.LedgerError()
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.get_did_verkey(self.request)
 
     async def test_get_endpoint(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
-        )
         self.request.query = {"did": self.test_did}
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
@@ -175,14 +97,6 @@ class TestLedgerRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_get_endpoint_of_type_profile(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
         self.request.query = {
             "did": self.test_did,
             "endpoint_type": self.test_endpoint_type.w3c,
@@ -195,10 +109,7 @@ class TestLedgerRoutes(AsyncTestCase):
             )
             result = await test_module.get_did_endpoint(self.request)
             json_response.assert_called_once_with(
-                {
-                    "ledger_id": "test_ledger_id",
-                    "endpoint": self.ledger.get_endpoint_for_did.return_value,
-                }
+                {"endpoint": self.ledger.get_endpoint_for_did.return_value}
             )
             assert result is json_response.return_value
 
@@ -208,14 +119,6 @@ class TestLedgerRoutes(AsyncTestCase):
             await test_module.get_did_endpoint(self.request)
 
     async def test_get_endpoint_x(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
         self.request.query = {"did": self.test_did}
         self.ledger.get_endpoint_for_did.side_effect = test_module.LedgerError()
         with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -230,11 +133,11 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            success: bool = True
-            txn: dict = None
-            self.ledger.register_nym.return_value: Tuple[bool, dict] = (success, txn)
+            self.ledger.register_nym.return_value = True
             result = await test_module.register_ledger_nym(self.request)
-            json_response.assert_called_once_with({"success": success})
+            json_response.assert_called_once_with(
+                {"success": self.ledger.register_nym.return_value}
+            )
             assert result is json_response.return_value
 
     async def test_register_nym_bad_request(self):
@@ -268,193 +171,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.register_ledger_nym(self.request)
 
-    async def test_register_nym_create_transaction_for_endorser(self):
-        self.request.query = {
-            "did": "a_test_did",
-            "verkey": "a_test_verkey",
-            "alias": "did_alias",
-            "role": "ENDORSER",
-            "create_transaction_for_endorser": "true",
-            "conn_id": "dummy",
-        }
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, async_mock.patch.object(
-            test_module, "TransactionManager", async_mock.MagicMock()
-        ) as mock_txn_mgr, async_mock.patch.object(
-            test_module.web, "json_response", async_mock.MagicMock()
-        ) as mock_response:
-            mock_txn_mgr.return_value = async_mock.MagicMock(
-                create_record=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        serialize=async_mock.MagicMock(return_value={"...": "..."})
-                    )
-                )
-            )
-            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "endorser_did": ("did"),
-                        "endorser_name": ("name"),
-                    }
-                )
-            )
-            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
-                True,
-                {"signed_txn": {"...": "..."}},
-            )
-
-            result = await test_module.register_ledger_nym(self.request)
-            assert result == mock_response.return_value
-            mock_response.assert_called_once_with(
-                {"success": True, "txn": {"signed_txn": {"...": "..."}}}
-            )
-
-    async def test_register_nym_create_transaction_for_endorser_storage_x(self):
-        self.request.query = {
-            "did": "a_test_did",
-            "verkey": "a_test_verkey",
-            "alias": "did_alias",
-            "role": "ENDORSER",
-            "create_transaction_for_endorser": "true",
-            "conn_id": "dummy",
-        }
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve, async_mock.patch.object(
-            test_module, "TransactionManager", async_mock.MagicMock()
-        ) as mock_txn_mgr:
-
-            mock_txn_mgr.return_value = async_mock.MagicMock(
-                create_record=async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError()
-                )
-            )
-            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "endorser_did": ("did"),
-                        "endorser_name": ("name"),
-                    }
-                )
-            )
-            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
-                True,
-                {"signed_txn": {"...": "..."}},
-            )
-
-            with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.register_ledger_nym(self.request)
-
-    async def test_register_nym_create_transaction_for_endorser_not_found_x(self):
-        self.request.query = {
-            "did": "a_test_did",
-            "verkey": "a_test_verkey",
-            "alias": "did_alias",
-            "role": "ENDORSER",
-            "create_transaction_for_endorser": "true",
-            "conn_id": "dummy",
-        }
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve:
-            mock_conn_rec_retrieve.side_effect = test_module.StorageNotFoundError()
-            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
-                True,
-                {"signed_txn": {"...": "..."}},
-            )
-
-            with self.assertRaises(test_module.web.HTTPNotFound):
-                await test_module.register_ledger_nym(self.request)
-
-    async def test_register_nym_create_transaction_for_endorser_base_model_x(self):
-        self.request.query = {
-            "did": "a_test_did",
-            "verkey": "a_test_verkey",
-            "alias": "did_alias",
-            "role": "ENDORSER",
-            "create_transaction_for_endorser": "true",
-            "conn_id": "dummy",
-        }
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve:
-            mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
-            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
-                True,
-                {"signed_txn": {"...": "..."}},
-            )
-
-            with self.assertRaises(test_module.web.HTTPBadRequest):
-                await test_module.register_ledger_nym(self.request)
-
-    async def test_register_nym_create_transaction_for_endorser_no_endorser_info_x(
-        self,
-    ):
-        self.request.query = {
-            "did": "a_test_did",
-            "verkey": "a_test_verkey",
-            "alias": "did_alias",
-            "role": "ENDORSER",
-            "create_transaction_for_endorser": "true",
-            "conn_id": "dummy",
-        }
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve:
-            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(return_value=None)
-            )
-            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
-                True,
-                {"signed_txn": {"...": "..."}},
-            )
-
-            with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.register_ledger_nym(self.request)
-
-    async def test_register_nym_create_transaction_for_endorser_no_endorser_did_x(self):
-        self.request.query = {
-            "did": "a_test_did",
-            "verkey": "a_test_verkey",
-            "alias": "did_alias",
-            "role": "ENDORSER",
-            "create_transaction_for_endorser": "true",
-            "conn_id": "dummy",
-        }
-
-        with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
-        ) as mock_conn_rec_retrieve:
-            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "endorser_name": ("name"),
-                    }
-                )
-            )
-            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
-                True,
-                {"signed_txn": {"...": "..."}},
-            )
-
-            with self.assertRaises(test_module.web.HTTPForbidden):
-                await test_module.register_ledger_nym(self.request)
-
-    async def test_get_nym_role_a(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
-        )
+    async def test_get_nym_role(self):
         self.request.query = {"did": self.test_did}
 
         with async_mock.patch.object(
@@ -465,41 +182,12 @@ class TestLedgerRoutes(AsyncTestCase):
             json_response.assert_called_once_with({"role": "USER"})
             assert result is json_response.return_value
 
-    async def test_get_nym_role_b(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
-        self.request.query = {"did": self.test_did}
-
-        with async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
-        ) as json_response:
-            self.ledger.get_nym_role.return_value = Role.USER
-            result = await test_module.get_nym_role(self.request)
-            json_response.assert_called_once_with(
-                {"ledger_id": "test_ledger_id", "role": "USER"}
-            )
-            assert result is json_response.return_value
-
     async def test_get_nym_role_bad_request(self):
         self.request.query = {"no": "did"}
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.get_nym_role(self.request)
 
     async def test_get_nym_role_ledger_txn_error(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
         self.request.query = {"did": self.test_did}
         self.ledger.get_nym_role.side_effect = test_module.LedgerTransactionError(
             "Error in building get-nym request"
@@ -508,14 +196,6 @@ class TestLedgerRoutes(AsyncTestCase):
             await test_module.get_nym_role(self.request)
 
     async def test_get_nym_role_bad_ledger_req(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
         self.request.query = {"did": self.test_did}
         self.ledger.get_nym_role.side_effect = test_module.BadLedgerRequestError(
             "No such public DID"
@@ -524,14 +204,6 @@ class TestLedgerRoutes(AsyncTestCase):
             await test_module.get_nym_role(self.request)
 
     async def test_get_nym_role_ledger_error(self):
-        self.profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
-        )
         self.request.query = {"did": self.test_did}
         self.ledger.get_nym_role.side_effect = test_module.LedgerError("Error")
         with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -654,77 +326,3 @@ class TestLedgerRoutes(AsyncTestCase):
         mock_app = async_mock.MagicMock(_state={"swagger_dict": {}})
         test_module.post_process_routes(mock_app)
         assert "tags" in mock_app._state["swagger_dict"]
-
-    async def test_get_write_ledger(self):
-        self.profile.context.injector.bind_instance(
-            BaseMultipleLedgerManager,
-            async_mock.MagicMock(
-                get_write_ledger=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
-        with async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
-        ) as json_response:
-            result = await test_module.get_write_ledger(self.request)
-            json_response.assert_called_once_with(
-                {
-                    "ledger_id": "test_ledger_id",
-                }
-            )
-            assert result is json_response.return_value
-
-    async def test_get_write_ledger_x(self):
-        with self.assertRaises(test_module.web.HTTPForbidden) as cm:
-            await test_module.get_write_ledger(self.request)
-            assert "No instance provided for BaseMultipleLedgerManager" in cm
-
-    async def test_get_ledger_config(self):
-        self.profile.context.injector.bind_instance(
-            BaseMultipleLedgerManager,
-            async_mock.MagicMock(
-                get_prod_ledgers=async_mock.CoroutineMock(
-                    return_value={
-                        "test_1": async_mock.MagicMock(),
-                        "test_2": async_mock.MagicMock(),
-                        "test_5": async_mock.MagicMock(),
-                    }
-                ),
-                get_nonprod_ledgers=async_mock.CoroutineMock(
-                    return_value={
-                        "test_3": async_mock.MagicMock(),
-                        "test_4": async_mock.MagicMock(),
-                    }
-                ),
-            ),
-        )
-        self.context.settings["ledger.ledger_config_list"] = [
-            {"id": "test_1", "genesis_transactions": "..."},
-            {"id": "test_2", "genesis_transactions": "..."},
-            {"id": "test_3", "genesis_transactions": "..."},
-            {"id": "test_4", "genesis_transactions": "..."},
-        ]
-        with async_mock.patch.object(
-            test_module.web, "json_response", async_mock.Mock()
-        ) as json_response:
-            result = await test_module.get_ledger_config(self.request)
-            json_response.assert_called_once_with(
-                {
-                    "production_ledgers": [
-                        {"id": "test_1"},
-                        {"id": "test_2"},
-                        {
-                            "id": "test_5",
-                            "desc": "ledger configured outside --genesis-transactions-list",
-                        },
-                    ],
-                    "non_production_ledgers": [{"id": "test_3"}, {"id": "test_4"}],
-                }
-            )
-            assert result is json_response.return_value
-
-    async def test_get_ledger_config_x(self):
-        with self.assertRaises(test_module.web.HTTPForbidden) as cm:
-            await test_module.get_ledger_config(self.request)
-            assert "No instance provided for BaseMultipleLedgerManager" in cm

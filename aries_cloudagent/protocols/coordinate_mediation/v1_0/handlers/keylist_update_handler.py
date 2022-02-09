@@ -24,10 +24,9 @@ class KeylistUpdateHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Cannot update routes: no active connection")
 
-        profile = context.profile
-        mgr = MediationManager(profile)
+        mgr = MediationManager(context.profile)
         try:
-            async with profile.session() as session:
+            async with context.session() as session:
                 record = await MediationRecord.retrieve_by_connection_id(
                     session, context.connection_record.connection_id
                 )

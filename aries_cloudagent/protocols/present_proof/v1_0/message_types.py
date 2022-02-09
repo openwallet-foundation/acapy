@@ -40,7 +40,3 @@ ATTACH_DECO_IDS = {
     PRESENTATION_REQUEST: "libindy-request-presentation-0",
     PRESENTATION: "libindy-presentation-0",
 }
-
-CONTROLLERS = DIDCommPrefix.qualify_all(
-    {"present-proof/1.0": f"{PROTOCOL_PACKAGE}.controller.Controller"}
-)

@@ -321,7 +321,7 @@ async def credential_exchange_list(request: web.BaseRequest):
     }
 
     try:
-        async with context.profile.session() as session:
+        async with context.session() as session:
             records = await V10CredentialExchange.query(
                 session=session,
                 tag_filter=tag_filter,
@@ -357,7 +357,7 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
     credential_exchange_id = request.match_info["cred_ex_id"]
     cred_ex_record = None
     try:
-        async with context.profile.session() as session:
+        async with context.session() as session:
             cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                 session, credential_exchange_id
             )
@@ -479,7 +479,6 @@ async def credential_exchange_send(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -496,7 +495,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     cred_ex_record = None
     try:
         preview = CredentialPreview.deserialize(preview_spec)
-        async with profile.session() as session:
+        async with context.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
             if not connection_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
@@ -517,7 +516,7 @@ async def credential_exchange_send(request: web.BaseRequest):
             outcome="credential_exchange_send.START",
         )
 
-        credential_manager = CredentialManager(profile)
+        credential_manager = CredentialManager(context.profile)
         (
             cred_ex_record,
             credential_offer_message,
@@ -531,7 +530,7 @@ async def credential_exchange_send(request: web.BaseRequest):
 
     except (BaseModelError, CredentialManagerError, LedgerError, StorageError) as err:
         if cred_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -575,7 +574,6 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -590,12 +588,12 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     cred_ex_record = None
     try:
         preview = CredentialPreview.deserialize(preview_spec) if preview_spec else None
-        async with profile.session() as session:
+        async with context.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
             if not connection_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-        credential_manager = CredentialManager(profile)
+        credential_manager = CredentialManager(context.profile)
         cred_ex_record = await credential_manager.create_proposal(
             connection_id,
             comment=comment,
@@ -610,7 +608,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
     except (BaseModelError, StorageError) as err:
         if cred_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -704,7 +702,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
+
     body = await request.json()
 
     cred_def_id = body.get("cred_def_id")
@@ -724,7 +722,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     cred_ex_record = None
     try:
         (cred_ex_record, credential_offer_message) = await _create_free_offer(
-            profile=profile,
+            profile=context.profile,
             cred_def_id=cred_def_id,
             auto_issue=auto_issue,
             auto_remove=auto_remove,
@@ -741,7 +739,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
         StorageError,
     ) as err:
         if cred_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         raise web.HTTPBadRequest(reason=err.roll_up)
     trace_event(
@@ -776,7 +774,6 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -799,13 +796,13 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     cred_ex_record = None
     connection_record = None
     try:
-        async with profile.session() as session:
+        async with context.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
             if not connection_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
         cred_ex_record, credential_offer_message = await _create_free_offer(
-            profile=profile,
+            profile=context.profile,
             cred_def_id=cred_def_id,
             connection_id=connection_id,
             auto_issue=auto_issue,
@@ -823,7 +820,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         LedgerError,
     ) as err:
         if cred_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -869,7 +866,6 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json() if request.body_exists else {}
@@ -879,7 +875,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     cred_ex_record = None
     connection_record = None
     try:
-        async with profile.session() as session:
+        async with context.session() as session:
             try:
                 cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                     session, credential_exchange_id
@@ -901,7 +897,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             if not connection_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-        credential_manager = CredentialManager(profile)
+        credential_manager = CredentialManager(context.profile)
         (
             cred_ex_record,
             credential_offer_message,
@@ -923,7 +919,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
         StorageError,
     ) as err:
         if cred_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -965,7 +961,6 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     credential_exchange_id = request.match_info["cred_ex_id"]
@@ -973,7 +968,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     cred_ex_record = None
     connection_record = None
     try:
-        async with profile.session() as session:
+        async with context.session() as session:
             try:
                 cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                     session, credential_exchange_id
@@ -989,7 +984,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
             if not connection_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-        credential_manager = CredentialManager(profile)
+        credential_manager = CredentialManager(context.profile)
         (
             cred_ex_record,
             credential_request_message,
@@ -1007,7 +1002,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
         StorageError,
     ) as err:
         if cred_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -1050,7 +1045,6 @@ async def credential_exchange_issue(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -1061,7 +1055,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     cred_ex_record = None
     connection_record = None
     try:
-        async with profile.session() as session:
+        async with context.session() as session:
             try:
                 cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                     session, credential_exchange_id
@@ -1074,7 +1068,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
             if not connection_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-        credential_manager = CredentialManager(profile)
+        credential_manager = CredentialManager(context.profile)
         (
             cred_ex_record,
             credential_issue_message,
@@ -1090,7 +1084,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
         StorageError,
     ) as err:
         if cred_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -1133,7 +1127,6 @@ async def credential_exchange_store(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     try:
@@ -1147,7 +1140,7 @@ async def credential_exchange_store(request: web.BaseRequest):
     cred_ex_record = None
     connection_record = None
     try:
-        async with profile.session() as session:
+        async with context.session() as session:
             try:
                 cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                     session, credential_exchange_id
@@ -1160,7 +1153,7 @@ async def credential_exchange_store(request: web.BaseRequest):
             if not connection_record.is_ready:
                 raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
-        credential_manager = CredentialManager(profile)
+        credential_manager = CredentialManager(context.profile)
         cred_ex_record = await credential_manager.store_credential(
             cred_ex_record,
             credential_id,
@@ -1172,7 +1165,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         StorageError,
     ) as err:  # treat failure to store as mangled on receipt hence protocol error
         if cred_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -1230,7 +1223,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
     description = body["description"]
 
     try:
-        async with context.profile.session() as session:
+        async with context.session() as session:
             cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                 session, credential_exchange_id
             )
@@ -1268,7 +1261,7 @@ async def credential_exchange_remove(request: web.BaseRequest):
     credential_exchange_id = request.match_info["cred_ex_id"]
     cred_ex_record = None
     try:
-        async with context.profile.session() as session:
+        async with context.session() as session:
             cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                 session, credential_exchange_id
             )

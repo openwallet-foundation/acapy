@@ -1,7 +1,5 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
-from ......vc.ld_proofs.error import LinkedDataProofException
-from ......vc.ld_proofs.check import get_properties_without_context
 import logging
 
 from typing import Mapping
@@ -16,7 +14,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.vc_ld import (
-    issue_vc as issue,
+    issue,
     verify_credential,
     VerifiableCredentialSchema,
     LDProof,
@@ -386,31 +384,21 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof credential proposal."""
 
     async def create_offer(
-        self, cred_proposal_message: V20CredProposal
+        self, cred_ex_record: V20CredExRecord, offer_data: Mapping = None
     ) -> CredFormatAttachment:
         """Create linked data proof credential offer."""
-        if not cred_proposal_message:
+        if not cred_ex_record.cred_proposal:
             raise V20CredFormatError(
                 "Cannot create linked data proof offer without proposal data"
             )
 
-        # Parse offer data which is either a proposal or an offer.
-        # Data is stored in proposal if we received a proposal
+        # Parse proposal. Data is stored in proposal if we received a proposal
         # but also when we create an offer (manager does some weird stuff)
-        offer_data = cred_proposal_message.attachment(LDProofCredFormatHandler.format)
+        offer_data = cred_ex_record.cred_proposal.attachment(
+            LDProofCredFormatHandler.format
+        )
         detail = LDProofVCDetail.deserialize(offer_data)
         detail = await self._prepare_detail(detail)
-
-        document_loader = self.profile.inject(DocumentLoader)
-        missing_properties = get_properties_without_context(
-            detail.credential.serialize(), document_loader
-        )
-
-        if len(missing_properties) > 0:
-            raise LinkedDataProofException(
-                f"{len(missing_properties)} attributes dropped. "
-                f"Provide definitions in context to correct. {missing_properties}"
-            )
 
         # Make sure we can issue with the did and proof type
         await self._assert_can_issue_with_id_and_proof_type(

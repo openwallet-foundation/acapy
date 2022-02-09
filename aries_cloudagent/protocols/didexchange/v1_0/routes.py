@@ -44,11 +44,6 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         description="Qualified public DID to which to request connection",
         **GENERIC_DID,
     )
-    alias = fields.Str(
-        description="Alias for connection",
-        required=False,
-        example="Barry",
-    )
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     my_label = fields.Str(
         description="Label for connection request", required=False, example="Broker"
@@ -136,18 +131,17 @@ async def didx_accept_invitation(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-
     outbound_handler = request["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
+
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
 
-    profile = context.profile
-    didx_mgr = DIDXManager(profile)
+    didx_mgr = DIDXManager(session)
     try:
-        async with profile.session() as session:
-            conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
+        conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
         request = await didx_mgr.create_request(
             conn_rec=conn_rec,
             my_label=my_label,
@@ -183,16 +177,15 @@ async def didx_create_request_implicit(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    session = await context.session()
 
     their_public_did = request.query.get("their_public_did")
     my_label = request.query.get("my_label") or None
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
-    alias = request.query.get("alias") or None
     use_public_did = json.loads(request.query.get("use_public_did", "null"))
 
-    profile = context.profile
-    didx_mgr = DIDXManager(profile)
+    didx_mgr = DIDXManager(session)
     try:
         request = await didx_mgr.create_request_implicit(
             their_public_did=their_public_did,
@@ -200,7 +193,6 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
             use_public_did=use_public_did,
-            alias=alias,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -229,6 +221,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+    session = await context.session()
 
     body = await request.json()
     alias = request.query.get("alias")
@@ -236,8 +229,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
     mediation_id = request.query.get("mediation_id") or None
 
-    profile = context.profile
-    didx_mgr = DIDXManager(profile)
+    didx_mgr = DIDXManager(session)
     try:
         request = DIDXRequest.deserialize(body)
         conn_rec = await didx_mgr.receive_request(
@@ -278,14 +270,14 @@ async def didx_accept_request(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
+
     my_endpoint = request.query.get("my_endpoint") or None
     mediation_id = request.query.get("mediation_id") or None
 
-    profile = context.profile
-    didx_mgr = DIDXManager(profile)
+    didx_mgr = DIDXManager(session)
     try:
-        async with profile.session() as session:
-            conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
+        conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
         response = await didx_mgr.create_response(
             conn_rec=conn_rec,
             my_endpoint=my_endpoint,

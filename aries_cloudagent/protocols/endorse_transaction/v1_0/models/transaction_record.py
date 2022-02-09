@@ -9,8 +9,6 @@ from .....messaging.models.base_record import (
 )
 from .....messaging.valid import UUIDFour
 
-from ..controller import ENDORSE_TRANSACTION, REFUSE_TRANSACTION, WRITE_TRANSACTION
-
 
 class TransactionRecord(BaseExchangeRecord):
     """Represents a single transaction record."""
@@ -37,9 +35,9 @@ class TransactionRecord(BaseExchangeRecord):
 
     ADD_SIGNATURE = "add-signature"
 
-    ENDORSE_TRANSACTION = ENDORSE_TRANSACTION
-    REFUSE_TRANSACTION = REFUSE_TRANSACTION
-    WRITE_TRANSACTION = WRITE_TRANSACTION
+    ENDORSE_TRANSACTION = "transaction.endorse"
+    REFUSE_TRANSACTION = "transaction.refuse"
+    WRITE_TRANSACTION = "transaction.ledger.write"
 
     FORMAT_VERSION = "dif/endorse-transaction/request@v1.0"
 
@@ -68,7 +66,6 @@ class TransactionRecord(BaseExchangeRecord):
         connection_id: str = None,
         state: str = None,
         endorser_write_txn: bool = None,
-        meta_data: dict = {"context": {}, "processing": {}},
         **kwargs,
     ):
         """Initialize a new TransactionRecord."""
@@ -84,7 +81,6 @@ class TransactionRecord(BaseExchangeRecord):
         self.thread_id = thread_id
         self.connection_id = connection_id
         self.endorser_write_txn = endorser_write_txn
-        self.meta_data = meta_data
 
     @property
     def transaction_id(self) -> str:
@@ -107,7 +103,6 @@ class TransactionRecord(BaseExchangeRecord):
                 "connection_id",
                 "state",
                 "endorser_write_txn",
-                "meta_data",
             )
         }
 
@@ -214,13 +209,6 @@ class TransactionRecordSchema(BaseExchangeSchema):
                 },
             }
         ),
-        required=False,
-    )
-    meta_data = fields.Dict(
-        example={
-            "context": {"param1": "param1_value", "param2": "param2_value"},
-            "post_process": [{"topic": "topic_value", "other": "other_value"}],
-        },
         required=False,
     )
     thread_id = fields.Str(

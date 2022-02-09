@@ -3,6 +3,7 @@ from configargparse import ArgumentTypeError
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from .. import argparse
+from ..error import ArgsParseError
 from ..util import BoundedInt, ByteSize
 
 
@@ -52,79 +53,6 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("transport.inbound_configs") == [["http", "0.0.0.0", "80"]]
         assert settings.get("transport.outbound_configs") == ["http"]
         assert result.max_outbound_retry == 5
-
-    async def test_get_genesis_transactions_list_with_ledger_selection(self):
-        """Test multiple ledger support related argument parsing."""
-
-        parser = argparse.create_argument_parser()
-        group = argparse.LedgerGroup()
-        group.add_arguments(parser)
-
-        with async_mock.patch.object(parser, "exit") as exit_parser:
-            parser.parse_args(["-h"])
-            exit_parser.assert_called_once()
-
-        result = parser.parse_args(
-            [
-                "--genesis-transactions-list",
-                "./aries_cloudagent/config/tests/test-ledger-args.yaml",
-            ]
-        )
-
-        assert (
-            result.genesis_transactions_list
-            == "./aries_cloudagent/config/tests/test-ledger-args.yaml"
-        )
-
-        settings = group.get_settings(result)
-
-        assert len(settings.get("ledger.ledger_config_list")) == 3
-        assert (
-            {
-                "id": "sovrinStaging",
-                "is_production": True,
-                "genesis_file": "/home/indy/ledger/sandbox/pool_transactions_genesis",
-            }
-        ) in settings.get("ledger.ledger_config_list")
-        assert (
-            {
-                "id": "sovrinTest",
-                "is_production": False,
-                "genesis_url": "http://localhost:9000/genesis",
-            }
-        ) in settings.get("ledger.ledger_config_list")
-
-    async def test_upgrade_config(self):
-        """Test upgrade command related argument parsing."""
-
-        parser = argparse.create_argument_parser()
-        group = argparse.UpgradeGroup()
-        group.add_arguments(parser)
-
-        with async_mock.patch.object(parser, "exit") as exit_parser:
-            parser.parse_args(["-h"])
-            exit_parser.assert_called_once()
-
-        result = parser.parse_args(
-            [
-                "--upgrade-config-path",
-                "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml",
-                "--from-version",
-                "v0.7.2",
-            ]
-        )
-
-        assert (
-            result.upgrade_config_path
-            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
-        )
-
-        settings = group.get_settings(result)
-
-        assert (
-            settings.get("upgrade.config_path")
-            == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
-        )
 
     async def test_outbound_is_required(self):
         """Test that either -ot or -oq are required"""
@@ -262,29 +190,6 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("multitenant.jwt_secret") == "secret"
         assert settings.get("multitenant.wallet_type") == "askar"
         assert settings.get("multitenant.wallet_name") == "test"
-
-    async def test_endorser_settings(self):
-        """Test required argument parsing."""
-
-        parser = argparse.create_argument_parser()
-        group = argparse.EndorsementGroup()
-        group.add_arguments(parser)
-
-        result = parser.parse_args(
-            [
-                "--endorser-protocol-role",
-                argparse.ENDORSER_AUTHOR,
-                "--endorser-public-did",
-                "did:sov:12345",
-            ]
-        )
-
-        settings = group.get_settings(result)
-
-        assert settings.get("endorser.author") == True
-        assert settings.get("endorser.endorser") == False
-        assert settings.get("endorser.endorser_public_did") == "did:sov:12345"
-        assert settings.get("endorser.auto_endorse") == False
 
     async def test_error_raised_when_multitenancy_used_and_no_jwt_provided(self):
         """Test that error is raised if no jwt_secret is provided with multitenancy."""
@@ -431,37 +336,3 @@ class TestArgParse(AsyncTestCase):
         settings = group.get_settings(result)
 
         assert settings.get("wallet.key") == key_value
-
-    async def test_discover_features_args(self):
-        """Test discover features support related argument parsing."""
-
-        parser = argparse.create_argument_parser()
-        group = argparse.DiscoverFeaturesGroup()
-        group.add_arguments(parser)
-
-        with async_mock.patch.object(parser, "exit") as exit_parser:
-            parser.parse_args(["-h"])
-            exit_parser.assert_called_once()
-
-        result = parser.parse_args(
-            args=(
-                "--auto-disclose-features --disclose-features-list"
-                " ./aries_cloudagent/config/tests/test_disclose_features_list.yaml"
-            )
-        )
-
-        assert result.auto_disclose_features
-        assert (
-            result.disclose_features_list
-            == "./aries_cloudagent/config/tests/test_disclose_features_list.yaml"
-        )
-
-        settings = group.get_settings(result)
-
-        assert settings.get("auto_disclose_features")
-        assert (["test_protocol_1", "test_protocol_2"]) == settings.get(
-            "disclose_protocol_list"
-        )
-        assert (["test_goal_code_1", "test_goal_code_2"]) == settings.get(
-            "disclose_goal_code_list"
-        )

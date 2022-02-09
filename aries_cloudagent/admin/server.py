@@ -34,7 +34,6 @@ from ..transport.queue.basic import BasicMessageQueue
 from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
-from ..messaging.valid import UUIDFour
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -151,10 +150,14 @@ class AdminResponder(BaseResponder):
 async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
     """Only continue if application is ready to take work."""
 
-    if str(request.rel_url).rstrip("/") in (
-        "/status/live",
-        "/status/ready",
-    ) or request.app._state.get("ready"):
+    if (
+        str(request.rel_url).rstrip("/")
+        in (
+            "/status/live",
+            "/status/ready",
+        )
+        or request.app._state.get("ready")
+    ):
         try:
             return await handler(request)
         except (LedgerConfigError, LedgerTransactionError) as e:
@@ -263,14 +266,16 @@ class AdminServer(BaseAdminServer):
         assert self.admin_insecure_mode ^ bool(self.admin_api_key)
 
         def is_unprotected_path(path: str):
-            return path in [
-                "/api/doc",
-                "/api/docs/swagger.json",
-                "/favicon.ico",
-                "/ws",  # ws handler checks authentication
-                "/status/live",
-                "/status/ready",
-            ] or path.startswith("/static/swagger/")
+            return (
+                path
+                in [
+                    "/api/doc",
+                    "/api/docs/swagger.json",
+                    "/favicon.ico",
+                    "/ws",  # ws handler checks authentication
+                ]
+                or path.startswith("/static/swagger/")
+            )
 
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
@@ -281,15 +286,7 @@ class AdminServer(BaseAdminServer):
                 header_admin_api_key = request.headers.get("x-api-key")
                 valid_key = const_compare(self.admin_api_key, header_admin_api_key)
 
-                # We have to allow OPTIONS method access to paths without a key since
-                # browsers performing CORS requests will never include the original
-                # x-api-key header from the method that triggered the preflight
-                # OPTIONS check.
-                if (
-                    valid_key
-                    or is_unprotected_path(request.path)
-                    or (request.method == "OPTIONS")
-                ):
+                if valid_key or is_unprotected_path(request.path):
                     return await handler(request)
                 else:
                     raise web.HTTPUnauthorized()
@@ -312,19 +309,6 @@ class AdminServer(BaseAdminServer):
                 if authorization_header and is_multitenancy_path:
                     raise web.HTTPUnauthorized()
 
-                base_limited_access_path = (
-                    re.match(
-                        f"^/connections/(?:receive-invitation|{UUIDFour.PATTERN})", path
-                    )
-                    or path.startswith("/out-of-band/receive-invitation")
-                    or path.startswith("/mediation/requests/")
-                    or re.match(
-                        f"/mediation/(?:request/{UUIDFour.PATTERN}|"
-                        f"{UUIDFour.PATTERN}/default-mediator)",
-                        path,
-                    )
-                )
-
                 # base wallet is not allowed to perform ssi related actions.
                 # Only multitenancy and general server actions
                 if (
@@ -332,7 +316,6 @@ class AdminServer(BaseAdminServer):
                     and not is_multitenancy_path
                     and not is_server_path
                     and not is_unprotected_path(path)
-                    and not base_limited_access_path
                 ):
                     raise web.HTTPUnauthorized()
 
@@ -584,8 +567,6 @@ class AdminServer(BaseAdminServer):
         """
         config = {
             k: self.context.settings[k]
-            if (isinstance(self.context.settings[k], (str, int)))
-            else self.context.settings[k].copy()
             for k in self.context.settings
             if k
             not in [

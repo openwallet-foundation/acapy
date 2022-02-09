@@ -20,11 +20,6 @@ from .util import BoundedInt, ByteSize
 
 CAT_PROVISION = "general"
 CAT_START = "start"
-CAT_UPGRADE = "upgrade"
-
-ENDORSER_AUTHOR = "author"
-ENDORSER_ENDORSER = "endorser"
-ENDORSER_NONE = "none"
 
 
 class ArgumentGroup(abc.ABC):
@@ -461,49 +456,6 @@ class DebugGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_START)
-class DiscoverFeaturesGroup(ArgumentGroup):
-    """Discover Features settings."""
-
-    GROUP_NAME = "Discover features"
-
-    def add_arguments(self, parser: ArgumentParser):
-        """Add discover features specific command line arguments to the parser."""
-        parser.add_argument(
-            "--auto-disclose-features",
-            action="store_true",
-            env_var="ACAPY_AUTO_DISCLOSE_FEATURES",
-            help=(
-                "Specifies that the agent will proactively/auto disclose protocols"
-                " and goal-codes features on connection creation [RFC0557]."
-            ),
-        )
-        parser.add_argument(
-            "--disclose-features-list",
-            type=str,
-            dest="disclose_features_list",
-            required=False,
-            env_var="ACAPY_DISCLOSE_FEATURES_LIST",
-            help="Load YAML file path that specifies which features to disclose.",
-        )
-
-    def get_settings(self, args: Namespace) -> dict:
-        """Extract discover features settings."""
-        settings = {}
-        if args.auto_disclose_features:
-            settings["auto_disclose_features"] = True
-        if args.disclose_features_list:
-            with open(args.disclose_features_list, "r") as stream:
-                provided_lists = yaml.safe_load(stream)
-                if "protocols" in provided_lists:
-                    settings["disclose_protocol_list"] = provided_lists.get("protocols")
-                if "goal-codes" in provided_lists:
-                    settings["disclose_goal_code_list"] = provided_lists.get(
-                        "goal-codes"
-                    )
-        return settings
-
-
 @group(CAT_PROVISION, CAT_START)
 class GeneralGroup(ArgumentGroup):
     """General settings."""
@@ -604,6 +556,23 @@ class GeneralGroup(ArgumentGroup):
             env_var="ACAPY_READ_ONLY_LEDGER",
             help="Sets ledger to read-only to prevent updates. Default: false.",
         )
+        parser.add_argument(
+            "--tails-server-base-url",
+            type=str,
+            metavar="<tails-server-base-url>",
+            env_var="ACAPY_TAILS_SERVER_BASE_URL",
+            help="Sets the base url of the tails server in use.",
+        )
+        parser.add_argument(
+            "--tails-server-upload-url",
+            type=str,
+            metavar="<tails-server-upload-url>",
+            env_var="ACAPY_TAILS_SERVER_UPLOAD_URL",
+            help=(
+                "Sets the base url of the tails server for upload, defaulting to the "
+                "tails server base url."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -640,67 +609,11 @@ class GeneralGroup(ArgumentGroup):
 
         if args.read_only_ledger:
             settings["read_only_ledger"] = True
-        return settings
-
-
-@group(CAT_START, CAT_PROVISION)
-class RevocationGroup(ArgumentGroup):
-    """Revocation settings."""
-
-    GROUP_NAME = "Revocation"
-
-    def add_arguments(self, parser: ArgumentParser):
-        """Add revocation arguments to the parser."""
-        parser.add_argument(
-            "--tails-server-base-url",
-            type=str,
-            metavar="<tails-server-base-url>",
-            env_var="ACAPY_TAILS_SERVER_BASE_URL",
-            help="Sets the base url of the tails server in use.",
-        )
-        parser.add_argument(
-            "--tails-server-upload-url",
-            type=str,
-            metavar="<tails-server-upload-url>",
-            env_var="ACAPY_TAILS_SERVER_UPLOAD_URL",
-            help=(
-                "Sets the base url of the tails server for upload, defaulting to the "
-                "tails server base url."
-            ),
-        )
-        parser.add_argument(
-            "--notify-revocation",
-            action="store_true",
-            env_var="ACAPY_NOTIFY_REVOCATION",
-            help=(
-                "Specifies that aca-py will notify credential recipients when "
-                "revoking a credential it issued."
-            ),
-        )
-        parser.add_argument(
-            "--monitor-revocation-notification",
-            action="store_true",
-            env_var="ACAPY_NOTIFY_REVOCATION",
-            help=(
-                "Specifies that aca-py will emit webhooks on notification of "
-                "revocation received."
-            ),
-        )
-
-    def get_settings(self, args: Namespace) -> dict:
-        """Extract revocation settings."""
-        settings = {}
         if args.tails_server_base_url:
             settings["tails_server_base_url"] = args.tails_server_base_url
             settings["tails_server_upload_url"] = args.tails_server_base_url
         if args.tails_server_upload_url:
             settings["tails_server_upload_url"] = args.tails_server_upload_url
-        if args.notify_revocation:
-            settings["revocation.notify"] = args.notify_revocation
-        if args.monitor_revocation_notification:
-            settings[
-                "revocation.monitor_notification"
-            ] = args.monitor_revocation_notification
         return settings
 
 
@@ -788,18 +701,6 @@ class LedgerGroup(ArgumentGroup):
                 "connect to the public (outside of corporate network) ledger pool"
             ),
         )
-        parser.add_argument(
-            "--genesis-transactions-list",
-            type=str,
-            required=False,
-            dest="genesis_transactions_list",
-            metavar="<genesis-transactions-list>",
-            env_var="ACAPY_GENESIS_TRANSACTIONS_LIST",
-            help=(
-                "Load YAML configuration for connecting to multiple"
-                " HyperLedger Indy ledgers."
-            ),
-        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
@@ -807,30 +708,17 @@ class LedgerGroup(ArgumentGroup):
         if args.no_ledger:
             settings["ledger.disabled"] = True
         else:
-            configured = False
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
-                configured = True
             elif args.genesis_file:
                 settings["ledger.genesis_file"] = args.genesis_file
-                configured = True
             elif args.genesis_transactions:
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
-                configured = True
-            if args.genesis_transactions_list:
-                with open(args.genesis_transactions_list, "r") as stream:
-                    txn_config_list = yaml.safe_load(stream)
-                    ledger_config_list = []
-                    for txn_config in txn_config_list:
-                        ledger_config_list.append(txn_config)
-                    settings["ledger.ledger_config_list"] = ledger_config_list
-                    configured = True
-            if not configured:
+            else:
                 raise ArgsParseError(
-                    "One of --genesis-url --genesis-file, --genesis-transactions "
-                    "or --genesis-transactions-list must be specified (unless "
-                    "--no-ledger is specified to explicitly configure aca-py to"
-                    " run with no ledger)."
+                    "One of --genesis-url --genesis-file or --genesis-transactions "
+                    "must be specified (unless --no-ledger is specified to "
+                    "explicitly configure aca-py to run with no ledger)."
                 )
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
@@ -1219,28 +1107,6 @@ class TransportGroup(ArgumentGroup):
                 "accumulated messages in message queue. Default value is 4."
             ),
         )
-        parser.add_argument(
-            "--ws-heartbeat-interval",
-            default=3,
-            type=BoundedInt(min=1),
-            env_var="ACAPY_WS_HEARTBEAT_INTERVAL",
-            metavar="<interval>",
-            help=(
-                "When using Websocket Inbound Transport, send WS pings every "
-                "<interval> seconds."
-            ),
-        )
-        parser.add_argument(
-            "--ws-timeout-interval",
-            default=15,
-            type=BoundedInt(min=1),
-            env_var="ACAPY_WS_TIMEOUT_INTERVAL",
-            metavar="<interval>",
-            help=(
-                "When using Websocket Inbound Transport, timeout the WS connection "
-                "after <interval> seconds without a heartbeat ping."
-            ),
-        )
 
     def get_settings(self, args: Namespace):
         """Extract transport settings."""
@@ -1273,26 +1139,29 @@ class TransportGroup(ArgumentGroup):
             settings["transport.max_message_size"] = args.max_message_size
         if args.max_outbound_retry:
             settings["transport.max_outbound_retry"] = args.max_outbound_retry
-        if args.ws_heartbeat_interval:
-            settings["transport.ws.heartbeat_interval"] = args.ws_heartbeat_interval
-        if args.ws_timeout_interval:
-            settings["transport.ws.timeout_interval"] = args.ws_timeout_interval
 
         return settings
 
 
-@group(CAT_START, CAT_PROVISION)
-class MediationInviteGroup(ArgumentGroup):
-    """
-    Mediation invitation settings.
+@group(CAT_START)
+class MediationGroup(ArgumentGroup):
+    """Mediation settings."""
 
-    These can be provided at provision- and start-time.
-    """
-
-    GROUP_NAME = "Mediation invitation"
+    GROUP_NAME = "Mediation"
 
     def add_arguments(self, parser: ArgumentParser):
-        """Add mediation invitation command line arguments to the parser."""
+        """Add mediation command line arguments to the parser."""
+        parser.add_argument(
+            "--open-mediation",
+            action="store_true",
+            env_var="ACAPY_MEDIATION_OPEN",
+            help=(
+                "Enables didcomm mediation. After establishing a connection, "
+                "if enabled, an agent may request message mediation, which will "
+                "allow the mediator to forward messages on behalf of the recipient. "
+                "See aries-rfc:0211."
+            ),
+        )
         parser.add_argument(
             "--mediator-invitation",
             type=str,
@@ -1313,39 +1182,6 @@ class MediationInviteGroup(ArgumentGroup):
                 "Default: false."
             ),
         )
-
-    def get_settings(self, args: Namespace):
-        """Extract mediation invitation settings."""
-        settings = {}
-        if args.mediator_invitation:
-            settings["mediation.invite"] = args.mediator_invitation
-        if args.mediator_connections_invite:
-            settings["mediation.connections_invite"] = True
-
-        return settings
-
-
-@group(CAT_START)
-class MediationGroup(ArgumentGroup):
-    """Mediation settings."""
-
-    GROUP_NAME = "Mediation"
-
-    def add_arguments(self, parser: ArgumentParser):
-        """Add mediation command line arguments to the parser."""
-        parser.add_argument(
-            "--open-mediation",
-            action="store_true",
-            env_var="ACAPY_MEDIATION_OPEN",
-            help=(
-                "Enables automatic granting of mediation. After establishing a "
-                "connection, if enabled, an agent may request message mediation "
-                "and be granted it automatically, which will allow the mediator "
-                "to forward messages on behalf of the recipient. See "
-                "aries-rfc:0211."
-            ),
-        )
-
         parser.add_argument(
             "--default-mediator-id",
             type=str,
@@ -1365,10 +1201,14 @@ class MediationGroup(ArgumentGroup):
         settings = {}
         if args.open_mediation:
             settings["mediation.open"] = True
+        if args.mediator_invitation:
+            settings["mediation.invite"] = args.mediator_invitation
         if args.default_mediator_id:
             settings["mediation.default_id"] = args.default_mediator_id
         if args.clear_default_mediator:
             settings["mediation.clear"] = True
+        if args.mediator_connections_invite:
+            settings["mediation.connections_invite"] = True
 
         if args.clear_default_mediator and args.default_mediator_id:
             raise ArgsParseError(
@@ -1378,7 +1218,7 @@ class MediationGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_PROVISION, CAT_START, CAT_UPGRADE)
+@group(CAT_PROVISION, CAT_START)
 class WalletGroup(ArgumentGroup):
     """Wallet settings."""
 
@@ -1642,265 +1482,4 @@ class MultitenantGroup(ArgumentGroup):
                         "wallet_name"
                     )
 
-        return settings
-
-
-@group(CAT_START)
-class EndorsementGroup(ArgumentGroup):
-    """Endorsement settings."""
-
-    GROUP_NAME = "Endorsement"
-
-    def add_arguments(self, parser: ArgumentParser):
-        """Add endorsement-specific command line arguments to the parser."""
-        parser.add_argument(
-            "--endorser-protocol-role",
-            type=str.lower,
-            choices=[ENDORSER_AUTHOR, ENDORSER_ENDORSER, ENDORSER_NONE],
-            metavar="<endorser-role>",
-            env_var="ACAPY_ENDORSER_ROLE",
-            help=(
-                "Specify the role ('author' or 'endorser') which this agent will "
-                "participate. Authors will request transaction endorement from an "
-                "Endorser. Endorsers will endorse transactions from Authors, and "
-                "may write their own  transactions to the ledger. If no role "
-                "(or 'none') is specified then the endorsement protocol will not "
-                " be used and this agent will write transactions to the ledger "
-                "directly."
-            ),
-        )
-        parser.add_argument(
-            "--endorser-invitation",
-            type=str,
-            metavar="<endorser-invitation>",
-            env_var="ACAPY_ENDORSER_INVITATION",
-            help=(
-                "For transaction Authors, specify the invitation used to "
-                "connect to the Endorser agent who will be endorsing transactions. "
-                "Note this is a multi-use invitation created by the Endorser agent."
-            ),
-        )
-        parser.add_argument(
-            "--endorser-public-did",
-            type=str,
-            metavar="<endorser-public-did>",
-            env_var="ACAPY_ENDORSER_PUBLIC_DID",
-            help=(
-                "For transaction Authors, specify the public DID of the Endorser "
-                "agent who will be endorsing transactions."
-            ),
-        )
-        parser.add_argument(
-            "--endorser-endorse-with-did",
-            type=str,
-            metavar="<endorser-endorse-with-did>",
-            env_var="ACAPY_ENDORSER_ENDORSE_WITH_DID",
-            help=(
-                "For transaction Endorsers, specify the  DID to use to endorse "
-                "transactions.  The default (if not specified) is to use the "
-                "Endorser's Public DID."
-            ),
-        )
-        parser.add_argument(
-            "--endorser-alias",
-            type=str,
-            metavar="<endorser-alias>",
-            env_var="ACAPY_ENDORSER_ALIAS",
-            help=(
-                "For transaction Authors, specify the alias of the Endorser "
-                "connection that will be used to endorse transactions."
-            ),
-        )
-        parser.add_argument(
-            "--auto-request-endorsement",
-            action="store_true",
-            env_var="ACAPY_AUTO_REQUEST_ENDORSEMENT",
-            help="For Authors, specify whether to automatically request "
-            "endorsement for all transactions. (If not specified, the controller "
-            " must invoke the request endorse operation for each transaction.)",
-        )
-        parser.add_argument(
-            "--auto-endorse-transactions",
-            action="store_true",
-            env_var="ACAPY_AUTO_ENDORSE_TRANSACTIONS",
-            help="For Endorsers, specify whether to automatically endorse any "
-            "received endorsement requests. (If not specified, the controller "
-            " must invoke the endorsement operation for each transaction.)",
-        )
-        parser.add_argument(
-            "--auto-write-transactions",
-            action="store_true",
-            env_var="ACAPY_AUTO_WRITE_TRANSACTIONS",
-            help="For Authors, specify whether to automatically write any "
-            "endorsed transactions. (If not specified, the controller "
-            " must invoke the write transaction operation for each transaction.)",
-        )
-        parser.add_argument(
-            "--auto-create-revocation-transactions",
-            action="store_true",
-            env_var="ACAPY_CREATE_REVOCATION_TRANSACTIONS",
-            help="For Authors, specify whether to automatically create"
-            " transactions for a cred def's revocation registry. (If not specified,"
-            " the controller must invoke the endpoints required to create the"
-            " revocation registry and assign to the cred def.)",
-        )
-        parser.add_argument(
-            "--auto-promote-author-did",
-            action="store_true",
-            env_var="ACAPY_PROMOTE-AUTHOR-DID",
-            help="For Authors, specify whether to automatically promote"
-            " a DID to the wallet public DID after writing to the ledger.",
-        )
-
-    def get_settings(self, args: Namespace):
-        """Extract endorser settings."""
-        settings = {}
-        settings["endorser.author"] = False
-        settings["endorser.endorser"] = False
-        settings["endorser.auto_endorse"] = False
-        settings["endorser.auto_write"] = False
-        settings["endorser.auto_create_rev_reg"] = False
-        settings["endorser.auto_promote_author_did"] = False
-
-        if args.endorser_protocol_role:
-            if args.endorser_protocol_role == ENDORSER_AUTHOR:
-                settings["endorser.author"] = True
-            elif args.endorser_protocol_role == ENDORSER_ENDORSER:
-                settings["endorser.endorser"] = True
-
-        if args.endorser_public_did:
-            if settings["endorser.author"]:
-                settings["endorser.endorser_public_did"] = args.endorser_public_did
-            else:
-                raise ArgsParseError(
-                    "Parameter --endorser-public-did should only be set for transaction "
-                    "Authors"
-                )
-
-        if args.endorser_endorse_with_did:
-            if settings["endorser.endorser"]:
-                settings[
-                    "endorser.endorser_endorse_with_did"
-                ] = args.endorser_endorse_with_did
-            else:
-                raise ArgsParseError(
-                    "Parameter --endorser-endorse-with-did should only be set for "
-                    "transaction Endorsers"
-                )
-
-        if args.endorser_alias:
-            if settings["endorser.author"]:
-                settings["endorser.endorser_alias"] = args.endorser_alias
-            else:
-                raise ArgsParseError(
-                    "Parameter --endorser-alias should only be set for transaction "
-                    "Authors"
-                )
-
-        if args.endorser_invitation:
-            if settings["endorser.author"]:
-                if not settings.get("endorser.endorser_public_did"):
-                    raise ArgsParseError(
-                        "Parameter --endorser-public-did must be provided if "
-                        "--endorser-invitation is set."
-                    )
-                if not settings.get("endorser.endorser_alias"):
-                    raise ArgsParseError(
-                        "Parameter --endorser-alias must be provided if "
-                        "--endorser-invitation is set."
-                    )
-                settings["endorser.endorser_invitation"] = args.endorser_invitation
-            else:
-                raise ArgsParseError(
-                    "Parameter --endorser-invitation should only be set for transaction "
-                    "Authors"
-                )
-
-        if args.auto_request_endorsement:
-            if settings["endorser.author"]:
-                settings["endorser.auto_request"] = True
-            else:
-                raise ArgsParseError(
-                    "Parameter --auto-request-endorsement should only be set for "
-                    "transaction Authors"
-                )
-
-        if args.auto_endorse_transactions:
-            if settings["endorser.endorser"]:
-                settings["endorser.auto_endorse"] = True
-            else:
-                raise ArgsParseError(
-                    "Parameter --auto-endorser-transactions should only be set for "
-                    "transaction Endorsers"
-                )
-
-        if args.auto_write_transactions:
-            if settings["endorser.author"]:
-                settings["endorser.auto_write"] = True
-            else:
-                raise ArgsParseError(
-                    "Parameter --auto-write-transactions should only be set for "
-                    "transaction Authors"
-                )
-
-        if args.auto_create_revocation_transactions:
-            if settings["endorser.author"]:
-                settings["endorser.auto_create_rev_reg"] = True
-            else:
-                raise ArgsParseError(
-                    "Parameter --auto-create-revocation-transactions should only be set "
-                    "for transaction Authors"
-                )
-
-        if args.auto_promote_author_did:
-            if settings["endorser.author"]:
-                settings["endorser.auto_promote_author_did"] = True
-            else:
-                raise ArgsParseError(
-                    "Parameter --auto-promote-author-did should only be set "
-                    "for transaction Authors"
-                )
-
-        return settings
-
-
-@group(CAT_UPGRADE)
-class UpgradeGroup(ArgumentGroup):
-    """ACA-Py Upgrade process settings."""
-
-    GROUP_NAME = "Upgrade"
-
-    def add_arguments(self, parser: ArgumentParser):
-        """Add ACA-Py upgrade process specific arguments to the parser."""
-
-        parser.add_argument(
-            "--upgrade-config-path",
-            type=str,
-            dest="upgrade_config_path",
-            required=False,
-            env_var="ACAPY_UPGRADE_CONFIG_PATH",
-            help=(
-                "YAML file path that specifies config to handle upgrade changes."
-                "Default: ./aries_cloudagent/commands/default_version_upgrade_config.yml"
-            ),
-        )
-
-        parser.add_argument(
-            "--from-version",
-            type=str,
-            env_var="ACAPY_UPGRADE_FROM_VERSION",
-            help=(
-                "Specify which ACA-Py version to upgrade from, "
-                "this version should be supported/included in "
-                "the --upgrade-config file."
-            ),
-        )
-
-    def get_settings(self, args: Namespace) -> dict:
-        """Extract ACA-Py upgrade process settings."""
-        settings = {}
-        if args.upgrade_config_path:
-            settings["upgrade.config_path"] = args.upgrade_config_path
-        if args.from_version:
-            settings["upgrade.from_version"] = args.from_version
         return settings

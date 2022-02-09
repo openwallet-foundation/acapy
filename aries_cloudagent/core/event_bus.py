@@ -2,6 +2,7 @@
 
 import asyncio
 from contextlib import contextmanager
+from itertools import chain
 import logging
 from typing import (
     Any,
@@ -10,13 +11,10 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Match,
-    NamedTuple,
     Optional,
     Pattern,
     TYPE_CHECKING,
 )
-from functools import partial
 
 if TYPE_CHECKING:  # To avoid circular import error
     from .profile import Profile
@@ -52,31 +50,6 @@ class Event:
         """Return debug representation."""
         return "<Event topic={}, payload={}>".format(self._topic, self._payload)
 
-    def with_metadata(self, metadata: "EventMetadata") -> "EventWithMetadata":
-        """Annotate event with metadata and return EventWithMetadata object."""
-        return EventWithMetadata(self.topic, self.payload, metadata)
-
-
-class EventMetadata(NamedTuple):
-    """Metadata passed alongside events to add context."""
-
-    pattern: Pattern
-    match: Match[str]
-
-
-class EventWithMetadata(Event):
-    """Event with metadata passed alongside events to add context."""
-
-    def __init__(self, topic: str, payload: Any, metadata: EventMetadata):
-        """Initialize event metadata."""
-        super().__init__(topic, payload)
-        self._metadata = metadata
-
-    @property
-    def metadata(self) -> EventMetadata:
-        """Return metadata."""
-        return self._metadata
-
 
 class EventBus:
     """A simple event bus implementation."""
@@ -98,26 +71,15 @@ class EventBus:
         # TODO log errors but otherwise ignore?
 
         LOGGER.debug("Notifying subscribers: %s", event)
+        matched = [
+            processor
+            for pattern, processor in self.topic_patterns_to_subscribers.items()
+            if pattern.match(event.topic)
+        ]
 
-        partials = []
-        for pattern, subscribers in self.topic_patterns_to_subscribers.items():
-            match = pattern.match(event.topic)
-
-            if not match:
-                continue
-
-            for subscriber in subscribers:
-                partials.append(
-                    partial(
-                        subscriber,
-                        profile,
-                        event.with_metadata(EventMetadata(pattern, match)),
-                    )
-                )
-
-        for processor in partials:
+        for processor in chain(*matched):
             try:
-                await processor()
+                await processor(profile, event)
             except Exception:
                 LOGGER.exception("Error occurred while processing event")
 

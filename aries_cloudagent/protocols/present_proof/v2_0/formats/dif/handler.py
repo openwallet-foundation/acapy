@@ -6,7 +6,6 @@ from marshmallow import RAISE
 from typing import Mapping, Tuple, Sequence
 from uuid import uuid4
 
-from ......messaging.base_handler import BaseResponder
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.error import StorageNotFoundError
 from ......storage.vc_holder.base import VCHolder
@@ -22,17 +21,14 @@ from ......vc.vc_ld.verify import verify_presentation
 from ......wallet.base import BaseWallet
 from ......wallet.key_type import KeyType
 
-from .....problem_report.v1_0.message import ProblemReport
-
-from ....dif.pres_exch import PresentationDefinition, SchemaInputDescriptor
-from ....dif.pres_exch_handler import DIFPresExchHandler, DIFPresExchError
+from ....dif.pres_exch import PresentationDefinition
+from ....dif.pres_exch_handler import DIFPresExchHandler
 from ....dif.pres_proposal_schema import DIFProofProposalSchema
 from ....dif.pres_request_schema import (
     DIFProofRequestSchema,
     DIFPresSpecSchema,
 )
 from ....dif.pres_schema import DIFProofSchema
-from ....v2_0.messages.pres_problem_report import ProblemReportReason
 
 from ...message_types import (
     ATTACHMENT_FORMAT,
@@ -168,7 +164,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         )
         pres_definition = None
         limit_record_ids = None
-        reveal_doc_frame = None
         challenge = None
         domain = None
         if request_data != {} and DIFPresFormatHandler.format.api in request_data:
@@ -178,11 +173,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             pres_definition = pres_spec_payload.get("presentation_definition")
             issuer_id = pres_spec_payload.get("issuer_id")
             limit_record_ids = pres_spec_payload.get("record_ids")
-            reveal_doc_frame = pres_spec_payload.get("reveal_doc")
         if not pres_definition:
             if "options" in proof_request:
-                challenge = proof_request["options"].get("challenge")
-                domain = proof_request["options"].get("domain")
+                challenge = proof_request.get("options").get("challenge")
+                domain = proof_request.get("options").get("domain")
             pres_definition = PresentationDefinition.deserialize(
                 proof_request.get("presentation_definition")
             )
@@ -203,27 +197,16 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     input_descriptor.constraint.limit_disclosure == "required"
                 )
                 uri_list = []
-                one_of_uri_groups = []
-                if input_descriptor.schemas:
-                    if input_descriptor.schemas.oneof_filter:
-                        one_of_uri_groups = (
-                            await self.retrieve_uri_list_from_schema_filter(
-                                input_descriptor.schemas.uri_groups
-                            )
-                        )
+                for schema in input_descriptor.schemas:
+                    uri = schema.uri
+                    if schema.required is None:
+                        required = True
                     else:
-                        schema_uris = input_descriptor.schemas.uri_groups[0]
-                        for schema_uri in schema_uris:
-                            if schema_uri.required is None:
-                                required = True
-                            else:
-                                required = schema_uri.required
-                            if required:
-                                uri_list.append(schema_uri.uri)
+                        required = schema.required
+                    if required:
+                        uri_list.append(uri)
                 if len(uri_list) == 0:
                     uri_list = None
-                if len(one_of_uri_groups) == 0:
-                    one_of_uri_groups = None
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                     dif_handler_proof_type = BbsBlsSignature2020.signature_type
@@ -302,31 +285,13 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                             "BbsBlsSignature2020 and Ed25519Signature2018"
                             " signature types are supported"
                         )
-                if one_of_uri_groups:
-                    records = []
-                    cred_group_record_ids = set()
-                    for uri_group in one_of_uri_groups:
-                        search = holder.search_credentials(
-                            proof_types=proof_type, pd_uri_list=uri_group
-                        )
-                        max_results = 1000
-                        cred_group = await search.fetch(max_results)
-                        (
-                            cred_group_vcrecord_list,
-                            cred_group_vcrecord_ids_set,
-                        ) = await self.process_vcrecords_return_list(
-                            cred_group, cred_group_record_ids
-                        )
-                        cred_group_record_ids = cred_group_vcrecord_ids_set
-                        records = records + cred_group_vcrecord_list
-                else:
-                    search = holder.search_credentials(
-                        proof_types=proof_type, pd_uri_list=uri_list
-                    )
-                    # Defaults to page_size but would like to include all
-                    # For now, setting to 1000
-                    max_results = 1000
-                    records = await search.fetch(max_results)
+                search = holder.search_credentials(
+                    proof_types=proof_type, pd_uri_list=uri_list
+                )
+                # Defaults to page_size but would like to include all
+                # For now, setting to 1000
+                max_results = 1000
+                records = await search.fetch(max_results)
                 # Avoiding addition of duplicate records
                 (
                     vcrecord_list,
@@ -336,56 +301,19 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 credentials_list = credentials_list + vcrecord_list
         except StorageNotFoundError as err:
             raise V20PresFormatHandlerError(err)
-        except TypeError as err:
-            LOGGER.error(str(err))
-            responder = self._profile.inject_or(BaseResponder)
-            if responder:
-                report = ProblemReport(
-                    description={
-                        "en": (
-                            "Presentation request not properly formatted,"
-                            " TypeError raised on Holder agent."
-                        ),
-                        "code": ProblemReportReason.ABANDONED.value,
-                    }
-                )
-                if pres_ex_record.thread_id:
-                    report.assign_thread_id(pres_ex_record.thread_id)
-                await responder.send_reply(
-                    report, connection_id=pres_ex_record.connection_id
-                )
-                return
 
         dif_handler = DIFPresExchHandler(
-            self._profile,
-            pres_signing_did=issuer_id,
-            proof_type=dif_handler_proof_type,
-            reveal_doc=reveal_doc_frame,
+            self._profile, pres_signing_did=issuer_id, proof_type=dif_handler_proof_type
         )
-        try:
-            pres = await dif_handler.create_vp(
-                challenge=challenge,
-                domain=domain,
-                pd=pres_definition,
-                credentials=credentials_list,
-                records_filter=limit_record_ids,
-            )
-            return self.get_format_data(PRES_20, pres)
-        except DIFPresExchError as err:
-            LOGGER.error(str(err))
-            responder = self._profile.inject_or(BaseResponder)
-            if responder:
-                report = ProblemReport(
-                    description={
-                        "en": str(err),
-                        "code": ProblemReportReason.ABANDONED.value,
-                    }
-                )
-                if pres_ex_record.thread_id:
-                    report.assign_thread_id(pres_ex_record.thread_id)
-                await responder.send_reply(
-                    report, connection_id=pres_ex_record.connection_id
-                )
+
+        pres = await dif_handler.create_vp(
+            challenge=challenge,
+            domain=domain,
+            pd=pres_definition,
+            credentials=credentials_list,
+            records_filter=limit_record_ids,
+        )
+        return self.get_format_data(PRES_20, pres)
 
     async def process_vcrecords_return_list(
         self, vc_records: Sequence[VCRecord], record_ids: set
@@ -398,20 +326,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 record_ids.add(vc_record.record_id)
         return (to_add, record_ids)
 
-    async def retrieve_uri_list_from_schema_filter(
-        self, schema_uri_groups: Sequence[Sequence[SchemaInputDescriptor]]
-    ) -> Sequence[str]:
-        """Retrieve list of schema uri from uri_group."""
-        group_schema_uri_list = []
-        for schema_group in schema_uri_groups:
-            uri_list = []
-            for schema in schema_group:
-                uri_list.append(schema.uri)
-            if len(uri_list) > 0:
-                group_schema_uri_list.append(uri_list)
-        return group_schema_uri_list
-
-    async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):
+    async def receive_pres(
+        self, message: V20Pres, pres_ex_record: V20PresExRecord
+    ) -> None:
         """Receive a presentation, from message in context on manager creation."""
         dif_handler = DIFPresExchHandler(self._profile)
         dif_proof = message.attachment(DIFPresFormatHandler.format)
@@ -421,25 +338,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         pres_definition = PresentationDefinition.deserialize(
             proof_request.get("presentation_definition")
         )
-        try:
-            await dif_handler.verify_received_pres(pd=pres_definition, pres=dif_proof)
-            return True
-        except DIFPresExchError as err:
-            LOGGER.error(str(err))
-            responder = self._profile.inject_or(BaseResponder)
-            if responder:
-                report = ProblemReport(
-                    description={
-                        "en": str(err),
-                        "code": ProblemReportReason.ABANDONED.value,
-                    }
-                )
-                if pres_ex_record.thread_id:
-                    report.assign_thread_id(pres_ex_record.thread_id)
-                await responder.send_reply(
-                    report, connection_id=pres_ex_record.connection_id
-                )
-                return False
+        await dif_handler.verify_received_pres(pd=pres_definition, pres=dif_proof)
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
         """
@@ -460,7 +359,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 DIFPresFormatHandler.format
             )
             if "options" in pres_request:
-                challenge = pres_request["options"].get("challenge")
+                challenge = pres_request.get("options").get("challenge")
             else:
                 raise V20PresFormatHandlerError(
                     "No options [challenge] set for the presentation request"

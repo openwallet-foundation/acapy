@@ -1,4 +1,4 @@
-FROM faber-alice-demo
+FROM fly2plan-ssi-demo
 
 # Install bdd dependencies
 RUN pip3 install --no-cache-dir -r demo/requirements.behave.txt

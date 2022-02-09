@@ -54,7 +54,6 @@ class V10PresentationExchange(BaseExchangeRecord):
     STATE_PRESENTATION_RECEIVED = "presentation_received"
     STATE_VERIFIED = "verified"
     STATE_PRESENTATION_ACKED = "presentation_acked"
-    STATE_ABANDONED = "abandoned"
 
     def __init__(
         self,
@@ -159,7 +158,6 @@ class V10PresentationExchange(BaseExchangeRecord):
         self,
         session: ProfileSession,
         *,
-        state: str = None,
         reason: str = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
@@ -174,10 +172,10 @@ class V10PresentationExchange(BaseExchangeRecord):
             override: Override configured logging regimen, print to stderr instead
         """
 
-        if self._last_state == state:  # already done
+        if self._last_state is None:  # already done
             return
 
-        self.state = state or V10PresentationExchange.STATE_ABANDONED
+        self.state = None
         if reason:
             self.error_msg = reason
 

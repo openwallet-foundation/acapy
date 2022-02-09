@@ -1,23 +1,23 @@
 from .ld_proofs import sign, verify, derive
 from .proof_set import ProofSet
 from .purposes import (
-    _ProofPurpose as ProofPurpose,
-    _ControllerProofPurpose as ControllerProofPurpose,
-    _AuthenticationProofPurpose as AuthenticationProofPurpose,
-    _CredentialIssuancePurpose as CredentialIssuancePurpose,
-    _AssertionProofPurpose as AssertionProofPurpose,
+    ProofPurpose,
+    ControllerProofPurpose,
+    AuthenticationProofPurpose,
+    CredentialIssuancePurpose,
+    AssertionProofPurpose,
 )
 from .suites import (
-    _LinkedDataProof as LinkedDataProof,
-    _LinkedDataSignature as LinkedDataSignature,
-    _JwsLinkedDataSignature as JwsLinkedDataSignature,
-    _Ed25519Signature2018 as Ed25519Signature2018,
-    _BbsBlsSignature2020 as BbsBlsSignature2020,
-    _BbsBlsSignatureProof2020 as BbsBlsSignatureProof2020,
+    LinkedDataProof,
+    LinkedDataSignature,
+    JwsLinkedDataSignature,
+    Ed25519Signature2018,
+    BbsBlsSignature2020,
+    BbsBlsSignatureProof2020,
 )
 from .crypto import (
-    _KeyPair as KeyPair,
-    _WalletKeyPair as WalletKeyPair,
+    KeyPair,
+    WalletKeyPair,
 )
 from .document_loader import (
     DocumentLoader,

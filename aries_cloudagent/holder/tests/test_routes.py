@@ -3,7 +3,6 @@ import json
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.injection_context import InjectionContext
-from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet
 
@@ -36,9 +35,7 @@ VC_RECORD = VCRecord(
 
 class TestHolderRoutes(AsyncTestCase):
     def setUp(self):
-        self.profile = InMemoryProfile.test_profile()
-        self.context = self.profile.context
-        setattr(self.context, "profile", self.profile)
+        self.context = AdminRequestContext.test_context()
 
         self.request_dict = {"context": self.context}
         self.request = async_mock.MagicMock(
@@ -50,7 +47,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_get(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 get_credential=async_mock.CoroutineMock(
@@ -68,7 +65,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_get_not_found(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 get_credential=async_mock.CoroutineMock(
@@ -82,10 +79,10 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_revoked(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             BaseLedger, async_mock.create_autospec(BaseLedger)
         )
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 credential_revoked=async_mock.CoroutineMock(return_value=False)
@@ -107,10 +104,10 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_not_found(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             BaseLedger, async_mock.create_autospec(BaseLedger)
         )
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 credential_revoked=async_mock.CoroutineMock(
@@ -125,10 +122,10 @@ class TestHolderRoutes(AsyncTestCase):
     async def test_credentials_x_ledger(self):
         self.request.match_info = {"credential_id": "dummy"}
         ledger = async_mock.create_autospec(BaseLedger)
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             BaseLedger, async_mock.create_autospec(BaseLedger)
         )
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 credential_revoked=async_mock.CoroutineMock(
@@ -142,7 +139,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_attribute_mime_types_get(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 get_mime_type=async_mock.CoroutineMock(
@@ -163,7 +160,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_remove(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 delete_credential=async_mock.CoroutineMock(return_value=None)
@@ -179,7 +176,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_remove_not_found(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 delete_credential=async_mock.CoroutineMock(
@@ -192,7 +189,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_list(self):
         self.request.query = {"start": "0", "count": "10"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 get_credentials=async_mock.CoroutineMock(
@@ -210,7 +207,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_credentials_list_x_holder(self):
         self.request.query = {"start": "0", "count": "10"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 get_credentials=async_mock.CoroutineMock(
@@ -224,7 +221,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_w3c_cred_get(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             VCHolder,
             async_mock.MagicMock(
                 retrieve_credential_by_id=async_mock.CoroutineMock(
@@ -241,7 +238,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_w3c_cred_get_not_found_x(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             VCHolder,
             async_mock.MagicMock(
                 retrieve_credential_by_id=async_mock.CoroutineMock(
@@ -255,7 +252,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_w3c_cred_get_storage_x(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             VCHolder,
             async_mock.MagicMock(
                 retrieve_credential_by_id=async_mock.CoroutineMock(
@@ -269,7 +266,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_w3c_cred_remove(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             VCHolder,
             async_mock.MagicMock(
                 retrieve_credential_by_id=async_mock.CoroutineMock(
@@ -288,7 +285,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_w3c_cred_remove_not_found_x(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             VCHolder,
             async_mock.MagicMock(
                 retrieve_credential_by_id=async_mock.CoroutineMock(
@@ -302,7 +299,7 @@ class TestHolderRoutes(AsyncTestCase):
 
     async def test_w3c_cred_remove_storage_x(self):
         self.request.match_info = {"credential_id": "dummy"}
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             VCHolder,
             async_mock.MagicMock(
                 retrieve_credential_by_id=async_mock.CoroutineMock(
@@ -329,7 +326,7 @@ class TestHolderRoutes(AsyncTestCase):
                 "max_results": "1",
             }
         )
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             VCHolder,
             async_mock.MagicMock(
                 search_credentials=async_mock.MagicMock(
@@ -358,7 +355,7 @@ class TestHolderRoutes(AsyncTestCase):
                 "max_results": "1",
             }
         )
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             VCHolder,
             async_mock.MagicMock(
                 search_credentials=async_mock.MagicMock(
@@ -386,7 +383,7 @@ class TestHolderRoutes(AsyncTestCase):
                 "max_results": "1",
             }
         )
-        self.profile.context.injector.bind_instance(
+        self.context.injector.bind_instance(
             VCHolder,
             async_mock.MagicMock(
                 search_credentials=async_mock.MagicMock(

@@ -13,7 +13,6 @@ def available_commands():
         {"name": "help", "summary": "Print available commands"},
         {"name": "provision", "summary": "Provision an agent"},
         {"name": "start", "summary": "Start a new agent process"},
-        {"name": "upgrade", "summary": "Start agent upgrade process"},
     ]
 
 

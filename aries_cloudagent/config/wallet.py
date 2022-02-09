@@ -4,10 +4,7 @@ import logging
 from typing import Tuple
 
 from ..core.error import ProfileNotFoundError
-from ..core.profile import Profile, ProfileManager, ProfileSession
-from ..storage.base import BaseStorage
-from ..storage.error import StorageNotFoundError
-from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
+from ..core.profile import Profile, ProfileManager
 from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
 from ..wallet.crypto import seed_to_did
@@ -138,19 +135,3 @@ async def wallet_config(
     await txn.commit()
 
     return (profile, public_did_info)
-
-
-async def add_or_update_version_to_storage(session: ProfileSession):
-    """Add or update ACA-Py version StorageRecord."""
-    storage: BaseStorage = session.inject(BaseStorage)
-    try:
-        record = await storage.find_record(RECORD_TYPE_ACAPY_VERSION, {})
-        await storage.update_record(record, f"v{__version__}", {})
-    except StorageNotFoundError:
-        raise ConfigError(
-            (
-                "No wallet storage version found, Run aca-py "
-                "upgrade command with --from-version argument "
-                "to fix this."
-            )
-        )

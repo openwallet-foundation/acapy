@@ -42,13 +42,12 @@ class V20PresRequestHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for presentation request")
 
-        profile = context.profile
-        pres_manager = V20PresManager(profile)
+        pres_manager = V20PresManager(context.profile)
 
         # Get pres ex record (holder initiated via proposal)
         # or create it (verifier sent request first)
         try:
-            async with profile.session() as session:
+            async with context.session() as session:
                 pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
                     session,
                     {"thread_id": context.message._thread_id},
@@ -102,7 +101,7 @@ class V20PresRequestHandler(BaseHandler):
             ) as err:
                 self._logger.exception(err)
                 if pres_ex_record:
-                    async with profile.session() as session:
+                    async with context.session() as session:
                         await pres_ex_record.save_error_state(
                             session,
                             reason=err.roll_up,  # us: be specific

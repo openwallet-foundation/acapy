@@ -1,7 +1,5 @@
 """Represents an OOB connection reuse problem report message."""
 
-import logging
-
 from enum import Enum
 
 from marshmallow import (
@@ -19,8 +17,6 @@ HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
     ".problem_report_handler.OOBProblemReportMessageHandler"
 )
-
-LOGGER = logging.getLogger(__name__)
 
 
 class ProblemReportReason(Enum):
@@ -67,15 +63,10 @@ class OOBProblemReportSchema(ProblemReportSchema):
     def validate_fields(self, data, **kwargs):
         """Validate schema fields."""
 
-        if not data.get("description", {}).get("code", ""):
-            raise ValidationError("Value for description.code must be present")
-        elif data.get("description", {}).get("code", "") not in [
+        if data.get("description", {}).get("code", "") not in [
             prr.value for prr in ProblemReportReason
         ]:
-            locales = list(data.get("description").keys())
-            locales.remove("code")
-            LOGGER.warning(
-                "Unexpected error code received.\n"
-                f"Code: {data.get('description').get('code')}, "
-                f"Description: {data.get('description').get(locales[0])}"
+            raise ValidationError(
+                "Value for description.code must be one of "
+                f"{[prr.value for prr in ProblemReportReason]}"
             )

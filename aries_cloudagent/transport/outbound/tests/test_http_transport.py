@@ -19,7 +19,6 @@ class TestHttpTransport(AioHTTPTestCase):
         self.profile = InMemoryProfile.test_profile()
         self.message_results = []
         self.headers = {}
-        await super().setUpAsync()
 
     async def receive_message(self, request):
         payload = await request.json()
@@ -35,6 +34,7 @@ class TestHttpTransport(AioHTTPTestCase):
         app.add_routes([web.post("/", self.receive_message)])
         return app
 
+    @unittest_run_loop
     async def test_handle_message_no_api_key(self):
         server_addr = f"http://localhost:{self.server.port}"
 
@@ -49,6 +49,7 @@ class TestHttpTransport(AioHTTPTestCase):
         assert self.headers.get("x-api-key") is None
         assert self.headers.get("content-type") == "application/json"
 
+    @unittest_run_loop
     async def test_handle_message_api_key(self):
         server_addr = f"http://localhost:{self.server.port}"
         api_key = "test1234"
@@ -67,6 +68,7 @@ class TestHttpTransport(AioHTTPTestCase):
         assert self.message_results == [{}]
         assert self.headers.get("x-api-key") == api_key
 
+    @unittest_run_loop
     async def test_handle_message_packed_compat_mime_type(self):
         server_addr = f"http://localhost:{self.server.port}"
 
@@ -82,6 +84,7 @@ class TestHttpTransport(AioHTTPTestCase):
         assert self.message_results == [{}]
         assert self.headers.get("content-type") == "application/ssi-agent-wire"
 
+    @unittest_run_loop
     async def test_handle_message_packed_standard_mime_type(self):
         server_addr = f"http://localhost:{self.server.port}"
 
@@ -98,6 +101,7 @@ class TestHttpTransport(AioHTTPTestCase):
         assert self.message_results == [{}]
         assert self.headers.get("content-type") == "application/didcomm-envelope-enc"
 
+    @unittest_run_loop
     async def test_stats(self):
         server_addr = f"http://localhost:{self.server.port}"
 
@@ -118,6 +122,7 @@ class TestHttpTransport(AioHTTPTestCase):
             "outbound-http:POST": 1,
         }
 
+    @unittest_run_loop
     async def test_transport_coverage(self):
         transport = HttpTransport()
         assert transport.wire_format is None

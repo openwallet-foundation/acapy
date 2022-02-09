@@ -161,7 +161,9 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         )
         return self.get_format_data(PRES_20, indy_proof)
 
-    async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):
+    async def receive_pres(
+        self, message: V20Pres, pres_ex_record: V20PresExRecord
+    ) -> None:
         """Receive a presentation and check for presented values vs. proposal request."""
 
         def _check_proof_vs_proposal():

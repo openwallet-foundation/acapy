@@ -8,7 +8,7 @@ from .constants import SECURITY_CONTEXT_URL
 from .document_loader import DocumentLoaderMethod
 from .error import LinkedDataProofException
 from .purposes.proof_purpose import ProofPurpose
-from .suites import _LinkedDataProof as LinkedDataProof
+from .suites import LinkedDataProof
 from .validation_result import DocumentVerificationResult, ProofResult
 
 

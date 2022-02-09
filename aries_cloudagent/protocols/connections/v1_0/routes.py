@@ -331,7 +331,6 @@ async def connections_list(request: web.BaseRequest):
         "my_did",
         "their_did",
         "request_id",
-        "invitation_key",
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
@@ -350,12 +349,11 @@ async def connections_list(request: web.BaseRequest):
     if request.query.get("connection_protocol"):
         post_filter["connection_protocol"] = request.query["connection_protocol"]
 
-    profile = context.profile
+    session = await context.session()
     try:
-        async with profile.session() as session:
-            records = await ConnRecord.query(
-                session, tag_filter, post_filter_positive=post_filter, alt=True
-            )
+        records = await ConnRecord.query(
+            session, tag_filter, post_filter_positive=post_filter, alt=True
+        )
         results = [record.serialize() for record in records]
         results.sort(key=connection_sort_key)
     except (StorageError, BaseModelError) as err:
@@ -380,11 +378,10 @@ async def connections_retrieve(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
 
-    profile = context.profile
     try:
-        async with profile.session() as session:
-            record = await ConnRecord.retrieve_by_id(session, connection_id)
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
         result = record.serialize()
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -410,9 +407,9 @@ async def connections_endpoints(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
 
-    profile = context.profile
-    connection_mgr = ConnectionManager(profile)
+    connection_mgr = ConnectionManager(session)
     try:
         endpoints = await connection_mgr.get_endpoints(connection_id)
     except StorageNotFoundError as err:
@@ -432,15 +429,14 @@ async def connections_metadata(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
     key = request.query.get("key", None)
+    session = await context.session()
 
-    profile = context.profile
     try:
-        async with profile.session() as session:
-            record = await ConnRecord.retrieve_by_id(session, connection_id)
-            if key:
-                result = await record.metadata_get(session, key)
-            else:
-                result = await record.metadata_get_all(session)
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
+        if key:
+            result = await record.metadata_get(session, key)
+        else:
+            result = await record.metadata_get_all(session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
@@ -458,14 +454,13 @@ async def connections_metadata_set(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
     body = await request.json() if request.body_exists else {}
+    session = await context.session()
 
-    profile = context.profile
     try:
-        async with profile.session() as session:
-            record = await ConnRecord.retrieve_by_id(session, connection_id)
-            for key, value in body.get("metadata", {}).items():
-                await record.metadata_set(session, key, value)
-            result = await record.metadata_get_all(session)
+        record = await ConnRecord.retrieve_by_id(session, connection_id)
+        for key, value in body.get("metadata", {}).items():
+            await record.metadata_set(session, key, value)
+        result = await record.metadata_get_all(session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except BaseModelError as err:
@@ -509,10 +504,10 @@ async def connections_create_invitation(request: web.BaseRequest):
         raise web.HTTPForbidden(
             reason="Configuration does not include public invitations"
         )
-    profile = context.profile
-    base_url = profile.settings.get("invite_base_url")
+    session = await context.session()
+    base_url = session.settings.get("invite_base_url")
 
-    connection_mgr = ConnectionManager(profile)
+    connection_mgr = ConnectionManager(session)
     try:
         (connection, invitation) = await connection_mgr.create_invitation(
             my_label=my_label,
@@ -564,8 +559,8 @@ async def connections_receive_invitation(request: web.BaseRequest):
         raise web.HTTPForbidden(
             reason="Configuration does not allow receipt of invitations"
         )
-    profile = context.profile
-    connection_mgr = ConnectionManager(profile)
+    session = await context.session()
+    connection_mgr = ConnectionManager(session)
     invitation_json = await request.json()
 
     try:
@@ -604,12 +599,11 @@ async def connections_accept_invitation(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
-    profile = context.profile
+    session = await context.session()
 
     try:
-        async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
-        connection_mgr = ConnectionManager(profile)
+        connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        connection_mgr = ConnectionManager(session)
         my_label = request.query.get("my_label")
         my_endpoint = request.query.get("my_endpoint")
         mediation_id = request.query.get("mediation_id")
@@ -655,12 +649,11 @@ async def connections_accept_request(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
+    session = await context.session()
 
-    profile = context.profile
     try:
-        async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
-        connection_mgr = ConnectionManager(profile)
+        connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        connection_mgr = ConnectionManager(session)
         my_endpoint = request.query.get("my_endpoint") or None
         response = await connection_mgr.create_response(connection, my_endpoint)
         result = connection.serialize()
@@ -689,12 +682,11 @@ async def connections_establish_inbound(request: web.BaseRequest):
     connection_id = request.match_info["conn_id"]
     outbound_handler = request["outbound_message_router"]
     inbound_connection_id = request.match_info["ref_id"]
+    session = await context.session()
 
-    profile = context.profile
     try:
-        async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
-        connection_mgr = ConnectionManager(profile)
+        connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        connection_mgr = ConnectionManager(session)
         await connection_mgr.establish_inbound(
             connection, inbound_connection_id, outbound_handler
         )
@@ -718,12 +710,11 @@ async def connections_remove(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
-    profile = context.profile
+    session = await context.session()
 
     try:
-        async with profile.session() as session:
-            connection = await ConnRecord.retrieve_by_id(session, connection_id)
-            await connection.delete_record(session)
+        connection = await ConnRecord.retrieve_by_id(session, connection_id)
+        await connection.delete_record(session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:
@@ -748,9 +739,9 @@ async def connections_create_static(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
+    session = await context.session()
 
-    profile = context.profile
-    connection_mgr = ConnectionManager(profile)
+    connection_mgr = ConnectionManager(session)
     try:
         (
             my_info,

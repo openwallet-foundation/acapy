@@ -7,6 +7,7 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.verifier import IndyVerifier
+from ....ledger.base import BaseLedger
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
@@ -136,7 +137,7 @@ class PresentationManager:
             name=name,
             version=version,
             nonce=nonce,
-            profile=self._profile,
+            ledger=self._profile.inject(BaseLedger),
         )
         presentation_request_message = PresentationRequest(
             comment=comment,
@@ -346,9 +347,7 @@ class PresentationManager:
                     name=name,
                     value=value,
                 ):
-                    presentation_exchange_record.state = (
-                        V10PresentationExchange.STATE_ABANDONED
-                    )
+                    presentation_exchange_record.state = None
                     async with self._profile.session() as session:
                         await presentation_exchange_record.save(
                             session,
@@ -399,9 +398,7 @@ class PresentationManager:
         verifier = self._profile.inject(IndyVerifier)
         presentation_exchange_record.verified = json.dumps(  # tag: needs string value
             await verifier.verify_presentation(
-                dict(
-                    indy_proof_request
-                ),  # copy to avoid changing the proof req in the stored pres exch
+                indy_proof_request,
                 indy_proof,
                 schemas,
                 cred_defs,
@@ -499,7 +496,7 @@ class PresentationManager:
                 )
             )
 
-            pres_ex_record.state = V10PresentationExchange.STATE_ABANDONED
+            pres_ex_record.state = None
             code = message.description.get("code", ProblemReportReason.ABANDONED.value)
             pres_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await pres_ex_record.save(session, reason="received problem report")

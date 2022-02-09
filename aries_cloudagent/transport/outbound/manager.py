@@ -9,6 +9,7 @@ from typing import Callable, Type, Union
 from urllib.parse import urlparse
 
 from ...connections.models.connection_target import ConnectionTarget
+from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ...utils.classloader import ClassLoader, ModuleLoadError, ClassNotFoundError
 from ...utils.stats import Collector
@@ -67,16 +68,18 @@ class OutboundTransportManager:
 
     MAX_RETRY_COUNT = 4
 
-    def __init__(self, profile: Profile, handle_not_delivered: Callable = None):
+    def __init__(
+        self, context: InjectionContext, handle_not_delivered: Callable = None
+    ):
         """
         Initialize a `OutboundTransportManager` instance.
 
         Args:
-            root_profile: The application root profile
+            context: The application context
             handle_not_delivered: An optional handler for undelivered messages
 
         """
-        self.root_profile = profile
+        self.context = context
         self.loop = asyncio.get_event_loop()
         self.handle_not_delivered = handle_not_delivered
         self.outbound_buffer = []
@@ -87,15 +90,13 @@ class OutboundTransportManager:
         self.running_transports = {}
         self.task_queue = TaskQueue(max_active=200)
         self._process_task: asyncio.Task = None
-        if self.root_profile.settings.get("transport.max_outbound_retry"):
-            self.MAX_RETRY_COUNT = self.root_profile.settings[
-                "transport.max_outbound_retry"
-            ]
+        if self.context.settings.get("transport.max_outbound_retry"):
+            self.MAX_RETRY_COUNT = self.context.settings["transport.max_outbound_retry"]
 
     async def setup(self):
         """Perform setup operations."""
         outbound_transports = (
-            self.root_profile.settings.get("transport.outbound_configs") or []
+            self.context.settings.get("transport.outbound_configs") or []
         )
         for outbound_transport in outbound_transports:
             self.register(outbound_transport)
@@ -171,10 +172,8 @@ class OutboundTransportManager:
 
     async def start_transport(self, transport_id: str):
         """Start a registered transport."""
-        transport = self.registered_transports[transport_id](
-            root_profile=self.root_profile
-        )
-        transport.collector = self.root_profile.inject_or(Collector)
+        transport = self.registered_transports[transport_id]()
+        transport.collector = self.context.inject_or(Collector)
         await transport.start()
         self.running_transports[transport_id] = transport
 
@@ -380,14 +379,14 @@ class OutboundTransportManager:
                 if deliver:
                     queued.state = QueuedOutboundMessage.STATE_DELIVER
                     p_time = trace_event(
-                        self.root_profile.settings,
+                        self.context.settings,
                         queued.message if queued.message else queued.payload,
                         outcome="OutboundTransportManager.DELIVER.START."
                         + queued.endpoint,
                     )
                     self.deliver_queued_message(queued)
                     trace_event(
-                        self.root_profile.settings,
+                        self.context.settings,
                         queued.message if queued.message else queued.payload,
                         outcome="OutboundTransportManager.DELIVER.END."
                         + queued.endpoint,
@@ -409,13 +408,13 @@ class OutboundTransportManager:
                     else:
                         queued.state = QueuedOutboundMessage.STATE_ENCODE
                         p_time = trace_event(
-                            self.root_profile.settings,
+                            self.context.settings,
                             queued.message if queued.message else queued.payload,
                             outcome="OutboundTransportManager.ENCODE.START",
                         )
                         self.encode_queued_message(queued)
                         trace_event(
-                            self.root_profile.settings,
+                            self.context.settings,
                             queued.message if queued.message else queued.payload,
                             outcome="OutboundTransportManager.ENCODE.END",
                             perf_counter=p_time,
@@ -450,7 +449,7 @@ class OutboundTransportManager:
         self, queued: QueuedOutboundMessage, wire_format: BaseWireFormat = None
     ):
         """Perform message encoding."""
-        wire_format = wire_format or self.root_profile.inject(BaseWireFormat)
+        wire_format = wire_format or self.context.inject(BaseWireFormat)
 
         session = await queued.profile.session()
         queued.payload = await wire_format.encode_message(

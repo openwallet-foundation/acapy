@@ -446,7 +446,7 @@ class TestJSONLDRoutes(AsyncTestCase):
                         ),
                         "degree": {
                             "type": "BachelorDegree",
-                            "name": "Bachelor of Encyclopædic Arts",
+                            "name": u"Bachelor of Encyclopædic Arts",
                         },
                     },
                 },

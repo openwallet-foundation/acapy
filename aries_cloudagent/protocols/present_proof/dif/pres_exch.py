@@ -16,7 +16,7 @@ from ....messaging.valid import (
     StrOrDictField,
     StrOrNumberField,
 )
-from ....vc.vc_ld import LinkedDataProofSchema
+from ....vc.vc_ld.models import LinkedDataProofSchema
 
 
 class ClaimFormat(BaseModel):
@@ -146,7 +146,7 @@ class SubmissionRequirementsSchema(BaseModelSchema):
     _from = fields.Str(description="From", required=False, data_key="from")
     # Self References
     from_nested = fields.List(
-        fields.Nested(lambda: SubmissionRequirementsSchema()),
+        fields.Nested(lambda: SubmissionRequirementsSchema(exclude=("from_nested",))),
         required=False,
     )
 
@@ -180,7 +180,7 @@ class SchemaInputDescriptor(BaseModel):
         uri: str = None,
         required: bool = None,
     ):
-        """Initialize SchemaInputDescriptor."""
+        """Initialize InputDescriptors."""
         self.uri = uri
         self.required = required
 
@@ -199,59 +199,6 @@ class SchemaInputDescriptorSchema(BaseModelSchema):
         required=False,
     )
     required = fields.Bool(description="Required", required=False)
-
-
-class SchemasInputDescriptorFilter(BaseModel):
-    """SchemasInputDescriptorFilter."""
-
-    class Meta:
-        """InputDescriptor Schemas filter metadata."""
-
-        schema_class = "SchemasInputDescriptorFilterSchema"
-
-    def __init__(
-        self,
-        *,
-        oneof_filter: bool = False,
-        uri_groups: Sequence[Sequence[SchemaInputDescriptor]] = None,
-    ):
-        """Initialize SchemasInputDescriptorFilter."""
-        self.oneof_filter = oneof_filter
-        self.uri_groups = uri_groups
-
-
-class SchemasInputDescriptorFilterSchema(BaseModelSchema):
-    """Single SchemasInputDescriptorFilterSchema Schema."""
-
-    class Meta:
-        """SchemasInputDescriptorFilterSchema metadata."""
-
-        model_class = SchemasInputDescriptorFilter
-        unknown = EXCLUDE
-
-    uri_groups = fields.List(fields.List(fields.Nested(SchemaInputDescriptorSchema)))
-    oneof_filter = fields.Bool(description="oneOf")
-
-    @pre_load
-    def extract_info(self, data, **kwargs):
-        """deserialize."""
-        new_data = {}
-        if isinstance(data, dict):
-            if "oneof_filter" in data:
-                new_data["oneof_filter"] = True
-                uri_group_list_of_list = []
-                uri_group_list = data.get("oneof_filter")
-                for uri_group in uri_group_list:
-                    if isinstance(uri_group, list):
-                        uri_group_list_of_list.append(uri_group)
-                    else:
-                        uri_group_list_of_list.append([uri_group])
-                new_data["uri_groups"] = uri_group_list_of_list
-        elif isinstance(data, list):
-            new_data["oneof_filter"] = False
-            new_data["uri_groups"] = [data]
-        data = new_data
-        return data
 
 
 class DIFHolder(BaseModel):
@@ -601,7 +548,7 @@ class InputDescriptors(BaseModel):
         purpose: str = None,
         metadata: dict = None,
         constraint: Constraints = None,
-        schemas: SchemasInputDescriptorFilter = None,
+        schemas: Sequence[SchemaInputDescriptor] = None,
     ):
         """Initialize InputDescriptors."""
         self.id = id
@@ -637,29 +584,8 @@ class InputDescriptorsSchema(BaseModelSchema):
     constraint = fields.Nested(
         ConstraintsSchema, required=False, data_key="constraints"
     )
-    schemas = fields.Nested(
-        SchemasInputDescriptorFilterSchema,
-        required=False,
-        data_key="schema",
-        description=(
-            "Accepts a list of schema or a dict containing filters like oneof_filter."
-        ),
-        example=(
-            {
-                "oneOf": [
-                    [
-                        {"uri": "https://www.w3.org/Test1#Test1"},
-                        {"uri": "https://www.w3.org/Test2#Test2"},
-                    ],
-                    {
-                        "oneof_filter": [
-                            [{"uri": "https://www.w3.org/Test1#Test1"}],
-                            [{"uri": "https://www.w3.org/Test2#Test2"}],
-                        ]
-                    },
-                ]
-            }
-        ),
+    schemas = fields.List(
+        fields.Nested(SchemaInputDescriptorSchema), required=False, data_key="schema"
     )
 
 

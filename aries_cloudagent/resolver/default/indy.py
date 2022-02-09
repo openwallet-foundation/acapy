@@ -10,12 +10,9 @@ from pydid.verification_method import Ed25519VerificationKey2018
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
+from ...ledger.base import BaseLedger
 from ...ledger.endpoint_type import EndpointType
 from ...ledger.error import LedgerError
-from ...ledger.multiple_ledger.ledger_requests_executor import (
-    GET_KEY_FOR_DID,
-    IndyLedgerRequestsExecutor,
-)
 from ...messaging.valid import IndyDID
 
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
@@ -44,13 +41,7 @@ class IndyDIDResolver(BaseDIDResolver):
 
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""
-        ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-        ledger = (
-            await ledger_exec_inst.get_ledger_for_identifier(
-                did,
-                txn_record_type=GET_KEY_FOR_DID,
-            )
-        )[1]
+        ledger = profile.inject_or(BaseLedger)
         if not ledger:
             raise NoIndyLedger("No Indy ledger instance is configured.")
 

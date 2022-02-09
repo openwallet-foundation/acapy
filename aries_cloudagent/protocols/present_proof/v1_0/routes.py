@@ -202,6 +202,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
+
     tag_filter = {}
     if "thread_id" in request.query and request.query["thread_id"] != "":
         tag_filter["thread_id"] = request.query["thread_id"]
@@ -212,7 +213,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
     }
 
     try:
-        async with context.profile.session() as session:
+        async with context.session() as session:
             records = await V10PresentationExchange.query(
                 session=session,
                 tag_filter=tag_filter,
@@ -243,13 +244,12 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
     pres_ex_record = None
     try:
-        async with profile.session() as session:
+        async with context.session() as session:
             pres_ex_record = await V10PresentationExchange.retrieve_by_id(
                 session, presentation_exchange_id
             )
@@ -260,7 +260,7 @@ async def presentation_exchange_retrieve(request: web.BaseRequest):
     except (BaseModelError, StorageError) as err:
         # present but broken or hopeless: protocol error
         if pres_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -292,7 +292,6 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
@@ -302,7 +301,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     )
 
     try:
-        async with profile.session() as session:
+        async with context.session() as session:
             pres_ex_record = await V10PresentationExchange.retrieve_by_id(
                 session, presentation_exchange_id
             )
@@ -320,7 +319,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder = profile.inject(IndyHolder)
+    holder = context.profile.inject(IndyHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_ex_record._presentation_request.ser,
@@ -331,7 +330,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
         )
     except IndyHolderError as err:
         if pres_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         await report_problem(
             err,
@@ -371,7 +370,6 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -382,7 +380,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     # Aries RFC 37 calls it a proposal in the proposal struct but it's of type preview
     presentation_preview = body.get("presentation_proposal")
     connection_record = None
-    async with profile.session() as session:
+    async with context.session() as session:
         try:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
             presentation_proposal_message = PresentationProposal(
@@ -405,7 +403,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
 
-    presentation_manager = PresentationManager(profile)
+    presentation_manager = PresentationManager(context.profile)
     pres_ex_record = None
     try:
         pres_ex_record = await presentation_manager.create_exchange_for_proposal(
@@ -416,7 +414,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
         if pres_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
@@ -456,7 +454,6 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
@@ -481,9 +478,9 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         trace_msg,
     )
 
+    presentation_manager = PresentationManager(context.profile)
     pres_ex_record = None
     try:
-        presentation_manager = PresentationManager(profile)
         pres_ex_record = await presentation_manager.create_exchange_for_request(
             connection_id=None,
             presentation_request_message=presentation_request_message,
@@ -491,7 +488,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
         if pres_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
@@ -528,13 +525,12 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
     connection_id = body.get("connection_id")
-    async with profile.session() as session:
+    async with context.session() as session:
         try:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
         except StorageNotFoundError as err:
@@ -563,9 +559,9 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         trace_msg,
     )
 
+    presentation_manager = PresentationManager(context.profile)
     pres_ex_record = None
     try:
-        presentation_manager = PresentationManager(profile)
         pres_ex_record = await presentation_manager.create_exchange_for_request(
             connection_id=connection_id,
             presentation_request_message=presentation_request_message,
@@ -573,7 +569,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
         if pres_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
@@ -611,14 +607,13 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
     pres_ex_record = None
-    async with profile.session() as session:
+    async with context.session() as session:
         try:
             pres_ex_record = await V10PresentationExchange.retrieve_by_id(
                 session, presentation_exchange_id
@@ -644,8 +639,8 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {conn_id} not ready")
 
+    presentation_manager = PresentationManager(context.profile)
     try:
-        presentation_manager = PresentationManager(profile)
         (
             pres_ex_record,
             presentation_request_message,
@@ -653,7 +648,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (BaseModelError, LedgerError, StorageError) as err:
         if pres_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cares that we cannot continue protocol
         await report_problem(
@@ -699,13 +694,12 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
     presentation_exchange_id = request.match_info["pres_ex_id"]
     body = await request.json()
 
     pres_ex_record = None
-    async with profile.session() as session:
+    async with context.session() as session:
         try:
             pres_ex_record = await V10PresentationExchange.retrieve_by_id(
                 session, presentation_exchange_id
@@ -731,8 +725,8 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
+    presentation_manager = PresentationManager(context.profile)
     try:
-        presentation_manager = PresentationManager(profile)
         (
             pres_ex_record,
             presentation_message,
@@ -754,7 +748,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         WalletNotFoundError,
     ) as err:
         if pres_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cares that we cannot continue protocol
         await report_problem(
@@ -799,13 +793,12 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
     r_time = get_timer()
 
     context: AdminRequestContext = request["context"]
-    profile = context.profile
     outbound_handler = request["outbound_message_router"]
 
     presentation_exchange_id = request.match_info["pres_ex_id"]
 
     pres_ex_record = None
-    async with profile.session() as session:
+    async with context.session() as session:
         try:
             pres_ex_record = await V10PresentationExchange.retrieve_by_id(
                 session, presentation_exchange_id
@@ -824,13 +817,13 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
                 )
             )
 
+    presentation_manager = PresentationManager(context.profile)
     try:
-        presentation_manager = PresentationManager(profile)
         pres_ex_record = await presentation_manager.verify_presentation(pres_ex_record)
         result = pres_ex_record.serialize()
     except (BaseModelError, LedgerError, StorageError) as err:
         if pres_ex_record:
-            async with profile.session() as session:
+            async with context.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party cares that we cannot continue protocol
         await report_problem(
@@ -874,7 +867,7 @@ async def presentation_exchange_problem_report(request: web.BaseRequest):
     description = body["description"]
 
     try:
-        async with await context.profile.session() as session:
+        async with await context.session() as session:
             pres_ex_record = await V10PresentationExchange.retrieve_by_id(
                 session, pres_ex_id
             )
@@ -912,7 +905,7 @@ async def presentation_exchange_remove(request: web.BaseRequest):
     presentation_exchange_id = request.match_info["pres_ex_id"]
     pres_ex_record = None
     try:
-        async with context.profile.session() as session:
+        async with context.session() as session:
             pres_ex_record = await V10PresentationExchange.retrieve_by_id(
                 session, presentation_exchange_id
             )

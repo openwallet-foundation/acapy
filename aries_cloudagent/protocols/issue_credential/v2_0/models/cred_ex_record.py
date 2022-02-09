@@ -50,8 +50,6 @@ class V20CredExRecord(BaseExchangeRecord):
     STATE_ISSUED = "credential-issued"
     STATE_CREDENTIAL_RECEIVED = "credential-received"
     STATE_DONE = "done"
-    STATE_CREDENTIAL_REVOKED = "credential-revoked"
-    STATE_ABANDONED = "abandoned"
 
     def __init__(
         self,
@@ -149,7 +147,6 @@ class V20CredExRecord(BaseExchangeRecord):
         self,
         session: ProfileSession,
         *,
-        state: str = None,
         reason: str = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
@@ -164,10 +161,10 @@ class V20CredExRecord(BaseExchangeRecord):
             override: Override configured logging regimen, print to stderr instead
         """
 
-        if self._last_state == state:  # already done
+        if self._last_state is None:  # already done
             return
 
-        self.state = state or V20CredExRecord.STATE_ABANDONED
+        self.state = None
         if reason:
             self.error_msg = reason
 

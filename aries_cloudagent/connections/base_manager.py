@@ -16,7 +16,7 @@ import pydid
 from pydid.verification_method import Ed25519VerificationKey2018
 
 from ..core.error import BaseError
-from ..core.profile import Profile
+from ..core.profile import ProfileSession
 from ..did.did_key import DIDKey
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
@@ -47,7 +47,7 @@ class BaseConnectionManager:
     RECORD_TYPE_DID_KEY = "did_key"
     SUPPORTED_KEY_TYPES = (Ed25519VerificationKey2018,)
 
-    def __init__(self, profile: Profile):
+    def __init__(self, session: ProfileSession):
         """
         Initialize a BaseConnectionManager.
 
@@ -55,7 +55,7 @@ class BaseConnectionManager:
             session: The profile session for this presentation
         """
         self._logger = logging.getLogger(__name__)
-        self._profile = profile
+        self._session = session
 
     async def create_did_document(
         self,
@@ -96,8 +96,7 @@ class BaseConnectionManager:
         router_idx = 1
         while router_id:
             # look up routing connection information
-            async with self._profile.session() as session:
-                router = await ConnRecord.retrieve_by_id(session, router_id)
+            router = await ConnRecord.retrieve_by_id(self._session, router_id)
             if ConnRecord.State.get(router.state) != ConnRecord.State.COMPLETED:
                 raise BaseConnectionManagerError(
                     f"Router connection not completed: {router_id}"
@@ -167,7 +166,7 @@ class BaseConnectionManager:
             did_doc: The `DIDDoc` instance to persist
         """
         assert did_doc.did
-
+        storage: BaseStorage = self._session.inject(BaseStorage)
         try:
             stored_doc, record = await self.fetch_did_document(did_doc.did)
         except StorageNotFoundError:
@@ -176,15 +175,9 @@ class BaseConnectionManager:
                 did_doc.to_json(),
                 {"did": did_doc.did},
             )
-            async with self._profile.session() as session:
-                storage: BaseStorage = session.inject(BaseStorage)
-                await storage.add_record(record)
+            await storage.add_record(record)
         else:
-            async with self._profile.session() as session:
-                storage: BaseStorage = session.inject(BaseStorage)
-                await storage.update_record(
-                    record, did_doc.to_json(), {"did": did_doc.did}
-                )
+            await storage.update_record(record, did_doc.to_json(), {"did": did_doc.did})
         await self.remove_keys_for_did(did_doc.did)
         for key in did_doc.pubkey.values():
             if key.controller == did_doc.did:
@@ -198,9 +191,8 @@ class BaseConnectionManager:
             key: The verkey to be added
         """
         record = StorageRecord(self.RECORD_TYPE_DID_KEY, key, {"did": did, "key": key})
-        async with self._profile.session() as session:
-            storage: BaseStorage = session.inject(BaseStorage)
-            await storage.add_record(record)
+        storage = self._session.inject(BaseStorage)
+        await storage.add_record(record)
 
     async def find_did_for_key(self, key: str) -> str:
         """Find the DID previously associated with a key.
@@ -208,9 +200,8 @@ class BaseConnectionManager:
         Args:
             key: The verkey to look up
         """
-        async with self._profile.session() as session:
-            storage: BaseStorage = session.inject(BaseStorage)
-            record = await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
+        storage = self._session.inject(BaseStorage)
+        record = await storage.find_record(self.RECORD_TYPE_DID_KEY, {"key": key})
         return record.tags["did"]
 
     async def remove_keys_for_did(self, did: str):
@@ -219,9 +210,8 @@ class BaseConnectionManager:
         Args:
             did: The DID for which to remove keys
         """
-        async with self._profile.session() as session:
-            storage: BaseStorage = session.inject(BaseStorage)
-            await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
+        storage = self._session.inject(BaseStorage)
+        await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
     async def resolve_invitation(self, did: str):
         """
@@ -235,9 +225,9 @@ class BaseConnectionManager:
             # prefix with did:sov: for backwards compatibility
             did = f"did:sov:{did}"
 
-        resolver = self._profile.inject(DIDResolver)
+        resolver = self._session.inject(DIDResolver)
         try:
-            doc_dict: dict = await resolver.resolve(self._profile, did)
+            doc_dict: dict = await resolver.resolve(self._session.profile, did)
             doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
         except ResolverError as error:
             raise BaseConnectionManagerError(
@@ -294,6 +284,9 @@ class BaseConnectionManager:
         if not connection.my_did:
             self._logger.debug("No local DID associated with connection")
             return None
+
+        wallet = self._session.inject(BaseWallet)
+        my_info = await wallet.get_local_did(connection.my_did)
         results = None
 
         if (
@@ -306,8 +299,7 @@ class BaseConnectionManager:
                 or connection.invitation_key
                 or not connection.their_did
             ):
-                async with self._profile.session() as session:
-                    invitation = await connection.retrieve_invitation(session)
+                invitation = await connection.retrieve_invitation(self._session)
                 if isinstance(
                     invitation, ConnectionInvitation
                 ):  # conn protocol invitation
@@ -351,11 +343,6 @@ class BaseConnectionManager:
                         recipient_keys,
                         routing_keys,
                     ) = await self.resolve_invitation(did)
-
-            async with self._profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(connection.my_did)
-
             results = [
                 ConnectionTarget(
                     did=connection.their_did,
@@ -372,11 +359,6 @@ class BaseConnectionManager:
                 return None
 
             did_doc, _ = await self.fetch_did_document(connection.their_did)
-
-            async with self._profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(connection.my_did)
-
             results = self.diddoc_connection_targets(
                 did_doc, my_info.verkey, connection.their_label
             )
@@ -426,7 +408,6 @@ class BaseConnectionManager:
         Args:
             did: The DID to search for
         """
-        async with self._profile.session() as session:
-            storage = session.inject(BaseStorage)
-            record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
+        storage = self._session.inject(BaseStorage)
+        record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
         return DIDDoc.from_json(record.value), record

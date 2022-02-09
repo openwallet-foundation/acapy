@@ -2,7 +2,7 @@ import json
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from ....core.in_memory import InMemoryProfile
+from ....config.injection_context import InjectionContext
 from ....connections.models.connection_target import ConnectionTarget
 from ....core.in_memory import InMemoryProfile
 from ...wire_format import BaseWireFormat
@@ -19,7 +19,7 @@ from ..message import OutboundMessage
 
 class TestOutboundTransportManager(AsyncTestCase):
     def test_register_path(self):
-        mgr = OutboundTransportManager(InMemoryProfile.test_profile())
+        mgr = OutboundTransportManager(InjectionContext())
         mgr.register("http")
         assert mgr.get_registered_transport_for_scheme("http")
         assert mgr.MAX_RETRY_COUNT == 4
@@ -33,21 +33,23 @@ class TestOutboundTransportManager(AsyncTestCase):
             mgr.register("no.such.module.path")
 
     def test_maximum_retry_count(self):
-        profile = InMemoryProfile.test_profile({"transport.max_outbound_retry": 5})
-        mgr = OutboundTransportManager(profile)
+        context = InjectionContext()
+        context.update_settings({"transport.max_outbound_retry": 5})
+        mgr = OutboundTransportManager(context)
         mgr.register("http")
         assert mgr.MAX_RETRY_COUNT == 5
 
     async def test_setup(self):
-        profile = InMemoryProfile.test_profile({"transport.outbound_configs": ["http"]})
-        mgr = OutboundTransportManager(profile)
+        context = InjectionContext()
+        context.update_settings({"transport.outbound_configs": ["http"]})
+        mgr = OutboundTransportManager(context)
         with async_mock.patch.object(mgr, "register") as mock_register:
             await mgr.setup()
             mock_register.assert_called_once_with("http")
 
     async def test_send_message(self):
-        profile = InMemoryProfile.test_profile()
-        mgr = OutboundTransportManager(profile)
+        context = InjectionContext()
+        mgr = OutboundTransportManager(context)
 
         transport_cls = async_mock.Mock(spec=[])
         with self.assertRaises(OutboundTransportRegistrationError):
@@ -122,8 +124,9 @@ class TestOutboundTransportManager(AsyncTestCase):
         transport.stop.assert_awaited_once_with()
 
     async def test_stop_cancel(self):
-        profile = InMemoryProfile.test_profile({"transport.outbound_configs": ["http"]})
-        mgr = OutboundTransportManager(profile)
+        context = InjectionContext()
+        context.update_settings({"transport.outbound_configs": ["http"]})
+        mgr = OutboundTransportManager(context)
         mgr._process_task = async_mock.MagicMock(
             done=async_mock.MagicMock(return_value=False), cancel=async_mock.MagicMock()
         )
@@ -132,8 +135,8 @@ class TestOutboundTransportManager(AsyncTestCase):
         mgr._process_task.cancel.assert_called_once()
 
     async def test_enqueue_webhook(self):
-        profile = InMemoryProfile.test_profile()
-        mgr = OutboundTransportManager(profile)
+        context = InjectionContext()
+        mgr = OutboundTransportManager(context)
         test_topic = "test-topic"
         test_payload = {"test": "payload"}
         test_endpoint_host = "http://example"
@@ -170,8 +173,8 @@ class TestOutboundTransportManager(AsyncTestCase):
             done=async_mock.MagicMock(return_value=True),
             exception=async_mock.MagicMock(return_value=KeyError("No such key")),
         )
-        profile = InMemoryProfile.test_profile()
-        mgr = OutboundTransportManager(profile)
+        context = InjectionContext()
+        mgr = OutboundTransportManager(context)
 
         with async_mock.patch.object(
             mgr, "_process_task", async_mock.MagicMock()
@@ -184,8 +187,8 @@ class TestOutboundTransportManager(AsyncTestCase):
         mock_task = async_mock.MagicMock(
             exc_info=(KeyError, KeyError("nope"), None),
         )
-        profile = InMemoryProfile.test_profile()
-        mgr = OutboundTransportManager(profile)
+        context = InjectionContext()
+        mgr = OutboundTransportManager(context)
 
         with async_mock.patch.object(
             mgr, "process_queued", async_mock.MagicMock()
@@ -200,9 +203,9 @@ class TestOutboundTransportManager(AsyncTestCase):
             retry_at=test_module.get_timer() - 1,
         )
 
-        profile = InMemoryProfile.test_profile()
+        context = InjectionContext()
         mock_handle_not_delivered = async_mock.MagicMock()
-        mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
+        mgr = OutboundTransportManager(context, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
 
         with async_mock.patch.object(
@@ -219,9 +222,9 @@ class TestOutboundTransportManager(AsyncTestCase):
             retry_at=test_module.get_timer() + 3600,
         )
 
-        profile = InMemoryProfile.test_profile()
+        context = InjectionContext()
         mock_handle_not_delivered = async_mock.MagicMock()
-        mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
+        mgr = OutboundTransportManager(context, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
 
         with async_mock.patch.object(
@@ -233,9 +236,9 @@ class TestOutboundTransportManager(AsyncTestCase):
             assert mock_queued.retry_at is not None
 
     async def test_process_loop_new(self):
-        profile = InMemoryProfile.test_profile()
+        context = InjectionContext()
         mock_handle_not_delivered = async_mock.MagicMock()
-        mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
+        mgr = OutboundTransportManager(context, mock_handle_not_delivered)
 
         mgr.outbound_new = [
             async_mock.MagicMock(
@@ -256,9 +259,9 @@ class TestOutboundTransportManager(AsyncTestCase):
                 await mgr._process_loop()
 
     async def test_process_loop_new_deliver(self):
-        profile = InMemoryProfile.test_profile()
+        context = InjectionContext()
         mock_handle_not_delivered = async_mock.MagicMock()
-        mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
+        mgr = OutboundTransportManager(context, mock_handle_not_delivered)
 
         mgr.outbound_new = [
             async_mock.MagicMock(
@@ -286,9 +289,9 @@ class TestOutboundTransportManager(AsyncTestCase):
             payload="Hello world",
         )
 
-        profile = InMemoryProfile.test_profile()
+        context = InjectionContext()
         mock_handle_not_delivered = async_mock.MagicMock()
-        mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
+        mgr = OutboundTransportManager(context, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
 
         await mgr._process_loop()
@@ -299,9 +302,9 @@ class TestOutboundTransportManager(AsyncTestCase):
         )
         mock_completed_x = async_mock.MagicMock(exc_info=KeyError("an error occurred"))
 
-        profile = InMemoryProfile.test_profile()
+        context = InjectionContext()
         mock_handle_not_delivered = async_mock.MagicMock()
-        mgr = OutboundTransportManager(profile, mock_handle_not_delivered)
+        mgr = OutboundTransportManager(context, mock_handle_not_delivered)
         mgr.outbound_buffer.append(mock_queued)
         with async_mock.patch.object(
             test_module.LOGGER, "exception", async_mock.MagicMock()
@@ -316,17 +319,19 @@ class TestOutboundTransportManager(AsyncTestCase):
             mgr.finished_deliver(mock_queued, mock_completed_x)
 
     async def test_should_encode_outbound_message(self):
+        context = InjectionContext()
         base_wire_format = BaseWireFormat()
         encoded_msg = "encoded_message"
         base_wire_format.encode_message = async_mock.CoroutineMock(
             return_value=encoded_msg
         )
-        profile = InMemoryProfile.test_profile(bind={BaseWireFormat: base_wire_format})
+        context.injector.bind_instance(BaseWireFormat, base_wire_format)
+        profile = InMemoryProfile.test_session().profile
         profile.session = async_mock.CoroutineMock(return_value=async_mock.MagicMock())
         outbound = async_mock.MagicMock(payload="payload", enc_payload=None)
         target = async_mock.MagicMock()
 
-        mgr = OutboundTransportManager(profile)
+        mgr = OutboundTransportManager(context)
         result = await mgr.encode_outbound_message(profile, outbound, target)
 
         assert result.payload == encoded_msg
@@ -339,12 +344,13 @@ class TestOutboundTransportManager(AsyncTestCase):
         )
 
     async def test_should_not_encode_already_packed_message(self):
+        context = InjectionContext()
         profile = InMemoryProfile.test_session().profile
         enc_payload = "enc_payload"
         outbound = async_mock.MagicMock(enc_payload=enc_payload)
         target = async_mock.MagicMock()
 
-        mgr = OutboundTransportManager(profile)
+        mgr = OutboundTransportManager(context)
         result = await mgr.encode_outbound_message(profile, outbound, target)
 
         assert result.payload == enc_payload

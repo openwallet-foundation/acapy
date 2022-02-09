@@ -27,13 +27,12 @@ class InvitationHandler(BaseHandler):
             BaseIntroductionService
         )
         if service:
-            async with context.profile.session() as session:
-                await service.return_invitation(
-                    context.connection_record.connection_id,
-                    context.message,
-                    session,
-                    responder.send,
-                )
+            await service.return_invitation(
+                context.connection_record.connection_id,
+                context.message,
+                await context.session(),
+                responder.send,
+            )
         else:
             raise HandlerException(
                 "Cannot handle Invitation message with no introduction service"

@@ -11,11 +11,7 @@ from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
 from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    GET_CRED_DEF,
-    GET_SCHEMA,
-    IndyLedgerRequestsExecutor,
-)
+from ....ledger.base import BaseLedger
 from ....messaging.credential_definitions.util import (
     CRED_DEF_TAGS,
     CRED_DEF_SENT_RECORD_TYPE,
@@ -24,7 +20,6 @@ from ....messaging.responder import BaseResponder
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
-from ....revocation.util import notify_revocation_reg_event
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
 
@@ -38,9 +33,7 @@ from .messages.credential_problem_report import (
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
 from .messages.inner.credential_preview import CredentialPreview
-from .models.credential_exchange import (
-    V10CredentialExchange,
-)
+from .models.credential_exchange import V10CredentialExchange
 
 LOGGER = logging.getLogger(__name__)
 
@@ -266,13 +259,7 @@ class CredentialManager:
         credential_preview = credential_proposal_message.credential_proposal
 
         # vet attributes
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger = (
-            await ledger_exec_inst.get_ledger_for_identifier(
-                cred_def_id,
-                txn_record_type=GET_CRED_DEF,
-            )
-        )[1]
+        ledger = self._profile.inject(BaseLedger)
         async with ledger:
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
@@ -404,13 +391,7 @@ class CredentialManager:
         cred_offer_ser = cred_ex_record._credential_offer.ser
 
         async def _create():
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger = (
-                await ledger_exec_inst.get_ledger_for_identifier(
-                    credential_definition_id,
-                    txn_record_type=GET_CRED_DEF,
-                )
-            )[1]
+            ledger = self._profile.inject(BaseLedger)
             async with ledger:
                 credential_definition = await ledger.get_credential_definition(
                     credential_definition_id
@@ -550,13 +531,8 @@ class CredentialManager:
         else:
             cred_offer_ser = cred_ex_record._credential_offer.ser
             cred_req_ser = cred_ex_record._credential_request.ser
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger = (
-                await ledger_exec_inst.get_ledger_for_identifier(
-                    schema_id,
-                    txn_record_type=GET_SCHEMA,
-                )
-            )[1]
+
+            ledger = self._profile.inject(BaseLedger)
             async with ledger:
                 schema = await ledger.get_schema(schema_id)
                 credential_definition = await ledger.get_credential_definition(
@@ -594,20 +570,21 @@ class CredentialManager:
                                     cred_ex_record.credential_definition_id,
                                 )
                             )  # prefer to reuse prior rev reg size
-                        cred_def_id = cred_ex_record.credential_definition_id
-                        rev_reg_size = (
-                            old_rev_reg_recs[0].max_cred_num
-                            if old_rev_reg_recs
-                            else None
-                        )
                         for _ in range(2):
-                            await notify_revocation_reg_event(
-                                self.profile,
-                                cred_def_id,
-                                rev_reg_size,
-                                auto_create_rev_reg=True,
+                            pending_rev_reg_rec = await revoc.init_issuer_registry(
+                                cred_ex_record.credential_definition_id,
+                                max_cred_num=(
+                                    old_rev_reg_recs[0].max_cred_num
+                                    if old_rev_reg_recs
+                                    else None
+                                ),
                             )
-
+                            asyncio.ensure_future(
+                                pending_rev_reg_rec.stage_pending_registry(
+                                    self._profile,
+                                    max_attempts=3,  # fail both in < 2s at worst
+                                )
+                            )
                     if retries > 0:
                         LOGGER.info(
                             "Waiting 2s on posted rev reg for cred def %s, retrying",
@@ -655,13 +632,16 @@ class CredentialManager:
                         )
 
                     # Send next 1 rev reg, publish tails file in background
-                    cred_def_id = cred_ex_record.credential_definition_id
-                    rev_reg_size = active_rev_reg_rec.max_cred_num
-                    await notify_revocation_reg_event(
-                        self.profile,
-                        cred_def_id,
-                        rev_reg_size,
-                        auto_create_rev_reg=True,
+                    revoc = IndyRevocation(self._profile)
+                    pending_rev_reg_rec = await revoc.init_issuer_registry(
+                        active_rev_reg_rec.cred_def_id,
+                        max_cred_num=active_rev_reg_rec.max_cred_num,
+                    )
+                    asyncio.ensure_future(
+                        pending_rev_reg_rec.stage_pending_registry(
+                            self._profile,
+                            max_attempts=16,
+                        )
                     )
 
             except IndyIssuerRevocationRegistryFullError:
@@ -740,7 +720,7 @@ class CredentialManager:
 
     async def store_credential(
         self, cred_ex_record: V10CredentialExchange, credential_id: str = None
-    ) -> V10CredentialExchange:
+    ) -> Tuple[V10CredentialExchange, CredentialAck]:
         """
         Store a credential in holder wallet; send ack to issuer.
 
@@ -762,13 +742,7 @@ class CredentialManager:
 
         raw_cred_serde = cred_ex_record._raw_credential
         revoc_reg_def = None
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger = (
-            await ledger_exec_inst.get_ledger_for_identifier(
-                raw_cred_serde.de.cred_def_id,
-                txn_record_type=GET_CRED_DEF,
-            )
-        )[1]
+        ledger = self._profile.inject(BaseLedger)
         async with ledger:
             credential_definition = await ledger.get_credential_definition(
                 raw_cred_serde.de.cred_def_id
@@ -915,7 +889,7 @@ class CredentialManager:
                 )
             )
 
-            cred_ex_record.state = V10CredentialExchange.STATE_ABANDONED
+            cred_ex_record.state = None
             code = message.description.get(
                 "code",
                 ProblemReportReason.ISSUANCE_ABANDONED.value,

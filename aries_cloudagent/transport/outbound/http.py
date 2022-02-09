@@ -18,9 +18,9 @@ class HttpTransport(BaseOutboundTransport):
 
     schemes = ("http", "https")
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self) -> None:
         """Initialize an `HttpTransport` instance."""
-        super().__init__(**kwargs)
+        super().__init__()
         self.client_session: ClientSession = None
         self.connector: TCPConnector = None
         self.logger = logging.getLogger(__name__)

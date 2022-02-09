@@ -2,12 +2,8 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from ....admin.request_context import AdminRequestContext
-from ....core.in_memory import InMemoryProfile
 from ....indy.issuer import IndyIssuer
 from ....ledger.base import BaseLedger
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
 from ....storage.base import BaseStorage
 
 from .. import routes as test_module
@@ -20,29 +16,7 @@ SCHEMA_ID = "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0"
 class TestSchemaRoutes(AsyncTestCase):
     def setUp(self):
         self.session_inject = {}
-        self.profile = InMemoryProfile.test_profile()
-        self.profile_injector = self.profile.context.injector
-        self.ledger = async_mock.create_autospec(BaseLedger)
-        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
-        self.ledger.create_and_send_schema = async_mock.CoroutineMock(
-            return_value=(SCHEMA_ID, {"schema": "def", "signed_txn": "..."})
-        )
-        self.ledger.get_schema = async_mock.CoroutineMock(
-            return_value={"schema": "def", "signed_txn": "..."}
-        )
-        self.profile_injector.bind_instance(BaseLedger, self.ledger)
-
-        self.issuer = async_mock.create_autospec(IndyIssuer)
-        self.profile_injector.bind_instance(IndyIssuer, self.issuer)
-
-        self.storage = async_mock.create_autospec(BaseStorage)
-        self.storage.find_all_records = async_mock.CoroutineMock(
-            return_value=[async_mock.MagicMock(value=SCHEMA_ID)]
-        )
-        self.session_inject[BaseStorage] = self.storage
-        self.context = AdminRequestContext.test_context(
-            self.session_inject, profile=self.profile
-        )
+        self.context = AdminRequestContext.test_context(self.session_inject)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -53,6 +27,25 @@ class TestSchemaRoutes(AsyncTestCase):
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
         )
+
+        self.ledger = async_mock.create_autospec(BaseLedger)
+        self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
+        self.ledger.create_and_send_schema = async_mock.CoroutineMock(
+            return_value=(SCHEMA_ID, {"schema": "def", "signed_txn": "..."})
+        )
+        self.ledger.get_schema = async_mock.CoroutineMock(
+            return_value={"schema": "def", "signed_txn": "..."}
+        )
+        self.context.injector.bind_instance(BaseLedger, self.ledger)
+
+        self.issuer = async_mock.create_autospec(IndyIssuer)
+        self.context.injector.bind_instance(IndyIssuer, self.issuer)
+
+        self.storage = async_mock.create_autospec(BaseStorage)
+        self.storage.find_all_records = async_mock.CoroutineMock(
+            return_value=[async_mock.MagicMock(value=SCHEMA_ID)]
+        )
+        self.session_inject[BaseStorage] = self.storage
 
     async def test_send_schema(self):
         self.request.json = async_mock.CoroutineMock(
@@ -287,35 +280,18 @@ class TestSchemaRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({"schema_ids": [SCHEMA_ID]})
 
     async def test_get_schema(self):
-        self.profile_injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
         self.request.match_info = {"schema_id": SCHEMA_ID}
+
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.schemas_get_schema(self.request)
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
-                {
-                    "ledger_id": "test_ledger_id",
-                    "schema": {"schema": "def", "signed_txn": "..."},
-                }
+                {"schema": {"schema": "def", "signed_txn": "..."}}
             )
 
     async def test_get_schema_on_seq_no(self):
-        self.profile_injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
-        )
         self.request.match_info = {"schema_id": "12345"}
+
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             result = await test_module.schemas_get_schema(self.request)
             assert result == mock_response.return_value
@@ -324,14 +300,6 @@ class TestSchemaRoutes(AsyncTestCase):
             )
 
     async def test_get_schema_no_ledger(self):
-        self.profile_injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, None)
-                )
-            ),
-        )
         self.request.match_info = {"schema_id": SCHEMA_ID}
         self.ledger.get_schema = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")
@@ -342,14 +310,6 @@ class TestSchemaRoutes(AsyncTestCase):
             await test_module.schemas_get_schema(self.request)
 
     async def test_get_schema_x_ledger(self):
-        self.profile_injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, self.ledger)
-                )
-            ),
-        )
         self.request.match_info = {"schema_id": SCHEMA_ID}
         self.ledger.get_schema = async_mock.CoroutineMock(
             side_effect=test_module.LedgerError("Down for routine maintenance")

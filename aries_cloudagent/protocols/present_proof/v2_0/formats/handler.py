@@ -79,7 +79,9 @@ class V20PresFormatHandler(ABC):
         """Create a presentation."""
 
     @abstractmethod
-    async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):
+    async def receive_pres(
+        self, message: V20Pres, pres_ex_record: V20PresExRecord
+    ) -> None:
         """Receive a presentation, from message in context on manager creation."""
 
     @abstractmethod

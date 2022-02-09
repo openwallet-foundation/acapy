@@ -12,7 +12,6 @@ from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event
 from ...core.in_memory import InMemoryProfile
 from ...core.protocol_registry import ProtocolRegistry
-from ...core.goal_code_registry import GoalCodeRegistry
 from ...transport.outbound.message import OutboundMessage
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
@@ -188,7 +187,6 @@ class TestAdminServer(AsyncTestCase):
         # for routes with associated tests, this shouldn't make a difference in coverage
         context = InjectionContext()
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
-        context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
         await DefaultContextBuilder().load_plugins(context)
         server = self.get_admin_server({"admin.admin_insecure_mode": True}, context)
         app = await server.make_application()
@@ -197,7 +195,6 @@ class TestAdminServer(AsyncTestCase):
         # imports all default admin routes
         context = InjectionContext()
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
-        context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
         profile = InMemoryProfile.test_profile()
         context.injector.bind_instance(
             test_module.BaseMultitenantManager,
@@ -339,31 +336,6 @@ class TestAdminServer(AsyncTestCase):
             headers={"x-api-key": "test-api-key"},
         ) as response:
             assert response.status == 200
-
-        # Make sure that OPTIONS requests used by browsers for CORS
-        # are allowed without a x-api-key even when x-api-key security is enabled
-        async with self.client_session.options(
-            f"http://127.0.0.1:{self.port}/status",
-            headers={
-                "Access-Control-Request-Headers": "x-api-key",
-                "Access-Control-Request-Method": "GET",
-                "Connection": "keep-alive",
-                "Host": f"http://127.0.0.1:{self.port}/status",
-                "Origin": "http://localhost:3000",
-                "Referer": "http://localhost:3000/",
-                "Sec-Fetch-Dest": "empty",
-                "Sec-Fetch-Mode": "cors",
-                "Sec-Fetch-Site": "same-site",
-            },
-        ) as response:
-            assert response.status == 200
-            assert response.headers["Access-Control-Allow-Credentials"] == "true"
-            assert response.headers["Access-Control-Allow-Headers"] == "X-API-KEY"
-            assert response.headers["Access-Control-Allow-Methods"] == "GET"
-            assert (
-                response.headers["Access-Control-Allow-Origin"]
-                == "http://localhost:3000"
-            )
 
         async with self.client_session.ws_connect(
             f"http://127.0.0.1:{self.port}/ws", headers={"x-api-key": "test-api-key"}

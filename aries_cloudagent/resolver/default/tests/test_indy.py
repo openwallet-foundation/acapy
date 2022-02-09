@@ -8,9 +8,6 @@ from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    IndyLedgerRequestsExecutor,
-)
 from ....messaging.valid import IndyDID
 
 from ...base import DIDNotFound, ResolverError
@@ -30,7 +27,7 @@ def resolver():
 @pytest.fixture
 def ledger():
     """Ledger fixture."""
-    ledger = async_mock.MagicMock(spec=BaseLedger)
+    ledger = async_mock.MagicMock(spec=test_module.BaseLedger)
     ledger.get_endpoint_for_did = async_mock.CoroutineMock(
         return_value="https://github.com/"
     )
@@ -42,14 +39,7 @@ def ledger():
 def profile(ledger):
     """Profile fixture."""
     profile = InMemoryProfile.test_profile()
-    profile.context.injector.bind_instance(
-        IndyLedgerRequestsExecutor,
-        async_mock.MagicMock(
-            get_ledger_for_identifier=async_mock.CoroutineMock(
-                return_value=(None, ledger)
-            )
-        ),
-    )
+    profile.context.injector.bind_instance(BaseLedger, ledger)
     yield profile
 
 
@@ -70,14 +60,7 @@ class TestIndyResolver:
         self, profile: Profile, resolver: IndyDIDResolver
     ):
         """Test resolve method with no ledger."""
-        profile.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=(None, None)
-                )
-            ),
-        )
+        profile.context.injector.clear_binding(BaseLedger)
         with pytest.raises(ResolverError):
             await resolver.resolve(profile, TEST_DID0)
 

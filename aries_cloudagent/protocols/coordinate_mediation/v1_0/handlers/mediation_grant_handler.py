@@ -24,18 +24,17 @@ class MediationGrantHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("Received mediation grant from inactive connection")
 
-        profile = context.profile
-        mgr = MediationManager(profile)
+        mgr = MediationManager(context.profile)
         try:
-            async with profile.session() as session:
+            async with context.session() as session:
                 record = await MediationRecord.retrieve_by_connection_id(
                     session, context.connection_record.connection_id
                 )
             await mgr.request_granted(record, context.message)
 
             # Multitenancy setup
-            multitenant_mgr = profile.inject_or(BaseMultitenantManager)
-            wallet_id = profile.settings.get("wallet.id")
+            multitenant_mgr = context.profile.inject_or(BaseMultitenantManager)
+            wallet_id = context.profile.settings.get("wallet.id")
 
             if multitenant_mgr and wallet_id:
                 base_mediation_record = await multitenant_mgr.get_default_mediator()
@@ -55,13 +54,11 @@ class MediationGrantHandler(BaseHandler):
                     )
 
             # Set to default if metadata set on connection to do so
-            async with profile.session() as session:
-                mediationRecord = await context.connection_record.metadata_get(
+            async with context.session() as session:
+                if await context.connection_record.metadata_get(
                     session, MediationManager.SET_TO_DEFAULT_ON_GRANTED
-                )
-
-            if mediationRecord:
-                await mgr.set_default_mediator(record)
+                ):
+                    await mgr.set_default_mediator(record)
 
         except StorageNotFoundError as err:
             raise HandlerException(

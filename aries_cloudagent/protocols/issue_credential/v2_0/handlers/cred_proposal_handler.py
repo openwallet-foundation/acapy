@@ -39,8 +39,7 @@ class V20CredProposalHandler(BaseHandler):
         if not context.connection_ready:
             raise HandlerException("No connection established for credential proposal")
 
-        profile = context.profile
-        cred_manager = V20CredManager(profile)
+        cred_manager = V20CredManager(context.profile)
         cred_ex_record = await cred_manager.receive_proposal(
             context.message, context.connection_record.connection_id
         )  # mgr only finds, saves record: on exception, saving state null is hopeless
@@ -70,17 +69,17 @@ class V20CredProposalHandler(BaseHandler):
                 V20CredManagerError,
             ) as err:
                 self._logger.exception(err)
-                async with profile.session() as session:
+                async with context.session() as session:
                     await cred_ex_record.save_error_state(
                         session,
                         reason=err.roll_up,  # us: be specific
                     )
-                await responder.send_reply(
-                    problem_report_for_record(
-                        cred_ex_record,
-                        ProblemReportReason.ISSUANCE_ABANDONED.value,  # them: vague
+                    await responder.send_reply(
+                        problem_report_for_record(
+                            cred_ex_record,
+                            ProblemReportReason.ISSUANCE_ABANDONED.value,  # them: vague
+                        )
                     )
-                )
 
             trace_event(
                 context.settings,

@@ -12,7 +12,7 @@ from datetime import datetime, date
 from io import StringIO
 from pathlib import Path
 from time import time
-from typing import Sequence, Tuple, Union, Optional
+from typing import Sequence, Tuple, Union
 
 from indy_vdr import ledger, open_pool, Pool, Request, VdrError
 
@@ -938,14 +938,8 @@ class IndyVdrLedger(BaseLedger):
         return False
 
     async def register_nym(
-        self,
-        did: str,
-        verkey: str,
-        alias: str = None,
-        role: str = None,
-        write_ledger: bool = True,
-        endorser_did: str = None,
-    ) -> Tuple[bool, dict]:
+        self, did: str, verkey: str, alias: str = None, role: str = None
+    ):
         """
         Register a nym on the ledger.
 
@@ -971,14 +965,8 @@ class IndyVdrLedger(BaseLedger):
         except VdrError as err:
             raise LedgerError("Exception when building nym request") from err
 
-        if endorser_did and not write_ledger:
-            nym_req.set_endorser(endorser_did)
+        await self._submit(nym_req, sign=True, sign_did=public_info)
 
-        resp = await self._submit(
-            nym_req, sign=True, sign_did=public_info, write_ledger=write_ledger
-        )
-        if not write_ledger:
-            return True, {"signed_txn": resp}
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             try:
@@ -988,7 +976,6 @@ class IndyVdrLedger(BaseLedger):
             else:
                 metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
                 await wallet.replace_local_did_metadata(did, metadata)
-        return True, None
 
     async def get_nym_role(self, did: str) -> Role:
         """
@@ -1019,21 +1006,6 @@ class IndyVdrLedger(BaseLedger):
             nym = self.did_to_nym(nym)
             return f"did:sov:{nym}"
 
-    async def build_and_return_get_nym_request(
-        self, submitter_did: Optional[str], target_did: str
-    ) -> str:
-        """Build GET_NYM request and return request_json."""
-        try:
-            request_json = ledger.build_get_nym_request(submitter_did, target_did)
-            return request_json
-        except VdrError as err:
-            raise LedgerError("Exception when building get-nym request") from err
-
-    async def submit_get_nym_request(self, request_json: str) -> str:
-        """Submit GET_NYM request to ledger and return response_json."""
-        response_json = await self._submit(request_json)
-        return response_json
-
     async def rotate_public_did_keypair(self, next_seed: str = None) -> None:
         """
         Rotate keypair for public DID: create new key, submit to ledger, update wallet.
@@ -1050,14 +1022,14 @@ class IndyVdrLedger(BaseLedger):
             del wallet
             await txn.commit()
 
-        # fetch current nym info from ledger
+        # submit to ledger (retain role and alias)
         nym = self.did_to_nym(public_did)
         try:
-            get_nym_req = ledger.build_get_nym_request(public_did, nym)
+            nym_req = ledger.build_get_nym_request(public_did, nym)
         except VdrError as err:
             raise LedgerError("Exception when building nym request") from err
 
-        response = await self._submit(get_nym_req)
+        response = await self._submit(nym_req)
         data = json.loads(response["data"])
         if not data:
             raise BadLedgerRequestError(
@@ -1079,8 +1051,7 @@ class IndyVdrLedger(BaseLedger):
         txn_data_data = txn_resp_data["txn"]["data"]
         role_token = Role.get(txn_data_data.get("role")).token()
         alias = txn_data_data.get("alias")
-        # submit the updated nym record
-        await self.register_nym(public_did, verkey, alias=alias, role=role_token)
+        await self.register_nym(public_did, verkey, role_token, alias)
 
         # update wallet
         async with self.profile.transaction() as txn:
@@ -1351,7 +1322,6 @@ class IndyVdrLedger(BaseLedger):
     async def txn_endorse(
         self,
         request_json: str,
-        endorse_did: DIDInfo = None,
     ) -> str:
         """Endorse (sign) the provided transaction."""
         try:
@@ -1361,7 +1331,7 @@ class IndyVdrLedger(BaseLedger):
 
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
-            sign_did = endorse_did if endorse_did else await wallet.get_public_did()
+            sign_did = await wallet.get_public_did()
             if not sign_did:
                 raise BadLedgerRequestError(
                     "Cannot endorse transaction without a public DID"
@@ -1382,9 +1352,6 @@ class IndyVdrLedger(BaseLedger):
         sign_did: DIDInfo = sentinel,
     ) -> str:
         """Write the provided (signed and possibly endorsed) transaction to the ledger."""
-        resp = await self._submit(
+        return await self._submit(
             request_json, sign=sign, taa_accept=taa_accept, sign_did=sign_did
         )
-        # match the format returned by indy sdk
-        sdk_resp = {"op": "REPLY", "result": resp}
-        return json.dumps(sdk_resp)
