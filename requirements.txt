@@ -16,7 +16,7 @@ requests~=2.25.0
 packaging~=20.4
 pyld~=2.0.3
 pyyaml~=5.4.0
-ConfigArgParse~=1.2.3
+ConfigArgParse~=1.5.3
 pyjwt~=1.7.1
 pydid~=0.3.3
 jsonpath_ng==1.5.2
