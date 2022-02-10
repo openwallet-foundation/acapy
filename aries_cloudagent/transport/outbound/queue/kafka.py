@@ -3,6 +3,7 @@ import logging
 import msgpack
 
 from aiokafka import AIOKafkaProducer
+from random import randrange
 from typing import Union
 
 from ....core.profile import Profile
@@ -85,5 +86,7 @@ class KafkaOutboundQueue(BaseOutboundQueue):
             }
         )
         await self.producer.send(
-            self.outbound_topic, value=message, key=self.outbound_topic.encode("utf-8")
+            self.outbound_topic,
+            value=message,
+            key=(f"{self.outbound_topic}_{str(randrange(5))}".encode("utf-8")),
         )

@@ -14,6 +14,7 @@ import yaml
 from aiokafka import AIOKafkaConsumer, ConsumerRebalanceListener, AIOKafkaProducer
 from aiokafka.errors import OffsetOutOfRangeError
 from collections import Counter
+from random import randrange
 from time import time
 
 logging.basicConfig(
@@ -202,8 +203,9 @@ class KafkaHandler:
                                         headers=headers,
                                         timeout=10,
                                     )
-                                except aiohttp.ClientError as err:
-                                    logging.error("Delivery error:", err)
+                                except aiohttp.ClientError:
+                                    failed = True
+                                except asyncio.TimeoutError:
                                     failed = True
                                 else:
                                     if response.status < 200 or response.status >= 300:
@@ -225,7 +227,7 @@ class KafkaHandler:
                                         )
                                     else:
                                         logging.error(
-                                            "Exceeded max retries for", endpoint
+                                            f"Exceeded max retries for {str(endpoint)}"
                                         )
                             else:
                                 logging.error(f"Unsupported scheme: {parsed.scheme}")
@@ -247,7 +249,7 @@ class KafkaHandler:
         await self.producer.send(
             self.retry_topic,
             value=msgpack.packb(message),
-            key=self.retry_topic.encode("utf-8"),
+            key=(f"{self.retry_topic}_{str(randrange(5))}".encode("utf-8")),
         )
 
     async def process_retries(self):
@@ -273,12 +275,15 @@ class KafkaHandler:
                     for msg in msgs:
                         msg_data = msgpack.unpackb(msg.value)
                         retry_time = msg_data[b"retry_time"]
-                        if int(time()) > retry_time:
+                        if int(time()) < retry_time:
                             del msg_data[b"retry_time"]
                             await self.producer.send(
                                 self.outbound_topic,
                                 value=msgpack.packb(msg_data),
-                                key=self.outbound_topic.encode("utf-8"),
+                                key=(
+                                    f"{self.outbound_topic}_"
+                                    f"{str(randrange(5))}".encode("utf-8")
+                                ),
                             )
                         counts[msg.key] += 1
                     local_state.add_counts(tp, counts, msg.offset)

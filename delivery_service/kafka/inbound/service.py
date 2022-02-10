@@ -9,6 +9,7 @@ import yaml
 
 from aiohttp import WSMessage, WSMsgType, web
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+from random import randrange
 from uuid import uuid4
 
 logging.basicConfig(
@@ -127,10 +128,6 @@ class KafkaHTTPHandler:
                 direct_response_request = True
         txn_id = str(uuid4())
         if direct_response_request:
-            logging.info(
-                f"Direct response requested for message ({txn_id})"
-                f" received from {request.remote}"
-            )
             self.direct_response_txn_request_map[txn_id] = request
             message = msgpack.packb(
                 {
@@ -144,7 +141,10 @@ class KafkaHTTPHandler:
             await self.producer.send(
                 self.inbound_transport_key,
                 value=message,
-                key=self.inbound_transport_key.encode("utf-8"),
+                key=(
+                    f"{self.inbound_transport_key}_"
+                    f"{str(randrange(5))}".encode("utf-8")
+                ),
             )
             try:
                 response_data = await asyncio.wait_for(
@@ -153,7 +153,6 @@ class KafkaHTTPHandler:
                     ),
                     15,
                 )
-                logging.info(f"Direct response recieved for message ({txn_id})")
                 response = response_data["response"]
                 content_type = response_data.get("content_type", "application/json")
                 if response:
@@ -177,7 +176,10 @@ class KafkaHTTPHandler:
             await self.producer.send(
                 self.inbound_transport_key,
                 value=message,
-                key=self.inbound_transport_key.encode("utf-8"),
+                key=(
+                    f"{self.inbound_transport_key}_"
+                    f"{str(randrange(5))}".encode("utf-8")
+                ),
             )
             return web.Response(status=200)
 
@@ -226,6 +228,7 @@ class KafkaWSHandler:
         runner = web.AppRunner(app)
         await runner.setup()
         self.site = web.TCPSite(runner, host=self.site_host, port=self.site_port)
+        await self.site.start()
 
     async def stop(self) -> None:
         """Shutdown."""
@@ -288,10 +291,6 @@ class KafkaWSHandler:
                             direct_response_request = True
                     txn_id = str(uuid4())
                     if direct_response_request:
-                        logging.info(
-                            f"Direct response requested for message ({txn_id})"
-                            f" received from {request.remote}"
-                        )
                         self.direct_response_txn_request_map[txn_id] = request
                         message = msgpack.packb(
                             {
@@ -305,7 +304,10 @@ class KafkaWSHandler:
                         await self.producer.send(
                             self.inbound_transport_key,
                             value=message,
-                            key=self.inbound_transport_key.encode("utf-8"),
+                            key=(
+                                f"{self.inbound_transport_key}_"
+                                f"{str(randrange(5))}".encode("utf-8")
+                            ),
                         )
                         try:
                             response_data = await asyncio.wait_for(
@@ -313,9 +315,6 @@ class KafkaWSHandler:
                                     txn_id=txn_id,
                                 ),
                                 15,
-                            )
-                            logging.info(
-                                f"Direct response recieved for message ({txn_id})"
                             )
                             response = response_data["response"]
                             if response:
@@ -338,7 +337,10 @@ class KafkaWSHandler:
                         await self.producer.send(
                             self.inbound_transport_key,
                             value=message,
-                            key=self.inbound_transport_key.encode("utf-8"),
+                            key=(
+                                f"{self.inbound_transport_key}_"
+                                f"{str(randrange(5))}".encode("utf-8")
+                            ),
                         )
                 elif msg.type == WSMsgType.ERROR:
                     logging.error(

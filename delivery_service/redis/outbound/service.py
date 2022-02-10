@@ -78,8 +78,9 @@ class RedisHandler:
                             response = await http_client.post(
                                 endpoint, data=payload, headers=headers, timeout=10
                             )
-                        except aiohttp.ClientError as err:
-                            logging.error("Delivery error:", err)
+                        except aiohttp.ClientError:
+                            failed = True
+                        except asyncio.TimeoutError:
                             failed = True
                         else:
                             if response.status < 200 or response.status >= 300:
@@ -98,7 +99,9 @@ class RedisHandler:
                                     }
                                 )
                             else:
-                                logging.error("Exceeded max retries for", endpoint)
+                                logging.error(
+                                    f"Exceeded max retries for {str(endpoint)}"
+                                )
                     else:
                         logging.error(f"Unsupported scheme: {parsed.scheme}")
         finally:
@@ -115,7 +118,8 @@ class RedisHandler:
                 )
                 retry_time = int(time() + wait_interval)
                 await self.redis.zadd(
-                    f"{self.prefix}.outbound_retry", retry_time, msgpack.packb(message)
+                    f"{self.prefix}.outbound_retry",
+                    {msgpack.packb(message): retry_time},
                 )
                 zadd_sent = True
             except aioredis.RedisError as err:

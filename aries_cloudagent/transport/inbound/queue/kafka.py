@@ -9,6 +9,7 @@ import pathlib
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer, ConsumerRebalanceListener
 from aiokafka.errors import OffsetOutOfRangeError
 from collections import Counter
+from random import randrange
 from threading import Thread
 
 from ....core.profile import Profile
@@ -258,7 +259,10 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                                 await self.producer.send(
                                     self.direct_response_topic,
                                     value=msgpack.packb(message),
-                                    key=self.direct_response_topic.encode("utf-8"),
+                                    key=(
+                                        f"{self.direct_response_topic}_"
+                                        f"{str(randrange(5))}".encode("utf-8")
+                                    ),
                                 )
                         counts[msg.key] += 1
                     local_state.add_counts(tp, counts, msg.offset)

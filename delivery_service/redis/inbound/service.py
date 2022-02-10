@@ -116,10 +116,6 @@ class RedisHTTPHandler:
                 direct_response_request = True
         txn_id = str(uuid4())
         if direct_response_request:
-            logging.info(
-                f"Direct response requested for message ({txn_id})"
-                f" received from {request.remote}"
-            )
             self.direct_response_txn_request_map[txn_id] = request
             message = {
                 "host": request.host,
@@ -145,7 +141,6 @@ class RedisHTTPHandler:
                     ),
                     15,
                 )
-                logging.info(f"Direct response recieved for message ({txn_id})")
                 response = response_data["response"]
                 content_type = (
                     response_data["content_type"]
@@ -212,6 +207,7 @@ class RedisWSHandler:
         runner = web.AppRunner(app)
         await runner.setup()
         self.site = web.TCPSite(runner, host=self.site_host, port=self.site_port)
+        await self.site.start()
 
     async def stop(self) -> None:
         """Shutdown."""
@@ -276,10 +272,6 @@ class RedisWSHandler:
                             direct_response_request = True
                     txn_id = str(uuid4())
                     if direct_response_request:
-                        logging.info(
-                            f"Direct response requested for message ({txn_id})"
-                            f" received from {request.remote}"
-                        )
                         self.direct_response_txn_request_map[txn_id] = request
                         message = {
                             "host": request.host,
@@ -306,9 +298,6 @@ class RedisWSHandler:
                                     txn_id=txn_id,
                                 ),
                                 15,
-                            )
-                            logging.info(
-                                f"Direct response recieved for message ({txn_id})"
                             )
                             response = response_data["response"]
                             if response:
