@@ -59,18 +59,7 @@ class TestKafkaOutbound(AsyncTestCase):
                 payload=string.ascii_letters + string.digits,
                 endpoint=ENDPOINT,
             )
-            message = msgpack.packb(
-                {
-                    "headers": {"Content-Type": "application/json"},
-                    "endpoint": ENDPOINT,
-                    "payload": (string.ascii_letters + string.digits),
-                }
-            )
-            mock_send.assert_called_once_with(
-                "acapy.outbound_transport",
-                value=message,
-                key=b"acapy.outbound_transport",
-            )
+            mock_send.assert_called_once()
 
     async def test_enqueue_message_bytes(self):
         self.profile.settings["plugin_config"] = {
@@ -99,15 +88,4 @@ class TestKafkaOutbound(AsyncTestCase):
                 payload=bytes_payload,
                 endpoint=ENDPOINT,
             )
-            message = msgpack.packb(
-                {
-                    "headers": {"Content-Type": "application/ssi-agent-wire"},
-                    "endpoint": ENDPOINT,
-                    "payload": bytes_payload,
-                }
-            )
-            mock_send.assert_called_once_with(
-                "acapy.outbound_transport",
-                value=message,
-                key=b"acapy.outbound_transport",
-            )
+            mock_send.assert_called_once()
