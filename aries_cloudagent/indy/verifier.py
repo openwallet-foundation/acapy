@@ -70,7 +70,14 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                             uuid,
                         )
 
-        if all(spec.get("timestamp") is None for spec in pres["identifiers"]):
+        if all(
+            (
+                spec.get("timestamp") is None
+                and "revocation"
+                not in cred_defs[spec["cred_def_id"]]["value"]
+            )
+            for spec in pres["identifiers"]
+        ):
             pres_req.pop("non_revoked", None)
             LOGGER.warning(
                 (
