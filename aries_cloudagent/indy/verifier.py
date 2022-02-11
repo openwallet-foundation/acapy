@@ -73,8 +73,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         if all(
             (
                 spec.get("timestamp") is None
-                and "revocation"
-                not in cred_defs[spec["cred_def_id"]]["value"]
+                and "revocation" not in cred_defs[spec["cred_def_id"]]["value"]
             )
             for spec in pres["identifiers"]
         ):
