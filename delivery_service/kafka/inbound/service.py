@@ -1,14 +1,13 @@
 """Kafka Inbound Delivery Service."""
 import asyncio
-import argparse
 import logging
 import msgpack
 import json
 import sys
-import yaml
 
 from aiohttp import WSMessage, WSMsgType, web
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
+from configargparse import ArgumentParser
 from random import randrange
 from uuid import uuid4
 
@@ -367,29 +366,30 @@ class KafkaWSHandler:
 async def main(args):
     """Start services."""
     args = argument_parser(args)
-    config = None
-    if args.plugin_config:
-        with open(args.plugin_config, "r") as stream:
-            loaded_plugin_config = yaml.safe_load(stream)
-        config = loaded_plugin_config.get("kafka_inbound_queue")
     if args.inbound_queue:
         host = args.inbound_queue
-    elif config:
-        host = config["connection"]
     else:
         raise SystemExit("No Kafka bootsrap server or host provided.")
-    if config:
-        prefix = config.get("prefix", "acapy")
-    elif args.inbound_queue_prefix:
+    if args.inbound_queue_prefix:
         prefix = args.inbound_queue_prefix
+    else:
+        prefix = "acapy"
     tasks = []
     if not args.inbound_queue_transports:
         raise SystemExit("No inbound transport config provided.")
     for inbound_transport in args.inbound_queue_transports:
         transport_type, site_host, site_port = inbound_transport
         if transport_type == "ws":
+            logging.info(
+                "Starting Kafka ws inbound delivery service agent "
+                f"with args: {host}, {prefix}, {site_host}, {site_port}"
+            )
             handler = KafkaWSHandler(host, prefix, site_host, site_port)
         elif transport_type == "http":
+            logging.info(
+                "Starting Kafka http inbound delivery service agent "
+                f"with args: {host}, {prefix}, {site_host}, {site_port}"
+            )
             handler = KafkaHTTPHandler(host, prefix, site_host, site_port)
         else:
             raise SystemExit("Only ws and http transport type are supported.")
@@ -399,12 +399,13 @@ async def main(args):
 
 def argument_parser(args):
     """Argument parser."""
-    parser = argparse.ArgumentParser(description="kafka Inbound Delivery Service.")
+    parser = ArgumentParser(description="kafka Inbound Delivery Service.")
     parser.add_argument(
         "-iq",
         "--inbound-queue",
         dest="inbound_queue",
         type=str,
+        env_var="ACAPY_INBOUND_TRANSPORT_QUEUE",
     )
     parser.add_argument(
         "-iqp",
@@ -412,6 +413,7 @@ def argument_parser(args):
         dest="inbound_queue_prefix",
         type=str,
         default="acapy",
+        env_var="ACAPY_INBOUND_TRANSPORT_QUEUE_PREFIX",
     )
     parser.add_argument(
         "-iqt",
@@ -419,15 +421,10 @@ def argument_parser(args):
         dest="inbound_queue_transports",
         type=str,
         action="append",
+        required=False,
         nargs=3,
         metavar=("<module>", "<host>", "<port>"),
-    )
-    parser.add_argument(
-        "--plugin-config",
-        dest="plugin_config",
-        type=str,
-        required=False,
-        help="Load YAML file path that defines external plugin configuration.",
+        env_var="ACAPY_INBOUND_QUEUE_TRANSPORT",
     )
     return parser.parse_args(args)
 

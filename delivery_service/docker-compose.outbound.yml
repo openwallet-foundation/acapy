@@ -1,0 +1,24 @@
+version: "3" 
+services:
+  kafka-outbound-delivery-service:
+    environment:
+      - ACAPY_OUTBOUND_TRANSPORT_QUEUE=${ACAPY_OUTBOUND_TRANSPORT_QUEUE}
+      - ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX=${ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX}
+    networks:
+      - delivey_service_network
+    build: 
+      context: ..
+      dockerfile: ./delivery_service/kafka/outbound/docker/Dockerfile.run
+  redis-outbound-delivery-service:
+    environment:
+      - ACAPY_OUTBOUND_TRANSPORT_QUEUE=${ACAPY_OUTBOUND_TRANSPORT_QUEUE}
+      - ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX=${ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX}
+    networks:
+      - delivey_service_network
+    build:
+      context: ..
+      dockerfile: ./delivery_service/redis/outbound/docker/Dockerfile.run
+networks:
+  delivey_service_network:
+    external: true
+    name: ${NETWORK_NAME}

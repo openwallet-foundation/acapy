@@ -1,14 +1,13 @@
 """Redis Inbound Delivery Service."""
 import aioredis
 import asyncio
-import argparse
 import logging
 import msgpack
 import sys
 import json
-import yaml
 
 from aiohttp import WSMessage, WSMsgType, web
+from configargparse import ArgumentParser
 from uuid import uuid4
 
 logging.basicConfig(
@@ -352,29 +351,30 @@ class RedisWSHandler:
 async def main(args):
     """Start services."""
     args = argument_parser(args)
-    config = None
-    if args.plugin_config:
-        with open(args.plugin_config, "r") as stream:
-            loaded_plugin_config = yaml.safe_load(stream)
-        config = loaded_plugin_config.get("redis_inbound_queue")
     if args.inbound_queue:
         host = args.inbound_queue
-    elif config:
-        host = config["connection"]
     else:
         raise SystemExit("No Redis host/connection provided.")
-    if config:
-        prefix = config.get("prefix", "acapy")
-    elif args.inbound_queue_prefix:
+    if args.inbound_queue_prefix:
         prefix = args.inbound_queue_prefix
+    else:
+        prefix = "acapy"
     tasks = []
     if not args.inbound_queue_transports:
         raise SystemExit("No inbound transport config provided.")
     for inbound_transport in args.inbound_queue_transports:
         transport_type, site_host, site_port = inbound_transport
         if transport_type == "ws":
+            logging.info(
+                "Starting Redis ws inbound delivery service agent "
+                f"with args: {host}, {prefix}, {site_host}, {site_port}"
+            )
             handler = RedisWSHandler(host, prefix, site_host, site_port)
         elif transport_type == "http":
+            logging.info(
+                "Starting Redis http inbound delivery service agent "
+                f"with args: {host}, {prefix}, {site_host}, {site_port}"
+            )
             handler = RedisHTTPHandler(host, prefix, site_host, site_port)
         else:
             raise SystemExit("Only ws and http transport type are supported.")
@@ -384,12 +384,13 @@ async def main(args):
 
 def argument_parser(args):
     """Argument parser."""
-    parser = argparse.ArgumentParser(description="Redis Inbound Delivery Service.")
+    parser = ArgumentParser(description="Redis Inbound Delivery Service.")
     parser.add_argument(
         "-iq",
         "--inbound-queue",
         dest="inbound_queue",
         type=str,
+        env_var="ACAPY_INBOUND_TRANSPORT_QUEUE",
     )
     parser.add_argument(
         "-iqp",
@@ -397,6 +398,7 @@ def argument_parser(args):
         dest="inbound_queue_prefix",
         type=str,
         default="acapy",
+        env_var="ACAPY_INBOUND_TRANSPORT_QUEUE_PREFIX",
     )
     parser.add_argument(
         "-iqt",
@@ -404,15 +406,10 @@ def argument_parser(args):
         dest="inbound_queue_transports",
         type=str,
         action="append",
+        required=False,
         nargs=3,
         metavar=("<module>", "<host>", "<port>"),
-    )
-    parser.add_argument(
-        "--plugin-config",
-        dest="plugin_config",
-        type=str,
-        required=False,
-        help="Load YAML file path that defines external plugin configuration.",
+        env_var="ACAPY_INBOUND_QUEUE_TRANSPORT",
     )
     return parser.parse_args(args)
 

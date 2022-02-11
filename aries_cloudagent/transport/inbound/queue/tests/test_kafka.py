@@ -182,13 +182,38 @@ class TestLocalState(AsyncTestCase):
         self.local_state.OFFSET_LOCAL_FILE = offset_local_path
         assert self.local_state._counts == {}
         assert self.local_state._offsets == {}
-        test_partition = {
+        self.test_partition = {
             TopicPartition(topic="topic1", partition=1),
             TopicPartition(topic="topic2", partition=0),
         }
-        self.local_state.load_local_state(test_partition)
+        with async_mock.patch.object(
+            test_module.pathlib, "Path", async_mock.MagicMock()
+        ) as pathlib_obj, async_mock.patch.object(
+            test_module.json,
+            "load",
+            async_mock.MagicMock(
+                return_value={"last_offset": 10, "counts": {"key": 5}}
+            ),
+        ):
+            pathlib_obj.exists = async_mock.CoroutineMock(return_value=True)
+            pathlib_obj.open = async_mock.MagicMock()
+            self.local_state.load_local_state(self.test_partition)
         assert self.local_state._counts != {}
         assert self.local_state._offsets != {}
+
+    def test_load_local_state_x(self):
+        with async_mock.patch.object(
+            test_module.pathlib, "Path", async_mock.MagicMock()
+        ) as pathlib_obj, async_mock.patch.object(
+            test_module.json,
+            "load",
+            async_mock.MagicMock(
+                side_effect=test_module.json.JSONDecodeError("test", "test", 1)
+            ),
+        ):
+            pathlib_obj.exists = async_mock.CoroutineMock(return_value=True)
+            pathlib_obj.open = async_mock.MagicMock()
+            self.local_state.load_local_state(self.test_partition)
 
     def test_dump_local_state(self):
         self.local_state.dump_local_state()
@@ -231,6 +256,10 @@ class TestKafkaInbound(AsyncTestCase):
 
     async def test_init(self):
         self.profile.settings["transport.inbound_queue"] = "connection"
+        self.profile.settings["transport.inbound_queue_transports"] = [
+            ("http", "0.0.0.0", "8002"),
+            ("ws", "0.0.0.0", "8003"),
+        ]
         with async_mock.patch(
             "aiokafka.AIOKafkaProducer.start",
             async_mock.CoroutineMock(),
@@ -275,6 +304,26 @@ class TestKafkaInbound(AsyncTestCase):
     def test_init_x(self):
         with pytest.raises(InboundQueueConfigurationError):
             KafkaInboundQueue(self.profile)
+
+    async def test_close(self):
+        self.profile.settings["transport.inbound_queue"] = "connection"
+        with async_mock.patch(
+            "aiokafka.AIOKafkaProducer.start",
+            async_mock.CoroutineMock(),
+        ), async_mock.patch(
+            "aiokafka.AIOKafkaProducer",
+            async_mock.MagicMock(),
+        ), async_mock.patch(
+            "aiokafka.AIOKafkaConsumer.start",
+            async_mock.CoroutineMock(),
+        ), async_mock.patch(
+            "aiokafka.AIOKafkaConsumer",
+            async_mock.MagicMock(),
+        ):
+            queue = KafkaInboundQueue(self.profile)
+            await queue.start_queue()
+            queue.producer._closed = True
+            await queue.close()
 
     async def test_receive_messages(self):
         self.profile.settings["transport.inbound_queue"] = "connection"

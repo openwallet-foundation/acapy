@@ -58,7 +58,7 @@ class KafkaOutboundQueue(BaseOutboundQueue):
 
     async def close(self):
         """Kafka connection context manager exit."""
-        if not self.producer._closed:
+        if self.producer._closed:
             await self.producer.start()
 
     async def enqueue_message(

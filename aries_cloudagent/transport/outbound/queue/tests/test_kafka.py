@@ -33,6 +33,37 @@ class TestKafkaOutbound(AsyncTestCase):
             queue.connection = "connection"
             assert str(queue)
             await queue.start()
+            await queue.stop()
+
+    async def test_close(self):
+        self.profile.settings["transport.outbound_queue"] = "connection"
+        with async_mock.patch(
+            "aiokafka.AIOKafkaProducer.start",
+            async_mock.CoroutineMock(),
+        ), async_mock.patch(
+            "aiokafka.AIOKafkaProducer",
+            async_mock.MagicMock(),
+        ):
+            queue = KafkaOutboundQueue(self.profile)
+            await queue.start()
+            queue.producer._closed = True
+            await queue.close()
+
+    async def test_enqueue_message_x(self):
+        self.profile.settings["transport.outbound_queue"] = "connection"
+        with async_mock.patch(
+            "aiokafka.AIOKafkaProducer.start",
+            async_mock.CoroutineMock(),
+        ), async_mock.patch(
+            "aiokafka.AIOKafkaProducer",
+            async_mock.MagicMock(),
+        ):
+            queue = KafkaOutboundQueue(self.profile)
+            with self.assertRaises(OutboundQueueError):
+                await queue.start()
+                await queue.enqueue_message(
+                    payload=string.ascii_letters + string.digits, endpoint=None
+                )
 
     def test_init_x(self):
         with pytest.raises(OutboundQueueConfigurationError):

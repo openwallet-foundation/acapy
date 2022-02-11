@@ -1,14 +1,13 @@
 """Redis Outbound Delivery Service."""
 import aiohttp
 import aioredis
-import argparse
 import asyncio
 import logging
 import msgpack
 import urllib
 import sys
-import yaml
 
+from configargparse import ArgumentParser
 from time import time
 
 logging.basicConfig(
@@ -183,33 +182,30 @@ class RedisHandler:
 async def main(args):
     """Start services."""
     args = argument_parser(args)
-    config = None
-    if args.plugin_config:
-        with open(args.plugin_config, "r") as stream:
-            loaded_plugin_config = yaml.safe_load(stream)
-        config = loaded_plugin_config.get("redis_outbound_queue")
     if args.outbound_queue:
         host = args.outbound_queue
-    elif config:
-        host = config["connection"]
     else:
         raise SystemExit("No Redis host/connection provided.")
-    if config:
-        prefix = config.get("prefix", "acapy")
-    elif args.outbound_queue_prefix:
+    if args.outbound_queue_prefix:
         prefix = args.outbound_queue_prefix
+    else:
+        prefix = "acapy"
+    logging.info(
+        f"Starting Redis outbound delivery service agent with args: {host}, {prefix}"
+    )
     handler = RedisHandler(host, prefix)
     await handler.run()
 
 
 def argument_parser(args):
     """Argument parser."""
-    parser = argparse.ArgumentParser(description="Redis Outbound Delivery Service.")
+    parser = ArgumentParser(description="Redis Outbound Delivery Service.")
     parser.add_argument(
         "-oq",
         "--outbound-queue",
         dest="outbound_queue",
         type=str,
+        env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE",
     )
     parser.add_argument(
         "-oqp",
@@ -217,13 +213,7 @@ def argument_parser(args):
         dest="outbound_queue_prefix",
         type=str,
         default="acapy",
-    )
-    parser.add_argument(
-        "--plugin-config",
-        dest="plugin_config",
-        type=str,
-        required=False,
-        help="Load YAML file path that defines external plugin configuration.",
+        env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX",
     )
     return parser.parse_args(args)
 

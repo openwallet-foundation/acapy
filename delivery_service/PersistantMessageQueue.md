@@ -19,10 +19,9 @@
 └───delivery_service
 │    │   redis
 │    │   kafka
+│    │   run_delivery_service
+│    │   docker-compose.yml
 │   
-└───scripts
-    │   run_docker
-    │   run_delivery_service
 ```
 ## Steps
 - Specifically for Kafka, the kafka instance, ACA-Py agent and delivery service agents will have to run in the same docker network. Create a docker network, `docker network create NETWORK_NAME`
@@ -131,5 +130,5 @@ services:
 networks:
   acapy_default:
     external: true
-    name: acapy_test_network
+    name: ${NETWORK_NAME}
 ```

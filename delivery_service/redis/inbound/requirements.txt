@@ -2,3 +2,4 @@ aiohttp~=3.8.1
 aioredis~=2.0.0
 msgpack~=0.6
 pyyaml~=5.4.0
+ConfigArgParse~=1.5.3

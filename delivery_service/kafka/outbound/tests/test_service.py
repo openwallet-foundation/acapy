@@ -117,8 +117,19 @@ test_msg_sets_d = {
         async_mock.MagicMock(
             value=msgpack.packb(
                 {
+                    b"headers": {b"content-type": b"test1"},
+                    b"endpoint": b"ws://localhost:9000",
+                    b"payload": (string.digits + string.ascii_letters).encode("utf-8"),
+                }
+            ),
+            key="test_random_1",
+            offsets=1001,
+        ),
+        async_mock.MagicMock(
+            value=msgpack.packb(
+                {
                     b"headers": {b"content-type": "test1"},
-                    b"endpoint": b"http://localhost:9000",
+                    b"endpoint": b"ws://localhost:9000",
                 }
             ),
             key="test_random_1",
@@ -187,13 +198,38 @@ class TestLocalState(AsyncTestCase):
         self.local_state.OFFSET_LOCAL_FILE = offset_local_path
         assert self.local_state._counts == {}
         assert self.local_state._offsets == {}
-        test_partition = {
+        self.test_partition = {
             TopicPartition(topic="topic1", partition=1),
             TopicPartition(topic="topic2", partition=0),
         }
-        self.local_state.load_local_state(test_partition)
+        with async_mock.patch.object(
+            test_module.pathlib, "Path", async_mock.MagicMock()
+        ) as pathlib_obj, async_mock.patch.object(
+            test_module.json,
+            "load",
+            async_mock.MagicMock(
+                return_value={"last_offset": 10, "counts": {"key": 5}}
+            ),
+        ):
+            pathlib_obj.exists = async_mock.CoroutineMock(return_value=True)
+            pathlib_obj.open = async_mock.MagicMock()
+            self.local_state.load_local_state(self.test_partition)
         assert self.local_state._counts != {}
         assert self.local_state._offsets != {}
+
+    def test_load_local_state_x(self):
+        with async_mock.patch.object(
+            test_module.pathlib, "Path", async_mock.MagicMock()
+        ) as pathlib_obj, async_mock.patch.object(
+            test_module.json,
+            "load",
+            async_mock.MagicMock(
+                side_effect=test_module.json.JSONDecodeError("test", "test", 1)
+            ),
+        ):
+            pathlib_obj.exists = async_mock.CoroutineMock(return_value=True)
+            pathlib_obj.open = async_mock.MagicMock()
+            self.local_state.load_local_state(self.test_partition)
 
     def test_dump_local_state(self):
         self.local_state.dump_local_state()
@@ -261,42 +297,6 @@ class TestKafkaHandler(AsyncTestCase):
         with self.assertRaises(SystemExit):
             await main([])
 
-    async def test_main_plugin_config(self):
-        KafkaHandler.RUNNING = PropertyMock(side_effect=[True, True, False])
-        with async_mock.patch(
-            "aiokafka.AIOKafkaProducer.start",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaProducer",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer.start",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer",
-            async_mock.MagicMock(),
-        ), async_mock.patch.object(
-            KafkaHandler, "process_delivery", autospec=True
-        ), async_mock.patch.object(
-            KafkaHandler, "process_retries", autospec=True
-        ), async_mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            async_mock.MagicMock(
-                return_value={"kafka_outbound_queue": {"connection": "test"}}
-            ),
-        ), async_mock.patch.object(
-            Path, "open", async_mock.MagicMock()
-        ), async_mock.patch(
-            "builtins.open", async_mock.MagicMock()
-        ) as mock_open:
-            await main(
-                [
-                    "--plugin-config",
-                    "test_yaml_path.yml",
-                ]
-            )
-
     async def test_save_state_every_second(self):
         sentinel = PropertyMock(side_effect=[True, True, True, False])
         KafkaHandler.RUNNING = sentinel
@@ -352,14 +352,18 @@ class TestKafkaHandler(AsyncTestCase):
             await service.process_delivery()
 
     async def test_process_delivery_x(self):
-        sentinel = PropertyMock(side_effect=[True, True, True, False])
+        sentinel = PropertyMock(side_effect=[True, True, True, True, False])
         KafkaHandler.RUNNING = sentinel
         service = KafkaHandler("test", "acapy")
         with async_mock.patch.object(
             aiohttp.ClientSession,
             "post",
             async_mock.CoroutineMock(
-                side_effect=[async_mock.MagicMock(status=400), aiohttp.ClientError]
+                side_effect=[
+                    async_mock.MagicMock(status=400),
+                    aiohttp.ClientError,
+                    asyncio.TimeoutError,
+                ]
             ),
         ), async_mock.patch.object(
             test_module, "LocalState", autospec=True
@@ -383,6 +387,7 @@ class TestKafkaHandler(AsyncTestCase):
                     side_effect=[
                         OffsetOutOfRangeError({}),
                         test_msg_sets_d,
+                        test_msg_sets_b,
                         test_msg_sets_b,
                     ]
                 ),

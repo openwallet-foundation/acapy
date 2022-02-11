@@ -82,6 +82,10 @@ class TestRedisInbound(AsyncTestCase):
 
     async def test_init(self):
         self.profile.settings["transport.inbound_queue"] = "connection"
+        self.profile.settings["transport.inbound_queue_transports"] = [
+            ("http", "0.0.0.0", "8002"),
+            ("ws", "0.0.0.0", "8003"),
+        ]
         with async_mock.patch(
             "aioredis.from_url",
             async_mock.MagicMock(),

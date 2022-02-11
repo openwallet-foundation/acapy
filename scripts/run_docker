@@ -30,7 +30,7 @@ for arg in "$@"; do
     done
   fi
 done
-ACAPY_NETWORK_NAME="${ACAPY_DOCKER_NETWORK}"
+DELIVERY_SERVICE_NETWORK_NAME="${ACAPY_DOCKER_NETWORK}"
 if [ -n "${ENABLE_PTVSD}" ]; then
   ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
@@ -51,7 +51,7 @@ if [ -z "$ACAPY_DOCKER_NETWORK" ]; then
   $CONTAINER_RUNTIME run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" \
     $ARGS aries-cloudagent-run "$@"
 else
-  echo "${ACAPY_NETWORK_NAME} Docker network specified."
-  $CONTAINER_RUNTIME run --rm -ti --network $ACAPY_NETWORK_NAME --name "aries-cloudagent-runner_${RAND_NAME}" \
+  echo "${DELIVERY_SERVICE_NETWORK_NAME} Docker network specified."
+  $CONTAINER_RUNTIME run --rm -ti --network $DELIVERY_SERVICE_NETWORK_NAME --name "aries-cloudagent-runner_${RAND_NAME}" \
     $ARGS aries-cloudagent-run "$@"
 fi

@@ -101,45 +101,6 @@ class TestKafkaHTTPHandler(AsyncTestCase):
                 ]
             )
 
-    async def test_main_plugin_config(self):
-        with async_mock.patch(
-            "aiokafka.AIOKafkaProducer.start",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaProducer",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer.start",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer",
-            async_mock.MagicMock(),
-        ), async_mock.patch.object(
-            KafkaHTTPHandler, "start", autospec=True
-        ), async_mock.patch.object(
-            KafkaHTTPHandler, "process_direct_responses", autospec=True
-        ), async_mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            async_mock.MagicMock(
-                return_value={"kafka_inbound_queue": {"connection": "test"}}
-            ),
-        ), async_mock.patch.object(
-            Path, "open", async_mock.MagicMock()
-        ), async_mock.patch(
-            "builtins.open", async_mock.MagicMock()
-        ) as mock_open:
-            await main(
-                [
-                    "--plugin-config",
-                    "test_yaml_path.yml",
-                    "-iqt",
-                    "http",
-                    "0.0.0.0",
-                    "8080",
-                ]
-            )
-
     async def test_stop(self):
         sentinel = PropertyMock(side_effect=[True, True, True, False])
         KafkaHTTPHandler.RUNNING = sentinel
@@ -348,45 +309,6 @@ class TestKafkaWSHandler(AsyncTestCase):
                     "test",
                     "-iqt",
                     "invalid",
-                    "0.0.0.0",
-                    "8080",
-                ]
-            )
-
-    async def test_main_plugin_config(self):
-        with async_mock.patch.object(
-            KafkaWSHandler, "start", autospec=True
-        ), async_mock.patch.object(
-            KafkaWSHandler, "process_direct_responses", autospec=True
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaProducer.start",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaProducer",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer.start",
-            async_mock.CoroutineMock(),
-        ), async_mock.patch(
-            "aiokafka.AIOKafkaConsumer",
-            async_mock.MagicMock(),
-        ), async_mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            async_mock.MagicMock(
-                return_value={"kafka_inbound_queue": {"connection": "test"}}
-            ),
-        ), async_mock.patch.object(
-            Path, "open", async_mock.MagicMock()
-        ), async_mock.patch(
-            "builtins.open", async_mock.MagicMock()
-        ) as mock_open:
-            await main(
-                [
-                    "--plugin-config",
-                    "test_yaml_path.yml",
-                    "-iqt",
-                    "ws",
                     "0.0.0.0",
                     "8080",
                 ]

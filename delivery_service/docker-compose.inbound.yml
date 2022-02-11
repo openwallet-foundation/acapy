@@ -1,0 +1,30 @@
+version: "3" 
+services:
+  kafka-inbound-delivery-service:
+    environment:
+      - ACAPY_INBOUND_TRANSPORT_QUEUE=${ACAPY_INBOUND_TRANSPORT_QUEUE}
+      - ACAPY_INBOUND_TRANSPORT_QUEUE_PREFIX=${ACAPY_INBOUND_TRANSPORT_QUEUE_PREFIX}
+      - ACAPY_INBOUND_QUEUE_TRANSPORT=${ACAPY_INBOUND_QUEUE_TRANSPORT}
+    networks:
+      - delivey_service_network
+    ports:
+      - ${INBOUND_TRANSPORT_PORT_RANGE}:${INBOUND_TRANSPORT_PORT_RANGE}
+    build: 
+      context: ..
+      dockerfile: ./delivery_service/kafka/inbound/docker/Dockerfile.run
+  redis-inbound-delivery-service:
+    environment:
+      - ACAPY_INBOUND_TRANSPORT_QUEUE=${ACAPY_INBOUND_TRANSPORT_QUEUE}
+      - ACAPY_INBOUND_TRANSPORT_QUEUE_PREFIX=${ACAPY_INBOUND_TRANSPORT_QUEUE_PREFIX}
+      - ACAPY_INBOUND_QUEUE_TRANSPORT=${ACAPY_INBOUND_QUEUE_TRANSPORT}
+    networks:
+      - delivey_service_network
+    ports:
+      - ${INBOUND_TRANSPORT_PORT_RANGE}:${INBOUND_TRANSPORT_PORT_RANGE}
+    build:
+      context: ..
+      dockerfile: ./delivery_service/redis/inbound/docker/Dockerfile.run
+networks:
+  delivey_service_network:
+    external: true
+    name: ${NETWORK_NAME}

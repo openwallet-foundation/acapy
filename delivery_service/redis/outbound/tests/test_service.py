@@ -132,34 +132,6 @@ class TestRedisHandler(AsyncTestCase):
         with self.assertRaises(SystemExit):
             await main([])
 
-    async def test_main_plugin_config(self):
-        RedisHandler.RUNNING = PropertyMock(side_effect=[True, True, False])
-        with async_mock.patch.object(
-            test_module.aioredis,
-            "from_url",
-            async_mock.MagicMock(),
-        ) as mock_redis, async_mock.patch.object(
-            RedisHandler, "process_delivery", autospec=True
-        ), async_mock.patch.object(
-            RedisHandler, "process_retries", autospec=True
-        ), async_mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            async_mock.MagicMock(
-                return_value={"redis_outbound_queue": {"connection": "test"}}
-            ),
-        ), async_mock.patch.object(
-            Path, "open", async_mock.MagicMock()
-        ), async_mock.patch(
-            "builtins.open", async_mock.MagicMock()
-        ) as mock_open:
-            await main(
-                [
-                    "--plugin-config",
-                    "test_yaml_path.yml",
-                ]
-            )
-
     async def test_process_delivery(self):
         with async_mock.patch.object(
             aiohttp.ClientSession,
