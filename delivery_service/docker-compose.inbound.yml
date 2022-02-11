@@ -27,4 +27,4 @@ services:
 networks:
   delivey_service_network:
     external: true
-    name: ${NETWORK_NAME}
+    name: ${DELIVERY_SERVICE_NETWORK_NAME}
