@@ -5,6 +5,7 @@ import msgpack
 import logging
 
 from threading import Thread
+from urllib.parse import urlparse, ParseResult
 
 from ....core.profile import Profile
 
@@ -58,6 +59,15 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
         return (
             f"RedisInboundQueue(prefix={self.prefix}, " f"connection={self.connection})"
         )
+
+    def sanitize_connection_url(self) -> str:
+        """Return sanitized connection with no secrets included."""
+        parsed: ParseResult = urlparse(self.connection)
+        if parsed.username or parsed.password:
+            sanitized = self.connection.rsplit("@", 1)[1]
+            return f"{parsed.scheme}://{sanitized}"
+        else:
+            return self.connection
 
     async def start_queue(self):
         """Start the transport."""

@@ -83,10 +83,12 @@ class TestLoggingConfigurator:
         mock_outbound_queue = async_mock.MagicMock(
             inbound_topic="mocked queue text",
             connection="test",
+            sanitize_connection_url=async_mock.MagicMock(return_value="test"),
         )
         mock_inbound_queue = async_mock.MagicMock(
             inbound_topic="mocked queue text",
             connection="test",
+            sanitize_connection_url=async_mock.MagicMock(return_value="test"),
         )
         mock_admin_server = async_mock.MagicMock(host="1.2.3.4", port=8091)
         with contextlib.redirect_stdout(stdout):

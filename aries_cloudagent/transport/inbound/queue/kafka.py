@@ -1,16 +1,18 @@
 """Kafka inbound transport."""
 import asyncio
-import os
 import msgpack
-import json
 import logging
-import pathlib
 
-from aiokafka import AIOKafkaConsumer, AIOKafkaProducer, ConsumerRebalanceListener
+from aiokafka import (
+    AIOKafkaConsumer,
+    AIOKafkaProducer,
+    ConsumerRebalanceListener,
+    OffsetAndMetadata,
+    TopicPartition,
+)
 from aiokafka.errors import OffsetOutOfRangeError
-from collections import Counter
-from random import randrange
 from threading import Thread
+from uuid import uuid4
 
 from ....core.profile import Profile
 
@@ -24,81 +26,41 @@ from .base import BaseInboundQueue, InboundQueueConfigurationError
 class RebalanceListener(ConsumerRebalanceListener):
     """Listener to control actions before and after rebalance."""
 
-    def __init__(self, consumer, local_state):
+    def __init__(self, consumer: AIOKafkaConsumer):
         """Initialize RebalanceListener."""
         self.consumer = consumer
-        self.local_state = local_state
+        self.state = {}
 
     async def on_partitions_revoked(self, revoked):
         """Triggered on partitions revocation."""
-        self.local_state.dump_local_state()
+        for tp in revoked:
+            offset = self.state.get(tp)
+            if offset and isinstance(offset, int):
+                await self.consumer.commit({tp: OffsetAndMetadata(offset, "")})
 
     async def on_partitions_assigned(self, assigned):
         """Triggered on partitions assigned."""
-        self.local_state.load_local_state(assigned)
         for tp in assigned:
-            last_offset = self.local_state.get_last_offset(tp)
+            last_offset = await self.get_last_offset(tp)
             if last_offset < 0:
                 await self.consumer.seek_to_beginning(tp)
             else:
                 self.consumer.seek(tp, last_offset + 1)
 
+    async def add_offset(self, partition, last_offset, topic):
+        """Commit offset to Kafka."""
+        self.state[TopicPartition(topic, partition)] = last_offset
+        await self.consumer.commit(
+            {TopicPartition(topic, partition): OffsetAndMetadata(last_offset, "")}
+        )
 
-class LocalState:
-    """Handle local json storage file for storing offsets."""
-
-    OFFSET_LOCAL_FILE = os.path.join(
-        os.path.dirname(__file__), "partition-state-inbound_queue.json"
-    )
-
-    def __init__(self):
-        """Initialize LocalState."""
-        self._counts = {}
-        self._offsets = {}
-
-    def dump_local_state(self):
-        """Dump local state."""
-        for tp in self._counts:
-            fpath = pathlib.Path(self.OFFSET_LOCAL_FILE)
-            with fpath.open("w+") as f:
-                json.dump(
-                    {
-                        "last_offset": self._offsets[tp],
-                        "counts": dict(self._counts[tp]),
-                    },
-                    f,
-                )
-
-    def load_local_state(self, partitions):
-        """Load local state."""
-        self._counts.clear()
-        self._offsets.clear()
-        for tp in partitions:
-            fpath = pathlib.Path(self.OFFSET_LOCAL_FILE)
-            state = {"last_offset": -1, "counts": {}}  # Non existing, will reset
-            if fpath.exists():
-                with fpath.open("r+") as f:
-                    try:
-                        state = json.load(f)
-                    except json.JSONDecodeError:
-                        pass
-            self._counts[tp] = Counter(state["counts"])
-            self._offsets[tp] = state["last_offset"]
-
-    def add_counts(self, tp, counts, last_offset):
-        """Update offsets and count."""
-        self._counts[tp] += counts
-        self._offsets[tp] = last_offset
-
-    def get_last_offset(self, tp):
-        """Return last offset."""
-        return self._offsets[tp]
-
-    def discard_state(self, tps):
-        """Discard a state."""
-        for tp in tps:
-            self._offsets[tp] = -1
-            self._counts[tp] = Counter()
+    async def get_last_offset(self, tp: TopicPartition) -> int:
+        """Return last saved offset for a TopicPartition."""
+        offset = await self.consumer.committed(tp)
+        if offset:
+            return offset
+        else:
+            return -1
 
 
 class KafkaInboundQueue(BaseInboundQueue, Thread):
@@ -124,7 +86,9 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
             raise InboundQueueConfigurationError(
                 "Configuration missing for Kafka queue"
             ) from error
-
+        (self.connection, self.username, self.password) = self.parse_connection_url(
+            self.connection
+        )
         self.prefix = self._profile.settings.get(
             "transport.inbound_queue_prefix"
         ) or config.get("prefix", "acapy")
@@ -144,6 +108,21 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         """Return string representation of the outbound queue."""
         return f"KafkaInboundQueue({self.prefix}, " f"{self.connection})"
 
+    def parse_connection_url(self, connection):
+        """Retreive bootstrap_server, username and password from provided connection."""
+        kafka_username = None
+        kafka_password = None
+        split_kafka_url_by_hash = connection.rsplit("#", 1)
+        if len(split_kafka_url_by_hash) > 1:
+            kafka_username = split_kafka_url_by_hash[1].split(":")[0]
+            kafka_password = split_kafka_url_by_hash[1].split(":")[1]
+        kafka_url = split_kafka_url_by_hash[0]
+        return (kafka_url, kafka_username, kafka_password)
+
+    def sanitize_connection_url(self) -> str:
+        """Return sanitized connection with no secrets included."""
+        return self.connection
+
     async def start_queue(self):
         """Start the transport."""
         self.daemon = True
@@ -154,11 +133,15 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
             enable_auto_commit=False,
             auto_offset_reset="none",
             isolation_level="read_committed",
-            key_deserializer=lambda key: key.decode("utf-8") if key else "",
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
         )
         self.producer = AIOKafkaProducer(
             bootstrap_servers=self.connection,
+            transactional_id=str(uuid4()),
             enable_idempotence=True,
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
         )
         await self.producer.start()
         await self.consumer.start()
@@ -169,15 +152,6 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         """Stop the transport."""
         await self.producer.stop()
         await self.consumer.stop()
-
-    async def save_state_every_second(self, local_state):
-        """Update local state."""
-        while self.RUNNING:
-            try:
-                await asyncio.sleep(1)
-            except asyncio.CancelledError:
-                break
-            local_state.dump_local_state()
 
     async def open(self):
         """Kafka connection context manager enter."""
@@ -194,23 +168,17 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
         transport_manager = self._profile.context.injector.inject(
             InboundTransportManager
         )
-        local_state = LocalState()
-        listener = RebalanceListener(self.consumer, local_state)
+        listener = RebalanceListener(self.consumer)
         self.consumer.subscribe(topics=[self.inbound_topic], listener=listener)
-        loop = asyncio.get_event_loop()
-        save_task = loop.create_task(self.save_state_every_second(local_state))
         try:
             while self.RUNNING:
                 try:
                     msg_set = await self.consumer.getmany(timeout_ms=1000)
                 except OffsetOutOfRangeError as err:
                     tps = err.args[0].keys()
-                    local_state.discard_state(tps)
                     await self.consumer.seek_to_beginning(*tps)
                     continue
-
                 for tp, msgs in msg_set.items():
-                    counts = Counter()
                     for msg in msgs:
                         msg_data = msgpack.unpackb(msg.value)
                         if not isinstance(msg_data, dict):
@@ -256,18 +224,12 @@ class KafkaInboundQueue(BaseInboundQueue, Thread):
                                 message = {}
                                 message["txn_id"] = txn_id
                                 message["response_data"] = response_data
-                                await self.producer.send(
-                                    self.direct_response_topic,
-                                    value=msgpack.packb(message),
-                                    key=(
-                                        f"{self.direct_response_topic}_"
-                                        f"{str(randrange(5))}".encode("utf-8")
-                                    ),
-                                )
-                        counts[msg.key] += 1
-                    local_state.add_counts(tp, counts, msg.offset)
+                                async with self.producer.transaction():
+                                    await self.producer.send(
+                                        self.direct_response_topic,
+                                        value=msgpack.packb(message),
+                                    )
+                        await listener.add_offset(msg.partition, msg.offset, msg.topic)
         finally:
             await self.producer.stop()
             await self.consumer.stop()
-            save_task.cancel()
-            await asyncio.wait([save_task], return_when=asyncio.FIRST_COMPLETED)

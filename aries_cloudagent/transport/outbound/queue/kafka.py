@@ -3,8 +3,8 @@ import logging
 import msgpack
 
 from aiokafka import AIOKafkaProducer
-from random import randrange
 from typing import Union
+from uuid import uuid4
 
 from ....core.profile import Profile
 from .base import BaseOutboundQueue, OutboundQueueConfigurationError, OutboundQueueError
@@ -30,7 +30,9 @@ class KafkaOutboundQueue(BaseOutboundQueue):
             raise OutboundQueueConfigurationError(
                 "Configuration missing for kafka"
             ) from error
-
+        (self.connection, self.username, self.password) = self.parse_connection_url(
+            self.connection
+        )
         self.prefix = self._profile.settings.get(
             "transport.outbound_queue_prefix"
         ) or config.get("prefix", "acapy")
@@ -41,11 +43,29 @@ class KafkaOutboundQueue(BaseOutboundQueue):
         """Return string representation of the outbound queue."""
         return f"KafkaOutboundQueue({self.prefix}, " f"{self.connection})"
 
+    def parse_connection_url(self, connection):
+        """Retreive bootstrap_server, username and password from provided connection."""
+        kafka_username = None
+        kafka_password = None
+        split_kafka_url_by_hash = connection.rsplit("#", 1)
+        if len(split_kafka_url_by_hash) > 1:
+            kafka_username = split_kafka_url_by_hash[1].split(":")[0]
+            kafka_password = split_kafka_url_by_hash[1].split(":")[1]
+        kafka_url = split_kafka_url_by_hash[0]
+        return (kafka_url, kafka_username, kafka_password)
+
+    def sanitize_connection_url(self) -> str:
+        """Return sanitized connection with no secrets included."""
+        return self.connection
+
     async def start(self):
         """Start the transport."""
         self.producer = AIOKafkaProducer(
             bootstrap_servers=self.connection,
+            transactional_id=str(uuid4()),
             enable_idempotence=True,
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
         )
         await self.producer.start()
 
@@ -85,8 +105,8 @@ class KafkaOutboundQueue(BaseOutboundQueue):
                 "payload": payload,
             }
         )
-        await self.producer.send(
-            self.outbound_topic,
-            value=message,
-            key=(f"{self.outbound_topic}_{str(randrange(5))}".encode("utf-8")),
-        )
+        async with self.producer.transaction():
+            await self.producer.send(
+                self.outbound_topic,
+                value=message,
+            )

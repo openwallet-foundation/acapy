@@ -19,6 +19,22 @@ class TestKafkaOutbound(AsyncTestCase):
         self.profile = self.session.profile
         self.context = self.profile.context
 
+    def test_parse_connection_url(self):
+        self.profile.settings[
+            "transport.outbound_queue"
+        ] = "localhost:8080,localhost:8081#username:password"
+        queue = KafkaOutboundQueue(self.profile)
+        assert queue.connection == "localhost:8080,localhost:8081"
+        assert queue.username == "username"
+        assert queue.password == "password"
+
+    def test_sanitize_connection_url(self):
+        self.profile.settings[
+            "transport.outbound_queue"
+        ] = "localhost:8080#username:password"
+        queue = KafkaOutboundQueue(self.profile)
+        assert queue.sanitize_connection_url() == "localhost:8080"
+
     async def test_init(self):
         self.profile.settings["transport.outbound_queue"] = "connection"
         with async_mock.patch(

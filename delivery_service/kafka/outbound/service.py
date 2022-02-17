@@ -1,20 +1,22 @@
 """Kafka Outbound Delivery Service."""
 import aiohttp
 import asyncio
-import json
 import logging
 import msgpack
-import os
-import pathlib
 import sys
 import urllib
 
-from aiokafka import AIOKafkaConsumer, ConsumerRebalanceListener, AIOKafkaProducer
+from aiokafka import (
+    AIOKafkaConsumer,
+    ConsumerRebalanceListener,
+    AIOKafkaProducer,
+    TopicPartition,
+    OffsetAndMetadata,
+)
 from aiokafka.errors import OffsetOutOfRangeError
-from collections import Counter
 from configargparse import ArgumentParser
-from random import randrange
 from time import time
+from uuid import uuid4
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s: %(message)s",
@@ -25,81 +27,41 @@ logging.basicConfig(
 class RebalanceListener(ConsumerRebalanceListener):
     """Listener to control actions before and after rebalance."""
 
-    def __init__(self, consumer, local_state):
+    def __init__(self, consumer: AIOKafkaConsumer):
         """Initialize RebalanceListener."""
         self.consumer = consumer
-        self.local_state = local_state
+        self.state = {}
 
     async def on_partitions_revoked(self, revoked):
         """Triggered on partitions revocation."""
-        self.local_state.dump_local_state()
+        for tp in revoked:
+            offset = self.state.get(tp)
+            if offset and isinstance(offset, int):
+                await self.consumer.commit({tp: OffsetAndMetadata(offset, "")})
 
     async def on_partitions_assigned(self, assigned):
         """Triggered on partitions assigned."""
-        self.local_state.load_local_state(assigned)
         for tp in assigned:
-            last_offset = self.local_state.get_last_offset(tp)
+            last_offset = await self.get_last_offset(tp)
             if last_offset < 0:
                 await self.consumer.seek_to_beginning(tp)
             else:
                 self.consumer.seek(tp, last_offset + 1)
 
+    async def add_offset(self, partition, last_offset, topic):
+        """Commit offset to Kafka."""
+        self.state[TopicPartition(topic, partition)] = last_offset
+        await self.consumer.commit(
+            {TopicPartition(topic, partition): OffsetAndMetadata(last_offset, "")}
+        )
 
-class LocalState:
-    """Handle local json storage file for storing offsets."""
-
-    OFFSET_LOCAL_FILE = os.path.join(
-        os.path.dirname(__file__), "partition-state-inbound_queue.json"
-    )
-
-    def __init__(self):
-        """Initialize LocalState."""
-        self._counts = {}
-        self._offsets = {}
-
-    def dump_local_state(self):
-        """Dump local state."""
-        for tp in self._counts:
-            fpath = pathlib.Path(self.OFFSET_LOCAL_FILE)
-            with fpath.open("w+") as f:
-                json.dump(
-                    {
-                        "last_offset": self._offsets[tp],
-                        "counts": dict(self._counts[tp]),
-                    },
-                    f,
-                )
-
-    def load_local_state(self, partitions):
-        """Load local state."""
-        self._counts.clear()
-        self._offsets.clear()
-        for tp in partitions:
-            fpath = pathlib.Path(self.OFFSET_LOCAL_FILE)
-            state = {"last_offset": -1, "counts": {}}  # Non existing, will reset
-            if fpath.exists():
-                with fpath.open("r+") as f:
-                    try:
-                        state = json.load(f)
-                    except json.JSONDecodeError:
-                        pass
-            self._counts[tp] = Counter(state["counts"])
-            self._offsets[tp] = state["last_offset"]
-
-    def add_counts(self, tp, counts, last_offset):
-        """Update offsets and count."""
-        self._counts[tp] += counts
-        self._offsets[tp] = last_offset
-
-    def get_last_offset(self, tp):
-        """Return last offset."""
-        return self._offsets[tp]
-
-    def discard_state(self, tps):
-        """Discard a state."""
-        for tp in tps:
-            self._offsets[tp] = -1
-            self._counts[tp] = Counter()
+    async def get_last_offset(self, tp: TopicPartition) -> int:
+        """Return last saved offset for a TopicPartition."""
+        offset = await self.consumer.committed(tp)
+        if offset:
+            return offset
+        else:
+            return -1
 
 
 class KafkaHandler:
@@ -111,7 +73,7 @@ class KafkaHandler:
 
     def __init__(self, host: str, prefix: str):
         """Initialize KafkaHandler."""
-        self._host = host
+        (self._host, self.username, self.password) = self.parse_connection_url(host)
         self.consumer_retry = None
         self.prefix = prefix
         self.retry_interval = 5
@@ -119,13 +81,38 @@ class KafkaHandler:
         self.outbound_topic = f"{self.prefix}.outbound_transport"
         self.retry_topic = f"{self.prefix}.outbound_retry"
         self.retry_timedelay_s = 3
+        self.consumer = None
+        self.producer = None
+        self.consumer_retry = None
+
+    def parse_connection_url(self, connection):
+        """Retreive bootstrap_server, username and password from provided connection."""
+        kafka_username = None
+        kafka_password = None
+        split_kafka_url_by_hash = connection.rsplit("#", 1)
+        if len(split_kafka_url_by_hash) > 1:
+            kafka_username = split_kafka_url_by_hash[1].split(":")[0]
+            kafka_password = split_kafka_url_by_hash[1].split(":")[1]
+        kafka_url = split_kafka_url_by_hash[0]
+        return (kafka_url, kafka_username, kafka_password)
+
+    async def run(self):
+        """Run the service."""
         self.consumer = AIOKafkaConsumer(
             bootstrap_servers=self._host,
             group_id="my_group",
             enable_auto_commit=False,
             auto_offset_reset="none",
             isolation_level="read_committed",
-            key_deserializer=lambda key: key.decode("utf-8") if key else "",
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
+        )
+        self.producer = AIOKafkaProducer(
+            bootstrap_servers=self._host,
+            enable_idempotence=True,
+            transactional_id=str(uuid4()),
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
         )
         self.consumer_retry = AIOKafkaConsumer(
             bootstrap_servers=self._host,
@@ -133,47 +120,28 @@ class KafkaHandler:
             enable_auto_commit=False,
             auto_offset_reset="none",
             isolation_level="read_committed",
-            key_deserializer=lambda key: key.decode("utf-8") if key else "",
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
         )
-        self.producer = AIOKafkaProducer(
-            bootstrap_servers=self._host, enable_idempotence=True
-        )
-
-    async def run(self):
-        """Run the service."""
         await self.consumer.start()
         await self.producer.start()
         await asyncio.gather(self.process_delivery(), self.process_retries())
 
-    async def save_state_every_second(self, local_state):
-        """Update local state."""
-        while self.RUNNING:
-            try:
-                await asyncio.sleep(1)
-            except asyncio.CancelledError:
-                break
-            local_state.dump_local_state()
-
     async def process_delivery(self):
         """Process delivery of outbound messages."""
         http_client = aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar())
-        local_state = LocalState()
-        listener = RebalanceListener(self.consumer, local_state)
+        listener = RebalanceListener(self.consumer)
         self.consumer.subscribe(topics=[self.outbound_topic], listener=listener)
-        loop = asyncio.get_event_loop()
-        save_task = loop.create_task(self.save_state_every_second(local_state))
         try:
             while self.RUNNING:
                 try:
                     msg_set = await self.consumer.getmany(timeout_ms=1000)
                 except OffsetOutOfRangeError as err:
                     tps = err.args[0].keys()
-                    local_state.discard_state(tps)
                     await self.consumer.seek_to_beginning(*tps)
                     continue
 
                 for tp, msgs in msg_set.items():
-                    counts = Counter()
                     for msg in msgs:
                         msg_data = msgpack.unpackb(msg.value)
                         if not isinstance(msg_data, dict):
@@ -230,13 +198,10 @@ class KafkaHandler:
                                         )
                             else:
                                 logging.error(f"Unsupported scheme: {parsed.scheme}")
-                        counts[msg.key] += 1
-                    local_state.add_counts(tp, counts, msg.offset)
+                        await listener.add_offset(msg.partition, msg.offset, msg.topic)
         finally:
             await self.consumer.stop()
             await http_client.close()
-            save_task.cancel()
-            await asyncio.wait([save_task], return_when=asyncio.FIRST_COMPLETED)
 
     async def add_retry(self, message: dict):
         """Add undelivered message for future retries."""
@@ -245,20 +210,17 @@ class KafkaHandler:
         )
         retry_time = int(time() + wait_interval)
         message["retry_time"] = retry_time
-        await self.producer.send(
-            self.retry_topic,
-            value=msgpack.packb(message),
-            key=(f"{self.retry_topic}_{str(randrange(5))}".encode("utf-8")),
-        )
+        async with self.producer.transaction():
+            await self.producer.send(
+                self.retry_topic,
+                value=msgpack.packb(message),
+            )
 
     async def process_retries(self):
         """Process retries."""
         await self.consumer_retry.start()
-        local_state = LocalState()
-        listener = RebalanceListener(self.consumer_retry, local_state)
+        listener = RebalanceListener(self.consumer_retry)
         self.consumer_retry.subscribe(topics=[self.retry_topic], listener=listener)
-        loop = asyncio.get_event_loop()
-        save_task = loop.create_task(self.save_state_every_second(local_state))
         try:
             while self.RUNNING_RETRY:
                 await asyncio.sleep(self.retry_timedelay_s)
@@ -266,31 +228,28 @@ class KafkaHandler:
                     msg_set = await self.consumer_retry.getmany(timeout_ms=1000)
                 except OffsetOutOfRangeError as err:
                     tps = err.args[0].keys()
-                    local_state.discard_state(tps)
                     await self.consumer_retry.seek_to_beginning(*tps)
                     continue
                 for tp, msgs in msg_set.items():
-                    counts = Counter()
                     for msg in msgs:
                         msg_data = msgpack.unpackb(msg.value)
                         retry_time = msg_data[b"retry_time"]
-                        if int(time()) < retry_time:
-                            del msg_data[b"retry_time"]
-                            await self.producer.send(
-                                self.outbound_topic,
-                                value=msgpack.packb(msg_data),
-                                key=(
-                                    f"{self.outbound_topic}_"
-                                    f"{str(randrange(5))}".encode("utf-8")
-                                ),
-                            )
-                        counts[msg.key] += 1
-                    local_state.add_counts(tp, counts, msg.offset)
+                        async with self.producer.transaction():
+                            if int(time()) > retry_time:
+                                del msg_data[b"retry_time"]
+                                await self.producer.send(
+                                    self.outbound_topic,
+                                    value=msgpack.packb(msg_data),
+                                )
+                            else:
+                                await self.producer.send(
+                                    self.retry_topic,
+                                    value=msgpack.packb(msg_data),
+                                )
+                        await listener.add_offset(msg.partition, msg.offset, msg.topic)
         finally:
             await self.consumer_retry.stop()
             await self.producer.stop()
-            save_task.cancel()
-            await asyncio.wait([save_task], return_when=asyncio.FIRST_COMPLETED)
 
 
 async def main(args):

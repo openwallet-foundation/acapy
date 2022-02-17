@@ -146,7 +146,7 @@ class LoggingConfigurator:
                     if ("Redis" in inbound_queue.__class__.__name__)
                     else "KafkaInboundQueue",
                     f"topic: {inbound_queue.inbound_topic}",
-                    f"{inbound_queue.connection}",
+                    f"{inbound_queue.sanitize_connection_url()}",
                 ]
             )
             banner.print_subsubtitle("Listeners")
@@ -163,7 +163,7 @@ class LoggingConfigurator:
                     if ("Redis" in outbound_queue.__class__.__name__)
                     else "KafkaOutboundQueue",
                     f"topic: {outbound_queue.outbound_topic}",
-                    f"{outbound_queue.connection}",
+                    f"{outbound_queue.sanitize_connection_url()}",
                 ]
             )
             banner.print_spacer()

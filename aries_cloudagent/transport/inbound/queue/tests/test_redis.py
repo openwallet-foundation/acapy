@@ -80,6 +80,21 @@ class TestRedisInbound(AsyncTestCase):
         self.profile = self.session.profile
         self.context = self.profile.context
 
+    def test_sanitize_connection_url(self):
+        self.profile.settings[
+            "transport.inbound_queue"
+        ] = "redis://username:password@localhost:6379/0"
+        queue = RedisInboundQueue(self.profile)
+        assert queue.sanitize_connection_url() == "redis://localhost:6379/0"
+        self.profile.settings[
+            "transport.inbound_queue"
+        ] = "rediss://username:password@localhost:6379/0"
+        queue = RedisInboundQueue(self.profile)
+        assert queue.sanitize_connection_url() == "rediss://localhost:6379/0"
+        self.profile.settings["transport.inbound_queue"] = "redis://localhost:6379"
+        queue = RedisInboundQueue(self.profile)
+        assert queue.sanitize_connection_url() == "redis://localhost:6379"
+
     async def test_init(self):
         self.profile.settings["transport.inbound_queue"] = "connection"
         self.profile.settings["transport.inbound_queue_transports"] = [

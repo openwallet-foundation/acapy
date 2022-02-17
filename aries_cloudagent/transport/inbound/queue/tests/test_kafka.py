@@ -7,8 +7,8 @@ import string
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock, PropertyMock
 from aiokafka.errors import OffsetOutOfRangeError
-from aiokafka.structs import TopicPartition
-from collections import Counter
+from aiokafka import TopicPartition, ConsumerRecord
+from time import time
 
 from .....config.settings import Settings
 from .....core.in_memory.profile import InMemoryProfile
@@ -17,7 +17,7 @@ from ...manager import InboundTransportManager
 
 from .. import kafka as test_module
 from ..base import InboundQueueConfigurationError
-from ..kafka import KafkaInboundQueue, LocalState, RebalanceListener
+from ..kafka import KafkaInboundQueue, RebalanceListener
 
 
 ENDPOINT = "http://localhost:9000"
@@ -25,8 +25,8 @@ KEYNAME = "acapy.kafka_inbound_transport"
 
 
 test_msg_sets_a = {
-    "test1": [
-        async_mock.MagicMock(
+    TopicPartition("acapy.inbound_transport", 0): [
+        ConsumerRecord(
             value=msgpack.packb(
                 {
                     "host": "test1",
@@ -36,9 +36,17 @@ test_msg_sets_a = {
                 }
             ),
             key="test_random_2",
-            offsets=1003,
+            offset=1003,
+            partition=0,
+            topic="acapy.inbound_transport",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
         ),
-        async_mock.MagicMock(
+        ConsumerRecord(
             value=msgpack.packb(
                 {
                     "host": "test1",
@@ -48,13 +56,21 @@ test_msg_sets_a = {
                 }
             ),
             key="test_random_3",
-            offsets=1002,
+            offset=1002,
+            partition=0,
+            topic="acapy.inbound_transport",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
         ),
     ]
 }
 test_msg_sets_b = {
-    "test3": [
-        async_mock.MagicMock(
+    TopicPartition("acapy.inbound_transport", 0): [
+        ConsumerRecord(
             value=msgpack.packb(
                 {
                     "host": "test1",
@@ -64,14 +80,22 @@ test_msg_sets_b = {
                 }
             ),
             key="test_random_1",
-            offsets=1001,
-        )
+            offset=1001,
+            partition=0,
+            topic="acapy.inbound_transport",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
+        ),
     ]
 }
 
 test_msg_sets_c = {
-    "test1": [
-        async_mock.MagicMock(
+    TopicPartition("acapy.inbound_transport", 0): [
+        ConsumerRecord(
             value=msgpack.packb(
                 {
                     "host": "test1",
@@ -82,14 +106,22 @@ test_msg_sets_c = {
                 }
             ),
             key="test_random_1",
-            offsets=1000,
-        )
+            offset=1000,
+            partition=0,
+            topic="acapy.inbound_transport",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
+        ),
     ]
 }
 
 test_msg_sets_d = {
-    "test2": [
-        async_mock.MagicMock(
+    TopicPartition("acapy.inbound_transport", 0): [
+        ConsumerRecord(
             value=msgpack.packb(
                 {
                     "host": "test2",
@@ -100,9 +132,17 @@ test_msg_sets_d = {
                 }
             ),
             key="test_random_3",
-            offsets=1003,
+            offset=1003,
+            partition=0,
+            topic="acapy.inbound_transport",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
         ),
-        async_mock.MagicMock(
+        ConsumerRecord(
             value=msgpack.packb(
                 {
                     "host": "test3",
@@ -113,14 +153,22 @@ test_msg_sets_d = {
                 }
             ),
             key="test_random_4",
-            offsets=1004,
+            offset=1004,
+            partition=0,
+            topic="acapy.inbound_transport",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
         ),
     ]
 }
 
 test_msg_sets_e = {
-    "test1": [
-        async_mock.MagicMock(
+    "acapy.inbound_transport": [
+        ConsumerRecord(
             value=msgpack.packb(
                 """{
                     "host": "test1",
@@ -133,8 +181,16 @@ test_msg_sets_e = {
                 )
             ),
             key="test_random_1",
-            offsets=1000,
-        )
+            offset=1000,
+            partition=0,
+            topic="acapy.inbound_transport",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
+        ),
     ]
 }
 offset_local_path = os.path.join(
@@ -152,100 +208,41 @@ class TestRebalanceListener(AsyncTestCase):
         self.mock_consumer = async_mock.MagicMock(
             seek_to_beginning=async_mock.CoroutineMock(),
             seek=async_mock.CoroutineMock(),
+            committed=async_mock.CoroutineMock(return_value=-1),
+            commit=async_mock.CoroutineMock(),
         )
-        self.mock_local_state = async_mock.MagicMock(
-            dump_local_state=async_mock.MagicMock(),
-            load_local_state=async_mock.MagicMock(),
-            get_last_offset=async_mock.MagicMock(return_value=-1),
-        )
-        self.listener = RebalanceListener(self.mock_consumer, self.mock_local_state)
+        self.listener = RebalanceListener(self.mock_consumer)
 
     async def test_on_partitions_revoked(self):
+        self.listener.state = {TopicPartition(topic="topic1", partition=1): 10}
         await self.listener.on_partitions_revoked(self.test_partition)
 
     async def test_on_partitions_assigned_a(self):
         await self.listener.on_partitions_assigned(self.test_partition)
 
     async def test_on_partitions_assigned_b(self):
-        self.mock_local_state = async_mock.MagicMock(
-            dump_local_state=async_mock.MagicMock(),
-            load_local_state=async_mock.MagicMock(),
-            get_last_offset=async_mock.MagicMock(return_value=1),
+        mock_consumer = async_mock.MagicMock(
+            seek_to_beginning=async_mock.CoroutineMock(),
+            seek=async_mock.CoroutineMock(),
+            committed=async_mock.CoroutineMock(return_value=1),
         )
-        self.listener = RebalanceListener(self.mock_consumer, self.mock_local_state)
+        self.listener = RebalanceListener(mock_consumer)
         await self.listener.on_partitions_assigned(self.test_partition)
 
+    async def test_get_last_offset(self):
+        mock_consumer = async_mock.MagicMock(
+            seek_to_beginning=async_mock.CoroutineMock(),
+            seek=async_mock.CoroutineMock(),
+            committed=async_mock.CoroutineMock(return_value=None),
+        )
+        self.listener = RebalanceListener(mock_consumer)
+        await self.listener.get_last_offset(
+            TopicPartition(topic="topic1", partition=1)
+        ) == -1
 
-class TestLocalState(AsyncTestCase):
-    def setUp(self):
-        self.local_state = LocalState()
-        self.local_state.OFFSET_LOCAL_FILE = offset_local_path
-        assert self.local_state._counts == {}
-        assert self.local_state._offsets == {}
-        self.test_partition = {
-            TopicPartition(topic="topic1", partition=1),
-            TopicPartition(topic="topic2", partition=0),
-        }
-        with async_mock.patch.object(
-            test_module.pathlib, "Path", async_mock.MagicMock()
-        ) as pathlib_obj, async_mock.patch.object(
-            test_module.json,
-            "load",
-            async_mock.MagicMock(
-                return_value={"last_offset": 10, "counts": {"key": 5}}
-            ),
-        ):
-            pathlib_obj.exists = async_mock.CoroutineMock(return_value=True)
-            pathlib_obj.open = async_mock.MagicMock()
-            self.local_state.load_local_state(self.test_partition)
-        assert self.local_state._counts != {}
-        assert self.local_state._offsets != {}
-
-    def test_load_local_state_x(self):
-        with async_mock.patch.object(
-            test_module.pathlib, "Path", async_mock.MagicMock()
-        ) as pathlib_obj, async_mock.patch.object(
-            test_module.json,
-            "load",
-            async_mock.MagicMock(
-                side_effect=test_module.json.JSONDecodeError("test", "test", 1)
-            ),
-        ):
-            pathlib_obj.exists = async_mock.CoroutineMock(return_value=True)
-            pathlib_obj.open = async_mock.MagicMock()
-            self.local_state.load_local_state(self.test_partition)
-
-    def test_dump_local_state(self):
-        self.local_state.dump_local_state()
-
-    def test_utility_functions(self):
-        counts = Counter()
-        counts[123] += 1
-        counts[456] += 1
-        self.local_state.add_counts(
-            TopicPartition(topic="topic1", partition=1), counts, 100
-        )
-        assert (
-            self.local_state.get_last_offset(
-                TopicPartition(topic="topic1", partition=1)
-            )
-            == 100
-        )
-        assert (
-            self.local_state._counts[TopicPartition(topic="topic1", partition=1)]
-            != Counter()
-        )
-        assert (
-            self.local_state._offsets[TopicPartition(topic="topic1", partition=1)] != -1
-        )
-        self.local_state.discard_state([TopicPartition(topic="topic1", partition=1)])
-        assert (
-            self.local_state._counts[TopicPartition(topic="topic1", partition=1)]
-            == Counter()
-        )
-        assert (
-            self.local_state._offsets[TopicPartition(topic="topic1", partition=1)] == -1
-        )
+    async def test_add_offset(self):
+        self.listener = RebalanceListener(self.mock_consumer)
+        await self.listener.add_offset(1, 10, "topic1")
 
 
 class TestKafkaInbound(AsyncTestCase):
@@ -253,6 +250,13 @@ class TestKafkaInbound(AsyncTestCase):
         self.session = InMemoryProfile.test_session()
         self.profile = self.session.profile
         self.context = self.profile.context
+
+    def test_sanitize_connection_url(self):
+        self.profile.settings[
+            "transport.inbound_queue"
+        ] = "localhost:8080,localhost:8081#username:password"
+        queue = KafkaInboundQueue(self.profile)
+        assert queue.sanitize_connection_url() == "localhost:8080,localhost:8081"
 
     async def test_init(self):
         self.profile.settings["transport.inbound_queue"] = "connection"
@@ -343,9 +347,7 @@ class TestKafkaInbound(AsyncTestCase):
             test_module.asyncio, "sleep", async_mock.CoroutineMock()
         ) as mock_sleep, async_mock.patch.object(
             test_module, "RebalanceListener", autospec=True
-        ) as mock_rebalance_listener, async_mock.patch.object(
-            test_module, "LocalState", autospec=True
-        ) as mock_local_state, async_mock.patch(
+        ) as mock_rebalance_listener, async_mock.patch(
             "aiokafka.AIOKafkaProducer.start",
             async_mock.CoroutineMock(),
         ), async_mock.patch(
@@ -433,9 +435,7 @@ class TestKafkaInbound(AsyncTestCase):
             test_module.asyncio, "sleep", async_mock.CoroutineMock()
         ) as mock_sleep, async_mock.patch.object(
             test_module, "RebalanceListener", autospec=True
-        ) as mock_rebalance_listener, async_mock.patch.object(
-            test_module, "LocalState", autospec=True
-        ) as mock_local_state, async_mock.patch(
+        ) as mock_rebalance_listener, async_mock.patch(
             "aiokafka.AIOKafkaProducer.start",
             async_mock.CoroutineMock(),
         ), async_mock.patch(
@@ -519,9 +519,7 @@ class TestKafkaInbound(AsyncTestCase):
             test_module.asyncio, "sleep", async_mock.CoroutineMock()
         ) as mock_sleep, async_mock.patch.object(
             test_module, "RebalanceListener", autospec=True
-        ) as mock_rebalance_listener, async_mock.patch.object(
-            test_module, "LocalState", autospec=True
-        ) as mock_local_state, async_mock.patch(
+        ) as mock_rebalance_listener, async_mock.patch(
             "aiokafka.AIOKafkaProducer.start",
             async_mock.CoroutineMock(),
         ), async_mock.patch(
@@ -570,19 +568,11 @@ class TestKafkaInbound(AsyncTestCase):
             await queue.start_queue()
             await queue.receive_messages()
 
-    async def test_save_state_every_second(self):
-        self.profile.settings["transport.inbound_queue"] = "connection"
-        sentinel = PropertyMock(side_effect=[True, True, True, False])
-        KafkaInboundQueue.RUNNING = sentinel
+    def test_parse_connection_url(self):
+        self.profile.settings[
+            "transport.inbound_queue"
+        ] = "localhost:8080,localhost:8081#username:password"
         queue = KafkaInboundQueue(self.profile)
-        with async_mock.patch.object(
-            test_module, "LocalState", autospec=True
-        ) as mock_local_state, async_mock.patch.object(
-            test_module.asyncio,
-            "sleep",
-            async_mock.CoroutineMock(
-                side_effect=[None, None, test_module.asyncio.CancelledError]
-            ),
-        ):
-            await queue.save_state_every_second(mock_local_state)
-        assert mock_local_state.dump_local_state.call_count == 2
+        assert queue.connection == "localhost:8080,localhost:8081"
+        assert queue.username == "username"
+        assert queue.password == "password"

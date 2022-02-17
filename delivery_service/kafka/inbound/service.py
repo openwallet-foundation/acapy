@@ -8,7 +8,6 @@ import sys
 from aiohttp import WSMessage, WSMsgType, web
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from configargparse import ArgumentParser
-from random import randrange
 from uuid import uuid4
 
 logging.basicConfig(
@@ -26,7 +25,7 @@ class KafkaHTTPHandler:
 
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaHTTPHandler."""
-        self._host = host
+        (self._host, self.username, self.password) = self.parse_connection_url(host)
         self.prefix = prefix
         self.site_host = site_host
         self.site_port = site_port
@@ -41,7 +40,11 @@ class KafkaHTTPHandler:
     async def run(self):
         """Run the service."""
         self.producer = AIOKafkaProducer(
-            bootstrap_servers=self._host, enable_idempotence=True
+            bootstrap_servers=self._host,
+            enable_idempotence=True,
+            transactional_id=str(uuid4()),
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
         )
         self.consumer_direct_response = AIOKafkaConsumer(
             self.direct_resp_topic,
@@ -49,9 +52,21 @@ class KafkaHTTPHandler:
             group_id="my_group",
             auto_offset_reset="earliest",
             isolation_level="read_committed",
-            key_deserializer=lambda key: key.decode("utf-8") if key else "",
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
         )
         await asyncio.gather(self.start(), self.process_direct_responses())
+
+    def parse_connection_url(self, connection):
+        """Retreive bootstrap_server, username and password from provided connection."""
+        kafka_username = None
+        kafka_password = None
+        split_kafka_url_by_hash = connection.rsplit("#", 1)
+        if len(split_kafka_url_by_hash) > 1:
+            kafka_username = split_kafka_url_by_hash[1].split(":")[0]
+            kafka_password = split_kafka_url_by_hash[1].split(":")[1]
+        kafka_url = split_kafka_url_by_hash[0]
+        return (kafka_url, kafka_username, kafka_password)
 
     async def start(self):
         """Construct the aiohttp application."""
@@ -137,14 +152,11 @@ class KafkaHTTPHandler:
                     "transport_type": "http",
                 }
             )
-            await self.producer.send(
-                self.inbound_transport_key,
-                value=message,
-                key=(
-                    f"{self.inbound_transport_key}_"
-                    f"{str(randrange(5))}".encode("utf-8")
-                ),
-            )
+            async with self.producer.transaction():
+                await self.producer.send(
+                    self.inbound_transport_key,
+                    value=message,
+                )
             try:
                 response_data = await asyncio.wait_for(
                     self.get_direct_responses(
@@ -172,14 +184,11 @@ class KafkaHTTPHandler:
                     "transport_type": "http",
                 }
             )
-            await self.producer.send(
-                self.inbound_transport_key,
-                value=message,
-                key=(
-                    f"{self.inbound_transport_key}_"
-                    f"{str(randrange(5))}".encode("utf-8")
-                ),
-            )
+            async with self.producer.transaction():
+                await self.producer.send(
+                    self.inbound_transport_key,
+                    value=message,
+                )
             return web.Response(status=200)
 
 
@@ -192,7 +201,7 @@ class KafkaWSHandler:
 
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaWSHandler."""
-        self._host = host
+        (self._host, self.username, self.password) = self.parse_connection_url(host)
         self.prefix = prefix
         self.site_host = site_host
         self.site_port = site_port
@@ -207,7 +216,11 @@ class KafkaWSHandler:
     async def run(self):
         """Run the service."""
         self.producer = AIOKafkaProducer(
-            bootstrap_servers=self._host, enable_idempotence=True
+            bootstrap_servers=self._host,
+            enable_idempotence=True,
+            transactional_id=str(uuid4()),
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
         )
         self.consumer_direct_response = AIOKafkaConsumer(
             self.direct_resp_topic,
@@ -215,9 +228,21 @@ class KafkaWSHandler:
             group_id="my_group",
             auto_offset_reset="earliest",
             isolation_level="read_committed",
-            key_deserializer=lambda key: key.decode("utf-8") if key else "",
+            sasl_plain_username=self.username,
+            sasl_plain_password=self.password,
         )
         await asyncio.gather(self.start(), self.process_direct_responses())
+
+    def parse_connection_url(self, connection):
+        """Retreive bootstrap_server, username and password from provided connection."""
+        kafka_username = None
+        kafka_password = None
+        split_kafka_url_by_hash = connection.rsplit("#", 1)
+        if len(split_kafka_url_by_hash) > 1:
+            kafka_username = split_kafka_url_by_hash[1].split(":")[0]
+            kafka_password = split_kafka_url_by_hash[1].split(":")[1]
+        kafka_url = split_kafka_url_by_hash[0]
+        return (kafka_url, kafka_username, kafka_password)
 
     async def start(self):
         """Construct the aiohttp application."""
@@ -300,14 +325,11 @@ class KafkaWSHandler:
                                 "transport_type": "ws",
                             }
                         )
-                        await self.producer.send(
-                            self.inbound_transport_key,
-                            value=message,
-                            key=(
-                                f"{self.inbound_transport_key}_"
-                                f"{str(randrange(5))}".encode("utf-8")
-                            ),
-                        )
+                        async with self.producer.transaction():
+                            await self.producer.send(
+                                self.inbound_transport_key,
+                                value=message,
+                            )
                         try:
                             response_data = await asyncio.wait_for(
                                 self.get_direct_responses(
@@ -333,14 +355,11 @@ class KafkaWSHandler:
                                 "transport_type": "ws",
                             }
                         )
-                        await self.producer.send(
-                            self.inbound_transport_key,
-                            value=message,
-                            key=(
-                                f"{self.inbound_transport_key}_"
-                                f"{str(randrange(5))}".encode("utf-8")
-                            ),
-                        )
+                        async with self.producer.transaction():
+                            await self.producer.send(
+                                self.inbound_transport_key,
+                                value=message,
+                            )
                 elif msg.type == WSMsgType.ERROR:
                     logging.error(
                         "Websocket connection closed with exception: %s",

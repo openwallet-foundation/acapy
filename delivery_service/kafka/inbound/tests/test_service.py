@@ -2,29 +2,64 @@ import msgpack
 import json
 import aiohttp
 
+from aiokafka import TopicPartition, ConsumerRecord
 from asynctest import TestCase as AsyncTestCase, mock as async_mock, PropertyMock
 from pathlib import Path
+from time import time
 
 from .. import service as test_module
 from ..service import KafkaHTTPHandler, KafkaWSHandler, main
 
 test_retry_msg_sets = {
-    "acapy.inbound_direct_responses": [
-        async_mock.MagicMock(
+    TopicPartition("acapy.inbound_direct_responses", 0): [
+        ConsumerRecord(
             value=msgpack.packb(["invalid", "list", "require", "dict"]),
             key="test_random_1",
-            offsets=1001,
+            offset=1001,
+            partition=0,
+            topic="acapy.inbound_direct_responses",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
         ),
-        async_mock.MagicMock(
+        ConsumerRecord(
             value=msgpack.packb(
                 {
                     "response_data": (bytes(range(0, 256))),
                 }
             ),
             key="test_random_1",
-            offsets=1001,
+            offset=1001,
+            partition=0,
+            topic="acapy.inbound_direct_responses",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
         ),
-        async_mock.MagicMock(
+        ConsumerRecord(
+            value=msgpack.packb(
+                {
+                    "response_data": (bytes(range(0, 256))),
+                }
+            ),
+            key="test_random_1",
+            offset=1001,
+            partition=0,
+            topic="acapy.inbound_direct_responses",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
+        ),
+        ConsumerRecord(
             value=msgpack.packb(
                 {
                     "response_data": (bytes(range(0, 256))),
@@ -32,16 +67,32 @@ test_retry_msg_sets = {
                 }
             ),
             key="test_random_1",
-            offsets=1001,
+            offset=1001,
+            partition=0,
+            topic="acapy.inbound_direct_responses",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
         ),
-        async_mock.MagicMock(
+        ConsumerRecord(
             value=msgpack.packb(
                 {
                     "txn_id": "test123",
                 }
             ),
             key="test_random_1",
-            offsets=1001,
+            offset=1001,
+            partition=0,
+            topic="acapy.inbound_direct_responses",
+            timestamp=int(time()),
+            timestamp_type=1,
+            checksum=123232,
+            serialized_key_size=123,
+            serialized_value_size=12321,
+            headers=[("test", b"test")],
         ),
     ]
 }
@@ -258,6 +309,14 @@ class TestKafkaHTTPHandler(AsyncTestCase):
         service = KafkaHTTPHandler("test", "acapy", "test", "8080")
         await service.invite_handler(async_mock.MagicMock(query={"c_i": ".."}))
         await service.invite_handler(async_mock.MagicMock(query={}))
+
+    def test_parse_connection_url(self):
+        service = KafkaHTTPHandler(
+            "localhost:8080,localhost:8081#username:password", "acapy", "test", "8080"
+        )
+        assert service._host == "localhost:8080,localhost:8081"
+        assert service.username == "username"
+        assert service.password == "password"
 
 
 class TestKafkaWSHandler(AsyncTestCase):
@@ -811,3 +870,11 @@ class TestKafkaWSHandler(AsyncTestCase):
             service.timedelay_s = 0.1
             service.producer = mock_producer
             await service.message_handler(mock_request)
+
+    def test_parse_connection_url(self):
+        service = KafkaWSHandler(
+            "localhost:8080,localhost:8081#username:password", "acapy", "test", "8080"
+        )
+        assert service._host == "localhost:8080,localhost:8081"
+        assert service.username == "username"
+        assert service.password == "password"

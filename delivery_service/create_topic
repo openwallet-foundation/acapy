@@ -1,0 +1,15 @@
+#!/bin/bash
+
+cd "$(dirname "$0")" || exit 1
+CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
+prefix=$1
+numPartition=$2
+numReplication=$3
+inboundTopic="${prefix}_inbound_transport"
+outboundTopic="${prefix}_outbound_transport"
+
+$CONTAINER_RUNTIME exec kafka kafka-topics --create --bootstrap-server \
+kafka:9092 --replication-factor $numReplication --partitions $numPartition --topic $inboundTopic
+
+$CONTAINER_RUNTIME exec kafka kafka-topics --create --bootstrap-server \
+kafka:9092 --replication-factor $numReplication --partitions $numPartition --topic $outboundTopic
