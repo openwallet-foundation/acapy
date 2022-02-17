@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:py36-1.15-1
+FROM bcgovimages/von-image:py36-1.16-1
 ADD delivery_service/redis/inbound/requirements.txt requirements.txt
 RUN pip3 install --no-cache-dir \
     -r requirements.txt
