@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - globalid-release
+      - feat-*
     tags:
       - v*
 
