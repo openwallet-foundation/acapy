@@ -187,7 +187,8 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
     )
     their_did = fields.Str(description="Their DID", required=False, **INDY_DID)
     their_public_did = fields.Str(
-        description="Their Public DID", required=False, **INDY_DID)
+        description="Their Public DID", required=False, **INDY_DID
+    )
     their_role = fields.Str(
         description="Their role in the connection protocol",
         required=False,
@@ -334,7 +335,7 @@ async def connections_list(request: web.BaseRequest):
         "their_did",
         "request_id",
         "invitation_key",
-        "their_public_did"
+        "their_public_did",
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
