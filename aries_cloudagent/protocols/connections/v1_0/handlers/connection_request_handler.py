@@ -1,12 +1,8 @@
 """Connection request handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
 from .....connections.models.conn_record import ConnRecord
-
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
+from ....coordinate_mediation.v1_0.manager import MediationManager
 from ..manager import ConnectionManager, ConnectionManagerError
 from ..messages.connection_request import ConnectionRequest
 from ..messages.problem_report import ConnectionProblemReport
@@ -30,19 +26,19 @@ class ConnectionRequestHandler(BaseHandler):
         profile = context.profile
         mgr = ConnectionManager(profile)
 
+        mediation_id = None
         if context.connection_record:
             async with profile.session() as session:
                 mediation_metadata = await context.connection_record.metadata_get(
-                    session, "mediation", {}
+                    session, MediationManager.METADATA_KEY, {}
                 )
-        else:
-            mediation_metadata = {}
+            mediation_id = mediation_metadata.get(MediationManager.METADATA_ID)
 
         try:
             connection = await mgr.receive_request(
                 context.message,
                 context.message_receipt,
-                mediation_id=mediation_metadata.get("id"),
+                mediation_id=mediation_id,
             )
 
             if connection.accept == ConnRecord.ACCEPT_AUTO:
