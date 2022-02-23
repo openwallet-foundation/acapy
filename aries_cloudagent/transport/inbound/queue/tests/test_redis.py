@@ -1,7 +1,6 @@
-import aioredis
 import msgpack
 import pytest
-import random
+import redis
 import os
 import string
 
@@ -101,11 +100,9 @@ class TestRedisInbound(AsyncTestCase):
             ("http", "0.0.0.0", "8002"),
             ("ws", "0.0.0.0", "8003"),
         ]
-        with async_mock.patch(
-            "aioredis.from_url",
-            async_mock.MagicMock(),
-        ), async_mock.patch(
-            "aioredis.ConnectionPool",
+        with async_mock.patch.object(
+            redis.cluster.RedisCluster,
+            "from_url",
             async_mock.MagicMock(),
         ):
             queue = RedisInboundQueue(self.profile)
@@ -129,14 +126,12 @@ class TestRedisInbound(AsyncTestCase):
             ),
         )
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(
-                        side_effect=[test_msg_a, test_msg_a]
-                    ),
-                    rpush=async_mock.CoroutineMock(),
+                    blpop=async_mock.MagicMock(side_effect=[test_msg_a, test_msg_a]),
+                    rpush=async_mock.MagicMock(),
                 )
             ),
         ) as mock_redis:
@@ -163,12 +158,12 @@ class TestRedisInbound(AsyncTestCase):
             ),
         )
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(side_effect=aioredis.RedisError),
-                    rpush=async_mock.CoroutineMock(),
+                    blpop=async_mock.MagicMock(side_effect=test_module.RedisError),
+                    rpush=async_mock.MagicMock(),
                 )
             ),
         ) as mock_redis, async_mock.patch.object(
@@ -204,14 +199,14 @@ class TestRedisInbound(AsyncTestCase):
             ),
         )
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(
+                    blpop=async_mock.MagicMock(
                         side_effect=[test_msg_b, test_msg_b, test_msg_c]
                     ),
-                    rpush=async_mock.CoroutineMock(),
+                    rpush=async_mock.MagicMock(),
                 )
             ),
         ) as mock_redis:
@@ -242,14 +237,12 @@ class TestRedisInbound(AsyncTestCase):
             ),
         )
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(
-                        side_effect=[test_msg_b, test_msg_d]
-                    ),
-                    rpush=async_mock.CoroutineMock(),
+                    blpop=async_mock.MagicMock(side_effect=[test_msg_b, test_msg_d]),
+                    rpush=async_mock.MagicMock(),
                 )
             ),
         ) as mock_redis:
@@ -282,12 +275,12 @@ class TestRedisInbound(AsyncTestCase):
             ),
         )
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(side_effect=[test_msg_b]),
-                    rpush=async_mock.CoroutineMock(side_effect=[aioredis.RedisError]),
+                    blpop=async_mock.MagicMock(side_effect=[test_msg_b]),
+                    rpush=async_mock.MagicMock(side_effect=[test_module.RedisError]),
                 )
             ),
         ) as mock_redis:

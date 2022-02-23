@@ -1,9 +1,10 @@
 """Redis outbound transport."""
-import aioredis
 import asyncio
 import logging
 import msgpack
 
+from redis.cluster import RedisCluster as Redis
+from redis.exceptions import RedisError
 from typing import Union
 from urllib.parse import urlparse, ParseResult
 
@@ -57,8 +58,8 @@ class RedisOutboundQueue(BaseOutboundQueue):
 
     async def start(self):
         """Start the transport."""
-        self.redis = aioredis.from_url(self.connection)
-        await self.redis.ping()
+        self.redis = Redis.from_url(self.connection)
+        self.redis.ping()
 
     async def stop(self):
         """Stop the transport."""
@@ -66,8 +67,8 @@ class RedisOutboundQueue(BaseOutboundQueue):
     async def push(self, key: str, message: bytes):
         """Push a ``message`` to redis on ``key``."""
         try:
-            await self.redis.rpush(key, message)
-        except aioredis.RedisError as err:
+            self.redis.rpush(key, message)
+        except RedisError as err:
             raise OutboundQueueError(f"Unexpected exception {str(err)}")
 
     async def enqueue_message(
@@ -102,5 +103,5 @@ class RedisOutboundQueue(BaseOutboundQueue):
             except OutboundQueueError as err:
                 await asyncio.sleep(1)
                 self.logger.warning(f"Resetting Redis connection pool, {str(err)}")
-                self.redis = aioredis.from_url(self.connection)
-                await self.redis.ping()
+                self.redis = Redis.from_url(self.connection)
+                self.redis.ping()

@@ -35,21 +35,106 @@
   You can use the following `docker-compose.yml` and execute `docker-compose up -d` to run the Redis instance.
 
   ```
-    version: "3"
-    services:
-      redis:
+  version: "3"
+  services:
+    redis-cluster:
+      image: redis:latest
+      container_name: cluster
+      command: redis-cli --cluster create 172.28.0.101:6377 172.28.0.102:6378 172.28.0.103:6379 172.28.0.104:6380 172.28.0.105:6381 172.28.0.106:6382 --cluster-replicas 1 --cluster-yes
+      environment:
+        - REDISCLI_AUTH=${REDIS_PASSWORD}
+      networks:
+          acapy_default:
+            ipv4_address: 172.28.0.107
+      depends_on:
+        - redis-node-1
+        - redis-node-2
+        - redis-node-3
+        - redis-node-4
+        - redis-node-5
+        - redis-node-6
+    redis-node-1:
         image: redis:latest
+        container_name: node1
+        command: ["redis-server", "/conf/redis.conf", "--port 6377"]
+        environment:
+          - REDISCLI_AUTH=${REDIS_PASSWORD}
+        ports:
+          - 6377:6377
+        volumes:
+          - ./config/redis.conf:/conf/redis.conf
         networks:
-          - acapy_default
+          acapy_default:
+            ipv4_address: 172.28.0.101
+    redis-node-2:
+        image: redis:latest
+        container_name: node2
+        command: ["redis-server", "/conf/redis.conf", "--port 6378"]
+        environment:
+          - REDISCLI_AUTH=${REDIS_PASSWORD}
+        ports:
+          - 6378:6378
+        volumes:
+          - ./config/redis.conf:/conf/redis.conf
+        networks:
+          acapy_default:
+            ipv4_address: 172.28.0.102
+    redis-node-3:
+        image: redis:latest
+        container_name: node3
+        command: ["redis-server", "/conf/redis.conf", "--port 6379"]
+        environment:
+          - REDISCLI_AUTH=${REDIS_PASSWORD}
         ports:
           - 6379:6379
         volumes:
-          - ./config/redis.conf:/redis.conf
-        command: ["redis-server", "/redis.conf"]
-    networks:
-      acapy_default:
-        external: true
-        name: ${DELIVERY_SERVICE_NETWORK_NAME}
+          - ./config/redis.conf:/conf/redis.conf
+        networks:
+          acapy_default:
+            ipv4_address: 172.28.0.103
+    redis-node-4:
+        image: redis:latest
+        container_name: node4
+        command: ["redis-server", "/conf/redis.conf", "--port 6380"]
+        environment:
+          - REDISCLI_AUTH=${REDIS_PASSWORD}
+        ports:
+          - 6380:6380
+        volumes:
+          - ./config/redis.conf:/conf/redis.conf
+        networks:
+          acapy_default:
+            ipv4_address: 172.28.0.104
+    redis-node-5:
+        image: redis:latest
+        container_name: node5
+        command: ["redis-server", "/conf/redis.conf", "--port 6381"]
+        environment:
+          - REDISCLI_AUTH=${REDIS_PASSWORD}
+        ports:
+          - 6381:6381
+        volumes:
+          - ./config/redis.conf:/conf/redis.conf
+        networks:
+          acapy_default:
+            ipv4_address: 172.28.0.105
+    redis-node-6:
+        image: redis:latest
+        container_name: node6
+        command: ["redis-server", "/conf/redis.conf", "--port 6382"]
+        environment:
+          - REDISCLI_AUTH=${REDIS_PASSWORD}
+        ports:
+          - 6382:6382
+        volumes:
+          - ./config/redis.conf:/conf/redis.conf
+        networks:
+          acapy_default:
+            ipv4_address: 172.28.0.106
+  networks:
+    acapy_default:
+      external: true
+      name: ${NETWORK_NAME}
   ```
   <br/>
   <b>Kafka</b><br/>

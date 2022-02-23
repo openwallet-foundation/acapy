@@ -1,12 +1,11 @@
 import os
 import string
 
-import aioredis
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 import msgpack
 import pytest
+import redis
 
-from .....config.settings import Settings
 from .....core.in_memory.profile import InMemoryProfile
 
 from .. import redis as test_module
@@ -44,13 +43,13 @@ class TestRedisOutbound(AsyncTestCase):
     async def test_init(self):
         self.profile.settings["transport.outbound_queue"] = "connection"
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(),
-                    rpush=async_mock.CoroutineMock(),
-                    ping=async_mock.CoroutineMock(),
+                    blpop=async_mock.MagicMock(),
+                    rpush=async_mock.MagicMock(),
+                    ping=async_mock.MagicMock(),
                 )
             ),
         ) as mock_redis:
@@ -68,13 +67,13 @@ class TestRedisOutbound(AsyncTestCase):
     async def test_enqueue_message_str(self):
         self.profile.settings["transport.outbound_queue"] = "connection"
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(),
-                    rpush=async_mock.CoroutineMock(),
-                    ping=async_mock.CoroutineMock(),
+                    blpop=async_mock.MagicMock(),
+                    rpush=async_mock.MagicMock(),
+                    ping=async_mock.MagicMock(),
                 )
             ),
         ) as mock_redis:
@@ -104,13 +103,13 @@ class TestRedisOutbound(AsyncTestCase):
             }
         }
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(),
-                    rpush=async_mock.CoroutineMock(),
-                    ping=async_mock.CoroutineMock(),
+                    blpop=async_mock.MagicMock(),
+                    rpush=async_mock.MagicMock(),
+                    ping=async_mock.MagicMock(),
                 )
             ),
         ) as mock_redis:
@@ -136,15 +135,15 @@ class TestRedisOutbound(AsyncTestCase):
     async def test_enqueue_message_x_redis_error(self):
         self.profile.settings["transport.outbound_queue"] = "connection"
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(),
-                    rpush=async_mock.CoroutineMock(
-                        side_effect=[aioredis.RedisError, None]
+                    blpop=async_mock.MagicMock(),
+                    rpush=async_mock.MagicMock(
+                        side_effect=[test_module.RedisError, None]
                     ),
-                    ping=async_mock.CoroutineMock(),
+                    ping=async_mock.MagicMock(),
                 )
             ),
         ) as mock_redis:
@@ -156,15 +155,15 @@ class TestRedisOutbound(AsyncTestCase):
     async def test_enqueue_message_x_no_endpoint(self):
         self.profile.settings["transport.outbound_queue"] = "connection"
         with async_mock.patch.object(
-            test_module.aioredis,
+            redis.cluster.RedisCluster,
             "from_url",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    blpop=async_mock.CoroutineMock(),
-                    rpush=async_mock.CoroutineMock(
-                        side_effect=[aioredis.RedisError, None]
+                    blpop=async_mock.MagicMock(),
+                    rpush=async_mock.MagicMock(
+                        side_effect=[test_module.RedisError, None]
                     ),
-                    ping=async_mock.CoroutineMock(),
+                    ping=async_mock.MagicMock(),
                 )
             ),
         ) as mock_redis:

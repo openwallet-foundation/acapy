@@ -4,10 +4,13 @@ import logging
 import msgpack
 import json
 import sys
+import uvicorn
 
 from aiohttp import WSMessage, WSMsgType, web
 from aiokafka import AIOKafkaProducer, AIOKafkaConsumer
 from configargparse import ArgumentParser
+from fastapi import Security, Depends, APIRouter, HTTPException
+from fastapi.security.api_key import APIKeyHeader
 from uuid import uuid4
 
 logging.basicConfig(
@@ -19,9 +22,8 @@ logging.basicConfig(
 class KafkaHTTPHandler:
     """Kafka inbound delivery service for HTTP."""
 
-    # for unit testing
-    RUNNING = True
-    RUNNING_DIRECT_RESP = True
+    running = False
+    ready = False
 
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaHTTPHandler."""
@@ -36,6 +38,16 @@ class KafkaHTTPHandler:
         self.inbound_transport_key = f"{self.prefix}.inbound_transport"
         self.site = None
         self.timedelay_s = 1
+
+    def is_running(self) -> bool:
+        """Check if delivery service agent is running properly."""
+        if (
+            not self.consumer_direct_response._closed
+            and not self.producer._closed
+            and self.running
+        ):
+            return True
+        return False
 
     async def run(self):
         """Run the service."""
@@ -71,6 +83,8 @@ class KafkaHTTPHandler:
     async def start(self):
         """Construct the aiohttp application."""
         await self.producer.start()
+        self.running = True
+        self.ready = True
         app = web.Application()
         app.add_routes([web.get("/", self.invite_handler)])
         app.add_routes([web.post("/", self.message_handler)])
@@ -90,7 +104,7 @@ class KafkaHTTPHandler:
     async def process_direct_responses(self):
         """Process inbound_direct_responses and update direct_response_txn_request_map."""
         await self.consumer_direct_response.start()
-        while self.RUNNING_DIRECT_RESP:
+        while self.running:
             data = await self.consumer_direct_response.getmany(timeout_ms=10000)
             for tp, messages in data.items():
                 for msg in messages:
@@ -111,7 +125,7 @@ class KafkaHTTPHandler:
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while self.RUNNING_DIRECT_RESP:
+        while self.running:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
             await asyncio.sleep(self.timedelay_s)
@@ -195,9 +209,8 @@ class KafkaHTTPHandler:
 class KafkaWSHandler:
     """Kafka Inbound Delivery Service for WebSockets."""
 
-    # for unit testing
-    RUNNING = True
-    RUNNING_DIRECT_RESP = True
+    running = False
+    ready = False
 
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaWSHandler."""
@@ -212,6 +225,16 @@ class KafkaWSHandler:
         self.inbound_transport_key = f"{self.prefix}.inbound_transport"
         self.site = None
         self.timedelay_s = 1
+
+    def is_running(self) -> bool:
+        """Check if delivery service agent is running properly."""
+        if (
+            not self.consumer_direct_response._closed
+            and not self.producer._closed
+            and self.running
+        ):
+            return True
+        return False
 
     async def run(self):
         """Run the service."""
@@ -247,6 +270,8 @@ class KafkaWSHandler:
     async def start(self):
         """Construct the aiohttp application."""
         await self.producer.start()
+        self.running = True
+        self.ready = True
         app = web.Application()
         app.add_routes([web.get("/", self.message_handler)])
         runner = web.AppRunner(app)
@@ -265,7 +290,7 @@ class KafkaWSHandler:
     async def process_direct_responses(self):
         """Process inbound_direct_responses and update direct_response_txn_request_map."""
         await self.consumer_direct_response.start()
-        while self.RUNNING_DIRECT_RESP:
+        while self.running:
             data = await self.consumer_direct_response.getmany(timeout_ms=10000)
             for tp, messages in data.items():
                 for msg in messages:
@@ -286,7 +311,7 @@ class KafkaWSHandler:
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while self.RUNNING_DIRECT_RESP:
+        while self.running:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
             await asyncio.sleep(self.timedelay_s)
@@ -382,7 +407,38 @@ class KafkaWSHandler:
         return ws
 
 
-async def main(args):
+router = APIRouter()
+API_KEY_NAME = "access_token"
+X_API_KEY = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+
+async def get_api_key(x_api_key: str = Security(X_API_KEY)):
+    """Extract and authenticate Header API_KEY."""
+    if x_api_key == API_KEY:
+        return x_api_key
+    else:
+        raise HTTPException(status_code=403, detail="Could not validate key")
+
+
+@router.get("/status/ready")
+def status_ready(api_key: str = Depends(get_api_key)):
+    """Request handler for readiness check."""
+    for handler in handlers:
+        if not handler.ready:
+            return {"ready": False}
+    return {"ready": True}
+
+
+@router.get("/status/live")
+def status_live(api_key: str = Depends(get_api_key)):
+    """Request handler for liveliness check."""
+    for handler in handlers:
+        if not handler.is_running():
+            return {"alive": False}
+    return {"alive": True}
+
+
+def main(args):
     """Start services."""
     args = argument_parser(args)
     if args.inbound_queue:
@@ -393,7 +449,19 @@ async def main(args):
         prefix = args.inbound_queue_prefix
     else:
         prefix = "acapy"
-    tasks = []
+    if args.endpoint_transport:
+        delivery_Service_endpoint_transport = args.endpoint_transport
+    else:
+        raise SystemExit("No Delivery Service api config provided.")
+    if args.endpoint_api_key:
+        delivery_Service_api_key = args.endpoint_api_key
+    else:
+        raise SystemExit("No Delivery Service api key provided.")
+    global API_KEY
+    API_KEY = delivery_Service_api_key
+    api_host, api_port = delivery_Service_endpoint_transport
+    global handlers
+    handlers = []
     if not args.inbound_queue_transports:
         raise SystemExit("No inbound transport config provided.")
     for inbound_transport in args.inbound_queue_transports:
@@ -404,16 +472,19 @@ async def main(args):
                 f"with args: {host}, {prefix}, {site_host}, {site_port}"
             )
             handler = KafkaWSHandler(host, prefix, site_host, site_port)
+            handlers.append(handler)
         elif transport_type == "http":
             logging.info(
                 "Starting Kafka http inbound delivery service agent "
                 f"with args: {host}, {prefix}, {site_host}, {site_port}"
             )
             handler = KafkaHTTPHandler(host, prefix, site_host, site_port)
+            handlers.append(handler)
         else:
             raise SystemExit("Only ws and http transport type are supported.")
-        tasks.append(handler.run())
-    await asyncio.gather(*tasks)
+        asyncio.ensure_future(handler.run())
+    logging.info(f"Starting FastAPI service: http://{api_host}:{api_port}")
+    uvicorn.run(router, host=api_host, port=int(api_port))
 
 
 def argument_parser(args):
@@ -445,8 +516,23 @@ def argument_parser(args):
         metavar=("<module>", "<host>", "<port>"),
         env_var="ACAPY_INBOUND_QUEUE_TRANSPORT",
     )
+    parser.add_argument(
+        "--endpoint-transport",
+        dest="endpoint_transport",
+        type=str,
+        required=False,
+        nargs=2,
+        metavar=("<host>", "<port>"),
+        env_var="DELIVERY_SERVICE_ENDPOINT_TRANSPORT",
+    )
+    parser.add_argument(
+        "--endpoint-api-key",
+        dest="endpoint_api_key",
+        type=str,
+        env_var="DELIVERY_SERVICE_ENDPOINT_KEY",
+    )
     return parser.parse_args(args)
 
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main(sys.argv[1:]))
+    main(sys.argv[1:])

@@ -5,6 +5,7 @@ import logging
 import msgpack
 import sys
 import urllib
+import uvicorn
 
 from aiokafka import (
     AIOKafkaConsumer,
@@ -15,6 +16,8 @@ from aiokafka import (
 )
 from aiokafka.errors import OffsetOutOfRangeError
 from configargparse import ArgumentParser
+from fastapi import Security, Depends, APIRouter, HTTPException
+from fastapi.security.api_key import APIKeyHeader
 from time import time
 from uuid import uuid4
 
@@ -67,9 +70,8 @@ class RebalanceListener(ConsumerRebalanceListener):
 class KafkaHandler:
     """Kafka outbound delivery."""
 
-    # for unit testing
-    RUNNING = True
-    RUNNING_RETRY = True
+    running = False
+    ready = False
 
     def __init__(self, host: str, prefix: str):
         """Initialize KafkaHandler."""
@@ -84,6 +86,17 @@ class KafkaHandler:
         self.consumer = None
         self.producer = None
         self.consumer_retry = None
+
+    def is_running(self) -> bool:
+        """Check if delivery service agent is running properly."""
+        if (
+            not self.consumer._closed
+            and not self.consumer_retry._closed
+            and not self.producer._closed
+            and self.running
+        ):
+            return True
+        return False
 
     def parse_connection_url(self, connection):
         """Retreive bootstrap_server, username and password from provided connection."""
@@ -125,6 +138,8 @@ class KafkaHandler:
         )
         await self.consumer.start()
         await self.producer.start()
+        self.running = True
+        self.ready = True
         await asyncio.gather(self.process_delivery(), self.process_retries())
 
     async def process_delivery(self):
@@ -133,7 +148,7 @@ class KafkaHandler:
         listener = RebalanceListener(self.consumer)
         self.consumer.subscribe(topics=[self.outbound_topic], listener=listener)
         try:
-            while self.RUNNING:
+            while self.running:
                 try:
                     msg_set = await self.consumer.getmany(timeout_ms=1000)
                 except OffsetOutOfRangeError as err:
@@ -222,7 +237,7 @@ class KafkaHandler:
         listener = RebalanceListener(self.consumer_retry)
         self.consumer_retry.subscribe(topics=[self.retry_topic], listener=listener)
         try:
-            while self.RUNNING_RETRY:
+            while self.running:
                 await asyncio.sleep(self.retry_timedelay_s)
                 try:
                     msg_set = await self.consumer_retry.getmany(timeout_ms=1000)
@@ -252,7 +267,42 @@ class KafkaHandler:
             await self.producer.stop()
 
 
-async def main(args):
+router = APIRouter()
+API_KEY_NAME = "access_token"
+X_API_KEY = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+
+async def get_api_key(x_api_key: str = Security(X_API_KEY)):
+    """Extract and authenticate Header API_KEY."""
+    if x_api_key == API_KEY:
+        return x_api_key
+    else:
+        raise HTTPException(status_code=403, detail="Could not validate key")
+
+
+async def start_handler(host, prefix):
+    """Start Redis Handler."""
+    global handler
+    handler = KafkaHandler(host, prefix)
+    logging.info(
+        f"Starting Redis outbound delivery service agent with args: {host}, {prefix}"
+    )
+    await handler.run()
+
+
+@router.get("/status/ready")
+def status_ready(api_key: str = Depends(get_api_key)):
+    """Request handler for readiness check."""
+    return {"ready": handler.ready}
+
+
+@router.get("/status/live")
+def status_live(api_key: str = Depends(get_api_key)):
+    """Request handler for liveliness check."""
+    return {"alive": handler.is_running()}
+
+
+def main(args):
     """Start services."""
     args = argument_parser(args)
     if args.outbound_queue:
@@ -263,11 +313,20 @@ async def main(args):
         prefix = args.outbound_queue_prefix
     else:
         prefix = "acapy"
-    logging.info(
-        f"Starting Kafka outbound delivery service agent with args: {host}, {prefix}"
-    )
-    handler = KafkaHandler(host, prefix)
-    await handler.run()
+    if args.endpoint_transport:
+        delivery_Service_endpoint_transport = args.endpoint_transport
+    else:
+        raise SystemExit("No Delivery Service api config provided.")
+    if args.endpoint_api_key:
+        delivery_Service_api_key = args.endpoint_api_key
+    else:
+        raise SystemExit("No Delivery Service api key provided.")
+    global API_KEY
+    API_KEY = delivery_Service_api_key
+    api_host, api_port = delivery_Service_endpoint_transport
+    asyncio.ensure_future(start_handler(host, prefix))
+    logging.info(f"Starting FastAPI service: http://{api_host}:{api_port}")
+    uvicorn.run(router, host=api_host, port=int(api_port))
 
 
 def argument_parser(args):
@@ -288,8 +347,23 @@ def argument_parser(args):
         default="acapy",
         env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE_PREFIX",
     )
+    parser.add_argument(
+        "--endpoint-transport",
+        dest="endpoint_transport",
+        type=str,
+        required=False,
+        nargs=2,
+        metavar=("<host>", "<port>"),
+        env_var="DELIVERY_SERVICE_ENDPOINT_TRANSPORT",
+    )
+    parser.add_argument(
+        "--endpoint-api-key",
+        dest="endpoint_api_key",
+        type=str,
+        env_var="DELIVERY_SERVICE_ENDPOINT_KEY",
+    )
     return parser.parse_args(args)
 
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main(sys.argv[1:]))
+    main(sys.argv[1:])

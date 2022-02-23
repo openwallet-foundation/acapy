@@ -1,13 +1,17 @@
 """Redis Inbound Delivery Service."""
-import aioredis
 import asyncio
 import logging
 import msgpack
 import sys
 import json
+import uvicorn
 
 from aiohttp import WSMessage, WSMsgType, web
 from configargparse import ArgumentParser
+from fastapi import Security, Depends, APIRouter, HTTPException
+from fastapi.security.api_key import APIKeyHeader
+from redis.cluster import RedisCluster as Redis
+from redis.exceptions import RedisError
 from uuid import uuid4
 
 logging.basicConfig(
@@ -19,9 +23,8 @@ logging.basicConfig(
 class RedisHTTPHandler:
     """Redis inbound delivery service for HTTP."""
 
-    # for unit testing
-    RUNNING = True
-    RUNNING_DIRECT_RESP = True
+    running = False
+    ready = False
 
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaHTTPHandler."""
@@ -29,7 +32,7 @@ class RedisHTTPHandler:
         self.prefix = prefix
         self.site_host = site_host
         self.site_port = site_port
-        self.redis = aioredis.from_url(self._host)
+        self.redis = Redis.from_url(self._host)
         self.direct_response_txn_request_map = {}
         self.direct_resp_topic = f"{self.prefix}.inbound_direct_responses"
         self.inbound_transport_key = f"{self.prefix}.inbound_transport"
@@ -38,7 +41,25 @@ class RedisHTTPHandler:
 
     async def run(self):
         """Run the service."""
-        await asyncio.gather(self.start(), self.process_direct_responses())
+        try:
+            self.redis.ping()
+            self.ready = True
+            self.running = True
+            await asyncio.gather(self.start(), self.process_direct_responses())
+        except RedisError:
+            self.ready = False
+            self.running = False
+
+    def is_running(self) -> bool:
+        """Check if delivery service agent is running properly."""
+        try:
+            self.redis.ping()
+            if self.running:
+                return True
+            else:
+                return False
+        except RedisError:
+            return False
 
     async def start(self):
         """Construct the aiohttp application."""
@@ -58,15 +79,18 @@ class RedisHTTPHandler:
 
     async def process_direct_responses(self):
         """Process inbound_direct_responses and update direct_response_txn_request_map."""
-        while self.RUNNING_DIRECT_RESP:
+        while self.running:
             msg_received = False
             while not msg_received:
                 try:
-                    msg = await self.redis.blpop(self.direct_resp_topic, 0)
+                    msg = self.redis.blpop(self.direct_resp_topic, 0.2)
                     msg_received = True
-                except aioredis.RedisError as err:
+                except RedisError as err:
                     await asyncio.sleep(1)
                     logging.exception(f"Unexpected redis client exception: {str(err)}")
+            if not msg:
+                await asyncio.sleep(1)
+                continue
             msg = msgpack.unpackb(msg[1])
             if not isinstance(msg, dict):
                 logging.error("Received non-dict message")
@@ -84,7 +108,7 @@ class RedisHTTPHandler:
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while self.RUNNING_DIRECT_RESP:
+        while self.running:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
             await asyncio.sleep(self.timedelay_s)
@@ -126,11 +150,9 @@ class RedisHTTPHandler:
             response_sent = False
             while not response_sent:
                 try:
-                    await self.redis.rpush(
-                        self.inbound_transport_key, msgpack.packb(message)
-                    )
+                    self.redis.rpush(self.inbound_transport_key, msgpack.packb(message))
                     response_sent = True
-                except aioredis.RedisError as err:
+                except RedisError as err:
                     await asyncio.sleep(1)
                     logging.exception(f"Unexpected redis client exception: {str(err)}")
             try:
@@ -165,11 +187,9 @@ class RedisHTTPHandler:
             msg_sent = False
             while not msg_sent:
                 try:
-                    await self.redis.rpush(
-                        self.inbound_transport_key, msgpack.packb(message)
-                    )
+                    self.redis.rpush(self.inbound_transport_key, msgpack.packb(message))
                     msg_sent = True
-                except aioredis.RedisError as err:
+                except RedisError as err:
                     await asyncio.sleep(1)
                     logging.exception(f"Unexpected redis client exception: {str(err)}")
             return web.Response(status=200)
@@ -178,9 +198,8 @@ class RedisHTTPHandler:
 class RedisWSHandler:
     """Redis inbound delivery service for WebSockets."""
 
-    # for unit testing
-    RUNNING = True
-    RUNNING_DIRECT_RESP = True
+    running = False
+    ready = False
 
     def __init__(self, host: str, prefix: str, site_host: str, site_port: str):
         """Initialize KafkaHTTPHandler."""
@@ -188,7 +207,7 @@ class RedisWSHandler:
         self.prefix = prefix
         self.site_host = site_host
         self.site_port = site_port
-        self.redis = aioredis.from_url(self._host)
+        self.redis = Redis.from_url(self._host)
         self.direct_response_txn_request_map = {}
         self.direct_resp_topic = f"{self.prefix}.inbound_direct_responses"
         self.inbound_transport_key = f"{self.prefix}.inbound_transport"
@@ -197,7 +216,25 @@ class RedisWSHandler:
 
     async def run(self):
         """Run the service."""
-        await asyncio.gather(self.start(), self.process_direct_responses())
+        try:
+            self.redis.ping()
+            self.ready = True
+            self.running = True
+            await asyncio.gather(self.start(), self.process_direct_responses())
+        except RedisError:
+            self.ready = False
+            self.running = False
+
+    def is_running(self) -> bool:
+        """Check if delivery service agent is running properly."""
+        try:
+            self.redis.ping()
+            if self.running:
+                return True
+            else:
+                return False
+        except RedisError:
+            return False
 
     async def start(self):
         """Construct the aiohttp application."""
@@ -216,15 +253,18 @@ class RedisWSHandler:
 
     async def process_direct_responses(self):
         """Process inbound_direct_responses and update direct_response_txn_request_map."""
-        while self.RUNNING_DIRECT_RESP:
+        while self.running:
             msg_received = False
             while not msg_received:
                 try:
-                    msg = await self.redis.blpop(self.direct_resp_topic, 0)
+                    msg = self.redis.blpop(self.direct_resp_topic, 0.2)
                     msg_received = True
-                except aioredis.RedisError as err:
+                except RedisError as err:
                     await asyncio.sleep(1)
                     logging.exception(f"Unexpected redis client exception: {str(err)}")
+            if not msg:
+                await asyncio.sleep(1)
+                continue
             msg = msgpack.unpackb(msg[1])
             if not isinstance(msg, dict):
                 logging.error("Received non-dict message")
@@ -242,7 +282,7 @@ class RedisWSHandler:
 
     async def get_direct_responses(self, txn_id):
         """Get direct_response for a specific transaction/request."""
-        while self.RUNNING_DIRECT_RESP:
+        while self.running:
             if txn_id in self.direct_response_txn_request_map:
                 return self.direct_response_txn_request_map[txn_id]
             await asyncio.sleep(self.timedelay_s)
@@ -282,11 +322,11 @@ class RedisWSHandler:
                         response_sent = False
                         while not response_sent:
                             try:
-                                await self.redis.rpush(
+                                self.redis.rpush(
                                     self.inbound_transport_key, msgpack.packb(message)
                                 )
                                 response_sent = True
-                            except aioredis.RedisError as err:
+                            except RedisError as err:
                                 await asyncio.sleep(1)
                                 logging.exception(
                                     f"Unexpected redis client exception: {str(err)}"
@@ -317,11 +357,11 @@ class RedisWSHandler:
                         msg_sent = False
                         while not msg_sent:
                             try:
-                                await self.redis.rpush(
+                                self.redis.rpush(
                                     self.inbound_transport_key, msgpack.packb(message)
                                 )
                                 msg_sent = True
-                            except aioredis.RedisError as err:
+                            except RedisError as err:
                                 await asyncio.sleep(1)
                                 logging.exception(
                                     f"Unexpected redis client exception: {str(err)}"
@@ -348,7 +388,38 @@ class RedisWSHandler:
         return ws
 
 
-async def main(args):
+router = APIRouter()
+API_KEY_NAME = "access_token"
+X_API_KEY = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+
+async def get_api_key(x_api_key: str = Security(X_API_KEY)):
+    """Extract and authenticate Header API_KEY."""
+    if x_api_key == API_KEY:
+        return x_api_key
+    else:
+        raise HTTPException(status_code=403, detail="Could not validate key")
+
+
+@router.get("/status/ready")
+def status_ready(api_key: str = Depends(get_api_key)):
+    """Request handler for readiness check."""
+    for handler in handlers:
+        if not handler.ready:
+            return {"ready": False}
+    return {"ready": True}
+
+
+@router.get("/status/live")
+def status_live(api_key: str = Depends(get_api_key)):
+    """Request handler for liveliness check."""
+    for handler in handlers:
+        if not handler.is_running():
+            return {"alive": False}
+    return {"alive": True}
+
+
+def main(args):
     """Start services."""
     args = argument_parser(args)
     if args.inbound_queue:
@@ -359,7 +430,19 @@ async def main(args):
         prefix = args.inbound_queue_prefix
     else:
         prefix = "acapy"
-    tasks = []
+    if args.endpoint_transport:
+        delivery_Service_endpoint_transport = args.endpoint_transport
+    else:
+        raise SystemExit("No Delivery Service api config provided.")
+    if args.endpoint_api_key:
+        delivery_Service_api_key = args.endpoint_api_key
+    else:
+        raise SystemExit("No Delivery Service api key provided.")
+    global API_KEY
+    API_KEY = delivery_Service_api_key
+    api_host, api_port = delivery_Service_endpoint_transport
+    global handlers
+    handlers = []
     if not args.inbound_queue_transports:
         raise SystemExit("No inbound transport config provided.")
     for inbound_transport in args.inbound_queue_transports:
@@ -370,16 +453,19 @@ async def main(args):
                 f"with args: {host}, {prefix}, {site_host}, {site_port}"
             )
             handler = RedisWSHandler(host, prefix, site_host, site_port)
+            handlers.append(handler)
         elif transport_type == "http":
             logging.info(
                 "Starting Redis http inbound delivery service agent "
                 f"with args: {host}, {prefix}, {site_host}, {site_port}"
             )
             handler = RedisHTTPHandler(host, prefix, site_host, site_port)
+            handlers.append(handler)
         else:
             raise SystemExit("Only ws and http transport type are supported.")
-        tasks.append(handler.run())
-    await asyncio.gather(*tasks)
+        asyncio.ensure_future(handler.run())
+    logging.info(f"Starting FastAPI service: http://{api_host}:{api_port}")
+    uvicorn.run(router, host=api_host, port=int(api_port))
 
 
 def argument_parser(args):
@@ -411,8 +497,23 @@ def argument_parser(args):
         metavar=("<module>", "<host>", "<port>"),
         env_var="ACAPY_INBOUND_QUEUE_TRANSPORT",
     )
+    parser.add_argument(
+        "--endpoint-transport",
+        dest="endpoint_transport",
+        type=str,
+        required=False,
+        nargs=2,
+        metavar=("<host>", "<port>"),
+        env_var="DELIVERY_SERVICE_ENDPOINT_TRANSPORT",
+    )
+    parser.add_argument(
+        "--endpoint-api-key",
+        dest="endpoint_api_key",
+        type=str,
+        env_var="DELIVERY_SERVICE_ENDPOINT_KEY",
+    )
     return parser.parse_args(args)
 
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main(sys.argv[1:]))
+    main(sys.argv[1:])

@@ -1,9 +1,10 @@
 """Redis inbound transport."""
-import aioredis
 import asyncio
 import msgpack
 import logging
 
+from redis.cluster import RedisCluster as Redis
+from redis.exceptions import RedisError
 from threading import Thread
 from urllib.parse import urlparse, ParseResult
 
@@ -81,7 +82,7 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
 
     async def receive_messages(self):
         """Recieve message from inbound queue and handle it."""
-        self.redis = aioredis.from_url(self.connection)
+        self.redis = Redis.from_url(self.connection)
         transport_manager = self._profile.context.injector.inject(
             InboundTransportManager
         )
@@ -90,15 +91,18 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
             retry_pop_count = 0
             while not msg_received:
                 try:
-                    msg = await self.redis.blpop(self.inbound_topic, 0)
+                    msg = self.redis.blpop(self.inbound_topic, 0.2)
                     msg_received = True
                     retry_pop_count = 0
-                except aioredis.RedisError as err:
+                except RedisError as err:
                     await asyncio.sleep(1)
                     self.logger.warning(err)
                     retry_pop_count = retry_pop_count + 1
                     if retry_pop_count > 5:
                         raise InboundQueueError(f"Unexpected exception {str(err)}")
+            if not msg:
+                await asyncio.sleep(1)
+                continue
             msg = msgpack.unpackb(msg[1])
             if not isinstance(msg, dict):
                 self.logger.error("Received non-dict message")
@@ -133,8 +137,8 @@ class RedisInboundQueue(BaseInboundQueue, Thread):
                     message["txn_id"] = txn_id
                     message["response_data"] = response_data
                     try:
-                        await self.redis.rpush(
+                        self.redis.rpush(
                             self.direct_response_topic, msgpack.packb(message)
                         )
-                    except aioredis.RedisError as err:
+                    except RedisError as err:
                         raise InboundQueueError(f"Unexpected exception {str(err)}")

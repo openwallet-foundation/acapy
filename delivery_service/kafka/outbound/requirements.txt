@@ -3,3 +3,5 @@ aiokafka~=0.7.2
 msgpack~=0.6
 pyyaml~=5.4.0
 ConfigArgParse~=1.5.3
+fastapi~=0.68.0
+uvicorn==0.16.0

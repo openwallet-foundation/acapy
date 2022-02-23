@@ -1,6 +1,7 @@
+import aiohttp
 import msgpack
 import json
-import aiohttp
+import uvicorn
 
 from aiokafka import TopicPartition, ConsumerRecord
 from asynctest import TestCase as AsyncTestCase, mock as async_mock, PropertyMock
@@ -118,8 +119,10 @@ class TestKafkaHTTPHandler(AsyncTestCase):
             KafkaHTTPHandler, "process_direct_responses", autospec=True
         ), async_mock.patch.object(
             Path, "open", async_mock.MagicMock()
+        ), async_mock.patch.object(
+            uvicorn, "run", async_mock.MagicMock()
         ):
-            await main(
+            main(
                 [
                     "-iq",
                     "test",
@@ -127,21 +130,26 @@ class TestKafkaHTTPHandler(AsyncTestCase):
                     "http",
                     "0.0.0.0",
                     "8080",
+                    "--endpoint-transport",
+                    "0.0.0.0",
+                    "8080",
+                    "--endpoint-api-key",
+                    "test123",
                 ]
             )
 
     async def test_main_x(self):
         with self.assertRaises(SystemExit):
-            await main([])
+            main([])
         with self.assertRaises(SystemExit):
-            await main(
+            main(
                 [
                     "-iq",
                     "test",
                 ]
             )
         with self.assertRaises(SystemExit):
-            await main(
+            main(
                 [
                     "-iq",
                     "test",
@@ -149,12 +157,17 @@ class TestKafkaHTTPHandler(AsyncTestCase):
                     "invalid",
                     "0.0.0.0",
                     "8080",
+                    "--endpoint-transport",
+                    "0.0.0.0",
+                    "8080",
+                    "--endpoint-api-key",
+                    "test123",
                 ]
             )
 
     async def test_stop(self):
         sentinel = PropertyMock(side_effect=[True, True, True, False])
-        KafkaHTTPHandler.RUNNING = sentinel
+        KafkaHTTPHandler.running = sentinel
         service = KafkaHTTPHandler("test", "acapy", "test", "8080")
         with async_mock.patch.object(
             test_module.web,
@@ -178,7 +191,7 @@ class TestKafkaHTTPHandler(AsyncTestCase):
 
     async def test_start(self):
         sentinel = PropertyMock(side_effect=[True, True, True, False])
-        KafkaHTTPHandler.RUNNING = sentinel
+        KafkaHTTPHandler.running = sentinel
         service = KafkaHTTPHandler("test", "acapy", "test", "8080")
         with async_mock.patch.object(
             test_module.web,
@@ -205,7 +218,7 @@ class TestKafkaHTTPHandler(AsyncTestCase):
 
     async def test_process_direct_response(self):
         sentinel = PropertyMock(side_effect=[True, False])
-        KafkaHTTPHandler.RUNNING_DIRECT_RESP = sentinel
+        KafkaHTTPHandler.running = sentinel
         service = KafkaHTTPHandler("test", "acapy", "test", "8080")
         mock_consumer = async_mock.MagicMock(
             start=async_mock.CoroutineMock(),
@@ -226,7 +239,7 @@ class TestKafkaHTTPHandler(AsyncTestCase):
 
     async def test_get_direct_response(self):
         sentinel = PropertyMock(side_effect=[True, True, False])
-        KafkaHTTPHandler.RUNNING_DIRECT_RESP = sentinel
+        KafkaHTTPHandler.running = sentinel
         service = KafkaHTTPHandler("test", "acapy", "test", "8080")
         service.timedelay_s = 0.1
         service.direct_response_txn_request_map = {
@@ -234,8 +247,8 @@ class TestKafkaHTTPHandler(AsyncTestCase):
             "txn_124": b"test2",
         }
         await service.get_direct_responses("txn_321")
-        sentinel = PropertyMock(side_effect=[True, False])
-        KafkaHTTPHandler.RUNNING_DIRECT_RESP = sentinel
+        sentinel = PropertyMock(side_effect=[True, True, False])
+        KafkaHTTPHandler.running = sentinel
         service = KafkaHTTPHandler("test", "acapy", "test", "8080")
         service.timedelay_s = 0.1
         service.direct_response_txn_request_map = {
@@ -259,7 +272,7 @@ class TestKafkaHTTPHandler(AsyncTestCase):
             send=async_mock.CoroutineMock(),
         )
         sentinel = PropertyMock(side_effect=[True, False])
-        KafkaHTTPHandler.RUNNING = sentinel
+        KafkaHTTPHandler.running = sentinel
         service = KafkaHTTPHandler("test", "acapy", "test", "8080")
         service.timedelay_s = 0.1
         service.producer = mock_producer
@@ -339,8 +352,53 @@ class TestKafkaWSHandler(AsyncTestCase):
             async_mock.MagicMock(),
         ), async_mock.patch.object(
             Path, "open", async_mock.MagicMock()
+        ), async_mock.patch.object(
+            uvicorn, "run", async_mock.MagicMock()
         ):
-            await main(
+            main(
+                [
+                    "-iq",
+                    "test",
+                    "-iqt",
+                    "ws",
+                    "0.0.0.0",
+                    "8080",
+                    "--endpoint-transport",
+                    "0.0.0.0",
+                    "8080",
+                    "--endpoint-api-key",
+                    "test123",
+                ]
+            )
+
+    async def test_main_x(self):
+        with self.assertRaises(SystemExit):
+            main([])
+        with self.assertRaises(SystemExit):
+            main(
+                [
+                    "-iq",
+                    "test",
+                ]
+            )
+        with self.assertRaises(SystemExit):
+            main(
+                [
+                    "-iq",
+                    "test",
+                    "-iqt",
+                    "invalid",
+                    "0.0.0.0",
+                    "8080",
+                    "--endpoint-transport",
+                    "0.0.0.0",
+                    "8080",
+                    "--endpoint-api-key",
+                    "test123",
+                ]
+            )
+        with self.assertRaises(SystemExit):
+            main(
                 [
                     "-iq",
                     "test",
@@ -350,24 +408,16 @@ class TestKafkaWSHandler(AsyncTestCase):
                     "8080",
                 ]
             )
-
-    async def test_main_x(self):
         with self.assertRaises(SystemExit):
-            await main([])
-        with self.assertRaises(SystemExit):
-            await main(
-                [
-                    "-iq",
-                    "test",
-                ]
-            )
-        with self.assertRaises(SystemExit):
-            await main(
+            main(
                 [
                     "-iq",
                     "test",
                     "-iqt",
-                    "invalid",
+                    "ws",
+                    "0.0.0.0",
+                    "8080",
+                    "--endpoint-transport",
                     "0.0.0.0",
                     "8080",
                 ]
@@ -375,7 +425,7 @@ class TestKafkaWSHandler(AsyncTestCase):
 
     async def test_stop(self):
         sentinel = PropertyMock(side_effect=[True, True, True, False])
-        KafkaWSHandler.RUNNING = sentinel
+        KafkaWSHandler.running = sentinel
         service = KafkaWSHandler("test", "acapy", "test", "8080")
         with async_mock.patch.object(
             test_module.web,
@@ -399,7 +449,7 @@ class TestKafkaWSHandler(AsyncTestCase):
 
     async def test_start(self):
         sentinel = PropertyMock(side_effect=[True, True, True, False])
-        KafkaWSHandler.RUNNING = sentinel
+        KafkaWSHandler.running = sentinel
         service = KafkaWSHandler("test", "acapy", "test", "8080")
         with async_mock.patch.object(
             test_module.web,
@@ -426,7 +476,7 @@ class TestKafkaWSHandler(AsyncTestCase):
 
     async def test_process_direct_response(self):
         sentinel = PropertyMock(side_effect=[True, False])
-        KafkaWSHandler.RUNNING_DIRECT_RESP = sentinel
+        KafkaWSHandler.running = sentinel
         service = KafkaWSHandler("test", "acapy", "test", "8080")
         mock_consumer = async_mock.MagicMock(
             start=async_mock.CoroutineMock(),
@@ -447,7 +497,7 @@ class TestKafkaWSHandler(AsyncTestCase):
 
     async def test_get_direct_response(self):
         sentinel = PropertyMock(side_effect=[True, True, False])
-        KafkaWSHandler.RUNNING_DIRECT_RESP = sentinel
+        KafkaWSHandler.running = sentinel
         service = KafkaWSHandler("test", "acapy", "test", "8080")
         service.timedelay_s = 0.1
         service.direct_response_txn_request_map = {
@@ -456,7 +506,7 @@ class TestKafkaWSHandler(AsyncTestCase):
         }
         await service.get_direct_responses("txn_321")
         sentinel = PropertyMock(side_effect=[True, False])
-        KafkaWSHandler.RUNNING_DIRECT_RESP = sentinel
+        KafkaWSHandler.running = sentinel
         service = KafkaWSHandler("test", "acapy", "test", "8080")
         service.timedelay_s = 0.1
         service.direct_response_txn_request_map = {
@@ -878,3 +928,29 @@ class TestKafkaWSHandler(AsyncTestCase):
         assert service._host == "localhost:8080,localhost:8081"
         assert service.username == "username"
         assert service.password == "password"
+
+    def test_status_live(self):
+        test_module.API_KEY = "test1234"
+        test_module.handlers = [
+            async_mock.MagicMock(is_running=async_mock.MagicMock(return_value=False)),
+            async_mock.MagicMock(is_running=async_mock.MagicMock(return_value=True)),
+        ]
+        assert test_module.status_live(api_key="test1234") == {"alive": False}
+        test_module.handlers = [
+            async_mock.MagicMock(is_running=async_mock.MagicMock(return_value=True)),
+            async_mock.MagicMock(is_running=async_mock.MagicMock(return_value=True)),
+        ]
+        assert test_module.status_live(api_key="test1234") == {"alive": True}
+
+    def test_status_ready(self):
+        test_module.API_KEY = "test1234"
+        test_module.handlers = [
+            async_mock.MagicMock(ready=False),
+            async_mock.MagicMock(ready=True),
+        ]
+        assert test_module.status_ready(api_key="test1234") == {"ready": False}
+        test_module.handlers = [
+            async_mock.MagicMock(ready=True),
+            async_mock.MagicMock(ready=True),
+        ]
+        assert test_module.status_ready(api_key="test1234") == {"ready": True}

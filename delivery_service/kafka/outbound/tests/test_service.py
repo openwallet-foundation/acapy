@@ -1,9 +1,7 @@
 import msgpack
 import os
-import pytest
-import random
 import string
-import json
+import uvicorn
 
 import aiohttp
 import asyncio
@@ -319,7 +317,7 @@ class TestKafkaHandler(AsyncTestCase):
         assert service.password == "password"
 
     async def test_main(self):
-        KafkaHandler.RUNNING = PropertyMock(side_effect=[True, True, False])
+        KafkaHandler.running = PropertyMock(side_effect=[True, True, False])
         with async_mock.patch(
             "aiokafka.AIOKafkaProducer.start",
             async_mock.CoroutineMock(),
@@ -338,21 +336,28 @@ class TestKafkaHandler(AsyncTestCase):
             KafkaHandler, "process_retries", autospec=True
         ), async_mock.patch.object(
             Path, "open", async_mock.MagicMock()
+        ), async_mock.patch.object(
+            uvicorn, "run", async_mock.MagicMock()
         ):
-            await main(
+            main(
                 [
                     "-oq",
                     "test",
+                    "--endpoint-transport",
+                    "0.0.0.0",
+                    "8080",
+                    "--endpoint-api-key",
+                    "test123",
                 ]
             )
 
     async def test_main_x(self):
         with self.assertRaises(SystemExit):
-            await main([])
+            main([])
 
     async def test_process_delivery(self):
         sentinel = PropertyMock(side_effect=[True, True, False])
-        KafkaHandler.RUNNING = sentinel
+        KafkaHandler.running = sentinel
         service = KafkaHandler("test", "acapy")
         with async_mock.patch.object(
             aiohttp.ClientSession,
@@ -388,7 +393,7 @@ class TestKafkaHandler(AsyncTestCase):
 
     async def test_process_delivery_x(self):
         sentinel = PropertyMock(side_effect=[True, True, True, True, False])
-        KafkaHandler.RUNNING = sentinel
+        KafkaHandler.running = sentinel
         service = KafkaHandler("test", "acapy")
         with async_mock.patch.object(
             aiohttp.ClientSession,
@@ -432,7 +437,7 @@ class TestKafkaHandler(AsyncTestCase):
 
     async def test_process_retries(self):
         sentinel = PropertyMock(side_effect=[True, True, False])
-        KafkaHandler.RUNNING_RETRY = sentinel
+        KafkaHandler.running = sentinel
         service = KafkaHandler("test", "acapy")
         service.retry_timedelay_s = 0.1
         mock_producer = async_mock.MagicMock(
@@ -459,3 +464,21 @@ class TestKafkaHandler(AsyncTestCase):
         service.consumer_retry = mock_consumer
         service.producer = mock_producer
         await service.process_retries()
+
+    def test_status_live(self):
+        test_module.API_KEY = "test1234"
+        test_module.handler = async_mock.MagicMock(
+            is_running=async_mock.MagicMock(return_value=False)
+        )
+        assert test_module.status_live(api_key="test1234") == {"alive": False}
+        test_module.handler = async_mock.MagicMock(
+            is_running=async_mock.MagicMock(return_value=True)
+        )
+        assert test_module.status_live(api_key="test1234") == {"alive": True}
+
+    def test_status_ready(self):
+        test_module.API_KEY = "test1234"
+        test_module.handler = async_mock.MagicMock(ready=False)
+        assert test_module.status_ready(api_key="test1234") == {"ready": False}
+        test_module.handler = async_mock.MagicMock(ready=True)
+        assert test_module.status_ready(api_key="test1234") == {"ready": True}
