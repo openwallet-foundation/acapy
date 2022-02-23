@@ -2,9 +2,8 @@
 
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
-
+from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....problem_report.v1_0.message import ProblemReport
-
 from ..manager import DIDXManager, DIDXManagerError
 from ..messages.request import DIDXRequest
 
@@ -27,15 +26,14 @@ class DIDXRequestHandler(BaseHandler):
         profile = context.profile
         mgr = DIDXManager(profile)
 
+        mediation_id = None
         if context.connection_record:
             async with profile.session() as session:
                 mediation_metadata = await context.connection_record.metadata_get(
-                    session, "mediation", {}
+                    session, MediationManager.METADATA_KEY, {}
                 )
-        else:
-            mediation_metadata = {}
+            mediation_id = mediation_metadata.get(MediationManager.METADATA_ID)
 
-        mediation_id = mediation_metadata.get("id")
         try:
             conn_rec = await mgr.receive_request(
                 request=context.message,
