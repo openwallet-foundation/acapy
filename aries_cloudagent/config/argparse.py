@@ -800,6 +800,17 @@ class LedgerGroup(ArgumentGroup):
                 " HyperLedger Indy ledgers."
             ),
         )
+        parser.add_argument(
+            "--accept-taa",
+            type=str,
+            nargs=2,
+            metavar=("<acceptance-mechanism>", "<taa-version>"),
+            env_var="ACAPY_ACCEPT_TAA",
+            help=(
+                "Specify the acceptance mechanism and taa version for which to accept the transaction author agreement."
+                "If not provided, the TAA must be accepted through the TTY or the admin API."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract ledger settings."""
@@ -838,6 +849,9 @@ class LedgerGroup(ArgumentGroup):
                 settings["ledger.keepalive"] = args.ledger_keepalive
             if args.ledger_socks_proxy:
                 settings["ledger.socks_proxy"] = args.ledger_socks_proxy
+            if args.accept_taa:
+                settings["ledger.taa_acceptance_mechanism"] = args.accept_taa[0]
+                settings["ledger.taa_acceptance_version"] = args.accept_taa[1]
 
         return settings
 

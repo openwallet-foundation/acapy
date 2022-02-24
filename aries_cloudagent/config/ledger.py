@@ -4,6 +4,7 @@ from collections import OrderedDict
 import logging
 import re
 import sys
+from typing import Optional
 import uuid
 
 import markdown
@@ -140,7 +141,7 @@ async def ledger_config(
                     not taa_accepted
                     or taa_info["taa_record"]["digest"] != taa_accepted["digest"]
                 ):
-                    if not await accept_taa(ledger, taa_info, provision):
+                    if not await accept_taa(ledger, profile, taa_info, provision):
                         return False
 
         # Publish endpoints if necessary - skipped if TAA is required but not accepted
@@ -162,13 +163,7 @@ async def ledger_config(
     return True
 
 
-async def accept_taa(ledger: BaseLedger, taa_info, provision: bool = False) -> bool:
-    """Perform TAA acceptance."""
-
-    if not sys.stdout.isatty():
-        LOGGER.warning("Cannot accept TAA without interactive terminal")
-        return False
-
+async def select_aml_tty(taa_info, provision: bool = False) -> Optional[str]:
     mechanisms = taa_info["aml_record"]["aml"]
     allow_opts = OrderedDict(
         [
@@ -230,16 +225,53 @@ async def accept_taa(ledger: BaseLedger, taa_info, provision: bool = False) -> b
         try:
             opt = await prompt_toolkit.prompt(opts_text, async_=True)
         except EOFError:
-            return False
+            return None
         if not opt:
             opt = "1"
         opt = opt.strip()
         if opt in ("x", "X"):
-            return False
+            return None
         if opt in num_mechanisms:
             mechanism = num_mechanisms[opt]
             break
 
-    await ledger.accept_txn_author_agreement(taa_info["taa_record"], mechanism)
+    return mechanism
 
+
+async def accept_taa(ledger: BaseLedger, profile: Profile, taa_info, provision: bool = False, ) -> bool:
+    """Perform TAA acceptance."""
+
+    mechanisms = taa_info["aml_record"]["aml"]
+    mechanism = None
+
+    taa_acceptance_mechanism = profile.settings.get("ledger.taa_acceptance_mechanism")
+    taa_acceptance_version = profile.settings.get("ledger.taa_acceptance_version")
+
+    # If configured, accept the TAA automatically
+    if taa_acceptance_mechanism:
+        taa_record_version = taa_info["taa_record"]["version"]
+        if taa_acceptance_version != taa_record_version:
+            raise LedgerError(
+                f"TAA version ({taa_record_version}) is different from TAA accept version ({taa_acceptance_version}) from configuration. Update the TAA version in the config to accept the TAA."
+            )
+
+        if taa_acceptance_mechanism not in mechanisms:
+            raise LedgerError(
+                f"TAA acceptance mechanism '{taa_acceptance_mechanism}' is not a valid acceptance mechanism. Valid mechanisms are: {str(list(mechanisms.keys()))}"
+            )
+
+        mechanism = taa_acceptance_mechanism
+    # If tty is available use it (allows to accept newer TAA than configured)
+    elif sys.stdout.isatty():
+        mechanism = await select_aml_tty(taa_info, provision)
+    else:
+        LOGGER.warning(
+            "Cannot accept TAA without interactive terminal or taa accept config"
+        )
+
+    if not mechanism:
+        return False
+
+    LOGGER.debug(f"Accepting the TAA using mechanism '{mechanism}'")
+    await ledger.accept_txn_author_agreement(taa_info["taa_record"], mechanism)
     return True
