@@ -807,8 +807,9 @@ class LedgerGroup(ArgumentGroup):
             metavar=("<acceptance-mechanism>", "<taa-version>"),
             env_var="ACAPY_ACCEPT_TAA",
             help=(
-                "Specify the acceptance mechanism and taa version for which to accept the transaction author agreement."
-                "If not provided, the TAA must be accepted through the TTY or the admin API."
+                "Specify the acceptance mechanism and taa version for which to accept"
+                " the transaction author agreement. If not provided, the TAA must"
+                " be accepted through the TTY or the admin API."
             ),
         )
 

@@ -164,6 +164,7 @@ async def ledger_config(
 
 
 async def select_aml_tty(taa_info, provision: bool = False) -> Optional[str]:
+    """Select acceptance mechanism from AML."""
     mechanisms = taa_info["aml_record"]["aml"]
     allow_opts = OrderedDict(
         [
@@ -257,12 +258,16 @@ async def accept_taa(
         taa_record_version = taa_info["taa_record"]["version"]
         if taa_acceptance_version != taa_record_version:
             raise LedgerError(
-                f"TAA version ({taa_record_version}) is different from TAA accept version ({taa_acceptance_version}) from configuration. Update the TAA version in the config to accept the TAA."
+                f"TAA version ({taa_record_version}) is different from TAA accept "
+                f"version ({taa_acceptance_version}) from configuration. Update the "
+                "TAA version in the config to accept the TAA."
             )
 
         if taa_acceptance_mechanism not in mechanisms:
             raise LedgerError(
-                f"TAA acceptance mechanism '{taa_acceptance_mechanism}' is not a valid acceptance mechanism. Valid mechanisms are: {str(list(mechanisms.keys()))}"
+                f"TAA acceptance mechanism '{taa_acceptance_mechanism}' is not a "
+                "valid acceptance mechanism. Valid mechanisms are: "
+                + str(list(mechanisms.keys()))
             )
 
         mechanism = taa_acceptance_mechanism
