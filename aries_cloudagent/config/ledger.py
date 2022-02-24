@@ -238,7 +238,12 @@ async def select_aml_tty(taa_info, provision: bool = False) -> Optional[str]:
     return mechanism
 
 
-async def accept_taa(ledger: BaseLedger, profile: Profile, taa_info, provision: bool = False, ) -> bool:
+async def accept_taa(
+    ledger: BaseLedger,
+    profile: Profile,
+    taa_info,
+    provision: bool = False,
+) -> bool:
     """Perform TAA acceptance."""
 
     mechanisms = taa_info["aml_record"]["aml"]
