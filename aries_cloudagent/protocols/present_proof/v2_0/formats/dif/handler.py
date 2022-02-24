@@ -1,5 +1,6 @@
 """V2.0 present-proof dif presentation-exchange format handler."""
 
+import json
 import logging
 
 from marshmallow import RAISE
@@ -475,5 +476,5 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 document_loader=self._profile.inject(DocumentLoader),
                 challenge=challenge,
             )
-            pres_ex_record.verified = pres_ver_result.verified
+            pres_ex_record.verified = json.dumps(pres_ver_result.verified)
             return pres_ex_record
