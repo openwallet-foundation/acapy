@@ -404,7 +404,7 @@ You can also run the demo against a postgres database using the following:
 
 (Obvs you need to be running a postgres database - the command to start postgres is in the yml file provided above.)
 
-You can tweak the number of credentials issued using the `--cound` and --batch` prameters, and you can run against an askar database using the `--askar` option.
+You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option.
 
 An example full set of options is:
 
