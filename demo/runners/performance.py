@@ -73,6 +73,11 @@ class BaseAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
+    async def handle_issue_credential(self, payload):
+        cred_ex_id = payload["credential_exchange_id"]
+        self.credential_state[cred_ex_id] = payload["state"]
+        self.credential_event.set()
+
     async def handle_issue_credential_v2_0(self, payload):
         cred_ex_id = payload["cred_ex_id"]
         self.credential_state[cred_ex_id] = payload["state"]
@@ -103,7 +108,7 @@ class BaseAgent(DemoAgent):
             pending = 0
             total = len(self.credential_state)
             for result in self.credential_state.values():
-                if result != "done":
+                if result != "done" and result != "credential_acked":
                     pending += 1
             if self.credential_event.is_set():
                 continue

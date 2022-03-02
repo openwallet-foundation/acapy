@@ -52,7 +52,9 @@ class CredentialOfferHandler(BaseHandler):
         )
 
         # If auto respond is turned on, automatically reply with credential request
-        if context.settings.get("debug.auto_respond_credential_offer"):
+        if cred_ex_record and context.settings.get(
+            "debug.auto_respond_credential_offer"
+        ):
             credential_request_message = None
             try:
                 (
@@ -70,7 +72,7 @@ class CredentialOfferHandler(BaseHandler):
                 LedgerError,
                 StorageError,
             ) as err:
-                self._logger.exception(err)
+                self._logger.exception("Error responding to credential offer")
                 if cred_ex_record:
                     async with profile.session() as session:
                         await cred_ex_record.save_error_state(
