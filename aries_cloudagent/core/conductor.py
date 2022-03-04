@@ -70,6 +70,7 @@ from .dispatcher import Dispatcher
 from .util import STARTUP_EVENT_TOPIC, SHUTDOWN_EVENT_TOPIC
 
 LOGGER = logging.getLogger(__name__)
+UNDELIVERABLE_EVENT_TOPIC = "acapy::outbound-message::undeliverable"
 
 
 class Conductor:
@@ -697,7 +698,7 @@ class Conductor:
     ) -> OutboundSendStatus:
         """Handle a message that failed delivery via outbound transports."""
         queued_for_inbound = self.inbound_transport_manager.return_undelivered(outbound)
-
+        profile.notify(UNDELIVERABLE_EVENT_TOPIC, outbound)
         return (
             OutboundSendStatus.WAITING_FOR_PICKUP
             if queued_for_inbound
