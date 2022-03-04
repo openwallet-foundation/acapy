@@ -50,7 +50,7 @@ class CredentialIssueHandler(BaseHandler):
         )
 
         # Automatically move to next state if flag is set
-        if context.settings.get("debug.auto_store_credential"):
+        if cred_ex_record and context.settings.get("debug.auto_store_credential"):
             try:
                 cred_ex_record = await credential_manager.store_credential(
                     cred_ex_record
@@ -62,7 +62,7 @@ class CredentialIssueHandler(BaseHandler):
                 StorageError,
             ) as err:
                 # treat failure to store as mangled on receipt hence protocol error
-                self._logger.exception(err)
+                self._logger.exception("Error storing issued credential")
                 if cred_ex_record:
                     async with profile.session() as session:
                         await cred_ex_record.save_error_state(
