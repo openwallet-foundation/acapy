@@ -658,7 +658,7 @@ class Conductor:
         if self.outbound_queue:
             return await self._queue_external(profile, outbound)
         else:
-            return self._queue_internal(profile, outbound)
+            return await self._queue_internal(profile, outbound)
 
     async def _queue_external(
         self,
@@ -682,7 +682,7 @@ class Conductor:
 
             return OutboundSendStatus.SENT_TO_EXTERNAL_QUEUE
 
-    def _queue_internal(
+    async def _queue_internal(
         self, profile: Profile, outbound: OutboundMessage
     ) -> OutboundSendStatus:
         """Save the message to an internal outbound queue."""
@@ -691,14 +691,14 @@ class Conductor:
             return OutboundSendStatus.QUEUED_FOR_DELIVERY
         except OutboundDeliveryError:
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
-            return self.handle_not_delivered(profile, outbound)
+            return await self.handle_not_delivered(profile, outbound)
 
-    def handle_not_delivered(
+    async def handle_not_delivered(
         self, profile: Profile, outbound: OutboundMessage
     ) -> OutboundSendStatus:
         """Handle a message that failed delivery via outbound transports."""
         queued_for_inbound = self.inbound_transport_manager.return_undelivered(outbound)
-        profile.notify(UNDELIVERABLE_EVENT_TOPIC, outbound)
+        await profile.notify(UNDELIVERABLE_EVENT_TOPIC, outbound)
         return (
             OutboundSendStatus.WAITING_FOR_PICKUP
             if queued_for_inbound

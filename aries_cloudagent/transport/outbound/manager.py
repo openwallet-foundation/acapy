@@ -363,7 +363,9 @@ class OutboundTransportManager:
                             exc_info=queued.error,
                         )
                         if self.handle_not_delivered and queued.message:
-                            self.handle_not_delivered(queued.profile, queued.message)
+                            await self.handle_not_delivered(
+                                queued.profile, queued.message
+                            )
                     continue  # remove from buffer
 
                 deliver = False
