@@ -248,10 +248,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     except (IndyIssuerError, LedgerError) as e:
         raise web.HTTPBadRequest(reason=e.message) from e
 
+    issuer_did = cred_def_id.split(":")[0]
     meta_data = {
         "context": {
             "schema_id": schema_id,
             "cred_def_id": cred_def_id,
+            "issuer_did": issuer_did,
             "support_revocation": support_revocation,
             "novel": novel,
             "tag": tag,
@@ -264,10 +266,6 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
     if not create_transaction_for_endorser:
         # Notify event
-        issuer_did = cred_def_id.split(":")[0]
-        meta_data["context"]["schema_id"] = schema_id
-        meta_data["context"]["cred_def_id"] = cred_def_id
-        meta_data["context"]["issuer_did"] = issuer_did
         meta_data["processing"]["auto_create_rev_reg"] = True
         await notify_cred_def_event(context.profile, cred_def_id, meta_data)
 
