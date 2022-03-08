@@ -251,6 +251,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     meta_data = {
         "context": {
             "schema_id": schema_id,
+            "cred_def_id": cred_def_id,
             "support_revocation": support_revocation,
             "novel": novel,
             "tag": tag,
