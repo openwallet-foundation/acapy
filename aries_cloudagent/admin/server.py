@@ -325,6 +325,9 @@ class AdminServer(BaseAdminServer):
                     )
                 )
 
+                # to allow base wallet to register sub-wallet DIDs on the ledger
+                is_register_nym_path = path.startswith("/ledger/register-nym")
+
                 # base wallet is not allowed to perform ssi related actions.
                 # Only multitenancy and general server actions
                 if (
@@ -333,6 +336,7 @@ class AdminServer(BaseAdminServer):
                     and not is_server_path
                     and not is_unprotected_path(path)
                     and not base_limited_access_path
+                    and not is_register_nym_path
                 ):
                     raise web.HTTPUnauthorized()
 
