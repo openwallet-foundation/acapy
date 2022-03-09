@@ -304,7 +304,10 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
             await outbound_handler(transaction_request, connection_id=connection_id)
 
-        return web.json_response({"txn": transaction.serialize()})
+        return web.json_response({
+            "sent": {"credential_definition_id": cred_def_id},
+            "txn": transaction.serialize(),
+        })
 
 
 @docs(

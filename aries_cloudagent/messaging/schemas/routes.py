@@ -290,7 +290,10 @@ async def schemas_send_schema(request: web.BaseRequest):
 
             await outbound_handler(transaction_request, connection_id=connection_id)
 
-        return web.json_response({"txn": transaction.serialize()})
+        return web.json_response({
+            "sent": {"schema_id": schema_id, "schema": schema_def},
+            "txn": transaction.serialize(),
+        })
 
 
 @docs(
