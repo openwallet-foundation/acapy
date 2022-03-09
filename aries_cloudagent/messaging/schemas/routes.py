@@ -261,6 +261,10 @@ async def schemas_send_schema(request: web.BaseRequest):
         await notify_schema_event(context.profile, schema_id, meta_data)
         return web.json_response({"schema_id": schema_id, "schema": schema_def})
 
+    # If the transaction is for the endorser, but the schema has already been created,
+    # then we send back the schema since the transaction will fail to be created.
+    elif "signed_txn" not in schema_def:
+        return web.json_response({"sent": {"schema_id": schema_id, "schema": schema_def}})
     else:
         transaction_mgr = TransactionManager(context.profile)
         try:
