@@ -213,6 +213,22 @@ class Conductor:
 
         self.outbound_queue = get_outbound_queue(self.root_profile)
 
+        if (
+            not self.outbound_queue
+            and self.outbound_transport_manager.registered_transports == {}
+        ):
+            LOGGER.exception("outbound_transport or outbound_queue is required")
+            raise
+
+        if (
+            self.outbound_queue
+            and self.outbound_transport_manager.registered_transports != {}
+        ):
+            LOGGER.exception(
+                "outbound_transport and outbound-queue are not allowed together"
+            )
+            raise
+
         # Admin API
         if context.settings.get("admin.enabled"):
             try:
@@ -649,11 +665,10 @@ class Conductor:
                     self.admin_server.notify_fatal_error()
                 raise
             del conn_mgr
-        # If ``self.outbound_queue`` is specified (usually set via
-        # outbound queue `-oq` commandline option), use that external
-        # queue. Else save the message to an internal queue. This
-        # internal queue usually results in the message to be sent over
-        # ACA-py `-ot` transport.
+        # If ``self.outbound_queue`` is specified (redis_queue plugin),
+        # use that external queue. Else save the message to an internal
+        # queue. This internal queue usually results in the message to
+        # be sent over ACA-py `-ot` transport.
         if self.outbound_queue:
             return await self._queue_external(profile, outbound)
         else:

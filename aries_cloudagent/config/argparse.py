@@ -1170,22 +1170,6 @@ class TransportGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
-            "-oq",
-            "--outbound-queue",
-            dest="outbound_queue",
-            type=str,
-            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE",
-            help=(
-                "Defines the location of the Outbound Queue Engine. This must be "
-                "a 'dotpath' to a Python module on the PYTHONPATH, followed by a "
-                "colon, followed by the name of a Python class that implements "
-                "BaseOutboundQueue. This commandline option is the official entry "
-                "point of ACA-py's pluggable queue interface. The default value is: "
-                "'aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue'."
-                ""
-            ),
-        )
-        parser.add_argument(
             "-l",
             "--label",
             type=str,
@@ -1264,19 +1248,8 @@ class TransportGroup(ArgumentGroup):
             settings["transport.inbound_configs"] = args.inbound_transports
         else:
             raise ArgsParseError("-it/--inbound-transport is required")
-        if not args.outbound_transports and not args.outbound_queue:
-            raise ArgsParseError(
-                "-ot/--outbound-transport or -oq/--outbound-queue is required"
-            )
-        if args.outbound_transports and args.outbound_queue:
-            raise ArgsParseError(
-                "-ot/--outbound-transport and -oq/--outbound-queue are "
-                "not allowed together"
-            )
         if args.outbound_transports:
             settings["transport.outbound_configs"] = args.outbound_transports
-        if args.outbound_queue:
-            settings["transport.outbound_queue"] = args.outbound_queue
 
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
