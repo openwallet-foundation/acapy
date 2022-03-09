@@ -884,7 +884,7 @@ class CredentialManager:
         Delete credential exchange record if set to auto-remove.
 
         Returns:
-            Tuple: cred ex record, credential ack message for tracing.
+            credential ack message for tracing
 
         """
         credential_ack_message = CredentialAck()
