@@ -877,14 +877,15 @@ class CredentialManager:
     async def send_credential_ack(
         self,
         cred_ex_record: V10CredentialExchange,
-    ):
+    ) -> Tuple[V10CredentialExchange, CredentialAck]:
         """
         Create, send, and return ack message for input credential exchange record.
 
         Delete credential exchange record if set to auto-remove.
 
         Returns:
-            credential ack message for tracing
+            a tuple of the updated credential exchange record
+            and the credential ack message for tracing
 
         """
         credential_ack_message = CredentialAck()
@@ -906,7 +907,7 @@ class CredentialManager:
                         "Skipping credential exchange ack, record not found: '%s'",
                         cred_ex_record.credential_exchange_id,
                     )
-                    return None
+                    return (cred_ex_record, None)
 
                 if (
                     cred_ex_record.state
@@ -917,7 +918,7 @@ class CredentialManager:
                         cred_ex_record.state,
                         cred_ex_record.credential_exchange_id,
                     )
-                    return None
+                    return (cred_ex_record, None)
 
                 cred_ex_record.state = V10CredentialExchange.STATE_ACKED
                 await cred_ex_record.save(txn, reason="ack credential")
@@ -944,7 +945,7 @@ class CredentialManager:
                 cred_ex_record.thread_id,
             )
 
-        return credential_ack_message
+        return (cred_ex_record, credential_ack_message)
 
     async def receive_credential_ack(
         self, message: CredentialAck, connection_id: str

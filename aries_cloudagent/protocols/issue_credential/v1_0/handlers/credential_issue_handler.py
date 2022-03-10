@@ -76,7 +76,7 @@ class CredentialIssueHandler(BaseHandler):
                         )
                     )
 
-            credential_ack_message = await credential_manager.send_credential_ack(
+            (_, credential_ack_message) = await credential_manager.send_credential_ack(
                 cred_ex_record
             )
 
