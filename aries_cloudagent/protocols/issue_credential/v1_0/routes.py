@@ -1183,9 +1183,10 @@ async def credential_exchange_store(request: web.BaseRequest):
         )
 
     try:  # protocol owes an ack
-        credential_ack_message = await credential_manager.send_credential_ack(
-            cred_ex_record
-        )
+        (
+            cred_ex_record,
+            credential_ack_message,
+        ) = await credential_manager.send_credential_ack(cred_ex_record)
         result = cred_ex_record.serialize()  # pick up state done
 
     except (

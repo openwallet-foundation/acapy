@@ -45,7 +45,10 @@ class TestCredentialIssueHandler(AsyncTestCase):
                 receive_credential=async_mock.CoroutineMock(),
                 store_credential=async_mock.CoroutineMock(),
                 send_credential_ack=async_mock.CoroutineMock(
-                    return_value="credential_ack_message"
+                    return_value=(
+                        async_mock.CoroutineMock(),
+                        async_mock.CoroutineMock(),
+                    )
                 ),
             )
             request_context.message = CredentialIssue()
@@ -78,7 +81,12 @@ class TestCredentialIssueHandler(AsyncTestCase):
                 store_credential=async_mock.CoroutineMock(
                     side_effect=test_module.IndyHolderError()
                 ),
-                send_credential_ack=async_mock.CoroutineMock(),
+                send_credential_ack=async_mock.CoroutineMock(
+                    return_value=(
+                        async_mock.CoroutineMock(),
+                        async_mock.CoroutineMock(),
+                    )
+                ),
             )
 
             request_context.message = CredentialIssue()

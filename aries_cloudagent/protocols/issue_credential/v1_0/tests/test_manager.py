@@ -1615,15 +1615,17 @@ class TestCredentialManager(AsyncTestCase):
             test_module.LOGGER, "warning", async_mock.MagicMock()
         ) as mock_log_warning:
             mock_delete_ex.side_effect = test_module.StorageError()
-            ack = await self.manager.send_credential_ack(stored_exchange)
+            (exch, ack) = await self.manager.send_credential_ack(stored_exchange)
             assert ack._thread
             mock_log_exception.assert_called_once()  # cover exception log-and-continue
             mock_log_warning.assert_called_once()  # no BaseResponder
+            assert exch.state == V10CredentialExchange.STATE_ACKED
 
             mock_responder = MockResponder()  # cover with responder
             self.context.injector.bind_instance(BaseResponder, mock_responder)
-            ack = await self.manager.send_credential_ack(stored_exchange)
+            (exch, ack) = await self.manager.send_credential_ack(stored_exchange)
             assert ack._thread
+            assert exch.state == V10CredentialExchange.STATE_ACKED
 
     async def test_receive_credential_ack(self):
         connection_id = "connection-id"
