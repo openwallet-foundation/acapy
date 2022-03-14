@@ -1,6 +1,6 @@
 from os import remove
 from tempfile import NamedTemporaryFile
-
+import pytest
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from .. import argparse
@@ -643,14 +643,23 @@ class TestLedgerConfig(AsyncTestCase):
                 )
 
     @async_mock.patch("sys.stdout")
-    async def test_ledger_accept_taa_not_tty(self, mock_stdout):
+    async def test_ledger_accept_taa_not_tty_not_accept_config(self, mock_stdout):
         mock_stdout.isatty = async_mock.MagicMock(return_value=False)
+        mock_profile = InMemoryProfile.test_profile()
 
-        assert not await test_module.accept_taa(None, None, provision=False)
+        taa_info = {
+            "taa_record": {"version": "1.0", "text": "Agreement"},
+            "aml_record": {"aml": ["wallet_agreement", "on_file"]},
+        }
+
+        assert not await test_module.accept_taa(
+            None, mock_profile, taa_info, provision=False
+        )
 
     @async_mock.patch("sys.stdout")
-    async def test_ledger_accept_taa(self, mock_stdout):
+    async def test_ledger_accept_taa_tty(self, mock_stdout):
         mock_stdout.isatty = async_mock.MagicMock(return_value=True)
+        mock_profile = InMemoryProfile.test_profile()
 
         taa_info = {
             "taa_record": {"version": "1.0", "text": "Agreement"},
@@ -663,7 +672,9 @@ class TestLedgerConfig(AsyncTestCase):
             test_module.prompt_toolkit, "prompt", async_mock.CoroutineMock()
         ) as mock_prompt:
             mock_prompt.side_effect = EOFError()
-            assert not await test_module.accept_taa(None, taa_info, provision=False)
+            assert not await test_module.accept_taa(
+                None, mock_profile, taa_info, provision=False
+            )
 
         with async_mock.patch.object(
             test_module, "use_asyncio_event_loop", async_mock.MagicMock()
@@ -671,7 +682,9 @@ class TestLedgerConfig(AsyncTestCase):
             test_module.prompt_toolkit, "prompt", async_mock.CoroutineMock()
         ) as mock_prompt:
             mock_prompt.return_value = "x"
-            assert not await test_module.accept_taa(None, taa_info, provision=False)
+            assert not await test_module.accept_taa(
+                None, mock_profile, taa_info, provision=False
+            )
 
         with async_mock.patch.object(
             test_module, "use_asyncio_event_loop", async_mock.MagicMock()
@@ -682,7 +695,53 @@ class TestLedgerConfig(AsyncTestCase):
                 accept_txn_author_agreement=async_mock.CoroutineMock()
             )
             mock_prompt.return_value = ""
-            assert await test_module.accept_taa(mock_ledger, taa_info, provision=False)
+            assert await test_module.accept_taa(
+                mock_ledger, mock_profile, taa_info, provision=False
+            )
+
+    async def test_ledger_accept_taa_tty(self):
+        taa_info = {
+            "taa_record": {"version": "1.0", "text": "Agreement"},
+            "aml_record": {"aml": {"wallet_agreement": "", "on_file": ""}},
+        }
+
+        # Incorrect version
+        with pytest.raises(LedgerError):
+            mock_profile = InMemoryProfile.test_profile(
+                {
+                    "ledger.taa_acceptance_mechanism": "wallet_agreement",
+                    "ledger.taa_acceptance_version": "1.5",
+                }
+            )
+            assert not await test_module.accept_taa(
+                None, mock_profile, taa_info, provision=False
+            )
+
+        # Incorrect mechanism
+        with pytest.raises(LedgerError):
+            mock_profile = InMemoryProfile.test_profile(
+                {
+                    "ledger.taa_acceptance_mechanism": "not_exist",
+                    "ledger.taa_acceptance_version": "1.0",
+                }
+            )
+            assert not await test_module.accept_taa(
+                None, mock_profile, taa_info, provision=False
+            )
+
+        # Valid
+        mock_profile = InMemoryProfile.test_profile(
+            {
+                "ledger.taa_acceptance_mechanism": "on_file",
+                "ledger.taa_acceptance_version": "1.0",
+            }
+        )
+        mock_ledger = async_mock.MagicMock(
+            accept_txn_author_agreement=async_mock.CoroutineMock()
+        )
+        assert await test_module.accept_taa(
+            mock_ledger, mock_profile, taa_info, provision=False
+        )
 
     async def test_ledger_config(self):
         """Test required argument parsing."""

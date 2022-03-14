@@ -435,15 +435,15 @@ class V20CredManager:
                         ),
                     )
 
-            for format in cred_request_message.formats:
-                cred_format = V20CredFormat.Format.get(format.format)
-                if cred_format:
-                    await cred_format.handler(self.profile).receive_request(
-                        cred_ex_record, cred_request_message
-                    )
+        for format in cred_request_message.formats:
+            cred_format = V20CredFormat.Format.get(format.format)
+            if cred_format:
+                await cred_format.handler(self.profile).receive_request(
+                    cred_ex_record, cred_request_message
+                )
 
-            cred_ex_record.cred_request = cred_request_message
-            cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED
+        cred_ex_record.cred_request = cred_request_message
+        cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED
 
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential request")
@@ -549,37 +549,37 @@ class V20CredManager:
                 )
             )
 
-            cred_request_message = cred_ex_record.cred_request
-            req_formats = [
-                V20CredFormat.Format.get(fmt.format)
-                for fmt in cred_request_message.formats
-                if V20CredFormat.Format.get(fmt.format)
-            ]
-            issue_formats = [
-                V20CredFormat.Format.get(fmt.format)
-                for fmt in cred_issue_message.formats
-                if V20CredFormat.Format.get(fmt.format)
-            ]
-            handled_formats = []
+        cred_request_message = cred_ex_record.cred_request
+        req_formats = [
+            V20CredFormat.Format.get(fmt.format)
+            for fmt in cred_request_message.formats
+            if V20CredFormat.Format.get(fmt.format)
+        ]
+        issue_formats = [
+            V20CredFormat.Format.get(fmt.format)
+            for fmt in cred_issue_message.formats
+            if V20CredFormat.Format.get(fmt.format)
+        ]
+        handled_formats = []
 
-            # check that we didn't receive any formats not present in the request
-            if set(issue_formats) - set(req_formats):
-                raise V20CredManagerError(
-                    "Received issue credential format(s) not present in credential "
-                    f"request: {set(issue_formats) - set(req_formats)}"
-                )
+        # check that we didn't receive any formats not present in the request
+        if set(issue_formats) - set(req_formats):
+            raise V20CredManagerError(
+                "Received issue credential format(s) not present in credential "
+                f"request: {set(issue_formats) - set(req_formats)}"
+            )
 
-            for issue_format in issue_formats:
-                await issue_format.handler(self.profile).receive_credential(
-                    cred_ex_record, cred_issue_message
-                )
-                handled_formats.append(issue_format)
+        for issue_format in issue_formats:
+            await issue_format.handler(self.profile).receive_credential(
+                cred_ex_record, cred_issue_message
+            )
+            handled_formats.append(issue_format)
 
-            if len(handled_formats) == 0:
-                raise V20CredManagerError("No supported credential formats received.")
+        if len(handled_formats) == 0:
+            raise V20CredManagerError("No supported credential formats received.")
 
-            cred_ex_record.cred_issue = cred_issue_message
-            cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+        cred_ex_record.cred_issue = cred_issue_message
+        cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
 
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential issue")
@@ -646,11 +646,13 @@ class V20CredManager:
                 # FIXME - re-fetch record to check state, apply transactional update
                 await cred_ex_record.save(session, reason="store credential v2.0")
 
-                if cred_ex_record.auto_remove:
-                    await cred_ex_record.delete_record(session)  # all done: delete
+            if cred_ex_record.auto_remove:
+                await self.delete_cred_ex_record(cred_ex_record.cred_ex_id)
 
-        except StorageError as err:
-            LOGGER.exception(err)  # holder still owes an ack: carry on
+        except StorageError:
+            LOGGER.exception(
+                "Error sending credential ack"
+            )  # holder still owes an ack: carry on
 
         responder = self._profile.inject_or(BaseResponder)
         if responder:
