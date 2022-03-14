@@ -97,7 +97,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
     async def create_bound_request(
         self,
         pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        request_data: dict = {},
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """
         Create a presentation request bound to a proposal.
