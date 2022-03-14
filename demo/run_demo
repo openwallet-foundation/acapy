@@ -144,7 +144,7 @@ else
 fi
 
 echo "Preparing agent image..."
-docker build -q -t fly2plan-ssi-demo -f ../docker/Dockerfile.demo .. || exit 1
+docker build -q -t ssi-demo -f ../docker/Dockerfile.demo .. || exit 1
 
 if [ ! -z "$DOCKERHOST" ]; then
   # provided via APPLICATION_URL environment variable
@@ -247,4 +247,4 @@ $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
   -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
   ${DOCKER_VOL} \
   $DOCKER_ENV \
-  fly2plan-ssi-demo $AGENT_MODULE --port $AGENT_PORT $ARGS
+  ssi-demo $AGENT_MODULE --port $AGENT_PORT $ARGS
