@@ -19,12 +19,12 @@ from runners.agent_container import (  # noqa:E402
 #     CRED_FORMAT_JSON_LD,
 #     SIG_TYPE_BLS,
 # )
-# from runners.support.utils import (  # noqa:E402
-#     log_msg,
-#     log_status,
-#     prompt,
-#     prompt_loop,
-# )
+from runners.support.utils import (  # noqa:E402
+    # log_msg,
+    log_status,
+    # prompt,
+    # prompt_loop,
+)
 
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
@@ -55,7 +55,7 @@ class CaaAgent(AriesAgent):
         self.connection_id = None
         self._connection_ready = None
         self.cred_state = {}
-        self.cred_attrs = {}
+        # self.cred_attrs = {}
 
     async def detect_connection(self):
         await self._connection_ready
@@ -65,15 +65,48 @@ class CaaAgent(AriesAgent):
     def connection_ready(self):
         return self._connection_ready.done() and self._connection_ready.result()
 
+    async def handle_basicmessages(self, message):
+        self.log("Received message:", message["content"])
+
 
 async def main(args):
-    consortiq_agent = ""
+    caa_agent = await create_agent_with_args(args, ident="caa")
 
     try:
-        print(200)
+        log_status(
+            "#1 Provision an agent and wallet, get back configuration details"
+            + (
+                f" (Wallet type: {caa_agent.wallet_type})"
+                if caa_agent.wallet_type
+                else ""
+            )
+        )
+        agent = CaaAgent(
+            "Caa",
+            caa_agent.start_port,
+            caa_agent.start_port + 1,
+            genesis_data=caa_agent.genesis_txns,
+            no_auto=caa_agent.no_auto,
+            tails_server_base_url=caa_agent.tails_server_base_url,
+            timing=caa_agent.show_timing,
+            multitenant=caa_agent.multitenant,
+            mediation=caa_agent.mediation,
+            wallet_type=caa_agent.wallet_type,
+            seed=caa_agent.seed,
+        )
+
+        caa_agent.public_did = True
+
+        await caa_agent.initialize(
+            the_agent=agent,
+            # schema_name=caa_schema_name,
+            # schema_attrs=caa_schema_attrs,
+        )
+
+        print(10000)
 
     finally:
-        terminated = False
+        terminated = await caa_agent.terminate()
 
     await asyncio.sleep(0.1)
 
@@ -111,7 +144,7 @@ if __name__ == "__main__":
             )
         except ImportError:
             print("pydevd_pycharm library was not found")
-
+    print(200) #
     try:
         asyncio.get_event_loop().run_until_complete(main(args))
     except KeyboardInterrupt:
