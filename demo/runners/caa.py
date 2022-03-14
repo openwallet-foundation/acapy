@@ -1,9 +1,7 @@
 import asyncio
-# import json
 import logging
 import os
 import sys
-# import time
 
 # from aiohttp import ClientError
 
@@ -55,7 +53,6 @@ class CaaAgent(AriesAgent):
         self.connection_id = None
         self._connection_ready = None
         self.cred_state = {}
-        # self.cred_attrs = {}
     async def detect_connection(self):
         await self._connection_ready
         self._connection_ready = None
@@ -71,7 +68,7 @@ async def main(args):
 
     try:
         log_status(
-            "#1 Provision an agent and wallet, get back configuration details"
+            "Provision an agent and wallet, get back configuration details"
             + (
                 f" (Wallet type: {caa_agent.wallet_type})"
                 if caa_agent.wallet_type
@@ -99,11 +96,9 @@ async def main(args):
             raise Exception("Invalid credential type:" + caa_agent.cred_type)
 
         options = (
-            # "    (1) Issue Credential\n"
-            # "    (2) Send Proof Request\n"
             "    (1) Send Message\n"
             "    (X) Exit?\n"
-            "[1/2/3/X]"
+            "[1/X]"
         )
         async for option in prompt_loop(options):
             if option is not None:
@@ -114,7 +109,6 @@ async def main(args):
 
             elif option == "1":
                 msg = await prompt("Enter message: ")
-                import json
                 if len(connections["results"]) == 0:
                     caa_agent.agent.log(
                         "No connections available. There are {} connection(s).".format(len(connections))
@@ -140,7 +134,7 @@ async def main(args):
 if __name__ == "__main__":
     parser = arg_parser(ident="caa", port=8050)
     args = parser.parse_args()
-    # Namespace(aip=20, arg_file=None, cred_type='indy', did_exchange=False, mediation=False, multitenant=False, no_auto=False, port=8050, revocation=False, tails_server_base_url=None, timing=False, wallet_type=None)
+
     ENABLE_PYDEVD_PYCHARM = os.getenv("ENABLE_PYDEVD_PYCHARM", "").lower()
     ENABLE_PYDEVD_PYCHARM = ENABLE_PYDEVD_PYCHARM and ENABLE_PYDEVD_PYCHARM not in (
         "false",
@@ -168,7 +162,7 @@ if __name__ == "__main__":
             )
         except ImportError:
             print("pydevd_pycharm library was not found")
-    print(200) #
+
     try:
         asyncio.get_event_loop().run_until_complete(main(args))
     except KeyboardInterrupt:
