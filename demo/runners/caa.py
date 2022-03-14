@@ -56,15 +56,12 @@ class CaaAgent(AriesAgent):
         self._connection_ready = None
         self.cred_state = {}
         # self.cred_attrs = {}
-
     async def detect_connection(self):
         await self._connection_ready
         self._connection_ready = None
-
     @property
     def connection_ready(self):
         return self._connection_ready.done() and self._connection_ready.result()
-
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
 
@@ -82,7 +79,7 @@ async def main(args):
             )
         )
         agent = CaaAgent(
-            "Caa",
+            "caa.agent",
             caa_agent.start_port,
             caa_agent.start_port + 1,
             genesis_data=caa_agent.genesis_txns,
@@ -94,8 +91,6 @@ async def main(args):
             wallet_type=caa_agent.wallet_type,
             seed=caa_agent.seed,
         )
-
-        caa_agent.public_did = True
 
         if caa_agent.cred_type == CRED_FORMAT_INDY or caa_agent.cred_type == CRED_FORMAT_JSON_LD:
             caa_agent.public_did = True
@@ -119,17 +114,20 @@ async def main(args):
 
             elif option == "1":
                 msg = await prompt("Enter message: ")
-                await agent.admin_POST(
-                    f"/connections/{agent.connection_id}/send-message", {"content": msg}
-                )
+                import json
+                if len(connections["results"]) == 0:
+                    caa_agent.agent.log(
+                        "No connections available. There are {} connection(s).".format(len(connections))
+                    )
+                if len(connections["results"]) > 0:
+                    conn_id = connections["results"][0]["connection_id"]
+                    await agent.admin_POST( f"/connections/{conn_id}/send-message", {"content": msg} )
 
         if caa_agent.show_timing:
             timing = await caa_agent.agent.fetch_timing()
             if timing:
                 for line in caa_agent.agent.format_timing(timing):
                     log_msg(line)
-
-        print(10000)
 
     finally:
         terminated = await caa_agent.terminate()
