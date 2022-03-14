@@ -551,7 +551,7 @@ class TestV20PresManager(AsyncTestCase):
 
             assert px_rec.state == V20PresExRecord.STATE_PROPOSAL_RECEIVED
 
-    async def test_create_bound_request(self):
+    async def test_create_bound_request_a(self):
         comment = "comment"
 
         proposal = V20PresProposal(
@@ -580,6 +580,34 @@ class TestV20PresManager(AsyncTestCase):
         (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
             pres_ex_record=px_rec,
             request_data=request_data,
+            comment=comment,
+        )
+        assert ret_px_rec is px_rec
+        px_rec.save.assert_called_once()
+
+    async def test_create_bound_request_b(self):
+        comment = "comment"
+
+        proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+            ],
+        )
+        px_rec = V20PresExRecord(
+            pres_proposal=proposal.serialize(),
+            role=V20PresExRecord.ROLE_VERIFIER,
+        )
+        px_rec.save = async_mock.CoroutineMock()
+        (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
+            pres_ex_record=px_rec,
             comment=comment,
         )
         assert ret_px_rec is px_rec
