@@ -14,16 +14,16 @@ from runners.agent_container import (  # noqa:E402
     create_agent_with_args,
     AriesAgent,
 )
-# from runners.support.agent import (  # noqa:E402
-#     CRED_FORMAT_INDY,
-#     CRED_FORMAT_JSON_LD,
-#     SIG_TYPE_BLS,
-# )
+from runners.support.agent import (  # noqa:E402
+    CRED_FORMAT_INDY,
+    CRED_FORMAT_JSON_LD,
+    # SIG_TYPE_BLS,
+)
 from runners.support.utils import (  # noqa:E402
-    # log_msg,
+    log_msg,
     log_status,
-    # prompt,
-    # prompt_loop,
+    prompt,
+    prompt_loop,
 )
 
 
@@ -97,11 +97,37 @@ async def main(args):
 
         caa_agent.public_did = True
 
-        await caa_agent.initialize(
-            the_agent=agent,
-            # schema_name=caa_schema_name,
-            # schema_attrs=caa_schema_attrs,
+        if caa_agent.cred_type == CRED_FORMAT_INDY or caa_agent.cred_type == CRED_FORMAT_JSON_LD:
+            caa_agent.public_did = True
+            await caa_agent.initialize(the_agent=agent)
+        else:
+            raise Exception("Invalid credential type:" + caa_agent.cred_type)
+
+        options = (
+            # "    (1) Issue Credential\n"
+            # "    (2) Send Proof Request\n"
+            "    (1) Send Message\n"
+            "    (X) Exit?\n"
+            "[1/2/3/X]"
         )
+        async for option in prompt_loop(options):
+            if option is not None:
+                option = option.strip()
+
+            if option is None or option in "xX":
+                break
+
+            elif option == "1":
+                msg = await prompt("Enter message: ")
+                await agent.admin_POST(
+                    f"/connections/{agent.connection_id}/send-message", {"content": msg}
+                )
+
+        if caa_agent.show_timing:
+            timing = await caa_agent.agent.fetch_timing()
+            if timing:
+                for line in caa_agent.agent.format_timing(timing):
+                    log_msg(line)
 
         print(10000)
 
