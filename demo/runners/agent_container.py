@@ -837,9 +837,9 @@ class AgentContainer:
 
 def arg_parser(ident: str = None, port: int = 8020):
     """
-    Standard command-line arguements.
+    Standard command-line arguments.
 
-    "ident", if specified, refers to one of the standard demo personas - alice, consortiq, airops or performance.
+    "ident", if specified, refers to one of the standard demo personas - consortiq, alice, airops or caa.
     """
     parser = argparse.ArgumentParser(
         description="Runs a " + (ident or "aries") + " demo agent."
@@ -1031,6 +1031,8 @@ async def test_main(
 
     consortiq_container = None
     alice_container = None
+    airops_container = None
+    caa_container = None
     try:
         # initialize the containers
         consortiq_container = AgentContainer(
@@ -1065,32 +1067,57 @@ async def test_main(
             seed=None,
             aip=aip,
         )
+        airops_container = AgentContainer(
+            genesis,
+            "Airops.agent",
+            start_port,
+            no_auto=no_auto,
+            revocation=revocation,
+            tails_server_base_url=tails_server_base_url,
+            show_timing=show_timing,
+            multitenant=multitenant,
+            mediation=mediation,
+            use_did_exchange=use_did_exchange,
+            wallet_type=wallet_type,
+            public_did=True,
+            seed="random",
+            cred_type=cred_type,
+            aip=aip,
+        )
+        caa_container = AgentContainer(
+            genesis,
+            "caa.agent",
+            start_port,
+            no_auto=no_auto,
+            revocation=revocation,
+            tails_server_base_url=tails_server_base_url,
+            show_timing=show_timing,
+            multitenant=multitenant,
+            mediation=mediation,
+            use_did_exchange=use_did_exchange,
+            wallet_type=wallet_type,
+            public_did=True,
+            seed="random",
+            cred_type=cred_type,
+            aip=aip,
+        )
 
         # start the agents - consortiq gets a public DID and schema/cred def
-        await consortiq_container.initialize(
-            schema_name="degree schema",
-            schema_attrs=[
-                "name",
-                "date",
-                "degree",
-                "grade",
-            ],
-        )
+        await consortiq_container.initialize()
         await alice_container.initialize()
+        await airops_container.initialize()
+        await caa_container.initialize()
 
         # consortiq create invitation
-        invite = await consortiq_container.generate_invitation()
+        # invite = await consortiq_container.generate_invitation()
 
         # alice accept invitation
-        invite_details = invite["invitation"]
-        connection = await alice_container.input_invitation(invite_details)
+        # invite_details = invite["invitation"]
+        # connection = await alice_container.input_invitation(invite_details)
 
         # wait for consortiq connection to activate
-        await consortiq_container.detect_connection()
-        await alice_container.detect_connection()
-
-        # TODO consortiq issue credential to alice
-        # TODO alice check for received credential
+        # await consortiq_container.detect_connection()
+        # await alice_container.detect_connection()
 
         log_msg("Sleeping ...")
         await asyncio.sleep(3.0)
@@ -1107,6 +1134,9 @@ async def test_main(
                 log_msg("Shutting down alice agent ...")
                 await alice_container.terminate()
             if consortiq_container:
+                log_msg("Shutting down consortiq agent ...")
+                await consortiq_container.terminate()
+            if airops_container:
                 log_msg("Shutting down consortiq agent ...")
                 await consortiq_container.terminate()
         except Exception as e:
