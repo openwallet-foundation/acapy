@@ -14,6 +14,18 @@ from runners.agent_container import (  # noqa:E402
     create_agent_with_args,
     AriesAgent,
 )
+# from runners.support.agent import (  # noqa:E402
+#     CRED_FORMAT_INDY,
+#     CRED_FORMAT_JSON_LD,
+#     SIG_TYPE_BLS,
+# )
+# from runners.support.utils import (  # noqa:E402
+#     log_msg,
+#     log_status,
+#     prompt,
+#     prompt_loop,
+# )
+
 
 CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 SELF_ATTESTED = os.getenv("SELF_ATTESTED")
@@ -43,8 +55,6 @@ class CaaAgent(AriesAgent):
         self.connection_id = None
         self._connection_ready = None
         self.cred_state = {}
-        # TODO define a dict to hold credential attributes
-        # based on cred_def_id
         self.cred_attrs = {}
 
     async def detect_connection(self):
@@ -57,7 +67,18 @@ class CaaAgent(AriesAgent):
 
 
 async def main(args):
-    print(200)
+    consortiq_agent = ""
+
+    try:
+        print(200)
+
+    finally:
+        terminated = False
+
+    await asyncio.sleep(0.1)
+
+    if not terminated:
+        os._exit(1)
 
 if __name__ == "__main__":
     parser = arg_parser(ident="caa", port=8050)
