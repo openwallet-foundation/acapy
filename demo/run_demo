@@ -87,7 +87,7 @@ do
     continue
   ;;
   --bg)
-    if [ "${AGENT}" = "alice" ] || [ "${AGENT}" = "airops" ] || [ "${AGENT}" = "consortiq" ]; then
+    if [ "${AGENT}" = "alice" ] || [ "${AGENT}" = "airops" ] || [ "${AGENT}" = "consortiq" ] || [ "${AGENT}" = "caa" ]; then
       DOCKER_OPTS="-d"
       echo -e "\nRunning in ${AGENT} in the background. Note that you cannot use the command line console in this mode."
       echo To see the logs use: \"docker logs ${AGENT}\".
@@ -134,8 +134,12 @@ elif [ "$AGENT" = "airops" ]; then
   AGENT_MODULE="airops"
   AGENT_PORT=8040
   AGENT_PORT_RANGE=8040-8047
+elif [ "$AGENT" = "caa" ]; then
+  AGENT_MODULE="caa"
+  AGENT_PORT=8050
+  AGENT_PORT_RANGE=8050-8057
 else
-  echo "Please specify which agent you want to run. Choose from 'consortiq', 'dpilot', or 'airops'."
+  echo "Please specify which agent you want to run. Choose from 'consortiq', 'alice', 'airops' or 'caa'."
   exit 1
 fi
 
