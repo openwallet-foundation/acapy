@@ -396,6 +396,22 @@ The script starts both agents, runs the performance test, spits out performance 
 
 A second version of the performance test can be run by adding the parameter `--routing` to the invocation above. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.
 
+You can also run the demo against a postgres database using the following:
+
+```bash
+./run_demo performance --arg-file demo/postgres-indy-args.yml
+```
+
+(Obvs you need to be running a postgres database - the command to start postgres is in the yml file provided above.)
+
+You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option.
+
+An example full set of options is:
+
+```bash
+./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type askar
+```
+
 ## Coding Challenge: Adding ACME
 
 Now that you have a solid foundation in using ACA-Py, time for a coding challenge. In this challenge, we extend the Alice-Faber command line demo by adding in ACME Corp, a place where Alice wants to work. The demo adds:

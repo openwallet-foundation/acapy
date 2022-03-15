@@ -291,13 +291,14 @@ class IndySdkLedger(BaseLedger):
     async def _endorse(
         self,
         request_json: str,
+        endorse_did: DIDInfo = None,
     ) -> str:
         if not self.pool.handle:
             raise ClosedPoolError(
                 f"Cannot endorse request with closed pool '{self.pool.name}'"
             )
 
-        public_info = await self.get_wallet_public_did()
+        public_info = endorse_did if endorse_did else await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError(
                 "Cannot endorse transaction without a public DID"
@@ -403,9 +404,10 @@ class IndySdkLedger(BaseLedger):
     async def txn_endorse(
         self,
         request_json: str,
+        endorse_did: DIDInfo = None,
     ) -> str:
         """Endorse a (signed) ledger transaction."""
-        return await self._endorse(request_json)
+        return await self._endorse(request_json, endorse_did=endorse_did)
 
     async def txn_submit(
         self,

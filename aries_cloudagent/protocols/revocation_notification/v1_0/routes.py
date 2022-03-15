@@ -32,7 +32,6 @@ async def on_revocation_published(profile: Profile, event: Event):
     """Handle issuer revoke event."""
     LOGGER.debug("Sending notification of revocation to recipient: %s", event.payload)
 
-    should_notify = profile.settings.get("revocation.notify", False)
     responder = profile.inject(BaseResponder)
     crids = event.payload.get("crids") or []
 
@@ -46,10 +45,9 @@ async def on_revocation_published(profile: Profile, event: Event):
 
             for record in records:
                 await record.delete_record(session)
-                if should_notify:
-                    await responder.send(
-                        record.to_message(), connection_id=record.connection_id
-                    )
+                await responder.send(
+                    record.to_message(), connection_id=record.connection_id
+                )
 
     except StorageNotFoundError:
         LOGGER.info(

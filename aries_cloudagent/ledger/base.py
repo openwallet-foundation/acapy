@@ -160,6 +160,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     async def txn_endorse(
         self,
         request_json: str,
+        endorse_did: DIDInfo = None,
     ) -> str:
         """Endorse (sign) the provided transaction."""
 
