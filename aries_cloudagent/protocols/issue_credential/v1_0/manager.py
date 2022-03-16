@@ -566,7 +566,9 @@ class CredentialManager:
 
         schema_id = cred_ex_record.schema_id
         rev_reg = None
+        rev_reg_id = None
         credential_ser = None
+        cred_rev_id = None
 
         if cred_ex_record.credential:
             LOGGER.warning(
@@ -575,6 +577,8 @@ class CredentialManager:
                 cred_ex_record.credential_exchange_id,
             )
             credential_ser = cred_ex_record._credential.ser
+            cred_rev_id = cred_ex_record.revocation_id
+            rev_reg_id = cred_ex_record.revoc_reg_id
         else:
             cred_offer_ser = cred_ex_record._credential_offer.ser
             cred_req_ser = cred_ex_record._credential_request.ser
@@ -599,8 +603,7 @@ class CredentialManager:
                         cred_ex_record.credential_definition_id
                     )
                     rev_reg = await active_rev_reg_rec.get_registry()
-                    cred_ex_record.revoc_reg_id = active_rev_reg_rec.revoc_reg_id
-
+                    rev_reg_id = rev_reg.registry_id
                     tails_path = rev_reg.tails_local_path
                     await rev_reg.get_or_fetch_local_tails_path()
 
@@ -661,22 +664,19 @@ class CredentialManager:
             )
             issuer = self._profile.inject(IndyIssuer)
             try:
-                (
-                    credential_json,
-                    cred_ex_record.revocation_id,
-                ) = await issuer.create_credential(
+                (credential_json, cred_rev_id) = await issuer.create_credential(
                     schema,
                     cred_offer_ser,
                     cred_req_ser,
                     credential_values,
                     cred_ex_record.credential_exchange_id,
-                    cred_ex_record.revoc_reg_id,
+                    rev_reg_id,
                     tails_path,
                 )
                 credential_ser = json.loads(credential_json)
 
                 # If the rev reg is now full
-                if rev_reg and rev_reg.max_creds == int(cred_ex_record.revocation_id):
+                if rev_reg and rev_reg.max_creds == int(cred_rev_id):
                     async with self._profile.session() as session:
                         await active_rev_reg_rec.set_state(
                             session,
@@ -728,6 +728,8 @@ class CredentialManager:
                 )
             cred_ex_record.state = V10CredentialExchange.STATE_ISSUED
             cred_ex_record.credential = credential_ser
+            cred_ex_record.revoc_reg_id = rev_reg_id
+            cred_ex_record.revocation_id = cred_rev_id
             await cred_ex_record.save(txn, reason="issue credential")
             await txn.commit()
 
