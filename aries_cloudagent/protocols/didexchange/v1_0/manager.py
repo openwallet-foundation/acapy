@@ -702,13 +702,22 @@ class DIDXManager(BaseConnectionManager):
         conn_rec = None
         if response._thread:
             # identify the request by the thread ID
-            try:
-                async with self.profile.session() as session:
+            async with self.profile.session() as session:
+                try:
                     conn_rec = await ConnRecord.retrieve_by_request_id(
-                        session, response._thread_id, their_role="inviter"
+                        session, response._thread_id,
+                        their_role=ConnRecord.Role.RESPONDER.rfc23,
                     )
-            except StorageNotFoundError:
-                pass
+                except StorageNotFoundError:
+                    pass
+                if not conn_rec:
+                    try:
+                        conn_rec = await ConnRecord.retrieve_by_request_id(
+                            session, response._thread_id,
+                            their_role=ConnRecord.Role.RESPONDER.rfc160,
+                        )
+                    except StorageNotFoundError:
+                        pass
 
         if not conn_rec and receipt.sender_did:
             # identify connection by the DID they used for us
@@ -809,12 +818,25 @@ class DIDXManager(BaseConnectionManager):
         conn_rec = None
 
         # identify the request by the thread ID
-        try:
-            async with self.profile.session() as session:
+        async with self.profile.session() as session:
+            try:
                 conn_rec = await ConnRecord.retrieve_by_request_id(
-                    session, complete._thread_id, their_role="invitee"
+                    session, complete._thread_id,
+                    their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
-        except StorageNotFoundError:
+            except StorageNotFoundError:
+                pass
+
+            if not conn_rec:
+                try:
+                    conn_rec = await ConnRecord.retrieve_by_request_id(
+                        session, complete._thread_id,
+                        their_role=ConnRecord.Role.REQUESTER.rfc160,
+                    )
+                except StorageNotFoundError:
+                    pass
+
+        if not conn_rec:
             raise DIDXManagerError(
                 "No corresponding connection request found",
                 error_code=ProblemReportReason.COMPLETE_NOT_ACCEPTED.value,
