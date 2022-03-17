@@ -705,7 +705,8 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 try:
                     conn_rec = await ConnRecord.retrieve_by_request_id(
-                        session, response._thread_id,
+                        session,
+                        response._thread_id,
                         their_role=ConnRecord.Role.RESPONDER.rfc23,
                     )
                 except StorageNotFoundError:
@@ -713,7 +714,8 @@ class DIDXManager(BaseConnectionManager):
                 if not conn_rec:
                     try:
                         conn_rec = await ConnRecord.retrieve_by_request_id(
-                            session, response._thread_id,
+                            session,
+                            response._thread_id,
                             their_role=ConnRecord.Role.RESPONDER.rfc160,
                         )
                     except StorageNotFoundError:
@@ -821,7 +823,8 @@ class DIDXManager(BaseConnectionManager):
         async with self.profile.session() as session:
             try:
                 conn_rec = await ConnRecord.retrieve_by_request_id(
-                    session, complete._thread_id,
+                    session,
+                    complete._thread_id,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                 )
             except StorageNotFoundError:
@@ -830,7 +833,8 @@ class DIDXManager(BaseConnectionManager):
             if not conn_rec:
                 try:
                     conn_rec = await ConnRecord.retrieve_by_request_id(
-                        session, complete._thread_id,
+                        session,
+                        complete._thread_id,
                         their_role=ConnRecord.Role.REQUESTER.rfc160,
                     )
                 except StorageNotFoundError:
