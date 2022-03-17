@@ -163,9 +163,13 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     index = revealed_attrs[uuid]["sub_proof_index"]
                     if cred_defs[index]["value"].get("revocation"):
                         timestamp = pres["identifiers"][index].get("timestamp")
-                        if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
+                        if (timestamp is not None) ^ bool(
+                            non_revoc_intervals.get(uuid)
+                        ):
                             LOGGER.debug(f">>> uuid: {uuid}")
-                            LOGGER.debug(f">>> revealed_attrs[uuid]: {revealed_attrs[uuid]}")
+                            LOGGER.debug(
+                                f">>> revealed_attrs[uuid]: {revealed_attrs[uuid]}"
+                            )
                             raise ValueError(
                                 f"Timestamp on sub-proof #{index} "
                                 f"is {'superfluous' if timestamp else 'missing'} "
