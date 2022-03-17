@@ -705,7 +705,7 @@ class DIDXManager(BaseConnectionManager):
             try:
                 async with self.profile.session() as session:
                     conn_rec = await ConnRecord.retrieve_by_request_id(
-                        session, response._thread_id
+                        session, response._thread_id, their_role="inviter"
                     )
             except StorageNotFoundError:
                 pass
@@ -812,7 +812,7 @@ class DIDXManager(BaseConnectionManager):
         try:
             async with self.profile.session() as session:
                 conn_rec = await ConnRecord.retrieve_by_request_id(
-                    session, complete._thread_id
+                    session, complete._thread_id, their_role="invitee"
                 )
         except StorageNotFoundError:
             raise DIDXManagerError(
