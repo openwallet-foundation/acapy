@@ -1178,8 +1178,11 @@ class DIFPresExchHandler:
         elif isinstance(val, str):
             if val.isdigit():
                 return int(val)
-            elif val.isdecimal():
-                return float(val)
+            else:
+                try:
+                    return float(val)
+                except ValueError:
+                    pass
         raise DIFPresExchError(
             "Invalid type provided for comparision/numeric operation."
         )
