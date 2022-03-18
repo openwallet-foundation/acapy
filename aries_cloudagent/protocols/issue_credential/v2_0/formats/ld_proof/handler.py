@@ -128,14 +128,14 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 session, cred_ex_id
             )
 
-            if len(records) > 1:
-                LOGGER.warning(
-                    "Cred ex id %s has %d %s detail records: should be 1",
-                    cred_ex_id,
-                    len(records),
-                    LDProofCredFormatHandler.format.api,
-                )
-            return records[0] if records else None
+        if len(records) > 1:
+            LOGGER.warning(
+                "Cred ex id %s has %d %s detail records: should be 1",
+                cred_ex_id,
+                len(records),
+                LDProofCredFormatHandler.format.api,
+            )
+        return records[0] if records else None
 
     def get_format_identifier(self, message_type: str) -> str:
         """Get attachment format identifier for format and message combination.

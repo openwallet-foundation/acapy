@@ -1197,13 +1197,13 @@ async def present_proof_problem_report(request: web.BaseRequest):
     description = body["description"]
 
     try:
-        async with await context.profile.session() as session:
+        async with context.profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
+            await pres_ex_record.save_error_state(
+                session,
+                reason=f"created problem report: {description}",
+            )
         report = problem_report_for_record(pres_ex_record, description)
-        await pres_ex_record.save_error_state(
-            session,
-            reason=f"created problem report: {description}",
-        )
     except StorageNotFoundError as err:  # other party does not care about meta-problems
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:

@@ -8,6 +8,7 @@ base58~=2.1.0
 deepmerge~=0.3.0
 ecdsa~=0.16.1
 Markdown~=3.1.1
+markupsafe==2.0.1
 marshmallow==3.5.1
 msgpack~=1.0
 prompt_toolkit~=2.0.9
@@ -16,7 +17,7 @@ requests~=2.25.0
 packaging~=20.4
 pyld~=2.0.3
 pyyaml~=5.4.0
-ConfigArgParse~=1.2.3
+ConfigArgParse~=1.5.3
 pyjwt~=1.7.1
 pydid~=0.3.3
 jsonpath_ng==1.5.2

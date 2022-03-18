@@ -49,7 +49,7 @@ from .multiple_ledger.ledger_config_schema import (
 )
 from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
-from .util import notify_did_event
+from .util import notify_register_did_event
 
 
 class LedgerModulesResultSchema(OpenAPISchema):
@@ -316,10 +316,10 @@ async def register_ledger_nym(request: web.BaseRequest):
                 )
             )
 
-    meta_data = {"verkey": verkey, "alias": alias, "role": role}
+    meta_data = {"did": did, "verkey": verkey, "alias": alias, "role": role}
     if not create_transaction_for_endorser:
         # Notify event
-        await notify_did_event(context.profile, did, meta_data)
+        await notify_register_did_event(context.profile, did, meta_data)
         return web.json_response({"success": success})
     else:
         transaction_mgr = TransactionManager(context.profile)

@@ -50,7 +50,6 @@ async def test_on_revocation_published(profile: Profile, responder: MockResponde
     event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
 
     assert isinstance(profile.settings, Settings)
-    profile.settings["revocation.notify"] = True
 
     with mock.patch.object(test_module, "RevNotificationRecord", MockRec):
         await test_module.on_revocation_published(profile, event)
@@ -58,32 +57,6 @@ async def test_on_revocation_published(profile: Profile, responder: MockResponde
     MockRec.query_by_rev_reg_id.assert_called_once()
     mock_rec.delete_record.assert_called_once()
     assert responder.messages
-
-
-@pytest.mark.asyncio
-async def test_on_revocation_published_no_notify(
-    profile: Profile, responder: MockResponder
-):
-    """Test revocation published event handler."""
-    mock_rec = mock.MagicMock()
-    mock_rec.cred_rev_id = "mock"
-    mock_rec.delete_record = mock.CoroutineMock()
-
-    MockRec = mock.MagicMock()
-    MockRec.query_by_rev_reg_id = mock.CoroutineMock(return_value=[mock_rec])
-
-    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::mock"
-    event = Event(topic, {"rev_reg_id": "mock", "crids": ["mock"]})
-
-    assert isinstance(profile.settings, Settings)
-    profile.settings["revocation.notify"] = False
-
-    with mock.patch.object(test_module, "RevNotificationRecord", MockRec):
-        await test_module.on_revocation_published(profile, event)
-
-    MockRec.query_by_rev_reg_id.assert_called_once()
-    mock_rec.delete_record.assert_called_once()
-    assert not responder.messages
 
 
 @pytest.mark.asyncio
