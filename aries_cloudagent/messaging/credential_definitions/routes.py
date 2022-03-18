@@ -269,8 +269,17 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         meta_data["processing"]["auto_create_rev_reg"] = True
         await notify_cred_def_event(context.profile, cred_def_id, meta_data)
 
-        return web.json_response({"credential_definition_id": cred_def_id})
+        return web.json_response(
+            {
+                "sent": {"credential_definition_id": cred_def_id},
+                "credential_definition_id": cred_def_id,
+            }
+        )
 
+    # If the transaction is for the endorser, but the schema has already been created,
+    # then we send back the schema since the transaction will fail to be created.
+    elif "signed_txn" not in cred_def:
+        return web.json_response({"sent": {"credential_definition_id": cred_def_id}})
     else:
         meta_data["processing"]["auto_create_rev_reg"] = context.settings.get_value(
             "endorser.auto_create_rev_reg"
@@ -300,7 +309,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
 
             await outbound_handler(transaction_request, connection_id=connection_id)
 
-        return web.json_response({"txn": transaction.serialize()})
+        return web.json_response(
+            {
+                "sent": {"credential_definition_id": cred_def_id},
+                "txn": transaction.serialize(),
+            }
+        )
 
 
 @docs(
