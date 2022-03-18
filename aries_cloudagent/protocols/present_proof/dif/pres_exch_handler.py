@@ -1168,7 +1168,7 @@ class DIFPresExchHandler:
         Args:
             val: to check
         Return:
-            bool
+            numeric value
         Raises:
             DIFPresExchError: Provided value has invalid/incompatible type
 
@@ -1177,6 +1177,8 @@ class DIFPresExchHandler:
             return val
         elif isinstance(val, str):
             if val.isdigit():
+                return int(val)
+            elif val.isdecimal():
                 return float(val)
         raise DIFPresExchError(
             "Invalid type provided for comparision/numeric operation."
