@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Optional
 
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.diddoc import DIDDoc
@@ -67,10 +68,10 @@ class DIDXManager(BaseConnectionManager):
     async def receive_invitation(
         self,
         invitation: OOBInvitationMessage,
-        their_public_did: str = None,
-        auto_accept: bool = None,
-        alias: str = None,
-        mediation_id: str = None,
+        their_public_did: Optional[str] = None,
+        auto_accept: Optional[bool] = None,
+        alias: Optional[str] = None,
+        mediation_id: Optional[str] = None,
     ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band
         """
         Create a new connection record to track a received invitation.

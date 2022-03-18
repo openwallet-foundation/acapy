@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Coroutine, Sequence, Tuple
+from typing import Coroutine, Optional, Sequence, Tuple
 
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
@@ -281,11 +281,11 @@ class ConnectionManager(BaseConnectionManager):
     async def receive_invitation(
         self,
         invitation: ConnectionInvitation,
-        their_public_did: str = None,
-        auto_accept: bool = None,
-        alias: str = None,
-        mediation_id: str = None,
-        mediation_record: MediationRecord = None,
+        their_public_did: Optional[str] = None,
+        auto_accept: Optional[bool] = None,
+        alias: Optional[str] = None,
+        mediation_id: Optional[str] = None,
+        mediation_record: Optional[MediationRecord] = None,
     ) -> ConnRecord:
         """
         Create a new connection record to track a received invitation.
