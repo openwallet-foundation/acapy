@@ -463,6 +463,7 @@ class OutOfBandManager(BaseConnectionManager):
         )
 
         # Save record
+        # TODO: I think we can remove this save. Other paths will save the record
         async with self.profile.session() as session:
             await oob_record.save(session)
 
@@ -483,7 +484,6 @@ class OutOfBandManager(BaseConnectionManager):
 
         # Try to create a connection. Either if the reuse failed or we didn't have a connection yet
         # Throws an error if connection could not be created
-        # TODO: do we need to wait for the connection to be active? (see below)
         if not conn_rec and invitation.handshake_protocols:
             oob_record = await self._perform_handshake(
                 oob_record=oob_record,
