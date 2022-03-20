@@ -2,14 +2,15 @@
 
 import json
 import logging
+from typing import Optional
 
+from ...out_of_band.v1_0.models.oob_record import OobRecord
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.verifier import IndyVerifier
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....storage.error import StorageNotFoundError
 
 from ..indy.pres_exch_handler import IndyPresExchHandler
 
@@ -276,7 +277,10 @@ class PresentationManager:
             ],
         )
 
-        presentation_message._thread = {"thid": presentation_exchange_record.thread_id}
+        # Assign thid (and optionally pthid) to message
+        presentation_message.assign_thread_from(
+            presentation_exchange_record.presentation_request_dict
+        )
         presentation_message.assign_trace_decorator(
             self._profile.settings, presentation_exchange_record.trace
         )
@@ -294,7 +298,10 @@ class PresentationManager:
         return presentation_exchange_record, presentation_message
 
     async def receive_presentation(
-        self, message: Presentation, connection_record: ConnRecord
+        self,
+        message: Presentation,
+        connection_record: Optional[ConnRecord],
+        oob_record: Optional[OobRecord],
     ):
         """
         Receive a presentation, from message in context on manager creation.
@@ -306,25 +313,27 @@ class PresentationManager:
         presentation = message.indy_proof()
 
         thread_id = message._thread_id
-        connection_id_filter = (
-            {"connection_id": connection_record.connection_id}
-            if connection_record is not None
-            else None
-        )
+        # connection_id is None in the record if this is in response to
+        # a request~attach from an OOB message. If so, we do not want to filter
+        # the record by connection_id.
+        connection_id = None if oob_record else connection_record.connection_id
+
         async with self._profile.session() as session:
-            try:
-                (
-                    presentation_exchange_record
-                ) = await V10PresentationExchange.retrieve_by_tag_filter(
-                    session, {"thread_id": thread_id}, connection_id_filter
+            # Find by thread_id and role. Verify connection id later
+            presentation_exchange_record = (
+                await V10PresentationExchange.retrieve_by_tag_filter(
+                    session,
+                    {"thread_id": thread_id},
+                    {
+                        "role": V10PresentationExchange.ROLE_VERIFIER,
+                        "connection_id": connection_id,
+                    },
                 )
-            except StorageNotFoundError:
-                # Proof Request not bound to any connection: requests_attach in OOB msg
-                (
-                    presentation_exchange_record
-                ) = await V10PresentationExchange.retrieve_by_tag_filter(
-                    session, {"thread_id": thread_id}, None
-                )
+            )
+
+        # Save connection id (if it wasn't already present)
+        if connection_record:
+            presentation_exchange_record.connection_id = connection_record.connection_id
 
         # Check for bait-and-switch in presented attribute values vs. proposal
         if presentation_exchange_record.presentation_proposal_dict:
@@ -442,6 +451,7 @@ class PresentationManager:
 
             await responder.send_reply(
                 presentation_ack_message,
+                # connection_id can be none in case of connectionless
                 connection_id=presentation_exchange_record.connection_id,
             )
         else:
@@ -451,7 +461,7 @@ class PresentationManager:
             )
 
     async def receive_presentation_ack(
-        self, message: PresentationAck, connection_record: ConnRecord
+        self, message: PresentationAck, connection_record: Optional[ConnRecord]
     ):
         """
         Receive a presentation ack, from message in context on manager creation.
@@ -460,13 +470,19 @@ class PresentationManager:
             presentation exchange record, retrieved and updated
 
         """
+        connection_id = connection_record.connection_id if connection_record else None
+
         async with self._profile.session() as session:
             (
                 presentation_exchange_record
             ) = await V10PresentationExchange.retrieve_by_tag_filter(
                 session,
                 {"thread_id": message._thread_id},
-                {"connection_id": connection_record.connection_id},
+                {
+                    # connection_id can be null in connectionless
+                    "connection_id": connection_id,
+                    "role": V10PresentationExchange.ROLE_PROVER,
+                },
             )
 
             presentation_exchange_record.state = (

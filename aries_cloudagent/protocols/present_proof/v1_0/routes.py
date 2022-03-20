@@ -496,8 +496,6 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
 
-    await outbound_handler(presentation_request_message, connection_id=None)
-
     trace_event(
         context.settings,
         presentation_request_message,

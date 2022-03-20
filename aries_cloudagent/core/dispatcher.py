@@ -14,6 +14,8 @@ from typing import Callable, Coroutine, Union
 
 from aiohttp.web import HTTPException
 
+
+from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
 from ..messaging.base_message import BaseMessage
@@ -173,11 +175,20 @@ class Dispatcher:
 
         context.injector.bind_instance(BaseResponder, responder)
 
-        connection_mgr = ConnectionManager(profile)
-        connection = await connection_mgr.find_inbound_connection(
-            inbound_message.receipt
-        )
-        del connection_mgr
+        # When processing oob attach message we supply the connection id
+        # associated with the inbound message
+        if inbound_message.connection_id:
+            async with self.profile.session() as session:
+                connection = await ConnRecord.retrieve_by_id(
+                    session, inbound_message.connection_id
+                )
+        else:
+            connection_mgr = ConnectionManager(profile)
+            connection = await connection_mgr.find_inbound_connection(
+                inbound_message.receipt
+            )
+            del connection_mgr
+
         if connection:
             inbound_message.connection_id = connection.connection_id
 
