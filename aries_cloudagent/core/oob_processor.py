@@ -2,16 +2,18 @@
 
 import json
 import logging
-from typing import Any, Callable, Dict, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
-
-from ..ledger.base import BaseLedger
+from ..messaging.agent_message import AgentMessage
 from ..connections.models.conn_record import ConnRecord
 from ..connections.models.connection_target import ConnectionTarget
-from ..did.did_key import DIDKey
 from ..messaging.decorators.service_decorator import ServiceDecorator
 from ..messaging.request_context import RequestContext
-from ..protocols.out_of_band.v1_0.messages.service import Service
+from ..protocols.didcomm_prefix import DIDCommPrefix
+from ..protocols.issue_credential.v1_0.message_types import CREDENTIAL_OFFER
+from ..protocols.issue_credential.v2_0.message_types import CRED_20_OFFER
+from ..protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
+from ..protocols.present_proof.v2_0.message_types import PRES_20_REQUEST
 from ..protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ..storage.error import StorageNotFoundError
 from ..transport.inbound.message import InboundMessage
@@ -40,6 +42,23 @@ class OobMessageProcessor:
         """
         self._inbound_message_router = inbound_message_router
         self.wire_format = JsonWireFormat()
+
+    async def clean_finished_oob_record(self, profile: Profile, message: AgentMessage):
+        try:
+            async with profile.session() as session:
+                oob_record = await OobRecord.retrieve_by_tag_filter(
+                    session,
+                    {"invi_msg_id": message._thread.pthid},
+                    {"role": OobRecord.ROLE_SENDER},
+                )
+
+            # If the oob record is not multi use and it doesn't contain any attachments
+            # We can now safely remove the oob record
+            if not oob_record.multi_use and not oob_record.invitation.requests_attach:
+                await oob_record.delete_record(session)
+        except Exception:
+            # It is fine if no oob record is found, Only retrieved for cleanup
+            pass
 
     async def find_oob_target_for_outbound_message(
         self, profile: Profile, outbound_message: OutboundMessage
@@ -176,7 +195,7 @@ class OobMessageProcessor:
         if not oob_record.attach_thread_id and oob_record.invitation.requests_attach:
             # Check if the current message thread_id corresponds to one of the invitation ~thread.thid
             allowed_thread_ids = [
-                self._get_thread_id(attachment.content)
+                self.get_thread_id(attachment.content)
                 for attachment in oob_record.invitation.requests_attach
             ]
 
@@ -230,15 +249,41 @@ class OobMessageProcessor:
             oob_record.their_service = context.message._service.serialize()
 
         async with context.profile.session() as session:
-            await oob_record.save(session, reason="Update their service in oob record")
+            # We can now remove the oob record as the connection should now be stored in the
+            # exchange record itself.
+            if oob_record.connection_id:
+                await oob_record.delete_record(session)
+            else:
+                await oob_record.save(
+                    session, reason="Update their service in oob record"
+                )
 
         return oob_record
 
     async def handle_message(
-        self, profile: Profile, message: Dict[str, Any], oob_record: OobRecord
+        self, profile: Profile, messages: List[Dict[str, Any]], oob_record: OobRecord
     ):
         """Message handler for inbound messages."""
 
+        supported_types = [
+            CREDENTIAL_OFFER,
+            CRED_20_OFFER,
+            PRESENTATION_REQUEST,
+            PRES_20_REQUEST,
+        ]
+
+        supported_messages = [
+            message
+            for message in messages
+            if DIDCommPrefix.unqualify(message["@type"]) in supported_types
+        ]
+
+        if not supported_messages:
+            raise Exception(
+                f"None of the oob attached messages supported. Supported message types are {supported_types}"
+            )
+
+        message = supported_messages[0]
         message_str = json.dumps(message)
 
         async with profile.session() as session:

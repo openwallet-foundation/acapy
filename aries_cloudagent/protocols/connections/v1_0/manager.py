@@ -4,6 +4,8 @@ import logging
 
 from typing import Coroutine, Optional, Sequence, Tuple
 
+
+from ....core.oob_processor import OobMessageProcessor
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
@@ -640,6 +642,10 @@ class ConnectionManager(BaseConnectionManager):
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
+
+        # Clean associated oob record if not needed anymore
+        oob_processor = self.profile.inject(OobMessageProcessor)
+        await oob_processor.clean_finished_oob_record(self.profile, request)
 
         return connection
 

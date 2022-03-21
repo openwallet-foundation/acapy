@@ -57,6 +57,7 @@ class OobRecord(BaseExchangeRecord):
         attach_thread_id: Optional[str] = None,
         our_recipient_key: Optional[str] = None,
         our_service: Optional[ServiceDecorator] = None,
+        multi_use: bool = False,
         trace: bool = False,
         **kwargs,
     ):
@@ -73,6 +74,7 @@ class OobRecord(BaseExchangeRecord):
         self.our_service = our_service
         self.attach_thread_id = attach_thread_id
         self.our_recipient_key = our_recipient_key
+        self.multi_use = multi_use
         self.trace = trace
 
     @property

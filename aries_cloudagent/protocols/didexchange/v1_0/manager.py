@@ -4,6 +4,8 @@ import json
 import logging
 from typing import Optional
 
+
+from ....core.oob_processor import OobMessageProcessor
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.diddoc import DIDDoc
 from ....connections.base_manager import BaseConnectionManager
@@ -493,10 +495,7 @@ class DIDXManager(BaseConnectionManager):
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
             conn_rec.request_id = request._id
-            async with self.profile.session() as session:
-                await conn_rec.save(
-                    session, reason="Received connection request from invitation"
-                )
+
         else:
             # request is against implicit invitation on public DID
             async with self.profile.session() as session:
@@ -553,6 +552,10 @@ class DIDXManager(BaseConnectionManager):
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
+
+        # Clean associated oob record if not needed anymore
+        oob_processor = self.profile.inject(OobMessageProcessor)
+        await oob_processor.clean_finished_oob_record(self.profile, request)
 
         return conn_rec
 

@@ -398,6 +398,7 @@ class OutOfBandManager(BaseConnectionManager):
             invitation=invi_msg,
             our_recipient_key=our_recipient_key,
             our_service=our_service,
+            multi_use=multi_use,
         )
 
         async with self.profile.session() as session:
@@ -520,6 +521,7 @@ class OutOfBandManager(BaseConnectionManager):
             LOGGER.debug(
                 f"Process attached messages for oob exchange {oob_record.oob_id} (connection_id {oob_record.connection_id})"
             )
+
             # FIXME: this should ideally be handled using an event handler. Once the connection is ready
             # we start processing the attached messages. For now we use the timeout method
             if (
@@ -555,13 +557,12 @@ class OutOfBandManager(BaseConnectionManager):
 
     async def _respond_request_attach(self, oob_record: OobRecord):
         invitation = oob_record.invitation
-        req_attach = invitation.requests_attach[0]
 
         if not isinstance(req_attach, AttachDecorator):
             raise OutOfBandManagerError("requests~attach is not properly formatted")
 
         message_processor = self.profile.inject(OobMessageProcessor)
-        message = req_attach.content
+        messages = [attachment.content for attachment in invitation.requests_attach]
 
         if not oob_record.connection_id:
             service = oob_record.invitation.services[0]
@@ -575,7 +576,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         await message_processor.handle_message(
             self.profile,
-            req_attach.content,
+            messages,
             oob_record=oob_record,
         )
 
@@ -951,10 +952,14 @@ class OutOfBandManager(BaseConnectionManager):
                 {"state": OobRecord.STATE_AWAIT_RESPONSE},
             )
 
-            oob_record.state = OobRecord.STATE_ACCEPTED
-            oob_record.reuse_msg_id = reuse_msg_id
-            oob_record.connection_id = conn_rec.connection_id
-            await oob_record.save(session)
+            # If the oob_record is not multi-use we can now remove it
+            if not oob_record.multi_use:
+                await oob_record.delete_record(session)
+            # OOB_TODO
+            # oob_record.state = OobRecord.STATE_DONE
+            # oob_record.reuse_msg_id = reuse_msg_id
+            # oob_record.connection_id = conn_rec.connection_id
+            # await oob_record.save(session)
 
             conn_rec.invitation_msg_id = invi_msg_id
             await conn_rec.save(session, reason="Assigning new invitation_msg_id")
@@ -1012,12 +1017,13 @@ class OutOfBandManager(BaseConnectionManager):
                     {"invi_msg_id": invi_msg_id, "reuse_msg_id": thread_reuse_msg_id},
                 )
 
-                oob_record.state = OobRecord.STATE_ACCEPTED
+                # We can now remove the oob_record
+                await oob_record.delete_record(session)
+
                 conn_record.invitation_msg_id = invi_msg_id
                 await conn_record.save(
                     session, reason="Assigning new invitation_msg_id"
                 )
-                await oob_record.save(session, reason="Reuse accepted")
             # Emit webhook
             await self.profile.notify(
                 REUSE_ACCEPTED_WEBHOOK_TOPIC,
