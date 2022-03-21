@@ -722,6 +722,7 @@ class OutOfBandManager(BaseConnectionManager):
         if oob_record.state != OobRecord.STATE_ACCEPTED:
             # Remove associated connection id as reuse has ben denied
             oob_record.connection_id = None
+            oob_record.state = OobRecord.STATE_NOT_ACCEPTED
 
             # OOB_TODO: replace webhook event with new oob webhook event
             # Emit webhook if the reuse was not accepted
@@ -952,14 +953,17 @@ class OutOfBandManager(BaseConnectionManager):
                 {"state": OobRecord.STATE_AWAIT_RESPONSE},
             )
 
+            oob_record.state = OobRecord.STATE_DONE
+            oob_record.reuse_msg_id = reuse_msg_id
+            oob_record.connection_id = conn_rec.connection_id
+
+            # We don't want to store this state. We either remove the record (no multi-use)
+            # or we can't update the record (multi-use)
+            await oob_record.emit_event(session)
+
             # If the oob_record is not multi-use we can now remove it
             if not oob_record.multi_use:
                 await oob_record.delete_record(session)
-            # OOB_TODO
-            # oob_record.state = OobRecord.STATE_DONE
-            # oob_record.reuse_msg_id = reuse_msg_id
-            # oob_record.connection_id = conn_rec.connection_id
-            # await oob_record.save(session)
 
             conn_rec.invitation_msg_id = invi_msg_id
             await conn_rec.save(session, reason="Assigning new invitation_msg_id")
@@ -1017,7 +1021,11 @@ class OutOfBandManager(BaseConnectionManager):
                     {"invi_msg_id": invi_msg_id, "reuse_msg_id": thread_reuse_msg_id},
                 )
 
+                oob_record.state = OobRecord.STATE_DONE
+                oob_record.connection_id = conn_record.connection_id
+
                 # We can now remove the oob_record
+                await oob_record.emit_event(session)
                 await oob_record.delete_record(session)
 
                 conn_record.invitation_msg_id = invi_msg_id

@@ -55,6 +55,8 @@ class OobMessageProcessor:
             # If the oob record is not multi use and it doesn't contain any attachments
             # We can now safely remove the oob record
             if not oob_record.multi_use and not oob_record.invitation.requests_attach:
+                oob_record.state = OobRecord.STATE_DONE
+                await oob_record.emit_event(session)
                 await oob_record.delete_record(session)
         except Exception:
             # It is fine if no oob record is found, Only retrieved for cleanup
@@ -252,6 +254,8 @@ class OobMessageProcessor:
             # We can now remove the oob record as the connection should now be stored in the
             # exchange record itself.
             if oob_record.connection_id:
+                oob_record.state = OobRecord.STATE_DONE
+                await oob_record.emit_event(session)
                 await oob_record.delete_record(session)
             else:
                 await oob_record.save(

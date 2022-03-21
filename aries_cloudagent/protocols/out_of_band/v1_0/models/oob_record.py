@@ -4,7 +4,7 @@ from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields
 
-from aries_cloudagent.messaging.decorators.service_decorator import (
+from .....messaging.decorators.service_decorator import (
     ServiceDecorator,
     ServiceDecoratorSchema,
 )
