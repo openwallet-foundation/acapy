@@ -11,7 +11,7 @@ from ....core.profile import Profile
 from ....indy.verifier import IndyVerifier
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-
+from ....storage.error import StorageNotFoundError
 from ..indy.pres_exch_handler import IndyPresExchHandler
 
 from .messages.presentation_ack import PresentationAck
@@ -298,10 +298,7 @@ class PresentationManager:
         return presentation_exchange_record, presentation_message
 
     async def receive_presentation(
-        self,
-        message: Presentation,
-        connection_record: Optional[ConnRecord],
-        oob_record: Optional[OobRecord],
+        self, message: Presentation, connection_record: Optional[ConnRecord]
     ):
         """
         Receive a presentation, from message in context on manager creation.
@@ -313,10 +310,11 @@ class PresentationManager:
         presentation = message.indy_proof()
 
         thread_id = message._thread_id
-        # connection_id is None in the record if this is in response to
-        # a request~attach from an OOB message. If so, we do not want to filter
-        # the record by connection_id.
-        connection_id = None if oob_record else connection_record.connection_id
+        # Normally we only set the connection_id to None if an oob record is present
+        # But present proof supports the old-style AIP-1 connectionless exchange that
+        # bypasses the oob record. So we can't verify if an oob record is associated with the
+        # exchange because it is possible that there is None
+        connection_id = connection_record.connection_id if connection_record else None
 
         async with self._profile.session() as session:
             # Find by thread_id and role. Verify connection id later
@@ -439,6 +437,29 @@ class PresentationManager:
 
         """
         responder = self._profile.inject_or(BaseResponder)
+
+        if not presentation_exchange_record.connection_id:
+            # Find associated oob record. If this presentation exchange is created
+            # without oob (aip1 style connectionless) we can't send a presentation ack
+            # because we don't have their service
+            try:
+                pthid = (
+                    presentation_exchange_record.presentation_request_dict._thread.pthid
+                )
+            except AttributeError:
+                raise PresentationManagerError(
+                    "Unable to send connectionless presentation ack without associated oob record"
+                )
+            try:
+                async with self._profile.session() as session:
+                    await OobRecord.retrieve_by_tag_filter(
+                        session,
+                        {"invi_msg_id": pthid},
+                    )
+            except StorageNotFoundError:
+                raise PresentationManagerError(
+                    "Unable to send connectionless presentation ack without associated oob record"
+                )
 
         if responder:
             presentation_ack_message = PresentationAck()

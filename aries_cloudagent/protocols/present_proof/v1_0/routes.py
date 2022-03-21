@@ -36,7 +36,7 @@ from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSche
 from ....wallet.error import WalletNotFoundError
 
 from . import problem_report_for_record, report_problem
-from .manager import PresentationManager
+from .manager import PresentationManager, PresentationManagerError
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI
 from .messages.presentation_problem_report import ProblemReportReason
 from .messages.presentation_proposal import PresentationProposal
@@ -846,6 +846,8 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
             pres_ex_record,
             outbound_handler,
         )
+    except PresentationManagerError as err:
+        return web.HTTPBadRequest(reason=err.roll_up)
 
     trace_event(
         context.settings,
