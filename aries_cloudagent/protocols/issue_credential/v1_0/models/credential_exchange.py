@@ -57,7 +57,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         self,
         *,
         credential_exchange_id: str = None,
-        connection_id: str = None,
+        connection_id: Optional[str] = None,
         thread_id: str = None,
         parent_thread_id: str = None,
         initiator: str = None,

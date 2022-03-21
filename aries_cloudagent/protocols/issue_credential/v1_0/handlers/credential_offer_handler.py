@@ -1,7 +1,7 @@
 """Credential offer message handler."""
 
-from base58 import b58decode, b58encode
 
+from .....wallet.util import default_did_from_verkey
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....ledger.error import LedgerError
@@ -75,9 +75,7 @@ class CredentialOfferHandler(BaseHandler):
             holder_did = context.connection_record.my_did
         else:
             # Transform recipient key into did
-            holder_did = b58encode(b58decode(oob_record.our_recipient_key)[:16]).decode(
-                "utf-8"
-            )
+            holder_did = default_did_from_verkey(oob_record.our_recipient_key)
 
         # If auto respond is turned on, automatically reply with credential request
         if cred_ex_record and context.settings.get(
