@@ -56,6 +56,7 @@ class OobRecord(BaseExchangeRecord):
         oob_id: Optional[str] = None,
         attach_thread_id: Optional[str] = None,
         our_recipient_key: Optional[str] = None,
+        our_service: Optional[ServiceDecorator] = None,
         trace: bool = False,
         **kwargs,
     ):
@@ -69,6 +70,7 @@ class OobRecord(BaseExchangeRecord):
         self.connection_id = connection_id
         self.reuse_msg_id = reuse_msg_id
         self.their_service = their_service
+        self.our_service = our_service
         self.attach_thread_id = attach_thread_id
         self.our_recipient_key = our_recipient_key
         self.trace = trace
@@ -99,6 +101,7 @@ class OobRecord(BaseExchangeRecord):
                     "their_service",
                     "connection_id",
                     "role",
+                    "our_service",
                 )
             },
             **{

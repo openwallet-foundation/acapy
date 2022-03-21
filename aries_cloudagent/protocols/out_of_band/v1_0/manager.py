@@ -3,11 +3,12 @@
 import asyncio
 import logging
 import re
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, Union
 import uuid
 
-from aries_cloudagent.core.event_bus import EventBus
 
+from ....messaging.decorators.service_decorator import ServiceDecorator
+from ....core.event_bus import EventBus
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.util import mediation_record_if_id
@@ -38,6 +39,7 @@ from .messages.reuse_accept import HandshakeReuseAccept
 from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
 from .models.oob_record import OobRecord
+from .messages.service import Service
 
 LOGGER = logging.getLogger(__name__)
 REUSE_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse"
@@ -209,6 +211,7 @@ class OutOfBandManager(BaseConnectionManager):
         )
 
         our_recipient_key = None
+        our_service = None
         conn_rec = None
 
         if public:
@@ -261,7 +264,12 @@ class OutOfBandManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Created new invitation")
                     await conn_rec.attach_invitation(session, invi_msg)
-
+            else:
+                our_service = ServiceDecorator(
+                    recipient_keys=[our_recipient_key],
+                    endpoint=endpoint,
+                    routing_keys=[],
+                )
         else:
             if not my_endpoint:
                 my_endpoint = self.profile.settings.get("default_endpoint")
@@ -324,19 +332,27 @@ class OutOfBandManager(BaseConnectionManager):
                 my_endpoint = mediation_record.endpoint
 
                 # Save that this invitation was created with mediation
-
-                async with self.profile.session() as session:
-                    await conn_rec.metadata_set(
-                        session,
-                        MediationManager.METADATA_KEY,
-                        {MediationManager.METADATA_ID: mediation_record.mediation_id},
-                    )
+                if conn_rec:
+                    async with self.profile.session() as session:
+                        await conn_rec.metadata_set(
+                            session,
+                            MediationManager.METADATA_KEY,
+                            {
+                                MediationManager.METADATA_ID: mediation_record.mediation_id
+                            },
+                        )
 
                 if keylist_updates:
                     responder = self.profile.inject_or(BaseResponder)
                     await responder.send(
                         keylist_updates, connection_id=mediation_record.connection_id
                     )
+            if not conn_rec:
+                our_service = ServiceDecorator(
+                    recipient_keys=[our_recipient_key],
+                    endpoint=my_endpoint,
+                    routing_keys=routing_keys,
+                )
             routing_keys = [
                 key
                 if len(key.split(":")) == 3
@@ -381,6 +397,7 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg_id=invi_msg._id,
             invitation=invi_msg,
             our_recipient_key=our_recipient_key,
+            our_service=our_service,
         )
 
         async with self.profile.session() as session:
@@ -462,25 +479,23 @@ class OutOfBandManager(BaseConnectionManager):
             connection_id=conn_rec.connection_id if conn_rec else None,
         )
 
-        # Save record
-        # TODO: I think we can remove this save. Other paths will save the record
-        async with self.profile.session() as session:
-            await oob_record.save(session)
+        # # Save record
+        # # OOB_TODO: I think we can remove this save. Other paths will save the record
+        # async with self.profile.session() as session:
+        #     await oob_record.save(session)
 
         # Try to reuse the connection. If not accepted sets the conn_rec to None
         if conn_rec and not invitation.requests_attach:
             oob_record = await self._handle_hanshake_reuse(oob_record, conn_rec)
-            conn_rec = None
 
             LOGGER.warning(
                 f"Connection reuse request finished with state {oob_record.state}"
             )
 
-            # If reuse is accepted we can return as the oob exchange is complete
-            # TODO: update the state to DONE
-            # TODO: Should we remove the oob record if the reuse has been accepted?
-            if oob_record.state == OobRecord.STATE_ACCEPTED:
-                return oob_record
+            if oob_record.state != OobRecord.STATE_ACCEPTED:
+                # Set connection record to None if not accepted
+                # Will make new connection
+                conn_rec = None
 
         # Try to create a connection. Either if the reuse failed or we didn't have a connection yet
         # Throws an error if connection could not be created
@@ -505,12 +520,19 @@ class OutOfBandManager(BaseConnectionManager):
             LOGGER.debug(
                 f"Process attached messages for oob exchange {oob_record.oob_id} (connection_id {oob_record.connection_id})"
             )
-            if oob_record.connection_id:
-                # Wait for connection to become active.
-                # FIXME: this should ideally be handled using an event handler. Once the connection is ready
-                # we start processing the attached messages. For now we use the timeout method
-                # TODO: what if not ready within the timeout?
-                await self._wait_for_conn_rec_active(oob_record.connection_id)
+            # FIXME: this should ideally be handled using an event handler. Once the connection is ready
+            # we start processing the attached messages. For now we use the timeout method
+            if (
+                conn_rec
+                and not conn_rec.is_ready
+                and not await self._wait_for_conn_rec_active(conn_rec.connection_id)
+            ):
+                raise OutOfBandManagerError(
+                    "Connection not ready to process attach message"
+                    f"For connection_id: {oob_record.connection_id} and "
+                    f"invitation_msg_id {invitation._id}",
+                )
+
             if not conn_rec:
                 # Create and store new key for connectionless exchange
                 async with self.profile.session() as session:
@@ -521,8 +543,13 @@ class OutOfBandManager(BaseConnectionManager):
 
             await self._respond_request_attach(oob_record)
 
-        # TODO: remove record? not possible with connectionless
-        oob_record.state = OobRecord.STATE_DONE
+        # If a connection record is associated with the oob record we can remove it
+        # Otherwise we need to keep it around for the connectionless exchange
+        if conn_rec:
+            oob_record.state = OobRecord.STATE_DONE
+            async with self.profile.session() as session:
+                await oob_record.save(session)
+                await oob_record.delete_record(session)
 
         return oob_record
 
@@ -534,16 +561,55 @@ class OutOfBandManager(BaseConnectionManager):
             raise OutOfBandManagerError("requests~attach is not properly formatted")
 
         message_processor = self.profile.inject(OobMessageProcessor)
+        message = req_attach.content
 
-        LOGGER.warning("Handle inbound oob message")
+        if not oob_record.connection_id:
+            service = oob_record.invitation.services[0]
+            service_decorator = await self._service_decorator_from_service(service)
 
-        # TODO: should we add somethign to get the outcome of processing the message?
-        # Success will happen through protocol specific webhooks
+            oob_record.their_service = service_decorator.serialize()
+
+        async with self.profile.session() as session:
+            oob_record.attach_thread_id = message_processor.get_thread_id(message)
+            await oob_record.save(session)
+
         await message_processor.handle_message(
             self.profile,
             req_attach.content,
             oob_record=oob_record,
         )
+
+    async def _service_decorator_from_service(
+        self, service: Union[Service, str]
+    ) -> ServiceDecorator:
+        if isinstance(service, str):
+            (
+                endpoint,
+                recipient_keys,
+                routing_keys,
+            ) = await self.resolve_invitation(service)
+
+            return ServiceDecorator(
+                endpoint=endpoint,
+                recipient_keys=recipient_keys,
+                routing_keys=routing_keys,
+            )
+        else:
+            # Create ~service decorator from the oob service
+            recipient_keys = [
+                DIDKey.from_did(did_key).public_key_b58
+                for did_key in service.recipient_keys
+            ]
+            routing_keys = [
+                DIDKey.from_did(did_key).public_key_b58
+                for did_key in service.routing_keys
+            ]
+
+            return ServiceDecorator(
+                endpoint=service.service_endpoint,
+                recipient_keys=recipient_keys,
+                routing_keys=routing_keys,
+            )
 
     async def _wait_for_reuse_response(
         self, oob_id: str, timeout: int = 15
@@ -656,7 +722,7 @@ class OutOfBandManager(BaseConnectionManager):
             # Remove associated connection id as reuse has ben denied
             oob_record.connection_id = None
 
-            # TODO: replace webhook event with new oob webhook event
+            # OOB_TODO: replace webhook event with new oob webhook event
             # Emit webhook if the reuse was not accepted
             await self.profile.notify(
                 REUSE_ACCEPTED_WEBHOOK_TOPIC,

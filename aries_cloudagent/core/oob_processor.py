@@ -54,19 +54,12 @@ class OobMessageProcessor:
                 their_service = oob_record.their_service
                 their_service = ServiceDecorator.deserialize(their_service)
 
-                # FIXME: integrate with mediation
-                our_service = ServiceDecorator(
-                    recipient_keys=[oob_record.our_recipient_key],
-                    endpoint=profile.settings.get("default_endpoint"),
-                    routing_keys=[],
-                )
-
                 # Attach ~service decorator so other message can respond
                 message = json.loads(outbound_message.payload)
                 if not message.get("~service"):
-                    message["~service"] = our_service.serialize()
+                    message["~service"] = oob_record.our_service.serialize()
 
-                # TODO: state is somewhat done, but we need it for connectionless exchange
+                # OOB_TODO: state is somewhat done, but we need it for connectionless exchange
                 # if is_first_response:
                 message["~thread"] = {
                     **message.get("~thread", {}),
@@ -214,12 +207,18 @@ class OobMessageProcessor:
 
         # Verify the sender key is present in their service in our record
         # If we don't have the sender verkey stored yet we can allow any key
-        if (
-            their_service
-            # FIXME: does this mean anyone with anoncreds can send a message?
-            and context.message_receipt.sender_verkey
-            and context.message_receipt.sender_verkey
-            not in their_service.recipient_keys
+        if their_service and (
+            # We either want the sender key to be present and present in their_service
+            (
+                context.message_receipt.sender_verkey
+                and context.message_receipt.sender_verkey
+                not in their_service.recipient_keys
+            )
+            # Or we don't want the sender or recipient key to be present (in case of oob message handler)
+            or (
+                not context.message_receipt.sender_verkey
+                and not context.message_receipt.recipient_verkey
+            )
         ):
             LOGGER.debug(
                 "Inbound message sender verkey does not match stored service on oob record"
@@ -228,8 +227,6 @@ class OobMessageProcessor:
 
         # If the message has a ~service decorator we save it in the oob record so we can reply to this message
         if context._message._service:
-            # TODO: what should we do if the keys don't match? I would say for now we require the complete
-            # oob exchange to use the same keys
             oob_record.their_service = context.message._service.serialize()
 
         async with context.profile.session() as session:
@@ -254,47 +251,8 @@ class OobMessageProcessor:
                 connection_id=oob_record.connection_id,
                 receipt=receipt,
             )
-            # Create ~service from the oob service
-
-            if not oob_record.connection_id:
-                service = oob_record.invitation.services[0]
-
-                if isinstance(service, str):
-                    async with session.inject(BaseLedger) as ledger:
-                        endpoint = await ledger.get_endpoint_for_did(service)
-                        verkey = await ledger.get_key_for_did(service)
-
-                        service_decorator = ServiceDecorator(
-                            endpoint=endpoint,
-                            recipient_keys=[verkey],
-                            routing_keys=[],
-                        )
-                else:
-                    service_decorator = self._service_decorator_from_service(service)
-
-                oob_record.their_service = service_decorator.serialize()
-
-            oob_record.attach_thread_id = inbound_message.receipt.thread_id
-
-            await oob_record.save(session)
 
         self._inbound_message_router(profile, inbound_message, False)
 
-    def _get_thread_id(self, message: Dict[str, Any]) -> str:
+    def get_thread_id(self, message: Dict[str, Any]) -> str:
         return message.get("~thread", {}).get("thid") or message.get("@id")
-
-    def _service_decorator_from_service(self, service: Service) -> ServiceDecorator:
-        # Create ~service decorator from the oob service
-        recipient_keys = [
-            DIDKey.from_did(did_key).public_key_b58
-            for did_key in service.recipient_keys
-        ]
-        routing_keys = [
-            DIDKey.from_did(did_key).public_key_b58 for did_key in service.routing_keys
-        ]
-
-        return ServiceDecorator(
-            endpoint=service.service_endpoint,
-            recipient_keys=recipient_keys,
-            routing_keys=routing_keys,
-        )
