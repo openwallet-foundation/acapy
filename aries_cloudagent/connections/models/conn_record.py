@@ -174,6 +174,7 @@ class ConnRecord(BaseRecord):
         "invitation_key",
         "their_public_did",
         "invitation_msg_id",
+        "their_role",
     }
 
     RECORD_TYPE = "connection"
@@ -373,7 +374,7 @@ class ConnRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_request_id(
-        cls, session: ProfileSession, request_id: str
+        cls, session: ProfileSession, request_id: str, their_role: str = None
     ) -> "ConnRecord":
         """Retrieve a connection record from our previous request ID.
 
@@ -382,6 +383,8 @@ class ConnRecord(BaseRecord):
             request_id: The ID of the originating connection request
         """
         tag_filter = {"request_id": request_id}
+        if their_role:
+            tag_filter["their_role"] = their_role
         return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     @classmethod
