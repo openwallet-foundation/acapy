@@ -323,15 +323,19 @@ async def wallet_create_did(request: web.BaseRequest):
             )
         )
     info = None
-    async with context.session() as session:
-        wallet = session.inject_or(BaseWallet)
+    async with context.transaction() as transaction:
+        wallet = transaction.inject_or(BaseWallet)
         if not wallet:
+            await transaction.rollback()
             raise web.HTTPForbidden(reason="No wallet available")
         try:
             info = await wallet.create_local_did(method=method, key_type=key_type)
 
         except WalletError as err:
+            await transaction.rollback()
             raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    await transaction.commit()
 
     return web.json_response({"result": format_did_info(info)})
 
