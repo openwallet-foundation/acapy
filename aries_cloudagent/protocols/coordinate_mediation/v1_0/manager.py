@@ -58,6 +58,8 @@ class MediationManager:
     DEFAULT_MEDIATOR_RECORD_TYPE = "default_mediator"
     SEND_REQ_AFTER_CONNECTION = "send_mediation_request_on_connection"
     SET_TO_DEFAULT_ON_GRANTED = "set_to_default_on_granted"
+    METADATA_KEY = "mediation"
+    METADATA_ID = "id"
 
     def __init__(self, profile: Profile):
         """Initialize Mediation Manager.

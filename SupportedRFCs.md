@@ -6,12 +6,12 @@ and an overview of the ACA-Py feature set. This document is
 manually updated and as such, may not be up to date with the most recent release of
 ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page are
 welcome! If you have any questions, please contact us on the #aries channel on
-[Hyperledger Rocketchat](https://chat.hyperledger.org) or through an issue in this repo.
+[Hyperledger Discord](https://discord.gg/hyperledger) or through an issue in this repo.
 
 **Last Update**: 2021-12-22, Release 0.7.3
 
 > The checklist version of this document was created as a joint effort
-> between [Northern Block](https://northernblock.io/) and [Animo Solutions](https://animo.id/).
+> between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.
 
 ## AIP Support and Interoperability
 

@@ -70,6 +70,13 @@ class TestSchemaRoutes(AsyncTestCase):
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
                 {
+                    "sent": {
+                        "schema_id": SCHEMA_ID,
+                        "schema": {
+                            "schema": "def",
+                            "signed_txn": "...",
+                        },
+                    },
                     "schema_id": SCHEMA_ID,
                     "schema": {
                         "schema": "def",
@@ -116,7 +123,18 @@ class TestSchemaRoutes(AsyncTestCase):
             )
             result = await test_module.schemas_send_schema(self.request)
             assert result == mock_response.return_value
-            mock_response.assert_called_once_with({"txn": {"...": "..."}})
+            mock_response.assert_called_once_with(
+                {
+                    "sent": {
+                        "schema_id": SCHEMA_ID,
+                        "schema": {
+                            "schema": "def",
+                            "signed_txn": "...",
+                        },
+                    },
+                    "txn": {"...": "..."},
+                }
+            )
 
     async def test_send_schema_create_transaction_for_endorser_storage_x(self):
         self.request.json = async_mock.CoroutineMock(

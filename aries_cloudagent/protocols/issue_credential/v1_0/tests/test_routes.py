@@ -1339,10 +1339,7 @@ class TestCredentialRoutes(AsyncTestCase):
                     return_value=mock_cred_ex_record
                 ),
                 send_credential_ack=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cred_ex_record,
-                        async_mock.MagicMock(),
-                    )
+                    return_value=(mock_cred_ex_record, async_mock.MagicMock())
                 ),
             )
 
