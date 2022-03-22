@@ -15,12 +15,16 @@ class BaseOutboundTransport(ABC):
     """Base outbound transport class."""
 
     def __init__(
-        self, wire_format: BaseWireFormat = None, root_profile: Profile = None
+        self,
+        wire_format: BaseWireFormat = None,
+        root_profile: Profile = None,
+        is_external: bool = False,
     ) -> None:
         """Initialize a `BaseOutboundTransport` instance."""
         self._collector = None
         self._wire_format = wire_format
         self.root_profile = root_profile
+        self.is_external = is_external
 
     @property
     def collector(self) -> Collector:
@@ -69,7 +73,7 @@ class BaseOutboundTransport(ABC):
         metadata: dict = None,
     ):
         """
-        Handle message from queue.
+        Handle message.
 
         Args:
             profile: the profile that produced the message

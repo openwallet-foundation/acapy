@@ -187,15 +187,11 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(value=f"v{__version__}")
             ),
-        ), async_mock.patch.object(
-            test_module, "get_outbound_queue", async_mock.MagicMock()
-        ) as mock_get_outbound_queue:
+        ):
             mock_outbound_mgr.return_value.registered_transports = {}
-            mock_get_outbound_queue.return_value = async_mock.MagicMock(
-                enqueue_message=async_mock.CoroutineMock(),
-                start=async_mock.CoroutineMock(),
-                stop=async_mock.CoroutineMock(),
-            )
+            mock_outbound_mgr.return_value.enqueue_message = async_mock.CoroutineMock()
+            mock_outbound_mgr.return_value.start = async_mock.CoroutineMock()
+            mock_outbound_mgr.return_value.stop = async_mock.CoroutineMock()
             await conductor.setup()
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
@@ -320,16 +316,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         conductor = test_module.Conductor(builder)
         test_to_verkey = "test-to-verkey"
         test_from_verkey = "test-from-verkey"
-        with async_mock.patch.object(
-            test_module,
-            "get_outbound_queue",
-            async_mock.MagicMock(
-                return_value=async_mock.MagicMock(
-                    enqueue_message=async_mock.CoroutineMock()
-                )
-            ),
-        ) as mock_get_outbound_queue:
-            await conductor.setup()
+        await conductor.setup()
 
         payload = "{}"
         message = OutboundMessage(payload=payload)
@@ -340,13 +327,10 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
         with async_mock.patch.object(
             conductor.inbound_transport_manager, "return_to_session"
-        ) as mock_return, async_mock.patch.object(
-            conductor, "queue_outbound", async_mock.CoroutineMock()
-        ) as mock_queue:
+        ) as mock_return:
             mock_return.return_value = True
             await conductor.outbound_message_router(conductor.context, message)
             mock_return.assert_called_once_with(message)
-            mock_queue.assert_not_awaited()
 
     async def test_outbound_message_handler_with_target(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
@@ -442,7 +426,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value = async_mock.MagicMock(
                 setup=async_mock.CoroutineMock(),
-                enqueue_message=async_mock.MagicMock(),
+                enqueue_message=async_mock.CoroutineMock(),
             )
 
             payload = "{}"
@@ -487,47 +471,8 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             target=async_mock.MagicMock(endpoint="endpoint"),
             reply_to_verkey=TestDIDs.test_verkey,
         )
-        with async_mock.patch.object(
-            test_module, "get_outbound_queue", async_mock.MagicMock()
-        ) as mock_get_outbound_queue:
-            mock_get_outbound_queue.return_value = async_mock.MagicMock(
-                enqueue_message=async_mock.CoroutineMock()
-            )
-            await conductor.setup()
-            await conductor.queue_outbound(conductor.root_profile, message)
-            conductor.outbound_queue.enqueue_message.assert_called_once()
-
-    async def test_handle_outbound_queue_and_transport_missing(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        conductor = test_module.Conductor(builder)
-        with async_mock.patch.object(test_module, "LOGGER") as mock_logger:
-            with self.assertRaises(RuntimeError):
-                await conductor.setup()
-            mock_logger.exception.assert_called_once_with(
-                "outbound_transport or outbound_queue is required"
-            )
-
-    async def test_handle_outbound_queue_and_transport_both(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        conductor = test_module.Conductor(builder)
-        with async_mock.patch.object(
-            test_module, "LOGGER"
-        ) as mock_logger, async_mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, async_mock.patch.object(
-            test_module, "get_outbound_queue", async_mock.MagicMock()
-        ) as mock_get_outbound_queue:
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": async_mock.MagicMock(schemes=["http"])
-            }
-            mock_get_outbound_queue.return_value = async_mock.MagicMock(
-                enqueue_message=async_mock.CoroutineMock()
-            )
-            with self.assertRaises(RuntimeError):
-                await conductor.setup()
-            mock_logger.exception.assert_called_once_with(
-                "outbound_transport and outbound-queue are not allowed together"
-            )
+        await conductor.setup()
+        await conductor.queue_outbound(conductor.root_profile, message)
 
     async def test_handle_not_returned_ledger_x(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings_admin)
@@ -795,18 +740,13 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             test_module, "ConnectionManager"
         ) as mock_mgr, async_mock.patch.object(
             test_module, "OutboundTransportManager"
-        ) as mock_outx_mgr, async_mock.patch.object(
-            test_module, "get_outbound_queue", async_mock.MagicMock()
-        ) as mock_get_outbound_queue:
-            mock_get_outbound_queue.return_value = async_mock.MagicMock(
-                enqueue_message=async_mock.CoroutineMock(),
-                start=async_mock.CoroutineMock(side_effect=KeyError("trouble")),
-                stop=async_mock.CoroutineMock(),
-            )
+        ) as mock_outx_mgr:
             mock_outx_mgr.return_value = async_mock.MagicMock(
                 setup=async_mock.CoroutineMock(),
-                start=async_mock.CoroutineMock(),
+                start=async_mock.CoroutineMock(side_effect=KeyError("trouble")),
+                stop=async_mock.CoroutineMock(),
                 registered_transports={},
+                enqueue_message=async_mock.CoroutineMock(),
             )
             await conductor.setup()
             mock_mgr.return_value.create_static_connection = async_mock.CoroutineMock()

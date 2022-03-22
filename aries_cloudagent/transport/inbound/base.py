@@ -21,6 +21,7 @@ class BaseInboundTransport(ABC):
         max_message_size: int = 0,
         wire_format: BaseWireFormat = None,
         root_profile: Profile = None,
+        is_external: bool = False,
     ):
         """
         Initialize the inbound transport instance.
@@ -35,6 +36,7 @@ class BaseInboundTransport(ABC):
         self._scheme = scheme
         self.wire_format: BaseWireFormat = wire_format
         self.root_profile: Profile = root_profile
+        self.is_external = is_external
 
     @property
     def max_message_size(self):
