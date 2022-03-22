@@ -335,7 +335,7 @@ async def wallet_create_did(request: web.BaseRequest):
             await transaction.rollback()
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    await transaction.commit()
+        await transaction.commit()
 
     return web.json_response({"result": format_did_info(info)})
 
