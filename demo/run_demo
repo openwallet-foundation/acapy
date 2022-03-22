@@ -188,7 +188,7 @@ if [ -z "$AGENT_ENDPOINT" ] && [ "$RUNMODE" == "docker" ]; then
   fi
 fi
 
-echo $DOCKERHOST
+echo "DOCKERHOST=$DOCKERHOST"
 
 DOCKER_ENV="-e LOG_LEVEL=${LOG_LEVEL} -e RUNMODE=${RUNMODE} -e DOCKERHOST=${DOCKERHOST}"
 if ! [ -z "$AGENT_PORT" ]; then
@@ -240,6 +240,8 @@ fi
 if ! [ -z "${ENABLE_PYDEVD_PYCHARM}" ]; then
   DOCKER_ENV="${DOCKER_ENV} -e ENABLE_PYDEVD_PYCHARM=${ENABLE_PYDEVD_PYCHARM} -e PYDEVD_PYCHARM_CONTROLLER_PORT=${PYDEVD_PYCHARM_CONTROLLER_PORT} -e PYDEVD_PYCHARM_AGENT_PORT=${PYDEVD_PYCHARM_AGENT_PORT}"
 fi
+
+echo "DOCKER_ENV=$DOCKER_ENV"
 
 # on Windows, docker run needs to be prefixed by winpty
 if [ "$OSTYPE" = "msys" ]; then
