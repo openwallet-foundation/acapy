@@ -258,10 +258,18 @@ class BaseRecord(BaseModel):
             cls.prefix_tag_filter(tag_filter),
             options={"retrieveTags": False},
         )
+        LOGGER.warn(' rows')
+        LOGGER.warn(rows)
         found = None
         for record in rows:
+            LOGGER.warn(' record in rows')
+            LOGGER.warn(record)
             vals = json.loads(record.value)
+            LOGGER.warn('vals')
+            LOGGER.warn(vals)
+
             if match_post_filter(vals, post_filter, alt=False):
+                LOGGER.warn('match post filter')
                 if found:
                     raise StorageDuplicateError(
                         "Multiple {} records located for {}{}".format(
@@ -270,7 +278,11 @@ class BaseRecord(BaseModel):
                             f", {post_filter}" if post_filter else "",
                         )
                     )
+                LOGGER.warn('record id')
+                LOGGER.warn(record.id)
                 found = cls.from_storage(record.id, vals)
+                LOGGER.warn('found')
+                LOGGER.warn(found)
         if not found:
             raise StorageNotFoundError(
                 "{} record not found for {}{}".format(
