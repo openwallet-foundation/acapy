@@ -125,7 +125,7 @@ class LoggingConfigurator:
         external_in_transports = set().union(
             *(
                 transport
-                for transport in outbound_transports.values()
+                for transport in inbound_transports.values()
                 if transport.is_external
             )
         )
