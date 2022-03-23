@@ -84,10 +84,11 @@ class AskarStorage(BaseStorage):
             raise StorageError("Record type not provided")
         if not record_id:
             raise StorageError("Record ID not provided")
-        if not options:
-            options = {}
+        for_update = bool(options and options.get("forUpdate"))
         try:
-            item = await self._session.handle.fetch(record_type, record_id)
+            item = await self._session.handle.fetch(
+                record_type, record_id, for_update=for_update
+            )
         except AskarError as err:
             raise StorageError("Error when fetching storage record") from err
         if not item:
@@ -155,9 +156,10 @@ class AskarStorage(BaseStorage):
             tag_query: Tags to query
             options: Dictionary of backend-specific options
         """
+        for_update = bool(options and options.get("forUpdate"))
         try:
             results = await self._session.handle.fetch_all(
-                type_filter, tag_query, limit=2
+                type_filter, tag_query, limit=2, for_update=for_update
             )
         except AskarError as err:
             raise StorageError("Error when finding storage record") from err
@@ -180,8 +182,11 @@ class AskarStorage(BaseStorage):
         options: Mapping = None,
     ):
         """Retrieve all records matching a particular type filter and tag query."""
+        for_update = bool(options and options.get("forUpdate"))
         results = []
-        for row in await self._session.handle.fetch_all(type_filter, tag_query):
+        for row in await self._session.handle.fetch_all(
+            type_filter, tag_query, for_update=for_update
+        ):
             results.append(
                 StorageRecord(
                     type=row.category,
