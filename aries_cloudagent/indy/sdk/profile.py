@@ -1,9 +1,10 @@
 """Manage Indy-SDK profile interaction."""
 
+import asyncio
 import logging
 
-from typing import Any, Mapping
-from weakref import ref
+from typing import Any, Mapping, Optional
+from weakref import finalize, ref
 
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
@@ -115,6 +116,18 @@ class IndySdkProfile(Profile):
         if self.opened:
             await self.opened.close()
             self.opened = None
+
+    def finalizer(self) -> Optional[finalize]:
+        """Return a finalizer for this profile.
+
+        See docs for weakref.finalize for more details on behavior of finalizers.
+        """
+
+        def _finalize(opened: Optional[IndyOpenWallet]):
+            if opened:
+                asyncio.get_event_loop().run_until_complete(opened.close())
+
+        return finalize(self, _finalize, self.opened)
 
     async def remove(self):
         """Remove the profile associated with this instance."""

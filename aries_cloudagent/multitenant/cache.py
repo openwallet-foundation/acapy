@@ -1,7 +1,6 @@
 """Cache for multitenancy profiles."""
 
 import logging
-import sys
 from collections import OrderedDict
 from typing import Optional
 
@@ -23,21 +22,6 @@ class ProfileCache:
 
         self.profiles: OrderedDict[str, Profile] = OrderedDict()
         self.capacity = capacity
-
-    async def _cleanup(self):
-        for (key, profile) in self.profiles.items():
-            # When ref count is 4 we can assume the profile is not referenced
-            # 1 = profiles dict
-            # 2 = self.profiles.items()
-            # 3 = profile above
-            # 4 = sys.getrefcount
-            if sys.getrefcount(profile) <= 4:
-                LOGGER.debug(f"closing profile with id {key}")
-                del self.profiles[key]
-                await profile.close()
-
-                if len(self.profiles) <= self.capacity:
-                    break
 
     def get(self, key: str) -> Optional[Profile]:
         """Get profile with associated key from cache.
@@ -77,13 +61,17 @@ class ProfileCache:
             key (str): the key to set
             value (Profile): the profile to set
         """
+        value.finalizer()
         self.profiles[key] = value
         self.profiles.move_to_end(key)
         LOGGER.debug(f"setting profile with id {key} in profile cache")
 
         if len(self.profiles) > self.capacity:
-            LOGGER.debug(f"profile limit of {self.capacity} reached. cleaning...")
-            await self._cleanup()
+            LOGGER.debug(
+                f"Profile limit of {self.capacity} reached."
+                " Evicting least recently used profile..."
+            )
+            self.profiles.popitem(last=False)
 
     def remove(self, key: str):
         """Remove profile with associated key from the cache.

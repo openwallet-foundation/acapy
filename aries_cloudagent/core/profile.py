@@ -4,6 +4,7 @@ import logging
 
 from abc import ABC, abstractmethod
 from typing import Any, Mapping, Optional, Type
+from weakref import finalize
 
 from .event_bus import EventBus, Event
 from ..config.base import InjectionError
@@ -114,6 +115,18 @@ class Profile(ABC):
 
     async def close(self):
         """Close the profile instance."""
+
+    def finalizer(self) -> Optional[finalize]:
+        """Create and return a finalizer for the profile or None.
+
+        None is returned if no special handling is required to close the profile.
+
+        Finalizers enable automatic clean up of wallet profiles when all references to
+        the profile expire.
+
+        See docs for weakref.finalize for more details on the behavior of finalizers.
+        """
+        return None
 
     async def remove(self):
         """Remove the profile."""
