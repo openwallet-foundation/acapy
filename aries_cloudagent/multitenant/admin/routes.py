@@ -3,25 +3,23 @@
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    request_schema,
     match_info_schema,
-    response_schema,
     querystring_schema,
+    request_schema,
+    response_schema,
 )
-from marshmallow import fields, validate, validates_schema, ValidationError
+from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ...admin.request_context import AdminRequestContext
-from ...messaging.valid import JSONWebToken, UUIDFour
-from ...messaging.models.base import BaseModelError
-from ...messaging.models.openapi import OpenAPISchema
-from ...multitenant.base import BaseMultitenantManager
-from ...storage.error import StorageError, StorageNotFoundError
-from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
-from ...wallet.error import WalletSettingsError
-
 from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
-
+from ...messaging.models.base import BaseModelError
+from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.valid import JSONWebToken, UUIDFour
+from ...multitenant.base import BaseMultitenantManager
+from ...storage.error import StorageError, StorageNotFoundError
+from ...wallet.error import WalletSettingsError
+from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ..error import WalletKeyMissingError
 
 
@@ -56,6 +54,13 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
     wallet_key = fields.Str(
         description="Master key used for key derivation.", example="MySecretKey123"
+    )
+
+    wallet_key_derivation = fields.Str(
+        description="Key derivation",
+        example="RAW",
+        default="ARGON2I_MOD",
+        validate=validate.OneOf(["ARGON2I_MOD", "ARGON2I_INT", "RAW"]),
     )
 
     wallet_type = fields.Str(
@@ -225,8 +230,7 @@ async def wallets_list(request: web.BaseRequest):
     profile = context.profile
 
     query = {}
-    wallet_name = request.query.get("wallet_name")
-    if wallet_name:
+    if wallet_name := request.query.get("wallet_name"):
         query["wallet_name"] = wallet_name
 
     try:
@@ -297,6 +301,9 @@ async def wallet_create(request: web.BaseRequest):
         "wallet.type": body.get("wallet_type") or "in_memory",
         "wallet.name": body.get("wallet_name"),
         "wallet.key": wallet_key,
+        "wallet.key_derivation_method": body.get(
+            "wallet_key_derivation", "ARGON2I_MOD"
+        ),
         "wallet.webhook_urls": wallet_webhook_urls,
         "wallet.dispatch_type": wallet_dispatch_type,
     }

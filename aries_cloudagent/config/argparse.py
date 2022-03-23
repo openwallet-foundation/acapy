@@ -1656,16 +1656,14 @@ class MultitenantGroup(ArgumentGroup):
                     settings["multitenant.wallet_name"] = multitenancyConfig.get(
                         "wallet_name"
                     )
-                
+
                 if multitenancyConfig.get("key"):
-                    settings["multitenant.key"] = multitenancyConfig.get(
-                        "key"
-                    )
-                
+                    settings["multitenant.key"] = multitenancyConfig.get("key")
+
                 if multitenancyConfig.get("key_derivation_method"):
-                    settings["multitenant.key_derivation_method"] = multitenancyConfig.get(
-                        "key_derivation_method"
-                    )
+                    settings[
+                        "multitenant.key_derivation_method"
+                    ] = multitenancyConfig.get("key_derivation_method")
 
         return settings
 
