@@ -36,7 +36,7 @@ class WalletRecord(BaseRecord):
         wallet_id: str = None,
         key_management_mode: str = None,
         settings: dict = None,
-        # MTODO: how to make this a tag without making it
+        # TODO: how to make this a tag without making it
         # a constructor param
         wallet_name: str = None,
         **kwargs,
@@ -80,6 +80,11 @@ class WalletRecord(BaseRecord):
     def wallet_key(self) -> Optional[str]:
         """Accessor for the key of the wallet."""
         return self.settings.get("wallet.key")
+
+    @property
+    def wallet_key_derivation_method(self):
+        """Accessor for the key derivation method of the wallet."""
+        return self.settings.get("wallet.key_derivation_method")
 
     @property
     def record_value(self) -> dict:
