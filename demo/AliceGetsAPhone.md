@@ -206,7 +206,7 @@ https://abfde260.ngrok.io?c_i=eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVU
 Or this:
 
 ```bash
-http://ip10-0-121-4-bquqo816b480a4bfn3kg-8020.direct.play-with-von.vonx.io?c_i=eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZWI2MTI4NDUtYmU1OC00YTNiLTk2MGUtZmE3NDUzMGEwNzkyIiwgInJlY2lwaWVudEtleXMiOiBbIkFacEdoMlpIOTJVNnRFRTlmYk13Z3BqQkp3TEUzRFJIY1dCbmg4Y2FqdzNiIl0sICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cDovL2lwMTAtMC0xMjEtNC1icXVxbzgxNmI0ODBhNGJmbjNrZy04MDIwLmRpcmVjdC5wbGF5LXdpdGgtdm9uLnZvbnguaW8iLCAibGFiZWwiOiAiRmFiZXIuQWdlbnQifQ==
+http://ip10-0-121-4-bquqo816b480a4bfn3kg-8020.direct.play-with-docker.com?c_i=eyJAdHlwZSI6ICJkaWQ6c292OkJ6Q2JzTlloTXJqSGlxWkRUVUFTSGc7c3BlYy9jb25uZWN0aW9ucy8xLjAvaW52aXRhdGlvbiIsICJAaWQiOiAiZWI2MTI4NDUtYmU1OC00YTNiLTk2MGUtZmE3NDUzMGEwNzkyIiwgInJlY2lwaWVudEtleXMiOiBbIkFacEdoMlpIOTJVNnRFRTlmYk13Z3BqQkp3TEUzRFJIY1dCbmg4Y2FqdzNiIl0sICJzZXJ2aWNlRW5kcG9pbnQiOiAiaHR0cDovL2lwMTAtMC0xMjEtNC1icXVxbzgxNmI0ODBhNGJmbjNrZy04MDIwLmRpcmVjdC5wbGF5LXdpdGgtdm9uLnZvbnguaW8iLCAibGFiZWwiOiAiRmFiZXIuQWdlbnQifQ==
 ```
 
 Note that this will use the ngrok endpoint if you are running locally, or your PWD endpoint if you are running on PWD.
@@ -306,7 +306,7 @@ Once that is done, try sending another proof request and see what happens! Exper
 
 A connectionless proof request works the same way as a regular proof request, however it does not require a connection to be established between the Verifier and Holder/Prover.
 
-This is supported in the Faber demo, however note that it will only work when running Faber on the Docker playground service [Play with Docker](https://labs.play-with-docker.com/) (or on [Play with VON](http://play-with-von.vonx.io)).  (This is because both the Faber agent *and* controller both need to be exposed to the mobile agent.)
+This is supported in the Faber demo, however note that it will only work when running Faber on the Docker playground service [Play with Docker](https://labs.play-with-docker.com/).  (This is because both the Faber agent *and* controller both need to be exposed to the mobile agent.)
 
 If you have gone through the above steps, you can delete the Faber connection in your mobile agent (however *do not* delete the credential that Faber issued to you).
 
