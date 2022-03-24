@@ -874,11 +874,15 @@ class AgentContainer:
                     non_revoked_supplied = True
                 for attr in proof_request["requested_attributes"]:
                     if "non_revoked" in proof_request["requested_attributes"][attr]:
-                        indy_proof_request["requested_attributes"][attr]["non_revoked"] = non_revoked
+                        indy_proof_request["requested_attributes"][attr][
+                            "non_revoked"
+                        ] = non_revoked
                         non_revoked_supplied = True
                 for pred in proof_request["requested_predicates"]:
                     if "non_revoked" in proof_request["requested_predicates"][pred]:
-                        indy_proof_request["requested_predicates"][pred]["non_revoked"] = non_revoked
+                        indy_proof_request["requested_predicates"][pred][
+                            "non_revoked"
+                        ] = non_revoked
                         non_revoked_supplied = True
 
                 if not non_revoked_supplied:
