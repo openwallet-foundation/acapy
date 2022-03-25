@@ -70,7 +70,6 @@ from .dispatcher import Dispatcher
 from .util import STARTUP_EVENT_TOPIC, SHUTDOWN_EVENT_TOPIC
 
 LOGGER = logging.getLogger(__name__)
-OUTBOUND_STATUS_PREFIX = "acapy::outbound-message::"
 
 
 class Conductor:
@@ -598,15 +597,31 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
+        status: OutboundSendStatus = await self._outbound_message_router(
+            profile=profile, outbound=outbound, inbound=inbound
+        )
+        await profile.notify(status.topic, outbound)
+        return status
+
+    async def _outbound_message_router(
+        self,
+        profile: Profile,
+        outbound: OutboundMessage,
+        inbound: InboundMessage = None,
+    ) -> OutboundSendStatus:
+        """
+        Route an outbound message.
+
+        Args:
+            profile: The active profile for the request
+            message: An outbound message to be sent
+            inbound: The inbound message that produced this response, if available
+        """
         if not outbound.target and outbound.reply_to_verkey:
             if not outbound.reply_from_verkey and inbound:
                 outbound.reply_from_verkey = inbound.receipt.recipient_verkey
             # return message to an inbound session
             if self.inbound_transport_manager.return_to_session(outbound):
-                await profile.notify(
-                    f"{OUTBOUND_STATUS_PREFIX}{OutboundSendStatus.SENT_TO_SESSION}",
-                    outbound,
-                )
                 return OutboundSendStatus.SENT_TO_SESSION
 
         if not outbound.to_session_only:
@@ -684,10 +699,6 @@ class Conductor:
                     encoded_outbound_message.payload, target.endpoint
                 )
 
-            await profile.notify(
-                f"{OUTBOUND_STATUS_PREFIX}{OutboundSendStatus.SENT_TO_EXTERNAL_QUEUE}",
-                outbound,
-            )
             return OutboundSendStatus.SENT_TO_EXTERNAL_QUEUE
 
     async def _queue_internal(
@@ -696,10 +707,6 @@ class Conductor:
         """Save the message to an internal outbound queue."""
         try:
             self.outbound_transport_manager.enqueue_message(profile, outbound)
-            await profile.notify(
-                f"{OUTBOUND_STATUS_PREFIX}{OutboundSendStatus.QUEUED_FOR_DELIVERY}",
-                outbound,
-            )
             return OutboundSendStatus.QUEUED_FOR_DELIVERY
         except OutboundDeliveryError:
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
@@ -715,7 +722,6 @@ class Conductor:
             if queued_for_inbound
             else OutboundSendStatus.UNDELIVERABLE
         )
-        await profile.notify(f"{OUTBOUND_STATUS_PREFIX}{status}", outbound)
         return status
 
     def webhook_router(
