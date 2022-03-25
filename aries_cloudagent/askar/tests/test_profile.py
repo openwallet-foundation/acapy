@@ -55,10 +55,10 @@ class TestProfile(AsyncTestCase):
         profile = "profileId"
 
         with mock.patch("aries_cloudagent.askar.profile.AskarProfile") as AskarProfile:
-            askar_profile = AskarProfile(None, True)
+            askar_profile = AskarProfile(None, True, profile_id=profile)
+            askar_profile.profile_id = profile
             askar_profile_transaction = mock.MagicMock()
             askar_profile.store.transaction.return_value = askar_profile_transaction
-            askar_profile.context.settings.get.return_value = profile
 
             transactionProfile = test_module.AskarProfileSession(askar_profile, True)
 
@@ -70,10 +70,10 @@ class TestProfile(AsyncTestCase):
         profile = "profileId"
 
         with mock.patch("aries_cloudagent.askar.profile.AskarProfile") as AskarProfile:
-            askar_profile = AskarProfile(None, False)
+            askar_profile = AskarProfile(None, False, profile_id=profile)
+            askar_profile.profile_id = profile
             askar_profile_session = mock.MagicMock()
             askar_profile.store.session.return_value = askar_profile_session
-            askar_profile.context.settings.get.return_value = profile
 
             sessionProfile = test_module.AskarProfileSession(askar_profile, False)
 
