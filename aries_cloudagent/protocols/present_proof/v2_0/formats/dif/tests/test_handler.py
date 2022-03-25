@@ -341,9 +341,7 @@ class TestDIFFormatHandler(AsyncTestCase):
 
     async def test_create_bound_request_b(self):
         dif_proposal_dict = {
-            "options": {
-                "challenge": "test123"
-            },
+            "options": {"challenge": "test123"},
             "input_descriptors": [
                 {
                     "id": "citizenship_input_1",
@@ -365,7 +363,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                         ],
                     },
                 }
-            ]
+            ],
         }
         dif_pres_proposal = V20PresProposal(
             formats=[
