@@ -918,15 +918,19 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             await conductor.setup()
             multitenant_mgr = conductor.context.inject(BaseMultitenantManager)
 
-            multitenant_mgr._instances = {
-                "test1": async_mock.MagicMock(close=async_mock.CoroutineMock()),
-                "test2": async_mock.MagicMock(close=async_mock.CoroutineMock()),
-            }
+            multitenant_mgr._profiles.put(
+                "test1",
+                async_mock.MagicMock(close=async_mock.CoroutineMock()),
+            )
+            multitenant_mgr._profiles.put(
+                "test2",
+                async_mock.MagicMock(close=async_mock.CoroutineMock()),
+            )
 
             await conductor.stop()
 
-            multitenant_mgr._instances["test1"].close.assert_called_once_with()
-            multitenant_mgr._instances["test2"].close.assert_called_once_with()
+            multitenant_mgr._profiles.profiles["test1"].close.assert_called_once_with()
+            multitenant_mgr._profiles.profiles["test2"].close.assert_called_once_with()
 
 
 def get_invite_store_mock(

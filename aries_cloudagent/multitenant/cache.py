@@ -51,7 +51,7 @@ class ProfileCache:
         """
         return key in self.profiles
 
-    async def put(self, key: str, value: Profile) -> None:
+    def put(self, key: str, value: Profile) -> None:
         """Add profile with associated key to the cache.
 
         If new profile exceeds the cache capacity least recently used profiles

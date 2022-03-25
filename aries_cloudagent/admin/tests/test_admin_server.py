@@ -198,10 +198,9 @@ class TestAdminServer(AsyncTestCase):
         context = InjectionContext()
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
-        profile = InMemoryProfile.test_profile()
         context.injector.bind_instance(
             test_module.BaseMultitenantManager,
-            test_module.BaseMultitenantManager(profile),
+            async_mock.MagicMock(spec=test_module.BaseMultitenantManager),
         )
         await DefaultContextBuilder().load_plugins(context)
         server = self.get_admin_server(
