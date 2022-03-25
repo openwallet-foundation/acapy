@@ -323,10 +323,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             )
             assert status == OutboundSendStatus.SENT_TO_SESSION
             assert bus.events
-            assert (
-                bus.events[0][1].topic
-                == f"{EVENT_PREFIX}{OutboundSendStatus.SENT_TO_SESSION}"
-            )
+            assert bus.events[0][1].topic == status.topic
             assert bus.events[0][1].payload == message
             mock_return.assert_called_once_with(message)
             mock_queue.assert_not_awaited()
@@ -355,10 +352,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             assert status == OutboundSendStatus.QUEUED_FOR_DELIVERY
             assert bus.events
             print(bus.events)
-            assert (
-                bus.events[0][1].topic
-                == f"{EVENT_PREFIX}{OutboundSendStatus.QUEUED_FOR_DELIVERY}"
-            )
+            assert bus.events[0][1].topic == status.topic
             assert bus.events[0][1].payload == message
             mock_outbound_mgr.return_value.enqueue_message.assert_called_once_with(
                 conductor.root_profile, message
@@ -389,10 +383,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             assert status == OutboundSendStatus.QUEUED_FOR_DELIVERY
             assert bus.events
             print(bus.events)
-            assert (
-                bus.events[0][1].topic
-                == f"{EVENT_PREFIX}{OutboundSendStatus.QUEUED_FOR_DELIVERY}"
-            )
+            assert bus.events[0][1].topic == status.topic
             assert bus.events[0][1].payload == message
 
             conn_mgr.return_value.get_connection_targets.assert_awaited_once_with(
@@ -435,10 +426,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
             assert status == OutboundSendStatus.QUEUED_FOR_DELIVERY
             assert bus.events
             print(bus.events)
-            assert (
-                bus.events[0][1].topic
-                == f"{EVENT_PREFIX}{OutboundSendStatus.QUEUED_FOR_DELIVERY}"
-            )
+            assert bus.events[0][1].topic == status.topic
             assert bus.events[0][1].payload == message
 
             mock_outbound_mgr.return_value.enqueue_message.assert_called_once_with(
