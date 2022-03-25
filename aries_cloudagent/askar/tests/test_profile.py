@@ -28,7 +28,7 @@ class TestProfile(AsyncTestCase):
             "wallet.askar_profile": profile_id,
             "ledger.genesis_transactions": mock.MagicMock(),
         }
-        askar_profile = AskarProfile(openStore, context)
+        askar_profile = AskarProfile(openStore, context, profile_id=profile_id)
         remove_profile_stub = asyncio.Future()
         remove_profile_stub.set_result(True)
         openStore.store.remove_profile.return_value = remove_profile_stub
@@ -63,9 +63,6 @@ class TestProfile(AsyncTestCase):
             transactionProfile = test_module.AskarProfileSession(askar_profile, True)
 
             assert transactionProfile._opener == askar_profile_transaction
-            askar_profile.context.settings.get.assert_called_once_with(
-                "wallet.askar_profile"
-            )
             askar_profile.store.transaction.assert_called_once_with(profile)
 
     @pytest.mark.asyncio
@@ -81,7 +78,4 @@ class TestProfile(AsyncTestCase):
             sessionProfile = test_module.AskarProfileSession(askar_profile, False)
 
             assert sessionProfile._opener == askar_profile_session
-            askar_profile.context.settings.get.assert_called_once_with(
-                "wallet.askar_profile"
-            )
             askar_profile.store.session.assert_called_once_with(profile)
