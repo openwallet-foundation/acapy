@@ -24,6 +24,7 @@ class MultitenantManager(BaseMultitenantManager):
         super().__init__(profile)
         self._profiles = ProfileCache(100)
 
+    @property
     def open_profiles(self) -> Iterable[Profile]:
         """Return iterator over open profiles."""
         yield from self._profiles.profiles.values()

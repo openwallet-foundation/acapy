@@ -27,6 +27,7 @@ from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
 )
 from ...resolver.did_resolver import DIDResolver, DIDResolverRegistry
 from ...multitenant.base import BaseMultitenantManager
+from ...multitenant.manager import MultitenantManager
 from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
 from ...transport.inbound.message import InboundMessage
@@ -917,6 +918,7 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
 
             await conductor.setup()
             multitenant_mgr = conductor.context.inject(BaseMultitenantManager)
+            assert isinstance(multitenant_mgr, MultitenantManager)
 
             multitenant_mgr._profiles.put(
                 "test1",
