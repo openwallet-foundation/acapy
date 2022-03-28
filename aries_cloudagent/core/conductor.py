@@ -712,7 +712,7 @@ class Conductor:
             LOGGER.warning("Cannot queue message for delivery, no supported transport")
             return self.handle_not_delivered(profile, outbound)
 
-    async def handle_not_delivered(
+    def handle_not_delivered(
         self, profile: Profile, outbound: OutboundMessage
     ) -> OutboundSendStatus:
         """Handle a message that failed delivery via outbound transports."""
