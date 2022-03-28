@@ -41,7 +41,7 @@ The Alice/Faber demo is the (in)famous first verifiable credentials demo. Alice,
 
 ### Running in a Browser
 
-In your browser, go to the docker playground service [Play with VON](http://play-with-von.vonx.io) (from the BC Gov). On the title screen, click "Start". On the next screen, click (in the left menu) "+Add a new instance".  That will start up a terminal in your browser. Run the following commands to start the Faber agent:
+In your browser, go to the docker playground service [Play with Docker](https://labs.play-with-docker.com/). On the title screen, click "Start". On the next screen, click (in the left menu) "+Add a new instance".  That will start up a terminal in your browser. Run the following commands to start the Faber agent:
 
 ```bash
 git clone https://github.com/hyperledger/aries-cloudagent-python
@@ -395,6 +395,22 @@ To run the demo, make sure that you shut down any running Alice/Faber agents. Th
 The script starts both agents, runs the performance test, spits out performance results and shuts down the agents. Note that this is just one demonstration of how performance metrics tracking can be done with ACA-Py.
 
 A second version of the performance test can be run by adding the parameter `--routing` to the invocation above. The parameter triggers the example to run with Alice using a routing agent such that all messages pass through the routing agent between Alice and Faber. This is a good, simple example of how routing can be implemented with DIDComm agents.
+
+You can also run the demo against a postgres database using the following:
+
+```bash
+./run_demo performance --arg-file demo/postgres-indy-args.yml
+```
+
+(Obvs you need to be running a postgres database - the command to start postgres is in the yml file provided above.)
+
+You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option.
+
+An example full set of options is:
+
+```bash
+./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type askar
+```
 
 ## Coding Challenge: Adding ACME
 

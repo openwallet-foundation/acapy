@@ -73,6 +73,11 @@ class BaseAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
+    async def handle_issue_credential(self, payload):
+        cred_ex_id = payload["credential_exchange_id"]
+        self.credential_state[cred_ex_id] = payload["state"]
+        self.credential_event.set()
+
     async def handle_issue_credential_v2_0(self, payload):
         cred_ex_id = payload["cred_ex_id"]
         self.credential_state[cred_ex_id] = payload["state"]
@@ -103,7 +108,7 @@ class BaseAgent(DemoAgent):
             pending = 0
             total = len(self.credential_state)
             for result in self.credential_state.values():
-                if result != "done":
+                if result != "done" and result != "credential_acked":
                     pending += 1
             if self.credential_event.is_set():
                 continue
@@ -266,7 +271,9 @@ async def main(
     revocation: bool = False,
     tails_server_base_url: str = None,
     issue_count: int = 300,
+    batch_size: int = 30,
     wallet_type: str = None,
+    arg_file: str = None,
 ):
 
     if multi_ledger:
@@ -295,6 +302,7 @@ async def main(
             multitenant=multitenant,
             mediation=mediation,
             wallet_type=wallet_type,
+            arg_file=arg_file,
         )
         await alice.listen_webhooks(start_port + 2)
 
@@ -307,6 +315,7 @@ async def main(
             multitenant=multitenant,
             mediation=mediation,
             wallet_type=wallet_type,
+            arg_file=arg_file,
         )
         await faber.listen_webhooks(start_port + 5)
         await faber.register_did()
@@ -370,8 +379,6 @@ async def main(
             if mediation:
                 await alice_mediator_agent.reset_timing()
                 await faber_mediator_agent.reset_timing()
-
-        batch_size = 100
 
         semaphore = asyncio.Semaphore(threads)
 
@@ -592,6 +599,13 @@ if __name__ == "__main__":
         help="Set the number of credentials to issue",
     )
     parser.add_argument(
+        "-b",
+        "--batch",
+        type=int,
+        default=100,
+        help="Set the batch size of credentials to issue",
+    )
+    parser.add_argument(
         "-p",
         "--port",
         type=int,
@@ -655,6 +669,12 @@ if __name__ == "__main__":
         metavar="<wallet-type>",
         help="Set the agent wallet type",
     )
+    parser.add_argument(
+        "--arg-file",
+        type=str,
+        metavar="<arg-file>",
+        help="Specify a file containing additional aca-py parameters",
+    )
     args = parser.parse_args()
 
     if args.did_exchange and args.mediation:
@@ -690,7 +710,9 @@ if __name__ == "__main__":
                 args.revocation,
                 tails_server_base_url,
                 args.count,
+                args.batch,
                 args.wallet_type,
+                args.arg_file,
             )
         )
     except KeyboardInterrupt:

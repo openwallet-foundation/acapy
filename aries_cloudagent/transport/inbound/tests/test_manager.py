@@ -83,7 +83,6 @@ class TestInboundTransportManager(AsyncTestCase):
         test_accept = True
         test_can_respond = True
         test_client_info = {"client": "info"}
-        mgr.session_limit = asyncio.Semaphore(16)
         session = await mgr.create_session(
             test_transport,
             accept_undelivered=test_accept,

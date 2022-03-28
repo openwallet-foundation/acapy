@@ -248,7 +248,9 @@ class ConnectionManager(BaseConnectionManager):
             # Save that this invitation was created with mediation
             async with self.profile.session() as session:
                 await connection.metadata_set(
-                    session, "mediation", {"id": mediation_record.mediation_id}
+                    session,
+                    MediationManager.METADATA_KEY,
+                    {MediationManager.METADATA_ID: mediation_record.mediation_id},
                 )
 
             if keylist_updates:
