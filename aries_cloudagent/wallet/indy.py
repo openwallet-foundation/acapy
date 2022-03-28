@@ -740,7 +740,13 @@ class IndySdkWallet(BaseWallet):
                 )
             if not ledger.read_only:
                 async with ledger:
-                    attrib_def = await ledger.update_endpoint_for_did(did, endpoint, endpoint_type, write_ledger=write_ledger, endorser_did=endorser_did)
+                    attrib_def = await ledger.update_endpoint_for_did(
+                        did,
+                        endpoint,
+                        endpoint_type,
+                        write_ledger=write_ledger,
+                        endorser_did=endorser_did,
+                    )
                     if not write_ledger:
                         return attrib_def
 

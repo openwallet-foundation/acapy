@@ -943,11 +943,11 @@ class IndyVdrLedger(BaseLedger):
                 )
 
                 if endorser_did and not write_ledger:
-                    request_json = await indy.ledger.append_request_endorser(
-                        request_json, endorser_did
+                    attrib_req = await ledger.append_request_endorser(
+                        attrib_req, endorser_did
                     )
                     resp = await self._submit(
-                        request_json,
+                        attrib_req,
                         True,
                         sign_did=public_info,
                         write_ledger=write_ledger,
