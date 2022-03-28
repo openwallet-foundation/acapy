@@ -36,9 +36,9 @@ from ..protocols.endorse_transaction.v1_0.manager import (
 )
 from ..protocols.endorse_transaction.v1_0.util import (
     is_author_role,
-    get_endorser_connection_id
+    get_endorser_connection_id,
 )
-from ..storage.error import (StorageNotFoundError, StorageError)
+from ..storage.error import StorageNotFoundError, StorageError
 
 from .base import BaseWallet
 from .did_info import DIDInfo
@@ -201,9 +201,7 @@ class CreateAttribTxnForEndorserOptionSchema(OpenAPISchema):
 class AttribConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(
-        description="Connection identifier", required=False
-    )
+    conn_id = fields.Str(description="Connection identifier", required=False)
 
 
 def format_did_info(info: DIDInfo):
@@ -454,8 +452,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
         transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=attrib_def["signed_txn"],
-                connection_id=connection_id
+                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -674,8 +671,7 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
         transaction_mgr = TransactionManager(context.profile)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=attrib_def["signed_txn"],
-                connection_id=connection_id
+                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
