@@ -200,7 +200,7 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
             use_public_did=use_public_did,
-            alias=alias
+            alias=alias,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
