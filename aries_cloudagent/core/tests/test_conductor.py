@@ -46,8 +46,6 @@ from ...wallet.did_method import DIDMethod
 
 from .. import conductor as test_module
 
-EVENT_PREFIX = test_module.OUTBOUND_STATUS_PREFIX
-
 
 class Config:
     test_settings = {"admin.webhook_urls": ["http://sample.webhook.ca"]}
