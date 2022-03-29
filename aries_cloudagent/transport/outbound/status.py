@@ -26,4 +26,5 @@ class OutboundSendStatus(Enum):
 
     @property
     def topic(self):
+        """Return an event topic associated with a given status."""
         return f"{OUTBOUND_STATUS_PREFIX}{self.value}"
