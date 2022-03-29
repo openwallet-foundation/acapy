@@ -8,8 +8,8 @@ base58~=2.1.0
 deepmerge~=0.3.0
 ecdsa~=0.16.1
 Markdown~=3.1.1
-markupsafe==2.1.1
-marshmallow==3.15.0
+markupsafe==2.0.1
+marshmallow==3.5.1
 msgpack~=1.0
 prompt_toolkit~=2.0.9
 pynacl~=1.4.0
@@ -20,9 +20,9 @@ pyyaml~=5.4.0
 ConfigArgParse~=1.5.3
 pyjwt~=1.7.1
 pydid~=0.3.3
-jsonpath_ng==1.5.3
+jsonpath_ng==1.5.2
 pytz~=2021.1
 python-dateutil~=2.8.1
-rlp==3.0.0
+rlp==0.5.1
 unflatten~=0.1
 qrcode[pil]~=6.1
