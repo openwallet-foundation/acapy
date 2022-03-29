@@ -646,7 +646,7 @@ class InputDescriptorsSchema(BaseModelSchema):
         ),
         example=(
             {
-                "oneOf": [
+                "oneof_filter": [
                     [
                         {"uri": "https://www.w3.org/Test1#Test1"},
                         {"uri": "https://www.w3.org/Test2#Test2"},
