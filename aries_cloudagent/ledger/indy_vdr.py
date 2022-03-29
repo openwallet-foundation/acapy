@@ -943,9 +943,7 @@ class IndyVdrLedger(BaseLedger):
                 )
 
                 if endorser_did and not write_ledger:
-                    attrib_req = await ledger.append_request_endorser(
-                        attrib_req, endorser_did
-                    )
+                    attrib_req.set_endorser(endorser_did)
                     resp = await self._submit(
                         attrib_req,
                         True,
