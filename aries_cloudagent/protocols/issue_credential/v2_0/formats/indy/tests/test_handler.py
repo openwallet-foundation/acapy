@@ -13,6 +13,8 @@ from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from .......multitenant.base import BaseMultitenantManager
+from .......multitenant.manager import MultitenantManager
 from .......indy.issuer import IndyIssuer
 from .......cache.in_memory import InMemoryCache
 from .......cache.base import BaseCache
@@ -497,6 +499,10 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                 AttachDecorator.data_base64({"cred_def_id": CRED_DEF_ID}, ident="0")
             ],
         )
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
 
         cred_def_record = StorageRecord(
             CRED_DEF_SENT_RECORD_TYPE,
@@ -516,9 +522,13 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         self.issuer.create_credential_offer = async_mock.CoroutineMock(
             return_value=json.dumps(INDY_OFFER)
         )
-
-        with self.assertRaises(V20CredFormatError):
-            await self.handler.create_offer(cred_proposal)
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=(None, self.ledger)),
+        ):
+            with self.assertRaises(V20CredFormatError):
+                await self.handler.create_offer(cred_proposal)
 
     async def test_create_offer_no_matching_sent_cred_def(self):
         cred_proposal = V20CredProposal(
@@ -602,7 +612,18 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         # cover case with no cache in injection context
         self.context.injector.clear_binding(BaseCache)
         cred_ex_record._id = "dummy-id3"
-        await self.handler.create_request(cred_ex_record, {"holder_did": holder_did})
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=(None, self.ledger)),
+        ):
+            await self.handler.create_request(
+                cred_ex_record, {"holder_did": holder_did}
+            )
 
     async def test_create_request_bad_state(self):
         cred_ex_record = V20CredExRecord(state=V20CredExRecord.STATE_OFFER_SENT)
@@ -802,20 +823,28 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value=CRED_DEF_NR
         )
-
-        (cred_format, attachment) = await self.handler.issue_credential(
-            cred_ex_record, retries=0
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
         )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ):
+            (cred_format, attachment) = await self.handler.issue_credential(
+                cred_ex_record, retries=0
+            )
 
-        self.issuer.create_credential.assert_called_once_with(
-            SCHEMA,
-            INDY_OFFER,
-            INDY_CRED_REQ,
-            attr_values,
-            cred_ex_record.cred_ex_id,
-            None,
-            None,
-        )
+            self.issuer.create_credential.assert_called_once_with(
+                SCHEMA,
+                INDY_OFFER,
+                INDY_CRED_REQ,
+                attr_values,
+                cred_ex_record.cred_ex_id,
+                None,
+                None,
+            )
 
         # assert identifier match
         assert cred_format.attach_id == self.handler.format.api == attachment.ident
@@ -1254,8 +1283,15 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             with self.assertRaises(V20CredFormatError) as context:
                 await self.handler.store_credential(stored_cx_rec, cred_id=cred_id)
             assert "No credential exchange " in str(context.exception)
-
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
         with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ), async_mock.patch.object(
             test_module, "RevocationRegistry", autospec=True
         ) as mock_rev_reg, async_mock.patch.object(
             test_module.IndyCredFormatHandler, "get_detail_record", autospec=True
