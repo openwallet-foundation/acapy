@@ -10,6 +10,7 @@ returns VerifiablePresentation
 """
 import pytz
 import re
+import logging
 
 from datetime import datetime
 from dateutil.parser import parse as dateutil_parser
@@ -61,6 +62,7 @@ PRESENTATION_SUBMISSION_JSONLD_CONTEXT = (
 PRESENTATION_SUBMISSION_JSONLD_TYPE = "PresentationSubmission"
 PYTZ_TIMEZONE_PATTERN = re.compile(r"(([a-zA-Z]+)(?:\/)([a-zA-Z]+))")
 LIST_INDEX_PATTERN = re.compile(r"\[(\W+)\]|\[(\d+)\]")
+LOGGER = logging.getLogger(__name__)
 
 
 class DIFPresExchError(BaseError):
@@ -789,8 +791,11 @@ class DIFPresExchHandler:
                     given_date = self.string_to_timezone_aware_datetime(str(val))
                     return given_date > to_compare_date
             else:
-                if self.is_numeric(val):
+                try:
+                    val = self.is_numeric(val)
                     return val > _filter.exclusive_min
+                except DIFPresExchError as err:
+                    LOGGER.error(err)
             return False
         except (TypeError, ValueError, ParserError):
             return False
@@ -817,8 +822,11 @@ class DIFPresExchHandler:
                     given_date = self.string_to_timezone_aware_datetime(str(val))
                     return given_date < to_compare_date
             else:
-                if self.is_numeric(val):
+                try:
+                    val = self.is_numeric(val)
                     return val < _filter.exclusive_max
+                except DIFPresExchError as err:
+                    LOGGER.error(err)
             return False
         except (TypeError, ValueError, ParserError):
             return False
@@ -845,8 +853,11 @@ class DIFPresExchHandler:
                     given_date = self.string_to_timezone_aware_datetime(str(val))
                     return given_date <= to_compare_date
             else:
-                if self.is_numeric(val):
+                try:
+                    val = self.is_numeric(val)
                     return val <= _filter.maximum
+                except DIFPresExchError as err:
+                    LOGGER.error(err)
             return False
         except (TypeError, ValueError, ParserError):
             return False
@@ -873,8 +884,11 @@ class DIFPresExchHandler:
                     given_date = self.string_to_timezone_aware_datetime(str(val))
                     return given_date >= to_compare_date
             else:
-                if self.is_numeric(val):
+                try:
+                    val = self.is_numeric(val)
                     return val >= _filter.minimum
+                except DIFPresExchError as err:
+                    LOGGER.error(err)
             return False
         except (TypeError, ValueError, ParserError):
             return False
@@ -1147,19 +1161,31 @@ class DIFPresExchHandler:
             nested_result=nested_result, exclude=exclude
         )
 
-    def is_numeric(self, val: any) -> bool:
+    def is_numeric(self, val: any):
         """
         Check if val is an int or float.
 
         Args:
             val: to check
         Return:
-            bool
+            numeric value
+        Raises:
+            DIFPresExchError: Provided value has invalid/incompatible type
+
         """
         if isinstance(val, float) or isinstance(val, int):
-            return True
-        else:
-            return False
+            return val
+        elif isinstance(val, str):
+            if val.isdigit():
+                return int(val)
+            else:
+                try:
+                    return float(val)
+                except ValueError:
+                    pass
+        raise DIFPresExchError(
+            "Invalid type provided for comparision/numeric operation."
+        )
 
     async def merge_nested_results(
         self, nested_result: Sequence[dict], exclude: dict
