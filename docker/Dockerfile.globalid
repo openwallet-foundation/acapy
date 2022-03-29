@@ -1,6 +1,8 @@
 FROM python:3.10-slim
 ENV ENABLE_PTVSD 0
 
+RUN apt-get update && apt-get upgrade -y
+
 WORKDIR cloudagent
 ADD aries_cloudagent ./aries_cloudagent
 ADD requirements*.txt ./
