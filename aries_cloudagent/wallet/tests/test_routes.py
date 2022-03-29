@@ -585,7 +585,11 @@ class TestWalletRoutes(AsyncTestCase):
             result = await test_module.wallet_set_public_did(self.request)
             self.wallet.set_public_did.assert_awaited_once()
             self.wallet.set_did_endpoint.assert_awaited_once_with(
-                did_info.did, "https://default_endpoint.com", ledger
+                did_info.did,
+                "https://default_endpoint.com",
+                ledger,
+                write_ledger=True,
+                endorser_did=None,
             )
             json_response.assert_called_once_with(
                 {

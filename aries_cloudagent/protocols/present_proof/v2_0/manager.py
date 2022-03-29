@@ -339,7 +339,8 @@ class V20PresManager:
                     )
         pres_ex_record.pres = message
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
-
+        if not pres_ex_record.connection_id:
+            pres_ex_record.connection_id = conn_record.connection_id
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="receive v2.0 presentation")
 
