@@ -224,6 +224,8 @@ class BaseWallet(ABC):
         endpoint: str,
         _ledger: BaseLedger,
         endpoint_type: EndpointType = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ):
         """
         Update the endpoint for a DID in the wallet, send to ledger if public or posted.
