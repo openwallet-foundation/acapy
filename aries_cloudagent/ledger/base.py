@@ -75,6 +75,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         did: str,
         endpoint: str,
         endpoint_type: EndpointType = EndpointType.ENDPOINT,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 

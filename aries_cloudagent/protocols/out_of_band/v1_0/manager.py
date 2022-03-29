@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, Optional
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
@@ -477,69 +477,7 @@ class OutOfBandManager(BaseConnectionManager):
                 and num_included_req_attachments == 0
                 and use_existing_connection
             ):
-                await self.create_handshake_reuse_message(
-                    invi_msg=invitation,
-                    conn_record=conn_rec,
-                )
-                try:
-                    await asyncio.wait_for(
-                        self.check_reuse_msg_state(
-                            conn_rec=conn_rec,
-                        ),
-                        15,
-                    )
-                    async with self.profile.session() as session:
-                        await conn_rec.metadata_delete(
-                            session=session, key="reuse_msg_id"
-                        )
-
-                        msg_state = await conn_rec.metadata_get(
-                            session, "reuse_msg_state"
-                        )
-
-                    if msg_state == "not_accepted":
-                        conn_rec = None
-                    else:
-                        async with self.profile.session() as session:
-                            await conn_rec.metadata_delete(
-                                session=session, key="reuse_msg_state"
-                            )
-                            # refetch connection for accurate state after handshake
-                            conn_rec = await ConnRecord.retrieve_by_id(
-                                session=session, record_id=conn_rec.connection_id
-                            )
-                except asyncio.TimeoutError:
-                    # If no reuse_accepted or problem_report message was received within
-                    # the 15s timeout then a new connection to be created
-                    async with self.profile.session() as session:
-                        sent_reuse_msg_id = await conn_rec.metadata_get(
-                            session=session, key="reuse_msg_id"
-                        )
-                        await conn_rec.metadata_delete(
-                            session=session, key="reuse_msg_id"
-                        )
-                        await conn_rec.metadata_delete(
-                            session=session, key="reuse_msg_state"
-                        )
-                        conn_rec.state = ConnRecord.State.ABANDONED.rfc160
-                        await conn_rec.save(
-                            session, reason="No HandshakeReuseAccept message received"
-                        )
-                    # Emit webhook
-                    await self.profile.notify(
-                        REUSE_ACCEPTED_WEBHOOK_TOPIC,
-                        {
-                            "thread_id": sent_reuse_msg_id,
-                            "connection_id": conn_rec.connection_id,
-                            "state": "rejected",
-                            "comment": (
-                                "No HandshakeReuseAccept message received, "
-                                f"connection {conn_rec.connection_id} ",
-                                f"and invitation {invitation._id}",
-                            ),
-                        },
-                    )
-                    conn_rec = None
+                conn_rec = await self.send_reuse_message(invitation, conn_rec)
             # Inverse of the following cases
             # Handshake_Protocol not included
             # Request_Attachment included
@@ -609,6 +547,8 @@ class OutOfBandManager(BaseConnectionManager):
         # Request Attach
         if len(invitation.requests_attach) >= 1 and conn_rec is not None:
             req_attach = invitation.requests_attach[0]
+            if use_existing_connection:
+                conn_rec = await self.send_reuse_message(invitation, conn_rec)
             if isinstance(req_attach, AttachDecorator):
                 if req_attach.data is not None:
                     unq_req_attach_type = DIDCommPrefix.unqualify(
@@ -767,6 +707,73 @@ class OutOfBandManager(BaseConnectionManager):
                     "respond automatically to presentation requests"
                 )
             )
+
+    async def send_reuse_message(
+        self, invitation: InvitationMessage, conn_rec: ConnRecord
+    ) -> Optional[ConnRecord]:
+        """
+        Create and wait for handshake reuse message.
+
+        Args:
+            invitation: invitation message
+            conn_rec: connection record
+        """
+        await self.create_handshake_reuse_message(
+            invi_msg=invitation,
+            conn_record=conn_rec,
+        )
+        try:
+            await asyncio.wait_for(
+                self.check_reuse_msg_state(
+                    conn_rec=conn_rec,
+                ),
+                15,
+            )
+            async with self.profile.session() as session:
+                await conn_rec.metadata_delete(session=session, key="reuse_msg_id")
+
+                msg_state = await conn_rec.metadata_get(session, "reuse_msg_state")
+
+            if msg_state == "not_accepted":
+                conn_rec = None
+            else:
+                async with self.profile.session() as session:
+                    await conn_rec.metadata_delete(
+                        session=session, key="reuse_msg_state"
+                    )
+                    # refetch connection for accurate state after handshake
+                    conn_rec = await ConnRecord.retrieve_by_id(
+                        session=session, record_id=conn_rec.connection_id
+                    )
+            return conn_rec
+        except asyncio.TimeoutError:
+            # If no reuse_accepted or problem_report message was received within
+            # the 15s timeout then a new connection to be created
+            async with self.profile.session() as session:
+                sent_reuse_msg_id = await conn_rec.metadata_get(
+                    session=session, key="reuse_msg_id"
+                )
+                await conn_rec.metadata_delete(session=session, key="reuse_msg_id")
+                await conn_rec.metadata_delete(session=session, key="reuse_msg_state")
+                conn_rec.state = ConnRecord.State.ABANDONED.rfc160
+                await conn_rec.save(
+                    session, reason="No HandshakeReuseAccept message received"
+                )
+            # Emit webhook
+            await self.profile.notify(
+                REUSE_ACCEPTED_WEBHOOK_TOPIC,
+                {
+                    "thread_id": sent_reuse_msg_id,
+                    "connection_id": conn_rec.connection_id,
+                    "state": "rejected",
+                    "comment": (
+                        "No HandshakeReuseAccept message received, "
+                        f"connection {conn_rec.connection_id} ",
+                        f"and invitation {invitation._id}",
+                    ),
+                },
+            )
+            return None
 
     async def _process_pres_request_v2(
         self,
