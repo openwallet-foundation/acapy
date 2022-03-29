@@ -1669,9 +1669,14 @@ class TestPresExchHandler:
     @pytest.mark.asyncio
     def test_is_numeric(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
-        assert dif_pres_exch_handler.is_numeric("test") is False
-        assert dif_pres_exch_handler.is_numeric(1) is True
-        assert dif_pres_exch_handler.is_numeric(2 + 3j) is False
+        with pytest.raises(DIFPresExchError):
+            dif_pres_exch_handler.is_numeric("test")
+        assert dif_pres_exch_handler.is_numeric(1) == 1
+        assert dif_pres_exch_handler.is_numeric(2.20) == 2.20
+        assert dif_pres_exch_handler.is_numeric("2.20") == 2.20
+        assert dif_pres_exch_handler.is_numeric("2") == 2
+        with pytest.raises(DIFPresExchError):
+            dif_pres_exch_handler.is_numeric(2 + 3j)
 
     @pytest.mark.asyncio
     def test_filter_no_match(self, profile):

@@ -1351,7 +1351,19 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
             autospec=True,
-        ) as inv_message_cls:
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "send_reuse_message",
+            autospec=True,
+        ) as oob_mgr_send_reuse_message:
 
             mock_oob_invi = async_mock.MagicMock(
                 services=[TestConfig.test_did],
@@ -1373,7 +1385,19 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         ) as didx_mgr_receive_invitation, async_mock.patch(
             "aries_cloudagent.protocols.out_of_band.v1_0.manager.InvitationMessage",
             autospec=True,
-        ) as inv_message_cls:
+        ) as inv_message_cls, async_mock.patch.object(
+            OutOfBandManager,
+            "create_handshake_reuse_message",
+            autospec=True,
+        ) as oob_mgr_create_reuse_msg, async_mock.patch.object(
+            OutOfBandManager,
+            "check_reuse_msg_state",
+            autospec=True,
+        ) as oob_mgr_check_reuse_state, async_mock.patch.object(
+            OutOfBandManager,
+            "send_reuse_message",
+            autospec=True,
+        ) as oob_mgr_send_reuse_message:
             mock_oob_invi = async_mock.MagicMock(
                 handshake_protocols=[
                     pfx.qualify(HSProto.RFC23.name) for pfx in DIDCommPrefix
