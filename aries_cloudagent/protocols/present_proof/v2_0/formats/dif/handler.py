@@ -151,9 +151,18 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        dif_proof_request = pres_ex_record.pres_proposal.attachment(
+        dif_proof_request = {}
+        pres_proposal_dict = pres_ex_record.pres_proposal.attachment(
             DIFPresFormatHandler.format
         )
+        if "options" not in pres_proposal_dict:
+            dif_proof_request["options"] = {"challenge": str(uuid4())}
+        else:
+            dif_proof_request["options"] = pres_proposal_dict["options"]
+            del pres_proposal_dict["options"]
+            if "challenge" not in dif_proof_request.get("options"):
+                dif_proof_request["options"]["challenge"] = str(uuid4())
+        dif_proof_request["presentation_definition"] = pres_proposal_dict
 
         return self.get_format_data(PRES_20_REQUEST, dif_proof_request)
 
