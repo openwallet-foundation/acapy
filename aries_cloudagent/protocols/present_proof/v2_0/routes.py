@@ -34,6 +34,8 @@ from ....messaging.valid import (
 from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
+from ....storage.record import StorageRecord
+from ....storage.base import BaseStorage
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 from ....vc.ld_proofs import BbsBlsSignature2020, Ed25519Signature2018
 from ....wallet.error import WalletNotFoundError
@@ -1234,8 +1236,10 @@ async def present_proof_remove(request: web.BaseRequest):
     pres_ex_record = None
     try:
         async with context.profile.session() as session:
-            pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-            await pres_ex_record.delete_record(session)
+            storage = session.inject(BaseStorage)
+            storage_record = StorageRecord(type=V20PresExRecord.RECORD_TYPE, value=None, id=pres_ex_id)
+            await storage.delete_record(storage_record)
+
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:
