@@ -459,16 +459,11 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             pres_request = pres_ex_record.pres_request.attachment(
                 DIFPresFormatHandler.format
             )
+            challenge = None
             if "options" in pres_request:
-                challenge = pres_request["options"].get("challenge")
-            else:
-                raise V20PresFormatHandlerError(
-                    "No options [challenge] set for the presentation request"
-                )
+                challenge = pres_request["options"].get("challenge", str(uuid4()))
             if not challenge:
-                raise V20PresFormatHandlerError(
-                    "No challenge is set for the presentation request"
-                )
+                challenge = str(uuid4())
             pres_ver_result = await verify_presentation(
                 presentation=dif_proof,
                 suites=await self._get_all_suites(wallet=wallet),

@@ -9,6 +9,7 @@ flake8==3.9.0
 flake8-docstrings==1.5.0
 flake8-rst==0.7.2
 pydocstyle==3.0.0
+pre-commit
 
 sphinx==1.8.4
 sphinx-rtd-theme>=0.4.3

@@ -12,3 +12,21 @@ end-user and developer demos in the repo should include updates or extensions to
 If you would like to propose a significant change, please open an issue first to discuss the work with the community.
 
 Contributions are made pursuant to the Developer's Certificate of Origin, available at [https://developercertificate.org](https://developercertificate.org), and licensed under the Apache License, version 2.0 (Apache-2.0).
+
+## Development Tools
+
+### Pre-commit
+
+A configuration for [pre-commit](https://pre-commit.com/) is included in this repository. This is an optional tool to help contributors commit code that follows the formatting requirements enforced by the CI pipeline. Additionally, it can be used to help contributors write descriptive commit messages that can be parsed by changelog generators.
+
+On each commit, pre-commit hooks will run that verify the committed code complies with flake8 and is formatted with black. To install the flake8 and black checks:
+
+```
+$ pre-commit install
+```
+
+To install the commit message linter:
+
+```
+$ pre-commit install --hook-type commit-msg
+```

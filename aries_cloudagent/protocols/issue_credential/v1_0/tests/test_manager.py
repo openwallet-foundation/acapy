@@ -661,12 +661,11 @@ class TestCredentialManager(AsyncTestCase):
             await self.manager.create_request(stored_exchange, holder_did)
 
             # cover case with existing cred req
-            stored_exchange.state = V10CredentialExchange.STATE_OFFER_RECEIVED
-            stored_exchange.credential_request = INDY_CRED_REQ
             (
-                _ret_existing_exchange,
+                ret_existing_exchange,
                 ret_existing_request,
-            ) = await self.manager.create_request(stored_exchange, holder_did)
+            ) = await self.manager.create_request(ret_exchange, holder_did)
+            assert ret_existing_exchange == ret_exchange
             assert ret_existing_request._thread_id == thread_id
 
     async def test_create_request_no_cache(self):
@@ -895,9 +894,9 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex:
             revoc.return_value.get_active_issuer_rev_reg_record = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(  # active_rev_reg_rec
-                    revoc_reg_id=REV_REG_ID,
                     get_registry=async_mock.CoroutineMock(
                         return_value=async_mock.MagicMock(  # rev_reg
+                            registry_id=REV_REG_ID,
                             tails_local_path="dummy-path",
                             get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
                         )
@@ -926,14 +925,11 @@ class TestCredentialManager(AsyncTestCase):
             assert ret_cred_issue._thread_id == thread_id
 
             # cover case with existing cred
-            stored_exchange.credential = cred
-            stored_exchange.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
-            await stored_exchange.save(self.session)
             (
                 ret_existing_exchange,
                 ret_existing_cred,
             ) = await self.manager.issue_credential(
-                stored_exchange, comment=comment, retries=0
+                ret_exchange, comment=comment, retries=0
             )
             assert ret_existing_exchange == ret_exchange
             assert ret_existing_cred._thread_id == thread_id
@@ -1061,9 +1057,9 @@ class TestCredentialManager(AsyncTestCase):
                 get_active_issuer_rev_reg_record=(
                     async_mock.CoroutineMock(
                         return_value=async_mock.MagicMock(  # active_rev_reg_rec
-                            revoc_reg_id=REV_REG_ID,
                             get_registry=async_mock.CoroutineMock(
                                 return_value=async_mock.MagicMock(  # rev_reg
+                                    registry_id=REV_REG_ID,
                                     tails_local_path="dummy-path",
                                     max_creds=1000,
                                     get_or_fetch_local_tails_path=(
