@@ -120,7 +120,11 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
         )
         await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", mock_ledger)
         mock_ledger.update_endpoint_for_did.assert_called_once_with(
-            info_pub.did, "http://1.2.3.4:8021", EndpointType.ENDPOINT
+            info_pub.did,
+            "http://1.2.3.4:8021",
+            EndpointType.ENDPOINT,
+            endorser_did=None,
+            write_ledger=True,
         )
         info_pub2 = await wallet.get_public_did()
         assert info_pub2.metadata["endpoint"] == "http://1.2.3.4:8021"
