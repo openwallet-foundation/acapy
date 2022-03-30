@@ -1087,50 +1087,7 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with self.assertRaises(V20PresFormatHandlerError):
-            await self.handler.verify_pres(record)
-
-    async def test_verify_pres_invalid_challenge(self):
-        test_pd = deepcopy(DIF_PRES_REQUEST_B)
-        del test_pd["options"]
-        dif_pres_request = V20PresRequest(
-            formats=[
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.DIF.api
-                    ],
-                )
-            ],
-            request_presentations_attach=[
-                AttachDecorator.data_json(test_pd, ident="dif")
-            ],
-        )
-        dif_pres = V20Pres(
-            formats=[
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
-                )
-            ],
-            presentations_attach=[AttachDecorator.data_json(DIF_PRES, ident="dif")],
-        )
-        record = V20PresExRecord(
-            pres_ex_id="pxid",
-            thread_id="thid",
-            connection_id="conn_id",
-            initiator="init",
-            role="role",
-            state="state",
-            pres_request=dif_pres_request,
-            pres=dif_pres,
-            verified="false",
-            auto_present=True,
-            error_msg="error",
-        )
-
-        with self.assertRaises(V20PresFormatHandlerError):
-            await self.handler.verify_pres(record)
+        assert await self.handler.verify_pres(record)
 
     async def test_create_pres_cred_limit_disclosure_no_bbs(self):
         test_pd = deepcopy(DIF_PRES_REQUEST_B)
