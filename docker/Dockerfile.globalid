@@ -3,6 +3,9 @@ ENV ENABLE_PTVSD 0
 
 RUN apt-get update && apt-get upgrade -y
 
+RUN useradd user
+USER user
+
 WORKDIR cloudagent
 ADD aries_cloudagent ./aries_cloudagent
 ADD requirements*.txt ./
