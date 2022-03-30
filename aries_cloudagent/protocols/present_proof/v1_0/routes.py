@@ -130,6 +130,11 @@ class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
 
     proof_request = fields.Nested(IndyProofRequestSchema(), required=True)
     comment = fields.Str(required=False, allow_none=True)
+    auto_verify = fields.Bool(
+        description="Verifier choice to auto-verify proof presentation",
+        required=False,
+        example=False
+    )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
@@ -146,6 +151,18 @@ class V10PresentationSendRequestRequestSchema(
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
 
+class V10PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
+    """Request schema for sending a proof request bound to a proposal"""
+    auto_verify = fields.Bool(
+        description="Verifier choice to auto-verify proof presentation",
+        required=False,
+        example=False
+    )
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
+    )
 
 class CredentialsFetchQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credentials fetch request query string."""
@@ -475,6 +492,9 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
             )
         ],
     )
+    auto_verify = body.get(
+        "auto_verify", context.settings.get("debug.auto_verify_presentation")
+    )
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(
         context.settings,
@@ -487,6 +507,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         pres_ex_record = await presentation_manager.create_exchange_for_request(
             connection_id=None,
             presentation_request_message=presentation_request_message,
+            auto_verify=auto_verify
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -562,6 +583,9 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         context.settings,
         trace_msg,
     )
+    auto_verify = body.get(
+        "auto_verify", context.settings.get("debug.auto_verify_presentation")
+    )
 
     pres_ex_record = None
     try:
@@ -569,6 +593,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         pres_ex_record = await presentation_manager.create_exchange_for_request(
             connection_id=connection_id,
             presentation_request_message=presentation_request_message,
+            auto_verify=auto_verify
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -595,7 +620,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     summary="Sends a presentation request in reference to a proposal",
 )
 @match_info_schema(V10PresExIdMatchInfoSchema())
-@request_schema(AdminAPIMessageTracingSchema())
+@request_schema(V10PresentationSendRequestToProposalSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
 async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     """
@@ -644,6 +669,9 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     if not connection_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {conn_id} not ready")
 
+    pres_ex_record.auto_verify = body.get(
+        "auto_verify", context.settings.get("debug.auto_verify_presentation")
+    )
     try:
         presentation_manager = PresentationManager(profile)
         (
