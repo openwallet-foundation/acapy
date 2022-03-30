@@ -145,6 +145,7 @@ class V20PresExRecord(BaseExchangeRecord):
         self,
         session: ProfileSession,
         *,
+        state: str = None,
         reason: str = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
@@ -159,10 +160,10 @@ class V20PresExRecord(BaseExchangeRecord):
             override: Override configured logging regimen, print to stderr instead
         """
 
-        if self._last_state == V20PresExRecord.STATE_ABANDONED:  # already done
+        if self._last_state == state:  # already done
             return
 
-        self.state = V20PresExRecord.STATE_ABANDONED
+        self.state = state or V20PresExRecord.STATE_ABANDONED
         if reason:
             self.error_msg = reason
 

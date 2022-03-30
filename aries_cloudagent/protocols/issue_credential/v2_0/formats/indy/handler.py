@@ -97,25 +97,26 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 session, cred_ex_id
             )
 
-            if len(records) > 1:
-                LOGGER.warning(
-                    "Cred ex id %s has %d %s detail records: should be 1",
-                    cred_ex_id,
-                    len(records),
-                    IndyCredFormatHandler.format.api,
-                )
-            return records[0] if records else None
+        if len(records) > 1:
+            LOGGER.warning(
+                "Cred ex id %s has %d %s detail records: should be 1",
+                cred_ex_id,
+                len(records),
+                IndyCredFormatHandler.format.api,
+            )
+        return records[0] if records else None
 
     async def _check_uniqueness(self, cred_ex_id: str):
         """Raise exception on evidence that cred ex already has cred issued to it."""
         async with self.profile.session() as session:
-            if await IndyCredFormatHandler.format.detail.query_by_cred_ex_id(
+            exist = await IndyCredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id
-            ):
-                raise V20CredFormatError(
-                    f"{IndyCredFormatHandler.format.api} detail record already "
-                    f"exists for cred ex id {cred_ex_id}"
-                )
+            )
+        if exist:
+            raise V20CredFormatError(
+                f"{IndyCredFormatHandler.format.api} detail record already "
+                f"exists for cred ex id {cred_ex_id}"
+            )
 
     def get_format_identifier(self, message_type: str) -> str:
         """Get attachment format identifier for format and message combination.

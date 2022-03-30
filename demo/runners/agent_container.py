@@ -121,7 +121,7 @@ class AriesAgent(DemoAgent):
         conn_id = message["connection_id"]
 
         # inviter:
-        if message["state"] == "invitation":
+        if message.get("state") == "invitation":
             self.connection_id = conn_id
 
         # invitee:
@@ -158,7 +158,7 @@ class AriesAgent(DemoAgent):
                     )
 
     async def handle_issue_credential(self, message):
-        state = message["state"]
+        state = message.get("state")
         credential_exchange_id = message["credential_exchange_id"]
         prev_state = self.cred_state.get(credential_exchange_id)
         if prev_state == state:
@@ -221,8 +221,12 @@ class AriesAgent(DemoAgent):
             except ClientError:
                 pass
 
+        elif state == "abandoned":
+            log_status("Credential exchange abandoned")
+            self.log("Problem report message:", message.get("error_msg"))
+
     async def handle_issue_credential_v2_0(self, message):
-        state = message["state"]
+        state = message.get("state")
         cred_ex_id = message["cred_ex_id"]
         prev_state = self.cred_state.get(cred_ex_id)
         if prev_state == state:
@@ -238,6 +242,7 @@ class AriesAgent(DemoAgent):
                 f"/issue-credential-2.0/records/{cred_ex_id}/issue",
                 {"comment": f"Issuing credential, exchange {cred_ex_id}"},
             )
+
         elif state == "offer-received":
             log_status("#15 After receiving credential offer, send credential request")
             if message["by_format"]["cred_offer"].get("indy"):
@@ -253,9 +258,14 @@ class AriesAgent(DemoAgent):
                 await self.admin_POST(
                     f"/issue-credential-2.0/records/{cred_ex_id}/send-request", data
                 )
+
         elif state == "done":
             pass
             # Logic moved to detail record specific handler
+
+        elif state == "abandoned":
+            log_status("Credential exchange abandoned")
+            self.log("Problem report message:", message.get("error_msg"))
 
     async def handle_issue_credential_v2_0_indy(self, message):
         rev_reg_id = message.get("rev_reg_id")
@@ -284,7 +294,7 @@ class AriesAgent(DemoAgent):
         pass
 
     async def handle_present_proof(self, message):
-        state = message["state"]
+        state = message.get("state")
 
         presentation_exchange_id = message["presentation_exchange_id"]
         presentation_request = message["presentation_request"]
@@ -366,8 +376,12 @@ class AriesAgent(DemoAgent):
             )
             self.log("Proof =", proof["verified"])
 
+        elif state == "abandoned":
+            log_status("Presentation exchange abandoned")
+            self.log("Problem report message:", message.get("error_msg"))
+
     async def handle_present_proof_v2_0(self, message):
-        state = message["state"]
+        state = message.get("state")
         pres_ex_id = message["pres_ex_id"]
         self.log(f"Presentation: state = {state}, pres_ex_id = {pres_ex_id}")
 
@@ -507,11 +521,15 @@ class AriesAgent(DemoAgent):
             self.log("Proof =", proof["verified"])
             self.last_proof_received = proof
 
+        elif state == "abandoned":
+            log_status("Presentation exchange abandoned")
+            self.log("Problem report message:", message.get("error_msg"))
+
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
 
     async def handle_endorse_transaction(self, message):
-        self.log("Received transaction message:", message["state"])
+        self.log("Received transaction message:", message.get("state"))
 
     async def handle_revocation_notification(self, message):
         self.log("Received revocation notification message:", message)

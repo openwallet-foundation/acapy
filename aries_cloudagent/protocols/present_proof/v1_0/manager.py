@@ -346,7 +346,9 @@ class PresentationManager:
                     name=name,
                     value=value,
                 ):
-                    presentation_exchange_record.state = None
+                    presentation_exchange_record.state = (
+                        V10PresentationExchange.STATE_ABANDONED
+                    )
                     async with self._profile.session() as session:
                         await presentation_exchange_record.save(
                             session,
@@ -497,7 +499,7 @@ class PresentationManager:
                 )
             )
 
-            pres_ex_record.state = None
+            pres_ex_record.state = V10PresentationExchange.STATE_ABANDONED
             code = message.description.get("code", ProblemReportReason.ABANDONED.value)
             pres_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await pres_ex_record.save(session, reason="received problem report")

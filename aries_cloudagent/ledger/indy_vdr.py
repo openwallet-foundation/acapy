@@ -938,8 +938,14 @@ class IndyVdrLedger(BaseLedger):
         return False
 
     async def register_nym(
-        self, did: str, verkey: str, alias: str = None, role: str = None
-    ):
+        self,
+        did: str,
+        verkey: str,
+        alias: str = None,
+        role: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ) -> Tuple[bool, dict]:
         """
         Register a nym on the ledger.
 
@@ -965,8 +971,14 @@ class IndyVdrLedger(BaseLedger):
         except VdrError as err:
             raise LedgerError("Exception when building nym request") from err
 
-        await self._submit(nym_req, sign=True, sign_did=public_info)
+        if endorser_did and not write_ledger:
+            nym_req.set_endorser(endorser_did)
 
+        resp = await self._submit(
+            nym_req, sign=True, sign_did=public_info, write_ledger=write_ledger
+        )
+        if not write_ledger:
+            return True, {"signed_txn": resp}
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             try:
@@ -976,6 +988,7 @@ class IndyVdrLedger(BaseLedger):
             else:
                 metadata = {**did_info.metadata, **DIDPosture.POSTED.metadata}
                 await wallet.replace_local_did_metadata(did, metadata)
+        return True, None
 
     async def get_nym_role(self, did: str) -> Role:
         """
@@ -1338,6 +1351,7 @@ class IndyVdrLedger(BaseLedger):
     async def txn_endorse(
         self,
         request_json: str,
+        endorse_did: DIDInfo = None,
     ) -> str:
         """Endorse (sign) the provided transaction."""
         try:
@@ -1347,7 +1361,7 @@ class IndyVdrLedger(BaseLedger):
 
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
-            sign_did = await wallet.get_public_did()
+            sign_did = endorse_did if endorse_did else await wallet.get_public_did()
             if not sign_did:
                 raise BadLedgerRequestError(
                     "Cannot endorse transaction without a public DID"
