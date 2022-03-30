@@ -230,7 +230,8 @@ async def wallets_list(request: web.BaseRequest):
     profile = context.profile
 
     query = {}
-    if wallet_name := request.query.get("wallet_name"):
+    wallet_name = request.query.get("wallet_name")
+    if wallet_name:
         query["wallet_name"] = wallet_name
 
     try:
