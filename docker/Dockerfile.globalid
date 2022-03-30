@@ -3,9 +3,6 @@ ENV ENABLE_PTVSD 0
 
 RUN apt-get update && apt-get upgrade -y
 
-RUN useradd user
-USER user
-
 WORKDIR cloudagent
 ADD aries_cloudagent ./aries_cloudagent
 ADD requirements*.txt ./
@@ -19,5 +16,8 @@ RUN pip install --upgrade pip && \
     -r requirements.bbs.txt \
     -r requirements.globalid.txt \
     -e .
+
+RUN useradd user
+USER user
 
 ENTRYPOINT ["aca-py"]
