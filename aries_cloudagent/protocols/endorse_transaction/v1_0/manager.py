@@ -21,6 +21,7 @@ from ....revocation.util import (
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
+from ....wallet.util import notify_endorse_did_event
 
 from .messages.cancel_transaction import CancelTransaction
 from .messages.endorsed_transaction_response import EndorsedTransactionResponse
@@ -204,6 +205,7 @@ class TransactionManager:
         self,
         transaction: TransactionRecord,
         state: str,
+        use_endorser_did: str = None,
     ):
         """
         Create a response to endorse a transaction.
@@ -233,10 +235,22 @@ class TransactionManager:
             wallet: BaseWallet = session.inject_or(BaseWallet)
             if not wallet:
                 raise StorageError("No wallet available")
-            endorser_did_info = await wallet.get_public_did()
+            endorser_did_info = None
+            override_did = (
+                use_endorser_did
+                if use_endorser_did
+                else session.context.settings.get_value(
+                    "endorser.endorser_endorse_with_did"
+                )
+            )
+            if override_did:
+                endorser_did_info = await wallet.get_local_did(override_did)
+            else:
+                endorser_did_info = await wallet.get_public_did()
             if not endorser_did_info:
                 raise StorageError(
-                    "Transaction cannot be endorsed as there is no Public DID in wallet"
+                    "Transaction cannot be endorsed as there is no Public DID in wallet "
+                    "or Endorser DID specified"
                 )
             endorser_did = endorser_did_info.did
             endorser_verkey = endorser_did_info.verkey
@@ -250,7 +264,9 @@ class TransactionManager:
                 raise LedgerError(reason=reason)
 
         async with ledger:
-            endorsed_msg = await shield(ledger.txn_endorse(transaction_json))
+            endorsed_msg = await shield(
+                ledger.txn_endorse(transaction_json, endorse_did=endorser_did_info)
+            )
 
         # need to return the endorsed msg or else the ledger will reject the
         # eventual transaction write
@@ -789,6 +805,11 @@ class TransactionManager:
                 await notify_revocation_tails_file_event(
                     self._profile, rev_reg_id, meta_data
                 )
+
+        elif ledger_response["result"]["txn"]["type"] == "1":
+            # write DID to ledger
+            did = ledger_response["result"]["txn"]["data"]["dest"]
+            await notify_endorse_did_event(self._profile, did, meta_data)
 
         else:
             # TODO unknown ledger transaction type, just ignore for now ...

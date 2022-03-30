@@ -13,6 +13,7 @@ class TestWsTransport(AioHTTPTestCase):
     async def setUpAsync(self):
         self.profile = InMemoryProfile.test_profile()
         self.message_results = []
+        await super().setUpAsync()
 
     async def receive_message(self, request):
         ws = web.WebSocketResponse()
@@ -35,7 +36,6 @@ class TestWsTransport(AioHTTPTestCase):
         app.add_routes([web.get("/", self.receive_message)])
         return app
 
-    @unittest_run_loop
     async def test_handle_message(self):
         server_addr = f"ws://localhost:{self.server.port}"
 

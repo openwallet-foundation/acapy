@@ -86,8 +86,14 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def register_nym(
-        self, did: str, verkey: str, alias: str = None, role: str = None
-    ):
+        self,
+        did: str,
+        verkey: str,
+        alias: str = None,
+        role: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ) -> Tuple[bool, dict]:
         """
         Register a nym on the ledger.
 
@@ -154,6 +160,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     async def txn_endorse(
         self,
         request_json: str,
+        endorse_did: DIDInfo = None,
     ) -> str:
         """Endorse (sign) the provided transaction."""
 

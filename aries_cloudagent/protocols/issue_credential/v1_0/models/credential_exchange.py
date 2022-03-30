@@ -51,6 +51,7 @@ class V10CredentialExchange(BaseExchangeRecord):
     STATE_CREDENTIAL_RECEIVED = "credential_received"
     STATE_ACKED = "credential_acked"
     STATE_CREDENTIAL_REVOKED = "credential_revoked"
+    STATE_ABANDONED = "abandoned"
 
     def __init__(
         self,
@@ -188,6 +189,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         self,
         session: ProfileSession,
         *,
+        state: str = None,
         reason: str = None,
         log_params: Mapping[str, Any] = None,
         log_override: bool = False,
@@ -202,10 +204,10 @@ class V10CredentialExchange(BaseExchangeRecord):
             override: Override configured logging regimen, print to stderr instead
         """
 
-        if self._last_state is None:  # already done
+        if self._last_state == state:  # already done
             return
 
-        self.state = None
+        self.state = state or V10CredentialExchange.STATE_ABANDONED
         if reason:
             self.error_msg = reason
 
@@ -216,8 +218,8 @@ class V10CredentialExchange(BaseExchangeRecord):
                 log_params=log_params,
                 log_override=log_override,
             )
-        except StorageError as err:
-            LOGGER.exception(err)
+        except StorageError:
+            LOGGER.exception("Error saving credential exchange error state")
 
     @property
     def record_value(self) -> dict:
@@ -260,18 +262,24 @@ class V10CredentialExchange(BaseExchangeRecord):
 
     @classmethod
     async def retrieve_by_connection_and_thread(
-        cls, session: ProfileSession, connection_id: str, thread_id: str
+        cls,
+        session: ProfileSession,
+        connection_id: str,
+        thread_id: str,
+        *,
+        for_update=False,
     ) -> "V10CredentialExchange":
         """Retrieve a credential exchange record by connection and thread ID."""
         cache_key = f"credential_exchange_ctidx::{connection_id}::{thread_id}"
         record_id = await cls.get_cached_key(session, cache_key)
         if record_id:
-            record = await cls.retrieve_by_id(session, record_id)
+            record = await cls.retrieve_by_id(session, record_id, for_update=for_update)
         else:
             record = await cls.retrieve_by_tag_filter(
                 session,
                 {"thread_id": thread_id},
                 {"connection_id": connection_id} if connection_id else None,
+                for_update=for_update,
             )
             await cls.set_cached_key(session, cache_key, record.credential_exchange_id)
         return record

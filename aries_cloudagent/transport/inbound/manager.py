@@ -1,6 +1,5 @@
 """Inbound transport manager."""
 
-import asyncio
 import logging
 import uuid
 from collections import OrderedDict
@@ -43,7 +42,6 @@ class InboundTransportManager:
         self.registered_transports = {}
         self.running_transports = {}
         self.sessions = OrderedDict()
-        self.session_limit: asyncio.Semaphore = None
         self.task_queue = TaskQueue()
         self.undelivered_queue: DeliveryQueue = None
 
@@ -67,8 +65,6 @@ class InboundTransportManager:
         # Setup queue for undelivered messages
         if self.profile.context.settings.get("transport.enable_undelivered_queue"):
             self.undelivered_queue = DeliveryQueue()
-
-        # self.session_limit = asyncio.Semaphore(50)
 
     def register(self, config: InboundTransportConfiguration) -> str:
         """
@@ -163,8 +159,6 @@ class InboundTransportManager:
             client_info: An optional dict describing the client
             wire_format: Override the wire format for this session
         """
-        if self.session_limit:
-            await self.session_limit
         if not wire_format:
             wire_format = self.profile.context.inject(BaseWireFormat)
         session = InboundSession(
@@ -195,8 +189,6 @@ class InboundTransportManager:
         """
         if session.session_id in self.sessions:
             del self.sessions[session.session_id]
-            if self.session_limit:
-                self.session_limit.release()
         if session.response_buffer:
             if self.return_inbound:
                 self.return_inbound(session.profile, session.response_buffer)
