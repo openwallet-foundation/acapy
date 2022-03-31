@@ -133,7 +133,7 @@ class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     auto_verify = fields.Bool(
         description="Verifier choice to auto-verify proof presentation",
         required=False,
-        example=False
+        example=False,
     )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
@@ -151,18 +151,21 @@ class V10PresentationSendRequestRequestSchema(
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
     )
 
+
 class V10PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
-    """Request schema for sending a proof request bound to a proposal"""
+    """Request schema for sending a proof request bound to a proposal."""
+
     auto_verify = fields.Bool(
         description="Verifier choice to auto-verify proof presentation",
         required=False,
-        example=False
+        example=False,
     )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
         example=False,
     )
+
 
 class CredentialsFetchQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credentials fetch request query string."""
@@ -507,7 +510,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         pres_ex_record = await presentation_manager.create_exchange_for_request(
             connection_id=None,
             presentation_request_message=presentation_request_message,
-            auto_verify=auto_verify
+            auto_verify=auto_verify,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -593,7 +596,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         pres_ex_record = await presentation_manager.create_exchange_for_request(
             connection_id=connection_id,
             presentation_request_message=presentation_request_message,
-            auto_verify=auto_verify
+            auto_verify=auto_verify,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:

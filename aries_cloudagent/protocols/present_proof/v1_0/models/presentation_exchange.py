@@ -301,8 +301,7 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
         example=False,
     )
     auto_verify = fields.Bool(
-        required=False,
-        description="Verifier choice to auto-verify proof presentation"
+        required=False, description="Verifier choice to auto-verify proof presentation"
     )
     error_msg = fields.Str(
         required=False, description="Error message", example="Invalid structure"
