@@ -63,6 +63,7 @@ class V20PresExRecord(BaseExchangeRecord):
         pres: Union[V20Pres, Mapping] = None,  # aries message
         verified: str = None,
         auto_present: bool = False,
+        auto_verify: bool = False,
         error_msg: str = None,
         trace: bool = False,  # backward compat: BaseRecord.FromStorage()
         by_format: Mapping = None,  # backward compat: BaseRecord.FromStorage()
@@ -80,6 +81,7 @@ class V20PresExRecord(BaseExchangeRecord):
         self._pres = V20Pres.serde(pres)
         self.verified = verified
         self.auto_present = auto_present
+        self.auto_verify = auto_verify
         self.error_msg = error_msg
 
     @property
@@ -190,6 +192,7 @@ class V20PresExRecord(BaseExchangeRecord):
                     "state",
                     "verified",
                     "auto_present",
+                    "auto_verify",
                     "error_msg",
                     "trace",
                 )
@@ -308,6 +311,9 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         required=False,
         description="Prover choice to auto-present proof as verifier requests",
         example=False,
+    )
+    auto_verify = fields.Bool(
+        required=False, description="Verifier choice to auto-verify proof presentation"
     )
     error_msg = fields.Str(
         required=False, description="Error message", example="Invalid structure"
