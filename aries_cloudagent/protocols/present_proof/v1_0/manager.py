@@ -165,7 +165,10 @@ class PresentationManager:
         return presentation_exchange_record, presentation_request_message
 
     async def create_exchange_for_request(
-        self, connection_id: str, presentation_request_message: PresentationRequest
+        self,
+        connection_id: str,
+        presentation_request_message: PresentationRequest,
+        auto_verify: bool = None,
     ):
         """
         Create a presentation exchange record for input presentation request.
@@ -187,6 +190,7 @@ class PresentationManager:
             state=V10PresentationExchange.STATE_REQUEST_SENT,
             presentation_request=presentation_request_message.indy_proof_request(),
             presentation_request_dict=presentation_request_message,
+            auto_verify=auto_verify,
             trace=(presentation_request_message._trace is not None),
         )
         async with self._profile.session() as session:
