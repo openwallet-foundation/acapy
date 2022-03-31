@@ -35,8 +35,6 @@ from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.base import BaseStorage
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
-from ....storage.record import StorageRecord
-from ....storage.base import BaseStorage
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
 from ....vc.ld_proofs import BbsBlsSignature2020, Ed25519Signature2018
 from ....wallet.error import WalletNotFoundError
