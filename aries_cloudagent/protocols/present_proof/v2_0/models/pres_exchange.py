@@ -81,6 +81,7 @@ class V20PresExRecord(BaseExchangeRecord):
         self._pres = V20Pres.serde(pres)
         self.verified = verified
         self.auto_present = auto_present
+        self.auto_verify = auto_verify
         self.error_msg = error_msg
 
     @property
