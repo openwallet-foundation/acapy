@@ -24,6 +24,9 @@ This allows ACA-Py to be used for a wider range of use cases. One use case could
   - [Getting a token](#getting-a-token)
   - [JWT Secret](#jwt-secret)
   - [SwaggerUI](#swaggerui)
+- [Tenant Management](#tenant-management)
+  - [Update a tenant](#update-a-tenant)
+  - [Remove a tenant](#remove-a-tenant)
 
 ## General Concept
 
@@ -298,4 +301,74 @@ When using the SwaggerUI you can click the :lock: icon next to each of the endpo
 
 ![](/docs/assets/adminApiAuthentication.png)
 
+## Tenant Management
 
+After registering a tenant which effectively creates a subwallet, you may need to update the tenant information or delete it.  The following describes how to accomplish both goals.
+
+### Update a tenant
+
+The following properties can be updated: `image_url`, `label`, `wallet_dispatch_type`, and `wallet_webhook_urls` for tenants of a multitenancy wallet.  To update these properties you will `PUT` a request json containing the properties you wish to update along with the updated values to the `/multitenancy/wallet/${TENANT_WALLET_ID}` admin endpoint.  If the Admin API endoint is protected, you will also include the Admin API Key in the request header.
+
+Example
+
+```jsonc
+update_tenant='{
+  "image_url": "https://aries.ca/images/sample-updated.png",
+  "label": "example-label-02-updated",
+  "wallet_webhook_urls": [
+    "https://example.com/webhook/updated"
+  ]
+}'
+```
+
+```
+echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${TENANT_WALLET_ID}" \
+   -H "Content-Type: application/json" \
+   -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
+   -d @-
+```
+
+**`Response`**
+
+```jsonc
+{
+  "settings": {
+    "wallet.type": "askar",
+    "wallet.name": "example-name-02",
+    "wallet.webhook_urls": [
+      "https://example.com/webhook/updated"
+    ],
+    "wallet.dispatch_type": "default",
+    "default_label": "example-label-02-updated",
+    "image_url": "https://aries.ca/images/sample-updated.png",
+    "wallet.id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd"
+  },
+  "key_management_mode": "managed",
+  "updated_at": "2022-04-01T16:23:58.642004Z",
+  "wallet_id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd",
+  "created_at": "2022-04-01T15:12:35.474975Z"
+}
+```
+> An Admin API Key is all that is ALLOWED to be included in a request header during an update.  Inluding the Bearer token header will result in a 404: Unauthorized error
+
+## Remove a tenant
+
+The following information is required to delete a tenant: 
+- wallet_id
+- wallet_key
+- {Admin_Api_Key} if admin is protected
+
+Example
+
+```
+curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
+   -H "Content-Type: application/json" \
+   -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
+   -d '{ "wallet_key": "example-encryption-key-02" }'
+```
+
+**`Response`**
+
+```jsonc
+{}
+```
