@@ -12,6 +12,7 @@ from ..ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ..messaging.util import canon, encode
+from ..multitenant.base import BaseMultitenantManager
 
 from .models.xform import indy_proof_req2non_revoc_intervals
 
@@ -111,7 +112,11 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         for (index, ident) in enumerate(pres["identifiers"]):
             if ident.get("timestamp"):
                 cred_def_id = ident["cred_def_id"]
-                ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
+                multitenant_mgr = profile.inject_or(BaseMultitenantManager)
+                if multitenant_mgr:
+                    ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
+                else:
+                    ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
                 ledger = (
                     await ledger_exec_inst.get_ledger_for_identifier(
                         cred_def_id,
