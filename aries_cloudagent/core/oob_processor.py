@@ -72,13 +72,21 @@ class OobMessageProcessor:
                     session, {"attach_thread_id": outbound_message.reply_thread_id}
                 )
 
-                their_service = oob_record.their_service
-                their_service = ServiceDecorator.deserialize(their_service)
+                LOGGER.debug(
+                    "extracting their service from oob record %s",
+                    oob_record.their_service,
+                )
+
+                their_service = ServiceDecorator.deserialize(oob_record.their_service)
 
                 # Attach ~service decorator so other message can respond
                 message = json.loads(outbound_message.payload)
                 if not message.get("~service"):
-                    message["~service"] = oob_record.our_service.serialize()
+                    LOGGER.debug(
+                        "Setting our service on the message ~service %s",
+                        oob_record.our_service,
+                    )
+                    message["~service"] = oob_record.our_service
 
                 # OOB_TODO: state is somewhat done, but we need it for connectionless exchange
                 # if is_first_response:
@@ -88,6 +96,8 @@ class OobMessageProcessor:
                 }
 
                 outbound_message.payload = json.dumps(message)
+
+                LOGGER.debug("Sending oob message payload %s", outbound_message.payload)
 
                 return ConnectionTarget(
                     endpoint=their_service.endpoint,
@@ -148,8 +158,7 @@ class OobMessageProcessor:
             return None
 
         LOGGER.debug(
-            f"Found out of band record for inbound message with type {message_type}: %s",
-            oob_record,
+            f"Found out of band record for inbound message with type {message_type}: {oob_record.oob_id}"
         )
 
         # If the connection does not match with the connection id associated with the
@@ -229,16 +238,13 @@ class OobMessageProcessor:
         # Verify the sender key is present in their service in our record
         # If we don't have the sender verkey stored yet we can allow any key
         if their_service and (
-            # We either want the sender key to be present and present in their_service
             (
-                context.message_receipt.sender_verkey
-                and context.message_receipt.sender_verkey
-                not in their_service.recipient_keys
-            )
-            # Or we don't want the sender or recipient key to be present (in case of oob message handler)
-            or (
-                not context.message_receipt.sender_verkey
-                and not context.message_receipt.recipient_verkey
+                context.message_receipt.recipient_verkey
+                and (
+                    not context.message_receipt.sender_verkey
+                    or context.message_receipt.sender_verkey
+                    not in their_service.recipient_keys
+                )
             )
         ):
             LOGGER.debug(
@@ -248,6 +254,10 @@ class OobMessageProcessor:
 
         # If the message has a ~service decorator we save it in the oob record so we can reply to this message
         if context._message._service:
+            LOGGER.debug(
+                "Storing service decorator in oob record %s",
+                context.message._service.serialize(),
+            )
             oob_record.their_service = context.message._service.serialize()
 
         async with context.profile.session() as session:
@@ -265,7 +275,11 @@ class OobMessageProcessor:
         return oob_record
 
     async def handle_message(
-        self, profile: Profile, messages: List[Dict[str, Any]], oob_record: OobRecord
+        self,
+        profile: Profile,
+        messages: List[Dict[str, Any]],
+        oob_record: OobRecord,
+        their_service: Optional[ServiceDecorator],
     ):
         """Message handler for inbound messages."""
 
@@ -300,6 +314,13 @@ class OobMessageProcessor:
                 connection_id=oob_record.connection_id,
                 receipt=receipt,
             )
+
+            oob_record.attach_thread_id = self.get_thread_id(message)
+            if their_service:
+                LOGGER.debug("Storing their service in oob record %s", their_service)
+                oob_record.their_service = their_service.serialize()
+
+            await oob_record.save(session)
 
         self._inbound_message_router(profile, inbound_message, False)
 

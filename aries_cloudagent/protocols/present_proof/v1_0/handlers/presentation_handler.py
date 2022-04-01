@@ -40,10 +40,20 @@ class PresentationHandler(BaseHandler):
         if context.connection_record and not context.connection_ready:
             raise HandlerException("Connection used for presentation not ready")
 
+        # Find associated oob record. If the presentation request was created as an oob attachment
+        # the presentation exchange record won't have a connection id (yet)
+        oob_processor = context.inject(OobMessageProcessor)
+        oob_record = await oob_processor.find_oob_record_for_inbound_message(context)
+
+        # Normally we would do a check here that there is either a connection or
+        # an associated oob record. However as present proof supported receiving
+        # presentation without oob record or connection record (aip-1 style connectionless)
+        # we can't perform this check here
+
         presentation_manager = PresentationManager(profile)
 
         presentation_exchange_record = await presentation_manager.receive_presentation(
-            context.message, context.connection_record
+            context.message, context.connection_record, oob_record
         )  # mgr saves record state null if need be and possible
 
         r_time = trace_event(

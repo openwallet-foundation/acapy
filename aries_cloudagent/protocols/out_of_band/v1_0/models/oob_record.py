@@ -25,7 +25,7 @@ class OobRecord(BaseExchangeRecord):
 
     RECORD_TYPE = "oob_record"
     RECORD_ID_NAME = "oob_id"
-    RECORD_TOPIC = "oob_record"
+    RECORD_TOPIC = "out_of_band"
     TAG_NAMES = {
         "invi_msg_id",
         "attach_thread_id",

@@ -269,7 +269,7 @@ class OutOfBandManager(BaseConnectionManager):
                     recipient_keys=[our_recipient_key],
                     endpoint=endpoint,
                     routing_keys=[],
-                )
+                ).serialize()
         else:
             if not my_endpoint:
                 my_endpoint = self.profile.settings.get("default_endpoint")
@@ -352,7 +352,7 @@ class OutOfBandManager(BaseConnectionManager):
                     recipient_keys=[our_recipient_key],
                     endpoint=my_endpoint,
                     routing_keys=routing_keys,
-                )
+                ).serialize()
             routing_keys = [
                 key
                 if len(key.split(":")) == 3
@@ -493,7 +493,9 @@ class OutOfBandManager(BaseConnectionManager):
                 f"Connection reuse request finished with state {oob_record.state}"
             )
 
-            if oob_record.state != OobRecord.STATE_ACCEPTED:
+            if oob_record.state == OobRecord.STATE_ACCEPTED:
+                return oob_record
+            else:
                 # Set connection record to None if not accepted
                 # Will make new connection
                 conn_rec = None
@@ -541,12 +543,18 @@ class OutOfBandManager(BaseConnectionManager):
                     wallet = session.inject(BaseWallet)
                     connection_key = await wallet.create_signing_key(KeyType.ED25519)
                     oob_record.our_recipient_key = connection_key.verkey
+                    oob_record.our_service = ServiceDecorator(
+                        recipient_keys=[connection_key.verkey],
+                        endpoint=self.profile.settings.get("default_endpoint"),
+                        routing_keys=[],
+                    ).serialize()
                     await oob_record.save(session)
 
             await self._respond_request_attach(oob_record)
 
-        # If a connection record is associated with the oob record we can remove it
-        # Otherwise we need to keep it around for the connectionless exchange
+        # If a connection record is associated with the oob record we can remove it now as
+        # we can leverage the connection for all exchanges. Otherwise we need to keep it around
+        # for the connectionless exchange
         if conn_rec:
             oob_record.state = OobRecord.STATE_DONE
             async with self.profile.session() as session:
@@ -558,26 +566,17 @@ class OutOfBandManager(BaseConnectionManager):
     async def _respond_request_attach(self, oob_record: OobRecord):
         invitation = oob_record.invitation
 
-        if not isinstance(req_attach, AttachDecorator):
-            raise OutOfBandManagerError("requests~attach is not properly formatted")
-
         message_processor = self.profile.inject(OobMessageProcessor)
         messages = [attachment.content for attachment in invitation.requests_attach]
 
+        their_service = None
         if not oob_record.connection_id:
             service = oob_record.invitation.services[0]
-            service_decorator = await self._service_decorator_from_service(service)
-
-            oob_record.their_service = service_decorator.serialize()
-
-        async with self.profile.session() as session:
-            oob_record.attach_thread_id = message_processor.get_thread_id(message)
-            await oob_record.save(session)
+            their_service = await self._service_decorator_from_service(service)
+            LOGGER.debug("Found service for oob record %s", their_service)
 
         await message_processor.handle_message(
-            self.profile,
-            messages,
-            oob_record=oob_record,
+            self.profile, messages, oob_record=oob_record, their_service=their_service
         )
 
     async def _service_decorator_from_service(
@@ -650,8 +649,10 @@ class OutOfBandManager(BaseConnectionManager):
                         return oob_record
 
                 LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted mesage")
+                # FIXME: event is not being picked up by the event listener. Is it the event, the cond?
                 # Wait for oob_record to have reuse_accepted state
                 event = await await_event
+                LOGGER.debug("Received reuse response message")
                 return OobRecord.deserialize(event.payload)
 
         try:
@@ -1021,7 +1022,7 @@ class OutOfBandManager(BaseConnectionManager):
                     {"invi_msg_id": invi_msg_id, "reuse_msg_id": thread_reuse_msg_id},
                 )
 
-                oob_record.state = OobRecord.STATE_DONE
+                oob_record.state = OobRecord.STATE_ACCEPTED
                 oob_record.connection_id = conn_record.connection_id
 
                 # We can now remove the oob_record
