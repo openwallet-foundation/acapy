@@ -12,6 +12,8 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ....messaging.valid import IndyDID
+from ....multitenant.base import BaseMultitenantManager
+from ....multitenant.manager import MultitenantManager
 
 from ...base import DIDNotFound, ResolverError
 from .. import indy as test_module
@@ -64,6 +66,22 @@ class TestIndyResolver:
     async def test_resolve(self, profile: Profile, resolver: IndyDIDResolver):
         """Test resolve method."""
         assert await resolver.resolve(profile, TEST_DID0)
+
+    @pytest.mark.asyncio
+    async def test_resolve_multitenant(
+        self, profile: Profile, resolver: IndyDIDResolver, ledger: BaseLedger
+    ):
+        """Test resolve method."""
+        profile.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", ledger)),
+        ):
+            assert await resolver.resolve(profile, TEST_DID0)
 
     @pytest.mark.asyncio
     async def test_resolve_x_no_ledger(

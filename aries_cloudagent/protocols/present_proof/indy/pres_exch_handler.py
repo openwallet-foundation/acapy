@@ -14,6 +14,7 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
     GET_REVOC_REG_DELTA,
     IndyLedgerRequestsExecutor,
 )
+from ....multitenant.base import BaseMultitenantManager
 from ....revocation.models.revocation_registry import RevocationRegistry
 
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
@@ -93,7 +94,11 @@ class IndyPresExchHandler:
 
         for credential in credentials.values():
             schema_id = credential["schema_id"]
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
+            else:
+                ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
                     schema_id,
@@ -127,7 +132,11 @@ class IndyPresExchHandler:
             if "timestamp" in precis:
                 continue
             rev_reg_id = credentials[credential_id]["rev_reg_id"]
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
+            else:
+                ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
                     rev_reg_id,
@@ -222,7 +231,11 @@ class IndyPresExchHandler:
         for identifier in identifiers:
             schema_ids.append(identifier["schema_id"])
             cred_def_ids.append(identifier["cred_def_id"])
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
+            else:
+                ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
                     identifier["schema_id"],
