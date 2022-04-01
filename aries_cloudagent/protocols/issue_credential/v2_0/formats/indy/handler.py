@@ -24,6 +24,7 @@ from ......messaging.credential_definitions.util import (
     CredDefQueryStringSchema,
 )
 from ......messaging.decorators.attach_decorator import AttachDecorator
+from ......multitenant.base import BaseMultitenantManager
 from ......revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
 from ......revocation.models.revocation_registry import RevocationRegistry
 from ......revocation.indy import IndyRevocation
@@ -202,7 +203,11 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 cred_def_id,
@@ -263,7 +268,11 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_def_id = cred_offer["cred_def_id"]
 
         async def _create():
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+            else:
+                ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
                     cred_def_id,
@@ -331,7 +340,11 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
         rev_reg_id = None
         rev_reg = None
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 schema_id,
@@ -475,7 +488,11 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 
         rev_reg_def = None
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 cred["cred_def_id"],
