@@ -33,8 +33,7 @@ class OobMessageProcessor:
             [Profile, InboundMessage, Optional[bool]], None
         ],
     ) -> None:
-        """
-        Initialize an inbound OOB message processor
+        """Initialize an inbound OOB message processor.
 
         Args:
             inbound_message_router: Method to create a new inbound session
@@ -44,6 +43,7 @@ class OobMessageProcessor:
         self.wire_format = JsonWireFormat()
 
     async def clean_finished_oob_record(self, profile: Profile, message: AgentMessage):
+        """Clean up oob record associated with agent message, if applicable."""
         try:
             async with profile.session() as session:
                 oob_record = await OobRecord.retrieve_by_tag_filter(
@@ -65,6 +65,7 @@ class OobMessageProcessor:
     async def find_oob_target_for_outbound_message(
         self, profile: Profile, outbound_message: OutboundMessage
     ) -> Optional[ConnectionTarget]:
+        """Find connection target for the outbound message."""
         try:
             async with profile.session() as session:
                 # Try to find the oob record for the outbound message:
@@ -88,8 +89,6 @@ class OobMessageProcessor:
                     )
                     message["~service"] = oob_record.our_service
 
-                # OOB_TODO: state is somewhat done, but we need it for connectionless exchange
-                # if is_first_response:
                 message["~thread"] = {
                     **message.get("~thread", {}),
                     "pthid": oob_record.invi_msg_id,
@@ -111,6 +110,7 @@ class OobMessageProcessor:
     async def find_oob_record_for_inbound_message(
         self, context: RequestContext
     ) -> Optional[OobRecord]:
+        """Find oob record for inbound message."""
         message_type = context.message._type
         oob_record = None
 
@@ -119,7 +119,9 @@ class OobMessageProcessor:
             if context.message_receipt.parent_thread_id:
                 try:
                     LOGGER.debug(
-                        f"Retrieving OOB record using pthid {context.message_receipt.parent_thread_id} for message type {message_type}"
+                        "Retrieving OOB record using pthid "
+                        f"{context.message_receipt.parent_thread_id} "
+                        f"for message type {message_type}"
                     )
                     oob_record = await OobRecord.retrieve_by_tag_filter(
                         session,
@@ -129,9 +131,10 @@ class OobMessageProcessor:
                     # Fine if record is not found
                     pass
             # Otherwise try to find it using the attach thread id. This is only needed
-            # for connectionless exchanges where every handlers needs the context of the oob
-            # record for verification. We could attach the oob_record to all messages, even if
-            # we have a connection, but it would add another query to all inbound messages.
+            # for connectionless exchanges where every handlers needs the context of the
+            # oob record for verification. We could attach the oob_record to all messages,
+            # even if we have a connection, but it would add another query to all inbound
+            # messages.
             if (
                 not oob_record
                 and not context.connection_record
@@ -140,7 +143,10 @@ class OobMessageProcessor:
             ):
                 try:
                     LOGGER.debug(
-                        f"Retrieving OOB record using thid {context.message_receipt.thread_id} and recipient verkey {context.message_receipt.recipient_verkey} for message type {message_type}"
+                        "Retrieving OOB record using thid "
+                        f"{context.message_receipt.thread_id} and recipient verkey"
+                        f" {context.message_receipt.recipient_verkey} for "
+                        f"message type {message_type}"
                     )
                     oob_record = await OobRecord.retrieve_by_tag_filter(
                         session,
@@ -158,7 +164,8 @@ class OobMessageProcessor:
             return None
 
         LOGGER.debug(
-            f"Found out of band record for inbound message with type {message_type}: {oob_record.oob_id}"
+            f"Found out of band record for inbound message with type {message_type}"
+            f": {oob_record.oob_id}"
         )
 
         # If the connection does not match with the connection id associated with the
@@ -173,23 +180,30 @@ class OobMessageProcessor:
             and context.connection_record.connection_id != oob_record.connection_id
         ):
             LOGGER.debug(
-                f"Oob record connection id {oob_record.connection_id} is different from inbound message connection {context.connection_record.connection_id}",
+                f"Oob record connection id {oob_record.connection_id} is different from"
+                f" inbound message connection {context.connection_record.connection_id}",
             )
-            # Mismatch in connection id's in only allowed in state await response (connection id can change bc of reuse)
+            # Mismatch in connection id's in only allowed in state await response
+            # (connection id can change bc of reuse)
             if oob_record.state != OobRecord.STATE_AWAIT_RESPONSE:
                 LOGGER.debug(
-                    f"Inbound message has incorrect connection_id {context.connection_record.connection_id}. Oob record {oob_record.oob_id} associated with connection id {oob_record.connection_id}"
+                    "Inbound message has incorrect connection_id "
+                    f"{context.connection_record.connection_id}. Oob record "
+                    f"{oob_record.oob_id} associated with connection id "
+                    f"{oob_record.connection_id}"
                 )
                 return None
 
-            # If the state is await response, and there are attachments we want to update the connection id
-            # on the oob record. In case no request_attach is present, this is handled by the reuse handlers
+            # If the state is await response, and there are attachments we want to update
+            # the connection id on the oob record. In case no request_attach is present,
+            # this is handled by the reuse handlers
             if (
                 oob_record.invitation.requests_attach
                 and oob_record.state == OobRecord.STATE_AWAIT_RESPONSE
             ):
                 LOGGER.debug(
-                    f"Removing stale connection {oob_record.connection_id} due to connection reuse"
+                    f"Removing stale connection {oob_record.connection_id} due "
+                    "to connection reuse"
                 )
                 # Remove stale connection due to connection reuse
                 if oob_record.connection_id:
@@ -201,18 +215,21 @@ class OobMessageProcessor:
 
                 oob_record.connection_id = context.connection_record.connection_id
 
-        # If no attach_thread_id is stored yet we need to match the current message thread_id against the attached messages
-        # in the oob invitation
+        # If no attach_thread_id is stored yet we need to match the current message
+        # thread_id against the attached messages in the oob invitation
         if not oob_record.attach_thread_id and oob_record.invitation.requests_attach:
-            # Check if the current message thread_id corresponds to one of the invitation ~thread.thid
+            # Check if the current message thread_id corresponds to one of the invitation
+            # ~thread.thid
             allowed_thread_ids = [
                 self.get_thread_id(attachment.content)
                 for attachment in oob_record.invitation.requests_attach
             ]
 
-            if not context.message_receipt.thread_id in allowed_thread_ids:
+            if context.message_receipt.thread_id not in allowed_thread_ids:
                 LOGGER.debug(
-                    f"Inbound message is for not allowed thread {context.message_receipt.thread_id}. Allowed threads are {allowed_thread_ids}"
+                    "Inbound message is for not allowed thread "
+                    f"{context.message_receipt.thread_id}. Allowed "
+                    f"threads are {allowed_thread_ids}"
                 )
                 return None
 
@@ -222,7 +239,8 @@ class OobMessageProcessor:
             and context.message_receipt.thread_id != oob_record.attach_thread_id
         ):
             LOGGER.debug(
-                f"Inbound message thread id {context.message_receipt.thread_id} does not match oob record thread id {oob_record.attach_thread_id}"
+                f"Inbound message thread id {context.message_receipt.thread_id} does not"
+                f" match oob record thread id {oob_record.attach_thread_id}"
             )
             return None
 
@@ -248,11 +266,13 @@ class OobMessageProcessor:
             )
         ):
             LOGGER.debug(
-                "Inbound message sender verkey does not match stored service on oob record"
+                "Inbound message sender verkey does not match stored service on oob"
+                " record"
             )
             return None
 
-        # If the message has a ~service decorator we save it in the oob record so we can reply to this message
+        # If the message has a ~service decorator we save it in the oob record so we
+        # can reply to this message
         if context._message._service:
             LOGGER.debug(
                 "Storing service decorator in oob record %s",
@@ -261,8 +281,8 @@ class OobMessageProcessor:
             oob_record.their_service = context.message._service.serialize()
 
         async with context.profile.session() as session:
-            # We can now remove the oob record as the connection should now be stored in the
-            # exchange record itself.
+            # We can now remove the oob record as the connection should now be stored in
+            # the exchange record itself.
             if oob_record.connection_id:
                 oob_record.state = OobRecord.STATE_DONE
                 await oob_record.emit_event(session)
@@ -298,7 +318,8 @@ class OobMessageProcessor:
 
         if not supported_messages:
             raise Exception(
-                f"None of the oob attached messages supported. Supported message types are {supported_types}"
+                f"None of the oob attached messages supported. Supported message types "
+                f"are {supported_types}"
             )
 
         message = supported_messages[0]
@@ -325,4 +346,5 @@ class OobMessageProcessor:
         self._inbound_message_router(profile, inbound_message, False)
 
     def get_thread_id(self, message: Dict[str, Any]) -> str:
+        """Extract thread id from agent message dict."""
         return message.get("~thread", {}).get("thid") or message.get("@id")

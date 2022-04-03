@@ -207,7 +207,8 @@ class Conductor:
                 BaseMultitenantManager, MultitenantManagerProvider(self.root_profile)
             )
 
-        # Bind oob message processor to be able to receive and process un-encrypted messages
+        # Bind oob message processor to be able to receive and process un-encrypted
+        # messages
         context.injector.bind_instance(
             OobMessageProcessor,
             OobMessageProcessor(inbound_message_router=self.inbound_message_router),

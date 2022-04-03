@@ -16,7 +16,6 @@ from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
-from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
@@ -338,7 +337,9 @@ class OutOfBandManager(BaseConnectionManager):
                             session,
                             MediationManager.METADATA_KEY,
                             {
-                                MediationManager.METADATA_ID: mediation_record.mediation_id
+                                MediationManager.METADATA_ID: (
+                                    mediation_record.mediation_id
+                                )
                             },
                         )
 
@@ -465,7 +466,8 @@ class OutOfBandManager(BaseConnectionManager):
             public_did is not None and use_existing_connection
         ):  # invite has public DID: seek existing connection
             LOGGER.debug(
-                f"Trying to find existing connection for oob invitation with did {public_did}"
+                "Trying to find existing connection for oob invitation with "
+                f"did {public_did}"
             )
             async with self._profile.session() as session:
                 conn_rec = await ConnRecord.find_existing_connection(
@@ -500,8 +502,8 @@ class OutOfBandManager(BaseConnectionManager):
                 # Will make new connection
                 conn_rec = None
 
-        # Try to create a connection. Either if the reuse failed or we didn't have a connection yet
-        # Throws an error if connection could not be created
+        # Try to create a connection. Either if the reuse failed or we didn't have a
+        # connection yet. Throws an error if connection could not be created
         if not conn_rec and invitation.handshake_protocols:
             oob_record = await self._perform_handshake(
                 oob_record=oob_record,
@@ -521,11 +523,13 @@ class OutOfBandManager(BaseConnectionManager):
         # Handle any attachments
         if invitation.requests_attach:
             LOGGER.debug(
-                f"Process attached messages for oob exchange {oob_record.oob_id} (connection_id {oob_record.connection_id})"
+                f"Process attached messages for oob exchange {oob_record.oob_id} "
+                f"(connection_id {oob_record.connection_id})"
             )
 
-            # FIXME: this should ideally be handled using an event handler. Once the connection is ready
-            # we start processing the attached messages. For now we use the timeout method
+            # FIXME: this should ideally be handled using an event handler. Once the
+            # connection is ready we start processing the attached messages.
+            # For now we use the timeout method
             if (
                 conn_rec
                 and not conn_rec.is_ready
@@ -553,8 +557,8 @@ class OutOfBandManager(BaseConnectionManager):
             await self._respond_request_attach(oob_record)
 
         # If a connection record is associated with the oob record we can remove it now as
-        # we can leverage the connection for all exchanges. Otherwise we need to keep it around
-        # for the connectionless exchange
+        # we can leverage the connection for all exchanges. Otherwise we need to keep it
+        # around for the connectionless exchange
         if conn_rec:
             oob_record.state = OobRecord.STATE_DONE
             async with self.profile.session() as session:
@@ -614,9 +618,11 @@ class OutOfBandManager(BaseConnectionManager):
     async def _wait_for_reuse_response(
         self, oob_id: str, timeout: int = 15
     ) -> OobRecord:
-        """
-        Wait for reuse response message state. Either by receiving a reuse accepted or problem
-        report. If no answer is received withing the timeout, the state will be set to reuse_not_acceted
+        """Wait for reuse response.
+
+        Wait for reuse response message state. Either by receiving a reuse accepted or
+        problem report. If no answer is received withing the timeout, the state will be
+        set to reuse_not_accepted
 
         Args:
             oob_id: Identifier of the oob record
@@ -649,8 +655,6 @@ class OutOfBandManager(BaseConnectionManager):
                         return oob_record
 
                 LOGGER.debug(f"Wait for oob {oob_id} to receive reuse accepted mesage")
-                # FIXME: event is not being picked up by the event listener. Is it the event, the cond?
-                # Wait for oob_record to have reuse_accepted state
                 event = await await_event
                 LOGGER.debug("Received reuse response message")
                 return OobRecord.deserialize(event.payload)
@@ -717,7 +721,8 @@ class OutOfBandManager(BaseConnectionManager):
         # Wait for the reuse accepted message
         oob_record = await self._wait_for_reuse_response(oob_record.oob_id)
         LOGGER.debug(
-            f"Oob reuse for oob id {oob_record.oob_id} with connection {oob_record.connection_id} finished with state {oob_record.state}"
+            f"Oob reuse for oob id {oob_record.oob_id} with connection "
+            f"{oob_record.connection_id} finished with state {oob_record.state}"
         )
 
         if oob_record.state != OobRecord.STATE_ACCEPTED:
@@ -844,7 +849,8 @@ class OutOfBandManager(BaseConnectionManager):
 
         if not conn_record:
             raise OutOfBandManagerError(
-                f"Unable to create connection. Could not perform handshake using any of the handshake_protocols (supported {supported_handshake_protocols})"
+                f"Unable to create connection. Could not perform handshake using any of "
+                f"the handshake_protocols (supported {supported_handshake_protocols})"
             )
 
         async with self.profile.session() as session:
@@ -958,8 +964,8 @@ class OutOfBandManager(BaseConnectionManager):
             oob_record.reuse_msg_id = reuse_msg_id
             oob_record.connection_id = conn_rec.connection_id
 
-            # We don't want to store this state. We either remove the record (no multi-use)
-            # or we can't update the record (multi-use)
+            # We don't want to store this state. We either remove the record
+            # (no multi-use) or we can't update the record (multi-use)
             await oob_record.emit_event(session)
 
             # If the oob_record is not multi-use we can now remove it
