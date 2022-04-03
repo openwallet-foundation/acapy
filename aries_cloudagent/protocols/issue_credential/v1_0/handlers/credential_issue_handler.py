@@ -1,8 +1,5 @@
 """Credential issue message handler."""
 
-from aries_cloudagent.protocols.connections.v1_0.handlers.tests.test_request_handler import (
-    connection_record,
-)
 from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....messaging.base_handler import BaseHandler, HandlerException
