@@ -12,6 +12,7 @@ from .....connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
+from .....core.oob_processor import OobMessageProcessor
 from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....messaging.responder import BaseResponder, MockResponder
@@ -77,6 +78,12 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def setUp(self):
         self.responder = MockResponder()
 
+        self.oob_mock = async_mock.MagicMock(
+            clean_finished_oob_record=async_mock.CoroutineMock(
+                return_value=None
+            )
+        )
+
         self.profile = InMemoryProfile.test_profile(
             {
                 "default_endpoint": "http://aries.ca/endpoint",
@@ -87,7 +94,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 "multitenant.enabled": True,
                 "wallet.id": True,
             },
-            bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
+            bind={BaseResponder: self.responder, BaseCache: InMemoryCache(), OobMessageProcessor: self.oob_mock},
         )
         self.context = self.profile.context
         async with self.profile.session() as session:
@@ -542,6 +549,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     mediation_id=None,
                 )
                 assert conn_rec
+                self.oob_mock.clean_finished_oob_record.assert_called_once_with(self.profile, mock_request)
 
     async def test_receive_request_invi_not_found(self):
         async with self.profile.session() as session:
