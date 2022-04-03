@@ -50,7 +50,8 @@ class CredentialOfferHandler(BaseHandler):
         # Either connection or oob context must be present
         if not context.connection_record and not oob_record:
             raise HandlerException(
-                "No connection or associated connectionless exchange found for credential offer"
+                "No connection or associated connectionless exchange found for credential"
+                " offer"
             )
 
         connection_id = (

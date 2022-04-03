@@ -41,15 +41,16 @@ class CredentialRequestHandler(BaseHandler):
         if context.connection_record and not context.connection_ready:
             raise HandlerException("Connection used for credential request not ready")
 
-        # Find associated oob record. If the credential offer was created as an oob attachment
-        # the presentation exchange record won't have a connection id (yet)
+        # Find associated oob record. If the credential offer was created as an oob
+        # attachment the presentation exchange record won't have a connection id (yet)
         oob_processor = context.inject(OobMessageProcessor)
         oob_record = await oob_processor.find_oob_record_for_inbound_message(context)
 
         # Either connection or oob context must be present
         if not context.connection_record and not oob_record:
             raise HandlerException(
-                "No connection or associated connectionless exchange found for credential request"
+                "No connection or associated connectionless exchange found for credential"
+                " request"
             )
 
         credential_manager = CredentialManager(profile)

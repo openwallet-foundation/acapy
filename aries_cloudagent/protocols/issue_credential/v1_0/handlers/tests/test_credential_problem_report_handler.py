@@ -21,6 +21,7 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
+            request_context.connection_ready = True
             mock_cred_mgr.return_value.receive_problem_report = (
                 async_mock.CoroutineMock()
             )
@@ -48,6 +49,7 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_cred_mgr:
+            request_context.connection_ready = True
             mock_cred_mgr.return_value.receive_problem_report = (
                 async_mock.CoroutineMock(
                     side_effect=test_module.StorageError("Disk full")
@@ -67,4 +69,49 @@ class TestCredentialProblemReportHandler(AsyncTestCase):
         mock_cred_mgr.return_value.receive_problem_report.assert_called_once_with(
             request_context.message, request_context.connection_record.connection_id
         )
+        assert not responder.messages
+
+    async def test_called_not_ready(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+        request_context.connection_record = async_mock.MagicMock()
+        request_context.connection_ready = False
+
+        request_context.message = CredentialProblemReport(
+            description={
+                "en": "Change of plans",
+                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+            }
+        )
+        handler = test_module.CredentialProblemReportHandler()
+        responder = MockResponder()
+
+        with self.assertRaises(test_module.HandlerException) as err:
+            await handler.handle(request_context, responder)
+        assert (
+            err.exception.message
+            == "Connection used for credential problem report not ready"
+        )
+
+    async def test_called_no_connection(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+        request_context.connection_record = None
+
+        request_context.message = CredentialProblemReport(
+            description={
+                "en": "Change of plans",
+                "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
+            }
+        )
+        handler = test_module.CredentialProblemReportHandler()
+        responder = MockResponder()
+
+        with self.assertRaises(test_module.HandlerException) as err:
+            await handler.handle(request_context, responder)
+        assert (
+            err.exception.message
+            == "Connectionless not supported for credential problem report"
+        )
+
         assert not responder.messages
