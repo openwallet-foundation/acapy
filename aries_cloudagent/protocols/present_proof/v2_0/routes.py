@@ -1043,13 +1043,6 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     try:
         async with profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-
-            # Fetch connection if exchange has record
-            conn_record = None
-            if pres_ex_record.connection_id:
-                conn_record = await ConnRecord.retrieve_by_id(
-                    session, pres_ex_record.connection_id
-                )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -1061,6 +1054,18 @@ async def present_proof_send_presentation(request: web.BaseRequest):
                 f"(must be {V20PresExRecord.STATE_REQUEST_RECEIVED})"
             )
         )
+
+    # Fetch connection if exchange has record
+    conn_record = None
+    if pres_ex_record.connection_id:
+        try:
+            async with profile.session() as session:
+
+                conn_record = await ConnRecord.retrieve_by_id(
+                    session, pres_ex_record.connection_id
+                )
+        except StorageNotFoundError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if conn_record and not conn_record.is_ready:
         raise web.HTTPForbidden(

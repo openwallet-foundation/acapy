@@ -457,7 +457,6 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 

@@ -2048,7 +2048,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
             mock_px_rec_inst = async_mock.MagicMock(
-                connection_id="dummy",
+                connection_id=None,
                 state=test_module.V20PresExRecord.STATE_DONE,
                 serialize=async_mock.MagicMock(
                     return_value={"thread_id": "sample-thread-id"}

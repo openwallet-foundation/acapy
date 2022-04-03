@@ -51,7 +51,8 @@ class V20PresRequestHandler(BaseHandler):
         # Either connection or oob context must be present
         if not context.connection_record and not oob_record:
             raise HandlerException(
-                "No connection or associated connectionless exchange found for presentation request"
+                "No connection or associated connectionless exchange found for"
+                " presentation request"
             )
 
         connection_id = (

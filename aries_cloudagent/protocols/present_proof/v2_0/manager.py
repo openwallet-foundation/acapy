@@ -312,8 +312,8 @@ class V20PresManager:
         thread_id = message._thread_id
         # Normally we only set the connection_id to None if an oob record is present
         # But present proof supports the old-style AIP-1 connectionless exchange that
-        # bypasses the oob record. So we can't verify if an oob record is associated with the
-        # exchange because it is possible that there is None
+        # bypasses the oob record. So we can't verify if an oob record is associated with
+        # the exchange because it is possible that there is None
         connection_id = (
             None
             if oob_record

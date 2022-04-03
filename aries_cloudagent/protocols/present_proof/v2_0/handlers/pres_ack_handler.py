@@ -41,7 +41,8 @@ class V20PresAckHandler(BaseHandler):
         # Either connection or oob context must be present
         if not context.connection_record and not oob_record:
             raise HandlerException(
-                "No connection or associated connectionless exchange found for presentation ack"
+                "No connection or associated connectionless exchange found for"
+                " presentation ack"
             )
 
         pres_manager = V20PresManager(context.profile)

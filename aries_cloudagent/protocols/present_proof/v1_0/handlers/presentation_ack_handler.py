@@ -41,7 +41,8 @@ class PresentationAckHandler(BaseHandler):
         # Either connection or oob context must be present
         if not context.connection_record and not oob_record:
             raise HandlerException(
-                "No connection or associated connectionless exchange found for presentation ack"
+                "No connection or associated connectionless exchange found for"
+                " presentation ack"
             )
 
         presentation_manager = PresentationManager(context.profile)
