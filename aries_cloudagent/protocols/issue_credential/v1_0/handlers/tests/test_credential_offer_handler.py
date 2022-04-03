@@ -144,7 +144,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
 
         assert not responder.messages
 
-    async def test_called_not_ready(self):
+    async def test_no_conn_no_oob(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
 

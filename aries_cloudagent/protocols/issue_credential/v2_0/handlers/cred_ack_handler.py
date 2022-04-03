@@ -41,7 +41,8 @@ class V20CredAckHandler(BaseHandler):
         # Either connection or oob context must be present
         if not context.connection_record and not oob_record:
             raise HandlerException(
-                "No connection or associated connectionless exchange found for credential ack"
+                "No connection or associated connectionless exchange found for credential"
+                " ack"
             )
 
         cred_manager = V20CredManager(context.profile)

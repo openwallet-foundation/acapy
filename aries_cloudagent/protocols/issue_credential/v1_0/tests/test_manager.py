@@ -6,13 +6,12 @@ from time import time
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from aries_cloudagent.messaging.decorators.thread_decorator import ThreadDecorator
-
 from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....indy.holder import IndyHolder
 from .....indy.issuer import IndyIssuer
+from .....messaging.decorators.thread_decorator import ThreadDecorator
 from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .....messaging.responder import BaseResponder, MockResponder
 from .....ledger.base import BaseLedger
