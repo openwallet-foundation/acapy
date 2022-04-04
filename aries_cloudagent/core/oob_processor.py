@@ -19,9 +19,14 @@ from ..storage.error import StorageNotFoundError
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import JsonWireFormat
+from .error import BaseError
 from .profile import Profile
 
 LOGGER = logging.getLogger(__name__)
+
+
+class OobMessageProcessorError(BaseError):
+    """Base error for OobMessageProcessor."""
 
 
 class OobMessageProcessor:
@@ -317,7 +322,7 @@ class OobMessageProcessor:
         ]
 
         if not supported_messages:
-            raise Exception(
+            raise OobMessageProcessorError(
                 f"None of the oob attached messages supported. Supported message types "
                 f"are {supported_types}"
             )

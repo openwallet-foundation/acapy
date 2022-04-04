@@ -137,6 +137,10 @@ class OutOfBandManager(BaseConnectionManager):
                 and self.profile.settings.get("debug.auto_accept_requests")
             )
         )
+        if not hs_protos and metadata:
+            raise OutOfBandManagerError(
+                "Cannot store metadata without handshake protocols"
+            )
         if public:
             if multi_use:
                 raise OutOfBandManagerError(
@@ -482,11 +486,6 @@ class OutOfBandManager(BaseConnectionManager):
             connection_id=conn_rec.connection_id if conn_rec else None,
         )
 
-        # # Save record
-        # # OOB_TODO: I think we can remove this save. Other paths will save the record
-        # async with self.profile.session() as session:
-        #     await oob_record.save(session)
-
         # Try to reuse the connection. If not accepted sets the conn_rec to None
         if conn_rec and not invitation.requests_attach:
             oob_record = await self._handle_hanshake_reuse(oob_record, conn_rec)
@@ -536,8 +535,8 @@ class OutOfBandManager(BaseConnectionManager):
                 and not await self._wait_for_conn_rec_active(conn_rec.connection_id)
             ):
                 raise OutOfBandManagerError(
-                    "Connection not ready to process attach message"
-                    f"For connection_id: {oob_record.connection_id} and "
+                    "Connection not ready to process attach message "
+                    f"for connection_id: {oob_record.connection_id} and "
                     f"invitation_msg_id {invitation._id}",
                 )
 
@@ -554,7 +553,7 @@ class OutOfBandManager(BaseConnectionManager):
                     ).serialize()
                     await oob_record.save(session)
 
-            await self._respond_request_attach(oob_record)
+            await self._process_request_attach(oob_record)
 
         # If a connection record is associated with the oob record we can remove it now as
         # we can leverage the connection for all exchanges. Otherwise we need to keep it
@@ -562,12 +561,12 @@ class OutOfBandManager(BaseConnectionManager):
         if conn_rec:
             oob_record.state = OobRecord.STATE_DONE
             async with self.profile.session() as session:
-                await oob_record.save(session)
+                await oob_record.emit_event(session)
                 await oob_record.delete_record(session)
 
         return oob_record
 
-    async def _respond_request_attach(self, oob_record: OobRecord):
+    async def _process_request_attach(self, oob_record: OobRecord):
         invitation = oob_record.invitation
 
         message_processor = self.profile.inject(OobMessageProcessor)
@@ -1069,10 +1068,8 @@ class OutOfBandManager(BaseConnectionManager):
             )
             raise OutOfBandManagerError(
                 (
-                    (
-                        "Error processing reuse accepted message "
-                        f"for OOB invitation {invi_msg_id}, {e}"
-                    )
+                    "Error processing reuse accepted message "
+                    f"for OOB invitation {invi_msg_id}, {e}"
                 )
             )
 
@@ -1112,9 +1109,7 @@ class OutOfBandManager(BaseConnectionManager):
         except Exception as e:
             raise OutOfBandManagerError(
                 (
-                    (
-                        "Error processing problem report message "
-                        f"for OOB invitation {invi_msg_id}, {e}"
-                    )
+                    "Error processing problem report message "
+                    f"for OOB invitation {invi_msg_id}, {e}"
                 )
             )
