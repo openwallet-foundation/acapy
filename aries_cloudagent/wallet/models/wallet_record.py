@@ -36,7 +36,7 @@ class WalletRecord(BaseRecord):
         wallet_id: str = None,
         key_management_mode: str = None,
         settings: dict = None,
-        # TODO: how to make this a tag without making it
+        # MTODO: how to make this a tag without making it
         # a constructor param
         wallet_name: str = None,
         **kwargs,
