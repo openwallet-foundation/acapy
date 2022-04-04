@@ -58,8 +58,8 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
     wallet_key_derivation = fields.Str(
         description="Key derivation",
+        required=False,
         example="RAW",
-        default="ARGON2I_MOD",
         validate=validate.OneOf(["ARGON2I_MOD", "ARGON2I_INT", "RAW"]),
     )
 
@@ -107,7 +107,7 @@ class CreateWalletRequestSchema(OpenAPISchema):
         description="Key management method to use for this wallet.",
         example=WalletRecord.MODE_MANAGED,
         default=WalletRecord.MODE_MANAGED,
-        # MTODO: add unmanaged mode once implemented
+        # TODO: add unmanaged mode once implemented
         validate=validate.OneOf((WalletRecord.MODE_MANAGED,)),
     )
 
@@ -302,19 +302,19 @@ async def wallet_create(request: web.BaseRequest):
         "wallet.type": body.get("wallet_type") or "in_memory",
         "wallet.name": body.get("wallet_name"),
         "wallet.key": wallet_key,
-        "wallet.key_derivation_method": body.get(
-            "wallet_key_derivation", "ARGON2I_MOD"
-        ),
         "wallet.webhook_urls": wallet_webhook_urls,
         "wallet.dispatch_type": wallet_dispatch_type,
     }
 
     label = body.get("label")
     image_url = body.get("image_url")
+    key_derivation = body.get("wallet_key_derivation")
     if label:
         settings["default_label"] = label
     if image_url:
         settings["image_url"] = image_url
+    if key_derivation:  # allow lower levels to handle default
+        settings["wallet.key_derivation_method"] = key_derivation
 
     try:
         multitenant_mgr = context.profile.inject(BaseMultitenantManager)

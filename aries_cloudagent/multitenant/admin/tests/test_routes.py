@@ -142,9 +142,9 @@ class TestMultitenantRoutes(AsyncTestCase):
     async def test_wallet_create(self):
         body = {
             "wallet_name": "test",
+            "default_label": "test_label",
             "wallet_type": "indy",
             "wallet_key": "test",
-            "key_derivation_method": "ARGON2I_MOD",
             "key_management_mode": "managed",
             "wallet_webhook_urls": [],
             "wallet_dispatch_type": "base",
@@ -176,7 +176,6 @@ class TestMultitenantRoutes(AsyncTestCase):
                     "wallet.name": body["wallet_name"],
                     "wallet.type": body["wallet_type"],
                     "wallet.key": body["wallet_key"],
-                    'wallet.key_derivation_method':  body["key_derivation_method"],
                     "wallet.webhook_urls": body["wallet_webhook_urls"],
                     "wallet.dispatch_type": body["wallet_dispatch_type"],
                 },
@@ -208,7 +207,7 @@ class TestMultitenantRoutes(AsyncTestCase):
         body = {
             "wallet_name": "test",
             "wallet_key": "test",
-            "key_derivation_method": "ARGON2I_MOD",
+            "wallet_key_derivation": "ARGON2I_MOD",
             "wallet_webhook_urls": [],
             "wallet_dispatch_type": "base",
             "label": "my_test_label",
@@ -226,11 +225,37 @@ class TestMultitenantRoutes(AsyncTestCase):
                     "wallet.name": body["wallet_name"],
                     "wallet.type": "in_memory",
                     "wallet.key": body["wallet_key"],
-                    'wallet.key_derivation_method':  body["key_derivation_method"],
                     "default_label": body["label"],
                     "image_url": body["image_url"],
                     "wallet.webhook_urls": body["wallet_webhook_urls"],
                     "wallet.dispatch_type": body["wallet_dispatch_type"],
+                    "wallet.key_derivation_method": body["wallet_key_derivation"],
+                },
+                WalletRecord.MODE_MANAGED,
+            )
+
+
+    async def test_wallet_create_raw_key_derivation(self):
+        body = {
+            "wallet_name": "test",
+            "wallet_key": "test",
+            "wallet_key_derivation": "RAW",
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+
+        with async_mock.patch.object(test_module.web, "json_response") as mock_response:
+            self.mock_multitenant_mgr.create_wallet = async_mock.CoroutineMock()
+            self.mock_multitenant_mgr.create_auth_token = async_mock.Mock()
+
+            await test_module.wallet_create(self.request)
+            self.mock_multitenant_mgr.create_wallet.assert_called_once_with(
+                {
+                    "wallet.type": "in_memory",
+                    "wallet.name": body["wallet_name"],
+                    "wallet.key": body["wallet_key"],
+                    "wallet.key_derivation_method": body["wallet_key_derivation"],
+                    "wallet.webhook_urls": [],
+                    "wallet.dispatch_type": "base",
                 },
                 WalletRecord.MODE_MANAGED,
             )

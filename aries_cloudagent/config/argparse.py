@@ -1623,7 +1623,7 @@ class MultitenantGroup(ArgumentGroup):
             help=(
                 'Specify multitenancy configuration ("wallet_type" and "wallet_name"). '
                 'For example: "{"wallet_type":"askar-profile","wallet_name":'
-                '"askar-profile-name", "key":"key", "key_derivation_method":"RAW"}"'
+                '"askar-profile-name", "key_derivation_method":"RAW"}"'
                 '"wallet_name" is only used when "wallet_type" is "askar-profile"'
             ),
         )
@@ -1656,9 +1656,6 @@ class MultitenantGroup(ArgumentGroup):
                     settings["multitenant.wallet_name"] = multitenancyConfig.get(
                         "wallet_name"
                     )
-
-                if multitenancyConfig.get("key"):
-                    settings["multitenant.key"] = multitenancyConfig.get("key")
 
                 if multitenancyConfig.get("key_derivation_method"):
                     settings[

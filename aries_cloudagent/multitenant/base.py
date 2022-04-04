@@ -183,26 +183,29 @@ class BaseMultitenantManager:
             )
 
             await wallet_record.save(session)
-
-        # provision wallet
-        profile = await self.get_wallet_profile(
-            self._profile.context,
-            wallet_record,
-            {
-                "wallet.key": wallet_key,
-            },
-            provision=True,
-        )
-
-        # subwallet context
-        async with profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            public_did_info = await wallet.get_public_did()
-
-        if public_did_info:
-            await self.add_key(
-                wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
+        try:
+            # provision wallet
+            profile = await self.get_wallet_profile(
+                self._profile.context,
+                wallet_record,
+                {
+                    "wallet.key": wallet_key,
+                },
+                provision=True,
             )
+
+            # subwallet context
+            async with profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                public_did_info = await wallet.get_public_did()
+
+            if public_did_info:
+                await self.add_key(
+                    wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
+                )
+        except Exception:
+            await wallet_record.delete_record(session)
+            raise
 
         return wallet_record
 
