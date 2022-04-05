@@ -136,7 +136,7 @@ class OobMessageProcessor:
                     # Fine if record is not found
                     pass
             # Otherwise try to find it using the attach thread id. This is only needed
-            # for connectionless exchanges where every handlers needs the context of the
+            # for connectionless exchanges where every handler needs the context of the
             # oob record for verification. We could attach the oob_record to all messages,
             # even if we have a connection, but it would add another query to all inbound
             # messages.
@@ -304,7 +304,7 @@ class OobMessageProcessor:
         profile: Profile,
         messages: List[Dict[str, Any]],
         oob_record: OobRecord,
-        their_service: Optional[ServiceDecorator],
+        their_service: Optional[ServiceDecorator] = None,
     ):
         """Message handler for inbound messages."""
 
@@ -322,9 +322,10 @@ class OobMessageProcessor:
         ]
 
         if not supported_messages:
+            message_str = ", ".join(supported_types)
             raise OobMessageProcessorError(
                 f"None of the oob attached messages supported. Supported message types "
-                f"are {supported_types}"
+                f"are {message_str}"
             )
 
         message = supported_messages[0]
