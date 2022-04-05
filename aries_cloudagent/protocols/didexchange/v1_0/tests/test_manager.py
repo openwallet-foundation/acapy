@@ -79,9 +79,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         self.responder = MockResponder()
 
         self.oob_mock = async_mock.MagicMock(
-            clean_finished_oob_record=async_mock.CoroutineMock(
-                return_value=None
-            )
+            clean_finished_oob_record=async_mock.CoroutineMock(return_value=None)
         )
 
         self.profile = InMemoryProfile.test_profile(
@@ -94,7 +92,11 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 "multitenant.enabled": True,
                 "wallet.id": True,
             },
-            bind={BaseResponder: self.responder, BaseCache: InMemoryCache(), OobMessageProcessor: self.oob_mock},
+            bind={
+                BaseResponder: self.responder,
+                BaseCache: InMemoryCache(),
+                OobMessageProcessor: self.oob_mock,
+            },
         )
         self.context = self.profile.context
         async with self.profile.session() as session:
@@ -549,7 +551,9 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                     mediation_id=None,
                 )
                 assert conn_rec
-                self.oob_mock.clean_finished_oob_record.assert_called_once_with(self.profile, mock_request)
+                self.oob_mock.clean_finished_oob_record.assert_called_once_with(
+                    self.profile, mock_request
+                )
 
     async def test_receive_request_invi_not_found(self):
         async with self.profile.session() as session:

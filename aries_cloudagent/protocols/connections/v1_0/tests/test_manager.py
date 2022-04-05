@@ -75,9 +75,7 @@ class TestConnectionManager(AsyncTestCase):
         self.responder = MockResponder()
 
         self.oob_mock = async_mock.MagicMock(
-            clean_finished_oob_record=async_mock.CoroutineMock(
-                return_value=None
-            )
+            clean_finished_oob_record=async_mock.CoroutineMock(return_value=None)
         )
 
         self.profile = InMemoryProfile.test_profile(
@@ -88,7 +86,11 @@ class TestConnectionManager(AsyncTestCase):
                 "debug.auto_accept_invites": True,
                 "debug.auto_accept_requests": True,
             },
-            bind={BaseResponder: self.responder, BaseCache: InMemoryCache(), OobMessageProcessor: self.oob_mock},
+            bind={
+                BaseResponder: self.responder,
+                BaseCache: InMemoryCache(),
+                OobMessageProcessor: self.oob_mock,
+            },
         )
         self.context = self.profile.context
 
@@ -720,7 +722,9 @@ class TestConnectionManager(AsyncTestCase):
                 conn_rec = await self.manager.receive_request(mock_request, receipt)
                 assert conn_rec
 
-                self.oob_mock.clean_finished_oob_record.assert_called_once_with(self.profile, mock_request)
+                self.oob_mock.clean_finished_oob_record.assert_called_once_with(
+                    self.profile, mock_request
+                )
 
     async def test_receive_request_public_did_conn_invite(self):
         async with self.profile.session() as session:
