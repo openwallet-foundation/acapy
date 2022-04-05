@@ -17,6 +17,7 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ...messaging.valid import IndyDID
+from ...multitenant.base import BaseMultitenantManager
 
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
@@ -44,7 +45,11 @@ class IndyDIDResolver(BaseDIDResolver):
 
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""
-        ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
+        else:
+            ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 did,

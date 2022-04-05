@@ -12,6 +12,8 @@ from ...ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
 )
+from ...multitenant.base import BaseMultitenantManager
+from ...multitenant.manager import MultitenantManager
 
 from .. import routes as test_module
 from ..indy import Role
@@ -121,6 +123,29 @@ class TestLedgerRoutes(AsyncTestCase):
             )
             assert result is json_response.return_value
 
+    async def test_get_verkey_multitenant(self):
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        self.request.query = {"did": self.test_did}
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ), async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.get_key_for_did.return_value = self.test_verkey
+            result = await test_module.get_did_verkey(self.request)
+            json_response.assert_called_once_with(
+                {
+                    "ledger_id": "test_ledger_id",
+                    "verkey": self.ledger.get_key_for_did.return_value,
+                }
+            )
+            assert result is json_response.return_value
+
     async def test_get_verkey_no_did(self):
         self.request.query = {"no": "did"}
         with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -171,6 +196,29 @@ class TestLedgerRoutes(AsyncTestCase):
             result = await test_module.get_did_endpoint(self.request)
             json_response.assert_called_once_with(
                 {"endpoint": self.ledger.get_endpoint_for_did.return_value}
+            )
+            assert result is json_response.return_value
+
+    async def test_get_endpoint_multitenant(self):
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        self.request.query = {"did": self.test_did}
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ), async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.get_endpoint_for_did.return_value = self.test_endpoint
+            result = await test_module.get_did_endpoint(self.request)
+            json_response.assert_called_once_with(
+                {
+                    "ledger_id": "test_ledger_id",
+                    "endpoint": self.ledger.get_endpoint_for_did.return_value,
+                }
             )
             assert result is json_response.return_value
 
@@ -477,6 +525,27 @@ class TestLedgerRoutes(AsyncTestCase):
         self.request.query = {"did": self.test_did}
 
         with async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as json_response:
+            self.ledger.get_nym_role.return_value = Role.USER
+            result = await test_module.get_nym_role(self.request)
+            json_response.assert_called_once_with(
+                {"ledger_id": "test_ledger_id", "role": "USER"}
+            )
+            assert result is json_response.return_value
+
+    async def test_get_nym_role_multitenant(self):
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        self.request.query = {"did": self.test_did}
+
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ), async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.ledger.get_nym_role.return_value = Role.USER
