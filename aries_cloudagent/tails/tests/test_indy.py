@@ -63,7 +63,7 @@ class TestIndyTailsServer(AsyncTestCase):
         ) as mock_put:
             mock_put.return_value = "tails-hash"
             (ok, text) = await indy_tails.upload_tails_file(
-                profile,
+                profile.context,
                 REV_REG_ID,
                 "/tmp/dummy/path",
             )
@@ -93,7 +93,7 @@ class TestIndyTailsServer(AsyncTestCase):
         ) as mock_put:
             mock_put.return_value = "tails-hash"
             (ok, text) = await indy_tails.upload_tails_file(
-                profile,
+                profile.context,
                 REV_REG_ID,
                 "/tmp/dummy/path",
             )
