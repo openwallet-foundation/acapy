@@ -10,6 +10,8 @@ from ...core.in_memory import InMemoryProfile
 from ...ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from ...multitenant.base import BaseMultitenantManager
+from ...multitenant.manager import MultitenantManager
 
 from .. import verifier as test_module
 from ..verifier import IndyVerifier
@@ -332,6 +334,28 @@ class TestIndySdkVerifier(AsyncTestCase):
         self.verifier = MockVerifier()
 
     async def test_check_timestamps(self):
+        # multitenant
+        mock_profile = InMemoryProfile.test_profile()
+        context = mock_profile.context
+        context.injector.bind_instance(
+            IndyLedgerRequestsExecutor,
+            IndyLedgerRequestsExecutor(mock_profile),
+        )
+        context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
+        ) as mock_get_ledger:
+            mock_get_ledger.return_value = (None, self.ledger)
+            await self.verifier.check_timestamps(
+                mock_profile,
+                INDY_PROOF_REQ_NAME,
+                INDY_PROOF_NAME,
+                REV_REG_DEFS,
+            )
+
         # all clear, with timestamps
         mock_profile = InMemoryProfile.test_profile()
         context = mock_profile.context
