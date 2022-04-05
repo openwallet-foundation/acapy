@@ -1,0 +1,41 @@
+{
+   "presentation_proposal": {
+      "requested_attributes": {
+         "address_attrs": {
+            "name": "address",
+            "non_revoked": "change-me",
+            "restrictions": [
+               {
+                  "schema_name": "Schema_DriversLicense_v2",
+                  "schema_version": "1.0.1"
+               }
+            ]
+         },
+         "health_attrs": {
+            "name": "health_id_num",
+            "non_revoked": "change-me",
+            "restrictions": [
+               {
+                  "schema_name": "Schema_Health_ID",
+                  "schema_version": "1.0.0"
+               }
+            ]
+         }
+      },
+      "requested_predicates": {
+         "age": {
+            "name": "age",
+            "p_type": ">",
+            "p_value": 19,
+            "non_revoked": "change-me",
+            "restrictions": [
+               {
+                  "schema_name": "Schema_DriversLicense_v2",
+                  "schema_version": "1.0.1"
+               }
+            ]
+         }
+      },
+      "version": "0.1.0"
+   }
+}
