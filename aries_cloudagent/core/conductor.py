@@ -597,6 +597,26 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
+        status: OutboundSendStatus = await self._outbound_message_router(
+            profile=profile, outbound=outbound, inbound=inbound
+        )
+        await profile.notify(status.topic, outbound)
+        return status
+
+    async def _outbound_message_router(
+        self,
+        profile: Profile,
+        outbound: OutboundMessage,
+        inbound: InboundMessage = None,
+    ) -> OutboundSendStatus:
+        """
+        Route an outbound message.
+
+        Args:
+            profile: The active profile for the request
+            message: An outbound message to be sent
+            inbound: The inbound message that produced this response, if available
+        """
         if not outbound.target and outbound.reply_to_verkey:
             if not outbound.reply_from_verkey and inbound:
                 outbound.reply_from_verkey = inbound.receipt.recipient_verkey
@@ -697,7 +717,6 @@ class Conductor:
     ) -> OutboundSendStatus:
         """Handle a message that failed delivery via outbound transports."""
         queued_for_inbound = self.inbound_transport_manager.return_undelivered(outbound)
-
         return (
             OutboundSendStatus.WAITING_FOR_PICKUP
             if queued_for_inbound

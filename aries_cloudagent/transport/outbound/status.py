@@ -2,6 +2,8 @@
 
 from enum import Enum
 
+OUTBOUND_STATUS_PREFIX = "acapy::outbound-message::"
+
 
 class OutboundSendStatus(Enum):
     """Send status of outbound messages."""
@@ -21,3 +23,8 @@ class OutboundSendStatus(Enum):
 
     # No endpoint available, and no internal queue for messages.
     UNDELIVERABLE = "undeliverable"
+
+    @property
+    def topic(self):
+        """Return an event topic associated with a given status."""
+        return f"{OUTBOUND_STATUS_PREFIX}{self.value}"
