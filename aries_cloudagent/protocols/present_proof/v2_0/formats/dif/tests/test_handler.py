@@ -284,7 +284,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         for suite in suites:
             assert type(suite) in types
 
-    async def test_create_bound_request(self):
+    async def test_create_bound_request_a(self):
         dif_proposal_dict = {
             "input_descriptors": [
                 {
@@ -308,6 +308,118 @@ class TestDIFFormatHandler(AsyncTestCase):
                     },
                 }
             ]
+        }
+        dif_pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_json(dif_proposal_dict, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_proposal=dif_pres_proposal,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        output = await self.handler.create_bound_request(pres_ex_record=record)
+        assert isinstance(output[0], V20PresFormat) and isinstance(
+            output[1], AttachDecorator
+        )
+
+    async def test_create_bound_request_b(self):
+        dif_proposal_dict = {
+            "options": {"challenge": "test123"},
+            "input_descriptors": [
+                {
+                    "id": "citizenship_input_1",
+                    "name": "EU Driver's License",
+                    "group": ["A"],
+                    "schema": [
+                        {
+                            "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+                        }
+                    ],
+                    "constraints": {
+                        "limit_disclosure": "required",
+                        "fields": [
+                            {
+                                "path": ["$.credentialSubject.givenName"],
+                                "purpose": "The claim must be from one of the specified issuers",
+                                "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+        dif_pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_json(dif_proposal_dict, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_proposal=dif_pres_proposal,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        output = await self.handler.create_bound_request(pres_ex_record=record)
+        assert isinstance(output[0], V20PresFormat) and isinstance(
+            output[1], AttachDecorator
+        )
+
+    async def test_create_bound_request_c(self):
+        dif_proposal_dict = {
+            "options": {"domain": "test123"},
+            "input_descriptors": [
+                {
+                    "id": "citizenship_input_1",
+                    "name": "EU Driver's License",
+                    "group": ["A"],
+                    "schema": [
+                        {
+                            "uri": "https://www.w3.org/2018/credentials#VerifiableCredential"
+                        }
+                    ],
+                    "constraints": {
+                        "limit_disclosure": "required",
+                        "fields": [
+                            {
+                                "path": ["$.credentialSubject.givenName"],
+                                "purpose": "The claim must be from one of the specified issuers",
+                                "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
+                            }
+                        ],
+                    },
+                }
+            ],
         }
         dif_pres_proposal = V20PresProposal(
             formats=[
@@ -975,50 +1087,7 @@ class TestDIFFormatHandler(AsyncTestCase):
             error_msg="error",
         )
 
-        with self.assertRaises(V20PresFormatHandlerError):
-            await self.handler.verify_pres(record)
-
-    async def test_verify_pres_invalid_challenge(self):
-        test_pd = deepcopy(DIF_PRES_REQUEST_B)
-        del test_pd["options"]
-        dif_pres_request = V20PresRequest(
-            formats=[
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.DIF.api
-                    ],
-                )
-            ],
-            request_presentations_attach=[
-                AttachDecorator.data_json(test_pd, ident="dif")
-            ],
-        )
-        dif_pres = V20Pres(
-            formats=[
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
-                )
-            ],
-            presentations_attach=[AttachDecorator.data_json(DIF_PRES, ident="dif")],
-        )
-        record = V20PresExRecord(
-            pres_ex_id="pxid",
-            thread_id="thid",
-            connection_id="conn_id",
-            initiator="init",
-            role="role",
-            state="state",
-            pres_request=dif_pres_request,
-            pres=dif_pres,
-            verified="false",
-            auto_present=True,
-            error_msg="error",
-        )
-
-        with self.assertRaises(V20PresFormatHandlerError):
-            await self.handler.verify_pres(record)
+        assert await self.handler.verify_pres(record)
 
     async def test_create_pres_cred_limit_disclosure_no_bbs(self):
         test_pd = deepcopy(DIF_PRES_REQUEST_B)

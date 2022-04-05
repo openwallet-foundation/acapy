@@ -208,6 +208,11 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
 
     presentation_request = fields.Nested(V20PresRequestByFormatSchema(), required=True)
     comment = fields.Str(required=False, allow_none=True)
+    auto_verify = fields.Bool(
+        description="Verifier choice to auto-verify proof presentation",
+        required=False,
+        example=False,
+    )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
@@ -220,6 +225,21 @@ class V20PresSendRequestRequestSchema(V20PresCreateRequestRequestSchema):
 
     connection_id = fields.UUID(
         description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+
+
+class V20PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
+    """Request schema for sending a proof request bound to a proposal."""
+
+    auto_verify = fields.Bool(
+        description="Verifier choice to auto-verify proof presentation",
+        required=False,
+        example=False,
+    )
+    trace = fields.Bool(
+        description="Whether to trace event (default false)",
+        required=False,
+        example=False,
     )
 
 
@@ -803,6 +823,9 @@ async def present_proof_create_request(request: web.BaseRequest):
         will_confirm=True,
         **_formats_attach(pres_request_spec, PRES_20_REQUEST, "request_presentations"),
     )
+    auto_verify = body.get(
+        "auto_verify", context.settings.get("debug.auto_verify_presentation")
+    )
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
         context.settings,
@@ -815,6 +838,7 @@ async def present_proof_create_request(request: web.BaseRequest):
         pres_ex_record = await pres_manager.create_exchange_for_request(
             connection_id=None,
             pres_request_message=pres_request_message,
+            auto_verify=auto_verify,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -880,6 +904,9 @@ async def present_proof_send_free_request(request: web.BaseRequest):
         will_confirm=True,
         **_formats_attach(pres_request_spec, PRES_20_REQUEST, "request_presentations"),
     )
+    auto_verify = body.get(
+        "auto_verify", context.settings.get("debug.auto_verify_presentation")
+    )
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
         context.settings,
@@ -892,6 +919,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
         pres_ex_record = await pres_manager.create_exchange_for_request(
             connection_id=connection_id,
             pres_request_message=pres_request_message,
+            auto_verify=auto_verify,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -918,7 +946,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
     summary="Sends a presentation request in reference to a proposal",
 )
 @match_info_schema(V20PresExIdMatchInfoSchema())
-@request_schema(AdminAPIMessageTracingSchema())
+@request_schema(V20PresentationSendRequestToProposalSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
 async def present_proof_send_bound_request(request: web.BaseRequest):
     """
@@ -966,6 +994,9 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
     if not conn_record.is_ready:
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
+    pres_ex_record.auto_verify = body.get(
+        "auto_verify", context.settings.get("debug.auto_verify_presentation")
+    )
     pres_manager = V20PresManager(profile)
     try:
         (
