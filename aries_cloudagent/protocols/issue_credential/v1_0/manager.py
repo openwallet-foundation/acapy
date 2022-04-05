@@ -21,6 +21,7 @@ from ....messaging.credential_definitions.util import (
     CRED_DEF_SENT_RECORD_TYPE,
 )
 from ....messaging.responder import BaseResponder
+from ....multitenant.base import BaseMultitenantManager
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
@@ -268,7 +269,11 @@ class CredentialManager:
         credential_preview = credential_proposal_message.credential_proposal
 
         # vet attributes
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 cred_def_id,
@@ -407,20 +412,17 @@ class CredentialManager:
             A tuple (credential exchange record, credential request message)
 
         """
-        if cred_ex_record.state != V10CredentialExchange.STATE_OFFER_RECEIVED:
-            raise CredentialManagerError(
-                f"Credential exchange {cred_ex_record.credential_exchange_id} "
-                f"in {cred_ex_record.state} state "
-                f"(must be {V10CredentialExchange.STATE_OFFER_RECEIVED})"
-            )
-
         credential_definition_id = cred_ex_record.credential_definition_id
         cred_offer_ser = cred_ex_record._credential_offer.ser
         cred_req_ser = None
         cred_req_meta = None
 
         async def _create():
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+            else:
+                ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
                     credential_definition_id,
@@ -443,14 +445,14 @@ class CredentialManager:
                 "metadata": json.loads(metadata_json),
             }
 
-        if cred_ex_record.credential_request:
+        if cred_ex_record.state == V10CredentialExchange.STATE_REQUEST_SENT:
             LOGGER.warning(
                 "create_request called multiple times for v1.0 credential exchange: %s",
                 cred_ex_record.credential_exchange_id,
             )
             cred_req_ser = cred_ex_record._credential_request.ser
             cred_req_meta = cred_ex_record.credential_request_metadata
-        else:
+        elif cred_ex_record.state == V10CredentialExchange.STATE_OFFER_RECEIVED:
             nonce = cred_offer_ser["nonce"]
             cache_key = (
                 f"credential_request::{credential_definition_id}::{holder_did}::{nonce}"
@@ -469,6 +471,29 @@ class CredentialManager:
             cred_req_ser = cred_req_result["request"]
             cred_req_meta = cred_req_result["metadata"]
 
+            async with self._profile.transaction() as txn:
+                cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                    txn, cred_ex_record.credential_exchange_id, for_update=True
+                )
+                if cred_ex_record.state != V10CredentialExchange.STATE_OFFER_RECEIVED:
+                    raise CredentialManagerError(
+                        f"Credential exchange {cred_ex_record.credential_exchange_id} "
+                        f"in {cred_ex_record.state} state "
+                        f"(must be {V10CredentialExchange.STATE_OFFER_RECEIVED})"
+                    )
+
+                cred_ex_record.credential_request = cred_req_ser
+                cred_ex_record.credential_request_metadata = cred_req_meta
+                cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_SENT
+                await cred_ex_record.save(txn, reason="create credential request")
+                await txn.commit()
+        else:
+            raise CredentialManagerError(
+                f"Credential exchange {cred_ex_record.credential_exchange_id} "
+                f"in {cred_ex_record.state} state "
+                f"(must be {V10CredentialExchange.STATE_OFFER_RECEIVED})"
+            )
+
         credential_request_message = CredentialRequest(
             requests_attach=[CredentialRequest.wrap_indy_cred_req(cred_req_ser)]
         )
@@ -479,23 +504,6 @@ class CredentialManager:
         credential_request_message.assign_trace_decorator(
             self._profile.settings, cred_ex_record.trace
         )
-
-        async with self._profile.transaction() as txn:
-            cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                txn, cred_ex_record.credential_exchange_id, for_update=True
-            )
-            if cred_ex_record.state != V10CredentialExchange.STATE_OFFER_RECEIVED:
-                raise CredentialManagerError(
-                    f"Credential exchange {cred_ex_record.credential_exchange_id} "
-                    f"in {cred_ex_record.state} state "
-                    f"(must be {V10CredentialExchange.STATE_OFFER_RECEIVED})"
-                )
-
-            cred_ex_record.credential_request = cred_req_ser
-            cred_ex_record.credential_request_metadata = cred_req_meta
-            cred_ex_record.state = V10CredentialExchange.STATE_REQUEST_SENT
-            await cred_ex_record.save(txn, reason="create credential request")
-            await txn.commit()
 
         return (cred_ex_record, credential_request_message)
 
@@ -576,28 +584,27 @@ class CredentialManager:
 
         """
 
-        if cred_ex_record.state != V10CredentialExchange.STATE_REQUEST_RECEIVED:
-            raise CredentialManagerError(
-                f"Credential exchange {cred_ex_record.credential_exchange_id} "
-                f"in {cred_ex_record.state} state "
-                f"(must be {V10CredentialExchange.STATE_REQUEST_RECEIVED})"
-            )
-
-        schema_id = cred_ex_record.schema_id
-        rev_reg = None
         credential_ser = None
 
         if cred_ex_record.credential:
             LOGGER.warning(
-                "issue_credential called multiple times for "
-                + "credential exchange record %s - abstaining",
+                "issue_credential called multiple times for v1.0 credential exchange %s",
                 cred_ex_record.credential_exchange_id,
             )
             credential_ser = cred_ex_record._credential.ser
-        else:
+
+        elif cred_ex_record.state == V10CredentialExchange.STATE_REQUEST_RECEIVED:
+            rev_reg = None
+            rev_reg_id = None
+            cred_rev_id = None
             cred_offer_ser = cred_ex_record._credential_offer.ser
             cred_req_ser = cred_ex_record._credential_request.ser
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            schema_id = cred_ex_record.schema_id
+            multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+            else:
+                ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
                     schema_id,
@@ -618,8 +625,7 @@ class CredentialManager:
                         cred_ex_record.credential_definition_id
                     )
                     rev_reg = await active_rev_reg_rec.get_registry()
-                    cred_ex_record.revoc_reg_id = active_rev_reg_rec.revoc_reg_id
-
+                    rev_reg_id = rev_reg.registry_id
                     tails_path = rev_reg.tails_local_path
                     await rev_reg.get_or_fetch_local_tails_path()
 
@@ -680,22 +686,19 @@ class CredentialManager:
             )
             issuer = self._profile.inject(IndyIssuer)
             try:
-                (
-                    credential_json,
-                    cred_ex_record.revocation_id,
-                ) = await issuer.create_credential(
+                (credential_json, cred_rev_id) = await issuer.create_credential(
                     schema,
                     cred_offer_ser,
                     cred_req_ser,
                     credential_values,
                     cred_ex_record.credential_exchange_id,
-                    cred_ex_record.revoc_reg_id,
+                    rev_reg_id,
                     tails_path,
                 )
                 credential_ser = json.loads(credential_json)
 
                 # If the rev reg is now full
-                if rev_reg and rev_reg.max_creds == int(cred_ex_record.revocation_id):
+                if rev_reg and rev_reg.max_creds == int(cred_rev_id):
                     async with self._profile.session() as session:
                         await active_rev_reg_rec.set_state(
                             session,
@@ -735,26 +738,32 @@ class CredentialManager:
 
                 raise
 
-        async with self._profile.transaction() as txn:
-            cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                txn, cred_ex_record.credential_exchange_id, for_update=True
-            )
-            if cred_ex_record.state != V10CredentialExchange.STATE_REQUEST_RECEIVED:
-                raise CredentialManagerError(
-                    f"Credential exchange {cred_ex_record.credential_exchange_id} "
-                    f"in {cred_ex_record.state} state "
-                    f"(must be {V10CredentialExchange.STATE_REQUEST_RECEIVED})"
+            async with self._profile.transaction() as txn:
+                cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                    txn, cred_ex_record.credential_exchange_id, for_update=True
                 )
-            cred_ex_record.state = V10CredentialExchange.STATE_ISSUED
-            cred_ex_record.credential = credential_ser
-            await cred_ex_record.save(txn, reason="issue credential")
-            await txn.commit()
+                if cred_ex_record.state != V10CredentialExchange.STATE_REQUEST_RECEIVED:
+                    raise CredentialManagerError(
+                        f"Credential exchange {cred_ex_record.credential_exchange_id} "
+                        f"in {cred_ex_record.state} state "
+                        f"(must be {V10CredentialExchange.STATE_REQUEST_RECEIVED})"
+                    )
+                cred_ex_record.state = V10CredentialExchange.STATE_ISSUED
+                cred_ex_record.credential = credential_ser
+                cred_ex_record.revoc_reg_id = rev_reg_id
+                cred_ex_record.revocation_id = cred_rev_id
+                await cred_ex_record.save(txn, reason="issue credential")
+                await txn.commit()
+        else:
+            raise CredentialManagerError(
+                f"Credential exchange {cred_ex_record.credential_exchange_id} "
+                f"in {cred_ex_record.state} state "
+                f"(must be {V10CredentialExchange.STATE_REQUEST_RECEIVED})"
+            )
 
         credential_message = CredentialIssue(
             comment=comment,
-            credentials_attach=[
-                CredentialIssue.wrap_indy_credential(cred_ex_record._credential.ser)
-            ],
+            credentials_attach=[CredentialIssue.wrap_indy_credential(credential_ser)],
         )
         credential_message._thread = {"thid": cred_ex_record.thread_id}
         credential_message.assign_trace_decorator(
@@ -831,7 +840,11 @@ class CredentialManager:
 
         raw_cred_serde = cred_ex_record._raw_credential
         revoc_reg_def = None
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 raw_cred_serde.de.cred_def_id,

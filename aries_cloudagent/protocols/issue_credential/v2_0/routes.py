@@ -398,19 +398,31 @@ def _formats_filters(filt_spec: Mapping) -> Mapping:
     )
 
 
-async def _get_result_with_details(
+async def _get_attached_credentials(
     profile: Profile, cred_ex_record: V20CredExRecord
 ) -> Mapping:
-    """Get credential exchange result with detail records."""
-    result = {"cred_ex_record": cred_ex_record.serialize()}
+    """Fetch the detail records attached to a credential exchange."""
+    result = {}
 
     for fmt in V20CredFormat.Format:
         detail_record = await fmt.handler(profile).get_detail_record(
             cred_ex_record.cred_ex_id
         )
+        if detail_record:
+            result[fmt.api] = detail_record
 
-        result[fmt.api] = detail_record.serialize() if detail_record else None
+    return result
 
+
+def _format_result_with_details(
+    cred_ex_record: V20CredExRecord, details: Mapping
+) -> Mapping:
+    """Get credential exchange result with detail records."""
+    result = {"cred_ex_record": cred_ex_record.serialize()}
+    for fmt in V20CredFormat.Format:
+        ident = fmt.api
+        detail_record = details.get(ident)
+        result[ident] = detail_record.serialize() if detail_record else None
     return result
 
 
@@ -452,7 +464,8 @@ async def credential_exchange_list(request: web.BaseRequest):
 
         results = []
         for cxr in cred_ex_records:
-            result = await _get_result_with_details(profile, cxr)
+            details = await _get_attached_credentials(profile, cxr)
+            result = _format_result_with_details(cxr, details)
             results.append(result)
 
     except (StorageError, BaseModelError) as err:
@@ -488,8 +501,8 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
         async with profile.session() as session:
             cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
 
-        result = await _get_result_with_details(context.profile, cred_ex_record)
-
+        details = await _get_attached_credentials(profile, cred_ex_record)
+        result = _format_result_with_details(cred_ex_record, details)
     except StorageNotFoundError as err:
         # no such cred ex record: not protocol error, user fat-fingered id
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -1348,10 +1361,10 @@ async def credential_exchange_issue(request: web.BaseRequest):
                 conn_record = await ConnRecord.retrieve_by_id(
                     session, cred_ex_record.connection_id
                 )
-            if conn_record and not conn_record.is_ready:
-                raise web.HTTPForbidden(
-                    reason=f"Connection {cred_ex_record.connection_id} not ready"
-                )
+        if conn_record and not conn_record.is_ready:
+            raise web.HTTPForbidden(
+                reason=f"Connection {cred_ex_record.connection_id} not ready"
+            )
 
         cred_manager = V20CredManager(profile)
         (cred_ex_record, cred_issue_message) = await cred_manager.issue_credential(
@@ -1359,7 +1372,8 @@ async def credential_exchange_issue(request: web.BaseRequest):
             comment=comment,
         )
 
-        result = await _get_result_with_details(profile, cred_ex_record)
+        details = await _get_attached_credentials(profile, cred_ex_record)
+        result = _format_result_with_details(cred_ex_record, details)
 
     except (
         BaseModelError,
@@ -1469,14 +1483,16 @@ async def credential_exchange_store(request: web.BaseRequest):
         )
 
     try:
+        # fetch these early, before potential removal
+        details = await _get_attached_credentials(profile, cred_ex_record)
+
+        # the record may be auto-removed here
         (
             cred_ex_record,
             cred_ack_message,
         ) = await cred_manager.send_cred_ack(cred_ex_record)
 
-        # We first need to retrieve the the cred_ex_record with detail record
-        # as the record may be auto removed
-        result = await _get_result_with_details(profile, cred_ex_record)
+        result = _format_result_with_details(cred_ex_record, details)
 
     except (
         BaseModelError,

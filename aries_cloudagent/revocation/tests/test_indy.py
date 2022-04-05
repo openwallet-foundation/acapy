@@ -7,6 +7,8 @@ from ...ledger.base import BaseLedger
 from ...ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from ...multitenant.base import BaseMultitenantManager
+from ...multitenant.manager import MultitenantManager
 from ...storage.error import StorageNotFoundError
 
 from ..error import (
@@ -48,6 +50,22 @@ class TestIndyRevocation(AsyncTestCase):
 
         result = await self.revoc.init_issuer_registry(CRED_DEF_ID)
 
+        assert result.cred_def_id == CRED_DEF_ID
+        assert result.issuer_did == self.test_did
+        assert result.max_cred_num == DEFAULT_REGISTRY_SIZE
+        assert result.revoc_def_type == IssuerRevRegRecord.REVOC_DEF_TYPE_CL
+        assert result.tag is None
+
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=(None, self.ledger)),
+        ):
+            result = await self.revoc.init_issuer_registry(CRED_DEF_ID)
         assert result.cred_def_id == CRED_DEF_ID
         assert result.issuer_did == self.test_did
         assert result.max_cred_num == DEFAULT_REGISTRY_SIZE
@@ -148,6 +166,27 @@ class TestIndyRevocation(AsyncTestCase):
             assert "dummy" in IndyRevocation.REV_REG_CACHE
 
             await self.revoc.get_ledger_registry("dummy")
+
+        mock_from_def.assert_called_once_with(
+            self.ledger.get_revoc_reg_def.return_value, True
+        )
+
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=(None, self.ledger)),
+        ), async_mock.patch.object(
+            RevocationRegistry, "from_definition", async_mock.MagicMock()
+        ) as mock_from_def:
+            result = await self.revoc.get_ledger_registry("dummy2")
+            assert result == mock_from_def.return_value
+            assert "dummy2" in IndyRevocation.REV_REG_CACHE
+
+            await self.revoc.get_ledger_registry("dummy2")
 
         mock_from_def.assert_called_once_with(
             self.ledger.get_revoc_reg_def.return_value, True

@@ -18,6 +18,8 @@ from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from .....multitenant.base import BaseMultitenantManager
+from .....multitenant.manager import MultitenantManager
 from .....storage.base import StorageRecord
 from .....storage.error import StorageNotFoundError
 
@@ -367,6 +369,10 @@ class TestCredentialManager(AsyncTestCase):
             credential_proposal_dict=proposal.serialize(),
             new_with_id=True,
         )
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
         await stored_exchange.save(self.session)
 
         with async_mock.patch.object(
@@ -670,12 +676,11 @@ class TestCredentialManager(AsyncTestCase):
             await self.manager.create_request(stored_exchange, holder_did)
 
             # cover case with existing cred req
-            stored_exchange.state = V10CredentialExchange.STATE_OFFER_RECEIVED
-            stored_exchange.credential_request = INDY_CRED_REQ
             (
-                _ret_existing_exchange,
+                ret_existing_exchange,
                 ret_existing_request,
-            ) = await self.manager.create_request(stored_exchange, holder_did)
+            ) = await self.manager.create_request(ret_exchange, holder_did)
+            assert ret_existing_exchange == ret_exchange
             assert ret_existing_request._thread_id == thread_id
             assert ret_existing_request._thread.pthid == "some-pthid"
 
@@ -701,6 +706,10 @@ class TestCredentialManager(AsyncTestCase):
             schema_id=SCHEMA_ID,
             thread_id=thread_id,
             new_with_id=True,
+        )
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
         )
         await stored_exchange.save(self.session)
 
@@ -915,9 +924,9 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex:
             revoc.return_value.get_active_issuer_rev_reg_record = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(  # active_rev_reg_rec
-                    revoc_reg_id=REV_REG_ID,
                     get_registry=async_mock.CoroutineMock(
                         return_value=async_mock.MagicMock(  # rev_reg
+                            registry_id=REV_REG_ID,
                             tails_local_path="dummy-path",
                             get_or_fetch_local_tails_path=async_mock.CoroutineMock(),
                         )
@@ -946,14 +955,11 @@ class TestCredentialManager(AsyncTestCase):
             assert ret_cred_issue._thread_id == thread_id
 
             # cover case with existing cred
-            stored_exchange.credential = cred
-            stored_exchange.state = V10CredentialExchange.STATE_REQUEST_RECEIVED
-            await stored_exchange.save(self.session)
             (
                 ret_existing_exchange,
                 ret_existing_cred,
             ) = await self.manager.issue_credential(
-                stored_exchange, comment=comment, retries=0
+                ret_exchange, comment=comment, retries=0
             )
             assert ret_existing_exchange == ret_exchange
             assert ret_existing_cred._thread_id == thread_id
@@ -965,7 +971,10 @@ class TestCredentialManager(AsyncTestCase):
         comment = "comment"
         cred_values = {"attr": "value"}
         thread_id = "thread-id"
-
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
         stored_exchange = V10CredentialExchange(
             credential_exchange_id="dummy-cxid",
             connection_id=connection_id,
@@ -1003,17 +1012,13 @@ class TestCredentialManager(AsyncTestCase):
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.context.injector.clear_binding(BaseLedger)
         self.context.injector.bind_instance(BaseLedger, self.ledger)
-        self.context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
-                    return_value=("test_ledger_id", self.ledger)
-                )
-            ),
-        )
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
-        ) as save_ex:
+        ) as save_ex, async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ):
             (ret_exchange, ret_cred_issue) = await self.manager.issue_credential(
                 stored_exchange, comment=comment, retries=0
             )
@@ -1081,9 +1086,9 @@ class TestCredentialManager(AsyncTestCase):
                 get_active_issuer_rev_reg_record=(
                     async_mock.CoroutineMock(
                         return_value=async_mock.MagicMock(  # active_rev_reg_rec
-                            revoc_reg_id=REV_REG_ID,
                             get_registry=async_mock.CoroutineMock(
                                 return_value=async_mock.MagicMock(  # rev_reg
+                                    registry_id=REV_REG_ID,
                                     tails_local_path="dummy-path",
                                     max_creds=1000,
                                     get_or_fetch_local_tails_path=(
@@ -1496,7 +1501,10 @@ class TestCredentialManager(AsyncTestCase):
         connection_id = "test_conn_id"
         cred_req_meta = {"req": "meta"}
         thread_id = "thread-id"
-
+        self.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
         cred_no_rev = {**INDY_CRED}
         cred_no_rev["rev_reg_id"] = None
         cred_no_rev["rev_reg"] = None
