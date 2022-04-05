@@ -23,6 +23,7 @@ from ..config.ledger import (
     ledger_config,
     load_multiple_genesis_transactions_from_config,
 )
+from ..config.error import ArgsParseError
 from ..config.logging import LoggingConfigurator
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
@@ -105,6 +106,52 @@ class Conductor:
         """Initialize the global request context."""
 
         context = await self.context_builder.build_context()
+        ext_plugin = context.settings.get("external_plugins")
+        ext_plugin_config = context.settings.get("plugin_config")
+        in_transport_config_exception = False
+        if not context.settings.get("transport.inbound_configs"):
+            if ext_plugin and ext_plugin_config:
+                if (
+                    "redis_queue" in ext_plugin_config
+                    and "inbound" in ext_plugin_config["redis_queue"]
+                ):
+                    pass
+                else:
+                    in_transport_config_exception = False
+            if ext_plugin and ext_plugin_config:
+                if (
+                    "kafka_queue" in ext_plugin_config
+                    and "consumer-config" in ext_plugin_config["kafka_queue"]
+                ):
+                    pass
+                else:
+                    in_transport_config_exception = False
+            if in_transport_config_exception:
+                raise ArgsParseError(
+                    "No --inbound-transport/-it and external transport config specified"
+                )
+        out_transport_config_exception = False
+        if not context.settings.get("transport.outbound_configs"):
+            if ext_plugin and ext_plugin_config:
+                if (
+                    "redis_queue" in ext_plugin_config
+                    and "outbound" in ext_plugin_config["redis_queue"]
+                ):
+                    pass
+                else:
+                    out_transport_config_exception = False
+            if ext_plugin and ext_plugin_config:
+                if (
+                    "kafka_queue" in ext_plugin_config
+                    and "producer-config" in ext_plugin_config["kafka_queue"]
+                ):
+                    pass
+                else:
+                    out_transport_config_exception = False
+            if out_transport_config_exception:
+                raise ArgsParseError(
+                    "No --outbound-transport/-ot and external transport config specified"
+                )
 
         # Fetch genesis transactions if necessary
         if context.settings.get("ledger.ledger_config_list"):
