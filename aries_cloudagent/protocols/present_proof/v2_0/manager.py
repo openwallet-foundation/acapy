@@ -161,7 +161,10 @@ class V20PresManager:
         return pres_ex_record, pres_request_message
 
     async def create_exchange_for_request(
-        self, connection_id: str, pres_request_message: V20PresRequest
+        self,
+        connection_id: str,
+        pres_request_message: V20PresRequest,
+        auto_verify: bool = None,
     ):
         """
         Create a presentation exchange record for input presentation request.
@@ -182,6 +185,7 @@ class V20PresManager:
             role=V20PresExRecord.ROLE_VERIFIER,
             state=V20PresExRecord.STATE_REQUEST_SENT,
             pres_request=pres_request_message,
+            auto_verify=auto_verify,
             trace=(pres_request_message._trace is not None),
         )
         async with self._profile.session() as session:
@@ -339,7 +343,8 @@ class V20PresManager:
                     )
         pres_ex_record.pres = message
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
-
+        if not pres_ex_record.connection_id:
+            pres_ex_record.connection_id = conn_record.connection_id
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="receive v2.0 presentation")
 

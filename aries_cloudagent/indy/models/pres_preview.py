@@ -14,6 +14,7 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.util import canon
 from ...messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
+from ...multitenant.base import BaseMultitenantManager
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.util import b64_to_str
 
@@ -351,7 +352,11 @@ class IndyPresPreview(BaseModel):
             revoc_support = False
             if cd_id:
                 if profile:
-                    ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
+                    multitenant_mgr = profile.inject_or(BaseMultitenantManager)
+                    if multitenant_mgr:
+                        ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
+                    else:
+                        ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
                     ledger = (
                         await ledger_exec_inst.get_ledger_for_identifier(
                             cd_id,
@@ -410,7 +415,11 @@ class IndyPresPreview(BaseModel):
             revoc_support = False
             if cd_id:
                 if profile:
-                    ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
+                    multitenant_mgr = profile.inject_or(BaseMultitenantManager)
+                    if multitenant_mgr:
+                        ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
+                    else:
+                        ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
                     ledger = (
                         await ledger_exec_inst.get_ledger_for_identifier(
                             cd_id,
