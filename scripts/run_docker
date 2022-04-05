@@ -14,9 +14,8 @@ for PORT in $PORTS; do
   ARGS="${ARGS} -p $PORT"
 done
 
-ENV_VAR_ARGS=""
 for ENV_VAR in $ENV_VARS; do
-  ENV_VAR_ARGS="${ENV_VAR_ARGS} -e $ENV_VAR"
+  ARGS="${ARGS} -e $ENV_VAR"
 done
 PTVSD_PORT="${PTVSD_PORT-5678}"
 
@@ -49,5 +48,5 @@ if [ "$OSTYPE" == "msys" ]; then
 fi
 
 RAND_NAME=$(env LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1)
-$CONTAINER_RUNTIME run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" $ENV_VAR_ARGS \
+$CONTAINER_RUNTIME run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" \
     $ARGS aries-cloudagent-run "$@"
