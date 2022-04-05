@@ -1252,7 +1252,7 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
     revoc_reg_id = event.payload["context"]["rev_reg_id"]
     tails_local_path = tails_path(revoc_reg_id)
     (upload_success, reason) = await tails_server.upload_tails_file(
-        profile,
+        profile.context,
         revoc_reg_id,
         tails_local_path,
         interval=0.8,
