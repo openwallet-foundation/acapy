@@ -190,7 +190,10 @@ class DIDCreateSchema(OpenAPISchema):
 
     seed = fields.Str(
         required=False,
-        description="Optional seed to use for DID",
+        description=(
+            "Optional seed to use for DID, Must be"
+            "enabled in configuration before use."
+        ),
         example="000000000000000000000000Trustee1",
     )
 
