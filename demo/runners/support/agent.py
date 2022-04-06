@@ -572,6 +572,12 @@ class DemoAgent:
         new_wallet = await self.agency_admin_POST("/multitenancy/wallet", wallet_params)
         self.log("New wallet params:", new_wallet)
         self.managed_wallet_params = new_wallet
+
+        # if endorser, endorse the wallet ledger operations
+        if endorser_agent:
+            if not await connect_wallet_to_endorser(self, endorser_agent):
+                raise Exception("Endorser setup FAILED :-(")
+
         if public_did:
             if cred_type == CRED_FORMAT_INDY:
                 # assign public did
@@ -598,11 +604,6 @@ class DemoAgent:
             if not await connect_wallet_to_mediator(self, mediator_agent):
                 log_msg("Mediation setup FAILED :-(")
                 raise Exception("Mediation setup FAILED :-(")
-
-        # if endorser, endorse the wallet ledger operations
-        if endorser_agent:
-            if not await connect_wallet_to_endorser(self, endorser_agent):
-                raise Exception("Endorser setup FAILED :-(")
 
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
