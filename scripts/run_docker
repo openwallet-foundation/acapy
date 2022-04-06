@@ -14,6 +14,9 @@ for PORT in $PORTS; do
   ARGS="${ARGS} -p $PORT"
 done
 
+for ENV_VAR in $ENV_VARS; do
+  ARGS="${ARGS} -e $ENV_VAR"
+done
 PTVSD_PORT="${PTVSD_PORT-5678}"
 
 for arg in "$@"; do
