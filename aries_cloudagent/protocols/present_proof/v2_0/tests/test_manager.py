@@ -20,6 +20,8 @@ from .....ledger.multiple_ledger.ledger_requests_executor import (
 )
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
+from .....multitenant.base import BaseMultitenantManager
+from .....multitenant.manager import MultitenantManager
 from .....storage.error import StorageNotFoundError
 
 from ...indy import pres_exch_handler as test_indy_util_module
@@ -551,7 +553,7 @@ class TestV20PresManager(AsyncTestCase):
 
             assert px_rec.state == V20PresExRecord.STATE_PROPOSAL_RECEIVED
 
-    async def test_create_bound_request(self):
+    async def test_create_bound_request_a(self):
         comment = "comment"
 
         proposal = V20PresProposal(
@@ -580,6 +582,34 @@ class TestV20PresManager(AsyncTestCase):
         (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
             pres_ex_record=px_rec,
             request_data=request_data,
+            comment=comment,
+        )
+        assert ret_px_rec is px_rec
+        px_rec.save.assert_called_once()
+
+    async def test_create_bound_request_b(self):
+        comment = "comment"
+
+        proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+            ],
+        )
+        px_rec = V20PresExRecord(
+            pres_proposal=proposal.serialize(),
+            role=V20PresExRecord.ROLE_VERIFIER,
+        )
+        px_rec.save = async_mock.CoroutineMock()
+        (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
+            pres_ex_record=px_rec,
             comment=comment,
         )
         assert ret_px_rec is px_rec
@@ -805,7 +835,15 @@ class TestV20PresManager(AsyncTestCase):
                 return_value="/tmp/sample/tails/path"
             )
         )
+        self.profile.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
         with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ), async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
             test_indy_handler, "AttachDecorator", autospec=True
@@ -1858,8 +1896,15 @@ class TestV20PresManager(AsyncTestCase):
             pres_request=pres_request,
             pres=pres,
         )
-
-        with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+        self.profile.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ), async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
             px_rec_out = await self.manager.verify_pres(px_rec_in)
             save_ex.assert_called_once()
 

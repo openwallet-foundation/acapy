@@ -18,6 +18,7 @@ from ..messaging.valid import (
     INT_EPOCH,
     UUIDFour,
 )
+from ..multitenant.base import BaseMultitenantManager
 
 from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
@@ -369,7 +370,11 @@ async def get_nym_role(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with context.profile.session() as session:
-        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = session.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+        else:
+            ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
         ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
             did,
             txn_record_type=GET_NYM_ROLE,
@@ -442,7 +447,11 @@ async def get_did_verkey(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with context.profile.session() as session:
-        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = session.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+        else:
+            ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
         ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
             did,
             txn_record_type=GET_KEY_FOR_DID,
@@ -487,7 +496,11 @@ async def get_did_endpoint(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     async with context.profile.session() as session:
-        ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = session.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(context.profile)
+        else:
+            ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
         ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
             did,
             txn_record_type=GET_ENDPOINT_FOR_DID,

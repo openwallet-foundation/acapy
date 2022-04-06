@@ -8,6 +8,7 @@ from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_REVOC_REG_DEF,
     IndyLedgerRequestsExecutor,
 )
+from ..multitenant.base import BaseMultitenantManager
 from ..storage.base import StorageNotFoundError
 
 from .error import RevocationNotSupportedError, RevocationRegistryBadSizeError
@@ -32,7 +33,11 @@ class IndyRevocation:
         tag: str = None,
     ) -> "IssuerRevRegRecord":
         """Create a new revocation registry record for a credential definition."""
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
+        else:
+            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 cred_def_id,
@@ -108,7 +113,11 @@ class IndyRevocation:
         if revoc_reg_id in IndyRevocation.REV_REG_CACHE:
             return IndyRevocation.REV_REG_CACHE[revoc_reg_id]
 
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
+        else:
+            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 revoc_reg_id,
