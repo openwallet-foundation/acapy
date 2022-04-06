@@ -182,6 +182,12 @@ class DIDCreateSchema(OpenAPISchema):
         description="To define a key type for a did:key",
     )
 
+    seed = fields.Str(
+        required=False,
+        description="Optional seed to use for DID",
+        example="000000000000000000000000Trustee1",
+    )
+
 
 class CreateAttribTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
@@ -349,9 +355,9 @@ async def wallet_create_did(request: web.BaseRequest):
                 f" support key type {key_type.key_type}"
             )
         )
-    seed = None
-    if context.settings.get("wallet.allow_insecure_seed"):
-        seed = body.get("seed") or None
+    seed = body.get("seed") or None
+    if seed and not context.settings.get("wallet.allow_insecure_seed"):
+        raise web.HTTPBadRequest(reason="Seed support is not enabled")
     info = None
     async with context.session() as session:
         wallet = session.inject_or(BaseWallet)
