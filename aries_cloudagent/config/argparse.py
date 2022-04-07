@@ -1424,6 +1424,15 @@ class WalletGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--wallet-allow-insecure-seed",
+            action="store_true",
+            env_var="ACAPY_WALLET_ALLOW_INSECURE_SEED",
+            help=(
+                "If this parameter is set, allows to use a custom seed "
+                "to create a local DID"
+            ),
+        )
+        parser.add_argument(
             "--wallet-key",
             type=str,
             metavar="<wallet-key>",
@@ -1543,6 +1552,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.seed"] = args.seed
         if args.wallet_local_did:
             settings["wallet.local_did"] = True
+        if args.wallet_allow_insecure_seed:
+            settings["wallet.allow_insecure_seed"] = True
         if args.wallet_key:
             settings["wallet.key"] = args.wallet_key
         if args.wallet_rekey:

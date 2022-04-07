@@ -1,5 +1,6 @@
 """V2.0 present-proof dif presentation-exchange format handler."""
 
+import json
 import logging
 
 from marshmallow import RAISE
@@ -151,9 +152,18 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        dif_proof_request = pres_ex_record.pres_proposal.attachment(
+        dif_proof_request = {}
+        pres_proposal_dict = pres_ex_record.pres_proposal.attachment(
             DIFPresFormatHandler.format
         )
+        if "options" not in pres_proposal_dict:
+            dif_proof_request["options"] = {"challenge": str(uuid4())}
+        else:
+            dif_proof_request["options"] = pres_proposal_dict["options"]
+            del pres_proposal_dict["options"]
+            if "challenge" not in dif_proof_request.get("options"):
+                dif_proof_request["options"]["challenge"] = str(uuid4())
+        dif_proof_request["presentation_definition"] = pres_proposal_dict
 
         return self.get_format_data(PRES_20_REQUEST, dif_proof_request)
 
@@ -459,21 +469,16 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             pres_request = pres_ex_record.pres_request.attachment(
                 DIFPresFormatHandler.format
             )
+            challenge = None
             if "options" in pres_request:
-                challenge = pres_request["options"].get("challenge")
-            else:
-                raise V20PresFormatHandlerError(
-                    "No options [challenge] set for the presentation request"
-                )
+                challenge = pres_request["options"].get("challenge", str(uuid4()))
             if not challenge:
-                raise V20PresFormatHandlerError(
-                    "No challenge is set for the presentation request"
-                )
+                challenge = str(uuid4())
             pres_ver_result = await verify_presentation(
                 presentation=dif_proof,
                 suites=await self._get_all_suites(wallet=wallet),
                 document_loader=self._profile.inject(DocumentLoader),
                 challenge=challenge,
             )
-            pres_ex_record.verified = pres_ver_result.verified
+            pres_ex_record.verified = json.dumps(pres_ver_result.verified)
             return pres_ex_record

@@ -12,6 +12,7 @@ from ..ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ..messaging.util import canon, encode
+from ..multitenant.base import BaseMultitenantManager
 
 from .models.xform import indy_proof_req2non_revoc_intervals
 
@@ -107,24 +108,32 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         """
         now = int(time())
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_req)
+        LOGGER.debug(f">>> got non-revoc intervals: {non_revoc_intervals}")
         # timestamp for irrevocable credential
+        cred_defs = []
         for (index, ident) in enumerate(pres["identifiers"]):
-            if ident.get("timestamp"):
-                cred_def_id = ident["cred_def_id"]
+            LOGGER.debug(f">>> got (index, ident): ({index},{ident})")
+            cred_def_id = ident["cred_def_id"]
+            multitenant_mgr = profile.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
+            else:
                 ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-                ledger = (
-                    await ledger_exec_inst.get_ledger_for_identifier(
-                        cred_def_id,
-                        txn_record_type=GET_CRED_DEF,
+            ledger = (
+                await ledger_exec_inst.get_ledger_for_identifier(
+                    cred_def_id,
+                    txn_record_type=GET_CRED_DEF,
+                )
+            )[1]
+            async with ledger:
+                cred_def = await ledger.get_credential_definition(cred_def_id)
+            cred_defs.append(cred_def)
+            if ident.get("timestamp"):
+                if not cred_def["value"].get("revocation"):
+                    raise ValueError(
+                        f"Timestamp in presentation identifier #{index} "
+                        f"for irrevocable cred def id {cred_def_id}"
                     )
-                )[1]
-                async with ledger:
-                    cred_def = await ledger.get_credential_definition(cred_def_id)
-                    if not cred_def["value"].get("revocation"):
-                        raise ValueError(
-                            f"Timestamp in presentation identifier #{index} "
-                            f"for irrevocable cred def id {cred_def_id}"
-                        )
 
         # timestamp in the future too far in the past
         for ident in pres["identifiers"]:
@@ -157,23 +166,30 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
             if "name" in req_attr:
                 if uuid in revealed_attrs:
                     index = revealed_attrs[uuid]["sub_proof_index"]
-                    timestamp = pres["identifiers"][index].get("timestamp")
-                    if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
-                        raise ValueError(
-                            f"Timestamp on sub-proof #{index} "
-                            f"is {'superfluous' if timestamp else 'missing'} "
-                            f"vs. requested attribute {uuid}"
-                        )
-                    if non_revoc_intervals.get(uuid) and not (
-                        non_revoc_intervals[uuid].get("from", 0)
-                        < timestamp
-                        < non_revoc_intervals[uuid].get("to", now)
-                    ):
-                        LOGGER.info(
-                            f"Timestamp {timestamp} from ledger for item"
-                            f"{uuid} falls outside non-revocation interval "
-                            f"{non_revoc_intervals[uuid]}"
-                        )
+                    if cred_defs[index]["value"].get("revocation"):
+                        timestamp = pres["identifiers"][index].get("timestamp")
+                        if (timestamp is not None) ^ bool(
+                            non_revoc_intervals.get(uuid)
+                        ):
+                            LOGGER.debug(f">>> uuid: {uuid}")
+                            LOGGER.debug(
+                                f">>> revealed_attrs[uuid]: {revealed_attrs[uuid]}"
+                            )
+                            raise ValueError(
+                                f"Timestamp on sub-proof #{index} "
+                                f"is {'superfluous' if timestamp else 'missing'} "
+                                f"vs. requested attribute {uuid}"
+                            )
+                        if non_revoc_intervals.get(uuid) and not (
+                            non_revoc_intervals[uuid].get("from", 0)
+                            < timestamp
+                            < non_revoc_intervals[uuid].get("to", now)
+                        ):
+                            LOGGER.info(
+                                f"Timestamp {timestamp} from ledger for item"
+                                f"{uuid} falls outside non-revocation interval "
+                                f"{non_revoc_intervals[uuid]}"
+                            )
                 elif uuid not in self_attested:
                     raise ValueError(
                         f"Presentation attributes mismatch requested attribute {uuid}"
@@ -188,23 +204,24 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                 ):
                     raise ValueError(f"Missing requested attribute group {uuid}")
                 index = group_spec["sub_proof_index"]
-                timestamp = pres["identifiers"][index].get("timestamp")
-                if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
-                    raise ValueError(
-                        f"Timestamp on sub-proof #{index} "
-                        f"is {'superfluous' if timestamp else 'missing'} "
-                        f"vs. requested attribute group {uuid}"
-                    )
-                if non_revoc_intervals.get(uuid) and not (
-                    non_revoc_intervals[uuid].get("from", 0)
-                    < timestamp
-                    < non_revoc_intervals[uuid].get("to", now)
-                ):
-                    LOGGER.warning(
-                        f"Timestamp {timestamp} from ledger for item"
-                        f"{uuid} falls outside non-revocation interval "
-                        f"{non_revoc_intervals[uuid]}"
-                    )
+                if cred_defs[index]["value"].get("revocation"):
+                    timestamp = pres["identifiers"][index].get("timestamp")
+                    if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
+                        raise ValueError(
+                            f"Timestamp on sub-proof #{index} "
+                            f"is {'superfluous' if timestamp else 'missing'} "
+                            f"vs. requested attribute group {uuid}"
+                        )
+                    if non_revoc_intervals.get(uuid) and not (
+                        non_revoc_intervals[uuid].get("from", 0)
+                        < timestamp
+                        < non_revoc_intervals[uuid].get("to", now)
+                    ):
+                        LOGGER.warning(
+                            f"Timestamp {timestamp} from ledger for item"
+                            f"{uuid} falls outside non-revocation interval "
+                            f"{non_revoc_intervals[uuid]}"
+                        )
 
         for (uuid, req_pred) in pres_req["requested_predicates"].items():
             pred_spec = preds.get(uuid)
@@ -213,23 +230,24 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     f"Presentation predicates mismatch requested predicate {uuid}"
                 )
             index = pred_spec["sub_proof_index"]
-            timestamp = pres["identifiers"][index].get("timestamp")
-            if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
-                raise ValueError(
-                    f"Timestamp on sub-proof #{index} "
-                    f"is {'superfluous' if timestamp else 'missing'} "
-                    f"vs. requested predicate {uuid}"
-                )
-            if non_revoc_intervals.get(uuid) and not (
-                non_revoc_intervals[uuid].get("from", 0)
-                < timestamp
-                < non_revoc_intervals[uuid].get("to", now)
-            ):
-                LOGGER.warning(
-                    f"Best-effort timestamp {timestamp} "
-                    "from ledger falls outside non-revocation interval "
-                    f"{non_revoc_intervals[uuid]}"
-                )
+            if cred_defs[index]["value"].get("revocation"):
+                timestamp = pres["identifiers"][index].get("timestamp")
+                if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
+                    raise ValueError(
+                        f"Timestamp on sub-proof #{index} "
+                        f"is {'superfluous' if timestamp else 'missing'} "
+                        f"vs. requested predicate {uuid}"
+                    )
+                if non_revoc_intervals.get(uuid) and not (
+                    non_revoc_intervals[uuid].get("from", 0)
+                    < timestamp
+                    < non_revoc_intervals[uuid].get("to", now)
+                ):
+                    LOGGER.warning(
+                        f"Best-effort timestamp {timestamp} "
+                        "from ledger falls outside non-revocation interval "
+                        f"{non_revoc_intervals[uuid]}"
+                    )
 
     async def pre_verify(self, pres_req: dict, pres: dict):
         """
