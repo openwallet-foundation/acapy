@@ -194,7 +194,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             tag_query=tag_query,
         )
         if 0 < len(found):
-            # need to check te 'tag' value
+            # need to check the 'tag' value
             for record in found:
                 cred_def_id = record.value
                 cred_def_id_parts = cred_def_id.split(":")
