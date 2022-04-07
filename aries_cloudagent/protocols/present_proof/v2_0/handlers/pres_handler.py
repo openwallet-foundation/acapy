@@ -49,7 +49,7 @@ class V20PresHandler(BaseHandler):
         )
 
         # Automatically move to next state if flag is set
-        if context.settings.get("debug.auto_verify_presentation"):
+        if pres_ex_record and pres_ex_record.auto_verify:
             try:
                 await pres_manager.verify_pres(pres_ex_record)
             except (BaseModelError, LedgerError, StorageError) as err:

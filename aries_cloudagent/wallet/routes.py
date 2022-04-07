@@ -355,13 +355,20 @@ async def wallet_create_did(request: web.BaseRequest):
                 f" support key type {key_type.key_type}"
             )
         )
+    seed = None
+    if context.settings.get("wallet.allow_insecure_seed"):
+        seed = body.get("seed") or None
     info = None
     async with context.session() as session:
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
         try:
-            info = await wallet.create_local_did(method=method, key_type=key_type)
+            info = await wallet.create_local_did(
+                method=method,
+                key_type=key_type,
+                seed=seed,
+            )
 
         except WalletError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
