@@ -184,6 +184,18 @@ async def schemas_send_schema(request: web.BaseRequest):
     schema_version = body.get("schema_version")
     attributes = body.get("attributes")
 
+    tag_query = {"schema_name": schema_name, "schema_version": schema_version}
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        found = await storage.find_all_records(
+            type_filter=SCHEMA_SENT_RECORD_TYPE,
+            tag_query=tag_query,
+        )
+        if 0 < len(found):
+            raise web.HTTPBadRequest(
+                reason=f"Schema {schema_name} {schema_version} already exists"
+            )
+
     # check if we need to endorse
     if is_author_role(context.profile):
         # authors cannot write to the ledger
