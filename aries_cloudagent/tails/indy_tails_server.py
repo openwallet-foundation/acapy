@@ -2,6 +2,8 @@
 
 from typing import Tuple
 
+from ..config.injection_context import InjectionContext
+from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..utils.http import put_file, PutError
 
 from .base import BaseTailsServer
@@ -13,7 +15,7 @@ class IndyTailsServer(BaseTailsServer):
 
     async def upload_tails_file(
         self,
-        context,
+        context: InjectionContext,
         rev_reg_id: str,
         tails_file_path: str,
         interval: float = 1.0,
@@ -30,9 +32,18 @@ class IndyTailsServer(BaseTailsServer):
             backoff: exponential backoff in retry interval
             max_attempts: maximum number of attempts to make
         """
-
-        genesis_transactions = context.settings.get("ledger.genesis_transactions")
         tails_server_upload_url = context.settings.get("tails_server_upload_url")
+        genesis_transactions = context.settings.get("ledger.genesis_transactions")
+
+        if not genesis_transactions:
+            ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
+            write_ledgers = await ledger_manager.get_write_ledger()
+            pool = write_ledgers[1].pool
+
+            try:
+                genesis_transactions = pool.genesis_transactions
+            except AttributeError:
+                genesis_transactions = pool.genesis_txns_cache
 
         if not tails_server_upload_url:
             raise TailsServerNotConfiguredError(

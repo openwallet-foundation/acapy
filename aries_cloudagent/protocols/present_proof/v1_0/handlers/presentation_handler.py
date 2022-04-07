@@ -49,7 +49,7 @@ class PresentationHandler(BaseHandler):
         )
 
         # Automatically move to next state if flag is set
-        if context.settings.get("debug.auto_verify_presentation"):
+        if presentation_exchange_record and presentation_exchange_record.auto_verify:
             try:
                 await presentation_manager.verify_presentation(
                     presentation_exchange_record

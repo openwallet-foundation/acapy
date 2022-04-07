@@ -13,6 +13,8 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ....messaging.util import canon
+from ....multitenant.base import BaseMultitenantManager
+from ....multitenant.manager import MultitenantManager
 from ....protocols.didcomm_prefix import DIDCommPrefix
 
 
@@ -442,6 +444,10 @@ class TestIndyPresPreviewAsync(AsyncTestCase):
         context = mock_profile.context
         context.injector.bind_instance(
             IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
+        )
+        context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
         )
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"

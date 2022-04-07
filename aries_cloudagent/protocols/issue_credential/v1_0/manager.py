@@ -21,6 +21,7 @@ from ....messaging.credential_definitions.util import (
     CRED_DEF_SENT_RECORD_TYPE,
 )
 from ....messaging.responder import BaseResponder
+from ....multitenant.base import BaseMultitenantManager
 from ....revocation.indy import IndyRevocation
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
@@ -266,7 +267,11 @@ class CredentialManager:
         credential_preview = credential_proposal_message.credential_proposal
 
         # vet attributes
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 cred_def_id,
@@ -406,7 +411,11 @@ class CredentialManager:
         cred_req_meta = None
 
         async def _create():
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+            else:
+                ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
                     credential_definition_id,
@@ -572,7 +581,11 @@ class CredentialManager:
             cred_offer_ser = cred_ex_record._credential_offer.ser
             cred_req_ser = cred_ex_record._credential_request.ser
             schema_id = cred_ex_record.schema_id
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+            multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+            else:
+                ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
                     schema_id,
@@ -804,7 +817,11 @@ class CredentialManager:
 
         raw_cred_serde = cred_ex_record._raw_credential
         revoc_reg_def = None
-        ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        if multitenant_mgr:
+            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
+        else:
+            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
                 raw_cred_serde.de.cred_def_id,
