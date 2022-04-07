@@ -234,7 +234,6 @@ class TestMultitenantRoutes(AsyncTestCase):
                 WalletRecord.MODE_MANAGED,
             )
 
-
     async def test_wallet_create_raw_key_derivation(self):
         body = {
             "wallet_name": "test",
