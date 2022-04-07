@@ -608,14 +608,10 @@ async def main(args):
                     )
                     pres_req_id = proof_request["presentation_exchange_id"]
                     url = (
-                        "http://"
-                        + os.getenv("DOCKERHOST").replace(
-                            "{PORT}", str(faber_agent.agent.admin_port + 1)
-                        )
-                        + "/webhooks/pres_req/"
-                        + pres_req_id
-                        + "/"
+                        os.getenv("WEBHOOK_TARGET")
+                        or ("http://" + os.getenv("DOCKERHOST").replace("{PORT}", str(faber_agent.agent.admin_port + 1)) + "/webhooks")
                     )
+                    + f"/pres_req/{pres_req_id}/"
                     log_msg(f"Proof request url: {url}")
                     qr = QRCode(border=1)
                     qr.add_data(url)

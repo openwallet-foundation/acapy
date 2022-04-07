@@ -715,7 +715,7 @@ class DemoAgent:
         if RUN_MODE == "pwd":
             self.webhook_url = f"http://localhost:{str(webhook_port)}/webhooks"
         else:
-            self.webhook_url = (
+            self.webhook_url = self.external_webhook_target or (
                 f"http://{self.external_host}:{str(webhook_port)}/webhooks"
             )
         app = web.Application()
@@ -764,6 +764,8 @@ class DemoAgent:
             return web.Response(status=404)
         proof_reg_txn = proof_exch["presentation_request_dict"]
         proof_reg_txn["~service"] = await self.service_decorator()
+        if request.headers['Accept'] == 'application/json':
+            return web.json_response(proof_reg_txn)
         objJsonStr = json.dumps(proof_reg_txn)
         objJsonB64 = base64.b64encode(objJsonStr.encode("ascii"))
         service_url = self.webhook_url
