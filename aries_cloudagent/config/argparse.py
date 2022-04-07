@@ -1645,16 +1645,21 @@ class MultitenantGroup(ArgumentGroup):
                 settings["multitenant.admin_enabled"] = True
 
             if args.multitenancy_config:
-                multitenancyConfig = json.loads(args.multitenancy_config)
+                multitenancy_config = json.loads(args.multitenancy_config)
 
-                if multitenancyConfig.get("wallet_type"):
-                    settings["multitenant.wallet_type"] = multitenancyConfig.get(
+                if multitenancy_config.get("wallet_type"):
+                    settings["multitenant.wallet_type"] = multitenancy_config.get(
                         "wallet_type"
                     )
 
-                if multitenancyConfig.get("wallet_name"):
-                    settings["multitenant.wallet_name"] = multitenancyConfig.get(
+                if multitenancy_config.get("wallet_name"):
+                    settings["multitenant.wallet_name"] = multitenancy_config.get(
                         "wallet_name"
+                    )
+
+                if multitenancy_config.get("cache_size"):
+                    settings["multitenant.cache_size"] = multitenancy_config.get(
+                        "cache_size"
                     )
 
         return settings

@@ -1,15 +1,16 @@
 """Manager for multitenancy."""
 
+import logging
 from typing import Iterable
-from ..core.profile import (
-    Profile,
-)
-from ..config.wallet import wallet_config
-from ..config.injection_context import InjectionContext
-from ..wallet.models.wallet_record import WalletRecord
-from ..multitenant.base import BaseMultitenantManager
 
+from ..config.injection_context import InjectionContext
+from ..config.wallet import wallet_config
+from ..core.profile import Profile
+from ..multitenant.base import BaseMultitenantManager
+from ..wallet.models.wallet_record import WalletRecord
 from .cache import ProfileCache
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MultitenantManager(BaseMultitenantManager):
@@ -22,7 +23,9 @@ class MultitenantManager(BaseMultitenantManager):
             profile: The profile for this manager
         """
         super().__init__(profile)
-        self._profiles = ProfileCache(100)
+        self._profiles = ProfileCache(
+            profile.settings.get_int("multitenant.cache_size") or 100
+        )
 
     @property
     def open_profiles(self) -> Iterable[Profile]:

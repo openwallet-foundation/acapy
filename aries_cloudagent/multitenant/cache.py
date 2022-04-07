@@ -21,19 +21,21 @@ class ProfileCache:
                       profiles are closed.
         """
 
-        self.profiles: OrderedDict[str, Profile] = OrderedDict()
-        self._open_profiles: WeakValueDictionary[str, Profile] = WeakValueDictionary()
+        LOGGER.debug(f"Profile cache initialized with capacity {capacity}")
+
+        self._cache: OrderedDict[str, Profile] = OrderedDict()
+        self.profiles: WeakValueDictionary[str, Profile] = WeakValueDictionary()
         self.capacity = capacity
 
     def _cleanup(self):
         """Prune cache until size matches defined capacity."""
-        if len(self.profiles) > self.capacity:
+        if len(self._cache) > self.capacity:
             LOGGER.debug(
                 f"Profile limit of {self.capacity} reached."
                 " Evicting least recently used profiles..."
             )
-            while len(self.profiles) > self.capacity:
-                key, _ = self.profiles.popitem(last=False)
+            while len(self._cache) > self.capacity:
+                key, _ = self._cache.popitem(last=False)
                 LOGGER.debug(f"Evicted profile with key {key}")
 
     def get(self, key: str) -> Optional[Profile]:
@@ -50,19 +52,18 @@ class ProfileCache:
             Optional[Profile]: Profile if found in cache.
 
         """
-        if key not in self._open_profiles:
-            return None
-        else:
-            value = self._open_profiles[key]
-            if key not in self.profiles:
+        value = self.profiles.get(key)
+        if value:
+            if key not in self._cache:
                 LOGGER.debug(
                     f"Rescuing profile {key} from eviction from cache; profile "
                     "will be reinserted into cache"
                 )
-                self.profiles[key] = value
-            self.profiles.move_to_end(key)
+                self._cache[key] = value
+            self._cache.move_to_end(key)
             self._cleanup()
-            return value
+
+        return value
 
     def has(self, key: str) -> bool:
         """Check whether there is a profile with associated key in the cache.
@@ -86,11 +87,19 @@ class ProfileCache:
             key (str): the key to set
             value (Profile): the profile to set
         """
+
+        # Close the profile when it falls out of scope
         value.finalizer()
-        self._open_profiles[key] = value
+
+        # Keep track of currently opened profiles using weak references
         self.profiles[key] = value
+
+        # Strong reference to profile to hold open until evicted
         LOGGER.debug(f"Setting profile with id {key} in profile cache")
-        self.profiles.move_to_end(key)
+        self._cache[key] = value
+
+        # Refresh profile livliness
+        self._cache.move_to_end(key)
         self._cleanup()
 
     def remove(self, key: str):
@@ -100,3 +109,4 @@ class ProfileCache:
             key (str): The key to remove from the cache.
         """
         del self.profiles[key]
+        del self._cache[key]

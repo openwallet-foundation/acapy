@@ -125,7 +125,8 @@ class IndySdkProfile(Profile):
 
         def _finalize(opened: Optional[IndyOpenWallet]):
             if opened:
-                asyncio.get_event_loop().run_until_complete(opened.close())
+                LOGGER.debug("Profile finalizer called; closing wallet")
+                asyncio.get_event_loop().create_task(opened.close())
 
         return finalize(self, _finalize, self.opened)
 
