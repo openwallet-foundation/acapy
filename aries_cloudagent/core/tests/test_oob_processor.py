@@ -687,9 +687,40 @@ class TestOobProcessor(AsyncTestCase):
             self.oob_record.delete_record.assert_not_called()
             self.oob_record.save.assert_called_once()
 
-    async def test_handle_message(self):
+    async def test_handle_message_connection(self):
         oob_record = async_mock.MagicMock(
-            connection_id="the-conn-id", save=async_mock.CoroutineMock()
+            connection_id="the-conn-id",
+            save=async_mock.CoroutineMock(),
+            attach_thread_id=None,
+            their_service=None,
+        )
+
+        await self.oob_processor.handle_message(
+            self.profile,
+            [
+                {
+                    "@type": "issue-credential/1.0/offer-credential",
+                    "@id": "4a580490-a9d8-44f5-a3f6-14e0b8a219b0",
+                }
+            ],
+            oob_record,
+            their_service=ServiceDecorator(
+                endpoint="http://their-service-endpoint.com",
+                recipient_keys=["9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"],
+                routing_keys=["6QSduYdf8Bi6t8PfNm5vNomGWDtXhmMmTRzaciudBXYJ"],
+            ),
+        )
+
+        assert oob_record.attach_thread_id == None
+        assert oob_record.their_service == None
+
+        oob_record.save.assert_not_called()
+
+        self.inbound_message_router.assert_called_once_with(self.profile, ANY, False)
+
+    async def test_handle_message_connectionless(self):
+        oob_record = async_mock.MagicMock(
+            save=async_mock.CoroutineMock(), connection_id=None
         )
 
         await self.oob_processor.handle_message(
