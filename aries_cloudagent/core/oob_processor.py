@@ -342,12 +342,17 @@ class OobMessageProcessor:
                 receipt=receipt,
             )
 
-            oob_record.attach_thread_id = self.get_thread_id(message)
-            if their_service:
-                LOGGER.debug("Storing their service in oob record %s", their_service)
-                oob_record.their_service = their_service.serialize()
+            # We only need to store this data for connectionless
+            # (it could be the oob record is already deleted)
+            if not oob_record.connection_id:
+                oob_record.attach_thread_id = self.get_thread_id(message)
+                if their_service:
+                    LOGGER.debug(
+                        "Storing their service in oob record %s", their_service
+                    )
+                    oob_record.their_service = their_service.serialize()
 
-            await oob_record.save(session)
+                await oob_record.save(session)
 
         self._inbound_message_router(profile, inbound_message, False)
 
