@@ -35,9 +35,10 @@ class OobRecord(BaseExchangeRecord):
     }
 
     STATE_INITIAL = "initial"
-    STATE_AWAIT_RESPONSE = "await_response"
-    STATE_NOT_ACCEPTED = "reuse_not_accepted"
-    STATE_ACCEPTED = "reuse_accepted"
+    STATE_PREPARE_RESPONSE = "prepare-response"
+    STATE_AWAIT_RESPONSE = "await-response"
+    STATE_NOT_ACCEPTED = "reuse-not-accepted"
+    STATE_ACCEPTED = "reuse-accepted"
     STATE_DONE = "done"
 
     ROLE_SENDER = "sender"

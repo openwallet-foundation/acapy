@@ -1289,7 +1289,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 ],
                 requests_attach=[],
             )
-            await self.manager.receive_invitation(oob_invitation)
+            oob_record = await self.manager.receive_invitation(oob_invitation)
             conn_mgr_cls.return_value.receive_invitation.assert_called_once_with(
                 invitation=ANY,
                 their_public_did=None,
@@ -1306,6 +1306,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
             ]
             assert not invitation.routing_keys
+
+            assert oob_record.state == OobRecord.STATE_DONE
 
     async def test_receive_invitation_services_with_neither_service_blocks_nor_dids(
         self,
@@ -1564,6 +1566,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             assert oob_record.our_recipient_key == "a-verkey"
             assert oob_record.our_service
+            assert oob_record.state == OobRecord.STATE_PREPARE_RESPONSE
 
             mock_create_signing_key.assert_called_once_with(KeyType.ED25519)
             mock_oob_processor.handle_message.assert_called_once_with(

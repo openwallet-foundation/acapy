@@ -519,6 +519,19 @@ class OutOfBandManager(BaseConnectionManager):
                     session, oob_record.connection_id
                 )
 
+        # If a connection record is associated with the oob record we can remove it now as
+        # we can leverage the connection for all exchanges. Otherwise we need to keep it
+        # around for the connectionless exchange
+        if conn_rec:
+            oob_record.state = OobRecord.STATE_DONE
+            async with self.profile.session() as session:
+                await oob_record.emit_event(session)
+                await oob_record.delete_record(session)
+        else:
+            oob_record.state = OobRecord.STATE_PREPARE_RESPONSE
+            async with self.profile.session() as session:
+                await oob_record.save(session)
+
         # Handle any attachments
         if invitation.requests_attach:
             LOGGER.debug(
@@ -554,15 +567,6 @@ class OutOfBandManager(BaseConnectionManager):
                     await oob_record.save(session)
 
             await self._process_request_attach(oob_record)
-
-        # If a connection record is associated with the oob record we can remove it now as
-        # we can leverage the connection for all exchanges. Otherwise we need to keep it
-        # around for the connectionless exchange
-        if conn_rec:
-            oob_record.state = OobRecord.STATE_DONE
-            async with self.profile.session() as session:
-                await oob_record.emit_event(session)
-                await oob_record.delete_record(session)
 
         return oob_record
 
@@ -631,7 +635,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         """
         OOB_REUSE_RESPONSE_STATE = re.compile(
-            "^acapy::record::out_of_band::(reuse_accepted|reuse_not_accepted)$"
+            "^acapy::record::out_of_band::(reuse-accepted|reuse-not-accepted)$"
         )
 
         async def _wait_for_state() -> OobRecord:
