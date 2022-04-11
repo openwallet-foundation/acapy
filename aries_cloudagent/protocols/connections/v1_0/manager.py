@@ -835,6 +835,17 @@ class ConnectionManager(BaseConnectionManager):
             )
         if their_did != conn_did_doc.did:
             raise ConnectionManagerError("Connection DID does not match DIDDoc id")
+        # Verify connection response using connection field
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            try:
+                await response.verify_signed_field(
+                    "connection", wallet, connection.invitation_key
+                )
+            except ValueError:
+                raise ConnectionManagerError(
+                    "connection field verification using invitation_key failed"
+                )
         await self.store_did_document(conn_did_doc)
 
         connection.their_did = their_did

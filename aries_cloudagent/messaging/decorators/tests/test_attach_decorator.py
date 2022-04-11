@@ -475,6 +475,7 @@ class TestAttachDecoratorSignature:
         assert deco_indy.data.header_map()["kid"] == did_key(did_info[0].verkey)
         assert deco_indy.data.header_map()["jwk"]["kid"] == did_key(did_info[0].verkey)
         assert await deco_indy.data.verify(wallet)
+        assert await deco_indy.data.verify(wallet, did_info[0].verkey)
 
         indy_cred = json.loads(deco_indy.data.signed.decode())
         assert indy_cred == INDY_CRED
