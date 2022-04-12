@@ -792,7 +792,6 @@ async def on_register_nym_event(profile: Profile, event: Event):
     if is_author_role(profile) and profile.context.settings.get_value(
         "endorser.auto_promote_author_did"
     ):
-        print(">>> payload =", event.payload)
         did = event.payload["did"]
         connection_id = event.payload.get("connection_id")
         try:
