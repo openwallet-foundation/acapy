@@ -1678,7 +1678,7 @@ class MultitenantGroup(ArgumentGroup):
                             "cache_size"
                         )
                 else:
-                    for value_str in chain(*args.multitenancy_config):
+                    for value_str in args.multitenancy_config:
                         key, value = value_str.split("=", maxsplit=1)
                         value = yaml.safe_load(value)
                         settings[f"multitenant.{key}"] = value
