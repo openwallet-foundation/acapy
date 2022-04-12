@@ -12,6 +12,7 @@ from ....storage.base import (
     StorageError,
     StorageRecord,
 )
+from ....messaging.models.base import BaseModelError
 
 from ...util import time_now
 
@@ -180,6 +181,26 @@ class TestBaseRecord(AsyncTestCase):
         assert result and isinstance(result[0], BaseRecordImpl)
         assert result[0]._id == record_id
         assert result[0].value == record_value
+
+    async def test_query_x(self):
+        session = InMemoryProfile.test_session()
+        mock_storage = async_mock.MagicMock(BaseStorage, autospec=True)
+        session.context.injector.bind_instance(BaseStorage, mock_storage)
+        record_id = "record_id"
+        record_value = {"created_at": time_now(), "updated_at": time_now()}
+        tag_filter = {"tag": "filter"}
+        stored = StorageRecord(
+            BaseRecordImpl.RECORD_TYPE, json.dumps(record_value), {}, record_id
+        )
+
+        mock_storage.find_all_records.return_value = [stored]
+        with async_mock.patch.object(
+            BaseRecordImpl,
+            "from_storage",
+            async_mock.MagicMock(side_effect=BaseModelError),
+        ):
+            with self.assertRaises(BaseModelError):
+                await BaseRecordImpl.query(session, tag_filter)
 
     async def test_query_post_filter(self):
         session = InMemoryProfile.test_session()
