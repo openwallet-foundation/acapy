@@ -114,8 +114,8 @@ class RevNotificationRecord(BaseRecord):
                 "cannot create message"
             )
         return Revoke(
-            revocation_format="self.revocation_format",
-            credential_id=self.cred_rev_id,
+            revocation_format="indy-anoncreds",
+            credential_id=f"{self.rev_reg_id}::{self.cred_rev_id}",
             comment=self.comment,
         )
 
