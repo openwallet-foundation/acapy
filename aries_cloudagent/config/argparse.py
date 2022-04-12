@@ -1662,7 +1662,7 @@ class MultitenantGroup(ArgumentGroup):
                     len(args.multitenancy_config) == 1
                     and args.multitenancy_config[0][0] == "{"
                 ):
-                    multitenancy_config = json.loads(args.multitenancy_config)
+                    multitenancy_config = json.loads(args.multitenancy_config[0])
                     if multitenancy_config.get("wallet_type"):
                         settings["multitenant.wallet_type"] = multitenancy_config.get(
                             "wallet_type"
