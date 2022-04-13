@@ -165,7 +165,7 @@ class TestMultitenantRoutes(AsyncTestCase):
                 return_value=wallet_mock
             )
 
-            self.mock_multitenant_mgr.create_auth_token = async_mock.Mock(
+            self.mock_multitenant_mgr.create_auth_token = async_mock.CoroutineMock(
                 return_value="test_token"
             )
             print(self.request["context"])
@@ -217,7 +217,7 @@ class TestMultitenantRoutes(AsyncTestCase):
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             self.mock_multitenant_mgr.create_wallet = async_mock.CoroutineMock()
-            self.mock_multitenant_mgr.create_auth_token = async_mock.Mock()
+            self.mock_multitenant_mgr.create_auth_token = async_mock.CoroutineMock()
 
             await test_module.wallet_create(self.request)
             self.mock_multitenant_mgr.create_wallet.assert_called_once_with(
@@ -468,7 +468,7 @@ class TestMultitenantRoutes(AsyncTestCase):
         ) as mock_response:
             mock_wallet_record_retrieve_by_id.return_value = mock_wallet_record
 
-            self.mock_multitenant_mgr.create_auth_token = async_mock.Mock(
+            self.mock_multitenant_mgr.create_auth_token = async_mock.CoroutineMock(
                 return_value="test_token"
             )
 
@@ -496,7 +496,7 @@ class TestMultitenantRoutes(AsyncTestCase):
         ) as mock_response:
             mock_wallet_record_retrieve_by_id.return_value = mock_wallet_record
 
-            self.mock_multitenant_mgr.create_auth_token = async_mock.Mock(
+            self.mock_multitenant_mgr.create_auth_token = async_mock.CoroutineMock(
                 return_value="test_token"
             )
 

@@ -323,7 +323,7 @@ async def wallet_create(request: web.BaseRequest):
             settings, key_management_mode
         )
 
-        token = multitenant_mgr.create_auth_token(wallet_record, wallet_key)
+        token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -421,7 +421,7 @@ async def wallet_create_token(request: web.BaseRequest):
                 " the wallet key to be provided"
             )
 
-        token = multitenant_mgr.create_auth_token(wallet_record, wallet_key)
+        token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except WalletKeyMissingError as err:

@@ -260,7 +260,7 @@ echo $new_tenant | curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet" \
 
 #### Method 2: Get tenant token
 
-This method allows you to retrieve a tenant `token` for an already registered tenant.  To retrieve a token you will need an Admin API key (if your admin is protected with one), `wallet_key` and the `wallet_id` of the tenant.
+This method allows you to retrieve a tenant `token` for an already registered tenant.  To retrieve a token you will need an Admin API key (if your admin is protected with one), `wallet_key` and the `wallet_id` of the tenant. Note that calling the get tenant token endpoint will **invalidate** the old token. This is useful if the old token needs to be revoked, but does mean that you can't have multiple authentication tokens for the same wallet. Only the last generated token will always be valid.
 
 Example
 
