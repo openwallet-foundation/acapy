@@ -244,7 +244,7 @@ class TestMultitenantRoutes(AsyncTestCase):
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
             self.mock_multitenant_mgr.create_wallet = async_mock.CoroutineMock()
-            self.mock_multitenant_mgr.create_auth_token = async_mock.Mock()
+            self.mock_multitenant_mgr.create_auth_token = async_mock.CoroutineMock()
 
             await test_module.wallet_create(self.request)
             self.mock_multitenant_mgr.create_wallet.assert_called_once_with(
