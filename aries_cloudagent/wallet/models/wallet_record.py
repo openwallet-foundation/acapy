@@ -39,11 +39,13 @@ class WalletRecord(BaseRecord):
         # MTODO: how to make this a tag without making it
         # a constructor param
         wallet_name: str = None,
+        jwt_iat: Optional[int] = None,
         **kwargs,
     ):
         """Initialize a new WalletRecord."""
         super().__init__(wallet_id, **kwargs)
         self.key_management_mode = key_management_mode
+        self.jwt_iat = jwt_iat
         self._settings = settings
 
     @property
@@ -85,7 +87,8 @@ class WalletRecord(BaseRecord):
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
         return {
-            prop: getattr(self, prop) for prop in ("settings", "key_management_mode")
+            prop: getattr(self, prop)
+            for prop in ("settings", "key_management_mode", "jwt_iat")
         }
 
     @property
