@@ -252,7 +252,7 @@ class TestArgParse(AsyncTestCase):
                 "--jwt-secret",
                 "secret",
                 "--multitenancy-config",
-                '{"wallet_type":"askar","wallet_name":"test"}',
+                '{"wallet_type":"askar","wallet_name":"test", "cache_size": 10}',
             ]
         )
 
@@ -271,6 +271,7 @@ class TestArgParse(AsyncTestCase):
                 "--multitenancy-config",
                 "wallet_type=askar",
                 "wallet_name=test",
+                "cache_size=10",
             ]
         )
 
