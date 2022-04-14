@@ -556,7 +556,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         ).decode()
 
         with async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile:
             mock_profile = InMemoryProfile.test_profile()
             get_wallet_profile.return_value = mock_profile
@@ -594,7 +594,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         ).decode()
 
         with async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile, self.assertRaises(
             MultitenantManagerError, msg="Token not valid"
         ):
