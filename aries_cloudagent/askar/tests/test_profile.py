@@ -87,9 +87,7 @@ async def test_profile_manager_store():
 
 def test_finalizer(open_store, caplog):
     def _smaller_scope():
-        askar_profile = AskarProfile(
-            open_store,
-        )
+        askar_profile = AskarProfile(open_store)
         askar_profile.finalizer()
 
     with caplog.at_level(logging.DEBUG):

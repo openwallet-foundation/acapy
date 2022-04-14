@@ -1,3 +1,4 @@
+import logging
 import pytest
 
 from asynctest import mock as async_mock
@@ -10,19 +11,21 @@ from ..profile import IndySdkProfile
 from ..wallet_setup import IndyWalletConfig, IndyOpenWallet
 
 
+@pytest.fixture
+async def open_wallet():
+    yield IndyOpenWallet(
+        config=IndyWalletConfig({"name": "test-profile"}),
+        created=True,
+        handle=1,
+        master_secret_id="master-secret",
+    )
+
+
 @pytest.fixture()
-async def profile():
+async def profile(open_wallet):
     context = InjectionContext()
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-    yield IndySdkProfile(
-        IndyOpenWallet(
-            config=IndyWalletConfig({"name": "test-profile"}),
-            created=True,
-            handle=1,
-            master_secret_id="master-secret",
-        ),
-        context,
-    )
+    yield IndySdkProfile(open_wallet, context)
 
 
 @pytest.mark.asyncio
@@ -45,45 +48,32 @@ async def test_properties(profile):
         assert profile.opened is None
 
 
-def test_settings_genesis_transactions():
+def test_settings_genesis_transactions(open_wallet):
     context = InjectionContext(
         settings={"ledger.genesis_transactions": async_mock.MagicMock()}
     )
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-    profile = IndySdkProfile(
-        IndyOpenWallet(
-            config=IndyWalletConfig({"name": "test-profile"}),
-            created=True,
-            handle=1,
-            master_secret_id="master-secret",
-        ),
-        context,
-    )
+    profile = IndySdkProfile(open_wallet, context)
 
 
-def test_settings_ledger_config():
+def test_settings_ledger_config(open_wallet):
     context = InjectionContext(settings={"ledger.ledger_config_list": True})
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-    profile = IndySdkProfile(
-        IndyOpenWallet(
-            config=IndyWalletConfig({"name": "test-profile"}),
-            created=True,
-            handle=1,
-            master_secret_id="master-secret",
-        ),
-        context,
-    )
+    profile = IndySdkProfile(open_wallet, context)
 
 
-def test_read_only():
+def test_read_only(open_wallet):
     context = InjectionContext(settings={"ledger.read_only": True})
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-    ro_profile = IndySdkProfile(
-        IndyOpenWallet(
-            config=IndyWalletConfig({"name": "test-profile"}),
-            created=True,
-            handle=1,
-            master_secret_id="master-secret",
-        ),
-        context,
-    )
+    ro_profile = IndySdkProfile(open_wallet, context)
+
+
+def test_finalizer(open_wallet, caplog):
+    def _smaller_scope():
+        profile = IndySdkProfile(open_wallet)
+        profile.finalizer()
+
+    with caplog.at_level(logging.DEBUG):
+        _smaller_scope()
+
+    assert "finalizer called" in caplog.text
