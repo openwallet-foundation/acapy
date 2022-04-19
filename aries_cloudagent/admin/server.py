@@ -323,6 +323,7 @@ class AdminServer(BaseAdminServer):
                         f"{UUIDFour.PATTERN}/default-mediator)",
                         path,
                     )
+                    or path.startswith("/mediation/default-mediator")
                 )
 
                 # base wallet is not allowed to perform ssi related actions.
