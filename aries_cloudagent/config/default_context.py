@@ -136,5 +136,8 @@ class DefaultContextBuilder(ContextBuilder):
         for plugin_path in self.settings.get("external_plugins", []):
             plugin_registry.register_plugin(plugin_path)
 
+        for plugin_path in self.settings.get("deny_plugins", []):
+            plugin_registry.unregister_plugin(plugin_path)
+
         # Register message protocols
         await plugin_registry.init_context(context)

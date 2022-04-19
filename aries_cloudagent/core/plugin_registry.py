@@ -177,6 +177,13 @@ class PluginRegistry:
         #     self._plugins[module_name] = mod
         #     return mod
 
+    def unregister_plugin(self, module_name: str):
+        """Unregister a plugin module. MUST BE CALLED BEFORE INITIALIZATION."""
+        if module_name not in self._plugins:
+            return
+
+        del self._plugins[module_name]
+
     def register_package(self, package_name: str) -> Sequence[ModuleType]:
         """Register all modules (sub-packages) under a given package name."""
         try:
