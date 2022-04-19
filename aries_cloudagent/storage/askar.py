@@ -92,7 +92,9 @@ class AskarStorage(BaseStorage):
         except AskarError as err:
             raise StorageError("Error when fetching storage record") from err
         if not item:
-            raise StorageNotFoundError(f"Record not found: {record_type}/{record_id}")
+            raise StorageNotFoundError(
+                f"Record not found: {record_type}/{record_id}/{self._session.profile.settings.get('wallet.id')}"
+            )
         return StorageRecord(
             type=item.category,
             id=item.name,
