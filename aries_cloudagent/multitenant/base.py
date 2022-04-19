@@ -1,5 +1,6 @@
 """Manager for multitenancy."""
 
+from datetime import datetime
 import logging
 from abc import abstractmethod
 
@@ -183,26 +184,29 @@ class BaseMultitenantManager:
             )
 
             await wallet_record.save(session)
-
-        # provision wallet
-        profile = await self.get_wallet_profile(
-            self._profile.context,
-            wallet_record,
-            {
-                "wallet.key": wallet_key,
-            },
-            provision=True,
-        )
-
-        # subwallet context
-        async with profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            public_did_info = await wallet.get_public_did()
-
-        if public_did_info:
-            await self.add_key(
-                wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
+        try:
+            # provision wallet
+            profile = await self.get_wallet_profile(
+                self._profile.context,
+                wallet_record,
+                {
+                    "wallet.key": wallet_key,
+                },
+                provision=True,
             )
+
+            # subwallet context
+            async with profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                public_did_info = await wallet.get_public_did()
+
+            if public_did_info:
+                await self.add_key(
+                    wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
+                )
+        except Exception:
+            await wallet_record.delete_record(session)
+            raise
 
         return wallet_record
 
@@ -333,7 +337,7 @@ class BaseMultitenantManager:
                 keylist_updates, connection_id=mediation_record.connection_id
             )
 
-    def create_auth_token(
+    async def create_auth_token(
         self, wallet_record: WalletRecord, wallet_key: str = None
     ) -> str:
         """Create JWT auth token for specified wallet record.
@@ -351,8 +355,9 @@ class BaseMultitenantManager:
             str: JWT auth token
 
         """
+        iat = int(round(datetime.utcnow().timestamp()))
 
-        jwt_payload = {"wallet_id": wallet_record.wallet_id}
+        jwt_payload = {"wallet_id": wallet_record.wallet_id, "iat": iat}
         jwt_secret = self._profile.settings.get("multitenant.jwt_secret")
 
         if wallet_record.requires_external_key:
@@ -362,6 +367,11 @@ class BaseMultitenantManager:
             jwt_payload["wallet_key"] = wallet_key
 
         token = jwt.encode(jwt_payload, jwt_secret, algorithm="HS256").decode()
+
+        # Store iat for verification later on
+        wallet_record.jwt_iat = iat
+        async with self._profile.session() as session:
+            await wallet_record.save(session)
 
         return token
 
@@ -389,6 +399,7 @@ class BaseMultitenantManager:
 
         wallet_id = token_body.get("wallet_id")
         wallet_key = token_body.get("wallet_key")
+        iat = token_body.get("iat")
 
         async with self._profile.session() as session:
             wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
@@ -398,6 +409,9 @@ class BaseMultitenantManager:
                 raise WalletKeyMissingError()
 
             extra_settings["wallet.key"] = wallet_key
+
+        if wallet.jwt_iat and wallet.jwt_iat != iat:
+            raise MultitenantManagerError("Token not valid")
 
         profile = await self.get_wallet_profile(context, wallet, extra_settings)
 
