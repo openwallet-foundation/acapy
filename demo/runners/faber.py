@@ -616,8 +616,7 @@ async def main(args):
                             )
                             + "/webhooks"
                         )
-                        + f"/pres_req/{pres_req_id}/"
-                    )
+                    ) + f"/pres_req/{pres_req_id}/"
                     log_msg(f"Proof request url: {url}")
                     qr = QRCode(border=1)
                     qr.add_data(url)
