@@ -60,7 +60,7 @@ async def test_storage(profile, rec):
 def test_to_message(rec):
     message = rec.to_message()
     assert isinstance(message, Revoke)
-    assert message.credential_id == rec.cred_rev_id
+    assert message.credential_id == f"{rec.rev_reg_id}::{rec.cred_rev_id}"
     assert message.comment == rec.comment
 
     with pytest.raises(ValueError):
