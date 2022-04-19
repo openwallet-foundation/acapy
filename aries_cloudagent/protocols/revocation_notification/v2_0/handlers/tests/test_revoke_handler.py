@@ -29,7 +29,11 @@ def profile(event_bus):
 
 @pytest.fixture
 def message():
-    yield Revoke(revocation_format="indy-anoncreds", credential_id="mock_cred_revocation_id", comment="mock_comment")
+    yield Revoke(
+        revocation_format="indy-anoncreds",
+        credential_id="mock_cred_revocation_id",
+        comment="mock_comment",
+    )
 
 
 @pytest.fixture

@@ -17,8 +17,7 @@ class RevokeHandler(BaseHandler):
         """Handle revoke message."""
         assert isinstance(context.message, Revoke)
         self._logger.debug(
-            "Received notification of revocation for %s cred %s "
-            "with comment: %s",
+            "Received notification of revocation for %s cred %s with comment: %s",
             context.message.revocation_format,
             context.message.credential_id,
             context.message.comment,

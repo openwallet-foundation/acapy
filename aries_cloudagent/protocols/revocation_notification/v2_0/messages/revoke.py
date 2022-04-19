@@ -48,17 +48,13 @@ class RevokeSchema(AgentMessageSchema):
 
     revocation_format = fields.Str(
         required=True,
-        description=(
-            "The format of the credential revocation ID"
-        ),
+        description=("The format of the credential revocation ID"),
         example="indy-anoncreds",
         validate=validate.OneOf(["indy-anoncreds"]),
     )
     credential_id = fields.Str(
         required=True,
-        description=(
-            "Credential ID of the issued credential to be revoked"
-        ),
+        description=("Credential ID of the issued credential to be revoked"),
         example=UUIDFour.EXAMPLE,
     )
     please_ack = fields.Nested(
