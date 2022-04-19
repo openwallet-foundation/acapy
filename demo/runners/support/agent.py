@@ -572,6 +572,12 @@ class DemoAgent:
         new_wallet = await self.agency_admin_POST("/multitenancy/wallet", wallet_params)
         self.log("New wallet params:", new_wallet)
         self.managed_wallet_params = new_wallet
+
+        # if endorser, endorse the wallet ledger operations
+        if endorser_agent:
+            if not await connect_wallet_to_endorser(self, endorser_agent):
+                raise Exception("Endorser setup FAILED :-(")
+
         if public_did:
             if cred_type == CRED_FORMAT_INDY:
                 # assign public did
@@ -581,7 +587,11 @@ class DemoAgent:
                     did=new_did["result"]["did"],
                     verkey=new_did["result"]["verkey"],
                 )
-                await self.admin_POST("/wallet/did/public?did=" + self.did)
+                if self.endorser_role and self.endorser_role == "author":
+                    if endorser_agent:
+                        await self.admin_POST("/wallet/did/public?did=" + self.did)
+                else:
+                    await self.admin_POST("/wallet/did/public?did=" + self.did)
             elif cred_type == CRED_FORMAT_JSON_LD:
                 # create did of appropriate type
                 data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
@@ -598,11 +608,6 @@ class DemoAgent:
             if not await connect_wallet_to_mediator(self, mediator_agent):
                 log_msg("Mediation setup FAILED :-(")
                 raise Exception("Mediation setup FAILED :-(")
-
-        # if endorser, endorse the wallet ledger operations
-        if endorser_agent:
-            if not await connect_wallet_to_endorser(self, endorser_agent):
-                raise Exception("Endorser setup FAILED :-(")
 
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
@@ -715,7 +720,7 @@ class DemoAgent:
         if RUN_MODE == "pwd":
             self.webhook_url = f"http://localhost:{str(webhook_port)}/webhooks"
         else:
-            self.webhook_url = (
+            self.webhook_url = self.external_webhook_target or (
                 f"http://{self.external_host}:{str(webhook_port)}/webhooks"
             )
         app = web.Application()
@@ -764,6 +769,8 @@ class DemoAgent:
             return web.Response(status=404)
         proof_reg_txn = proof_exch["presentation_request_dict"]
         proof_reg_txn["~service"] = await self.service_decorator()
+        if request.headers["Accept"] == "application/json":
+            return web.json_response(proof_reg_txn)
         objJsonStr = json.dumps(proof_reg_txn)
         objJsonB64 = base64.b64encode(objJsonStr.encode("ascii"))
         service_url = self.webhook_url

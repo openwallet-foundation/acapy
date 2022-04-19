@@ -24,6 +24,9 @@ This allows ACA-Py to be used for a wider range of use cases. One use case could
   - [Getting a token](#getting-a-token)
   - [JWT Secret](#jwt-secret)
   - [SwaggerUI](#swaggerui)
+- [Tenant Management](#tenant-management)
+  - [Update a tenant](#update-a-tenant)
+  - [Remove a tenant](#remove-a-tenant)
 
 ## General Concept
 
@@ -203,6 +206,79 @@ The `Authorization` header is in addition to the Admin API key. So if the `admin
 
 A token can be obtained in two ways. The first method is the `token` parameter from the response of the create wallet (`POST /multitenancy/wallet`) endpoint. The second option is using the get wallet token endpoint (`POST /multitenancy/wallet/{wallet_id}/token`) endpoint.
 
+#### Method 1: Register new tenant
+
+This is the method you use to obtain a token when you haven't already registered a tenant.  In this process you will first register a tenant then an object containing your tenant `token` as well as other useful information like your `wallet id` will be returned to you.
+
+Example
+
+```jsonc
+new_tenant='{
+  "image_url": "https://aries.ca/images/sample.png",
+  "key_management_mode": "managed",
+  "label": "example-label-02",
+  "wallet_dispatch_type": "default",
+  "wallet_key": "example-encryption-key-02",
+  "wallet_name": "example-name-02",
+  "wallet_type": "askar",
+  "wallet_webhook_urls": [
+    "https://example.com/webhook"
+  ]
+}'
+```
+
+```
+echo $new_tenant | curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet" \
+   -H "Content-Type: application/json" \
+   -H "X-Api-Key: $ACAPY_ADMIN_URL_API_KEY" \
+   -d @-
+```
+
+**`Response`**
+
+```jsonc
+{
+  "settings": {
+    "wallet.type": "askar",
+    "wallet.name": "example-name-02",
+    "wallet.webhook_urls": [
+      "https://example.com/webhook"
+    ],
+    "wallet.dispatch_type": "default",
+    "default_label": "example-label-02",
+    "image_url": "https://aries.ca/images/sample.png",
+    "wallet.id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd"
+  },
+  "key_management_mode": "managed",
+  "updated_at": "2022-04-01T15:12:35.474975Z",
+  "wallet_id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd",
+  "created_at": "2022-04-01T15:12:35.474975Z",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3YWxsZXRfaWQiOiIzYjY0YWQwZC1mNTU2LTRjMDQtOTJiYy1jZDk1YmZkZTU4Y2QifQ.A4eWbSR2M1Z6mbjcSLOlciBuUejehLyytCVyeUlxI0E"
+}
+```
+
+
+#### Method 2: Get tenant token
+
+This method allows you to retrieve a tenant `token` for an already registered tenant.  To retrieve a token you will need an Admin API key (if your admin is protected with one), `wallet_key` and the `wallet_id` of the tenant. Note that calling the get tenant token endpoint will **invalidate** the old token. This is useful if the old token needs to be revoked, but does mean that you can't have multiple authentication tokens for the same wallet. Only the last generated token will always be valid.
+
+Example
+
+```
+curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/token" \
+   -H "Content-Type: application/json" \
+   -H "X-Api-Key: $ACAPY_ADMIN_URL_API_KEY" \
+   -d { "wallet_key": "example-encryption-key-02" }
+```
+
+**`Response`**
+
+```jsonc
+{
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3YWxsZXRfaWQiOiIzYjY0YWQwZC1mNTU2LTRjMDQtOTJiYy1jZDk1YmZkZTU4Y2QifQ.A4eWbSR2M1Z6mbjcSLOlciBuUejehLyytCVyeUlxI0E"
+}
+```
+
 In unmanaged mode, the get token endpoint also requires the `wallet_key` parameter to be included in the request body. The wallet key will be included in the JWT so the wallet can be unlocked when making requests to the admin API.
 
 ```jsonc
@@ -224,3 +300,75 @@ For deterministic JWT creation and verification between restarts and multiple in
 When using the SwaggerUI you can click the :lock: icon next to each of the endpoints or the `Authorize` button at the top to set the correct authentication headers. Make sure to also include the `Bearer ` part in the input field. This won't be automatically added.
 
 ![](/docs/assets/adminApiAuthentication.png)
+
+## Tenant Management
+
+After registering a tenant which effectively creates a subwallet, you may need to update the tenant information or delete it.  The following describes how to accomplish both goals.
+
+### Update a tenant
+
+The following properties can be updated: `image_url`, `label`, `wallet_dispatch_type`, and `wallet_webhook_urls` for tenants of a multitenancy wallet.  To update these properties you will `PUT` a request json containing the properties you wish to update along with the updated values to the `/multitenancy/wallet/${TENANT_WALLET_ID}` admin endpoint.  If the Admin API endoint is protected, you will also include the Admin API Key in the request header.
+
+Example
+
+```jsonc
+update_tenant='{
+  "image_url": "https://aries.ca/images/sample-updated.png",
+  "label": "example-label-02-updated",
+  "wallet_webhook_urls": [
+    "https://example.com/webhook/updated"
+  ]
+}'
+```
+
+```
+echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${TENANT_WALLET_ID}" \
+   -H "Content-Type: application/json" \
+   -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
+   -d @-
+```
+
+**`Response`**
+
+```jsonc
+{
+  "settings": {
+    "wallet.type": "askar",
+    "wallet.name": "example-name-02",
+    "wallet.webhook_urls": [
+      "https://example.com/webhook/updated"
+    ],
+    "wallet.dispatch_type": "default",
+    "default_label": "example-label-02-updated",
+    "image_url": "https://aries.ca/images/sample-updated.png",
+    "wallet.id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd"
+  },
+  "key_management_mode": "managed",
+  "updated_at": "2022-04-01T16:23:58.642004Z",
+  "wallet_id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd",
+  "created_at": "2022-04-01T15:12:35.474975Z"
+}
+```
+> An Admin API Key is all that is ALLOWED to be included in a request header during an update.  Inluding the Bearer token header will result in a 404: Unauthorized error
+
+## Remove a tenant
+
+The following information is required to delete a tenant: 
+- wallet_id
+- wallet_key
+- {Admin_Api_Key} if admin is protected
+
+Example
+
+```
+curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
+   -H "Content-Type: application/json" \
+   -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
+   -d '{ "wallet_key": "example-encryption-key-02" }'
+```
+
+**`Response`**
+
+```jsonc
+{}
+```

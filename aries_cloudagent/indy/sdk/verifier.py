@@ -47,6 +47,8 @@ class IndySdkVerifier(IndyVerifier):
             rev_reg_entries: revocation registry entries
         """
 
+        LOGGER.debug(f">>> received presentation: {pres}")
+        LOGGER.debug(f">>> for pres_req: {pres_req}")
         try:
             self.non_revoc_intervals(pres_req, pres, credential_definitions)
             await self.check_timestamps(self.profile, pres_req, pres, rev_reg_defs)
@@ -58,6 +60,8 @@ class IndySdkVerifier(IndyVerifier):
             )
             return False
 
+        LOGGER.debug(f">>> verifying presentation: {pres}")
+        LOGGER.debug(f">>> for pres_req: {pres_req}")
         try:
             verified = await indy.anoncreds.verifier_verify_proof(
                 json.dumps(pres_req),

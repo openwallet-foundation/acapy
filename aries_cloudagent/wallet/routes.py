@@ -355,13 +355,20 @@ async def wallet_create_did(request: web.BaseRequest):
                 f" support key type {key_type.key_type}"
             )
         )
+    seed = None
+    if context.settings.get("wallet.allow_insecure_seed"):
+        seed = body.get("seed") or None
     info = None
     async with context.session() as session:
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
         try:
-            info = await wallet.create_local_did(method=method, key_type=key_type)
+            info = await wallet.create_local_did(
+                method=method,
+                key_type=key_type,
+                seed=seed,
+            )
 
         except WalletError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -434,7 +441,12 @@ async def wallet_set_public_did(request: web.BaseRequest):
     info: DIDInfo = None
     try:
         info, attrib_def = await promote_wallet_public_did(
-            context.profile, context, context.session, did, write_ledger=write_ledger
+            context.profile,
+            context,
+            context.session,
+            did,
+            write_ledger=write_ledger,
+            connection_id=connection_id,
         )
     except LookupError as err:
         raise web.HTTPNotFound(reason=str(err)) from err
@@ -480,6 +492,7 @@ async def promote_wallet_public_did(
     session_fn,
     did: str,
     write_ledger: bool = False,
+    connection_id: str = None,
 ) -> DIDInfo:
     """Promote supplied DID to the wallet public DID."""
 
@@ -505,7 +518,8 @@ async def promote_wallet_public_did(
         write_ledger = False
 
         # author has not provided a connection id, so determine which to use
-        connection_id = await get_endorser_connection_id(context.profile)
+        if not connection_id:
+            connection_id = await get_endorser_connection_id(context.profile)
         if not connection_id:
             raise web.HTTPBadRequest(reason="No endorser connection found")
 
@@ -779,9 +793,10 @@ async def on_register_nym_event(profile: Profile, event: Event):
         "endorser.auto_promote_author_did"
     ):
         did = event.payload["did"]
+        connection_id = event.payload.get("connection_id")
         try:
             await promote_wallet_public_did(
-                profile, profile.context, profile.session, did
+                profile, profile.context, profile.session, did, connection_id
             )
         except Exception:
             # log the error, but continue

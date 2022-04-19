@@ -1395,6 +1395,15 @@ class WalletGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--wallet-allow-insecure-seed",
+            action="store_true",
+            env_var="ACAPY_WALLET_ALLOW_INSECURE_SEED",
+            help=(
+                "If this parameter is set, allows to use a custom seed "
+                "to create a local DID"
+            ),
+        )
+        parser.add_argument(
             "--wallet-key",
             type=str,
             metavar="<wallet-key>",
@@ -1514,6 +1523,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.seed"] = args.seed
         if args.wallet_local_did:
             settings["wallet.local_did"] = True
+        if args.wallet_allow_insecure_seed:
+            settings["wallet.allow_insecure_seed"] = True
         if args.wallet_key:
             settings["wallet.key"] = args.wallet_key
         if args.wallet_rekey:
@@ -1594,7 +1605,7 @@ class MultitenantGroup(ArgumentGroup):
             help=(
                 'Specify multitenancy configuration ("wallet_type" and "wallet_name"). '
                 'For example: "{"wallet_type":"askar-profile","wallet_name":'
-                '"askar-profile-name"}"'
+                '"askar-profile-name", "key_derivation_method":"RAW"}"'
                 '"wallet_name" is only used when "wallet_type" is "askar-profile"'
             ),
         )
@@ -1627,6 +1638,11 @@ class MultitenantGroup(ArgumentGroup):
                     settings["multitenant.wallet_name"] = multitenancyConfig.get(
                         "wallet_name"
                     )
+
+                if multitenancyConfig.get("key_derivation_method"):
+                    settings[
+                        "multitenant.key_derivation_method"
+                    ] = multitenancyConfig.get("key_derivation_method")
 
         return settings
 
