@@ -47,6 +47,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
     is_author_role,
     get_endorser_connection_id,
 )
+from ..protocols.problem_report.v1_0.message import ProblemReport
 from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from ..tails.base import BaseTailsServer
@@ -1250,6 +1251,7 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
 
     tails_server = profile.inject(BaseTailsServer)
     revoc_reg_id = event.payload["context"]["rev_reg_id"]
+    cred_def_id = event.payload["context"].get("cred_def_id")
     tails_local_path = tails_path(revoc_reg_id)
     (upload_success, reason) = await tails_server.upload_tails_file(
         profile.context,
@@ -1260,9 +1262,16 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
         max_attempts=5,  # heuristic: respect HTTP timeout
     )
     if not upload_success:
-        raise RevocationError(
-            f"Tails file for rev reg {revoc_reg_id} failed to upload: {reason}"
+        err_msg = f"Tails file for rev reg {revoc_reg_id} failed to upload: {reason}"
+        problem_report = ProblemReport(
+            description={
+                "en": err_msg,
+                "code": "error",
+            }
         )
+        problem_report.assign_thread_id(thid=revoc_reg_id, pthid=cred_def_id)
+        await profile.notify("acapy::problem_report", problem_report.serialize())
+        raise RevocationError(err_msg)
 
     # create a "pending" registry if one is requested
     # (this is done automatically when creating a credential definition, so that when a
@@ -1275,7 +1284,6 @@ async def on_revocation_tails_file_event(profile: Profile, event: Event):
         meta_data = event.payload
         del meta_data["context"]["rev_reg_id"]
         del meta_data["processing"]["create_pending_rev_reg"]
-        cred_def_id = meta_data["context"]["cred_def_id"]
         rev_reg_size = meta_data["context"].get("rev_reg_size", None)
         auto_create_rev_reg = meta_data["processing"].get("auto_create_rev_reg", False)
         endorser_connection_id = (
