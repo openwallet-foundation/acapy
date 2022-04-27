@@ -15,7 +15,8 @@ from ..error import ProtocolDefinitionValidationError
 
 class TestPluginRegistry(AsyncTestCase):
     def setUp(self):
-        self.registry = PluginRegistry()
+        self.blocked_module = "blocked_module"
+        self.registry = PluginRegistry(blocklist=[self.blocked_module])
 
         self.context = InjectionContext(enforce_typing=False)
         self.proto_registry = async_mock.MagicMock(
@@ -492,10 +493,8 @@ class TestPluginRegistry(AsyncTestCase):
                 None,  # message types
                 None,  # definition without versions attr
             ]
-            assert self.registry.register_plugin("dummy") == obj
-            assert "dummy" in self.registry._plugins.keys()
-            self.registry.unregister_plugin("dummy")
-            assert "dummy" not in self.registry._plugins.keys()
+            assert self.registry.register_plugin(self.blocked_module) == None
+            assert self.blocked_module not in self.registry._plugins.keys()
 
     async def test_register_definitions_malformed(self):
         class MODULE:
