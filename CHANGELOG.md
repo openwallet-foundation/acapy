@@ -1,11 +1,10 @@
 # 0.7.4-RC1
 
-The largest enhancement is in the area of the Hyperledger Indy endorser,
-enabling an instance of ACA-Py to act as an Endorser for Indy authors needed
-endorsing to write objects to an Indy ledger. We're hoping to see an
-"aries-endorser-service" come from that work, an Endorser to be easily operated
-by an organization, ideally with a controller starter kit to allow an approvals
-business flow.
+This release consists largely of internal fixes with a few minor enhancements.
+There have been a lot of groups exercising ACA-Py and the updates made in this
+release are a reflection of those efforts. We have PRs that have been
+contributed by 17 different people, which is likely a record for a single ACA-Py
+release.
 
 The largest enhancement is in the area of the Hyperledger Indy endorser,
 enabling an instance of ACA-Py to act as an Endorser for Indy authors needed
