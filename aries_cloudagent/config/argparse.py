@@ -1246,9 +1246,12 @@ class TransportGroup(ArgumentGroup):
         settings = {}
         if args.inbound_transports:
             settings["transport.inbound_configs"] = args.inbound_transports
+        else:
+            raise ArgsParseError("-it/--inbound-transport is required")
         if args.outbound_transports:
             settings["transport.outbound_configs"] = args.outbound_transports
-
+        else:
+            raise ArgsParseError("-ot/--outbound-transport is required")
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
         if args.label:
