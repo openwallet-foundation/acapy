@@ -1,6 +1,8 @@
 """Manager for askar profile multitenancy mode."""
 
 from typing import Iterable, Optional, cast
+import logging
+
 from ..core.profile import (
     Profile,
 )
@@ -9,6 +11,8 @@ from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord
 from ..askar.profile import AskarProfile
 from ..multitenant.base import BaseMultitenantManager
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AskarProfileMultitenantManager(BaseMultitenantManager):
@@ -85,10 +89,12 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
 
         profile_context = self._multitenant_profile.context.copy()
 
+        # check response or query if exists, remove cache on error and throw error!
         if provision:
-            await self._multitenant_profile.store.create_profile(
+            created_profile = await self._multitenant_profile.store.create_profile(
                 wallet_record.wallet_id
             )
+            LOGGER.info(f"created_profile: {created_profile}")
 
         extra_settings = {
             "admin.webhook_urls": self.get_webhook_urls(base_context, wallet_record),
