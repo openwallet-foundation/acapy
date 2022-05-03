@@ -1,0 +1,55 @@
+version: "3"
+services:
+      
+  agent:
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile.globalid
+    environment:
+      - ACAPY_ENDPOINT=http://172.16.48.145:3000
+      - ACAPY_NO_LEDGER=true
+      - ACAPY_ADMIN_INSECURE_MODE=true
+      - ACAPY_WALLET_TYPE=askar
+      - ACAPY_TRACE=true
+      - ACAPY_LOG_LEVEL=INFO
+      - ACAPY_WALLET_STORAGE_TYPE=postgres_storage
+      - ACAPY_WALLET_STORAGE_CONFIG={"url":"postgres"}
+      - ACAPY_WALLET_STORAGE_CREDS={"account":"root","password":"root","admin_account":"root","admin_password":"root"}
+      - ACAPY_WALLET_NAME=acapy_custodial_agency
+      - ACAPY_MULTITENANT=true
+      - ACAPY_MULTITENANT_ADMIN=true
+      - ACAPY_MULTITENANT_JWT_SECRET=secret
+      - ACAPY_MULTITENANCY_CONFIGURATION={"wallet_type":"askar-profile","wallet_name":"askar-profile-name"}
+      - ACAPY_WALLET_KEY=3znvA1Fq5qbx6vumL6dAKpYjE3H1Zk1x7xLLhLNo6AqU
+      - ACAPY_WALLET_KEY_DERIVATION_METHOD=raw
+      - ACAPY_AUTO_STORE_CREDENTIAL=true
+      - ACAPY_AUTO_PROVISION=true
+      - ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST=true
+      - ACAPY_EMIT_NEW_DIDCOMM_PREFIX=true
+      - ACAPY_PRESERVE_EXCHANGE_RECORDS=true
+      - RUST_BACKTRACE=1
+    command: ["start", "--admin", "0.0.0.0", "3001", "-it", "http", "0.0.0.0", "3000", "-ot", "http"]
+    networks:
+      - app-network
+    ports: 
+      - "3000:3000"
+      - "3001:3001"
+
+  postgres:
+    image: postgres:12
+    hostname: postgres
+    restart: unless-stopped
+    ports: # Uncomment to access postgres outside of containers
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+
+
