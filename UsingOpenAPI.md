@@ -26,6 +26,22 @@ Two major open source code generation tools are [Swagger](https://github.com/swa
 
  Another suggestion for code generation is to keep the `modelPropertyNaming` set to `original` when generating code.  Although it is tempting to try and enable marshalling into standard naming formats such as `camelCase`, the reality is that the models represent what is sent on the wire and documented in the [Aries Protocol RFCS](https://github.com/hyperledger/aries-rfcs/tree/master/features).  It has proven handy to be able to see code references correspond directly with protocol RFCs when debugging. It will also correspond directly with what the `model` shows when looking at the ACA-py `Swagger UI` in a browser if you need to try something out manually before coding.  One final point is that on occasions it has been discovered that the code generation tools don't always get the marshalling correct in all circumstances when changing model name format.
 
+## Existing Language Wrappers for ACA-py
+
+### Python
+
+- https://pypi.org/project/aries-cloudcontroller/
+  - https://github.com/didx-xyz/aries-cloudcontroller-python
+- https://github.com/bcgov/traction/tree/develop/services/traction/acapy_client
+- https://github.com/Indicio-tech/acapy-client
+
+### Go
+
+- https://github.com/ldej/go-acapy-client
+
+### Java
+
+- https://github.com/hyperledger-labs/acapy-java-client
 
 
 
