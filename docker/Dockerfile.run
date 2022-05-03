@@ -10,6 +10,10 @@ RUN pip3 install --no-cache-dir \
     -r requirements.bbs.txt \
     -r requirements.dev.txt
 
+COPY aries_askar-0.2.6-py3-none-any.whl aries_askar-0.2.6-py3-none-any.whl
+
+RUN pip install aries_askar-0.2.6-py3-none-any.whl
+
 RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
 ADD aries_cloudagent/version.py aries_cloudagent/version.py
 ADD bin ./bin

@@ -17,6 +17,11 @@ RUN pip install --upgrade pip && \
     -r requirements.globalid.txt \
     -e .
 
+
+COPY aries_askar-0.2.6-py3-none-any.whl aries_askar-0.2.6-py3-none-any.whl
+
+RUN pip install aries_askar-0.2.6-py3-none-any.whl
+
 RUN useradd user
 USER user
 
