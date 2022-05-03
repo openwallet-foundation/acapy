@@ -246,7 +246,8 @@ async def delete_mediation_request(request: web.BaseRequest):
                 session, mediation_id
             )
         result = mediation_record.serialize()
-        await mediation_record.delete_record(session)
+        async with context.profile.session() as session:
+            await mediation_record.delete_record(session)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except (BaseModelError, StorageError) as err:
