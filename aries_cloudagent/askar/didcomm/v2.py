@@ -262,7 +262,7 @@ async def unpack_message(
     recip_kid = None
     for kid in wrapper.recipient_key_ids:
         recip_key_entry = next(
-            await session.fetch_all_keys(tag_filter={"kid": kid}), None
+            iter(await session.fetch_all_keys(tag_filter={"kid": kid})), None
         )
         if recip_key_entry:
             recip_kid = kid
@@ -289,7 +289,7 @@ async def unpack_message(
         # FIXME - will need to insert proper sender key resolution method here
         # instead of looking in the wallet
         sender_key_entry = next(
-            await session.fetch_all_keys(tag_filter={"kid": sender_kid}), None
+            iter(await session.fetch_all_keys(tag_filter={"kid": sender_kid})), None
         )
         if not sender_key_entry:
             raise DidcommEnvelopeError("Sender public key not found")

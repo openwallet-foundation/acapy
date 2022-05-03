@@ -1677,6 +1677,12 @@ class MultitenantGroup(ArgumentGroup):
                         settings["multitenant.cache_size"] = multitenancy_config.get(
                             "cache_size"
                         )
+
+                    if multitenancy_config.get("key_derivation_method"):
+                        settings[
+                            "multitenant.key_derivation_method"
+                        ] = multitenancy_config.get("key_derivation_method")
+
                 else:
                     for value_str in args.multitenancy_config:
                         key, value = value_str.split("=", maxsplit=1)

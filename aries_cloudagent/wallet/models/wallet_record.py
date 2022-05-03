@@ -84,6 +84,11 @@ class WalletRecord(BaseRecord):
         return self.settings.get("wallet.key")
 
     @property
+    def wallet_key_derivation_method(self):
+        """Accessor for the key derivation method of the wallet."""
+        return self.settings.get("wallet.key_derivation_method")
+
+    @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this record."""
         return {
