@@ -1920,13 +1920,31 @@ class TestV20PresManager(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
 
+        px_rec = V20PresExRecord(verified="true")
+
+        responder = MockResponder()
+        self.profile.context.injector.bind_instance(BaseResponder, responder)
+
+        await self.manager.send_pres_ack(px_rec)
+        messages = responder.messages
+        assert len(messages) == 1
+
+        px_rec = V20PresExRecord(verified="false")
+
+        responder = MockResponder()
+        self.profile.context.injector.bind_instance(BaseResponder, responder)
+
+        await self.manager.send_pres_ack(px_rec)
+        messages = responder.messages
+        assert len(messages) == 1
+
     async def test_send_pres_ack_no_responder(self):
         px_rec = V20PresExRecord()
 
         self.profile.context.injector.clear_binding(BaseResponder)
         await self.manager.send_pres_ack(px_rec)
 
-    async def test_receive_pres_ack(self):
+    async def test_receive_pres_ack_a(self):
         conn_record = async_mock.MagicMock(connection_id=CONN_ID)
 
         px_rec_dummy = V20PresExRecord()
@@ -1942,6 +1960,24 @@ class TestV20PresManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             assert px_rec_out.state == V20PresExRecord.STATE_DONE
+
+    async def test_receive_pres_ack_b(self):
+        conn_record = async_mock.MagicMock(connection_id=CONN_ID)
+
+        px_rec_dummy = V20PresExRecord()
+        message = async_mock.MagicMock(_verification_result="true")
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = px_rec_dummy
+            px_rec_out = await self.manager.receive_pres_ack(message, conn_record)
+            save_ex.assert_called_once()
+
+            assert px_rec_out.state == V20PresExRecord.STATE_DONE
+            assert px_rec_out.verified == "true"
 
     async def test_receive_problem_report(self):
         connection_id = "connection-id"

@@ -436,7 +436,9 @@ class PresentationManager:
         responder = self._profile.inject_or(BaseResponder)
 
         if responder:
-            presentation_ack_message = PresentationAck()
+            presentation_ack_message = PresentationAck(
+                verification_result=presentation_exchange_record.verified
+            )
             presentation_ack_message._thread = {
                 "thid": presentation_exchange_record.thread_id
             }
@@ -472,7 +474,7 @@ class PresentationManager:
                 {"thread_id": message._thread_id},
                 {"connection_id": connection_record.connection_id},
             )
-
+            presentation_exchange_record.verified = message._verification_result
             presentation_exchange_record.state = (
                 V10PresentationExchange.STATE_PRESENTATION_ACKED
             )
