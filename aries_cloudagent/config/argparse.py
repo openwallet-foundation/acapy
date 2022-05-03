@@ -680,7 +680,7 @@ class RevocationGroup(ArgumentGroup):
         parser.add_argument(
             "--monitor-revocation-notification",
             action="store_true",
-            env_var="ACAPY_MONITOR_REVOCATION_NOTIF",
+            env_var="ACAPY_MONITOR_REVOCATION_NOTIFICATION",
             help=(
                 "Specifies that aca-py will emit webhooks on notification of "
                 "revocation received."
