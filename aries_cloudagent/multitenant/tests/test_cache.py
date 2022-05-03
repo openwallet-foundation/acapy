@@ -10,9 +10,6 @@ class MockProfile(Profile):
     def transaction(self, context=None):
         ...
 
-    def finalizer(self):
-        return None
-
 
 def test_get_not_in_cache():
     cache = ProfileCache(1)

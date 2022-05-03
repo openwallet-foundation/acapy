@@ -88,8 +88,9 @@ class ProfileCache:
             value (Profile): the profile to set
         """
 
-        # Close the profile when it falls out of scope
-        value.finalizer()
+        # Profiles are responsible for cleaning up after themselves when they
+        # fall out of scope. Previously the cache needed to create a finalizer.
+        # value.finalzer()
 
         # Keep track of currently opened profiles using weak references
         self.profiles[key] = value

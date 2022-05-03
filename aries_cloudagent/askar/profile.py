@@ -6,8 +6,8 @@ import time
 
 # import traceback
 
-from typing import Any, Mapping, Optional
-from weakref import finalize, ref
+from typing import Any, Mapping
+from weakref import ref
 
 from aries_askar import AskarError, Session, Store
 
@@ -152,24 +152,6 @@ class AskarProfile(Profile):
         if self.opened:
             await self.opened.close()
             self.opened = None
-
-    def finalizer(self) -> Optional[finalize]:
-        """Return a finalizer for this profile.
-
-        See docs for weakref.finalize for more details on behavior of finalizers.
-        """
-        # Askar Profiles (not to be confused with AskarProfiles) don't need
-        # additional clean up
-
-        if self.profile_id:
-            return None
-
-        def _finalize(opened: Optional[AskarOpenStore]):
-            if opened:
-                LOGGER.debug("Profile finalizer called; closing wallet")
-                asyncio.get_event_loop().create_task(opened.close())
-
-        return finalize(self, _finalize, self.opened)
 
 
 class AskarProfileSession(ProfileSession):

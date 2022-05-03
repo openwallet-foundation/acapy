@@ -83,14 +83,3 @@ async def test_profile_manager_store():
 
         assert sessionProfile._opener == askar_profile_session
         askar_profile.store.session.assert_called_once_with(profile)
-
-
-def test_finalizer(open_store, caplog):
-    def _smaller_scope():
-        askar_profile = AskarProfile(open_store)
-        askar_profile.finalizer()
-
-    with caplog.at_level(logging.DEBUG):
-        _smaller_scope()
-
-    assert "finalizer called" in caplog.text

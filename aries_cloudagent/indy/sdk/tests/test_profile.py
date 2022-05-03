@@ -71,7 +71,7 @@ def test_read_only(open_wallet):
 def test_finalizer(open_wallet, caplog):
     def _smaller_scope():
         profile = IndySdkProfile(open_wallet)
-        profile.finalizer()
+        assert profile
 
     with caplog.at_level(logging.DEBUG):
         _smaller_scope()

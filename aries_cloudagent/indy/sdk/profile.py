@@ -31,13 +31,18 @@ class IndySdkProfile(Profile):
 
     BACKEND_NAME = "indy"
 
-    def __init__(self, opened: IndyOpenWallet, context: InjectionContext = None):
+    def __init__(
+        self,
+        opened: IndyOpenWallet,
+        context: InjectionContext = None,
+    ):
         """Create a new IndyProfile instance."""
         super().__init__(context=context, name=opened.name, created=opened.created)
         self.opened = opened
         self.ledger_pool: IndySdkLedgerPool = None
         self.init_ledger_pool()
         self.bind_providers()
+        self._finalizer = self._make_finalizer()
 
     @property
     def name(self) -> str:
@@ -117,7 +122,7 @@ class IndySdkProfile(Profile):
             await self.opened.close()
             self.opened = None
 
-    def finalizer(self) -> Optional[finalize]:
+    def _make_finalizer(self) -> finalize:
         """Return a finalizer for this profile.
 
         See docs for weakref.finalize for more details on behavior of finalizers.
