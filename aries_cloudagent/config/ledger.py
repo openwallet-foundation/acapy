@@ -31,7 +31,9 @@ async def fetch_genesis_transactions(genesis_url: str) -> str:
     headers["Content-Type"] = "application/json"
     LOGGER.info("Fetching genesis transactions from: %s", genesis_url)
     try:
-        return await fetch(genesis_url, headers=headers)
+        # Fetch from --genesis-url likely to fail in composed container setup
+        # https://github.com/hyperledger/aries-cloudagent-python/issues/1745
+        return await fetch(genesis_url, headers=headers, max_attempts=20)
     except FetchError as e:
         raise ConfigError("Error retrieving ledger genesis transactions") from e
 
