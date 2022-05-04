@@ -18,9 +18,9 @@ RUN pip install --upgrade pip && \
     -e .
 
 
-COPY aries_askar-0.2.4-py3-none-any.whl aries_askar-0.2.4-py3-none-any.whl
+COPY aries_askar-0.2.5-py3-none-any.whl aries_askar-0.2.5-py3-none-any.whl
 
-RUN pip install aries_askar-0.2.4-py3-none-any.whl
+RUN pip install aries_askar-0.2.5-py3-none-any.whl
 
 RUN useradd user
 USER user
