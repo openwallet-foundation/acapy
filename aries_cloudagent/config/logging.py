@@ -83,7 +83,6 @@ class LoggingConfigurator:
         agent_label,
         inbound_transports,
         outbound_transports,
-        outbound_queue,
         public_did,
         admin_server=None,
         banner_length=40,
@@ -96,7 +95,6 @@ class LoggingConfigurator:
             agent_label: Agent Label
             inbound_transports: Configured inbound transports
             outbound_transports: Configured outbound transports
-            outbound_queue: The outbound queue engine instance
             admin_server: Admin server info
             public_did: Public DID
             banner_length: (Default value = 40) Length of the banner
@@ -124,6 +122,18 @@ class LoggingConfigurator:
         )
         banner.print_spacer()
 
+        external_in_transports = set().union(
+            *(
+                transport
+                for transport in inbound_transports.values()
+                if transport.is_external
+            )
+        )
+        if external_in_transports:
+            banner.print_spacer()
+            banner.print_list([f"{external_in_transports}"])
+            banner.print_spacer()
+
         # Outbound transports
         schemes = set().union(
             *(transport.schemes for transport in outbound_transports.values())
@@ -134,15 +144,16 @@ class LoggingConfigurator:
             banner.print_list([f"{scheme}" for scheme in sorted(schemes)])
             banner.print_spacer()
 
-        # Outbound queue
-        if outbound_queue:
-            banner.print_subtitle("Outbound Queue")
-            banner.print_spacer()
-            banner.print_list(
-                [
-                    f"{outbound_queue}",
-                ]
+        external_out_transports = set().union(
+            *(
+                transport
+                for transport in outbound_transports.values()
+                if transport.is_external
             )
+        )
+        if external_out_transports:
+            banner.print_spacer()
+            banner.print_list([f"{external_out_transports}"])
             banner.print_spacer()
 
         # DID info
