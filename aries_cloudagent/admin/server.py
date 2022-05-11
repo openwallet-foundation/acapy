@@ -52,6 +52,7 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::actionmenu::received": "actionmenu",
     "acapy::actionmenu::get-active-menu": "get-active-menu",
     "acapy::actionmenu::perform-menu-action": "perform-menu-action",
+    "acapy::keylist::updated": "keylist",
 }
 
 

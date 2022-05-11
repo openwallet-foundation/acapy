@@ -1,11 +1,14 @@
 """Test MediationManager."""
 import logging
+from typing import AsyncIterable, Iterable
 
 import pytest
 
 from asynctest import mock as async_mock
 
 from .....core.profile import Profile, ProfileSession
+from .....core.in_memory import InMemoryProfile
+from .....core.event_bus import EventBus, MockEventBus
 from .....connections.models.conn_record import ConnRecord
 from .....messaging.request_context import RequestContext
 from .....storage.error import StorageNotFoundError
@@ -36,29 +39,32 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def profile() -> Profile:
+def profile() -> Iterable[Profile]:
     """Fixture for profile used in tests."""
     # pylint: disable=W0621
-    context = RequestContext.test_context()
-    context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
-    context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
-    yield context.profile
+    yield InMemoryProfile.test_profile(bind={EventBus: MockEventBus()})
 
 
 @pytest.fixture
-async def session(profile) -> ProfileSession:  # pylint: disable=W0621
+def mock_event_bus(profile: Profile):
+    yield profile.inject(EventBus)
+
+
+@pytest.fixture
+async def session(profile) -> AsyncIterable[ProfileSession]:  # pylint: disable=W0621
     """Fixture for profile session used in tests."""
-    yield await profile.session()
+    async with profile.session() as session:
+        yield session
 
 
 @pytest.fixture
-async def manager(profile) -> MediationManager:  # pylint: disable=W0621
+def manager(profile) -> Iterable[MediationManager]:  # pylint: disable=W0621
     """Fixture for manager used in tests."""
     yield MediationManager(profile)
 
 
 @pytest.fixture
-def record() -> MediationRecord:
+def record() -> Iterable[MediationRecord]:
     """Fixture for record used in tests."""
     yield MediationRecord(
         state=MediationRecord.STATE_GRANTED, connection_id=TEST_CONN_ID
@@ -71,7 +77,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
     async def test_create_manager_no_profile(self):
         """test_create_manager_no_profile."""
         with pytest.raises(MediationManagerError):
-            await MediationManager(None)
+            MediationManager(None)
 
     async def test_create_did(self, manager, session):
         """test_create_did."""
@@ -363,7 +369,12 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert update.updates[0].recipient_key == TEST_VERKEY
         assert update.updates[1].recipient_key == TEST_ROUTE_VERKEY
 
-    async def test_store_update_results(self, session, manager):
+    async def test_store_update_results(
+        self,
+        session: ProfileSession,
+        manager: MediationManager,
+        mock_event_bus: MockEventBus,
+    ):
         """test_store_update_results."""
         await RouteRecord(
             role=RouteRecord.ROLE_CLIENT,
@@ -383,6 +394,12 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
             ),
         ]
         await manager.store_update_results(TEST_CONN_ID, results)
+        assert mock_event_bus.events
+        assert mock_event_bus.events[0][1].topic == manager.KEYLIST_UPDATED_EVENT
+        assert mock_event_bus.events[0][1].payload == {
+            "connection_id": TEST_CONN_ID,
+            "updated": [result.serialize() for result in results],
+        }
         routes = await RouteRecord.query(session)
 
         assert len(routes) == 1
