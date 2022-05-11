@@ -59,6 +59,7 @@ class TestOutboundTransportManager(AsyncTestCase):
         transport.start = async_mock.CoroutineMock()
         transport.stop = async_mock.CoroutineMock()
         transport.schemes = ["http"]
+        transport.is_external = False
 
         transport_cls = async_mock.MagicMock()
         transport_cls.schemes = ["http"]
@@ -85,7 +86,7 @@ class TestOutboundTransportManager(AsyncTestCase):
         setattr(
             send_profile, "session", async_mock.MagicMock(return_value=send_session)
         )
-        mgr.enqueue_message(send_profile, message)
+        await mgr.enqueue_message(send_profile, message)
         await mgr.flush()
 
         transport.wire_format.encode_message.assert_awaited_once_with(
@@ -113,7 +114,7 @@ class TestOutboundTransportManager(AsyncTestCase):
             sender_key=4,
         )
         with self.assertRaises(OutboundDeliveryError) as context:
-            mgr.enqueue_message(send_profile, message)
+            await mgr.enqueue_message(send_profile, message)
         assert "No supported transport" in str(context.exception)
 
         await mgr.stop()

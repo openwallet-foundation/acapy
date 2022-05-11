@@ -15,6 +15,8 @@ LOGGER = logging.getLogger(__name__)
 class HttpTransport(BaseInboundTransport):
     """Http Transport class."""
 
+    is_external = False
+
     def __init__(self, host: str, port: int, create_session, **kwargs) -> None:
         """
         Initialize an inbound HTTP transport instance.
