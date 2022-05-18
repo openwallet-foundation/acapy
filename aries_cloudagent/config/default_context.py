@@ -111,7 +111,9 @@ class DefaultContextBuilder(ContextBuilder):
     async def load_plugins(self, context: InjectionContext):
         """Set up plugin registry and load plugins."""
 
-        plugin_registry = PluginRegistry()
+        plugin_registry = PluginRegistry(
+            blocklist=self.settings.get("blocked_plugins", [])
+        )
         context.injector.bind_instance(PluginRegistry, plugin_registry)
 
         # Register standard protocol plugins
