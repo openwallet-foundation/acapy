@@ -213,7 +213,8 @@ class AskarProfileSession(ProfileSession):
                 await self._handle.commit()
             except AskarError as err:
                 raise ProfileError("Error committing transaction") from err
-        await self._handle.close()
+        if self._handle:
+            await self._handle.close()
         self._handle = None
         self._check_duration()
 
