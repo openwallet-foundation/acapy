@@ -14,6 +14,7 @@ class WsTransport(BaseOutboundTransport):
     """Websockets outbound transport class."""
 
     schemes = ("ws", "wss")
+    is_external = False
 
     def __init__(self, **kwargs) -> None:
         """Initialize an `WsTransport` instance."""

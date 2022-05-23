@@ -3,6 +3,7 @@ aiohttp-apispec~=2.2.1
 aiohttp-cors~=0.7.0
 apispec~=3.3.0
 async-timeout~=4.0.2
+nest_asyncio~=1.5.5
 aioredis~=2.0.0
 base58~=2.1.0
 deepmerge~=0.3.0

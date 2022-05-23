@@ -15,7 +15,9 @@ class BaseOutboundTransport(ABC):
     """Base outbound transport class."""
 
     def __init__(
-        self, wire_format: BaseWireFormat = None, root_profile: Profile = None
+        self,
+        wire_format: BaseWireFormat = None,
+        root_profile: Profile = None,
     ) -> None:
         """Initialize a `BaseOutboundTransport` instance."""
         self._collector = None
@@ -31,6 +33,16 @@ class BaseOutboundTransport(ABC):
     def collector(self, coll: Collector):
         """Assign a new stats collector instance."""
         self._collector = coll
+
+    @property
+    def wire_format(self) -> BaseWireFormat:
+        """Accessor for a custom wire format for the transport."""
+        return self._wire_format
+
+    @wire_format.setter
+    def wire_format(self, format: BaseWireFormat):
+        """Setter for a custom wire format for the transport."""
+        self._wire_format = format
 
     async def __aenter__(self):
         """Async context manager enter."""
@@ -50,16 +62,6 @@ class BaseOutboundTransport(ABC):
     async def stop(self):
         """Shut down the transport."""
 
-    @property
-    def wire_format(self) -> BaseWireFormat:
-        """Accessor for a custom wire format for the transport."""
-        return self._wire_format
-
-    @wire_format.setter
-    def wire_format(self, format: BaseWireFormat):
-        """Setter for a custom wire format for the transport."""
-        self._wire_format = format
-
     @abstractmethod
     async def handle_message(
         self,
@@ -69,7 +71,7 @@ class BaseOutboundTransport(ABC):
         metadata: dict = None,
     ):
         """
-        Handle message from queue.
+        Handle message.
 
         Args:
             profile: the profile that produced the message
