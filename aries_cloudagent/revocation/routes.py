@@ -259,6 +259,21 @@ class CredRevRecordResultSchema(OpenAPISchema):
     result = fields.Nested(IssuerCredRevRecordSchema())
 
 
+class CredRevRecordDetailsResultSchema(OpenAPISchema):
+    """Result schema for credential revocation record request."""
+
+    results = fields.List(fields.Nested(IssuerCredRevRecordSchema()))
+
+
+class CredRevDeltaRecordResultSchema(OpenAPISchema):
+    """Result schema for revoc reg delta."""
+
+    result: fields.Dict(
+        required=True,
+        description="Credential revocation ids by revocation registry id",
+    )
+
+
 class RevRegIssuedResultSchema(OpenAPISchema):
     """Result schema for revocation registry credentials issued request."""
 
@@ -588,7 +603,7 @@ async def get_rev_reg(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegIssuedResultSchema(), 200, description="")
-async def get_rev_reg_issued(request: web.BaseRequest):
+async def get_rev_reg_issued_count(request: web.BaseRequest):
     """
     Request handler to get number of credentials issued against revocation registry.
 
@@ -613,6 +628,68 @@ async def get_rev_reg_issued(request: web.BaseRequest):
         )
 
     return web.json_response({"result": count})
+
+
+@docs(
+    tags=["revocation"],
+    summary="Get details of credentials issued against revocation registry",
+)
+@match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(CredRevRecordDetailsResultSchema(), 200, description="")
+async def get_rev_reg_issued(request: web.BaseRequest):
+    """
+    Request handler to get number of credentials issued against revocation registry.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Number of credentials issued against revocation registry
+
+    """
+    context: AdminRequestContext = request["context"]
+
+    rev_reg_id = request.match_info["rev_reg_id"]
+
+    recs = []
+    async with context.profile.session() as session:
+        try:
+            await IssuerRevRegRecord.retrieve_by_revoc_reg_id(session, rev_reg_id)
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+        recs = await IssuerCredRevRecord.query_by_ids(session, rev_reg_id=rev_reg_id)
+    results = []
+    for rec in recs:
+        results.append(rec.serialize())
+
+    return web.json_response(results)
+
+
+@docs(
+    tags=["revocation"],
+    summary="Get details of revoked credentials from ledger",
+)
+@match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(CredRevDeltaRecordResultSchema(), 200, description="")
+async def get_rev_reg_delta(request: web.BaseRequest):
+    """
+    Request handler to get details of revoked credentials from ledger.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        Detailes of revoked credentials from ledger
+
+    """
+    context: AdminRequestContext = request["context"]
+
+    rev_reg_id = request.match_info["rev_reg_id"]
+
+    revoc = IndyRevocation(context.profile)
+    rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
+
+    return web.json_response({"result": rev_reg_delta})
 
 
 @docs(
@@ -1334,7 +1411,17 @@ async def register(app: web.Application):
             ),
             web.get(
                 "/revocation/registry/{rev_reg_id}/issued",
+                get_rev_reg_issued_count,
+                allow_head=False,
+            ),
+            web.get(
+                "/revocation/registry/{rev_reg_id}/issued/details",
                 get_rev_reg_issued,
+                allow_head=False,
+            ),
+            web.get(
+                "/revocation/registry/{rev_reg_id}/issued/delta",
+                get_rev_reg_delta,
                 allow_head=False,
             ),
             web.post("/revocation/create-registry", create_rev_reg),
