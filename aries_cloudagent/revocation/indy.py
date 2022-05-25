@@ -3,6 +3,7 @@
 from typing import Sequence
 
 from ..core.profile import Profile
+from ..ledger.base import BaseLedger
 from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     GET_REVOC_REG_DEF,
@@ -142,7 +143,8 @@ class IndyRevocation:
             IndyRevocation.REV_REG_CACHE[revoc_reg_id] = rev_reg
             return rev_reg
 
-    async def get_ledger_for_registry(self, revoc_reg_id: str) -> "Ledger":
+    async def get_ledger_for_registry(self, revoc_reg_id: str) -> "BaseLedger":
+        """Get the ledger for the given registry."""
         multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)

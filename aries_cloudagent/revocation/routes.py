@@ -268,8 +268,7 @@ class CredRevRecordDetailsResultSchema(OpenAPISchema):
 class CredRevDeltaRecordResultSchema(OpenAPISchema):
     """Result schema for revoc reg delta."""
 
-    result: fields.Dict(
-        required=True,
+    result = fields.Dict(
         description="Credential revocation ids by revocation registry id",
     )
 
@@ -689,7 +688,7 @@ async def get_rev_reg_delta(request: web.BaseRequest):
     revoc = IndyRevocation(context.profile)
     rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
 
-    return web.json_response({"result": rev_reg_delta})
+    return web.json_response({"result": rev_reg_delta.serialize()})
 
 
 @docs(
