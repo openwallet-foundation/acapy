@@ -535,6 +535,20 @@ class GeneralGroup(ArgumentGroup):
         )
 
         parser.add_argument(
+            "--block-plugin",
+            dest="blocked_plugins",
+            type=str,
+            action="append",
+            required=False,
+            metavar="<module>",
+            env_var="ACAPY_BLOCKED_PLUGIN",
+            help=(
+                "Block <module> plugin module from loading. Multiple "
+                "instances of this parameter can be specified."
+            ),
+        )
+
+        parser.add_argument(
             "--plugin-config",
             dest="plugin_config",
             type=str,
@@ -611,6 +625,9 @@ class GeneralGroup(ArgumentGroup):
         if args.external_plugins:
             settings["external_plugins"] = args.external_plugins
 
+        if args.blocked_plugins:
+            settings["blocked_plugins"] = args.blocked_plugins
+
         if args.plugin_config:
             with open(args.plugin_config, "r") as stream:
                 settings["plugin_config"] = yaml.safe_load(stream)
@@ -680,7 +697,7 @@ class RevocationGroup(ArgumentGroup):
         parser.add_argument(
             "--monitor-revocation-notification",
             action="store_true",
-            env_var="ACAPY_NOTIFY_REVOCATION",
+            env_var="ACAPY_MONITOR_REVOCATION_NOTIFICATION",
             help=(
                 "Specifies that aca-py will emit webhooks on notification of "
                 "revocation received."
@@ -1170,22 +1187,6 @@ class TransportGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
-            "-oq",
-            "--outbound-queue",
-            dest="outbound_queue",
-            type=str,
-            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE",
-            help=(
-                "Defines the location of the Outbound Queue Engine. This must be "
-                "a 'dotpath' to a Python module on the PYTHONPATH, followed by a "
-                "colon, followed by the name of a Python class that implements "
-                "BaseOutboundQueue. This commandline option is the official entry "
-                "point of ACA-py's pluggable queue interface. The default value is: "
-                "'aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue'."
-                ""
-            ),
-        )
-        parser.add_argument(
             "-l",
             "--label",
             type=str,
@@ -1264,20 +1265,10 @@ class TransportGroup(ArgumentGroup):
             settings["transport.inbound_configs"] = args.inbound_transports
         else:
             raise ArgsParseError("-it/--inbound-transport is required")
-        if not args.outbound_transports and not args.outbound_queue:
-            raise ArgsParseError(
-                "-ot/--outbound-transport or -oq/--outbound-queue is required"
-            )
-        if args.outbound_transports and args.outbound_queue:
-            raise ArgsParseError(
-                "-ot/--outbound-transport and -oq/--outbound-queue are "
-                "not allowed together"
-            )
         if args.outbound_transports:
             settings["transport.outbound_configs"] = args.outbound_transports
-        if args.outbound_queue:
-            settings["transport.outbound_queue"] = args.outbound_queue
-
+        else:
+            raise ArgsParseError("-ot/--outbound-transport is required")
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
         if args.label:

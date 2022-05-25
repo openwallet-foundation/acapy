@@ -17,6 +17,7 @@ class HttpTransport(BaseOutboundTransport):
     """Http outbound transport class."""
 
     schemes = ("http", "https")
+    is_external = False
 
     def __init__(self, **kwargs) -> None:
         """Initialize an `HttpTransport` instance."""
