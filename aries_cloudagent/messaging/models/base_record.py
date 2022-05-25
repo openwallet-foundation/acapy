@@ -19,7 +19,7 @@ from ...storage.record import StorageRecord
 from ..util import datetime_to_str, time_now
 from ..valid import INDY_ISO8601_DATETIME
 
-from .base import BaseModel, BaseModelSchema
+from .base import BaseModel, BaseModelSchema, BaseModelError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -329,7 +329,10 @@ class BaseRecord(BaseModel):
                 positive=False,
                 alt=alt,
             ):
-                result.append(cls.from_storage(record.id, vals))
+                try:
+                    result.append(cls.from_storage(record.id, vals))
+                except BaseModelError as err:
+                    raise BaseModelError(f"{err}, for record id {record.id}")
         return result
 
     async def save(
