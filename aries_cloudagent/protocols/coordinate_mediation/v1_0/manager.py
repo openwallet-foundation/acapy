@@ -1,24 +1,23 @@
 """Manager for Mediation coordination."""
 import json
 import logging
-
 from typing import Optional, Sequence, Tuple
 
+from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
+from ....messaging.responder import BaseResponder
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
-from ....wallet.key_type import KeyType
-from ....wallet.did_method import DIDMethod
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
-
+from ....wallet.did_method import DIDMethod
+from ....wallet.key_type import KeyType
 from ...routing.v1_0.manager import RoutingManager
 from ...routing.v1_0.models.route_record import RouteRecord
 from ...routing.v1_0.models.route_update import RouteUpdate
 from ...routing.v1_0.models.route_updated import RouteUpdated
-
 from .messages.inner.keylist_key import KeylistKey
 from .messages.inner.keylist_query_paginate import KeylistQueryPaginate
 from .messages.inner.keylist_update_rule import KeylistUpdateRule
@@ -484,6 +483,47 @@ class MediationManager:
             paginate=KeylistQueryPaginate(paginate_limit, paginate_offset),
         )
         return message
+
+    async def update_keylist_for_connection(
+        self, conn_record: ConnRecord, mediation_record: MediationRecord
+    ) -> Optional[KeylistUpdate]:
+        """Update the mediator with keys created for the connection.
+
+        If the connection is in invitation received state, create the
+        connection keys and update.
+        """
+        if conn_record.rfc23_state == ConnRecord.State.INVITATION.rfc23strict(
+            ConnRecord.Role.REQUESTER
+        ) or conn_record.rfc23_state == ConnRecord.State.REQUEST.rfc23strict(
+            ConnRecord.Role.RESPONDER
+        ):
+            if not conn_record.my_did:
+                async with self._profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    # Create new DID for connection
+                    my_info = await wallet.create_local_did(
+                        DIDMethod.SOV, KeyType.ED25519
+                    )
+                    conn_record.my_did = my_info.did
+                    await conn_record.save(session, reason="Connection my did created")
+            else:
+                async with self._profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    my_info = await wallet.get_local_did(conn_record.my_did)
+
+            keylist_update = await self.add_key(my_info.verkey)
+            if conn_record.rfc23_state == ConnRecord.State.REQUEST.rfc23strict(
+                ConnRecord.Role.RESPONDER
+            ):
+                keylist_update = await self.remove_key(
+                    conn_record.invitation_key, keylist_update
+                )
+            responder = self._profile.inject(BaseResponder)
+            await responder.send(
+                keylist_update, connection_id=mediation_record.connection_id
+            )
+            return keylist_update
+        return None
 
     async def add_key(
         self, recipient_key: str, message: Optional[KeylistUpdate] = None

@@ -495,7 +495,7 @@ async def set_default_mediator(request: web.BaseRequest):
         mediator_mgr = MediationManager(context.profile)
         await mediator_mgr.set_default_mediator_by_id(mediation_id=mediation_id)
         default_mediator = await mediator_mgr.get_default_mediator()
-        results = default_mediator.serialize()
+        results = default_mediator.serialize() if default_mediator else {}
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response(results, status=201)
@@ -510,9 +510,46 @@ async def clear_default_mediator(request: web.BaseRequest):
         mediator_mgr = MediationManager(context.profile)
         default_mediator = await mediator_mgr.get_default_mediator()
         await mediator_mgr.clear_default_mediator()
-        results = default_mediator.serialize()
+        results = default_mediator.serialize() if default_mediator else {}
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
+    return web.json_response(results, status=201)
+
+
+@docs(tags=["mediation"], summary="Update keylist for a connection")
+@match_info_schema(ConnectionsConnIdMatchInfoSchema())
+@request_schema(MediationIdMatchInfoSchema(), 200)
+@response_schema(KeylistUpdateSchema())
+async def update_keylist_for_connection(request: web.BaseRequest):
+    """Update keylist for a connection."""
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    mediation_id = body.get("mediation_id")
+    connection_id = request.match_info["conn_id"]
+    try:
+        mediation_mgr = MediationManager(context.profile)
+        mediation_id = mediation_id or await mediation_mgr.get_default_mediator()
+        if not mediation_id:
+            raise web.HTTPBadRequest(
+                reason="No mediation_id specified and no default mediator"
+            )
+
+        async with context.session() as session:
+            mediation_record = await MediationRecord.retrieve_by_id(
+                session, mediation_id
+            )
+            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
+
+        keylist_update = await mediation_mgr.update_keylist_for_connection(
+            connection_record, mediation_record
+        )
+
+        results = keylist_update.serialize() if keylist_update else {}
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
     return web.json_response(results, status=201)
 
 
