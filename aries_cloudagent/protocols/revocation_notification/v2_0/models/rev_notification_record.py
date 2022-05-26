@@ -38,6 +38,7 @@ class RevNotificationRecord(BaseRecord):
         connection_id: str = None,
         thread_id: str = None,
         comment: str = None,
+        version: str = None,
         **kwargs,
     ):
         """Construct record."""
@@ -47,6 +48,7 @@ class RevNotificationRecord(BaseRecord):
         self.connection_id = connection_id
         self.thread_id = thread_id
         self.comment = comment
+        self.version = version
 
     @property
     def revocation_notification_id(self) -> Optional[str]:
@@ -156,5 +158,9 @@ class RevNotificationRecordSchema(BaseRecordSchema):
     )
     comment = fields.Str(
         description="Optional comment to include in revocation notification",
+        required=False,
+    )
+    version = fields.Str(
+        description="Version of Revocation Notification to send out",
         required=False,
     )
