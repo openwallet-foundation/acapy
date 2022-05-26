@@ -5,6 +5,7 @@ import json
 import logging
 import tempfile
 from datetime import date, datetime
+from io import StringIO
 from os import path
 from time import time
 from typing import Sequence, Tuple, Optional
@@ -40,6 +41,17 @@ from .util import TAA_ACCEPTED_RECORD_TYPE
 LOGGER = logging.getLogger(__name__)
 
 GENESIS_TRANSACTION_FILE = "indy_genesis_transactions.txt"
+
+
+def _normalize_txns(txns: str) -> str:
+    """Normalize a set of genesis transactions."""
+    lines = StringIO()
+    for line in txns.splitlines():
+        line = line.strip()
+        if line:
+            lines.write(line)
+            lines.write("\n")
+    return lines.getvalue()
 
 
 class IndySdkLedgerPoolProvider(BaseProvider):
@@ -107,11 +119,27 @@ class IndySdkLedgerPool:
         self.cache = cache
         self.cache_duration = cache_duration
         self.genesis_transactions = genesis_transactions
+        self.genesis_txns_cache = genesis_transactions
         self.handle = None
         self.name = name
         self.taa_cache = None
         self.read_only = read_only
         self.socks_proxy = socks_proxy
+
+    @property
+    def genesis_txns(self) -> str:
+        """Get the configured genesis transactions."""
+        if not self.genesis_txns_cache:
+            try:
+                txn_path = path.join(
+                    tempfile.gettempdir(), f"{self.name}_{GENESIS_TRANSACTION_FILE}"
+                )
+                self.genesis_txns_cache = _normalize_txns(open(txn_path).read())
+            except FileNotFoundError:
+                raise LedgerConfigError(
+                    "Pool config '%s' not found", self.name
+                ) from None
+        return self.genesis_txns_cache
 
     async def create_pool_config(
         self, genesis_transactions: str, recreate: bool = False
