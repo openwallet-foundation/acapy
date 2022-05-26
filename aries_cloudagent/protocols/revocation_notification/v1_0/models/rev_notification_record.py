@@ -27,6 +27,7 @@ class RevNotificationRecord(BaseRecord):
         "rev_reg_id",
         "cred_rev_id",
         "connection_id",
+        "version",
     }
 
     def __init__(
@@ -75,6 +76,7 @@ class RevNotificationRecord(BaseRecord):
             rev_reg_id: the rev reg id by which to filter
         """
         tag_filter = {
+            **{"version": "v1_0"},
             **{"cred_rev_id": cred_rev_id for _ in [""] if cred_rev_id},
             **{"rev_reg_id": rev_reg_id for _ in [""] if rev_reg_id},
         }
@@ -103,6 +105,7 @@ class RevNotificationRecord(BaseRecord):
             rev_reg_id: the rev reg id by which to filter
         """
         tag_filter = {
+            **{"version": "v1_0"},
             **{"rev_reg_id": rev_reg_id for _ in [""] if rev_reg_id},
         }
 
