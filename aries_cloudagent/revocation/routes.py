@@ -157,10 +157,15 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
 
         notify = data.get("notify")
         connection_id = data.get("connection_id")
+        notify_version = data.get("notify_version", "v1_0")
 
         if notify and not connection_id:
             raise ValidationError(
                 "Request must specify connection_id if notify is true"
+            )
+        if notify and not notify_version:
+            raise ValidationError(
+                "Request must specify notify_version if notify is true"
             )
 
     publish = fields.Boolean(
@@ -172,6 +177,11 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
     )
     notify = fields.Boolean(
         description="Send a notification to the credential recipient",
+        required=False,
+    )
+    notify_version = fields.String(
+        description="Specify which version of the revocation notification should be sent",
+        validate=validate.OneOf(["v1_0", "v2_0"]),
         required=False,
     )
     connection_id = fields.Str(
@@ -377,9 +387,14 @@ async def revoke(request: web.BaseRequest):
     body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
     notify = body.get("notify")
     connection_id = body.get("connection_id")
+    notify_version = body.get("notify_version", "v1_0")
 
     if notify and not connection_id:
         raise web.HTTPBadRequest(reason="connection_id must be set when notify is true")
+    if notify and not notify_version:
+        raise web.HTTPBadRequest(
+            reason="Request must specify notify_version if notify is true"
+        )
 
     rev_manager = RevocationManager(context.profile)
     try:
