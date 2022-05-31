@@ -98,7 +98,6 @@ def step_impl(context, holder):
             "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
             "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
             "publish": "Y",
-            "notify_version": "v1_0",
             "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
         },
     )

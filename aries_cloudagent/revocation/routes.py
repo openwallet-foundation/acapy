@@ -157,7 +157,7 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
 
         notify = data.get("notify")
         connection_id = data.get("connection_id")
-        notify_version = data.get("notify_version")
+        notify_version = data.get("notify_version", "v1_0")
 
         if notify and not connection_id:
             raise ValidationError(
@@ -387,7 +387,7 @@ async def revoke(request: web.BaseRequest):
     body["notify"] = body.get("notify", context.settings.get("revocation.notify"))
     notify = body.get("notify")
     connection_id = body.get("connection_id")
-    notify_version = body.get("notify_version")
+    notify_version = body.get("notify_version", "v1_0")
 
     if notify and not connection_id:
         raise web.HTTPBadRequest(reason="connection_id must be set when notify is true")
