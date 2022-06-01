@@ -15,8 +15,6 @@ LOGGER = logging.getLogger(__name__)
 class HttpTransport(BaseInboundTransport):
     """Http Transport class."""
 
-    is_external = False
-
     def __init__(self, host: str, port: int, create_session, **kwargs) -> None:
         """
         Initialize an inbound HTTP transport instance.
@@ -27,7 +25,7 @@ class HttpTransport(BaseInboundTransport):
             create_session: Method to create a new inbound session
 
         """
-        super().__init__("http", create_session, **kwargs)
+        super().__init__("http", create_session, is_external=False, **kwargs)
         self.host = host
         self.port = port
         self.site: web.BaseSite = None
