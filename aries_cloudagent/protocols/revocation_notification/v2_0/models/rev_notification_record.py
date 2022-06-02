@@ -76,7 +76,7 @@ class RevNotificationRecord(BaseRecord):
             rev_reg_id: the rev reg id by which to filter
         """
         tag_filter = {
-            **{"version": "v1_0"},
+            **{"version": "v2_0"},
             **{"cred_rev_id": cred_rev_id for _ in [""] if cred_rev_id},
             **{"rev_reg_id": rev_reg_id for _ in [""] if rev_reg_id},
         }
@@ -105,7 +105,7 @@ class RevNotificationRecord(BaseRecord):
             rev_reg_id: the rev reg id by which to filter
         """
         tag_filter = {
-            **{"version": "v1_0"},
+            **{"version": "v2_0"},
             **{"rev_reg_id": rev_reg_id for _ in [""] if rev_reg_id},
         }
 
@@ -119,7 +119,8 @@ class RevNotificationRecord(BaseRecord):
                 "cannot create message"
             )
         return Revoke(
-            thread_id=self.thread_id,
+            revocation_format="indy-anoncreds",
+            credential_id=f"{self.rev_reg_id}::{self.cred_rev_id}",
             comment=self.comment,
         )
 

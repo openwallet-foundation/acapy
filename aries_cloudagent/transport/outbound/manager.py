@@ -255,6 +255,7 @@ class OutboundTransportManager:
             outbound: The outbound message to deliver
         """
         targets = [outbound.target] if outbound.target else (outbound.target_list or [])
+        transport_id = None
         for target in targets:
             endpoint = target.endpoint
             try:

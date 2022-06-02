@@ -535,6 +535,20 @@ class GeneralGroup(ArgumentGroup):
         )
 
         parser.add_argument(
+            "--block-plugin",
+            dest="blocked_plugins",
+            type=str,
+            action="append",
+            required=False,
+            metavar="<module>",
+            env_var="ACAPY_BLOCKED_PLUGIN",
+            help=(
+                "Block <module> plugin module from loading. Multiple "
+                "instances of this parameter can be specified."
+            ),
+        )
+
+        parser.add_argument(
             "--plugin-config",
             dest="plugin_config",
             type=str,
@@ -610,6 +624,9 @@ class GeneralGroup(ArgumentGroup):
         settings = {}
         if args.external_plugins:
             settings["external_plugins"] = args.external_plugins
+
+        if args.blocked_plugins:
+            settings["blocked_plugins"] = args.blocked_plugins
 
         if args.plugin_config:
             with open(args.plugin_config, "r") as stream:

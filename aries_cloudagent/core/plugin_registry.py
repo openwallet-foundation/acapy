@@ -3,7 +3,7 @@
 import logging
 from collections import OrderedDict
 from types import ModuleType
-from typing import Sequence
+from typing import Sequence, Iterable
 
 from ..config.injection_context import InjectionContext
 from ..core.event_bus import EventBus
@@ -19,9 +19,10 @@ LOGGER = logging.getLogger(__name__)
 class PluginRegistry:
     """Plugin registry for indexing application plugins."""
 
-    def __init__(self):
+    def __init__(self, blocklist: Iterable[str] = []):
         """Initialize a `PluginRegistry` instance."""
         self._plugins = OrderedDict()
+        self._blocklist = set(blocklist)
 
     @property
     def plugin_names(self) -> Sequence[str]:
@@ -119,6 +120,9 @@ class PluginRegistry:
         """Register a plugin module."""
         if module_name in self._plugins:
             mod = self._plugins[module_name]
+        elif module_name in self._blocklist:
+            LOGGER.debug(f"Blocked {module_name} from loading due to blocklist")
+            return None
         else:
             try:
                 mod = ClassLoader.load_module(module_name)
