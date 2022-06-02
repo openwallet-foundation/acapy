@@ -1626,8 +1626,9 @@ class MultitenantGroup(ArgumentGroup):
             help=(
                 "Specify multitenancy configuration in key=value pairs. "
                 'For example: "wallet_type=askar-profile wallet_name=askar-profile-name" '
-                "Possible values: wallet_name, wallet_key, cache_size. "
-                '"wallet_name" is only used when "wallet_type" is "askar-profile"'
+                "Possible values: wallet_name, wallet_key, cache_size, "
+                'key_derivation_method. "wallet_name" is only used when '
+                '"wallet_type" is "askar-profile"'
             ),
         )
 
