@@ -15,6 +15,7 @@ def open_store():
     yield mock.MagicMock()
 
 
+@pytest.mark.asyncio
 async def test_init_success(open_store):
     askar_profile = AskarProfile(
         open_store,
@@ -23,6 +24,7 @@ async def test_init_success(open_store):
     assert askar_profile.opened == open_store
 
 
+@pytest.mark.asyncio
 async def test_remove_success(open_store):
     openStore = open_store
     context = InjectionContext()
@@ -42,6 +44,7 @@ async def test_remove_success(open_store):
     openStore.store.remove_profile.assert_called_once_with(profile_id)
 
 
+@pytest.mark.asyncio
 async def test_remove_profile_not_removed_if_wallet_type_not_askar_profile(open_store):
     openStore = open_store
     context = InjectionContext()
