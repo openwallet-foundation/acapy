@@ -14,7 +14,7 @@ from ..multitenant.base import BaseMultitenantManager
 class AskarProfileMultitenantManager(BaseMultitenantManager):
     """Class for handling askar profile multitenancy."""
 
-    DEFAULT_MULTIENANT_WALLET_NAME = "multitenant_sub_wallet"
+    DEFAULT_MULTITENANT_WALLET_NAME = "multitenant_sub_wallet"
 
     def __init__(self, profile: Profile, multitenant_profile: AskarProfile = None):
         """Initialize askar profile multitenant Manager.
@@ -62,7 +62,7 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
         """
         if not self._multitenant_profile:
             multitenant_wallet_name = base_context.settings.get(
-                "multitenant.wallet_name", self.DEFAULT_MULTIENANT_WALLET_NAME
+                "multitenant.wallet_name", self.DEFAULT_MULTITENANT_WALLET_NAME
             )
             context = base_context.copy()
             sub_wallet_settings = {

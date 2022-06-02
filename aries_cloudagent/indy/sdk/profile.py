@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 from weakref import finalize, ref
 
 from ...config.injection_context import InjectionContext
@@ -42,7 +42,7 @@ class IndySdkProfile(Profile):
         self.ledger_pool: IndySdkLedgerPool = None
         self.init_ledger_pool()
         self.bind_providers()
-        self._finalizer = self._make_finalizer()
+        self._finalizer = self._make_finalizer(opened)
 
     @property
     def name(self) -> str:
@@ -122,18 +122,17 @@ class IndySdkProfile(Profile):
             await self.opened.close()
             self.opened = None
 
-    def _make_finalizer(self) -> finalize:
+    def _make_finalizer(self, opened: IndyOpenWallet) -> finalize:
         """Return a finalizer for this profile.
 
         See docs for weakref.finalize for more details on behavior of finalizers.
         """
 
-        def _finalize(opened: Optional[IndyOpenWallet]):
-            if opened:
-                LOGGER.debug("Profile finalizer called; closing wallet")
-                asyncio.get_event_loop().create_task(opened.close())
+        def _finalize(opened: IndyOpenWallet):
+            LOGGER.debug("Profile finalizer called; closing wallet")
+            asyncio.get_event_loop().create_task(opened.close())
 
-        return finalize(self, _finalize, self.opened)
+        return finalize(self, _finalize, opened)
 
     async def remove(self):
         """Remove the profile associated with this instance."""

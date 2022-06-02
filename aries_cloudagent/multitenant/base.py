@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import logging
-from abc import abstractmethod, ABC, abstractproperty
+from abc import abstractmethod, ABC
 
 import jwt
 from typing import Iterable, List, Optional, cast
@@ -48,10 +48,10 @@ class BaseMultitenantManager(ABC):
         if not profile:
             raise MultitenantManagerError("Missing profile")
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def open_profiles(self) -> Iterable[Profile]:
         """Return iterator over open profiles."""
-        ...
 
     async def get_default_mediator(self) -> Optional[MediationRecord]:
         """Retrieve the default mediator used for subwallet routing.
