@@ -602,7 +602,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
                 raise web.HTTPBadRequest(
                     reason=f"Ledger {ledger.pool_name} TAA not available"
                 )
-            LOGGER.info(f"TAA on ledger: {taa_info}")
+            LOGGER.info("TAA on ledger: ", taa_info)
             # this is a bit of a hack, but the "\ufeff" code is included in the
             # ledger TAA and digest calculation, so it needs to be included in the
             # TAA text that the user is accepting

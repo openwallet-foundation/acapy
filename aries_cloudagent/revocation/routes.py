@@ -818,7 +818,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 
             LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
             if apply_ledger_update:
-                ledger = session.inject(BaseLedger)
+                ledger = session.inject_or(BaseLedger)
                 if not ledger:
                     reason = "No ledger available"
                     if not session.context.settings.get_value("wallet.type"):

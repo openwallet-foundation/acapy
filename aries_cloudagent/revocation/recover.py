@@ -24,11 +24,18 @@ failed.)
 """
 
 
+class RevocRecoveryException(Exception):
+    """Raise exception generating the recovery transaction."""
+
+
 async def fetch_txns(genesis_txns, registry_id):
     """Fetch tails file and revocation registry information."""
 
-    vdr_module = importlib.import_module("indy_vdr")
-    credx_module = importlib.import_module("indy_credx")
+    try:
+        vdr_module = importlib.import_module("indy_vdr")
+        credx_module = importlib.import_module("indy_credx")
+    except Exception as e:
+        raise RevocRecoveryException(f"Failed to import library {e}")
 
     pool = await vdr_module.open_pool(transactions=genesis_txns)
     LOGGER.debug("Connected to pool")
@@ -37,8 +44,7 @@ async def fetch_txns(genesis_txns, registry_id):
     fetch = vdr_module.ledger.build_get_revoc_reg_def_request(None, registry_id)
     result = await pool.submit_request(fetch)
     if not result["data"]:
-        LOGGER.error("Registry definition not found")
-        return
+        raise RevocRecoveryException(f"Registry definition not found for {registry_id}")
     data = result["data"]
     data["ver"] = "1.0"
     defn = credx_module.RevocationRegistryDefinition.load(data)
@@ -51,8 +57,9 @@ async def fetch_txns(genesis_txns, registry_id):
             "utf-8"
         )
         if tails_hash != defn.tails_hash:
-            LOGGER.debug("Tails hash mismatch: %s %s", tails_hash, defn.tails_hash)
-            return
+            raise RevocRecoveryException(
+                f"Tails hash mismatch {tails_hash} {defn.tails_hash}"
+            )
         else:
             LOGGER.debug("Checked tails hash: %s", tails_hash)
         tails_temp = tempfile.NamedTemporaryFile(delete=False)
@@ -65,8 +72,7 @@ async def fetch_txns(genesis_txns, registry_id):
     )
     result = await pool.submit_request(fetch)
     if not result["data"]:
-        LOGGER.error("Error fetching delta")
-        return None
+        raise RevocRecoveryException(f"Error fetching delta fromledger")
 
     accum_to = result["data"]["value"]["accum_to"]
     accum_to["ver"] = "1.0"
