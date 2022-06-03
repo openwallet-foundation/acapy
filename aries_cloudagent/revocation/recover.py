@@ -72,7 +72,7 @@ async def fetch_txns(genesis_txns, registry_id):
     )
     result = await pool.submit_request(fetch)
     if not result["data"]:
-        raise RevocRecoveryException(f"Error fetching delta fromledger")
+        raise RevocRecoveryException("Error fetching delta from ledger")
 
     accum_to = result["data"]["value"]["accum_to"]
     accum_to["ver"] = "1.0"
