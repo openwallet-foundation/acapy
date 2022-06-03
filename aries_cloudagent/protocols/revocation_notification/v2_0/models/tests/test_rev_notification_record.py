@@ -21,7 +21,7 @@ def rec():
         connection_id="mock_connection_id",
         thread_id="mock_thread_id",
         comment="mock_comment",
-        version="v1_0",
+        version="v2_0",
     )
 
 
@@ -51,7 +51,7 @@ async def test_storage(profile, rec):
             another = RevNotificationRecord(
                 rev_reg_id="mock_rev_reg_id",
                 cred_rev_id="mock_cred_rev_id",
-                version="v1_0",
+                version="v2_0",
             )
             await another.save(session)
             await RevNotificationRecord.query_by_ids(
@@ -62,7 +62,7 @@ async def test_storage(profile, rec):
 def test_to_message(rec):
     message = rec.to_message()
     assert isinstance(message, Revoke)
-    assert message.thread_id == rec.thread_id
+    assert message.credential_id == f"{rec.rev_reg_id}::{rec.cred_rev_id}"
     assert message.comment == rec.comment
 
     with pytest.raises(ValueError):

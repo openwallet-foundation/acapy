@@ -1,0 +1,62 @@
+# Sample docker-compose to start a local aca-py in multi-ledger mode
+# To start aca-py and the postgres database, just run `docker-compose up`
+# To shut down the services run `docker-compose rm` - this will retain the postgres database, so you can change aca-py startup parameters
+# and restart the docker containers without losing your wallet data
+# If you want to delete your wallet data just run `docker volume ls -q | xargs docker volume rm`
+version: "3"
+services:
+  vcr-agent:
+    image: bcgovimages/aries-cloudagent:py36-1.16-1_0.7.3
+    ports:
+      - 8010:8010
+    depends_on:
+      - wallet-db
+    entrypoint: /bin/bash
+    command: [
+        "-c",
+        "sleep 5; \
+        aca-py start \
+        --auto-provision \
+        --inbound-transport http '0.0.0.0' 8001 \
+        --endpoint 'http://host.docker.internal:8001' \
+        --outbound-transport http \
+        --genesis-transactions-list 'ledgers.yaml'
+        --auto-accept-invites \
+        --auto-accept-requests \
+        --auto-ping-connection \
+        --auto-respond-messages \
+        --auto-respond-credential-proposal \
+        --auto-respond-credential-offer \
+        --auto-respond-credential-request \
+        --auto-verify-presentation \
+        --wallet-type 'indy' \
+        --wallet-name 'acapy_agent_wallet' \
+        --wallet-key 'key' \
+        --wallet-storage-type 'postgres_storage' \
+        --wallet-storage-config '{\"url\":\"wallet-db:5432\",\"max_connections\":5}' \
+        --wallet-storage-creds '{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}' \
+        --admin '0.0.0.0' 8010 \
+        --admin-insecure-mode \
+        --label 'tester_agent' \
+        --log-level 'info' ",
+      ]
+    volumes:
+      - ./ledgers.yaml:/home/indy/ledgers.yaml
+
+# note - if you want to start aca-py in single-ledger mode, replace the `--genesis-transactions-list` parameter above with:
+#        --genesis-url 'https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_sandbox_genesis' \
+
+  wallet-db:
+    image: vcr-postgresql
+    environment:
+      - POSTGRESQL_USER=DB_USER
+      - POSTGRESQL_PASSWORD=DB_PASSWORD
+      - POSTGRESQL_DATABASE=DB_USER
+      - POSTGRESQL_ADMIN_PASSWORD=mysecretpassword
+    ports:
+      - 5433:5432
+    volumes:
+      - wallet-db-data:/var/lib/pgsql/data
+
+volumes:
+  wallet-db-data:

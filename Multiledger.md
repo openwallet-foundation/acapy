@@ -14,6 +14,7 @@ More background information including problem statement, design (algorithm) and 
   - [Read Requests](#read-requests)
     - [For checking ledger in parallel](#for-checking-ledger-in-parallel)
   - [Write Requests](#write-requests)
+- [A Special Warning for TAA Acceptance](#a-special-warning-for-taa-acceptance)
 - [Impact on other ACA-Py function](#impact-on-other-aca-py-function)
 
 ## Usage
@@ -103,6 +104,25 @@ If multiple ledgers are configured then `IndyLedgerRequestsExecutor` service ext
 ### Write Requests
 
 On startup, the first configured applicable ledger is assigned as the `write_ledger` [`BaseLedger`], the selection is dependant on the order (top-down) and whether it is `production` or `non_production`. For instance, considering this [example configuration](#example-config-file), ledger `bcorvinTest` will be set as `write_ledger` as it is the topmost `production` ledger. If no `production` ledgers are included in configuration then the topmost `non_production` ledger is selected.
+
+## A Special Warning for TAA Acceptance
+
+When you run in multi-ledger mode, ACA-Py will use the `pool-name` (or `id`) specified in the ledger configuration file for each ledger.
+
+(When running in single-ledger mode, ACA-Py uses `default` as the ledger name.)
+
+If you are running against a ledger in `write` mode, and the ledger requires you to accept a Transaction Author Agreement (TAA), ACA-Py stores the TAA acceptance
+status in the wallet in a non-secrets record, using the ledger's `pool_name` as a key.
+
+This means that if you are upgrading from single-ledger to multi-ledger mode, you will need to *either*:
+
+- set the `id` for your writable ledger to `default` (in your `ledgers.yaml` file)
+
+*or*:
+
+- re-accept the TAA once you restart your ACA-Py in multi-ledger mode
+
+Once you re-start ACA-Py, you can check the `GET /ledger/taa` endpoint to verify your TAA acceptance status.
 
 ## Impact on other ACA-Py function
 
