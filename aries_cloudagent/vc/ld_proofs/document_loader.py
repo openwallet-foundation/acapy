@@ -14,6 +14,10 @@ from ...resolver.did_resolver import DIDResolver
 
 from .error import LinkedDataProofException
 
+import nest_asyncio
+
+nest_asyncio.apply()
+
 
 class DocumentLoader:
     """JSON-LD document loader."""
@@ -32,6 +36,7 @@ class DocumentLoader:
         self.requests_loader = requests.requests_document_loader()
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self.cache_ttl = cache_ttl
+        self._event_loop = asyncio.get_event_loop()
 
     async def _load_did_document(self, did: str, options: dict):
         # Resolver expects plain did without path, query, etc...
@@ -59,14 +64,6 @@ class DocumentLoader:
     async def _load_async(self, url: str, options: dict):
         """Retrieve http(s) or did document."""
 
-        cache_key = f"json_ld_document_resolver::{url}"
-
-        # Try to get from cache
-        if self.cache:
-            document = await self.cache.get(cache_key)
-            if document:
-                return document
-
         # Resolve DIDs using did resolver
         if url.startswith("did:"):
             document = await self._load_did_document(url, options)
@@ -78,22 +75,9 @@ class DocumentLoader:
                 "'did:', 'http://' or 'https://'"
             )
 
-        # Cache document, if cache is available
-        if self.cache:
-            await self.cache.set(cache_key, document, self.cache_ttl)
-
         return document
 
-    def _load_sync(self, url: str, options: dict):
-        """Run document loader in event loop to make it async.
-
-        NOTE: This should be called in a thread where an event loop is not already
-        running, such as a new thread.
-        """
-        loop = asyncio.new_event_loop()
-        return loop.run_until_complete(self._load_async(url, options))
-
-    def load_document(self, url: str, options: dict):
+    async def load_document(self, url: str, options: dict):
         """Load JSON-LD document.
 
         Method signature conforms to PyLD document loader interface
@@ -101,13 +85,30 @@ class DocumentLoader:
         Document loading is processed in separate thread to deal with
         async to sync transformation.
         """
-        future = self.executor.submit(self._load_sync, url, options)
-        return future.result()
+        cache_key = f"json_ld_document_resolver::{url}"
+
+        # Try to get from cache
+        if self.cache:
+            document = await self.cache.get(cache_key)
+            if document:
+                return document
+
+        document = await self._load_async(url, options)
+
+        # Cache document, if cache is available
+        if self.cache:
+            await self.cache.set(cache_key, document, self.cache_ttl)
+
+        return document
 
     def __call__(self, url: str, options: dict):
         """Load JSON-LD Document."""
 
-        return self.load_document(url, options)
+        loop = self._event_loop
+        coroutine = self.load_document(url, options)
+        document = loop.run_until_complete(coroutine)
+
+        return document
 
 
 DocumentLoaderMethod = Callable[[str, dict], dict]
