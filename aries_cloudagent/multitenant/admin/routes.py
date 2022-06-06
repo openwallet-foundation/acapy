@@ -103,6 +103,12 @@ class CreateWalletRequestSchema(OpenAPISchema):
         example="https://aries.ca/images/sample.png",
     )
 
+    wallet_source = fields.Str(
+        description="Wallet source. Arbitrary value describing the wallet creation source",
+        example="MyWalletSource",
+        required=False,
+    )
+
     key_management_mode = fields.Str(
         description="Key management method to use for this wallet.",
         example=WalletRecord.MODE_MANAGED,
@@ -159,6 +165,12 @@ class UpdateWalletRequestSchema(OpenAPISchema):
         description="Image url for this wallet. This image url is publicized\
             (self-attested) to other agents as part of forming a connection.",
         example="https://aries.ca/images/sample.png",
+    )
+
+    wallet_source = fields.Str(
+        description="Wallet source. Arbitrary value describing the wallet creation source",
+        example="MyWalletSource",
+        required=False,
     )
 
 
@@ -309,12 +321,15 @@ async def wallet_create(request: web.BaseRequest):
     label = body.get("label")
     image_url = body.get("image_url")
     key_derivation = body.get("wallet_key_derivation")
+    wallet_source = body.get("wallet_source")
     if label:
         settings["default_label"] = label
     if image_url:
         settings["image_url"] = image_url
     if key_derivation:  # allow lower levels to handle default
         settings["wallet.key_derivation_method"] = key_derivation
+    if wallet_source:
+        settings["wallet.source"] = wallet_source
 
     try:
         multitenant_mgr = context.profile.inject(BaseMultitenantManager)
@@ -354,9 +369,17 @@ async def wallet_update(request: web.BaseRequest):
     wallet_dispatch_type = body.get("wallet_dispatch_type")
     label = body.get("label")
     image_url = body.get("image_url")
+    wallet_source = body.get("wallet_source")
 
     if all(
-        v is None for v in (wallet_webhook_urls, wallet_dispatch_type, label, image_url)
+        v is None
+        for v in (
+            wallet_webhook_urls,
+            wallet_dispatch_type,
+            label,
+            image_url,
+            wallet_source,
+        )
     ):
         raise web.HTTPBadRequest(reason="At least one parameter is required.")
 
@@ -376,6 +399,8 @@ async def wallet_update(request: web.BaseRequest):
         settings["default_label"] = label
     if image_url is not None:
         settings["image_url"] = image_url
+    if wallet_source is not None:
+        settings["wallet.source"] = wallet_source
 
     try:
         multitenant_mgr = context.profile.inject(BaseMultitenantManager)
