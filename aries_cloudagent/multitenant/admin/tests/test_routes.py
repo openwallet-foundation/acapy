@@ -145,6 +145,7 @@ class TestMultitenantRoutes(AsyncTestCase):
             "default_label": "test_label",
             "wallet_type": "indy",
             "wallet_key": "test",
+            "wallet_source": "source",
             "key_management_mode": "managed",
             "wallet_webhook_urls": [],
             "wallet_dispatch_type": "base",
@@ -178,6 +179,7 @@ class TestMultitenantRoutes(AsyncTestCase):
                     "wallet.key": body["wallet_key"],
                     "wallet.webhook_urls": body["wallet_webhook_urls"],
                     "wallet.dispatch_type": body["wallet_dispatch_type"],
+                    "wallet.source": body["wallet_source"],
                 },
                 body["key_management_mode"],
             )
@@ -208,6 +210,7 @@ class TestMultitenantRoutes(AsyncTestCase):
             "wallet_name": "test",
             "wallet_key": "test",
             "wallet_key_derivation": "ARGON2I_MOD",
+            "wallet_source": None,
             "wallet_webhook_urls": [],
             "wallet_dispatch_type": "base",
             "label": "my_test_label",
@@ -264,6 +267,7 @@ class TestMultitenantRoutes(AsyncTestCase):
         body = {
             "wallet_webhook_urls": ["test-webhook-url"],
             "wallet_dispatch_type": "default",
+            "wallet_source": "newSource",
             "label": "test-label",
             "image_url": "test-image-url",
         }
@@ -273,6 +277,7 @@ class TestMultitenantRoutes(AsyncTestCase):
             settings = {
                 "wallet.webhook_urls": body["wallet_webhook_urls"],
                 "wallet.dispatch_type": body["wallet_dispatch_type"],
+                "wallet.source": body["wallet_source"],
                 "default_label": body["label"],
                 "image_url": body["image_url"],
             }
