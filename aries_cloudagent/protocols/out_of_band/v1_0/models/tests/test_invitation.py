@@ -23,6 +23,7 @@ class TestInvitationRecord(AsyncTestCase):
             "invitation_url": None,
             "state": None,
             "trace": False,
+            "oob_id": None,
         }
 
         another = InvitationRecord(invi_msg_id="99999")
