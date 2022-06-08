@@ -206,7 +206,7 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         example=ConnRecord.Protocol.RFC_0160.aries_protocol,
     )
     invitation_msg_id = fields.UUID(
-        description="Identifier of the associated Invintation Mesage",
+        description="Identifier of the associated Invitation Mesage",
         required=False,
         example=UUIDFour.EXAMPLE,
     )
