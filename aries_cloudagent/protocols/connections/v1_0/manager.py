@@ -285,7 +285,6 @@ class ConnectionManager(BaseConnectionManager):
         auto_accept: bool = None,
         alias: str = None,
         mediation_id: str = None,
-        mediation_record: MediationRecord = None,
     ) -> ConnRecord:
         """
         Create a new connection record to track a received invitation.
@@ -379,22 +378,9 @@ class ConnectionManager(BaseConnectionManager):
         """
 
         keylist_updates = None
-
-        # Mediation Record can still be None after this operation if no
-        # mediation id passed and no default
-        mediation_record = await mediation_record_if_id(
-            self.profile,
-            mediation_id,
-            or_default=True,
-        )
-
+        my_info = None
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         wallet_id = self.profile.settings.get("wallet.id")
-        base_mediation_record = None
-
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
-        my_info = None
 
         if connection.my_did:
             async with self.profile.session() as session:
@@ -406,6 +392,7 @@ class ConnectionManager(BaseConnectionManager):
                 # Create new DID for connection
                 my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
+
             mediation_mgr = MediationManager(self.profile)
             keylist_updates = await mediation_mgr.add_key(
                 my_info.verkey, keylist_updates
@@ -424,6 +411,20 @@ class ConnectionManager(BaseConnectionManager):
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
+
+        # Retrieve MediationRecords for constructing DID Document
+        mediation_mgr = MediationManager(self.profile)
+
+        # Mediation Record can still be None after this operation if no
+        # mediation id passed and no default
+        mediation_record = await mediation_mgr.mediation_record_if_id(
+            mediation_id,
+            or_default=True,
+        )
+
+        base_mediation_record = None
+        if multitenant_mgr and wallet_id:
+            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         did_doc = await self.create_did_document(
             my_info,

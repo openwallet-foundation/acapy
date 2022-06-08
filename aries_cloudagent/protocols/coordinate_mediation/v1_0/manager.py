@@ -650,4 +650,30 @@ class MediationManager:
         async with self._profile.session() as session:
             return await RouteRecord.query(session, tag_filter)
 
+    async def mediation_record_if_id(
+        self, mediation_id: Optional[str] = None, or_default: bool = False
+    ):
+        """Validate mediation and return record.
+
+        If mediation_id is not None,
+        validate mediation record state and return record
+        else, return None
+        """
+        mediation_record = None
+        if mediation_id:
+            async with self._profile.session() as session:
+                mediation_record = await MediationRecord.retrieve_by_id(
+                    session, mediation_id
+                )
+        elif or_default:
+            mediation_record = await MediationManager(profile).get_default_mediator()
+
+        if mediation_record:
+            if mediation_record.state != MediationRecord.STATE_GRANTED:
+                raise BaseConnectionManagerError(
+                    "Mediation is not granted for mediation identified by "
+                    f"{mediation_record.mediation_id}"
+                )
+        return mediation_record
+
     # }}}
