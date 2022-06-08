@@ -955,22 +955,24 @@ class TestPresentationManager(AsyncTestCase):
             "session",
             async_mock.MagicMock(return_value=self.profile.session()),
         ) as session:
-            retrieve_ex.side_effect = [
-                StorageNotFoundError("no such record"),
-                exchange_dummy,
-            ]
+            retrieve_ex.side_effect = [exchange_dummy]
             exchange_out = await self.manager.receive_presentation(
-                PRES, connection_record
+                PRES, connection_record, None
             )
-            assert retrieve_ex.call_count == 2
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": "dummy"},
+                {
+                    "role": V10PresentationExchange.ROLE_VERIFIER,
+                    "connection_id": CONN_ID,
+                },
+            )
             save_ex.assert_called_once()
             assert exchange_out.state == (
                 V10PresentationExchange.STATE_PRESENTATION_RECEIVED
             )
 
     async def test_receive_presentation_oob(self):
-        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
-
         exchange_dummy = V10PresentationExchange(
             presentation_proposal_dict={
                 "presentation_proposal": {
@@ -1062,10 +1064,17 @@ class TestPresentationManager(AsyncTestCase):
             V10PresentationExchange, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
             V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
-        ) as retrieve_ex:
-            retrieve_ex.side_effect = [StorageNotFoundError(), exchange_dummy]
-            exchange_out = await self.manager.receive_presentation(
-                PRES, connection_record
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.side_effect = [exchange_dummy]
+            exchange_out = await self.manager.receive_presentation(PRES, None, None)
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": "dummy"},
+                {"role": V10PresentationExchange.ROLE_VERIFIER, "connection_id": None},
             )
             assert exchange_out.state == (
                 V10PresentationExchange.STATE_PRESENTATION_RECEIVED
@@ -1168,7 +1177,7 @@ class TestPresentationManager(AsyncTestCase):
         ) as retrieve_ex:
             retrieve_ex.return_value = exchange_dummy
             with self.assertRaises(PresentationManagerError):
-                await self.manager.receive_presentation(PRES, connection_record)
+                await self.manager.receive_presentation(PRES, connection_record, None)
 
     async def test_receive_presentation_connectionless(self):
         exchange_dummy = V10PresentationExchange()
@@ -1183,9 +1192,11 @@ class TestPresentationManager(AsyncTestCase):
             async_mock.MagicMock(return_value=self.profile.session()),
         ) as session:
             retrieve_ex.return_value = exchange_dummy
-            exchange_out = await self.manager.receive_presentation(PRES, None)
+            exchange_out = await self.manager.receive_presentation(PRES, None, None)
             retrieve_ex.assert_called_once_with(
-                session.return_value, {"thread_id": PRES._thread_id}, None
+                session.return_value,
+                {"thread_id": PRES._thread_id},
+                {"role": V10PresentationExchange.ROLE_VERIFIER, "connection_id": None},
             )
             save_ex.assert_called_once()
 
@@ -1255,7 +1266,7 @@ class TestPresentationManager(AsyncTestCase):
     """
 
     async def test_send_presentation_ack(self):
-        exchange = V10PresentationExchange()
+        exchange = V10PresentationExchange(connection_id="dummy")
 
         responder = MockResponder()
         self.profile.context.injector.bind_instance(BaseResponder, responder)
@@ -1263,6 +1274,26 @@ class TestPresentationManager(AsyncTestCase):
         await self.manager.send_presentation_ack(exchange)
         messages = responder.messages
         assert len(messages) == 1
+
+    async def test_send_presentation_ack_oob(self):
+        exchange = V10PresentationExchange(thread_id="some-thread-id")
+
+        responder = MockResponder()
+        self.profile.context.injector.bind_instance(BaseResponder, responder)
+
+        with async_mock.patch.object(
+            test_module.OobRecord, "retrieve_by_tag_filter"
+        ) as mock_retrieve_oob, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            await self.manager.send_presentation_ack(exchange)
+            messages = responder.messages
+            mock_retrieve_oob.assert_called_once_with(
+                session.return_value, {"attach_thread_id": "some-thread-id"}
+            )
+            assert len(messages) == 1
 
     async def test_send_presentation_ack_no_responder(self):
         exchange = V10PresentationExchange()

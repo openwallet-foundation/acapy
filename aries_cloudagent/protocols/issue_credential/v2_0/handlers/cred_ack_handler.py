@@ -1,5 +1,6 @@
 """Credential ack message handler."""
 
+from .....core.oob_processor import OobMessageProcessor
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
@@ -29,12 +30,27 @@ class V20CredAckHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        if not context.connection_ready:
-            raise HandlerException("No connection established for credential ack")
+        # If connection is present it must be ready for use
+        if context.connection_record and not context.connection_ready:
+            raise HandlerException("Connection used for credential ack not ready")
+
+        # Find associated oob record
+        oob_processor = context.inject(OobMessageProcessor)
+        oob_record = await oob_processor.find_oob_record_for_inbound_message(context)
+
+        # Either connection or oob context must be present
+        if not context.connection_record and not oob_record:
+            raise HandlerException(
+                "No connection or associated connectionless exchange found for credential"
+                " ack"
+            )
 
         cred_manager = V20CredManager(context.profile)
         await cred_manager.receive_credential_ack(
-            context.message, context.connection_record.connection_id
+            context.message,
+            context.connection_record.connection_id
+            if context.connection_record
+            else None,
         )
 
         trace_event(

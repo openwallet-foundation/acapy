@@ -134,6 +134,7 @@ class JsonWireFormat(BaseWireFormat):
         receipt.thread_id = (
             thread_dec and thread_dec.get("thid") or message_dict.get("@id")
         )
+        receipt.parent_thread_id = thread_dec.get("pthid") if thread_dec else None
 
         # handle transport decorator
         transport_dec = message_dict.get("~transport")

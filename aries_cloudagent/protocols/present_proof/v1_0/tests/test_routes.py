@@ -1005,6 +1005,7 @@ class TestProofRoutes(AsyncTestCase):
             mock_presentation_exchange.state = (
                 test_module.V10PresentationExchange.STATE_REQUEST_RECEIVED
             )
+            mock_presentation_exchange.connection_id = "dummy"
             mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(
                     state=mock_presentation_exchange.STATE_REQUEST_RECEIVED,

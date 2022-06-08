@@ -1,6 +1,6 @@
 """Presentation problem report message handler."""
 
-from .....messaging.base_handler import BaseHandler
+from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
 from .....storage.error import StorageError, StorageNotFoundError
@@ -25,6 +25,16 @@ class PresentationProblemReportHandler(BaseHandler):
             context,
         )
         assert isinstance(context.message, PresentationProblemReport)
+
+        # If connection is present it must be ready for use
+        if context.connection_record and not context.connection_ready:
+            raise HandlerException(
+                "Connection used for presentation problem report not ready"
+            )
+        elif not context.connection_record:
+            raise HandlerException(
+                "Connectionless not supported for presentation problem report"
+            )
 
         presentation_manager = PresentationManager(context.profile)
         try:

@@ -35,6 +35,7 @@ class InvitationRecord(BaseExchangeRecord):
         invi_msg_id: str = None,
         invitation: Union[InvitationMessage, Mapping] = None,  # invitation message
         invitation_url: str = None,
+        oob_id: str = None,
         public_did: str = None,  # backward-compat: BaseRecord.from_storage()
         trace: bool = False,
         **kwargs,
@@ -46,6 +47,7 @@ class InvitationRecord(BaseExchangeRecord):
         self.invi_msg_id = invi_msg_id
         self._invitation = InvitationMessage.serde(invitation)
         self.invitation_url = invitation_url
+        self.oob_id = oob_id
         self.trace = trace
 
     @property
@@ -69,11 +71,7 @@ class InvitationRecord(BaseExchangeRecord):
         return {
             **{
                 prop: getattr(self, prop)
-                for prop in (
-                    "invitation_url",
-                    "state",
-                    "trace",
-                )
+                for prop in ("invitation_url", "state", "trace", "oob_id")
             },
             **{
                 prop: getattr(self, f"_{prop}").ser
@@ -108,6 +106,11 @@ class InvitationRecordSchema(BaseExchangeSchema):
     invi_msg_id = fields.Str(
         required=False,
         description="Invitation message identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+    oob_id = fields.Str(
+        required=False,
+        description="Out of band record identifier",
         example=UUIDFour.EXAMPLE,
     )
     invitation = fields.Nested(
