@@ -73,7 +73,9 @@ class MultitenantRouteManager(RouteManager):
         if mediation_record:
             keylist_updates = await mediation_mgr.add_key(recipient_key)
             if replace_key:
-                keylist_updates = await mediation_mgr.remove_key(replace_key)
+                keylist_updates = await mediation_mgr.remove_key(
+                    replace_key, keylist_updates
+                )
 
             responder = self.root_profile.inject(BaseResponder)
             await responder.send(

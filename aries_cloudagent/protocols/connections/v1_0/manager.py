@@ -294,6 +294,10 @@ class ConnectionManager(BaseConnectionManager):
             # Save the invitation for later processing
             await connection.attach_invitation(session, invitation)
 
+        await self._route_manager.save_mediator_for_connection(
+            connection, mediation_id=mediation_id
+        )
+
         if connection.accept == ConnRecord.ACCEPT_AUTO:
             request = await self.create_request(connection, mediation_id=mediation_id)
             responder = self.profile.inject_or(BaseResponder)
