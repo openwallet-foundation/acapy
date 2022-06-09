@@ -1,31 +1,28 @@
 """Manager for multitenancy."""
 
+from abc import abstractmethod
 from datetime import datetime
 import logging
-from abc import abstractmethod
-
-import jwt
 from typing import List, Optional, cast
 
-from ..core.profile import (
-    Profile,
-    ProfileSession,
-)
-from ..messaging.responder import BaseResponder
+import jwt
+
 from ..config.injection_context import InjectionContext
-from ..wallet.models.wallet_record import WalletRecord
-from ..wallet.base import BaseWallet
 from ..core.error import BaseError
-from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
-from ..protocols.routing.v1_0.models.route_record import RouteRecord
-from ..transport.wire_format import BaseWireFormat
-from ..storage.base import BaseStorage
-from ..storage.error import StorageNotFoundError
+from ..core.profile import Profile, ProfileSession
+from ..messaging.responder import BaseResponder
+from ..multitenant.route_manager import MultitenantRouteManager
 from ..protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
     MediationRecord,
 )
-
+from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
+from ..protocols.routing.v1_0.models.route_record import RouteRecord
+from ..storage.base import BaseStorage
+from ..storage.error import StorageNotFoundError
+from ..transport.wire_format import BaseWireFormat
+from ..wallet.base import BaseWallet
+from ..wallet.models.wallet_record import WalletRecord
 from .error import WalletKeyMissingError
 
 LOGGER = logging.getLogger(__name__)
@@ -201,9 +198,9 @@ class BaseMultitenantManager:
                 public_did_info = await wallet.get_public_did()
 
             if public_did_info:
-                await self.add_key(
-                    wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
-                )
+                await self.get_route_manager(
+                    profile, wallet_record.wallet_id
+                ).route_public_did(public_did_info.verkey)
         except Exception:
             await wallet_record.delete_record(session)
             raise
@@ -293,6 +290,9 @@ class BaseMultitenantManager:
             profile: The wallet profile instance
 
         """
+
+    def get_route_manager(self, sub_profile: Profile, wallet_id: str):
+        return MultitenantRouteManager(self._profile, sub_profile, wallet_id)
 
     async def add_key(
         self, wallet_id: str, recipient_key: str, *, skip_if_exists: bool = False

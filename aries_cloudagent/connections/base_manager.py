@@ -18,11 +18,16 @@ from pydid.verification_method import Ed25519VerificationKey2018
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
+from ..multitenant.base import BaseMultitenantManager
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
+)
+from ..protocols.coordinate_mediation.v1_0.route_manager import (
+    CoordinateMediationV1RouteManager,
+    RouteManager,
 )
 from ..resolver.base import ResolverError
 from ..resolver.did_resolver import DIDResolver
@@ -56,6 +61,17 @@ class BaseConnectionManager:
         """
         self._logger = logging.getLogger(__name__)
         self._profile = profile
+
+        multitenant_mgr = profile.inject_or(BaseMultitenantManager)
+        wallet_id = profile.settings.get_str("wallet.id")
+        if multitenant_mgr and wallet_id:
+            self._route_manager: RouteManager = multitenant_mgr.get_route_manager(
+                profile, wallet_id
+            )
+        else:
+            self._route_manager: RouteManager = CoordinateMediationV1RouteManager(
+                profile
+            )
 
     async def create_did_document(
         self,
