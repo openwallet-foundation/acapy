@@ -65,18 +65,13 @@ class RouteManager(ABC):
         validate mediation record state and return record
         else, return None
         """
-        mediation_record = None
         async with self.profile.session() as session:
-            try:
-                mediation_record = await MediationRecord.retrieve_by_connection_id(
-                    session, conn_record.connection_id
-                )
-            except StorageNotFoundError:
-                pass
-
-        if mediation_record:
-            self._validate_mediation_state(mediation_record)
-            return mediation_record
+            mediation_metadata = await conn_record.metadata_get(
+                session, MediationManager.METADATA_KEY, {}
+            )
+            mediation_id = (
+                mediation_metadata.get(MediationManager.METADATA_ID) or mediation_id
+            )
 
         return await self.mediation_record_if_id(mediation_id, or_default)
 
