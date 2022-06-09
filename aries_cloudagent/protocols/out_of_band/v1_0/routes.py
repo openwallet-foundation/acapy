@@ -177,7 +177,7 @@ async def invitation_create(request: web.BaseRequest):
             mediation_id=mediation_id,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
-        raise web.HTTPBadRequest(reason=str(e))
+        raise web.HTTPBadRequest(reason=e.roll_up)
 
     return web.json_response(invi_rec.serialize())
 

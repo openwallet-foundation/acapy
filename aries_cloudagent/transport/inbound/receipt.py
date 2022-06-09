@@ -1,6 +1,7 @@
 """Classes for representing message receipt details."""
 
 from datetime import datetime
+from typing import Optional
 
 
 class MessageReceipt:
@@ -25,6 +26,7 @@ class MessageReceipt:
         sender_did: str = None,
         sender_verkey: str = None,
         thread_id: str = None,
+        parent_thread_id: str = None,
     ):
         """Initialize the message delivery instance."""
         self._connection_id = connection_id
@@ -37,6 +39,7 @@ class MessageReceipt:
         self._sender_did = sender_did
         self._sender_verkey = sender_verkey
         self._thread_id = thread_id
+        self._parent_thread_id = parent_thread_id
 
     @property
     def connection_id(self) -> str:
@@ -265,6 +268,28 @@ class MessageReceipt:
 
         """
         self._thread_id = thread
+
+    @property
+    def parent_thread_id(self) -> Optional[str]:
+        """
+        Accessor for the identifier of the message parent thread.
+
+        Returns:
+            The delivery parent thread ID
+
+        """
+        return self._parent_thread_id
+
+    @parent_thread_id.setter
+    def parent_thread_id(self, thread: Optional[str]):
+        """
+        Setter for the message parent thread identifier.
+
+        Args:
+            thread: The new parent thread identifier
+
+        """
+        self._parent_thread_id = thread
 
     def __repr__(self) -> str:
         """

@@ -1,5 +1,3 @@
-import pytest
-
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.request_context import RequestContext
@@ -14,6 +12,7 @@ from .. import pres_proposal_handler as test_module
 class TestV20PresProposalHandler(AsyncTestCase):
     async def test_called(self):
         request_context = RequestContext.test_context()
+        request_context.connection_record = async_mock.MagicMock()
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_presentation_proposal"] = False
 
@@ -39,6 +38,7 @@ class TestV20PresProposalHandler(AsyncTestCase):
     async def test_called_auto_request(self):
         request_context = RequestContext.test_context()
         request_context.message = async_mock.MagicMock()
+        request_context.connection_record = async_mock.MagicMock()
         request_context.message.comment = "hello world"
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_presentation_proposal"] = True
@@ -76,6 +76,7 @@ class TestV20PresProposalHandler(AsyncTestCase):
 
     async def test_called_auto_request_x(self):
         request_context = RequestContext.test_context()
+        request_context.connection_record = async_mock.MagicMock()
         request_context.message = async_mock.MagicMock()
         request_context.message.comment = "hello world"
         request_context.message_receipt = MessageReceipt()
@@ -107,6 +108,7 @@ class TestV20PresProposalHandler(AsyncTestCase):
     async def test_called_not_ready(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
+        request_context.connection_record = async_mock.MagicMock()
 
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
@@ -118,7 +120,27 @@ class TestV20PresProposalHandler(AsyncTestCase):
             request_context.connection_ready = False
             handler = test_module.V20PresProposalHandler()
             responder = MockResponder()
-            with self.assertRaises(test_module.HandlerException):
+            with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)
+            assert (
+                err.exception.message
+                == "Connection used for presentation proposal not ready"
+            )
+
+        assert not responder.messages
+
+    async def test_called_no_connection(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+
+        request_context.message = V20PresProposal()
+        handler = test_module.V20PresProposalHandler()
+        responder = MockResponder()
+        with self.assertRaises(test_module.HandlerException) as err:
+            await handler.handle(request_context, responder)
+        assert (
+            err.exception.message
+            == "Connectionless not supported for presentation proposal"
+        )
 
         assert not responder.messages

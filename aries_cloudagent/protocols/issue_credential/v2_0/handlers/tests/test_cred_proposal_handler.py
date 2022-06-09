@@ -109,7 +109,27 @@ class TestV20CredProposalHandler(AsyncTestCase):
             request_context.connection_ready = False
             handler_inst = test_module.V20CredProposalHandler()
             responder = MockResponder()
-            with self.assertRaises(test_module.HandlerException):
+            with self.assertRaises(test_module.HandlerException) as err:
                 await handler_inst.handle(request_context, responder)
+            assert (
+                err.exception.message
+                == "Connection used for credential proposal not ready"
+            )
+
+        assert not responder.messages
+
+    async def test_called_no_connection(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+
+        request_context.message = V20CredProposal()
+        handler_inst = test_module.V20CredProposalHandler()
+        responder = MockResponder()
+        with self.assertRaises(test_module.HandlerException) as err:
+            await handler_inst.handle(request_context, responder)
+        assert (
+            err.exception.message
+            == "Connectionless not supported for credential proposal"
+        )
 
         assert not responder.messages

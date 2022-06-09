@@ -63,6 +63,7 @@ from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 from ..wallet.did_info import DIDInfo
+from .oob_processor import OobMessageProcessor
 
 from .dispatcher import Dispatcher
 from .util import STARTUP_EVENT_TOPIC, SHUTDOWN_EVENT_TOPIC
@@ -202,6 +203,13 @@ class Conductor:
             context.injector.bind_provider(
                 BaseMultitenantManager, MultitenantManagerProvider(self.root_profile)
             )
+
+        # Bind oob message processor to be able to receive and process un-encrypted
+        # messages
+        context.injector.bind_instance(
+            OobMessageProcessor,
+            OobMessageProcessor(inbound_message_router=self.inbound_message_router),
+        )
 
         # Bind default PyLD document loader
         context.injector.bind_instance(
@@ -636,8 +644,10 @@ class Conductor:
             message: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
         """
+        has_target = outbound.target or outbound.target_list
+
         # populate connection target(s)
-        if not outbound.target and not outbound.target_list and outbound.connection_id:
+        if not has_target and outbound.connection_id:
             conn_mgr = ConnectionManager(profile)
             try:
                 outbound.target_list = await self.dispatcher.run_task(
@@ -654,6 +664,15 @@ class Conductor:
                     self.admin_server.notify_fatal_error()
                 raise
             del conn_mgr
+        # Find oob/connectionless target we can send the message to
+        elif not has_target and outbound.reply_thread_id:
+            message_processor = profile.inject(OobMessageProcessor)
+            outbound.target = await self.dispatcher.run_task(
+                message_processor.find_oob_target_for_outbound_message(
+                    profile, outbound
+                )
+            )
+
         return await self._queue_message(profile, outbound)
 
     async def _queue_message(

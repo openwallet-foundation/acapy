@@ -37,8 +37,13 @@ class CredentialProposalHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        if not context.connection_ready:
-            raise HandlerException("No connection established for credential proposal")
+        # If connection is present it must be ready for use
+        if context.connection_record and not context.connection_ready:
+            raise HandlerException("Connection used for credential proposal not ready")
+        elif not context.connection_record:
+            raise HandlerException(
+                "Connectionless not supported for credential proposal"
+            )
 
         credential_manager = CredentialManager(profile)
         cred_ex_record = await credential_manager.receive_proposal(

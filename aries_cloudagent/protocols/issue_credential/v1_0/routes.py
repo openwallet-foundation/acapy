@@ -11,6 +11,8 @@ from aiohttp_apispec import (
 from json.decoder import JSONDecodeError
 from marshmallow import fields, validate
 
+from ...out_of_band.v1_0.models.oob_record import OobRecord
+from ....wallet.util import default_did_from_verkey
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
@@ -972,30 +974,48 @@ async def credential_exchange_send_request(request: web.BaseRequest):
 
     cred_ex_record = None
     connection_record = None
-    try:
-        async with profile.session() as session:
-            try:
-                cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                    session, credential_exchange_id
-                )
-                connection_id = cred_ex_record.connection_id
-            except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
 
-            connection_record = await ConnRecord.retrieve_by_id(
-                session,
-                connection_id,
+    async with profile.session() as session:
+        try:
+            cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                session, credential_exchange_id
             )
-            if not connection_record.is_ready:
-                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
 
+        # Fetch connection if exchange has record
+        connection_record = None
+        if cred_ex_record.connection_id:
+            try:
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, cred_ex_record.connection_id
+                )
+            except StorageNotFoundError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    if connection_record and not connection_record.is_ready:
+        raise web.HTTPForbidden(
+            reason=f"Connection {connection_record.connection_id} not ready"
+        )
+
+    if connection_record:
+        holder_did = connection_record.my_did
+    else:
+        # Need to get the holder DID from the out of band record
+        async with profile.session() as session:
+            oob_record = await OobRecord.retrieve_by_tag_filter(
+                session,
+                {"invi_msg_id": cred_ex_record.credential_offer_dict._thread.pthid},
+            )
+            # Transform recipient key into did
+            holder_did = default_did_from_verkey(oob_record.our_recipient_key)
+
+    try:
         credential_manager = CredentialManager(profile)
         (
             cred_ex_record,
             credential_request_message,
-        ) = await credential_manager.create_request(
-            cred_ex_record, connection_record.my_did
-        )
+        ) = await credential_manager.create_request(cred_ex_record, holder_did)
 
         result = cred_ex_record.serialize()
 
@@ -1017,7 +1037,9 @@ async def credential_exchange_send_request(request: web.BaseRequest):
             outbound_handler,
         )
 
-    await outbound_handler(credential_request_message, connection_id=connection_id)
+    await outbound_handler(
+        credential_request_message, connection_id=cred_ex_record.connection_id
+    )
 
     trace_event(
         context.settings,
@@ -1060,20 +1082,31 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     cred_ex_record = None
     connection_record = None
-    try:
-        async with profile.session() as session:
+
+    async with profile.session() as session:
+        try:
+            cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                session, credential_exchange_id
+            )
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+
+        # Fetch connection if exchange has record
+        connection_record = None
+        if cred_ex_record.connection_id:
             try:
-                cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                    session, credential_exchange_id
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, cred_ex_record.connection_id
                 )
             except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-            connection_id = cred_ex_record.connection_id
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
-            if not connection_record.is_ready:
-                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+    if connection_record and not connection_record.is_ready:
+        raise web.HTTPForbidden(
+            reason=f"Connection {connection_record.connection_id} not ready"
+        )
 
+    try:
         credential_manager = CredentialManager(profile)
         (
             cred_ex_record,
@@ -1100,7 +1133,9 @@ async def credential_exchange_issue(request: web.BaseRequest):
             outbound_handler,
         )
 
-    await outbound_handler(credential_issue_message, connection_id=connection_id)
+    await outbound_handler(
+        credential_issue_message, connection_id=cred_ex_record.connection_id
+    )
 
     trace_event(
         context.settings,
@@ -1146,20 +1181,30 @@ async def credential_exchange_store(request: web.BaseRequest):
 
     cred_ex_record = None
     connection_record = None
-    try:
-        async with profile.session() as session:
+
+    async with profile.session() as session:
+        try:
+            cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                session, credential_exchange_id
+            )
+        except StorageNotFoundError as err:
+            raise web.HTTPNotFound(reason=err.roll_up) from err
+
+        # Fetch connection if exchange has record
+        if cred_ex_record.connection_id:
             try:
-                cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                    session, credential_exchange_id
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, cred_ex_record.connection_id
                 )
             except StorageNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-            connection_id = cred_ex_record.connection_id
-            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
-            if not connection_record.is_ready:
-                raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+    if connection_record and not connection_record.is_ready:
+        raise web.HTTPForbidden(
+            reason=f"Connection {connection_record.connection_id} not ready"
+        )
 
+    try:
         credential_manager = CredentialManager(profile)
         cred_ex_record = await credential_manager.store_credential(
             cred_ex_record,
@@ -1234,6 +1279,11 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
             cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                 session, credential_exchange_id
             )
+
+            if not cred_ex_record.connection_id:
+                raise web.HTTPBadRequest(
+                    reason="No connection associated with credential exchange."
+                )
             report = problem_report_for_record(cred_ex_record, description)
             await cred_ex_record.save_error_state(
                 session,
