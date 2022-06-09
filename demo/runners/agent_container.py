@@ -628,6 +628,7 @@ class AgentContainer:
         arg_file: str = None,
         endorser_role: str = None,
         reuse_connections: bool = False,
+        taa_accept: bool = False,
     ):
         # configuration parameters
         self.genesis_txns = genesis_txns
@@ -660,6 +661,7 @@ class AgentContainer:
         # local agent(s)
         self.agent = None
         self.mediator_agent = None
+        self.taa_accept = taa_accept
 
     async def initialize(
         self,
@@ -746,11 +748,15 @@ class AgentContainer:
                 webhook_port=None,
                 mediator_agent=self.mediator_agent,
                 endorser_agent=self.endorser_agent,
+                taa_accept=self.taa_accept,
             )
         elif self.mediation:
             # we need to pre-connect the agent to its mediator
             if not await connect_wallet_to_mediator(self.agent, self.mediator_agent):
                 raise Exception("Mediation setup FAILED :-(")
+        else:
+            if self.taa_accept:
+                await self.agent.taa_accept()
 
         if self.public_did and self.cred_type == CRED_FORMAT_JSON_LD:
             # create did of appropriate type
@@ -1179,6 +1185,11 @@ def arg_parser(ident: str = None, port: int = 8020):
         metavar="<arg-file>",
         help="Specify a file containing additional aca-py parameters",
     )
+    parser.add_argument(
+        "--taa-accept",
+        action="store_true",
+        help="Accept the ledger's TAA, if required",
+    )
     return parser
 
 
@@ -1279,6 +1290,7 @@ async def create_agent_with_args(args, ident: str = None):
         aip=aip,
         endorser_role=args.endorser_role,
         reuse_connections=reuse_connections,
+        taa_accept=args.taa_accept,
     )
 
     return agent

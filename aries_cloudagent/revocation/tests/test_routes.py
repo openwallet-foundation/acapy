@@ -368,7 +368,7 @@ class TestRevocationRoutes(AsyncTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
             mock_query.return_value = return_value = [{"...": "..."}, {"...": "..."}]
-            result = await test_module.get_rev_reg_issued(self.request)
+            result = await test_module.get_rev_reg_issued_count(self.request)
 
             mock_json_response.assert_called_once_with({"result": 2})
             assert result is mock_json_response.return_value
