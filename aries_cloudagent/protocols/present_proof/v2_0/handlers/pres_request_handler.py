@@ -1,5 +1,6 @@
 """Presentation request message handler."""
 
+from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
@@ -39,8 +40,26 @@ class V20PresRequestHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        if not context.connection_ready:
-            raise HandlerException("No connection established for presentation request")
+        # If connection is present it must be ready for use
+        if context.connection_record and not context.connection_ready:
+            raise HandlerException("Connection used for presentation request not ready")
+
+        # Find associated oob record
+        oob_processor = context.inject(OobMessageProcessor)
+        oob_record = await oob_processor.find_oob_record_for_inbound_message(context)
+
+        # Either connection or oob context must be present
+        if not context.connection_record and not oob_record:
+            raise HandlerException(
+                "No connection or associated connectionless exchange found for"
+                " presentation request"
+            )
+
+        connection_id = (
+            context.connection_record.connection_id
+            if context.connection_record
+            else None
+        )
 
         profile = context.profile
         pres_manager = V20PresManager(profile)
@@ -52,13 +71,16 @@ class V20PresRequestHandler(BaseHandler):
                 pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
                     session,
                     {"thread_id": context.message._thread_id},
-                    {"connection_id": context.connection_record.connection_id},
+                    {
+                        "connection_id": connection_id,
+                        "role": V20PresExRecord.ROLE_PROVER,
+                    },
                 )  # holder initiated via proposal
             pres_ex_record.pres_request = context.message
         except StorageNotFoundError:
             # verifier sent this request free of any proposal
             pres_ex_record = V20PresExRecord(
-                connection_id=context.connection_record.connection_id,
+                connection_id=connection_id,
                 thread_id=context.message._thread_id,
                 initiator=V20PresExRecord.INITIATOR_EXTERNAL,
                 role=V20PresExRecord.ROLE_PROVER,

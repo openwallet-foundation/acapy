@@ -1,5 +1,6 @@
 """Presentation ack message handler."""
 
+from .....core.oob_processor import OobMessageProcessor
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
@@ -29,8 +30,20 @@ class PresentationAckHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        if not context.connection_ready:
-            raise HandlerException("No connection established for presentation ack")
+        # If connection is present it must be ready for use
+        if context.connection_record and not context.connection_ready:
+            raise HandlerException("Connection used for presentation ack not ready")
+
+        # Find associated oob record
+        oob_processor = context.inject(OobMessageProcessor)
+        oob_record = await oob_processor.find_oob_record_for_inbound_message(context)
+
+        # Either connection or oob context must be present
+        if not context.connection_record and not oob_record:
+            raise HandlerException(
+                "No connection or associated connectionless exchange found for"
+                " presentation ack"
+            )
 
         presentation_manager = PresentationManager(context.profile)
         await presentation_manager.receive_presentation_ack(

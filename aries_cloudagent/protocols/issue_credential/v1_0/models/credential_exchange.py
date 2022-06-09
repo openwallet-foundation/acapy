@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields, validate
 
@@ -57,7 +57,7 @@ class V10CredentialExchange(BaseExchangeRecord):
         self,
         *,
         credential_exchange_id: str = None,
-        connection_id: str = None,
+        connection_id: Optional[str] = None,
         thread_id: str = None,
         parent_thread_id: str = None,
         initiator: str = None,
@@ -264,21 +264,27 @@ class V10CredentialExchange(BaseExchangeRecord):
     async def retrieve_by_connection_and_thread(
         cls,
         session: ProfileSession,
-        connection_id: str,
+        connection_id: Optional[str],
         thread_id: str,
+        role: Optional[str] = None,
         *,
         for_update=False,
     ) -> "V10CredentialExchange":
         """Retrieve a credential exchange record by connection and thread ID."""
-        cache_key = f"credential_exchange_ctidx::{connection_id}::{thread_id}"
+        cache_key = f"credential_exchange_ctidx::{connection_id}::{thread_id}::{role}"
         record_id = await cls.get_cached_key(session, cache_key)
         if record_id:
             record = await cls.retrieve_by_id(session, record_id, for_update=for_update)
         else:
+            post_filter = {}
+            if role:
+                post_filter["role"] = role
+            if connection_id:
+                post_filter["connection_id"] = connection_id
             record = await cls.retrieve_by_tag_filter(
                 session,
                 {"thread_id": thread_id},
-                {"connection_id": connection_id} if connection_id else None,
+                post_filter,
                 for_update=for_update,
             )
             await cls.set_cached_key(session, cache_key, record.credential_exchange_id)

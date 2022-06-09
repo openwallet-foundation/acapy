@@ -8,6 +8,7 @@ from .thread_decorator import ThreadDecorator
 from .trace_decorator import TraceDecorator
 from .timing_decorator import TimingDecorator
 from .transport_decorator import TransportDecorator
+from .service_decorator import ServiceDecorator
 
 DEFAULT_MODELS = {
     "l10n": LocalizationDecorator,
@@ -16,6 +17,7 @@ DEFAULT_MODELS = {
     "trace": TraceDecorator,
     "timing": TimingDecorator,
     "transport": TransportDecorator,
+    "service": ServiceDecorator,
 }
 
 
