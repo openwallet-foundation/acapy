@@ -2,14 +2,13 @@
 
 import logging
 
-from typing import Coroutine, Sequence, Tuple
+from typing import Coroutine, Sequence, Tuple, cast
 
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
-from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
@@ -26,7 +25,6 @@ from ....wallet.util import bytes_to_b58
 from ...routing.v1_0.manager import RoutingManager
 from ...coordinate_mediation.v1_0.manager import MediationManager
 
-from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...discovery.v2_0.manager import V20DiscoveryMgr
 
 from .message_types import ARIES_PROTOCOL as CONN_PROTO
@@ -124,17 +122,11 @@ class ConnectionManager(BaseConnectionManager):
         """
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
-        mediation_record = await mediation_record_if_id(
-            self.profile,
+        mediation_record = await self._route_manager.mediation_record_if_id(
             mediation_id,
             or_default=True,
         )
-        keylist_updates = None
         image_url = self.profile.context.settings.get("image_url")
-
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
 
         if not my_label:
             my_label = self.profile.settings.get("default_label")
@@ -168,10 +160,7 @@ class ConnectionManager(BaseConnectionManager):
 
             # Add mapping for multitenant relaying.
             # Mediation of public keys is not supported yet
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(
-                    wallet_id, public_did.verkey, skip_if_exists=True
-                )
+            await self._route_manager.route_public_did(public_did.verkey)
 
             return None, invitation
 
@@ -192,13 +181,6 @@ class ConnectionManager(BaseConnectionManager):
                 )
             invitation_key = invitation_signing_key.verkey
             recipient_keys = [invitation_key]
-            mediation_mgr = MediationManager(self.profile)
-            keylist_updates = await mediation_mgr.add_key(
-                invitation_key, keylist_updates
-            )
-
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(wallet_id, invitation_key)
 
         accept = (
             ConnRecord.ACCEPT_AUTO
@@ -225,39 +207,11 @@ class ConnectionManager(BaseConnectionManager):
         async with self.profile.session() as session:
             await connection.save(session, reason="Created new invitation")
 
-        routing_keys = []
-        my_endpoint = my_endpoint or self.profile.settings.get("default_endpoint")
-
-        # The base wallet can act as a mediator for all tenants
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
-
-            if base_mediation_record:
-                routing_keys = base_mediation_record.routing_keys
-                my_endpoint = base_mediation_record.endpoint
-
-                # If we use a mediator for the base wallet we don't
-                # need to register the key at the subwallet mediator
-                # because it only needs to know the key of the base mediator
-                # sub wallet mediator -> base wallet mediator -> agent
-                keylist_updates = None
-        if mediation_record:
-            routing_keys = [*routing_keys, *mediation_record.routing_keys]
-            my_endpoint = mediation_record.endpoint
-
-            # Save that this invitation was created with mediation
-            async with self.profile.session() as session:
-                await connection.metadata_set(
-                    session,
-                    MediationManager.METADATA_KEY,
-                    {MediationManager.METADATA_ID: mediation_record.mediation_id},
-                )
-
-            if keylist_updates:
-                responder = self.profile.inject_or(BaseResponder)
-                await responder.send(
-                    keylist_updates, connection_id=mediation_record.connection_id
-                )
+        await self._route_manager.route_invitation(connection, mediation_record)
+        routing_keys, my_endpoint = await self._route_manager.routing_info(
+            my_endpoint or cast(str, self.profile.settings.get("default_endpoint")),
+            mediation_record,
+        )
 
         # Create connection invitation message
         # Note: Need to split this into two stages to support inbound routing of invites
@@ -377,10 +331,17 @@ class ConnectionManager(BaseConnectionManager):
 
         """
 
-        keylist_updates = None
-        my_info = None
+        mediation_record = await self._route_manager.mediation_record_if_id(
+            mediation_id,
+            or_default=True,
+        )
+
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         wallet_id = self.profile.settings.get("wallet.id")
+
+        base_mediation_record = None
+        if multitenant_mgr and wallet_id:
+            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         if connection.my_did:
             async with self.profile.session() as session:
@@ -393,14 +354,10 @@ class ConnectionManager(BaseConnectionManager):
                 my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
 
-            mediation_mgr = MediationManager(self.profile)
-            keylist_updates = await mediation_mgr.add_key(
-                my_info.verkey, keylist_updates
-            )
-
-            # Add mapping for multitenant relay
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
+        # Idempotent; if routing has already been set up, no action taken
+        await self._route_manager.route_connection_as_invitee(
+            connection, mediation_record
+        )
 
         # Create connection request message
         if my_endpoint:
@@ -412,19 +369,8 @@ class ConnectionManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        # Retrieve MediationRecords for constructing DID Document
-        mediation_mgr = MediationManager(self.profile)
-
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
-        mediation_record = await mediation_mgr.mediation_record_if_id(
-            mediation_id,
-            or_default=True,
-        )
-
-        base_mediation_record = None
-        if multitenant_mgr and wallet_id:
-            base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         did_doc = await self.create_did_document(
             my_info,
@@ -451,21 +397,12 @@ class ConnectionManager(BaseConnectionManager):
         async with self.profile.session() as session:
             await connection.save(session, reason="Created connection request")
 
-        # Notify mediator of keylist changes
-        if keylist_updates and mediation_record:
-            # send a update keylist message with new recipient keys.
-            responder = self.profile.inject_or(BaseResponder)
-            await responder.send(
-                keylist_updates, connection_id=mediation_record.connection_id
-            )
-
         return request
 
     async def receive_request(
         self,
         request: ConnectionRequest,
         receipt: MessageReceipt,
-        mediation_id: str = None,
     ) -> ConnRecord:
         """
         Receive and store a connection request.
@@ -484,15 +421,9 @@ class ConnectionManager(BaseConnectionManager):
             settings=self.profile.settings,
         )
 
-        mediation_mgr = MediationManager(self.profile)
-        keylist_updates = None
         connection = None
         connection_key = None
         my_info = None
-
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
 
         # Determine what key will need to sign the response
         if receipt.recipient_did_public:
@@ -533,9 +464,6 @@ class ConnectionManager(BaseConnectionManager):
                     my_info = await wallet.create_local_did(
                         DIDMethod.SOV, KeyType.ED25519
                     )
-                keylist_updates = await mediation_mgr.add_key(
-                    my_info.verkey, keylist_updates
-                )
 
                 new_connection = ConnRecord(
                     invitation_key=connection_key,
@@ -563,14 +491,6 @@ class ConnectionManager(BaseConnectionManager):
 
                 connection = new_connection
 
-                # Add mapping for multitenant relay
-                if multitenant_mgr and wallet_id:
-                    await multitenant_mgr.add_key(wallet_id, my_info.verkey)
-            else:
-                # remove key from mediator keylist
-                keylist_updates = await mediation_mgr.remove_key(
-                    connection_key, keylist_updates
-                )
         conn_did_doc = request.connection.did_doc
         if not conn_did_doc:
             raise ConnectionManagerError(
@@ -597,14 +517,7 @@ class ConnectionManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
-            # send update-keylist message with new recipient keys
-            keylist_updates = await mediation_mgr.add_key(
-                my_info.verkey, keylist_updates
-            )
 
-            # Add mapping for multitenant relay
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
             async with self.profile.session() as session:
                 connection = await ConnRecord.retrieve_by_invitation_msg_id(
                     session=session,
@@ -634,14 +547,6 @@ class ConnectionManager(BaseConnectionManager):
             # Attach the connection request so it can be found and responded to
             await connection.attach_request(session, request)
 
-        # Send keylist updates to mediator
-        mediation_record = await mediation_record_if_id(self.profile, mediation_id)
-        if keylist_updates and mediation_record:
-            responder = self.profile.inject_or(BaseResponder)
-            await responder.send(
-                keylist_updates, connection_id=mediation_record.connection_id
-            )
-
         return connection
 
     async def create_response(
@@ -668,14 +573,15 @@ class ConnectionManager(BaseConnectionManager):
             settings=self.profile.settings,
         )
 
-        keylist_updates = None
-        mediation_record = await mediation_record_if_id(self.profile, mediation_id)
+        mediation_record = await self._route_manager.mediation_record_if_id(
+            mediation_id
+        )
 
         # Multitenancy setup
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         wallet_id = self.profile.settings.get("wallet.id")
-        base_mediation_record = None
 
+        base_mediation_record = None
         if multitenant_mgr and wallet_id:
             base_mediation_record = await multitenant_mgr.get_default_mediator()
 
@@ -689,6 +595,7 @@ class ConnectionManager(BaseConnectionManager):
 
         async with self.profile.session() as session:
             request = await connection.retrieve_request(session)
+
         if connection.my_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -698,13 +605,11 @@ class ConnectionManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
             connection.my_did = my_info.did
-            mediation_mgr = MediationManager(self.profile)
-            keylist_updates = await mediation_mgr.add_key(
-                my_info.verkey, keylist_updates
-            )
-            # Add mapping for multitenant relay
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(wallet_id, my_info.verkey)
+
+        # Idempotent; if routing has already been set up, no action taken
+        await self._route_manager.route_connection_as_inviter(
+            connection, mediation_record
+        )
 
         # Create connection response message
         if my_endpoint:
@@ -744,13 +649,6 @@ class ConnectionManager(BaseConnectionManager):
                 session,
                 reason="Created connection response",
                 log_params={"response": response},
-            )
-
-        # Update mediator if necessary
-        if keylist_updates and mediation_record:
-            responder = self.profile.inject_or(BaseResponder)
-            await responder.send(
-                keylist_updates, connection_id=mediation_record.connection_id
             )
 
         # TODO It's possible the mediation request sent here might arrive
@@ -901,6 +799,7 @@ class ConnectionManager(BaseConnectionManager):
         their_endpoint: str = None,
         their_label: str = None,
         alias: str = None,
+        mediation_id: str = None,
     ) -> Tuple[DIDInfo, DIDInfo, ConnRecord]:
         """
         Register a new static connection (for use by the test suite).
@@ -918,11 +817,6 @@ class ConnectionManager(BaseConnectionManager):
             Tuple: my DIDInfo, their DIDInfo, new `ConnRecord` instance
 
         """
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-        base_mediation_record = None
-
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             # seed and DID optional
@@ -962,20 +856,30 @@ class ConnectionManager(BaseConnectionManager):
                     connection_id=connection.connection_id
                 )
 
-        # Add mapping for multitenant relaying / mediation
+        # Routing
+        mediation_record = await self._route_manager.mediation_record_if_id(
+            mediation_id, or_default=True
+        )
+
+        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
+        wallet_id = self.profile.settings.get("wallet.id")
+
+        base_mediation_record = None
         if multitenant_mgr and wallet_id:
             base_mediation_record = await multitenant_mgr.get_default_mediator()
-            await multitenant_mgr.add_key(wallet_id, my_info.verkey)
+
+        await self._route_manager.route_static(connection, mediation_record)
 
         # Synthesize their DID doc
         did_doc = await self.create_did_document(
             their_info,
             None,
             [their_endpoint or ""],
-            mediation_records=[base_mediation_record]
-            if base_mediation_record
-            else None,
+            mediation_records=list(
+                filter(None, [base_mediation_record, mediation_record])
+            ),
         )
+
         await self.store_did_document(did_doc)
 
         return my_info, their_info, connection
