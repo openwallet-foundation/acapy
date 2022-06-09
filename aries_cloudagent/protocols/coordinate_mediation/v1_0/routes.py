@@ -518,9 +518,9 @@ async def clear_default_mediator(request: web.BaseRequest):
 
 @docs(tags=["mediation"], summary="Update keylist for a connection")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
-@request_schema(MediationIdMatchInfoSchema(), 200)
+@request_schema(MediationIdMatchInfoSchema())
 # TODO Fix this response so that it adequately represents Optionals
-@response_schema(KeylistUpdateSchema())
+@response_schema(KeylistUpdateSchema(), 200)
 async def update_keylist_for_connection(request: web.BaseRequest):
     """Update keylist for a connection."""
     context: AdminRequestContext = request["context"]
