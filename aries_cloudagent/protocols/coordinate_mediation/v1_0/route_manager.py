@@ -110,6 +110,23 @@ class RouteManager(ABC):
             skip_if_exists=True,
         )
 
+    async def route_connection(
+        self,
+        conn_record: ConnRecord,
+        mediation_record: Optional[MediationRecord] = None,
+    ):
+        if conn_record.rfc23_state == ConnRecord.State.INVITATION.rfc23strict(
+            ConnRecord.Role.REQUESTER
+        ):
+            return await self.route_connection_as_invitee(conn_record, mediation_record)
+
+        if conn_record.rfc23_state == ConnRecord.State.REQUEST.rfc23strict(
+            ConnRecord.Role.RESPONDER
+        ):
+            return await self.route_connection_as_inviter(conn_record, mediation_record)
+
+        return None
+
     async def route_invitation(
         self,
         conn_record: ConnRecord,

@@ -3,10 +3,9 @@ import json
 import logging
 from typing import Optional, Sequence, Tuple
 
-from ....connections.models.conn_record import ConnRecord
+
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
-from ....messaging.responder import BaseResponder
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
@@ -484,47 +483,6 @@ class MediationManager:
         )
         return message
 
-    async def update_keylist_for_connection(
-        self, conn_record: ConnRecord, mediation_record: MediationRecord
-    ) -> Optional[KeylistUpdate]:
-        """Update the mediator with keys created for the connection.
-
-        If the connection is in invitation received state, create the
-        connection keys and update.
-        """
-        if conn_record.rfc23_state == ConnRecord.State.INVITATION.rfc23strict(
-            ConnRecord.Role.REQUESTER
-        ) or conn_record.rfc23_state == ConnRecord.State.REQUEST.rfc23strict(
-            ConnRecord.Role.RESPONDER
-        ):
-            if not conn_record.my_did:
-                async with self._profile.session() as session:
-                    wallet = session.inject(BaseWallet)
-                    # Create new DID for connection
-                    my_info = await wallet.create_local_did(
-                        DIDMethod.SOV, KeyType.ED25519
-                    )
-                    conn_record.my_did = my_info.did
-                    await conn_record.save(session, reason="Connection my did created")
-            else:
-                async with self._profile.session() as session:
-                    wallet = session.inject(BaseWallet)
-                    my_info = await wallet.get_local_did(conn_record.my_did)
-
-            keylist_update = await self.add_key(my_info.verkey)
-            if conn_record.rfc23_state == ConnRecord.State.REQUEST.rfc23strict(
-                ConnRecord.Role.RESPONDER
-            ):
-                keylist_update = await self.remove_key(
-                    conn_record.invitation_key, keylist_update
-                )
-            responder = self._profile.inject(BaseResponder)
-            await responder.send(
-                keylist_update, connection_id=mediation_record.connection_id
-            )
-            return keylist_update
-        return None
-
     async def add_key(
         self, recipient_key: str, message: Optional[KeylistUpdate] = None
     ) -> KeylistUpdate:
@@ -649,31 +607,5 @@ class MediationManager:
         tag_filter["role"] = RouteRecord.ROLE_CLIENT
         async with self._profile.session() as session:
             return await RouteRecord.query(session, tag_filter)
-
-    async def mediation_record_if_id(
-        self, mediation_id: Optional[str] = None, or_default: bool = False
-    ):
-        """Validate mediation and return record.
-
-        If mediation_id is not None,
-        validate mediation record state and return record
-        else, return None
-        """
-        mediation_record = None
-        if mediation_id:
-            async with self._profile.session() as session:
-                mediation_record = await MediationRecord.retrieve_by_id(
-                    session, mediation_id
-                )
-        elif or_default:
-            mediation_record = await MediationManager(profile).get_default_mediator()
-
-        if mediation_record:
-            if mediation_record.state != MediationRecord.STATE_GRANTED:
-                raise BaseConnectionManagerError(
-                    "Mediation is not granted for mediation identified by "
-                    f"{mediation_record.mediation_id}"
-                )
-        return mediation_record
 
     # }}}
