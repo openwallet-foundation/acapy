@@ -15,14 +15,12 @@ from ....indy.holder import IndyHolder
 from ....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
-from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.util import b64_to_bytes
 from ....wallet.key_type import KeyType
 
-from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ...didcomm_prefix import DIDCommPrefix
@@ -123,22 +121,16 @@ class OutOfBandManager(BaseConnectionManager):
             Invitation record
 
         """
-        mediation_mgr = MediationManager(self.profile)
         mediation_record = await self._route_manager.mediation_record_if_id(
             mediation_id,
             or_default=True,
         )
-        keylist_updates = None
 
         if not (hs_protos or attachments):
             raise OutOfBandManagerError(
                 "Invitation must include handshake protocols, "
                 "request attachments, or both"
             )
-
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
 
         accept = bool(
             auto_accept
@@ -236,9 +228,6 @@ class OutOfBandManager(BaseConnectionManager):
                 requests_attach=message_attachments,
                 services=[f"did:sov:{public_did.did}"],
             )
-            keylist_updates = await mediation_mgr.add_key(
-                public_did.verkey, keylist_updates
-            )
 
             endpoint, *_ = await self.resolve_invitation(public_did.did)
             invi_url = invi_msg.to_url(endpoint)
@@ -257,11 +246,6 @@ class OutOfBandManager(BaseConnectionManager):
                 await conn_rec.save(session, reason="Created new invitation")
                 await conn_rec.attach_invitation(session, invi_msg)
 
-            if multitenant_mgr and wallet_id:  # add mapping for multitenant relay
-                await multitenant_mgr.add_key(
-                    wallet_id, public_did.verkey, skip_if_exists=True
-                )
-
         else:
             invitation_mode = (
                 ConnRecord.INVITATION_MODE_MULTI
@@ -277,12 +261,7 @@ class OutOfBandManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 connection_key = await wallet.create_signing_key(KeyType.ED25519)
-            keylist_updates = await mediation_mgr.add_key(
-                connection_key.verkey, keylist_updates
-            )
-            # Add mapping for multitenant relay
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(wallet_id, connection_key.verkey)
+
             # Initializing  InvitationMessage here to include
             # invitation_msg_id in webhook poyload
             invi_msg = InvitationMessage()
@@ -301,38 +280,9 @@ class OutOfBandManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 await conn_rec.save(session, reason="Created new connection")
 
-            routing_keys = []
-            # The base wallet can act as a mediator for all tenants
-            if multitenant_mgr and wallet_id:
-                base_mediation_record = await multitenant_mgr.get_default_mediator()
-
-                if base_mediation_record:
-                    routing_keys = base_mediation_record.routing_keys
-                    my_endpoint = base_mediation_record.endpoint
-
-                    # If we use a mediator for the base wallet we don't
-                    # need to register the key at the subwallet mediator
-                    # because it only needs to know the key of the base mediator
-                    # sub wallet mediator -> base wallet mediator -> agent
-                    keylist_updates = None
-            if mediation_record:
-                routing_keys = [*routing_keys, *mediation_record.routing_keys]
-                my_endpoint = mediation_record.endpoint
-
-                # Save that this invitation was created with mediation
-
-                async with self.profile.session() as session:
-                    await conn_rec.metadata_set(
-                        session,
-                        MediationManager.METADATA_KEY,
-                        {MediationManager.METADATA_ID: mediation_record.mediation_id},
-                    )
-
-                if keylist_updates:
-                    responder = self.profile.inject_or(BaseResponder)
-                    await responder.send(
-                        keylist_updates, connection_id=mediation_record.connection_id
-                    )
+            routing_keys, my_endpoint = await self._route_manager.routing_info(
+                my_endpoint, mediation_record
+            )
             routing_keys = [
                 key
                 if len(key.split(":")) == 3
@@ -370,6 +320,8 @@ class OutOfBandManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     for key, value in metadata.items():
                         await conn_rec.metadata_set(session, key, value)
+
+        await self._route_manager.route_invitation(conn_rec, mediation_record)
 
         return InvitationRecord(  # for return via admin API, not storage
             state=InvitationRecord.STATE_INITIAL,
