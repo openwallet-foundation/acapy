@@ -593,6 +593,9 @@ async def register(app: web.Application):
             ),
             web.put("/mediation/{mediation_id}/default-mediator", set_default_mediator),
             web.delete("/mediation/default-mediator", clear_default_mediator),
+            web.post(
+                "/mediation/update-keylist/{conn_id}", update_keylist_for_connection
+            ),
         ]
     )
 
