@@ -1,7 +1,6 @@
 """Classes to manage connections."""
 
 import logging
-
 from typing import Coroutine, Sequence, Tuple, cast
 
 from ....cache.base import BaseCache
@@ -16,17 +15,15 @@ from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_info import DIDInfo
 from ....wallet.crypto import create_keypair, seed_to_did
-from ....wallet.key_type import KeyType
+from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import DIDMethod
 from ....wallet.error import WalletNotFoundError
+from ....wallet.key_type import KeyType
 from ....wallet.util import bytes_to_b58
-from ...routing.v1_0.manager import RoutingManager
 from ...coordinate_mediation.v1_0.manager import MediationManager
-
 from ...discovery.v2_0.manager import V20DiscoveryMgr
-
+from ...routing.v1_0.manager import RoutingManager
 from .message_types import ARIES_PROTOCOL as CONN_PROTO
 from .messages.connection_invitation import ConnectionInvitation
 from .messages.connection_request import ConnectionRequest
@@ -331,7 +328,8 @@ class ConnectionManager(BaseConnectionManager):
 
         """
 
-        mediation_record = await self._route_manager.mediation_record_if_id(
+        mediation_record = await self._route_manager.mediation_record_for_connection(
+            connection,
             mediation_id,
             or_default=True,
         )
@@ -368,9 +366,6 @@ class ConnectionManager(BaseConnectionManager):
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
-
-        # Mediation Record can still be None after this operation if no
-        # mediation id passed and no default
 
         did_doc = await self.create_did_document(
             my_info,
@@ -573,8 +568,8 @@ class ConnectionManager(BaseConnectionManager):
             settings=self.profile.settings,
         )
 
-        mediation_record = await self._route_manager.mediation_record_if_id(
-            mediation_id
+        mediation_record = await self._route_manager.mediation_record_for_connection(
+            connection, mediation_id
         )
 
         # Multitenancy setup

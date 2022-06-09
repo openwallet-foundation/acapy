@@ -46,6 +46,40 @@ class RouteManager(ABC):
 
         return my_info
 
+    def _validate_mediation_state(self, mediation_record: MediationRecord):
+        if mediation_record.state != MediationRecord.STATE_GRANTED:
+            raise RouteManagerError(
+                "Mediation is not granted for mediation identified by "
+                f"{mediation_record.mediation_id}"
+            )
+
+    async def mediation_record_for_connection(
+        self,
+        conn_record: ConnRecord,
+        mediation_id: Optional[str] = None,
+        or_default: bool = False,
+    ):
+        """Validate mediation and return record.
+
+        If mediation_id is not None,
+        validate mediation record state and return record
+        else, return None
+        """
+        mediation_record = None
+        async with self.profile.session() as session:
+            try:
+                mediation_record = await MediationRecord.retrieve_by_connection_id(
+                    session, conn_record.connection_id
+                )
+            except StorageNotFoundError:
+                pass
+
+        if mediation_record:
+            self._validate_mediation_state(mediation_record)
+            return mediation_record
+
+        return await self.mediation_record_if_id(mediation_id, or_default)
+
     async def mediation_record_if_id(
         self, mediation_id: Optional[str] = None, or_default: bool = False
     ):
@@ -67,11 +101,7 @@ class RouteManager(ABC):
             ).get_default_mediator()
 
         if mediation_record:
-            if mediation_record.state != MediationRecord.STATE_GRANTED:
-                raise RouteManagerError(
-                    "Mediation is not granted for mediation identified by "
-                    f"{mediation_record.mediation_id}"
-                )
+            self._validate_mediation_state(mediation_record)
         return mediation_record
 
     @abstractmethod
