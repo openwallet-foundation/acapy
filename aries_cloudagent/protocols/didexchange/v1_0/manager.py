@@ -9,7 +9,6 @@ from pydid import BaseDIDDocument as ResolvedDocument, DIDCommService
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.diddoc import DIDDoc
 from ....connections.base_manager import BaseConnectionManager
-from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.decorators.attach_decorator import AttachDecorator
@@ -255,8 +254,7 @@ class DIDXManager(BaseConnectionManager):
         # Mediation Support
         mediation_mgr = MediationManager(self.profile)
         keylist_updates = None
-        mediation_record = await mediation_record_if_id(
-            self.profile,
+        mediation_record = await self._route_manager.mediation_record_if_id(
             mediation_id,
             or_default=True,
         )
@@ -552,7 +550,9 @@ class DIDXManager(BaseConnectionManager):
             await conn_rec.attach_request(session, request)
 
         # Send keylist updates to mediator
-        mediation_record = await mediation_record_if_id(self.profile, mediation_id)
+        mediation_record = await self._route_manager.mediation_record_if_id(
+            mediation_id
+        )
         if keylist_updates and mediation_record:
             responder = self.profile.inject(BaseResponder)
             await responder.send(
@@ -588,7 +588,9 @@ class DIDXManager(BaseConnectionManager):
 
         mediation_mgr = MediationManager(self.profile)
         keylist_updates = None
-        mediation_record = await mediation_record_if_id(self.profile, mediation_id)
+        mediation_record = await self._route_manager.mediation_record_if_id(
+            mediation_id
+        )
         base_mediation_record = None
 
         # Multitenancy setup

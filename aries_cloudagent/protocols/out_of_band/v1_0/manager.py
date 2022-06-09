@@ -8,7 +8,6 @@ from typing import Mapping, Sequence, Optional
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
-from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
@@ -125,8 +124,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         """
         mediation_mgr = MediationManager(self.profile)
-        mediation_record = await mediation_record_if_id(
-            self.profile,
+        mediation_record = await self._route_manager.mediation_record_if_id(
             mediation_id,
             or_default=True,
         )
@@ -404,7 +402,7 @@ class OutOfBandManager(BaseConnectionManager):
         """
         if mediation_id:
             try:
-                await mediation_record_if_id(self.profile, mediation_id)
+                await self._route_manager.mediation_record_if_id(mediation_id)
             except StorageNotFoundError:
                 mediation_id = None
 
