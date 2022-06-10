@@ -484,20 +484,10 @@ async def add_schema_non_secrets_record(profile: Profile, schema_id: str):
         "schema_version": schema_id_parts[-1],
         "epoch": str(int(time())),
     }
-    tag_query = {
-        "schema_name": schema_id_parts[-2],
-        "schema_version": schema_id_parts[-1],
-    }
+    record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
-        found = await storage.find_all_records(
-            type_filter=SCHEMA_SENT_RECORD_TYPE,
-            tag_query=tag_query,
-        )
-        if len(found) == 0:
-            record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
-            storage = session.inject(BaseStorage)
-            await storage.add_record(record)
+        await storage.add_record(record)
 
 
 async def register(app: web.Application):

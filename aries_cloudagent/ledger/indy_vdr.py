@@ -464,19 +464,6 @@ class IndyVdrLedger(BaseLedger):
                 else:
                     raise
 
-            schema_id_parts = schema_id.split(":")
-            schema_tags = {
-                "schema_id": schema_id,
-                "schema_issuer_did": public_info.did,
-                "schema_name": schema_id_parts[-2],
-                "schema_version": schema_id_parts[-1],
-                "epoch": str(int(time())),
-            }
-            record = StorageRecord(SCHEMA_SENT_RECORD_TYPE, schema_id, schema_tags)
-            async with self.profile.session() as session:
-                storage = session.inject(BaseStorage)
-                await storage.add_record(record)
-
         return schema_id, schema_def
 
     async def check_existing_schema(
@@ -714,24 +701,6 @@ class IndyVdrLedger(BaseLedger):
             )
             if not write_ledger:
                 return (credential_definition_id, {"signed_txn": resp}, novel)
-
-            # Add non-secrets record
-            schema_id_parts = schema_id.split(":")
-            cred_def_tags = {
-                "schema_id": schema_id,
-                "schema_issuer_did": schema_id_parts[0],
-                "schema_name": schema_id_parts[-2],
-                "schema_version": schema_id_parts[-1],
-                "issuer_did": public_info.did,
-                "cred_def_id": credential_definition_id,
-                "epoch": str(int(time())),
-            }
-            record = StorageRecord(
-                CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
-            )
-            async with self.profile.session() as session:
-                storage = session.inject(BaseStorage)
-                await storage.add_record(record)
 
         return (credential_definition_id, json.loads(credential_definition_json), novel)
 
