@@ -169,11 +169,13 @@ async def main(args):
                         target_wallet_name,
                         webhook_port=alice_agent.agent.get_new_webhook_port(),
                         mediator_agent=alice_agent.mediator_agent,
+                        taa_accept=alice_agent.taa_accept,
                     )
                 else:
                     await alice_agent.agent.register_or_switch_wallet(
                         target_wallet_name,
                         mediator_agent=alice_agent.mediator_agent,
+                        taa_accept=alice_agent.taa_accept,
                     )
 
             elif option == "3":

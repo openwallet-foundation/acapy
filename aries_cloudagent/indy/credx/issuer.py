@@ -480,6 +480,15 @@ class IndyCredxIssuer(IndyIssuer):
                 await txn.handle.replace(
                     CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
                 )
+                for cred_rev_id in rev_crids:
+                    issuer_cr_rec = await IssuerCredRevRecord.retrieve_by_ids(
+                        txn,
+                        revoc_reg_id,
+                        str(cred_rev_id),
+                    )
+                    await issuer_cr_rec.set_state(
+                        txn, IssuerCredRevRecord.STATE_REVOKED
+                    )
                 if not transaction:
                     await txn.commit()
             except AskarError as err:

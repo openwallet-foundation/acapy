@@ -205,6 +205,11 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         ),
         example=ConnRecord.Protocol.RFC_0160.aries_protocol,
     )
+    invitation_msg_id = fields.UUID(
+        description="Identifier of the associated Invitation Mesage",
+        required=False,
+        example=UUIDFour.EXAMPLE,
+    )
 
 
 class CreateInvitationQueryStringSchema(OpenAPISchema):
@@ -336,6 +341,7 @@ async def connections_list(request: web.BaseRequest):
         "request_id",
         "invitation_key",
         "their_public_did",
+        "invitation_msg_id",
     ):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]

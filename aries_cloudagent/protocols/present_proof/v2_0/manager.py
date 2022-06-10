@@ -2,13 +2,13 @@
 
 import logging
 
-from typing import Tuple
+from typing import Optional, Tuple
 
+from ...out_of_band.v1_0.models.oob_record import OobRecord
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
-from ....storage.error import StorageNotFoundError
 
 from .messages.pres import V20Pres
 from .messages.pres_ack import V20PresAck
@@ -283,7 +283,8 @@ class V20PresManager:
             presentations_attach=[attach for (_, attach) in pres_formats],
         )
 
-        pres_message._thread = {"thid": pres_ex_record.thread_id}
+        # Assign thid (and optionally pthid) to message
+        pres_message.assign_thread_from(pres_ex_record.pres_request)
         pres_message.assign_trace_decorator(
             self._profile.settings, pres_ex_record.trace
         )
@@ -298,7 +299,12 @@ class V20PresManager:
             await pres_ex_record.save(session, reason="create v2.0 presentation")
         return pres_ex_record, pres_message
 
-    async def receive_pres(self, message: V20Pres, conn_record: ConnRecord):
+    async def receive_pres(
+        self,
+        message: V20Pres,
+        connection_record: Optional[ConnRecord],
+        oob_record: Optional[OobRecord],
+    ):
         """
         Receive a presentation, from message in context on manager creation.
 
@@ -308,21 +314,31 @@ class V20PresManager:
         """
 
         thread_id = message._thread_id
-        conn_id_filter = (
+        # Normally we only set the connection_id to None if an oob record is present
+        # But present proof supports the old-style AIP-1 connectionless exchange that
+        # bypasses the oob record. So we can't verify if an oob record is associated with
+        # the exchange because it is possible that there is None
+        connection_id = (
             None
-            if conn_record is None
-            else {"connection_id": conn_record.connection_id}
+            if oob_record
+            else connection_record.connection_id
+            if connection_record
+            else None
         )
+
         async with self._profile.session() as session:
-            try:
-                pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
-                    session, {"thread_id": thread_id}, conn_id_filter
-                )
-            except StorageNotFoundError:
-                # Proof req not bound to any connection: requests_attach in OOB msg
-                pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
-                    session, {"thread_id": thread_id}, None
-                )
+            pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
+                session,
+                {"thread_id": thread_id},
+                {
+                    "role": V20PresExRecord.ROLE_VERIFIER,
+                    "connection_id": connection_id,
+                },
+            )
+
+        # Save connection id (if it wasn't already present)
+        if connection_record:
+            pres_ex_record.connection_id = connection_record.connection_id
 
         input_formats = message.formats
 
@@ -343,8 +359,6 @@ class V20PresManager:
                     )
         pres_ex_record.pres = message
         pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
-        if not pres_ex_record.connection_id:
-            pres_ex_record.connection_id = conn_record.connection_id
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="receive v2.0 presentation")
 
@@ -403,6 +417,7 @@ class V20PresManager:
 
             await responder.send_reply(
                 pres_ack_message,
+                # connection_id can be none in case of connectionless
                 connection_id=pres_ex_record.connection_id,
             )
         else:
@@ -419,11 +434,16 @@ class V20PresManager:
             presentation exchange record, retrieved and updated
 
         """
+        connection_id = conn_record.connection_id if conn_record else None
         async with self._profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
                 session,
                 {"thread_id": message._thread_id},
-                {"connection_id": conn_record.connection_id},
+                {
+                    # connection_id can be null in connectionless
+                    "connection_id": connection_id,
+                    "role": V20PresExRecord.ROLE_PROVER,
+                },
             )
 
             pres_ex_record.state = V20PresExRecord.STATE_DONE

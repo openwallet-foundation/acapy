@@ -354,7 +354,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 while not mock_indy_close_search.await_count and c < 10:
                     await asyncio.sleep(0.1)
                     c += 1
-                mock_indy_close_search.assert_awaited_once_with(1)
+                mock_indy_close_search.assert_awaited_with(1)
 
             with async_mock.patch.object(  # error on close
                 indy.non_secrets, "open_wallet_search", async_mock.CoroutineMock()

@@ -1,6 +1,7 @@
 """Ledger admin routes."""
 
 import json
+import logging
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -51,6 +52,9 @@ from .multiple_ledger.ledger_config_schema import (
 from .endpoint_type import EndpointType
 from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
 from .util import notify_register_did_event
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class LedgerModulesResultSchema(OpenAPISchema):
@@ -590,6 +594,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
             raise web.HTTPForbidden(reason=reason)
 
     accept_input = await request.json()
+    LOGGER.info(">>> accepting TAA with: %s", accept_input)
     async with ledger:
         try:
             taa_info = await ledger.get_txn_author_agreement()
@@ -597,13 +602,27 @@ async def ledger_accept_taa(request: web.BaseRequest):
                 raise web.HTTPBadRequest(
                     reason=f"Ledger {ledger.pool_name} TAA not available"
                 )
+            LOGGER.info("TAA on ledger: ", taa_info)
+            # this is a bit of a hack, but the "\ufeff" code is included in the
+            # ledger TAA and digest calculation, so it needs to be included in the
+            # TAA text that the user is accepting
+            # (if you copy the TAA text using swagger it won't include this character)
+            if taa_info["taa_record"]["text"].startswith("\ufeff"):
+                if not accept_input["text"].startswith("\ufeff"):
+                    LOGGER.info(
+                        ">>> pre-pending -endian character to TAA acceptance text"
+                    )
+                    accept_input["text"] = "\ufeff" + accept_input["text"]
             taa_record = {
                 "version": accept_input["version"],
                 "text": accept_input["text"],
                 "digest": ledger.taa_digest(
-                    accept_input["version"], accept_input["text"]
+                    accept_input["version"],
+                    accept_input["text"],
                 ),
             }
+            taa_record_digest = taa_record["digest"]
+            LOGGER.info(">>> accepting with digest: %s", taa_record_digest)
             await ledger.accept_txn_author_agreement(
                 taa_record, accept_input["mechanism"]
             )
