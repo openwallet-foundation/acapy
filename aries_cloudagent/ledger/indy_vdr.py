@@ -19,8 +19,6 @@ from indy_vdr import ledger, open_pool, Pool, Request, VdrError
 from ..cache.base import BaseCache
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer, IndyIssuerError, DEFAULT_CRED_DEF_TAG
-from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
-from ..messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ..storage.base import BaseStorage, StorageRecord
 from ..utils import sentinel
 from ..utils.env import storage_path
