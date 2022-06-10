@@ -554,12 +554,20 @@ async def add_cred_def_non_secrets_record(
         "cred_def_id": credential_definition_id,
         "epoch": str(int(time())),
     }
-    record = StorageRecord(
-        CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
-    )
     async with profile.session() as session:
-        storage = session.inject(BaseStorage)
-        await storage.add_record(record)
+        found = await storage.find_all_records(
+            type_filter=CRED_DEF_SENT_RECORD_TYPE,
+            tag_query={
+                "cred_def_id": credential_definition_id,
+                "schema_id": schema_id,
+            },
+        )
+        if len(found) == 0:
+            record = StorageRecord(
+                CRED_DEF_SENT_RECORD_TYPE, credential_definition_id, cred_def_tags
+            )
+            storage = session.inject(BaseStorage)
+            await storage.add_record(record)
 
 
 async def register(app: web.Application):
