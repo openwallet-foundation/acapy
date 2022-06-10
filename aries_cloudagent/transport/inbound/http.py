@@ -25,7 +25,7 @@ class HttpTransport(BaseInboundTransport):
             create_session: Method to create a new inbound session
 
         """
-        super().__init__("http", create_session, is_external=False, **kwargs)
+        super().__init__("http", create_session, **kwargs)
         self.host = host
         self.port = port
         self.site: web.BaseSite = None
