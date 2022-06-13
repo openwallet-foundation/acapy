@@ -2,16 +2,20 @@
 
 import json
 import logging
+from typing import Optional
+
 import pydid
+from pydid import BaseDIDDocument as ResolvedDocument
+from pydid import DIDCommService
 
-from pydid import BaseDIDDocument as ResolvedDocument, DIDCommService
-
+from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.diddoc import DIDDoc
-from ....connections.base_manager import BaseConnectionManager
 from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
+from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
+from ....did.did_key import DIDKey
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
@@ -20,24 +24,21 @@ from ....resolver.did_resolver import DIDResolver
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.error import WalletError
-from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
 from ....wallet.did_posture import DIDPosture
-from ....did.did_key import DIDKey
-
+from ....wallet.error import WalletError
+from ....wallet.key_type import KeyType
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...discovery.v2_0.manager import V20DiscoveryMgr
 from ...out_of_band.v1_0.messages.invitation import (
     InvitationMessage as OOBInvitationMessage,
 )
 from ...out_of_band.v1_0.messages.service import Service as OOBService
-
 from .message_types import ARIES_PROTOCOL as DIDX_PROTO
 from .messages.complete import DIDXComplete
+from .messages.problem_report_reason import ProblemReportReason
 from .messages.request import DIDXRequest
 from .messages.response import DIDXResponse
-from .messages.problem_report_reason import ProblemReportReason
 
 
 class DIDXManagerError(BaseError):
@@ -72,10 +73,10 @@ class DIDXManager(BaseConnectionManager):
     async def receive_invitation(
         self,
         invitation: OOBInvitationMessage,
-        their_public_did: str = None,
-        auto_accept: bool = None,
-        alias: str = None,
-        mediation_id: str = None,
+        their_public_did: Optional[str] = None,
+        auto_accept: Optional[bool] = None,
+        alias: Optional[str] = None,
+        mediation_id: Optional[str] = None,
     ) -> ConnRecord:  # leave in didexchange as it uses a responder: not out-of-band
         """
         Create a new connection record to track a received invitation.
@@ -498,10 +499,7 @@ class DIDXManager(BaseConnectionManager):
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
             conn_rec.request_id = request._id
-            async with self.profile.session() as session:
-                await conn_rec.save(
-                    session, reason="Received connection request from invitation"
-                )
+
         else:
             # request is against implicit invitation on public DID
             async with self.profile.session() as session:
@@ -558,6 +556,10 @@ class DIDXManager(BaseConnectionManager):
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )
+
+        # Clean associated oob record if not needed anymore
+        oob_processor = self.profile.inject(OobMessageProcessor)
+        await oob_processor.clean_finished_oob_record(self.profile, request)
 
         return conn_rec
 

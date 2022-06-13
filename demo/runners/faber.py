@@ -476,6 +476,7 @@ async def main(args):
                         public_did=True,
                         mediator_agent=faber_agent.mediator_agent,
                         endorser_agent=faber_agent.endorser_agent,
+                        taa_accept=faber_agent.taa_accept,
                     )
                 else:
                     created = await faber_agent.agent.register_or_switch_wallet(
@@ -484,6 +485,7 @@ async def main(args):
                         mediator_agent=faber_agent.mediator_agent,
                         endorser_agent=faber_agent.endorser_agent,
                         cred_type=faber_agent.cred_type,
+                        taa_accept=faber_agent.taa_accept,
                     )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets

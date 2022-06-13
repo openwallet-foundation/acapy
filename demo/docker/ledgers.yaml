@@ -1,0 +1,21 @@
+# the `id` is used as the `pool_name` in aca-py
+# note that if you are upgrading from single- to multi-ledger, you need to *either*:
+#  - set the `id` of your `is_write: true` ledger to `default` (the `pool_name` used in single-ledger mode)
+# *or*:
+#  - re-accept the TAA once you start aca-py in multi-ledger mode
+# (the TAA acceptance is stored in a wallet record keyed on the `pool_name`)
+#- id: localhost
+#  is_production: true
+#  is_write: true
+#  genesis_url: 'http://host.docker.internal:9000/genesis'
+# register a Sovrin dev DID here:  https://selfserve.sovrin.org/
+- id: SOVRINDevelopment
+  is_production: true
+  is_write: true
+  genesis_url: 'https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_builder_genesis'
+- id: BCovrinTest
+  is_production: true
+  genesis_url: 'http://test.bcovrin.vonx.io/genesis'
+- id: CANdyDev
+  is_production: true
+  genesis_url: 'https://raw.githubusercontent.com/ICCS-ISAC/dtrust-reconu/main/CANdy/dev/pool_transactions_genesis'

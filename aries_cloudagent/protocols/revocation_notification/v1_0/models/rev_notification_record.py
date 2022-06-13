@@ -27,6 +27,7 @@ class RevNotificationRecord(BaseRecord):
         "rev_reg_id",
         "cred_rev_id",
         "connection_id",
+        "version",
     }
 
     def __init__(
@@ -38,6 +39,7 @@ class RevNotificationRecord(BaseRecord):
         connection_id: str = None,
         thread_id: str = None,
         comment: str = None,
+        version: str = None,
         **kwargs,
     ):
         """Construct record."""
@@ -47,6 +49,7 @@ class RevNotificationRecord(BaseRecord):
         self.connection_id = connection_id
         self.thread_id = thread_id
         self.comment = comment
+        self.version = version
 
     @property
     def revocation_notification_id(self) -> Optional[str]:
@@ -73,6 +76,7 @@ class RevNotificationRecord(BaseRecord):
             rev_reg_id: the rev reg id by which to filter
         """
         tag_filter = {
+            **{"version": "v1_0"},
             **{"cred_rev_id": cred_rev_id for _ in [""] if cred_rev_id},
             **{"rev_reg_id": rev_reg_id for _ in [""] if rev_reg_id},
         }
@@ -101,6 +105,7 @@ class RevNotificationRecord(BaseRecord):
             rev_reg_id: the rev reg id by which to filter
         """
         tag_filter = {
+            **{"version": "v1_0"},
             **{"rev_reg_id": rev_reg_id for _ in [""] if rev_reg_id},
         }
 
@@ -155,5 +160,9 @@ class RevNotificationRecordSchema(BaseRecordSchema):
     )
     comment = fields.Str(
         description="Optional comment to include in revocation notification",
+        required=False,
+    )
+    version = fields.Str(
+        description="Version of Revocation Notification to send out",
         required=False,
     )

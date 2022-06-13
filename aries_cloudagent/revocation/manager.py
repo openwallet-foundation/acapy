@@ -45,6 +45,7 @@ class RevocationManager:
         cred_ex_id: str,
         publish: bool = False,
         notify: bool = False,
+        notify_version: str = None,
         thread_id: str = None,
         connection_id: str = None,
         comment: str = None,
@@ -77,6 +78,7 @@ class RevocationManager:
             cred_rev_id=rec.cred_rev_id,
             publish=publish,
             notify=notify,
+            notify_version=notify_version,
             thread_id=thread_id,
             connection_id=connection_id,
             comment=comment,
@@ -88,6 +90,7 @@ class RevocationManager:
         cred_rev_id: str,
         publish: bool = False,
         notify: bool = False,
+        notify_version: str = None,
         thread_id: str = None,
         connection_id: str = None,
         comment: str = None,
@@ -121,6 +124,7 @@ class RevocationManager:
                 thread_id=thread_id,
                 connection_id=connection_id,
                 comment=comment,
+                version=notify_version,
             )
             async with self._profile.session() as session:
                 await rev_notify_rec.save(session, reason="New revocation notification")

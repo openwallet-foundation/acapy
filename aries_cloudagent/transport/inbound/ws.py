@@ -16,6 +16,8 @@ LOGGER = logging.getLogger(__name__)
 class WsTransport(BaseInboundTransport):
     """Websockets Transport class."""
 
+    is_external = False
+
     def __init__(self, host: str, port: int, create_session, **kwargs) -> None:
         """
         Initialize an inbound WebSocket transport instance.
