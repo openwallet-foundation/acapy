@@ -41,7 +41,7 @@ from ...protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
 )
 
-from ...revocation.util import notify_revocation_reg_event
+from ...revocation.indy import IndyRevocation
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 
@@ -514,16 +514,15 @@ async def on_cred_def_event(profile: Profile, event: Event):
     if support_revocation and novel and auto_create_rev_reg:
         # this kicks off the revocation registry creation process, which is 3 steps:
         # 1 - create revocation registry (ledger transaction may require endorsement)
-        # 2 - create revocation entry (ledger transaction may require endorsement)
-        # 3 - upload tails file
+        # 2 - upload tails file
+        # 3 - create revocation entry (ledger transaction may require endorsement)
         # For a cred def we also automatically create a second "pending" revocation
         # registry, so when the first one fills up we can continue to issue credentials
         # without a delay
-        await notify_revocation_reg_event(
-            profile,
+        revoc = IndyRevocation(profile)
+        await revoc.init_issuer_registry(
             cred_def_id,
             rev_reg_size,
-            auto_create_rev_reg=auto_create_rev_reg,
             create_pending_rev_reg=create_pending_rev_reg,
             endorser_connection_id=endorser_connection_id,
         )

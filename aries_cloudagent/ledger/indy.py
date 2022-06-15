@@ -1131,7 +1131,7 @@ class IndySdkLedger(BaseLedger):
         issuer_did: str = None,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Publish a revocation registry definition to the ledger."""
         # NOTE - issuer DID could be extracted from the revoc_reg_def ID
         if issuer_did:
@@ -1167,7 +1167,7 @@ class IndySdkLedger(BaseLedger):
         issuer_did: str = None,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Publish a revocation registry entry to the ledger."""
         if issuer_did:
             async with self.profile.session() as session:

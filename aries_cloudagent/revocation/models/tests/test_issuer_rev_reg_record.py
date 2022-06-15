@@ -128,7 +128,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         assert rec.state == IssuerRevRegRecord.STATE_ACTIVE
         self.ledger.send_revoc_reg_entry.assert_called_once()
 
-        rev_reg = await rec.get_registry()
+        rev_reg = rec.get_registry()
         assert type(rev_reg) == RevocationRegistry
 
         async with self.profile.session() as session:
