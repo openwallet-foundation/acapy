@@ -8,7 +8,6 @@ import indy.anoncreds
 import indy.blob_storage
 from indy.error import AnoncredsRevocationRegistryFullError, IndyError, ErrorCode
 
-from ...core.profile import ProfileSession
 from ...indy.sdk.profile import IndySdkProfile
 from ...messaging.util import encode
 from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
@@ -267,7 +266,6 @@ class IndySdkIssuer(IndyIssuer):
         rev_reg_id: str,
         tails_file_path: str,
         cred_rev_ids: Sequence[str],
-        transaction: ProfileSession = None,
     ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.
@@ -281,7 +279,7 @@ class IndySdkIssuer(IndyIssuer):
             Tuple with the combined revocation delta, list of cred rev ids not revoked
 
         """
-        failed_crids = []
+        failed_crids = set()
         tails_reader_handle = await create_tails_reader(tails_file_path)
 
         result_json = None
@@ -290,22 +288,12 @@ class IndySdkIssuer(IndyIssuer):
                 "Exception when revoking credential", IndyIssuerError
             ):
                 try:
-                    session = await self.profile.session()
                     delta_json = await indy.anoncreds.issuer_revoke_credential(
                         self.profile.wallet.handle,
                         tails_reader_handle,
                         rev_reg_id,
                         cred_rev_id,
                     )
-                    issuer_cr_rec = await IssuerCredRevRecord.retrieve_by_ids(
-                        session,
-                        rev_reg_id,
-                        cred_rev_id,
-                    )
-                    await issuer_cr_rec.set_state(
-                        session, IssuerCredRevRecord.STATE_REVOKED
-                    )
-
                 except IndyError as err:
                     if err.error_code == ErrorCode.AnoncredsInvalidUserRevocId:
                         LOGGER.error(
@@ -323,7 +311,7 @@ class IndySdkIssuer(IndyIssuer):
                                 err, "Revocation error", IndyIssuerError
                             ).roll_up
                         )
-                    failed_crids.append(cred_rev_id)
+                    failed_crids.add(int(cred_rev_id))
                     continue
                 except StorageError as err:
                     LOGGER.warning(
@@ -344,7 +332,7 @@ class IndySdkIssuer(IndyIssuer):
                 else:
                     result_json = delta_json
 
-        return (result_json, failed_crids)
+        return (result_json, [str(rev_id) for rev_id in sorted(failed_crids)])
 
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
