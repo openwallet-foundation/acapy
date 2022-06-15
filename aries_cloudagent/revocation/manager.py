@@ -113,7 +113,7 @@ class RevocationManager:
         issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         if not issuer_rr_rec:
             raise RevocationManagerError(
-                f"No revocation registry record found for id {rev_reg_id}"
+                f"No revocation registry record found for id: {rev_reg_id}"
             )
 
         if notify:
@@ -137,19 +137,25 @@ class RevocationManager:
             (delta_json, _) = await issuer.revoke_credentials(
                 issuer_rr_rec.revoc_reg_id, issuer_rr_rec.tails_local_path, crids
             )
-            if delta_json:
-                issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
-                await issuer_rr_rec.send_entry(self._profile)
-                async with self._profile.session() as session:
-                    await issuer_rr_rec.clear_pending(session)
-                await self.set_cred_revoked_state(rev_reg_id, [cred_rev_id])
-                await notify_revocation_published_event(
-                    self._profile, rev_reg_id, [cred_rev_id]
+            async with self._profile.transaction() as txn:
+                issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
+                    txn, issuer_rr_rec.record_id, for_update=True
                 )
+                if delta_json:
+                    issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
+                await issuer_rr_upd.clear_pending(txn, crids)
+                await txn.commit()
+            if delta_json:
+                await issuer_rr_upd.send_entry(self._profile)
+            await self.set_cred_revoked_state(rev_reg_id, [cred_rev_id])
+            await notify_revocation_published_event(
+                self._profile, rev_reg_id, [cred_rev_id]
+            )
 
         else:
-            async with self._profile.session() as session:
-                await issuer_rr_rec.mark_pending(session, cred_rev_id)
+            async with self._profile.transaction() as txn:
+                await issuer_rr_rec.mark_pending(txn, cred_rev_id)
+                await txn.commit()
 
     async def publish_pending_revocations(
         self,
@@ -181,37 +187,42 @@ class RevocationManager:
         result = {}
         issuer = self._profile.inject(IndyIssuer)
 
-        async with self._profile.transaction() as txn:
-            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(txn)
-            for issuer_rr_rec in issuer_rr_recs:
-                rrid = issuer_rr_rec.revoc_reg_id
-                crids = []
-                if not rrid2crid:
-                    crids = issuer_rr_rec.pending_pub
-                elif rrid in rrid2crid:
-                    crids = [
-                        crid
-                        for crid in issuer_rr_rec.pending_pub
-                        if crid in (rrid2crid[rrid] or []) or not rrid2crid[rrid]
-                    ]
-                if crids:
-                    # FIXME - must use the same transaction
-                    (delta_json, failed_crids) = await issuer.revoke_credentials(
-                        issuer_rr_rec.revoc_reg_id,
-                        issuer_rr_rec.tails_local_path,
-                        crids,
-                        transaction=txn,
+        async with self._profile.session() as session:
+            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)
+
+        for issuer_rr_rec in issuer_rr_recs:
+            rrid = issuer_rr_rec.revoc_reg_id
+            if rrid2crid:
+                if rrid not in rrid2crid:
+                    continue
+                limit_crids = rrid2crid[rrid]
+            else:
+                limit_crids = ()
+            crids = set(issuer_rr_rec.pending_pub or ())
+            if limit_crids:
+                crids = crids.intersection(limit_crids)
+            if crids:
+                (delta_json, failed_crids) = await issuer.revoke_credentials(
+                    issuer_rr_rec.revoc_reg_id,
+                    issuer_rr_rec.tails_local_path,
+                    crids,
+                )
+                async with self._profile.transaction() as txn:
+                    issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
+                        txn, issuer_rr_rec.record_id, for_update=True
                     )
-                    issuer_rr_rec.revoc_reg_entry = json.loads(delta_json)
-                    await issuer_rr_rec.send_entry(self._profile)
-                    published = [crid for crid in crids if crid not in failed_crids]
-                    result[issuer_rr_rec.revoc_reg_id] = published
-                    await issuer_rr_rec.clear_pending(txn, published)
+                    if delta_json:
+                        issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
+                    await issuer_rr_upd.clear_pending(txn, crids)
                     await txn.commit()
-                    await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
-                    await notify_revocation_published_event(
-                        self._profile, issuer_rr_rec.revoc_reg_id, crids
-                    )
+                if delta_json:
+                    await issuer_rr_upd.send_entry(self._profile)
+                published = sorted(crid for crid in crids if crid not in failed_crids)
+                result[issuer_rr_rec.revoc_reg_id] = published
+                await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
+                await notify_revocation_published_event(
+                    self._profile, issuer_rr_rec.revoc_reg_id, crids
+                )
 
         return result
 
@@ -246,6 +257,7 @@ class RevocationManager:
 
         """
         result = {}
+        notify = []
 
         async with self._profile.transaction() as txn:
             issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(txn)
@@ -254,8 +266,11 @@ class RevocationManager:
                 await issuer_rr_rec.clear_pending(txn, (purge or {}).get(rrid))
                 if issuer_rr_rec.pending_pub:
                     result[rrid] = issuer_rr_rec.pending_pub
-                await notify_pending_cleared_event(self._profile, rrid)
+                notify.append(rrid)
             await txn.commit()
+
+        for rrid in notify:
+            await notify_pending_cleared_event(self._profile, rrid)
 
         return result
 
@@ -274,31 +289,31 @@ class RevocationManager:
 
         """
         for cred_rev_id in cred_rev_ids:
-            async with self._profile.session() as session:
+            async with self._profile.transaction() as txn:
                 try:
                     rev_rec = await IssuerCredRevRecord.retrieve_by_ids(
-                        session, rev_reg_id, cred_rev_id
+                        txn, rev_reg_id, cred_rev_id
                     )
                     try:
                         cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                            session, rev_rec.cred_ex_id
+                            txn, rev_rec.cred_ex_id, for_update=True
                         )
                         cred_ex_record.state = (
                             V10CredentialExchange.STATE_CREDENTIAL_REVOKED
                         )
-                        await cred_ex_record.save(session, reason="revoke credential")
+                        await cred_ex_record.save(txn, reason="revoke credential")
+                        await txn.commit()
 
                     except StorageNotFoundError:
                         try:
                             cred_ex_record = await V20CredExRecord.retrieve_by_id(
-                                session, rev_rec.cred_ex_id
+                                txn, rev_rec.cred_ex_id, for_update=True
                             )
                             cred_ex_record.state = (
                                 V20CredExRecord.STATE_CREDENTIAL_REVOKED
                             )
-                            await cred_ex_record.save(
-                                session, reason="revoke credential"
-                            )
+                            await cred_ex_record.save(txn, reason="revoke credential")
+                            await txn.commit()
 
                         except StorageNotFoundError:
                             pass
