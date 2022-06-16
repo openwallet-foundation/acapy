@@ -324,6 +324,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, retries: int = 5
     ) -> CredFormatAttachment:
         """Issue indy credential."""
+        await self._check_uniqueness(cred_ex_record.cred_ex_id)
+
         cred_offer = cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
         cred_request = cred_ex_record.cred_request.attachment(
             IndyCredFormatHandler.format
@@ -358,8 +360,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     cred_def_id,
                 )
                 await asyncio.sleep(2)
-
-            await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
             if revocable:
                 revoc = IndyRevocation(self.profile)
@@ -396,7 +396,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             async with self._profile.session() as session:
                 await detail_record.save(session, reason="v2.0 issue credential")
 
-            if rev_reg and rev_reg.max_creds <= int(cred_rev_id):
+            if revocable and rev_reg.max_creds <= int(cred_rev_id):
                 revoc = IndyRevocation(self.profile)
                 await revoc.handle_full_registry(rev_reg_id)
                 del revoc

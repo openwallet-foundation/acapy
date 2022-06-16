@@ -666,7 +666,7 @@ class CredentialManager:
                     # unlucky, another instance filled the registry first
                     continue
 
-                if rev_reg and rev_reg.max_creds <= int(cred_rev_id):
+                if revocable and rev_reg.max_creds <= int(cred_rev_id):
                     revoc = IndyRevocation(self.profile)
                     await revoc.handle_full_registry(rev_reg_id)
                     del revoc
