@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import datetime
+import aiohttp
 
 from aiohttp import ClientError
 from qrcode import QRCode
@@ -45,7 +46,6 @@ class FaberAgent(AriesAgent):
         admin_port: int,
         no_auto: bool = False,
         endorser_role: str = None,
-        revocation: bool = False,
         **kwargs,
     ):
         super().__init__(
@@ -55,7 +55,6 @@ class FaberAgent(AriesAgent):
             prefix="Faber",
             no_auto=no_auto,
             endorser_role=endorser_role,
-            revocation=revocation,
             **kwargs,
         )
         self.connection_id = None
@@ -182,18 +181,18 @@ class FaberAgent(AriesAgent):
             req_attrs = [
                 {
                     "name": "name",
-                    "restrictions": [{"schema_name": "degree schema"}],
+                    "restrictions": [{"schema_name": "Web Schema"}],
                 },
                 {
                     "name": "date",
-                    "restrictions": [{"schema_name": "degree schema"}],
+                    "restrictions": [{"schema_name": "Web Schema"}],
                 },
             ]
             if revocation:
                 req_attrs.append(
                     {
                         "name": "degree",
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"schema_name": "Web Schema"}],
                         "non_revoked": {"to": int(time.time() - 1)},
                     },
                 )
@@ -201,7 +200,7 @@ class FaberAgent(AriesAgent):
                 req_attrs.append(
                     {
                         "name": "degree",
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"schema_name": "Web Schema"}],
                     }
                 )
             if SELF_ATTESTED:
@@ -215,7 +214,7 @@ class FaberAgent(AriesAgent):
                     "name": "birthdate_dateint",
                     "p_type": "<=",
                     "p_value": int(birth_date.strftime(birth_date_format)),
-                    "restrictions": [{"schema_name": "degree schema"}],
+                    "restrictions": [{"schema_name": "Web Schema"}],
                 }
             ]
             indy_proof_request = {
@@ -245,18 +244,18 @@ class FaberAgent(AriesAgent):
                 req_attrs = [
                     {
                         "name": "name",
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"schema_name": "Web Schema"}],
                     },
                     {
                         "name": "date",
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"schema_name": "Web Schema"}],
                     },
                 ]
                 if revocation:
                     req_attrs.append(
                         {
                             "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
+                            "restrictions": [{"schema_name": "Web Schema"}],
                             "non_revoked": {"to": int(time.time() - 1)},
                         },
                     )
@@ -264,7 +263,7 @@ class FaberAgent(AriesAgent):
                     req_attrs.append(
                         {
                             "name": "degree",
-                            "restrictions": [{"schema_name": "degree schema"}],
+                            "restrictions": [{"schema_name": "Web Schema"}],
                         }
                     )
                 if SELF_ATTESTED:
@@ -278,7 +277,7 @@ class FaberAgent(AriesAgent):
                         "name": "birthdate_dateint",
                         "p_type": "<=",
                         "p_value": int(birth_date.strftime(birth_date_format)),
-                        "restrictions": [{"schema_name": "degree schema"}],
+                        "restrictions": [{"schema_name": "Web Schema"}],
                     }
                 ]
                 indy_proof_request = {
@@ -371,6 +370,9 @@ class FaberAgent(AriesAgent):
         else:
             raise Exception(f"Error invalid AIP level: {self.aip}")
 
+# async def fetch(session, url):
+#     async with session.get(url, ssl=False) as response:
+#         return await response.text()
 
 async def main(args):
     faber_agent = await create_agent_with_args(args, ident="faber")
@@ -389,10 +391,8 @@ async def main(args):
             faber_agent.start_port,
             faber_agent.start_port + 1,
             genesis_data=faber_agent.genesis_txns,
-            genesis_txn_list=faber_agent.genesis_txn_list,
             no_auto=faber_agent.no_auto,
             tails_server_base_url=faber_agent.tails_server_base_url,
-            revocation=faber_agent.revocation,
             timing=faber_agent.show_timing,
             multitenant=faber_agent.multitenant,
             mediation=faber_agent.mediation,
@@ -402,7 +402,16 @@ async def main(args):
             endorser_role=faber_agent.endorser_role,
         )
 
-        faber_schema_name = "degree schema"
+        log_msg(
+            f"Now cheking seed in faber.py: {faber_agent.seed}"
+        )
+
+        log_msg(
+            f"Now cheking AIP Status: {faber_agent.aip}"
+        )
+
+
+        faber_schema_name = "Web Schema"
         faber_schema_attrs = [
             "name",
             "date",
@@ -427,11 +436,18 @@ async def main(args):
             raise Exception("Invalid credential type:" + faber_agent.cred_type)
 
         # generate an invitation for Alice
-        await faber_agent.generate_invitation(
-            display_qr=True, reuse_connections=faber_agent.reuse_connections, wait=True
-        )
+        await faber_agent.generate_invitation(display_qr=True, wait=True)
+
+        # async with aiohttp.ClientSession() as session:
+        #     html = await fetch(session, 'http://127.0.0.1:9999/webhooks/topic/connections/')
+        #     print(html)
 
         exchange_tracing = False
+
+        log_status(
+            "#### Before printing the options.."
+        )
+
         options = (
             "    (1) Issue Credential\n"
             "    (2) Send Proof Request\n"
@@ -476,7 +492,6 @@ async def main(args):
                         public_did=True,
                         mediator_agent=faber_agent.mediator_agent,
                         endorser_agent=faber_agent.endorser_agent,
-                        taa_accept=faber_agent.taa_accept,
                     )
                 else:
                     created = await faber_agent.agent.register_or_switch_wallet(
@@ -485,7 +500,6 @@ async def main(args):
                         mediator_agent=faber_agent.mediator_agent,
                         endorser_agent=faber_agent.endorser_agent,
                         cred_type=faber_agent.cred_type,
-                        taa_accept=faber_agent.taa_accept,
                     )
                 # create a schema and cred def for the new wallet
                 # TODO check first in case we are switching between existing wallets
@@ -506,10 +520,16 @@ async def main(args):
 
             elif option == "1":
                 log_status("#13 Issue credential offer to X")
-
+                faber_agent.aip = 10
                 if faber_agent.aip == 10:
                     offer_request = faber_agent.agent.generate_credential_offer(
                         faber_agent.aip, None, faber_agent.cred_def_id, exchange_tracing
+                    )
+                    log_status(
+                        "Credential Data"
+                        + (
+                            f" (Generated JSON: {offer_request})"
+                        )
                     )
                     await faber_agent.agent.admin_POST(
                         "/issue-credential/send-offer", offer_request
@@ -610,15 +630,14 @@ async def main(args):
                     )
                     pres_req_id = proof_request["presentation_exchange_id"]
                     url = (
-                        os.getenv("WEBHOOK_TARGET")
-                        or (
-                            "http://"
-                            + os.getenv("DOCKERHOST").replace(
-                                "{PORT}", str(faber_agent.agent.admin_port + 1)
-                            )
-                            + "/webhooks"
+                        "http://"
+                        + os.getenv("DOCKERHOST").replace(
+                            "{PORT}", str(faber_agent.agent.admin_port + 1)
                         )
-                    ) + f"/pres_req/{pres_req_id}/"
+                        + "/webhooks/pres_req/"
+                        + pres_req_id
+                        + "/"
+                    )
                     log_msg(f"Proof request url: {url}")
                     qr = QRCode(border=1)
                     qr.add_data(url)
@@ -688,11 +707,7 @@ async def main(args):
                     "Creating a new invitation, please receive "
                     "and accept this invitation using Alice agent"
                 )
-                await faber_agent.generate_invitation(
-                    display_qr=True,
-                    reuse_connections=faber_agent.reuse_connections,
-                    wait=True,
-                )
+                await faber_agent.generate_invitation(display_qr=True, wait=True)
 
             elif option == "5" and faber_agent.revocation:
                 rev_reg_id = (await prompt("Enter revocation registry ID: ")).strip()
@@ -707,10 +722,6 @@ async def main(args):
                             "rev_reg_id": rev_reg_id,
                             "cred_rev_id": cred_rev_id,
                             "publish": publish,
-                            "connection_id": faber_agent.agent.connection_id,
-                            # leave out thread_id, let aca-py generate
-                            # "thread_id": "12345678-4444-4444-4444-123456789012",
-                            "comment": "Revocation reason goes here ...",
                         },
                     )
                 except ClientError:
