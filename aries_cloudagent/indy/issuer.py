@@ -4,7 +4,6 @@ from abc import ABC, ABCMeta, abstractmethod
 from typing import Sequence, Tuple
 
 from ..core.error import BaseError
-from ..core.profile import ProfileSession
 
 
 DEFAULT_CRED_DEF_TAG = "default"
@@ -150,7 +149,6 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         revoc_reg_id: str,
         tails_file_path: str,
         cred_rev_ids: Sequence[str],
-        transaction: ProfileSession = None,
     ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.
