@@ -1,5 +1,14 @@
 # Troubleshooting Aries Cloud Agent Python <!-- omit in toc -->
 
+This document contains some troubleshooting information that contributors to the
+community think may be helpful. Most of the content here assumes the reader has
+gotten started with ACA-Py and has arrived here because of an issue that came up
+in their use of ACA-Py.
+
+Contributions (via pull request) to this document are welcome. Topics added here
+will mostly come from reported issues that contributors think would be helpful
+to the larger community.
+
 ## Table of Contents <!-- omit in toc -->
 
 - [Unable to Connect to Ledger](#unable-to-connect-to-ledger)
