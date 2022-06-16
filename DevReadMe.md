@@ -18,6 +18,7 @@ See the [README](README.md) for details about this repository and information ab
 - [Developing](#developing)
   - [Prerequisites](#prerequisites)
   - [Running Locally](#running-locally)
+  - [Logging](#logging)
   - [Running Tests](#running-tests)
   - [Running Aries Agent Test Harness Tests](#running-aries-agent-test-harness-tests)
 - [Development Workflow](#development-workflow)
