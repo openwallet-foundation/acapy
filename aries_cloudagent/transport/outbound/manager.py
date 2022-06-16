@@ -127,7 +127,7 @@ class OutboundTransportManager:
                 BaseOutboundTransport, module, package
             )
         except (ModuleLoadError, ClassNotFoundError) as e:
-            raise InboundTransportRegistrationError(
+            raise OutboundTransportRegistrationError(
                 f"Outbound transport module {module} could not be resolved."
             ) from e
 
