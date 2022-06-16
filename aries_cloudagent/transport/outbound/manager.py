@@ -124,7 +124,7 @@ class OutboundTransportManager:
                 module = module_name
 
             imported_class = ClassLoader.load_subclass_of(
-                BaseInboundTransport, module, package
+                BaseOutboundTransport, module, package
             )
         except (ModuleLoadError, ClassNotFoundError) as e:
             raise InboundTransportRegistrationError(
