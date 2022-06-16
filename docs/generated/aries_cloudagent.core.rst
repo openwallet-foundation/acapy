@@ -57,6 +57,14 @@ aries\_cloudagent.core.goal\_code\_registry module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.core.oob\_processor module
+--------------------------------------------
+
+.. automodule:: aries_cloudagent.core.oob_processor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.core.plugin\_registry module
 ----------------------------------------------
 

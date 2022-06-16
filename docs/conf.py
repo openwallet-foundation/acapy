@@ -46,6 +46,7 @@ autodoc_mock_imports = [
     "unflatten",
     "qrcode",
     "rlp",
+    "nest_asyncio",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",
