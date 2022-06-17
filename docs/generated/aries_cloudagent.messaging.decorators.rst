@@ -49,6 +49,14 @@ aries\_cloudagent.messaging.decorators.please\_ack\_decorator module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.messaging.decorators.service\_decorator module
+----------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.messaging.decorators.service_decorator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.messaging.decorators.signature\_decorator module
 ------------------------------------------------------------------
 
