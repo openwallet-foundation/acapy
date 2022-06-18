@@ -10,7 +10,8 @@ REVOCATION_EVENT_PREFIX = "acapy::REVOCATION::"
 EVENT_LISTENER_PATTERN = re.compile(f"^{REVOCATION_EVENT_PREFIX}(.*)?$")
 REVOCATION_REG_INIT_EVENT = "REGISTRY_INIT"
 REVOCATION_REG_ENDORSED_EVENT = "REGISTRY_ENDORSED"
-REVOCATION_ENTRY_EVENT = "ENTRY"
+REVOCATION_ENTRY_ENDORSED_EVENT = "ENTRY_ENDORSED"
+REVOCATION_ENTRY_EVENT = "SEND_ENTRY"
 REVOCATION_PUBLISHED_EVENT = "published"
 REVOCATION_CLEAR_PENDING_EVENT = "clear-pending"
 
@@ -47,6 +48,14 @@ async def notify_revocation_reg_endorsed_event(
 ):
     """Send notification for a revocation registry endorsement event."""
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_REG_ENDORSED_EVENT}::{rev_reg_id}"
+    await profile.notify(topic, meta_data)
+
+
+async def notify_revocation_entry_endorsed_event(
+    profile: Profile, rev_reg_id: str, meta_data: dict
+):
+    """Send notification for a revocation registry entry endorsement event."""
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_ENTRY_ENDORSED_EVENT}::{rev_reg_id}"
     await profile.notify(topic, meta_data)
 
 

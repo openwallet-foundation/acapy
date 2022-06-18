@@ -43,6 +43,7 @@ class IndyRevocation:
         tag: str = None,
         create_pending_rev_reg: bool = False,
         endorser_connection_id: str = None,
+        notify: bool = True,
     ) -> "IssuerRevRegRecord":
         """Create a new revocation registry record for a credential definition."""
         multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
@@ -86,12 +87,13 @@ class IndyRevocation:
             if not endorser_connection_id:
                 raise RevocationError(reason="Endorser connection not found")
 
-        await notify_revocation_reg_init_event(
-            self._profile,
-            record.record_id,
-            create_pending_rev_reg=create_pending_rev_reg,
-            endorser_connection_id=endorser_connection_id,
-        )
+        if notify:
+            await notify_revocation_reg_init_event(
+                self._profile,
+                record.record_id,
+                create_pending_rev_reg=create_pending_rev_reg,
+                endorser_connection_id=endorser_connection_id,
+            )
 
         return record
 

@@ -550,6 +550,7 @@ async def create_rev_reg(request: web.BaseRequest):
         issuer_rev_reg_rec = await revoc.init_issuer_registry(
             credential_definition_id,
             max_cred_num=max_cred_num,
+            notify=False,
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
@@ -1128,17 +1129,16 @@ async def send_rev_reg_entry(request: web.BaseRequest):
                 raise web.HTTPBadRequest(reason="No endorser connection found")
 
     if not write_ledger:
-        try:
-            async with profile.session() as session:
+        async with profile.session() as session:
+            try:
                 connection_record = await ConnRecord.retrieve_by_id(
                     session, connection_id
                 )
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except BaseModelError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+            except StorageNotFoundError as err:
+                raise web.HTTPNotFound(reason=err.roll_up) from err
+            except BaseModelError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-        async with profile.session() as session:
             endorser_info = await connection_record.metadata_get(
                 session, "endorser_info"
             )
@@ -1295,14 +1295,16 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
     meta_data = event.payload
     if "endorser" in meta_data:
         # TODO error handling - for now just let exceptions get raised
+        endorser_connection_id = meta_data["endorser"]["connection_id"]
         async with profile.session() as session:
             connection = await ConnRecord.retrieve_by_id(
-                session, meta_data["endorser"]["connection_id"]
+                session, endorser_connection_id
             )
             endorser_info = await connection.metadata_get(session, "endorser_info")
         endorser_did = endorser_info["endorser_did"]
         write_ledger = False
     else:
+        endorser_connection_id = None
         endorser_did = None
         write_ledger = True
 
@@ -1313,10 +1315,8 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
     # Generate the registry and upload the tails file
     async def generate(rr_record: IssuerRevRegRecord) -> dict:
         await rr_record.generate_registry(profile)
-        await rr_record.set_tails_file_public_uri(
-            profile,
-            f"{tails_base_url}/{registry_record.revoc_reg_id}",
-        )
+        public_uri = tails_base_url.rstrip("/") + f"/{registry_record.revoc_reg_id}"
+        await rr_record.set_tails_file_public_uri(profile, public_uri)
         rev_reg_resp = await rr_record.send_def(
             profile,
             write_ledger=write_ledger,
@@ -1381,6 +1381,7 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
             registry_record.cred_def_id,
             registry_record.max_cred_num,
             registry_record.revoc_def_type,
+            endorser_connection_id=endorser_connection_id,
         )
 
 
@@ -1450,18 +1451,25 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
 
 
 async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
-    """Handle revocation tails file event."""
+    """Handle revocation registry endorsement event."""
     meta_data = event.payload
     rev_reg_id = meta_data["context"]["rev_reg_id"]
     revoc = IndyRevocation(profile)
     registry_record = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-    # NOTE: if there are multiple pods, then the one processing this
-    # event may not be the one that generated the tails file.
-    await registry_record.upload_tails_file(profile)
+
+    if profile.settings.get_value("endorser.auto_request"):
+        # NOTE: if there are multiple pods, then the one processing this
+        # event may not be the one that generated the tails file.
+        await registry_record.upload_tails_file(profile)
+
+        # Post the initial revocation entry
+        await notify_revocation_entry_event(
+            profile, registry_record.record_id, meta_data
+        )
 
     # create a "pending" registry if one is requested
     # (this is done automatically when creating a credential definition, so that when a
-    #   revocation registry fills up, we ca continue to issue credentials without a
+    #   revocation registry fills up, we can continue to issue credentials without a
     #   delay)
     create_pending_rev_reg = meta_data["processing"].get(
         "create_pending_rev_reg", False

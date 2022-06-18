@@ -67,7 +67,6 @@ class IssuerRevRegRecord(BaseRecord):
     STATE_INIT = "init"
     STATE_GENERATED = "generated"
     STATE_POSTED = "posted"  # definition published
-    STATE_UPLOADED = "uploaded"  # tails file uploaded
     STATE_ACTIVE = "active"  # initial entry published, possibly subsequent entries
     STATE_FULL = "full"  # includes corrupt
 
@@ -279,7 +278,7 @@ class IssuerRevRegRecord(BaseRecord):
         self._check_url(self.tails_public_uri)
 
         if self.state not in (
-            IssuerRevRegRecord.STATE_UPLOADED,
+            IssuerRevRegRecord.STATE_POSTED,
             IssuerRevRegRecord.STATE_ACTIVE,
             IssuerRevRegRecord.STATE_FULL,  # can still publish revocation deltas
         ):
@@ -299,7 +298,7 @@ class IssuerRevRegRecord(BaseRecord):
                 write_ledger=write_ledger,
                 endorser_did=endorser_did,
             )
-        if self.state == IssuerRevRegRecord.STATE_UPLOADED:
+        if self.state == IssuerRevRegRecord.STATE_POSTED:
             self.state = IssuerRevRegRecord.STATE_ACTIVE  # initial entry activates
             async with profile.session() as session:
                 await self.save(
@@ -321,7 +320,7 @@ class IssuerRevRegRecord(BaseRecord):
         if not self.has_local_tails_file:
             raise RevocationError("Local tails file not found")
 
-        (upload_success, reason) = await tails_server.upload_tails_file(
+        (upload_success, result) = await tails_server.upload_tails_file(
             profile.context,
             self.revoc_reg_id,
             self.tails_local_path,
@@ -331,12 +330,9 @@ class IssuerRevRegRecord(BaseRecord):
         )
         if not upload_success:
             raise RevocationError(
-                f"Tails file for rev reg {self.revoc_reg_id} failed to upload: {reason}"
+                f"Tails file for rev reg {self.revoc_reg_id} failed to upload: {result}"
             )
-
-        self.state = IssuerRevRegRecord.STATE_UPLOADED
-        async with profile.session() as session:
-            await self.save(session, reason="Uploaded tails file")
+        await self.set_tails_file_public_uri(profile, result)
 
     async def mark_pending(self, session: ProfileSession, cred_rev_id: str) -> None:
         """Mark a credential revocation id as revoked pending publication to ledger.
