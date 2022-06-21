@@ -409,7 +409,7 @@ class V20PresManager:
         responder = self._profile.inject_or(BaseResponder)
 
         if responder:
-            pres_ack_message = V20PresAck()
+            pres_ack_message = V20PresAck(verification_result=pres_ex_record.verified)
             pres_ack_message._thread = {"thid": pres_ex_record.thread_id}
             pres_ack_message.assign_trace_decorator(
                 self._profile.settings, pres_ex_record.trace
@@ -445,7 +445,7 @@ class V20PresManager:
                     "role": V20PresExRecord.ROLE_PROVER,
                 },
             )
-
+            pres_ex_record.verified = message._verification_result
             pres_ex_record.state = V20PresExRecord.STATE_DONE
 
             await pres_ex_record.save(session, reason="receive v2.0 presentation ack")

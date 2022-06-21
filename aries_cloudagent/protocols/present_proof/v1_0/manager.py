@@ -472,7 +472,9 @@ class PresentationManager:
                 return
 
         if responder:
-            presentation_ack_message = PresentationAck()
+            presentation_ack_message = PresentationAck(
+                verification_result=presentation_exchange_record.verified
+            )
             presentation_ack_message._thread = {
                 "thid": presentation_exchange_record.thread_id
             }
@@ -515,7 +517,7 @@ class PresentationManager:
                     "role": V10PresentationExchange.ROLE_PROVER,
                 },
             )
-
+            presentation_exchange_record.verified = message._verification_result
             presentation_exchange_record.state = (
                 V10PresentationExchange.STATE_PRESENTATION_ACKED
             )
