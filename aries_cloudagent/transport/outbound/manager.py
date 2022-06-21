@@ -100,12 +100,12 @@ class OutboundTransportManager:
         for outbound_transport in outbound_transports:
             self.register(outbound_transport)
 
-    def register(self, module: str) -> str:
+    def register(self, module_name: str) -> str:
         """
         Register a new outbound transport by module path.
 
         Args:
-            module: Module name to register
+            module_name: Module name to register
 
         Raises:
             OutboundTransportRegistrationError: If the imported class cannot
@@ -117,13 +117,19 @@ class OutboundTransportManager:
 
         """
         try:
+            if "." in module_name:
+                package, module = module_name.split(".", 1)
+            else:
+                package = MODULE_BASE_PATH
+                module = module_name
+
             imported_class = ClassLoader.load_subclass_of(
-                BaseOutboundTransport, module, MODULE_BASE_PATH
+                BaseOutboundTransport, module, package
             )
-        except (ModuleLoadError, ClassNotFoundError):
+        except (ModuleLoadError, ClassNotFoundError) as e:
             raise OutboundTransportRegistrationError(
                 f"Outbound transport module {module} could not be resolved."
-            )
+            ) from e
 
         return self.register_class(imported_class)
 
