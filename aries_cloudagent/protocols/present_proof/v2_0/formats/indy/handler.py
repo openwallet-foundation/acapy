@@ -199,7 +199,10 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                     f"attr::{name}::value": proof_value,
                 }
 
-                if not any(r.items() <= criteria.items() for r in req_restrictions):
+                if (
+                    not any(r.items() <= criteria.items() for r in req_restrictions)
+                    and len(req_restrictions) != 0
+                ):
                     raise V20PresFormatHandlerError(
                         f"Presented attribute {reft} does not satisfy proof request "
                         f"restrictions {req_restrictions}"
@@ -234,7 +237,10 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                     },
                 }
 
-                if not any(r.items() <= criteria.items() for r in req_restrictions):
+                if (
+                    not any(r.items() <= criteria.items() for r in req_restrictions)
+                    and len(req_restrictions) != 0
+                ):
                     raise V20PresFormatHandlerError(
                         f"Presented attr group {reft} does not satisfy proof request "
                         f"restrictions {req_restrictions}"
@@ -287,7 +293,10 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                     "issuer_did": cred_def_id.split(":")[-5],
                 }
 
-                if not any(r.items() <= criteria.items() for r in req_restrictions):
+                if (
+                    not any(r.items() <= criteria.items() for r in req_restrictions)
+                    and len(req_restrictions) != 0
+                ):
                     raise V20PresFormatHandlerError(
                         f"Presented predicate {reft} does not satisfy proof request "
                         f"restrictions {req_restrictions}"
