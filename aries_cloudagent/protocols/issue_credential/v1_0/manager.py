@@ -7,6 +7,7 @@ import logging
 from typing import Mapping, Optional, Tuple
 
 from ....cache.base import BaseCache
+from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
@@ -23,10 +24,10 @@ from ....messaging.credential_definitions.util import (
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
 from ....revocation.indy import IndyRevocation
+from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
-from ....connections.models.conn_record import ConnRecord
 
 from ...out_of_band.v1_0.models.oob_record import OobRecord
 from .messages.credential_ack import CredentialAck
@@ -638,7 +639,7 @@ class CredentialManager:
                     await asyncio.sleep(2)
 
                 if revocable:
-                    revoc = IndyRevocation(self.profile)
+                    revoc = IndyRevocation(self._profile)
                     registry_info = await revoc.get_or_create_active_registry(
                         cred_def_id
                     )
@@ -658,7 +659,6 @@ class CredentialManager:
                         cred_offer_ser,
                         cred_req_ser,
                         cred_values,
-                        cred_ex_record.credential_exchange_id,
                         rev_reg_id,
                         tails_path,
                     )
@@ -667,7 +667,7 @@ class CredentialManager:
                     continue
 
                 if revocable and rev_reg.max_creds <= int(cred_rev_id):
-                    revoc = IndyRevocation(self.profile)
+                    revoc = IndyRevocation(self._profile)
                     await revoc.handle_full_registry(rev_reg_id)
                     del revoc
 
@@ -681,6 +681,22 @@ class CredentialManager:
                 ) from None
 
             async with self._profile.transaction() as txn:
+                if revocable and cred_rev_id:
+                    issuer_cr_rec = IssuerCredRevRecord(
+                        state=IssuerCredRevRecord.STATE_ISSUED,
+                        cred_ex_id=cred_ex_record.credential_exchange_id,
+                        cred_ex_version=IssuerCredRevRecord.VERSION_1,
+                        rev_reg_id=rev_reg_id,
+                        cred_rev_id=cred_rev_id,
+                    )
+                    await issuer_cr_rec.save(
+                        txn,
+                        reason=(
+                            "Created issuer cred rev record for "
+                            f"rev reg id {rev_reg_id}, index {cred_rev_id}"
+                        ),
+                    )
+
                 cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                     txn, cred_ex_record.credential_exchange_id, for_update=True
                 )

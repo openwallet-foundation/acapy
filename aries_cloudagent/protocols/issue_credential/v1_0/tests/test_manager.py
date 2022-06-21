@@ -945,7 +945,6 @@ class TestCredentialManager(AsyncTestCase):
                 INDY_OFFER,
                 INDY_CRED_REQ,
                 cred_values,
-                stored_exchange.credential_exchange_id,
                 REV_REG_ID,
                 "dummy-path",
             )
@@ -1031,7 +1030,6 @@ class TestCredentialManager(AsyncTestCase):
                 INDY_OFFER,
                 INDY_CRED_REQ,
                 cred_values,
-                stored_exchange.credential_exchange_id,
                 None,
                 None,
             )
@@ -1113,7 +1111,6 @@ class TestCredentialManager(AsyncTestCase):
                 INDY_OFFER,
                 INDY_CRED_REQ,
                 cred_values,
-                stored_exchange.credential_exchange_id,
                 REV_REG_ID,
                 "dummy-path",
             )

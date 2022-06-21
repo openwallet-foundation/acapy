@@ -25,8 +25,9 @@ from ......messaging.credential_definitions.util import (
 )
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
-from ......revocation.models.revocation_registry import RevocationRegistry
 from ......revocation.indy import IndyRevocation
+from ......revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
+from ......revocation.models.revocation_registry import RevocationRegistry
 from ......storage.base import BaseStorage
 
 from ...message_types import (
@@ -352,6 +353,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             schema = await ledger.get_schema(schema_id)
             cred_def = await ledger.get_credential_definition(cred_def_id)
         revocable = cred_def["value"].get("revocation")
+        result = None
 
         for attempt in range(max(retries, 1)):
             if attempt > 0:
@@ -380,7 +382,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     cred_offer,
                     cred_request,
                     cred_values,
-                    cred_ex_record.cred_ex_id,
                     rev_reg_id,
                     tails_path,
                 )
@@ -388,24 +389,45 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 # unlucky, another instance filled the registry first
                 continue
 
-            detail_record = V20CredExRecordIndy(
-                cred_ex_id=cred_ex_record.cred_ex_id,
-                rev_reg_id=rev_reg_id,
-                cred_rev_id=cred_rev_id,
-            )
-            async with self._profile.session() as session:
-                await detail_record.save(session, reason="v2.0 issue credential")
-
             if revocable and rev_reg.max_creds <= int(cred_rev_id):
                 revoc = IndyRevocation(self.profile)
                 await revoc.handle_full_registry(rev_reg_id)
                 del revoc
 
-            return self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
+            result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
+            break
 
-        raise V20CredFormatError(
-            f"Cred def '{cred_def_id}' has no active revocation registry"
-        )
+        if not result:
+            raise V20CredFormatError(
+                f"Cred def '{cred_def_id}' has no active revocation registry"
+            )
+
+        async with self._profile.transaction() as txn:
+            detail_record = V20CredExRecordIndy(
+                cred_ex_id=cred_ex_record.cred_ex_id,
+                rev_reg_id=rev_reg_id,
+                cred_rev_id=cred_rev_id,
+            )
+            await detail_record.save(txn, reason="v2.0 issue credential")
+
+            if revocable and cred_rev_id:
+                issuer_cr_rec = IssuerCredRevRecord(
+                    state=IssuerCredRevRecord.STATE_ISSUED,
+                    cred_ex_id=cred_ex_record.cred_ex_id,
+                    cred_ex_version=IssuerCredRevRecord.VERSION_2,
+                    rev_reg_id=rev_reg_id,
+                    cred_rev_id=cred_rev_id,
+                )
+                await issuer_cr_rec.save(
+                    txn,
+                    reason=(
+                        "Created issuer cred rev record for "
+                        f"rev reg id {rev_reg_id}, index {cred_rev_id}"
+                    ),
+                )
+            await txn.commit()
+
+        return result
 
     async def receive_credential(
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue

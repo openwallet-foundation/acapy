@@ -753,7 +753,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                 INDY_OFFER,
                 INDY_CRED_REQ,
                 attr_values,
-                cred_ex_record.cred_ex_id,
                 REV_REG_ID,
                 "dummy-path",
             )
@@ -837,7 +836,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                 INDY_OFFER,
                 INDY_CRED_REQ,
                 attr_values,
-                cred_ex_record.cred_ex_id,
                 None,
                 None,
             )
