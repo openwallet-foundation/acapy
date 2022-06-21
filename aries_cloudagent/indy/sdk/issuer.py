@@ -283,7 +283,7 @@ class IndySdkIssuer(IndyIssuer):
         tails_reader_handle = await create_tails_reader(tails_file_path)
 
         result_json = None
-        for cred_rev_id in cred_rev_ids:
+        for cred_rev_id in set(cred_rev_ids):
             with IndyErrorHandler(
                 "Exception when revoking credential", IndyIssuerError
             ):
