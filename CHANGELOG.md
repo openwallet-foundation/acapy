@@ -1,12 +1,21 @@
-# 0.7.4-RC3
+# 0.7.4-RC4
+
+## June 21, 2022
+
+**NOTE:** 0.7.4-rc4 contains a fix for a revocation-related issue introduced in
+0.7.4-rc3. We recommend updating to 0.7.4-rc4 immediately if you have been using
+0.7.4-rc3.
+
+- See issue: [\#1823](https://github.com/hyperledger/aries-cloudagent-python/issues/1823)
+- See Pull Request: [\#1827](https://github.com/hyperledger/aries-cloudagent-python/pull/1827)
 
 The 0.7.4 release consists largely of internal fixes to ACA-Py, big increases in
 performance resulting from the now recommended use of [Aries
-Askar](https://github.com/bcgov/aries-askar) instead of the Indy-SDK, plus a few
-enhancements. There have been a lot of groups exercising ACA-Py and the updates
-made in this release are a reflection of those efforts. We have PRs that have
-been contributed by 17 different people, which is likely a record for a single
-ACA-Py release.
+Askar](https://github.com/bcgov/aries-askar) instead of the Indy-SDK, tools for
+dealing with revocation-related issues, plus a number of enhancements. There have been
+a lot of groups exercising ACA-Py and the updates made in this release are a
+reflection of those efforts. We have PRs that have been contributed by 20
+different people, which is likely a record for a single ACA-Py release.
 
 The largest enhancement is in the area of the Hyperledger Indy endorser,
 enabling an instance of ACA-Py to act as an Endorser for Indy authors needed
@@ -61,8 +70,6 @@ As well there were a number of internal fixes, dependency updates, documentation
 and demo changes, developer tools and release management updates. All the usual
 stuff needed for a growing codebase.
 
-## June 16, 2022
-
 - Hyperledger Indy Endorser related updates:
   - Fix order of operations connecting faber to endorser [\#1716](https://github.com/hyperledger/aries-cloudagent-python/pull/1716) ([ianco](https://github.com/ianco))
   - Endorser support for updating DID endpoints on ledger [\#1696](https://github.com/hyperledger/aries-cloudagent-python/pull/1696) ([frostyfrog](https://github.com/frostyfrog))
@@ -90,6 +97,7 @@ stuff needed for a growing codebase.
 
 - Credential Revocation and Tails File Handling
   - Additional endpoints to get revocation details and fix "published" status [\#1783](https://github.com/hyperledger/aries-cloudagent-python/pull/1783) ([ianco](https://github.com/ianco))
+  - Fix IssuerCredRevRecord state update on revocation publish [\#1827](https://github.com/hyperledger/aries-cloudagent-python/pull/1827) ([andrewwhitehead](https://github.com/andrewwhitehead))
   - Fix put_file when the server returns a redirect [\#1808](https://github.com/hyperledger/aries-cloudagent-python/pull/1808) ([andrewwhitehead](https://github.com/andrewwhitehead))
   - Adjust revocation registry update procedure to shorten transactions [\#1804](https://github.com/hyperledger/aries-cloudagent-python/pull/1804) ([andrewwhitehead](https://github.com/andrewwhitehead))
   - fix: Resolve Revocation Notification environment variable name collision [\#1751](https://github.com/hyperledger/aries-cloudagent-python/pull/1751) ([frostyfrog](https://github.com/frostyfrog))
@@ -101,6 +109,9 @@ stuff needed for a growing codebase.
   - Feat/revocation notification v2 [\#1734](https://github.com/hyperledger/aries-cloudagent-python/pull/1734) ([frostyfrog](https://github.com/frostyfrog))
 
 - Issue Credential, Present Proof updates/fixes
+  - Fix: Present Proof v2 - check_proof_vs_proposal update to support proof request with restrictions [\#1820](https://github.com/hyperledger/aries-cloudagent-python/pull/1820) ([shaangill025](https://github.com/shaangill025))
+  - Fix: present-proof v1 send-proposal flow [\#1811](https://github.com/hyperledger/aries-cloudagent-python/pull/1811) ([shaangill025](https://github.com/shaangill025))
+  - Prover - verification outcome from presentation ack message [\#1757](https://github.com/hyperledger/aries-cloudagent-python/pull/1757) ([shaangill025](https://github.com/shaangill025))
   - feat: support connectionless exchange [\#1710](https://github.com/hyperledger/aries-cloudagent-python/pull/1710) ([TimoGlastra](https://github.com/TimoGlastra))
   - Fix: DIF proof proposal when creating bound presentation request \[Issue\#1687\] [\#1690](https://github.com/hyperledger/aries-cloudagent-python/pull/1690) ([shaangill025](https://github.com/shaangill025))
   - Fix DIF PresExch and OOB request_attach delete unused connection [\#1676](https://github.com/hyperledger/aries-cloudagent-python/pull/1676) ([shaangill025](https://github.com/shaangill025))
@@ -124,6 +135,8 @@ stuff needed for a growing codebase.
   - feat: create new JWT tokens and invalidate older for multitenancy [\#1725](https://github.com/hyperledger/aries-cloudagent-python/pull/1725) ([TimoGlastra](https://github.com/TimoGlastra))
   
 - Dependencies and internal code updates/fixes
+  - Update pyjwt to 2.4 [\#1829](https://github.com/hyperledger/aries-cloudagent-python/pull/1829) ([andrewwhitehead](https://github.com/andrewwhitehead))
+  - Fix external Outbound Transport loading code [\#1812](https://github.com/hyperledger/aries-cloudagent-python/pull/1812) ([frostyfrog](https://github.com/frostyfrog))
   - Fix iteration over key list, update Askar to 0.2.5 [\#1740](https://github.com/hyperledger/aries-cloudagent-python/pull/1740) ([andrewwhitehead](https://github.com/andrewwhitehead))
   - Fix: update IndyLedgerRequestsExecutor logic - multitenancy and basic base wallet type  [\#1700](https://github.com/hyperledger/aries-cloudagent-python/pull/1700) ([shaangill025](https://github.com/shaangill025))
   - Move database operations inside the session context [\#1633](https://github.com/hyperledger/aries-cloudagent-python/pull/1633) ([acuderman](https://github.com/acuderman))
@@ -139,6 +152,15 @@ stuff needed for a growing codebase.
   - Replace async workaround within document loader [\#1774](https://github.com/hyperledger/aries-cloudagent-python/pull/1774) ([frostyfrog](https://github.com/frostyfrog))
 
 - Documentation and Demo Updates
+  - Changelog, version and ReadTheDocs updates for 0.7.4-rc3 release [\#1817](https://github.com/hyperledger/aries-cloudagent-python/pull/1817) ([swcurran](https://github.com/swcurran))
+  - 0.7.4-rc2 update [\#1771](https://github.com/hyperledger/aries-cloudagent-python/pull/1771) ([swcurran](https://github.com/swcurran))
+  - Some ReadTheDocs File updates [\#1770](https://github.com/hyperledger/aries-cloudagent-python/pull/1770) ([swcurran](https://github.com/swcurran))
+  - 0.7.4-RC1 Changelog intro paragraph - fix copy/paste error [\#1753](https://github.com/hyperledger/aries-cloudagent-python/pull/1753) ([swcurran](https://github.com/swcurran))
+  - Fixing the intro paragraph and heading in the changelog of this 0.7.4RC1 [\#1752](https://github.com/hyperledger/aries-cloudagent-python/pull/1752) ([swcurran](https://github.com/swcurran))
+  - Updates to Changelog for 0.7.4. RC1 release [\#1747](https://github.com/hyperledger/aries-cloudagent-python/pull/1747) ([swcurran](https://github.com/swcurran))
+  - Prep for adding the 0.7.4-rc0 tag [\#1722](https://github.com/hyperledger/aries-cloudagent-python/pull/1722) ([swcurran](https://github.com/swcurran))
+  - Add troubleshooting document, include initial examples - ledger connection, out-of-sync RevReg [\#1818](https://github.com/hyperledger/aries-cloudagent-python/pull/1818) ([swcurran](https://github.com/swcurran))
+  - Update POST /present-proof/send-request to POST /present-proof-2.0/send-request [\#1824](https://github.com/hyperledger/aries-cloudagent-python/pull/1824) ([lineko](https://github.com/lineko))
   - Fetch from --genesis-url likely to fail in composed container [\#1746](https://github.com/hyperledger/aries-cloudagent-python/pull/1739) ([tdiesler](https://github.com/tdiesler))
   - Fixes logic for web hook formatter in Faber demo [\#1739](https://github.com/hyperledger/aries-cloudagent-python/pull/1739) ([amanji](https://github.com/amanji))
   - Multitenancy Docs Update [\#1706](https://github.com/hyperledger/aries-cloudagent-python/pull/1706) ([MonolithicMonk](https://github.com/MonolithicMonk))
@@ -155,7 +177,15 @@ stuff needed for a growing codebase.
   - Add pre-commit as optional developer tool [\#1671](https://github.com/hyperledger/aries-cloudagent-python/pull/1671) ([dbluhm](https://github.com/dbluhm))
   - run_docker start - pass environment variables [\#1715](https://github.com/hyperledger/aries-cloudagent-python/pull/1715) ([shaangill025](https://github.com/shaangill025))
 
-- Release management-related updates
+- Release management pull requests
+  - Update changelog and version for 0.7.4-rc4 [\#1830](https://github.com/hyperledger/aries-cloudagent-python/pull/1830) ([swcurran](https://github.com/swcurran))
+  - Changelog, version and ReadTheDocs updates for 0.7.4-rc3 release [\#1817](https://github.com/hyperledger/aries-cloudagent-python/pull/1817) ([swcurran](https://github.com/swcurran))
+  - 0.7.4-rc2 update [\#1771](https://github.com/hyperledger/aries-cloudagent-python/pull/1771) ([swcurran](https://github.com/swcurran))
+  - Some ReadTheDocs File updates [\#1770](https://github.com/hyperledger/aries-cloudagent-python/pull/1770) ([swcurran](https://github.com/swcurran))
+  - 0.7.4-RC1 Changelog intro paragraph - fix copy/paste error [\#1753](https://github.com/hyperledger/aries-cloudagent-python/pull/1753) ([swcurran](https://github.com/swcurran))
+  - Fixing the intro paragraph and heading in the changelog of this 0.7.4RC1 [\#1752](https://github.com/hyperledger/aries-cloudagent-python/pull/1752) ([swcurran](https://github.com/swcurran))
+  - Updates to Changelog for 0.7.4. RC1 release [\#1747](https://github.com/hyperledger/aries-cloudagent-python/pull/1747) ([swcurran](https://github.com/swcurran))
+  - Prep for adding the 0.7.4-rc0 tag [\#1722](https://github.com/hyperledger/aries-cloudagent-python/pull/1722) ([swcurran](https://github.com/swcurran))
   - Added missed new module -- upgrade -- to the RTD generated docs [\#1593](https://github.com/hyperledger/aries-cloudagent-python/pull/1593) ([swcurran](https://github.com/swcurran))
   - Doh....update the date in the Changelog for 0.7.3 [\#1592](https://github.com/hyperledger/aries-cloudagent-python/pull/1592) ([swcurran](https://github.com/swcurran))
 
