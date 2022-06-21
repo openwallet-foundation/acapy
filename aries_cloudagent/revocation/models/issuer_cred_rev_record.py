@@ -90,10 +90,15 @@ class IssuerCredRevRecord(BaseRecord):
         session: ProfileSession,
         rev_reg_id: str,
         cred_rev_id: str,
+        *,
+        for_update: bool = False,
     ) -> "IssuerCredRevRecord":
         """Retrieve an issuer cred rev record by rev reg id and cred rev id."""
         return await cls.retrieve_by_tag_filter(
-            session, {"rev_reg_id": rev_reg_id}, {"cred_rev_id": cred_rev_id}
+            session,
+            {"rev_reg_id": rev_reg_id},
+            {"cred_rev_id": cred_rev_id},
+            for_update=for_update,
         )
 
     @classmethod
