@@ -1301,7 +1301,7 @@ class TestPresentationManager(AsyncTestCase):
         self.profile.context.injector.clear_binding(BaseResponder)
         await self.manager.send_presentation_ack(exchange)
 
-    async def test_receive_presentation_ack(self):
+    async def test_receive_presentation_ack_a(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
 
         exchange_dummy = V10PresentationExchange()
@@ -1321,6 +1321,28 @@ class TestPresentationManager(AsyncTestCase):
             assert exchange_out.state == (
                 V10PresentationExchange.STATE_PRESENTATION_ACKED
             )
+
+    async def test_receive_presentation_ack_b(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+
+        exchange_dummy = V10PresentationExchange()
+        message = async_mock.MagicMock(_verification_result="true")
+
+        with async_mock.patch.object(
+            V10PresentationExchange, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V10PresentationExchange, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = exchange_dummy
+            exchange_out = await self.manager.receive_presentation_ack(
+                message, connection_record
+            )
+            save_ex.assert_called_once()
+
+            assert exchange_out.state == (
+                V10PresentationExchange.STATE_PRESENTATION_ACKED
+            )
+            assert exchange_out.verified == "true"
 
     async def test_receive_problem_report(self):
         connection_id = "connection-id"
