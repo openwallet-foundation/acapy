@@ -63,16 +63,16 @@ corrected, as follows:
 To address this issue, some new endpoints were added to ACA-Py in Release 0.7.4,
 as follows:
 
-- GET /revocation/registry/<id>/issued - counts of the number of issued/revoked
+- GET `/revocation/registry/<id>/issued` - counts of the number of issued/revoked
   within a registry
-- GET /revocation/registry/<id>/issued/details - details of all credentials
+- GET `/revocation/registry/<id>/issued/details` - details of all credentials
   issued/revoked within a registry
-- GET /revocation/registry/<id>/issued/indy_recs - calculated rev_reg_delta from
+- GET `/revocation/registry/<id>/issued/indy_recs` - calculated rev_reg_delta from
   the ledger
   - This is used to compare ledger revoked vs wallet revoked credentials, which
     is essentially the state of the RevReg on the ledger and in ACA-Py. Where
     there is a difference, we have an error.
-- PUT /revocation/registry/<id>/fix-revocation-entry-state - publish an update
+- PUT `/revocation/registry/<id>/fix-revocation-entry-state` - publish an update
   to the RevReg state on the ledger to bring it into alignment with what is in
   the ACA-Py instance.
   - There is a boolean parameter (`apply_ledger_update`) to control whether the
