@@ -3,6 +3,7 @@
 from typing import Any, Mapping, MutableMapping, Optional
 
 from .base import BaseSettings
+from .plugin_settings import PluginSettings
 
 
 class Settings(BaseSettings, MutableMapping[str, Any]):
@@ -99,3 +100,7 @@ class Settings(BaseSettings, MutableMapping[str, Any]):
     def update(self, other: Mapping[str, Any]):
         """Update the settings in place."""
         self._values.update(other)
+
+    def for_plugin(self, plugin: str, default: Optional[Mapping[str, Any]] = None):
+        """Retrieve settings for plugin."""
+        return PluginSettings.for_plugin(self, plugin, default)

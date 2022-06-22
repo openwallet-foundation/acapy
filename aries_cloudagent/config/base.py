@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Iterator, Mapping, Optional, Type, TypeVar
 
 from ..core.error import BaseError
-from .plugin_settings import PluginSettings
 
 InjectType = TypeVar("InjectType")
 
@@ -111,10 +110,6 @@ class BaseSettings(Mapping[str, Any]):
         """Provide a human readable representation of this object."""
         items = ("{}={}".format(k, self[k]) for k in self)
         return "<{}({})>".format(self.__class__.__name__, ", ".join(items))
-
-    def for_plugin(self, plugin: str, default: Optional[Mapping[str, Any]] = None):
-        """Retrieve settings for plugin."""
-        return PluginSettings.for_plugin(self, plugin, default)
 
 
 class InjectionError(ConfigError):
