@@ -596,11 +596,16 @@ class MediationManager:
             for record_for_removal in to_remove:
                 await record_for_removal.delete_record(session)
 
+    async def notify_keylist_updated(
+        self, connection_id: str, response: KeylistUpdateResponse
+    ):
+        """Notify of keylist update response received."""
         await self._profile.notify(
             self.KEYLIST_UPDATED_EVENT,
             {
                 "connection_id": connection_id,
-                "updated": [update.serialize() for update in results],
+                "thread_id": response._thread_id,
+                "updated": [update.serialize() for update in response.updated],
             },
         )
 
