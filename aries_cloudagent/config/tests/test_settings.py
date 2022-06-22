@@ -79,9 +79,7 @@ class TestSettings(TestCase):
         for key in plugin_setting_values:
             assert key in plugin_settings
             assert plugin_settings[key] == plugin_setting_values[key]
-            assert (
-                plugin_settings.get_value(self.test_key) == plugin_setting_values[key]
-            )
+            assert plugin_settings.get_value(key) == plugin_setting_values[key]
         with self.assertRaises(KeyError):
             plugin_settings["MISSING"]
         assert len(plugin_settings) == 5
