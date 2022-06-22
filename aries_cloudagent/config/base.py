@@ -20,7 +20,7 @@ class BaseSettings(Mapping[str, Any]):
     """Base settings class."""
 
     @abstractmethod
-    def get_value(self, *var_names, default=None):
+    def get_value(self, *var_names, default: Optional[Any] = None) -> Any:
         """Fetch a setting.
 
         Args:
@@ -32,7 +32,7 @@ class BaseSettings(Mapping[str, Any]):
 
         """
 
-    def get_bool(self, *var_names, default=None) -> bool:
+    def get_bool(self, *var_names, default: Optional[bool] = None) -> Optional[bool]:
         """Fetch a setting as a boolean value.
 
         Args:
@@ -43,12 +43,9 @@ class BaseSettings(Mapping[str, Any]):
         if value is not None:
             value = bool(value and value not in ("false", "False", "0"))
 
-        if value is None:
-            raise KeyError(f"{var_names} not found in settings")
-
         return value
 
-    def get_int(self, *var_names, default=None) -> int:
+    def get_int(self, *var_names, default: Optional[int] = None) -> Optional[int]:
         """Fetch a setting as an integer value.
 
         Args:
@@ -59,12 +56,9 @@ class BaseSettings(Mapping[str, Any]):
         if value is not None:
             value = int(value)
 
-        if value is None:
-            raise KeyError(f"{var_names} not found in settings")
-
         return value
 
-    def get_str(self, *var_names, default=None) -> str:
+    def get_str(self, *var_names, default: Optional[str] = None) -> Optional[str]:
         """Fetch a setting as a string value.
 
         Args:
@@ -74,9 +68,6 @@ class BaseSettings(Mapping[str, Any]):
         value = self.get_value(*var_names, default=default)
         if value is not None:
             value = str(value)
-
-        if value is None:
-            raise KeyError(f"{var_names} not found in settings")
 
         return value
 
