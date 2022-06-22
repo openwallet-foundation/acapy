@@ -1,7 +1,7 @@
 """Configuration base classes."""
 
 from abc import ABC, abstractmethod
-from typing import Mapping, Optional, Type, TypeVar
+from typing import Any, Iterator, Mapping, Optional, Type, TypeVar
 
 from ..core.error import BaseError
 
@@ -16,7 +16,7 @@ class SettingsError(ConfigError):
     """The base exception raised by `BaseSettings` implementations."""
 
 
-class BaseSettings(Mapping[str, object]):
+class BaseSettings(Mapping[str, Any]):
     """Base settings class."""
 
     @abstractmethod
@@ -42,6 +42,10 @@ class BaseSettings(Mapping[str, object]):
         value = self.get_value(*var_names, default)
         if value is not None:
             value = bool(value and value not in ("false", "False", "0"))
+
+        if value is None:
+            raise KeyError(f"{var_names} not found in settings")
+
         return value
 
     def get_int(self, *var_names, default=None) -> int:
@@ -54,6 +58,10 @@ class BaseSettings(Mapping[str, object]):
         value = self.get_value(*var_names, default)
         if value is not None:
             value = int(value)
+
+        if value is None:
+            raise KeyError(f"{var_names} not found in settings")
+
         return value
 
     def get_str(self, *var_names, default=None) -> str:
@@ -66,10 +74,14 @@ class BaseSettings(Mapping[str, object]):
         value = self.get_value(*var_names, default=default)
         if value is not None:
             value = str(value)
+
+        if value is None:
+            raise KeyError(f"{var_names} not found in settings")
+
         return value
 
     @abstractmethod
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         """Iterate settings keys."""
 
     def __getitem__(self, index):
@@ -91,7 +103,7 @@ class BaseSettings(Mapping[str, object]):
         """Produce a copy of the settings instance."""
 
     @abstractmethod
-    def extend(self, other: Mapping[str, object]) -> "BaseSettings":
+    def extend(self, other: Mapping[str, Any]) -> "BaseSettings":
         """Merge another mapping to produce a new settings instance."""
 
     def __repr__(self) -> str:
@@ -111,7 +123,7 @@ class BaseInjector(ABC):
     def inject(
         self,
         base_cls: Type[InjectType],
-        settings: Mapping[str, object] = None,
+        settings: Optional[Mapping[str, Any]] = None,
     ) -> InjectType:
         """
         Get the provided instance of a given class identifier.
@@ -129,7 +141,7 @@ class BaseInjector(ABC):
     def inject_or(
         self,
         base_cls: Type[InjectType],
-        settings: Mapping[str, object] = None,
+        settings: Optional[Mapping[str, Any]] = None,
         default: Optional[InjectType] = None,
     ) -> Optional[InjectType]:
         """
