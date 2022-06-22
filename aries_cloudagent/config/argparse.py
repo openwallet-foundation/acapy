@@ -1636,7 +1636,9 @@ class MultitenantGroup(ArgumentGroup):
             required=False,
             metavar="<REGEX>",
             help=(
-                "Patterns matching admin routes that should be permitted for base wallet."
+                "Patterns matching admin routes that should be permitted for "
+                "base wallet. The base wallet is preconfigured to have access to "
+                "essential endpoints. This argument should be used sparingly."
             ),
         )
 
