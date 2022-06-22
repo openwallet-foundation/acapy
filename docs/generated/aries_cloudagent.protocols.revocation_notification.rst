@@ -13,6 +13,7 @@ Subpackages
    :maxdepth: 4
 
    aries_cloudagent.protocols.revocation_notification.v1_0
+   aries_cloudagent.protocols.revocation_notification.v2_0
 
 Submodules
 ----------

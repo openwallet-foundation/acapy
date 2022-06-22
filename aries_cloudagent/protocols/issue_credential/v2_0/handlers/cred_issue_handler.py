@@ -1,5 +1,6 @@
 """Credential issue message handler."""
 
+from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolderError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -35,12 +36,26 @@ class V20CredIssueHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        if not context.connection_ready:
-            raise HandlerException("No connection established for credential issue")
+        # If connection is present it must be ready for use
+        if context.connection_record and not context.connection_ready:
+            raise HandlerException("Connection used for credential not ready")
+
+        # Find associated oob record
+        oob_processor = context.inject(OobMessageProcessor)
+        oob_record = await oob_processor.find_oob_record_for_inbound_message(context)
+
+        # Either connection or oob context must be present
+        if not context.connection_record and not oob_record:
+            raise HandlerException(
+                "No connection or associated connectionless exchange found for credential"
+            )
 
         cred_manager = V20CredManager(context.profile)
         cred_ex_record = await cred_manager.receive_credential(
-            context.message, context.connection_record.connection_id
+            context.message,
+            context.connection_record.connection_id
+            if context.connection_record
+            else None,
         )  # mgr only finds, saves record: on exception, saving null state is hopeless
 
         r_time = trace_event(

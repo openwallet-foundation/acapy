@@ -37,9 +37,14 @@ class PresentationProposalHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        if not context.connection_ready:
+        if not context.connection_record:
             raise HandlerException(
-                "No connection established for presentation proposal"
+                "Connectionless not supported for presentation proposal"
+            )
+        # If connection is present it must be ready for use
+        elif not context.connection_ready:
+            raise HandlerException(
+                "Connection used for presentation proposal not ready"
             )
 
         presentation_manager = PresentationManager(profile)

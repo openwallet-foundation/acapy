@@ -401,6 +401,9 @@ def step_impl(context, agent_name, schema_name):
 @when(
     '"{holder}" has an issued {schema_name} credential {credential_data} from "{issuer}"'
 )
+@then(
+    '"{holder}" has an issued {schema_name} credential {credential_data} from "{issuer}"'
+)
 def step_impl(context, holder, schema_name, credential_data, issuer):
     context.execute_steps(
         '''

@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields, validate
 
@@ -60,7 +60,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         self,
         *,
         presentation_exchange_id: str = None,
-        connection_id: str = None,
+        connection_id: Optional[str] = None,
         thread_id: str = None,
         initiator: str = None,
         role: str = None,

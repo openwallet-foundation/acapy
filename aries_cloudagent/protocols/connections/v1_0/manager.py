@@ -1,8 +1,10 @@
 """Classes to manage connections."""
 
 import logging
-from typing import Coroutine, Sequence, Tuple, cast
+from typing import Coroutine, Optional, Sequence, Tuple, cast
 
+
+from ....core.oob_processor import OobMessageProcessor
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
@@ -232,10 +234,10 @@ class ConnectionManager(BaseConnectionManager):
     async def receive_invitation(
         self,
         invitation: ConnectionInvitation,
-        their_public_did: str = None,
-        auto_accept: bool = None,
-        alias: str = None,
-        mediation_id: str = None,
+        their_public_did: Optional[str] = None,
+        auto_accept: Optional[bool] = None,
+        alias: Optional[str] = None,
+        mediation_id: Optional[str] = None,
     ) -> ConnRecord:
         """
         Create a new connection record to track a received invitation.
@@ -545,6 +547,10 @@ class ConnectionManager(BaseConnectionManager):
         async with self.profile.session() as session:
             # Attach the connection request so it can be found and responded to
             await connection.attach_request(session, request)
+
+        # Clean associated oob record if not needed anymore
+        oob_processor = self.profile.inject(OobMessageProcessor)
+        await oob_processor.clean_finished_oob_record(self.profile, request)
 
         return connection
 

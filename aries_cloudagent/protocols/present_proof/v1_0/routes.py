@@ -36,7 +36,7 @@ from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSche
 from ....wallet.error import WalletNotFoundError
 
 from . import problem_report_for_record, report_problem
-from .manager import PresentationManager
+from .manager import PresentationManager, PresentationManagerError
 from .message_types import ATTACH_DECO_IDS, PRESENTATION_REQUEST, SPEC_URI
 from .messages.presentation_problem_report import ProblemReportReason
 from .messages.presentation_proposal import PresentationProposal
@@ -477,7 +477,6 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
 
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    outbound_handler = request["outbound_message_router"]
 
     body = await request.json()
 
@@ -519,8 +518,6 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
         # other party does not care about our false protocol start
         raise web.HTTPBadRequest(reason=err.roll_up)
-
-    await outbound_handler(presentation_request_message, connection_id=None)
 
     trace_event(
         context.settings,
@@ -753,14 +750,20 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
                 )
             )
 
-        connection_id = pres_ex_record.connection_id
-        try:
-            connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
-        except StorageNotFoundError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+        # Fetch connection if exchange has record
+        connection_record = None
+        if pres_ex_record.connection_id:
+            try:
+                connection_record = await ConnRecord.retrieve_by_id(
+                    session, pres_ex_record.connection_id
+                )
+            except StorageNotFoundError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    if not connection_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+    if connection_record and not connection_record.is_ready:
+        raise web.HTTPForbidden(
+            reason=f"Connection {connection_record.connection_id} not ready"
+        )
 
     try:
         presentation_manager = PresentationManager(profile)
@@ -801,7 +804,9 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         context.settings,
         trace_msg,
     )
-    await outbound_handler(presentation_message, connection_id=connection_id)
+    await outbound_handler(
+        presentation_message, connection_id=pres_ex_record.connection_id
+    )
 
     trace_event(
         context.settings,
@@ -871,6 +876,8 @@ async def presentation_exchange_verify_presentation(request: web.BaseRequest):
             pres_ex_record,
             outbound_handler,
         )
+    except PresentationManagerError as err:
+        return web.HTTPBadRequest(reason=err.roll_up)
 
     trace_event(
         context.settings,

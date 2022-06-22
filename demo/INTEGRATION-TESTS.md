@@ -17,10 +17,12 @@ cd indy-tails-server/docker
 cd ../..
 git clone https://github.com/hyperledger/aries-cloudagent-python
 cd aries-cloudagent-python/demo
-./run_bdd
+./run_bdd -t ~@taa_required
 ```
 
 Note that an Indy ledger and tails server are both required (these can also be specified using environment variables).
+
+Note also that some tests require a ledger with TAA enabled, how to run these tests will be described later.
 
 By default the test suite runs using a default (SQLite) wallet, to run the tests using postgres run the following:
 
@@ -33,7 +35,7 @@ ACAPY_ARG_FILE=postgres-indy-args.yml ./run_bdd
 To run the tests against the back-end `askar` libraries (as opposed to indy-sdk) run the following:
 
 ```bash
-BDD_EXTRA_AGENT_ARGS="{\"wallet-type\":\"askar\"}" ./run_bdd
+BDD_EXTRA_AGENT_ARGS="{\"wallet-type\":\"askar\"}" ./run_bdd -t ~@taa_required
 ```
 
 (Note that `wallet-type` is currently the only extra argument supported.)
@@ -42,6 +44,29 @@ You can run individual tests by specifying the tag(s):
 
 ```bash
 ./run_bdd -t @T001-AIP10-RFC0037
+```
+
+## Running Integration Tests which require TAA
+
+To run a local von-network with TAA enabled,run the following:
+
+```bash
+git clone https://github.com/bcgov/von-network
+cd von-network
+./manage build
+./manage start --taa-sample --logs
+```
+
+You can then run the TAA-enabled tests as follows:
+
+```bash
+./run_bdd -t @taa_required
+```
+
+or:
+
+```bash
+BDD_EXTRA_AGENT_ARGS="{\"wallet-type\":\"askar\"}" ./run_bdd -t @taa_required
 ```
 
 ## Aca-py Integration Tests vs Aries Agent Test Harness (AATH)

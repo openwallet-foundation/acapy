@@ -1087,15 +1087,22 @@ async def present_proof_send_presentation(request: web.BaseRequest):
             )
         )
 
-    connection_id = pres_ex_record.connection_id
-    try:
-        async with profile.session() as session:
-            conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    # Fetch connection if exchange has record
+    conn_record = None
+    if pres_ex_record.connection_id:
+        try:
+            async with profile.session() as session:
 
-    if not conn_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+                conn_record = await ConnRecord.retrieve_by_id(
+                    session, pres_ex_record.connection_id
+                )
+        except StorageNotFoundError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    if conn_record and not conn_record.is_ready:
+        raise web.HTTPForbidden(
+            reason=f"Connection {pres_ex_record.connection_id} not ready"
+        )
 
     pres_manager = V20PresManager(profile)
     try:
@@ -1129,7 +1136,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         context.settings,
         trace_msg,
     )
-    await outbound_handler(pres_message, connection_id=connection_id)
+    await outbound_handler(pres_message, connection_id=pres_ex_record.connection_id)
 
     trace_event(
         context.settings,
