@@ -232,6 +232,8 @@ class TestArgParse(AsyncTestCase):
                 "secret",
                 "--multitenancy-config",
                 '{"wallet_type":"askar","wallet_name":"test"}',
+                "--base-wallet-routes",
+                "/my_route",
             ]
         )
 
@@ -241,6 +243,7 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("multitenant.jwt_secret") == "secret"
         assert settings.get("multitenant.wallet_type") == "askar"
         assert settings.get("multitenant.wallet_name") == "test"
+        assert settings.get("multitenant.base_wallet_routes") == ["/my_route"]
 
     async def test_endorser_settings(self):
         """Test required argument parsing."""
