@@ -55,13 +55,17 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::actionmenu::perform-menu-action": "perform-menu-action",
 }
 
+
 def get_aca_py_base_url():
-    aca_py_base_url= ""
+    """Determine swaggerBaseUrl depending on if ACA_PY_BASE_URL env value exists."""
+    aca_py_base_url = ""
     if environ.get("ACA_PY_BASE_URL") is not None:
         aca_py_base_url = environ.get("ACA_PY_BASE_URL")
     return aca_py_base_url
 
+
 ACA_PY_BASE_URL = get_aca_py_base_url()
+
 
 class AdminModulesSchema(OpenAPISchema):
     """Schema for the modules endpoint."""
