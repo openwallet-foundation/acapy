@@ -1629,6 +1629,16 @@ class MultitenantGroup(ArgumentGroup):
                 '"wallet_name" is only used when "wallet_type" is "askar-profile"'
             ),
         )
+        parser.add_argument(
+            "--base-wallet-routes",
+            type=str,
+            nargs="+",
+            required=False,
+            metavar="<REGEX>",
+            help=(
+                "Patterns matching admin routes that should be permitted for base wallet."
+            ),
+        )
 
     def get_settings(self, args: Namespace):
         """Extract multitenant settings."""
@@ -1663,6 +1673,9 @@ class MultitenantGroup(ArgumentGroup):
                     settings[
                         "multitenant.key_derivation_method"
                     ] = multitenancyConfig.get("key_derivation_method")
+
+            if args.base_wallet_routes:
+                settings["multitenant.base_wallet_routes"] = args.base_wallet_routes
 
         return settings
 
