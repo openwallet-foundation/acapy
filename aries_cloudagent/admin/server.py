@@ -269,7 +269,6 @@ class AdminServer(BaseAdminServer):
         # This should be enforced during parameter parsing but to be sure,
         # we check here.
         assert self.admin_insecure_mode ^ bool(self.admin_api_key)
-        
         def is_unprotected_path(path: str):
             return path in [
                 "/api/doc",
