@@ -80,6 +80,10 @@ class PresentationRequestHandler(BaseHandler):
                         "connection_id": connection_id,
                     },
                 )  # holder initiated via proposal
+                presentation_exchange_record.presentation_request = indy_proof_request
+                presentation_exchange_record.presentation_request_dict = (
+                    context.message.serialize()
+                )
         except StorageNotFoundError:  # verifier sent this request free of any proposal
             presentation_exchange_record = V10PresentationExchange(
                 connection_id=connection_id,
@@ -94,7 +98,6 @@ class PresentationRequestHandler(BaseHandler):
                 trace=(context.message._trace is not None),
             )
 
-        presentation_exchange_record.presentation_request = indy_proof_request
         presentation_exchange_record = await presentation_manager.receive_request(
             presentation_exchange_record
         )  # mgr only saves record: on exception, saving state null is hopeless

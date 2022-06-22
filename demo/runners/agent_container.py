@@ -99,6 +99,10 @@ class AriesAgent(DemoAgent):
         print("handle_oob_invitation()")
         pass
 
+    async def handle_out_of_band(self, message):
+        print("handle_out_of_band()")
+        pass
+
     async def handle_connection_reuse(self, message):
         # we are reusing an existing connection, set our status to the existing connection
         if not self._connection_ready.done():

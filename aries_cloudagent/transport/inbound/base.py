@@ -19,6 +19,7 @@ class BaseInboundTransport(ABC):
         create_session: Callable,
         *,
         max_message_size: int = 0,
+        is_external: bool = False,
         wire_format: BaseWireFormat = None,
         root_profile: Profile = None,
     ):
@@ -35,6 +36,7 @@ class BaseInboundTransport(ABC):
         self._scheme = scheme
         self.wire_format: BaseWireFormat = wire_format
         self.root_profile: Profile = root_profile
+        self._is_external = is_external
 
     @property
     def max_message_size(self):
@@ -45,6 +47,11 @@ class BaseInboundTransport(ABC):
     def scheme(self):
         """Accessor for this transport's scheme."""
         return self._scheme
+
+    @property
+    def is_external(self):
+        """Accessor for this transport's is_external."""
+        return self._is_external
 
     def create_session(
         self,

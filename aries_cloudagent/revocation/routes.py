@@ -1337,16 +1337,13 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
             profile,
             f"{tails_base_url}/{registry_record.revoc_reg_id}",
         )
-        async with profile.session() as session:
-            rev_reg_resp = await registry_record.send_def(
-                session.profile,
-                write_ledger=write_ledger,
-                endorser_did=endorser_did,
-            )
-    except RevocationError as e:
-        raise RevocationError(e.message) from e
-    except RevocationNotSupportedError as e:
-        raise RevocationNotSupportedError(reason=e.message) from e
+        rev_reg_resp = await registry_record.send_def(
+            profile,
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
+        )
+    except RevocationError:
+        raise
 
     if not create_transaction_for_endorser:
         meta_data = event.payload
@@ -1384,19 +1381,18 @@ async def on_revocation_registry_event(profile: Profile, event: Event):
             except (StorageError, TransactionManagerError) as err:
                 raise TransactionManagerError(reason=err.roll_up) from err
 
-            async with profile.session() as session:
-                responder = session.inject_or(BaseResponder)
-                if responder:
-                    await responder.send(
-                        revo_transaction_request,
-                        connection_id=connection.connection_id,
-                    )
-                else:
-                    LOGGER.warning(
-                        "Configuration has no BaseResponder: cannot update "
-                        "revocation on cred def %s",
-                        cred_def_id,
-                    )
+            responder = profile.inject_or(BaseResponder)
+            if responder:
+                await responder.send(
+                    revo_transaction_request,
+                    connection_id=connection.connection_id,
+                )
+            else:
+                LOGGER.warning(
+                    "Configuration has no BaseResponder: cannot update "
+                    "revocation on cred def %s",
+                    cred_def_id,
+                )
 
 
 async def on_revocation_entry_event(profile: Profile, event: Event):
@@ -1429,10 +1425,8 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
             write_ledger=write_ledger,
             endorser_did=endorser_did,
         )
-    except RevocationError as e:
-        raise RevocationError(e.message) from e
-    except RevocationNotSupportedError as e:
-        raise RevocationError(e.message) from e
+    except RevocationError:
+        raise
 
     if not create_transaction_for_endorser:
         meta_data = event.payload
@@ -1468,19 +1462,18 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
             except (StorageError, TransactionManagerError) as err:
                 raise RevocationError(err.roll_up) from err
 
-            async with profile.session() as session:
-                responder = session.inject_or(BaseResponder)
-                if responder:
-                    await responder.send(
-                        revo_transaction_request,
-                        connection_id=connection.connection_id,
-                    )
-                else:
-                    LOGGER.warning(
-                        "Configuration has no BaseResponder: cannot update "
-                        "revocation on cred def %s",
-                        event.payload["endorser"]["cred_def_id"],
-                    )
+            responder = profile.inject_or(BaseResponder)
+            if responder:
+                await responder.send(
+                    revo_transaction_request,
+                    connection_id=connection.connection_id,
+                )
+            else:
+                LOGGER.warning(
+                    "Configuration has no BaseResponder: cannot update "
+                    "revocation on cred def %s",
+                    event.payload["endorser"]["cred_def_id"],
+                )
 
 
 async def on_revocation_tails_file_event(profile: Profile, event: Event):

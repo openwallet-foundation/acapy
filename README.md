@@ -78,6 +78,19 @@ An ACA-Py instance puts together an OpenAPI-documented REST interface based on t
 
 Technical note: the administrative API exposed by the agent for the controller to use must be protected with an API key (using the --admin-api-key command line arg) or deliberately left unsecured using the --admin-insecure-mode command line arg. The latter should not be used other than in development if the API is not otherwise secured.
 
+## Troubleshooting
+
+There are a number of resources for getting help with ACA-Py and troubleshooting
+any problems you might run into. The [Troubleshooting](Troubleshooting.md)
+document contains some guidance about issues that have been experienced in the
+past. Feel free to submit PRs to supplement the troubleshooting document!
+Searching the [ACA-Py GitHub
+issues](https://github.com/hyperledger/aries-cloudagent-python/issues) will
+often uncover challenges that others have experienced, often with answers to
+solving those challenges. As well, there is the "aries-cloudagent-python"
+channel on the Hyperledger Discord chat server ([invitation
+here](https://discord.gg/hyperledger)).
+
 ## Credit
 
 The initial implementation of ACA-Py was developed by the Government of British Columbia’s Digital Trust Team in Canada. To learn more about what’s happening with decentralized identity and digital trust in British Columbia, a new website will be launching and the link will be made available here.

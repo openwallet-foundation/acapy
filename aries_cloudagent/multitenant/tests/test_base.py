@@ -443,7 +443,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
 
         expected_token = jwt.encode(
             {"wallet_id": wallet_record.wallet_id, "iat": iat}, "very_secret_jwt"
-        ).decode()
+        )
 
         with async_mock.patch.object(test_module, "datetime") as mock_datetime:
             mock_datetime.utcnow.return_value = utc_now
@@ -472,7 +472,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
                 "wallet_key": "test_key",
             },
             "very_secret_jwt",
-        ).decode()
+        )
 
         with async_mock.patch.object(test_module, "datetime") as mock_datetime:
             mock_datetime.utcnow.return_value = utc_now
@@ -484,7 +484,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
     async def test_get_profile_for_token_invalid_token_raises(self):
         self.profile.settings["multitenant.jwt_secret"] = "very_secret_jwt"
 
-        token = jwt.encode({"wallet_id": "test"}, "some_random_key").decode()
+        token = jwt.encode({"wallet_id": "test"}, "some_random_key")
 
         with self.assertRaises(jwt.InvalidTokenError):
             await self.manager.get_profile_for_token(self.profile.context, token)
@@ -499,7 +499,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         await wallet_record.save(session)
         token = jwt.encode(
             {"wallet_id": wallet_record.wallet_id}, "very_secret_jwt", algorithm="HS256"
-        ).decode()
+        )
 
         with self.assertRaises(WalletKeyMissingError):
             await self.manager.get_profile_for_token(self.profile.context, token)
@@ -516,7 +516,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
 
         token = jwt.encode(
             {"wallet_id": wallet_record.wallet_id}, "very_secret_jwt", algorithm="HS256"
-        ).decode()
+        )
 
         with async_mock.patch.object(
             self.manager, "get_wallet_profile"
@@ -553,7 +553,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             {"wallet_id": wallet_record.wallet_id, "iat": iat},
             "very_secret_jwt",
             algorithm="HS256",
-        ).decode()
+        )
 
         with async_mock.patch.object(
             self.manager, "get_wallet_profile"
@@ -591,7 +591,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             {"wallet_id": wallet_record.wallet_id, "iat": 200},
             "very_secret_jwt",
             algorithm="HS256",
-        ).decode()
+        )
 
         with async_mock.patch.object(
             self.manager, "get_wallet_profile"
@@ -627,7 +627,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             {"wallet_id": wallet_record.wallet_id, "wallet_key": "wallet_key"},
             "very_secret_jwt",
             algorithm="HS256",
-        ).decode()
+        )
 
         with async_mock.patch.object(
             self.manager, "get_wallet_profile"

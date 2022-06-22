@@ -357,7 +357,7 @@ class BaseMultitenantManager(ABC):
 
             jwt_payload["wallet_key"] = wallet_key
 
-        token = jwt.encode(jwt_payload, jwt_secret, algorithm="HS256").decode()
+        token = jwt.encode(jwt_payload, jwt_secret, algorithm="HS256")
 
         # Store iat for verification later on
         wallet_record.jwt_iat = iat
