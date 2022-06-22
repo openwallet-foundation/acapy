@@ -1620,13 +1620,15 @@ class MultitenantGroup(ArgumentGroup):
         parser.add_argument(
             "--multitenancy-config",
             type=str,
-            metavar="<multitenancy-config>",
+            nargs="+",
+            metavar="key=value",
             env_var="ACAPY_MULTITENANCY_CONFIGURATION",
             help=(
-                'Specify multitenancy configuration ("wallet_type" and "wallet_name"). '
-                'For example: "{"wallet_type":"askar-profile","wallet_name":'
-                '"askar-profile-name", "key_derivation_method":"RAW"}"'
-                '"wallet_name" is only used when "wallet_type" is "askar-profile"'
+                "Specify multitenancy configuration in key=value pairs. "
+                'For example: "wallet_type=askar-profile wallet_name=askar-profile-name" '
+                "Possible values: wallet_name, wallet_key, cache_size, "
+                'key_derivation_method. "wallet_name" is only used when '
+                '"wallet_type" is "askar-profile"'
             ),
         )
 
@@ -1647,22 +1649,37 @@ class MultitenantGroup(ArgumentGroup):
                 settings["multitenant.admin_enabled"] = True
 
             if args.multitenancy_config:
-                multitenancyConfig = json.loads(args.multitenancy_config)
+                # Legacy support
+                if (
+                    len(args.multitenancy_config) == 1
+                    and args.multitenancy_config[0][0] == "{"
+                ):
+                    multitenancy_config = json.loads(args.multitenancy_config[0])
+                    if multitenancy_config.get("wallet_type"):
+                        settings["multitenant.wallet_type"] = multitenancy_config.get(
+                            "wallet_type"
+                        )
 
-                if multitenancyConfig.get("wallet_type"):
-                    settings["multitenant.wallet_type"] = multitenancyConfig.get(
-                        "wallet_type"
-                    )
+                    if multitenancy_config.get("wallet_name"):
+                        settings["multitenant.wallet_name"] = multitenancy_config.get(
+                            "wallet_name"
+                        )
 
-                if multitenancyConfig.get("wallet_name"):
-                    settings["multitenant.wallet_name"] = multitenancyConfig.get(
-                        "wallet_name"
-                    )
+                    if multitenancy_config.get("cache_size"):
+                        settings["multitenant.cache_size"] = multitenancy_config.get(
+                            "cache_size"
+                        )
 
-                if multitenancyConfig.get("key_derivation_method"):
-                    settings[
-                        "multitenant.key_derivation_method"
-                    ] = multitenancyConfig.get("key_derivation_method")
+                    if multitenancy_config.get("key_derivation_method"):
+                        settings[
+                            "multitenant.key_derivation_method"
+                        ] = multitenancy_config.get("key_derivation_method")
+
+                else:
+                    for value_str in args.multitenancy_config:
+                        key, value = value_str.split("=", maxsplit=1)
+                        value = yaml.safe_load(value)
+                        settings[f"multitenant.{key}"] = value
 
         return settings
 
