@@ -17,6 +17,7 @@ from aiohttp_apispec import (
 )
 import aiohttp_cors
 import jwt
+from os import environ
 from marshmallow import fields
 
 from ..config.injection_context import InjectionContext
@@ -54,6 +55,13 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::actionmenu::perform-menu-action": "perform-menu-action",
 }
 
+def get_aca_py_base_url():
+    aca_py_base_url= ""
+    if environ.get("ACA_PY_BASE_URL") is not None:
+        aca_py_base_url = environ.get("ACA_PY_BASE_URL")
+    return aca_py_base_url
+
+ACA_PY_BASE_URL = get_aca_py_base_url()
 
 class AdminModulesSchema(OpenAPISchema):
     """Schema for the modules endpoint."""
@@ -261,16 +269,15 @@ class AdminServer(BaseAdminServer):
         # This should be enforced during parameter parsing but to be sure,
         # we check here.
         assert self.admin_insecure_mode ^ bool(self.admin_api_key)
-
         def is_unprotected_path(path: str):
             return path in [
                 "/api/doc",
-                "/api/docs/swagger.json",
+                ACA_PY_BASE_URL + "/api/docs/swagger.json",
                 "/favicon.ico",
                 "/ws",  # ws handler checks authentication
                 "/status/live",
                 "/status/ready",
-            ] or path.startswith("/static/swagger/")
+            ] or path.startswith(ACA_PY_BASE_URL + "/static/swagger/")
 
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
@@ -433,7 +440,13 @@ class AdminServer(BaseAdminServer):
         version_string = f"v{__version__}"
 
         setup_aiohttp_apispec(
-            app=app, title=agent_label, version=version_string, swagger_path="/api/doc"
+            app=app,
+            title=agent_label,
+            version=version_string,
+            swagger_path="/api/doc",
+            static_path=ACA_PY_BASE_URL + "/static/swagger",
+            url=ACA_PY_BASE_URL + "/api/docs/swagger.json",
+            prefix=ACA_PY_BASE_URL,
         )
         app.on_startup.append(self.on_startup)
 
