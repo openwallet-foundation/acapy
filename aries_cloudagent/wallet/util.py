@@ -86,6 +86,15 @@ def full_verkey(did: str, abbr_verkey: str) -> str:
     )
 
 
+def default_did_from_verkey(verkey: str) -> str:
+    """Given a verkey, return the default indy did.
+
+    By default the did is the first 16 bytes of the verkey.
+    """
+    did = bytes_to_b58(b58_to_bytes(verkey)[:16])
+    return did
+
+
 def abbr_verkey(full_verkey: str, did: str = None) -> str:
     """Given a full verkey and DID, return the abbreviated verkey."""
     did_len = len(b58_to_bytes(did.split(":")[-1])) if did else 16

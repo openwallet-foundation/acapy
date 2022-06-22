@@ -351,6 +351,50 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_response.assert_called_once_with(mock_cx_rec.serialize.return_value)
 
+    async def test_credential_exchange_send_request_no_conn_no_holder_did(self):
+        self.request.json = async_mock.CoroutineMock(return_value={})
+        self.request.match_info = {"cred_ex_id": "dummy"}
+
+        with async_mock.patch.object(
+            test_module, "OobRecord", autospec=True
+        ) as mock_oob_rec, async_mock.patch.object(
+            test_module, "default_did_from_verkey", autospec=True
+        ) as mock_default_did_from_verkey, async_mock.patch.object(
+            test_module, "V20CredManager", autospec=True
+        ) as mock_cred_mgr, async_mock.patch.object(
+            test_module, "V20CredExRecord", autospec=True
+        ) as mock_cred_ex, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+
+            mock_oob_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(our_recipient_key="our-recipient_key")
+            )
+            mock_default_did_from_verkey.return_value = "holder-did"
+
+            mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
+            mock_cred_ex.retrieve_by_id.return_value.state = (
+                mock_cred_ex.STATE_OFFER_RECEIVED
+            )
+            mock_cred_ex.retrieve_by_id.return_value.connection_id = None
+
+            mock_cred_ex_record = async_mock.MagicMock()
+
+            mock_cred_mgr.return_value.create_request.return_value = (
+                mock_cred_ex_record,
+                async_mock.MagicMock(),
+            )
+
+            await test_module.credential_exchange_send_bound_request(self.request)
+
+            mock_cred_mgr.return_value.create_request.assert_called_once_with(
+                mock_cred_ex.retrieve_by_id.return_value, "holder-did"
+            )
+            mock_response.assert_called_once_with(
+                mock_cred_ex_record.serialize.return_value
+            )
+            mock_default_did_from_verkey.assert_called_once_with("our-recipient_key")
+
     async def test_credential_exchange_send_no_conn_record(self):
         connection_id = "connection-id"
         preview_spec = {"attributes": [{"name": "attr", "value": "value"}]}

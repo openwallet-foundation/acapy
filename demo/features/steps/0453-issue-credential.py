@@ -30,6 +30,7 @@ from runners.support.agent import (
 
 
 @given('"{issuer}" is ready to issue a credential for {schema_name}')
+@then('"{issuer}" is ready to issue a credential for {schema_name}')
 def step_impl(context, issuer, schema_name):
     agent = context.active_agents[issuer]
 
@@ -104,6 +105,122 @@ def step_impl(context, holder):
 
     # pause for a few seconds
     async_sleep(3.0)
+
+
+@given('"{holder}" successfully revoked the credential')
+@when('"{holder}" successfully revoked the credential')
+@then('"{holder}" successfully revoked the credential')
+def step_impl(context, holder):
+    agent = context.active_agents[holder]
+
+    # get the required revocation info from the last credential exchange
+    cred_exchange = context.cred_exchange
+    print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
+    print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
+    print("connection_id:", cred_exchange["cred_ex_record"]["connection_id"])
+
+    # check wallet status
+    wallet_revoked_creds = agent_container_GET(
+        agent["agent"],
+        "/revocation/registry/"
+        + cred_exchange["indy"]["rev_reg_id"]
+        + "/issued/details",
+    )
+    print("wallet_revoked_creds:", wallet_revoked_creds)
+    matched = False
+    for rec in wallet_revoked_creds:
+        if rec["cred_rev_id"] == cred_exchange["indy"]["cred_rev_id"]:
+            matched = True
+            assert rec["state"] == "revoked"
+    assert matched
+
+    # check ledger status
+    ledger_revoked_creds = agent_container_GET(
+        agent["agent"],
+        "/revocation/registry/"
+        + cred_exchange["indy"]["rev_reg_id"]
+        + "/issued/indy_recs",
+    )
+    assert (
+        int(cred_exchange["indy"]["cred_rev_id"])
+        in ledger_revoked_creds["rev_reg_delta"]["value"]["revoked"]
+    )
+
+
+@given('"{holder}" attempts to revoke the credential')
+@when('"{holder}" attempts to revoke the credential')
+@then('"{holder}" attempts to revoke the credential')
+def step_impl(context, holder):
+    agent = context.active_agents[holder]
+
+    # get the required revocation info from the last credential exchange
+    cred_exchange = context.cred_exchange
+
+    cred_exchange = agent_container_GET(
+        agent["agent"], "/issue-credential-2.0/records/" + cred_exchange["cred_ex_id"]
+    )
+    context.cred_exchange = cred_exchange
+    print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
+    print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
+    print("connection_id:", cred_exchange["cred_ex_record"]["connection_id"])
+
+    # revoke the credential
+    try:
+        revoke_status = agent_container_POST(
+            agent["agent"],
+            "/revocation/revoke",
+            data={
+                "rev_reg_id": cred_exchange["indy"]["rev_reg_id"],
+                "cred_rev_id": cred_exchange["indy"]["cred_rev_id"],
+                "publish": "Y",
+                "connection_id": cred_exchange["cred_ex_record"]["connection_id"],
+            },
+        )
+    except:
+        # ignore exceptions, we will check status later
+        pass
+
+    # pause for a second
+    async_sleep(1.0)
+
+
+@given('"{holder}" fails to publish the credential revocation')
+@when('"{holder}" fails to publish the credential revocation')
+@then('"{holder}" fails to publish the credential revocation')
+def step_impl(context, holder):
+    agent = context.active_agents[holder]
+
+    # get the required revocation info from the last credential exchange
+    cred_exchange = context.cred_exchange
+    print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
+    print("cred_rev_id:", cred_exchange["indy"]["cred_rev_id"])
+    print("connection_id:", cred_exchange["cred_ex_record"]["connection_id"])
+
+    # check wallet status
+    wallet_revoked_creds = agent_container_GET(
+        agent["agent"],
+        "/revocation/registry/"
+        + cred_exchange["indy"]["rev_reg_id"]
+        + "/issued/details",
+    )
+    matched = False
+    for rec in wallet_revoked_creds:
+        if rec["cred_rev_id"] == cred_exchange["indy"]["cred_rev_id"]:
+            matched = True
+            assert rec["state"] == "revoked"
+    assert matched
+
+    # check ledger status
+    ledger_revoked_creds = agent_container_GET(
+        agent["agent"],
+        "/revocation/registry/"
+        + cred_exchange["indy"]["rev_reg_id"]
+        + "/issued/indy_recs",
+    )
+    assert (
+        int(cred_exchange["indy"]["cred_rev_id"])
+        not in ledger_revoked_creds["rev_reg_delta"]["value"]["revoked"]
+    )
 
 
 @when('"{holder}" has the credential issued')

@@ -1,13 +1,24 @@
 """HTTP utility methods."""
 
 import asyncio
+import logging
+import urllib.parse
 
-from aiohttp import BaseConnector, ClientError, ClientResponse, ClientSession
+from aiohttp import (
+    BaseConnector,
+    ClientError,
+    ClientResponse,
+    ClientSession,
+    FormData,
+)
 from aiohttp.web import HTTPConflict
 
 from ..core.error import BaseError
 
 from .repeat import RepeatSequence
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class FetchError(BaseError):
@@ -147,7 +158,6 @@ async def put_file(
 
     """
     (data_key, file_path) = [k for k in file_data.items()][0]
-    data = {**extra_data}
     limit = max_attempts if retry else 1
 
     if not session:
@@ -158,17 +168,51 @@ async def put_file(
         async for attempt in RepeatSequence(limit, interval, backoff):
             try:
                 async with attempt.timeout(request_timeout):
-                    with open(file_path, "rb") as f:
-                        data[data_key] = f
-                        response: ClientResponse = await session.put(url, data=data)
-                        if (response.status < 200 or response.status >= 300) and (
-                            response.status != HTTPConflict.status_code
-                        ):
-                            raise ClientError(
-                                f"Bad response from server: {response.status}, "
-                                f"{response.reason}"
-                            )
+                    formdata = FormData()
+                    try:
+                        fp = open(file_path, "rb")
+                    except OSError as e:
+                        raise PutError("Error opening file for upload") from e
+                    if extra_data:
+                        for k, v in extra_data.items():
+                            formdata.add_field(k, v)
+                    formdata.add_field(
+                        data_key, fp, content_type="application/octet-stream"
+                    )
+                    response: ClientResponse = await session.put(
+                        url, data=formdata, allow_redirects=False
+                    )
+                    if (
+                        # redirect codes
+                        response.status in (301, 302, 303, 307, 308)
+                        and not attempt.final
+                    ):
+                        # NOTE: a redirect counts as another upload attempt
+                        to_url = response.headers.get("Location")
+                        if not to_url:
+                            raise PutError("Redirect missing target URL")
+                        try:
+                            parsed_to = urllib.parse.urlsplit(to_url)
+                            parsed_from = urllib.parse.urlsplit(url)
+                        except ValueError:
+                            raise PutError("Invalid redirect URL")
+                        if parsed_to.hostname != parsed_from.hostname:
+                            raise PutError("Redirect denied: hostname mismatch")
+                        url = to_url
+                        LOGGER.info("Upload redirect: %s", to_url)
+                    elif (response.status < 200 or response.status >= 300) and (
+                        response.status != HTTPConflict.status_code
+                    ):
+                        raise ClientError(
+                            f"Bad response from server: {response.status}, "
+                            f"{response.reason}"
+                        )
+                    else:
                         return await (response.json() if json else response.text())
             except (ClientError, asyncio.TimeoutError) as e:
+                if isinstance(e, ClientError):
+                    LOGGER.warning("Upload error: %s", e)
+                else:
+                    LOGGER.warning("Upload error: request timed out")
                 if attempt.final:
-                    raise PutError("Exceeded maximum put attempts") from e
+                    raise PutError("Exceeded maximum upload attempts") from e

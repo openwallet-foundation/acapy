@@ -1562,6 +1562,7 @@ class TestPresExchHandler:
         assert len(tmp_vp.get("verifiableCredential")) == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_filter_schema(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(profile)
@@ -1583,6 +1584,7 @@ class TestPresExchHandler:
             == 0
         )
 
+    @pytest.mark.ursa_bbs_signatures
     def test_cred_schema_match_a(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(profile)
@@ -1594,6 +1596,7 @@ class TestPresExchHandler:
             is True
         )
 
+    @pytest.mark.ursa_bbs_signatures
     @pytest.mark.asyncio
     async def test_merge_nested(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
@@ -1655,6 +1658,7 @@ class TestPresExchHandler:
             test_nested_result, {}
         )
 
+    @pytest.mark.ursa_bbs_signatures
     def test_subject_is_issuer(self, setup_tuple, profile):
         cred_list, pd_list = setup_tuple
         dif_pres_exch_handler = DIFPresExchHandler(profile)
@@ -1842,6 +1846,7 @@ class TestPresExchHandler:
             val="test", _filter=Filter()
         )
 
+    @pytest.mark.ursa_bbs_signatures
     def test_cred_schema_match_b(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         cred_list, pd_list = setup_tuple
@@ -2186,6 +2191,7 @@ class TestPresExchHandler:
             )
             assert len(filtered_creds) == 2
 
+    @pytest.mark.ursa_bbs_signatures
     @pytest.mark.asyncio
     async def test_create_vp_no_issuer(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
@@ -2277,6 +2283,7 @@ class TestPresExchHandler:
             )
 
     @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_create_vp_with_bbs_suite(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(
             profile, proof_type=BbsBlsSignature2020.signature_type
@@ -2333,6 +2340,7 @@ class TestPresExchHandler:
             assert SECURITY_CONTEXT_BBS_URL in vp["@context"]
 
     @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_create_vp_no_issuer_with_bbs_suite(self, profile, setup_tuple):
         dif_pres_exch_handler = DIFPresExchHandler(
             profile, proof_type=BbsBlsSignature2020.signature_type

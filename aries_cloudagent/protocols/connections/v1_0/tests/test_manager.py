@@ -11,6 +11,7 @@ from .....connections.base_manager import BaseConnectionManagerError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from .....core.oob_processor import OobMessageProcessor
 from .....core.in_memory import InMemoryProfile
 from .....core.profile import ProfileSession
 from .....did.did_key import DIDKey
@@ -73,6 +74,10 @@ class TestConnectionManager(AsyncTestCase):
 
         self.responder = MockResponder()
 
+        self.oob_mock = async_mock.MagicMock(
+            clean_finished_oob_record=async_mock.CoroutineMock(return_value=None)
+        )
+
         self.profile = InMemoryProfile.test_profile(
             {
                 "default_endpoint": "http://aries.ca/endpoint",
@@ -81,7 +86,11 @@ class TestConnectionManager(AsyncTestCase):
                 "debug.auto_accept_invites": True,
                 "debug.auto_accept_requests": True,
             },
-            bind={BaseResponder: self.responder, BaseCache: InMemoryCache()},
+            bind={
+                BaseResponder: self.responder,
+                BaseCache: InMemoryCache(),
+                OobMessageProcessor: self.oob_mock,
+            },
         )
         self.context = self.profile.context
 
@@ -712,6 +721,10 @@ class TestConnectionManager(AsyncTestCase):
                 mock_conn_retrieve_by_invitation_msg_id.return_value = ConnRecord()
                 conn_rec = await self.manager.receive_request(mock_request, receipt)
                 assert conn_rec
+
+                self.oob_mock.clean_finished_oob_record.assert_called_once_with(
+                    self.profile, mock_request
+                )
 
     async def test_receive_request_public_did_conn_invite(self):
         async with self.profile.session() as session:

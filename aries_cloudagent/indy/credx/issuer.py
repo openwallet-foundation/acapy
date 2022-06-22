@@ -20,7 +20,6 @@ from indy_credx import (
 )
 
 from ...askar.profile import AskarProfile
-from ...core.profile import ProfileSession
 
 from ..issuer import (
     IndyIssuer,
@@ -384,7 +383,6 @@ class IndyCredxIssuer(IndyIssuer):
         revoc_reg_id: str,
         tails_file_path: str,
         cred_revoc_ids: Sequence[str],
-        transaction: ProfileSession = None,
     ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.
@@ -399,66 +397,84 @@ class IndyCredxIssuer(IndyIssuer):
 
         """
 
-        txn = transaction if transaction else await self._profile.transaction()
-        try:
-            rev_reg_def = await txn.handle.fetch(CATEGORY_REV_REG_DEF, revoc_reg_id)
-            rev_reg = await txn.handle.fetch(
-                CATEGORY_REV_REG, revoc_reg_id, for_update=True
-            )
-            rev_reg_info = await txn.handle.fetch(
-                CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
-            )
-            if not rev_reg_def:
-                raise IndyIssuerError("Revocation registry definition not found")
-            if not rev_reg:
-                raise IndyIssuerError("Revocation registry not found")
-            if not rev_reg_info:
-                raise IndyIssuerError("Revocation registry metadata not found")
-        except AskarError as err:
-            raise IndyIssuerError("Error retrieving revocation registry") from err
+        delta = None
+        failed_crids = set()
+        max_attempt = 5
+        attempt = 0
 
-        try:
-            rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def.raw_value)
-        except CredxError as err:
-            raise IndyIssuerError(
-                "Error loading revocation registry definition"
-            ) from err
+        while True:
+            attempt += 1
+            if attempt >= max_attempt:
+                raise IndyIssuerError("Repeated conflict attempting to update registry")
+            try:
+                async with self._profile.session() as session:
+                    rev_reg_def = await session.handle.fetch(
+                        CATEGORY_REV_REG_DEF, revoc_reg_id
+                    )
+                    rev_reg = await session.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
+                    rev_reg_info = await session.handle.fetch(
+                        CATEGORY_REV_REG_INFO, revoc_reg_id
+                    )
+                if not rev_reg_def:
+                    raise IndyIssuerError("Revocation registry definition not found")
+                if not rev_reg:
+                    raise IndyIssuerError("Revocation registry not found")
+                if not rev_reg_info:
+                    raise IndyIssuerError("Revocation registry metadata not found")
+            except AskarError as err:
+                raise IndyIssuerError("Error retrieving revocation registry") from err
 
-        rev_crids = []
-        failed_crids = []
-        max_cred_num = rev_reg_def.max_cred_num
-        rev_info = rev_reg_info.value_json
-        used_ids = set(rev_info.get("used_ids") or [])
+            try:
+                rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def.raw_value)
+            except CredxError as err:
+                raise IndyIssuerError(
+                    "Error loading revocation registry definition"
+                ) from err
 
-        for rev_id in cred_revoc_ids:
-            rev_id = int(rev_id)
-            if rev_id < 1 or rev_id > max_cred_num:
-                LOGGER.error(
-                    "Skipping requested credential revocation"
-                    "on rev reg id %s, cred rev id=%s not in range",
-                    revoc_reg_id,
-                    rev_id,
-                )
-            elif rev_id > rev_info["curr_id"]:
-                LOGGER.warn(
-                    "Skipping requested credential revocation"
-                    "on rev reg id %s, cred rev id=%s not yet issued",
-                    revoc_reg_id,
-                    rev_id,
-                )
-            elif rev_id in used_ids:
-                LOGGER.warn(
-                    "Skipping requested credential revocation"
-                    "on rev reg id %s, cred rev id=%s already revoked",
-                    revoc_reg_id,
-                    rev_id,
-                )
-            else:
-                rev_crids.append(rev_id)
+            rev_crids = set()
+            failed_crids = set()
+            max_cred_num = rev_reg_def.max_cred_num
+            rev_info = rev_reg_info.value_json
+            used_ids = set(rev_info.get("used_ids") or [])
 
-        if rev_crids:
+            for rev_id in cred_revoc_ids:
+                rev_id = int(rev_id)
+                if rev_id < 1 or rev_id > max_cred_num:
+                    LOGGER.error(
+                        "Skipping requested credential revocation"
+                        "on rev reg id %s, cred rev id=%s not in range",
+                        revoc_reg_id,
+                        rev_id,
+                    )
+                    failed_crids.add(rev_id)
+                elif rev_id > rev_info["curr_id"]:
+                    LOGGER.warn(
+                        "Skipping requested credential revocation"
+                        "on rev reg id %s, cred rev id=%s not yet issued",
+                        revoc_reg_id,
+                        rev_id,
+                    )
+                    failed_crids.add(rev_id)
+                elif rev_id in used_ids:
+                    LOGGER.warn(
+                        "Skipping requested credential revocation"
+                        "on rev reg id %s, cred rev id=%s already revoked",
+                        revoc_reg_id,
+                        rev_id,
+                    )
+                    failed_crids.add(rev_id)
+                else:
+                    rev_crids.add(rev_id)
+
+            if not rev_crids:
+                break
+
             try:
                 rev_reg = RevocationRegistry.load(rev_reg.raw_value)
+            except CredxError as err:
+                raise IndyIssuerError("Error loading revocation registry") from err
+
+            try:
                 delta = await asyncio.get_event_loop().run_in_executor(
                     None,
                     lambda: rev_reg.update(
@@ -472,22 +488,41 @@ class IndyCredxIssuer(IndyIssuer):
                 raise IndyIssuerError("Error updating revocation registry") from err
 
             try:
-                await txn.handle.replace(
-                    CATEGORY_REV_REG, revoc_reg_id, rev_reg.to_json_buffer()
-                )
-                used_ids.update(rev_crids)
-                rev_info["used_ids"] = list(used_ids)
-                await txn.handle.replace(
-                    CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
-                )
-                if not transaction:
+                async with self._profile.transaction() as txn:
+                    rev_reg_upd = await txn.handle.fetch(
+                        CATEGORY_REV_REG, revoc_reg_id, for_update=True
+                    )
+                    rev_info_upd = await txn.handle.fetch(
+                        CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
+                    )
+                    if not rev_reg_upd or not rev_reg_info:
+                        LOGGER.warn(
+                            "Revocation registry missing, skipping update: {}",
+                            revoc_reg_id,
+                        )
+                        delta = None
+                        break
+                    rev_info_upd = rev_info_upd.value_json
+                    if rev_info_upd != rev_info:
+                        # handle concurrent update to the registry by retrying
+                        continue
+                    await txn.handle.replace(
+                        CATEGORY_REV_REG, revoc_reg_id, rev_reg.to_json_buffer()
+                    )
+                    used_ids.update(rev_crids)
+                    rev_info_upd["used_ids"] = sorted(used_ids)
+                    await txn.handle.replace(
+                        CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info_upd
+                    )
                     await txn.commit()
             except AskarError as err:
                 raise IndyIssuerError("Error saving revocation registry") from err
-        else:
-            delta = None
+            break
 
-        return (delta and delta.to_json(), failed_crids)
+        return (
+            delta and delta.to_json(),
+            [str(rev_id) for rev_id in sorted(failed_crids)],
+        )
 
     async def merge_revocation_registry_deltas(
         self, fro_delta: str, to_delta: str
@@ -558,7 +593,7 @@ class IndyCredxIssuer(IndyIssuer):
                 rev_reg_def,
                 rev_reg_def_private,
                 rev_reg,
-                rev_reg_delta,
+                _rev_reg_delta,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: RevocationRegistryDefinition.create(
