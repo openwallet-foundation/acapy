@@ -18,6 +18,8 @@ from ..utils.tracing import trace_event
 from .error import ArgsParseError
 from .util import BoundedInt, ByteSize
 
+from .plugin_settings import PLUGIN_CONFIG_KEY
+
 CAT_PROVISION = "general"
 CAT_START = "start"
 CAT_UPGRADE = "upgrade"
@@ -630,17 +632,17 @@ class GeneralGroup(ArgumentGroup):
 
         if args.plugin_config:
             with open(args.plugin_config, "r") as stream:
-                settings["plugin_config"] = yaml.safe_load(stream)
+                settings[PLUGIN_CONFIG_KEY] = yaml.safe_load(stream)
 
         if args.plugin_config_values:
-            if "plugin_config" not in settings:
-                settings["plugin_config"] = {}
+            if PLUGIN_CONFIG_KEY not in settings:
+                settings[PLUGIN_CONFIG_KEY] = {}
 
             for value_str in chain(*args.plugin_config_values):
                 key, value = value_str.split("=", maxsplit=1)
                 value = yaml.safe_load(value)
                 deepmerge.always_merger.merge(
-                    settings["plugin_config"],
+                    settings[PLUGIN_CONFIG_KEY],
                     reduce(lambda v, k: {k: v}, key.split(".")[::-1], value),
                 )
 
