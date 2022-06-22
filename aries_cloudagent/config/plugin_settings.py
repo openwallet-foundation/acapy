@@ -74,4 +74,8 @@ class PluginSettings(BaseSettings):
         plugin: str,
         default: Optional[Mapping[str, Any]] = None,
     ) -> "PluginSettings":
+        """Construct a PluginSettings object from another settings object.
+
+        PLUGIN_CONFIG_KEY is read from settings.
+        """
         return cls(settings.get(PLUGIN_CONFIG_KEY, {}).get(plugin, default))
