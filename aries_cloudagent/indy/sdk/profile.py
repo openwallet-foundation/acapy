@@ -1,9 +1,10 @@
 """Manage Indy-SDK profile interaction."""
 
+import asyncio
 import logging
 
 from typing import Any, Mapping
-from weakref import ref
+from weakref import finalize, ref
 
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
@@ -30,13 +31,18 @@ class IndySdkProfile(Profile):
 
     BACKEND_NAME = "indy"
 
-    def __init__(self, opened: IndyOpenWallet, context: InjectionContext = None):
+    def __init__(
+        self,
+        opened: IndyOpenWallet,
+        context: InjectionContext = None,
+    ):
         """Create a new IndyProfile instance."""
         super().__init__(context=context, name=opened.name, created=opened.created)
         self.opened = opened
         self.ledger_pool: IndySdkLedgerPool = None
         self.init_ledger_pool()
         self.bind_providers()
+        self._finalizer = self._make_finalizer(opened)
 
     @property
     def name(self) -> str:
@@ -115,6 +121,18 @@ class IndySdkProfile(Profile):
         if self.opened:
             await self.opened.close()
             self.opened = None
+
+    def _make_finalizer(self, opened: IndyOpenWallet) -> finalize:
+        """Return a finalizer for this profile.
+
+        See docs for weakref.finalize for more details on behavior of finalizers.
+        """
+
+        def _finalize(opened: IndyOpenWallet):
+            LOGGER.debug("Profile finalizer called; closing wallet")
+            asyncio.get_event_loop().create_task(opened.close())
+
+        return finalize(self, _finalize, opened)
 
     async def remove(self):
         """Remove the profile associated with this instance."""
