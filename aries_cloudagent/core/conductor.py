@@ -488,7 +488,7 @@ class Conductor:
         # close multitenant profiles
         multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
-            for profile in multitenant_mgr._instances.values():
+            for profile in multitenant_mgr.open_profiles:
                 shutdown.run(profile.close())
 
         if self.root_profile:
