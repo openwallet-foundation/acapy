@@ -43,79 +43,61 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
 
         with async_mock.patch(
             "aries_cloudagent.multitenant.askar_profile_manager.wallet_config"
-        ) as wallet_config:
-            with async_mock.patch(
-                "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile"
-            ) as AskarProfile:
-                sub_wallet_profile_context = InjectionContext()
-                sub_wallet_profile = AskarProfile(None, None)
-                sub_wallet_profile.context.copy.return_value = (
-                    sub_wallet_profile_context
-                )
+        ) as wallet_config, async_mock.patch(
+            "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile",
+        ) as AskarProfile:
+            sub_wallet_profile_context = InjectionContext()
+            sub_wallet_profile = AskarProfile(None, None)
+            sub_wallet_profile.context.copy.return_value = sub_wallet_profile_context
 
-                def side_effect(context, provision):
-                    sub_wallet_profile.name = askar_profile_mock_name
-                    return sub_wallet_profile, None
+            def side_effect(context, provision):
+                sub_wallet_profile.name = askar_profile_mock_name
+                return sub_wallet_profile, None
 
-                wallet_config.side_effect = side_effect
+            wallet_config.side_effect = side_effect
 
-                profile = await self.manager.get_wallet_profile(
-                    self.profile.context, wallet_record
-                )
+            profile = await self.manager.get_wallet_profile(
+                self.profile.context, wallet_record
+            )
 
-                assert profile.name == askar_profile_mock_name
-                wallet_config.assert_called_once()
-                wallet_config_settings_argument = wallet_config.call_args[0][0].settings
-                assert (
-                    wallet_config_settings_argument.get("wallet.name")
-                    == self.DEFAULT_MULTIENANT_WALLET_NAME
-                )
-                assert wallet_config_settings_argument.get("wallet.id") == None
-                assert wallet_config_settings_argument.get("auto_provision") == True
-                assert wallet_config_settings_argument.get("wallet.type") == "askar"
-                AskarProfile.assert_called_with(
-                    sub_wallet_profile.opened, sub_wallet_profile_context
-                )
-                assert (
-                    sub_wallet_profile_context.settings.get("wallet.seed")
-                    == "test_seed"
-                )
-                assert (
-                    sub_wallet_profile_context.settings.get("wallet.rekey")
-                    == "test_rekey"
-                )
-                assert (
-                    sub_wallet_profile_context.settings.get("wallet.name")
-                    == "test_name"
-                )
-                assert (
-                    sub_wallet_profile_context.settings.get("wallet.type")
-                    == "test_type"
-                )
-                assert sub_wallet_profile_context.settings.get("mediation.open") == True
-                assert (
-                    sub_wallet_profile_context.settings.get("mediation.invite")
-                    == "http://invite.com"
-                )
-                assert (
-                    sub_wallet_profile_context.settings.get("mediation.default_id")
-                    == "24a96ef5"
-                )
-                assert (
-                    sub_wallet_profile_context.settings.get("mediation.clear") == True
-                )
-                assert (
-                    sub_wallet_profile_context.settings.get("wallet.id")
-                    == wallet_record.wallet_id
-                )
-                assert (
-                    sub_wallet_profile_context.settings.get("wallet.name")
-                    == "test_name"
-                )
-                assert (
-                    sub_wallet_profile_context.settings.get("wallet.askar_profile")
-                    == wallet_record.wallet_id
-                )
+            assert profile.name == askar_profile_mock_name
+            wallet_config.assert_called_once()
+            wallet_config_settings_argument = wallet_config.call_args[0][0].settings
+            assert (
+                wallet_config_settings_argument.get("wallet.name")
+                == self.DEFAULT_MULTIENANT_WALLET_NAME
+            )
+            assert wallet_config_settings_argument.get("wallet.id") == None
+            assert wallet_config_settings_argument.get("auto_provision") == True
+            assert wallet_config_settings_argument.get("wallet.type") == "askar"
+            AskarProfile.assert_called_with(
+                sub_wallet_profile.opened, sub_wallet_profile_context, profile_id="test"
+            )
+            assert sub_wallet_profile_context.settings.get("wallet.seed") == "test_seed"
+            assert (
+                sub_wallet_profile_context.settings.get("wallet.rekey") == "test_rekey"
+            )
+            assert sub_wallet_profile_context.settings.get("wallet.name") == "test_name"
+            assert sub_wallet_profile_context.settings.get("wallet.type") == "test_type"
+            assert sub_wallet_profile_context.settings.get("mediation.open") == True
+            assert (
+                sub_wallet_profile_context.settings.get("mediation.invite")
+                == "http://invite.com"
+            )
+            assert (
+                sub_wallet_profile_context.settings.get("mediation.default_id")
+                == "24a96ef5"
+            )
+            assert sub_wallet_profile_context.settings.get("mediation.clear") == True
+            assert (
+                sub_wallet_profile_context.settings.get("wallet.id")
+                == wallet_record.wallet_id
+            )
+            assert sub_wallet_profile_context.settings.get("wallet.name") == "test_name"
+            assert (
+                sub_wallet_profile_context.settings.get("wallet.askar_profile")
+                == wallet_record.wallet_id
+            )
 
     async def test_get_wallet_profile_should_create_profile(self):
         wallet_record = WalletRecord(wallet_id="test", settings={})
@@ -128,9 +110,7 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
             sub_wallet_profile = AskarProfile(None, None)
             sub_wallet_profile.context.copy.return_value = InjectionContext()
             sub_wallet_profile.store.create_profile.return_value = create_profile_stub
-            self.manager._instances[
-                self.DEFAULT_MULTIENANT_WALLET_NAME
-            ] = sub_wallet_profile
+            self.manager._multitenant_profile = sub_wallet_profile
 
             await self.manager.get_wallet_profile(
                 self.profile.context, wallet_record, provision=True
@@ -172,8 +152,23 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
                 )
 
     async def test_remove_wallet_profile(self):
-        test_profile = InMemoryProfile.test_profile()
+        test_profile = InMemoryProfile.test_profile({"wallet.id": "test"})
 
         with async_mock.patch.object(InMemoryProfile, "remove") as profile_remove:
             await self.manager.remove_wallet_profile(test_profile)
             profile_remove.assert_called_once_with()
+
+    async def test_open_profiles(self):
+        assert len(list(self.manager.open_profiles)) == 0
+
+        create_profile_stub = asyncio.Future()
+        create_profile_stub.set_result("")
+        with async_mock.patch(
+            "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile"
+        ) as AskarProfile:
+            sub_wallet_profile = AskarProfile(None, None)
+            sub_wallet_profile.context.copy.return_value = InjectionContext()
+            sub_wallet_profile.store.create_profile.return_value = create_profile_stub
+            self.manager._multitenant_profile = sub_wallet_profile
+
+        assert len(list(self.manager.open_profiles)) == 1

@@ -19,7 +19,7 @@ class TestMultitenantManager(AsyncTestCase):
 
     async def test_get_wallet_profile_returns_from_cache(self):
         wallet_record = WalletRecord(wallet_id="test")
-        self.manager._instances["test"] = InMemoryProfile.test_profile()
+        self.manager._profiles.put("test", InMemoryProfile.test_profile())
 
         with async_mock.patch(
             "aries_cloudagent.config.wallet.wallet_config"
@@ -27,12 +27,12 @@ class TestMultitenantManager(AsyncTestCase):
             profile = await self.manager.get_wallet_profile(
                 self.profile.context, wallet_record
             )
-            assert profile is self.manager._instances["test"]
+            assert profile is self.manager._profiles.get("test")
             wallet_config.assert_not_called()
 
     async def test_get_wallet_profile_not_in_cache(self):
         wallet_record = WalletRecord(wallet_id="test", settings={})
-        self.manager._instances["test"] = InMemoryProfile.test_profile()
+        self.manager._profiles.put("test", InMemoryProfile.test_profile())
         self.profile.context.update_settings(
             {"admin.webhook_urls": ["http://localhost:8020"]}
         )
@@ -43,7 +43,7 @@ class TestMultitenantManager(AsyncTestCase):
             profile = await self.manager.get_wallet_profile(
                 self.profile.context, wallet_record
             )
-            assert profile is self.manager._instances["test"]
+            assert profile is self.manager._profiles.get("test")
             wallet_config.assert_not_called()
 
     async def test_get_wallet_profile_settings(self):
@@ -174,13 +174,46 @@ class TestMultitenantManager(AsyncTestCase):
             assert profile.settings.get("mediation.default_id") == "24a96ef5"
             assert profile.settings.get("mediation.clear") == True
 
+    async def test_update_wallet_update_wallet_profile(self):
+        with async_mock.patch.object(
+            WalletRecord, "retrieve_by_id"
+        ) as retrieve_by_id, async_mock.patch.object(
+            WalletRecord, "save"
+        ) as wallet_record_save:
+            wallet_id = "test-wallet-id"
+            wallet_profile = InMemoryProfile.test_profile()
+            self.manager._profiles.put("test-wallet-id", wallet_profile)
+            retrieve_by_id.return_value = WalletRecord(
+                wallet_id=wallet_id,
+                settings={
+                    "wallet.webhook_urls": ["test-webhook-url"],
+                    "wallet.dispatch_type": "both",
+                },
+            )
+
+            new_settings = {
+                "wallet.webhook_urls": ["new-webhook-url"],
+                "wallet.dispatch_type": "default",
+            }
+            wallet_record = await self.manager.update_wallet(wallet_id, new_settings)
+
+            wallet_record_save.assert_called_once()
+
+            assert isinstance(wallet_record, WalletRecord)
+            assert wallet_record.wallet_webhook_urls == ["new-webhook-url"]
+            assert wallet_record.wallet_dispatch_type == "default"
+            assert wallet_profile.settings.get("wallet.webhook_urls") == [
+                "new-webhook-url"
+            ]
+            assert wallet_profile.settings.get("wallet.dispatch_type") == "default"
+
     async def test_remove_wallet_profile(self):
         test_profile = InMemoryProfile.test_profile(
             settings={"wallet.id": "test"},
         )
-        self.manager._instances["test"] = test_profile
+        self.manager._profiles.put("test", test_profile)
 
         with async_mock.patch.object(InMemoryProfile, "remove") as profile_remove:
             await self.manager.remove_wallet_profile(test_profile)
-            assert "test" not in self.manager._instances
+            assert not self.manager._profiles.has("test")
             profile_remove.assert_called_once_with()
