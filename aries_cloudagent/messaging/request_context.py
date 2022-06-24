@@ -61,7 +61,7 @@ class RequestContext:
         self._connection_ready = active
 
     @property
-    def connection_record(self) -> ConnRecord:
+    def connection_record(self) -> Optional[ConnRecord]:
         """Accessor for the related connection record."""
         return self._connection_record
 

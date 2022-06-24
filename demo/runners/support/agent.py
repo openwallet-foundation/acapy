@@ -520,6 +520,7 @@ class DemoAgent:
         mediator_agent=None,
         cred_type: str = CRED_FORMAT_INDY,
         endorser_agent=None,
+        taa_accept=False,
     ):
         if webhook_port is not None:
             await self.listen_webhooks(webhook_port)
@@ -534,6 +535,9 @@ class DemoAgent:
             wallet_params = await self.get_id_and_token(self.wallet_name)
             self.managed_wallet_params["wallet_id"] = wallet_params["id"]
             self.managed_wallet_params["token"] = wallet_params["token"]
+
+            if taa_accept:
+                await self.taa_accept()
 
             self.log(f"Switching to AGENCY wallet {target_wallet_name}")
             return False
@@ -553,6 +557,9 @@ class DemoAgent:
                 wallet_params = await self.get_id_and_token(self.wallet_name)
                 self.managed_wallet_params["wallet_id"] = wallet_params["id"]
                 self.managed_wallet_params["token"] = wallet_params["token"]
+
+                if taa_accept:
+                    await self.taa_accept()
 
                 self.log(f"Switching to EXISTING wallet {target_wallet_name}")
                 return False
@@ -577,6 +584,9 @@ class DemoAgent:
         if endorser_agent:
             if not await connect_wallet_to_endorser(self, endorser_agent):
                 raise Exception("Endorser setup FAILED :-(")
+
+        if taa_accept:
+            await self.taa_accept()
 
         if public_did:
             if cred_type == CRED_FORMAT_INDY:
@@ -811,6 +821,20 @@ class DemoAgent:
     async def handle_revocation_registry(self, message):
         reg_id = message.get("revoc_reg_id", "(undetermined)")
         self.log(f"Revocation registry: {reg_id} state: {message['state']}")
+
+    async def taa_accept(self):
+        taa_info = await self.admin_GET("/ledger/taa")
+        if taa_info["result"]["taa_required"]:
+            taa_accept = {
+                "mechanism": list(taa_info["result"]["aml_record"]["aml"].keys())[0],
+                "version": taa_info["result"]["taa_record"]["version"],
+                "text": taa_info["result"]["taa_record"]["text"],
+            }
+            self.log(f"Accepting TAA with: {taa_accept}")
+            await self.admin_POST(
+                "/ledger/taa/accept",
+                data=taa_accept,
+            )
 
     async def admin_request(
         self, method, path, data=None, text=False, params=None, headers=None

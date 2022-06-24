@@ -1,5 +1,6 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
+from ......core.oob_processor import OobMessageProcessor
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
@@ -18,6 +19,14 @@ class TestV20CredRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = async_mock.MagicMock()
 
+        oob_record = async_mock.MagicMock()
+        mock_oob_processor = async_mock.MagicMock(
+            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+                return_value=oob_record
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
@@ -33,7 +42,7 @@ class TestV20CredRequestHandler(AsyncTestCase):
 
         mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_request.assert_called_once_with(
-            request_context.message, request_context.connection_record.connection_id
+            request_context.message, request_context.connection_record, oob_record
         )
         assert not responder.messages
 
@@ -41,6 +50,14 @@ class TestV20CredRequestHandler(AsyncTestCase):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()
         request_context.connection_record = async_mock.MagicMock()
+
+        oob_record = async_mock.MagicMock()
+        mock_oob_processor = async_mock.MagicMock(
+            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+                return_value=oob_record
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         cred_ex_rec = V20CredExRecord()
 
@@ -65,7 +82,7 @@ class TestV20CredRequestHandler(AsyncTestCase):
 
         mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_request.assert_called_once_with(
-            request_context.message, request_context.connection_record.connection_id
+            request_context.message, request_context.connection_record, oob_record
         )
         messages = responder.messages
         assert len(messages) == 1
@@ -79,6 +96,14 @@ class TestV20CredRequestHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
 
         cred_ex_rec = V20CredExRecord()
+
+        oob_record = async_mock.MagicMock()
+        mock_oob_processor = async_mock.MagicMock(
+            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+                return_value=oob_record
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with async_mock.patch.object(
             test_module, "V20CredManager", autospec=True
@@ -119,7 +144,35 @@ class TestV20CredRequestHandler(AsyncTestCase):
             request_context.connection_ready = False
             handler = test_module.V20CredRequestHandler()
             responder = MockResponder()
-            with self.assertRaises(test_module.HandlerException):
+            with self.assertRaises(test_module.HandlerException) as err:
                 await handler.handle(request_context, responder)
+            assert (
+                err.exception.message
+                == "Connection used for credential request not ready"
+            )
+
+        assert not responder.messages
+
+    async def test_called_no_connection_no_oob(self):
+        request_context = RequestContext.test_context()
+        request_context.message_receipt = MessageReceipt()
+
+        mock_oob_processor = async_mock.MagicMock(
+            find_oob_record_for_inbound_message=async_mock.CoroutineMock(
+                # No oob record found
+                return_value=None
+            )
+        )
+        request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
+
+        request_context.message = V20CredRequest()
+        handler = test_module.V20CredRequestHandler()
+        responder = MockResponder()
+        with self.assertRaises(test_module.HandlerException) as err:
+            await handler.handle(request_context, responder)
+            assert (
+                err.exception.message
+                == "No connection or associated connectionless exchange found for credential request"
+            )
 
         assert not responder.messages

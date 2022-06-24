@@ -1,7 +1,8 @@
 """Presentation message handler."""
 
+from .....core.oob_processor import OobMessageProcessor
 from .....ledger.error import LedgerError
-from .....messaging.base_handler import BaseHandler
+from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import BaseResponder
@@ -35,10 +36,24 @@ class V20PresHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
+        # If connection is present it must be ready for use
+        if context.connection_record and not context.connection_ready:
+            raise HandlerException("Connection used for presentation not ready")
+
+        # Find associated oob record. If the presentation request was created as an oob
+        # attachment the presentation exchange record won't have a connection id (yet)
+        oob_processor = context.inject(OobMessageProcessor)
+        oob_record = await oob_processor.find_oob_record_for_inbound_message(context)
+
+        # Normally we would do a check here that there is either a connection or
+        # an associated oob record. However as present proof supported receiving
+        # presentation without oob record or connection record
+        # (aip-1 style connectionless) we can't perform this check here
+
         pres_manager = V20PresManager(context.profile)
 
         pres_ex_record = await pres_manager.receive_pres(
-            context.message, context.connection_record
+            context.message, context.connection_record, oob_record
         )
 
         r_time = trace_event(

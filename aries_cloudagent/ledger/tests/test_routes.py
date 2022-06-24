@@ -686,7 +686,10 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            self.ledger.get_txn_author_agreement.return_value = {"taa_required": True}
+            self.ledger.get_txn_author_agreement.return_value = {
+                "taa_record": {"text": "text"},
+                "taa_required": True,
+            }
             result = await test_module.ledger_accept_taa(self.request)
             json_response.assert_called_once_with({})
             self.ledger.accept_txn_author_agreement.assert_awaited_once_with(
@@ -707,7 +710,10 @@ class TestLedgerRoutes(AsyncTestCase):
                 "mechanism": "mechanism",
             }
         )
-        self.ledger.get_txn_author_agreement.return_value = {"taa_required": True}
+        self.ledger.get_txn_author_agreement.return_value = {
+            "taa_record": {"text": "text"},
+            "taa_required": True,
+        }
         self.ledger.accept_txn_author_agreement.side_effect = test_module.StorageError()
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.ledger_accept_taa(self.request)

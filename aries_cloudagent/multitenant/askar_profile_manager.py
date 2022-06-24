@@ -1,5 +1,6 @@
 """Manager for askar profile multitenancy mode."""
 
+from typing import Iterable, Optional, cast
 from ..core.profile import (
     Profile,
 )
@@ -13,15 +14,25 @@ from ..multitenant.base import BaseMultitenantManager
 class AskarProfileMultitenantManager(BaseMultitenantManager):
     """Class for handling askar profile multitenancy."""
 
-    DEFAULT_MULTIENANT_WALLET_NAME = "multitenant_sub_wallet"
+    DEFAULT_MULTITENANT_WALLET_NAME = "multitenant_sub_wallet"
 
-    def __init__(self, profile: Profile):
+    def __init__(self, profile: Profile, multitenant_profile: AskarProfile = None):
         """Initialize askar profile multitenant Manager.
 
         Args:
             profile: The base profile for this manager
         """
         super().__init__(profile)
+        self._multitenant_profile: Optional[AskarProfile] = multitenant_profile
+
+    @property
+    def open_profiles(self) -> Iterable[Profile]:
+        """Return iterator over open profiles.
+
+        Only the core multitenant profile is considered open.
+        """
+        if self._multitenant_profile:
+            yield self._multitenant_profile
 
     async def get_wallet_profile(
         self,
@@ -33,6 +44,13 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
     ) -> Profile:
         """Get Askar profile for a wallet record.
 
+        An object of type AskarProfile is returned but this should not be
+        confused with the underlying profile mechanism provided by Askar that
+        enables multiple "profiles" to share a wallet. Usage of this mechanism
+        is what causes this implementation of BaseMultitenantManager.get_wallet_profile
+        to look different from others, especially since no explicit clean up is
+        required for profiles that are no longer in use.
+
         Args:
             base_context: Base context to extend from
             wallet_record: Wallet record to get the context for
@@ -42,12 +60,10 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
             Profile: Profile for the wallet record
 
         """
-        multitenant_wallet_name = (
-            base_context.settings.get("multitenant.wallet_name")
-            or self.DEFAULT_MULTIENANT_WALLET_NAME
-        )
-
-        if multitenant_wallet_name not in self._instances:
+        if not self._multitenant_profile:
+            multitenant_wallet_name = base_context.settings.get(
+                "multitenant.wallet_name", self.DEFAULT_MULTITENANT_WALLET_NAME
+            )
             context = base_context.copy()
             sub_wallet_settings = {
                 "wallet.recreate": False,
@@ -65,13 +81,14 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
             context.settings = context.settings.extend(sub_wallet_settings)
 
             profile, _ = await wallet_config(context, provision=False)
-            self._instances[multitenant_wallet_name] = profile
+            self._multitenant_profile = cast(AskarProfile, profile)
 
-        multitenant_wallet = self._instances[multitenant_wallet_name]
-        profile_context = multitenant_wallet.context.copy()
+        profile_context = self._multitenant_profile.context.copy()
 
         if provision:
-            await multitenant_wallet.store.create_profile(wallet_record.wallet_id)
+            await self._multitenant_profile.store.create_profile(
+                wallet_record.wallet_id
+            )
 
         extra_settings = {
             "admin.webhook_urls": self.get_webhook_urls(base_context, wallet_record),
@@ -82,7 +99,13 @@ class AskarProfileMultitenantManager(BaseMultitenantManager):
             wallet_record.settings
         ).extend(extra_settings)
 
-        return AskarProfile(multitenant_wallet.opened, profile_context)
+        assert self._multitenant_profile.opened
+
+        return AskarProfile(
+            self._multitenant_profile.opened,
+            profile_context,
+            profile_id=wallet_record.wallet_id,
+        )
 
     async def remove_wallet_profile(self, profile: Profile):
         """Remove the wallet profile instance.

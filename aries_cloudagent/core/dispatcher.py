@@ -11,9 +11,12 @@ import os
 import warnings
 
 from typing import Callable, Coroutine, Union
+import weakref
 
 from aiohttp.web import HTTPException
 
+
+from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
 from ..messaging.base_message import BaseMessage
@@ -173,11 +176,20 @@ class Dispatcher:
 
         context.injector.bind_instance(BaseResponder, responder)
 
-        connection_mgr = ConnectionManager(profile)
-        connection = await connection_mgr.find_inbound_connection(
-            inbound_message.receipt
-        )
-        del connection_mgr
+        # When processing oob attach message we supply the connection id
+        # associated with the inbound message
+        if inbound_message.connection_id:
+            async with self.profile.session() as session:
+                connection = await ConnRecord.retrieve_by_id(
+                    session, inbound_message.connection_id
+                )
+        else:
+            connection_mgr = ConnectionManager(profile)
+            connection = await connection_mgr.find_inbound_connection(
+                inbound_message.receipt
+            )
+            del connection_mgr
+
         if connection:
             inbound_message.connection_id = connection.connection_id
 
@@ -272,7 +284,10 @@ class DispatcherResponder(BaseResponder):
 
         """
         super().__init__(**kwargs)
-        self._context = context
+        # Weakly hold the context so it can be properly garbage collected.
+        # Binding this DispatcherResponder into the context creates a circular
+        # reference.
+        self._context = weakref.ref(context)
         self._inbound_message = inbound_message
         self._send = send_outbound
 
@@ -285,13 +300,13 @@ class DispatcherResponder(BaseResponder):
         Args:
             message: The message payload
         """
-        if isinstance(message, AgentMessage) and self._context.settings.get(
-            "timing.enabled"
-        ):
+        context = self._context()
+        if not context:
+            raise RuntimeError("weakref to context has expired")
+
+        if isinstance(message, AgentMessage) and context.settings.get("timing.enabled"):
             # Inject the timing decorator
-            in_time = (
-                self._context.message_receipt and self._context.message_receipt.in_time
-            )
+            in_time = context.message_receipt and context.message_receipt.in_time
             if not message._decorators.get("timing"):
                 message._decorators["timing"] = {
                     "in_time": in_time,
@@ -307,7 +322,11 @@ class DispatcherResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        return await self._send(self._context.profile, message, self._inbound_message)
+        context = self._context()
+        if not context:
+            raise RuntimeError("weakref to context has expired")
+
+        return await self._send(context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """
@@ -321,4 +340,8 @@ class DispatcherResponder(BaseResponder):
             "responder.send_webhook is deprecated; please use the event bus instead.",
             DeprecationWarning,
         )
-        await self._context.profile.notify("acapy::webhook::" + topic, payload)
+        context = self._context()
+        if not context:
+            raise RuntimeError("weakref to context has expired")
+
+        await context.profile.notify("acapy::webhook::" + topic, payload)

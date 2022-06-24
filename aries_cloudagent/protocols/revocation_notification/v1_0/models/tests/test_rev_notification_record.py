@@ -21,6 +21,7 @@ def rec():
         connection_id="mock_connection_id",
         thread_id="mock_thread_id",
         comment="mock_comment",
+        version="v1_0",
     )
 
 
@@ -50,6 +51,7 @@ async def test_storage(profile, rec):
             another = RevNotificationRecord(
                 rev_reg_id="mock_rev_reg_id",
                 cred_rev_id="mock_cred_rev_id",
+                version="v1_0",
             )
             await another.save(session)
             await RevNotificationRecord.query_by_ids(

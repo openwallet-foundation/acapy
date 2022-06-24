@@ -1,5 +1,6 @@
 """Presentation request message handler."""
 
+from .....core.oob_processor import OobMessageProcessor
 from .....indy.holder import IndyHolder, IndyHolderError
 from .....indy.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....ledger.error import LedgerError
@@ -40,8 +41,26 @@ class PresentationRequestHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        if not context.connection_ready:
-            raise HandlerException("No connection established for presentation request")
+        # If connection is present it must be ready for use
+        if context.connection_record and not context.connection_ready:
+            raise HandlerException("Connection used for presentation request not ready")
+
+        # Find associated oob record
+        oob_processor = context.inject(OobMessageProcessor)
+        oob_record = await oob_processor.find_oob_record_for_inbound_message(context)
+
+        # Either connection or oob context must be present
+        if not context.connection_record and not oob_record:
+            raise HandlerException(
+                "No connection or associated connectionless exchange found for"
+                " presentation request"
+            )
+
+        connection_id = (
+            context.connection_record.connection_id
+            if context.connection_record
+            else None
+        )
 
         presentation_manager = PresentationManager(profile)
 
@@ -56,11 +75,18 @@ class PresentationRequestHandler(BaseHandler):
                 ) = await V10PresentationExchange.retrieve_by_tag_filter(
                     session,
                     {"thread_id": context.message._thread_id},
-                    {"connection_id": context.connection_record.connection_id},
+                    {
+                        "role": V10PresentationExchange.ROLE_PROVER,
+                        "connection_id": connection_id,
+                    },
                 )  # holder initiated via proposal
+                presentation_exchange_record.presentation_request = indy_proof_request
+                presentation_exchange_record.presentation_request_dict = (
+                    context.message.serialize()
+                )
         except StorageNotFoundError:  # verifier sent this request free of any proposal
             presentation_exchange_record = V10PresentationExchange(
-                connection_id=context.connection_record.connection_id,
+                connection_id=connection_id,
                 thread_id=context.message._thread_id,
                 initiator=V10PresentationExchange.INITIATOR_EXTERNAL,
                 role=V10PresentationExchange.ROLE_PROVER,
@@ -72,7 +98,6 @@ class PresentationRequestHandler(BaseHandler):
                 trace=(context.message._trace is not None),
             )
 
-        presentation_exchange_record.presentation_request = indy_proof_request
         presentation_exchange_record = await presentation_manager.receive_request(
             presentation_exchange_record
         )  # mgr only saves record: on exception, saving state null is hopeless

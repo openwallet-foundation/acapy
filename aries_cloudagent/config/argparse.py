@@ -18,6 +18,8 @@ from ..utils.tracing import trace_event
 from .error import ArgsParseError
 from .util import BoundedInt, ByteSize
 
+from .plugin_settings import PLUGIN_CONFIG_KEY
+
 CAT_PROVISION = "general"
 CAT_START = "start"
 CAT_UPGRADE = "upgrade"
@@ -535,6 +537,20 @@ class GeneralGroup(ArgumentGroup):
         )
 
         parser.add_argument(
+            "--block-plugin",
+            dest="blocked_plugins",
+            type=str,
+            action="append",
+            required=False,
+            metavar="<module>",
+            env_var="ACAPY_BLOCKED_PLUGIN",
+            help=(
+                "Block <module> plugin module from loading. Multiple "
+                "instances of this parameter can be specified."
+            ),
+        )
+
+        parser.add_argument(
             "--plugin-config",
             dest="plugin_config",
             type=str,
@@ -611,19 +627,22 @@ class GeneralGroup(ArgumentGroup):
         if args.external_plugins:
             settings["external_plugins"] = args.external_plugins
 
+        if args.blocked_plugins:
+            settings["blocked_plugins"] = args.blocked_plugins
+
         if args.plugin_config:
             with open(args.plugin_config, "r") as stream:
-                settings["plugin_config"] = yaml.safe_load(stream)
+                settings[PLUGIN_CONFIG_KEY] = yaml.safe_load(stream)
 
         if args.plugin_config_values:
-            if "plugin_config" not in settings:
-                settings["plugin_config"] = {}
+            if PLUGIN_CONFIG_KEY not in settings:
+                settings[PLUGIN_CONFIG_KEY] = {}
 
             for value_str in chain(*args.plugin_config_values):
                 key, value = value_str.split("=", maxsplit=1)
                 value = yaml.safe_load(value)
                 deepmerge.always_merger.merge(
-                    settings["plugin_config"],
+                    settings[PLUGIN_CONFIG_KEY],
                     reduce(lambda v, k: {k: v}, key.split(".")[::-1], value),
                 )
 
@@ -680,7 +699,7 @@ class RevocationGroup(ArgumentGroup):
         parser.add_argument(
             "--monitor-revocation-notification",
             action="store_true",
-            env_var="ACAPY_NOTIFY_REVOCATION",
+            env_var="ACAPY_MONITOR_REVOCATION_NOTIFICATION",
             help=(
                 "Specifies that aca-py will emit webhooks on notification of "
                 "revocation received."
@@ -1170,22 +1189,6 @@ class TransportGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
-            "-oq",
-            "--outbound-queue",
-            dest="outbound_queue",
-            type=str,
-            env_var="ACAPY_OUTBOUND_TRANSPORT_QUEUE",
-            help=(
-                "Defines the location of the Outbound Queue Engine. This must be "
-                "a 'dotpath' to a Python module on the PYTHONPATH, followed by a "
-                "colon, followed by the name of a Python class that implements "
-                "BaseOutboundQueue. This commandline option is the official entry "
-                "point of ACA-py's pluggable queue interface. The default value is: "
-                "'aries_cloudagent.transport.outbound.queue.redis:RedisOutboundQueue'."
-                ""
-            ),
-        )
-        parser.add_argument(
             "-l",
             "--label",
             type=str,
@@ -1264,20 +1267,10 @@ class TransportGroup(ArgumentGroup):
             settings["transport.inbound_configs"] = args.inbound_transports
         else:
             raise ArgsParseError("-it/--inbound-transport is required")
-        if not args.outbound_transports and not args.outbound_queue:
-            raise ArgsParseError(
-                "-ot/--outbound-transport or -oq/--outbound-queue is required"
-            )
-        if args.outbound_transports and args.outbound_queue:
-            raise ArgsParseError(
-                "-ot/--outbound-transport and -oq/--outbound-queue are "
-                "not allowed together"
-            )
         if args.outbound_transports:
             settings["transport.outbound_configs"] = args.outbound_transports
-        if args.outbound_queue:
-            settings["transport.outbound_queue"] = args.outbound_queue
-
+        else:
+            raise ArgsParseError("-ot/--outbound-transport is required")
         settings["transport.enable_undelivered_queue"] = args.enable_undelivered_queue
 
         if args.label:
@@ -1629,13 +1622,15 @@ class MultitenantGroup(ArgumentGroup):
         parser.add_argument(
             "--multitenancy-config",
             type=str,
-            metavar="<multitenancy-config>",
+            nargs="+",
+            metavar="key=value",
             env_var="ACAPY_MULTITENANCY_CONFIGURATION",
             help=(
-                'Specify multitenancy configuration ("wallet_type" and "wallet_name"). '
-                'For example: "{"wallet_type":"askar-profile","wallet_name":'
-                '"askar-profile-name"}"'
-                '"wallet_name" is only used when "wallet_type" is "askar-profile"'
+                "Specify multitenancy configuration in key=value pairs. "
+                'For example: "wallet_type=askar-profile wallet_name=askar-profile-name" '
+                "Possible values: wallet_name, wallet_key, cache_size, "
+                'key_derivation_method. "wallet_name" is only used when '
+                '"wallet_type" is "askar-profile"'
             ),
         )
 
@@ -1656,17 +1651,37 @@ class MultitenantGroup(ArgumentGroup):
                 settings["multitenant.admin_enabled"] = True
 
             if args.multitenancy_config:
-                multitenancyConfig = json.loads(args.multitenancy_config)
+                # Legacy support
+                if (
+                    len(args.multitenancy_config) == 1
+                    and args.multitenancy_config[0][0] == "{"
+                ):
+                    multitenancy_config = json.loads(args.multitenancy_config[0])
+                    if multitenancy_config.get("wallet_type"):
+                        settings["multitenant.wallet_type"] = multitenancy_config.get(
+                            "wallet_type"
+                        )
 
-                if multitenancyConfig.get("wallet_type"):
-                    settings["multitenant.wallet_type"] = multitenancyConfig.get(
-                        "wallet_type"
-                    )
+                    if multitenancy_config.get("wallet_name"):
+                        settings["multitenant.wallet_name"] = multitenancy_config.get(
+                            "wallet_name"
+                        )
 
-                if multitenancyConfig.get("wallet_name"):
-                    settings["multitenant.wallet_name"] = multitenancyConfig.get(
-                        "wallet_name"
-                    )
+                    if multitenancy_config.get("cache_size"):
+                        settings["multitenant.cache_size"] = multitenancy_config.get(
+                            "cache_size"
+                        )
+
+                    if multitenancy_config.get("key_derivation_method"):
+                        settings[
+                            "multitenant.key_derivation_method"
+                        ] = multitenancy_config.get("key_derivation_method")
+
+                else:
+                    for value_str in args.multitenancy_config:
+                        key, value = value_str.split("=", maxsplit=1)
+                        value = yaml.safe_load(value)
+                        settings[f"multitenant.{key}"] = value
 
         return settings
 

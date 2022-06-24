@@ -2,8 +2,11 @@ import pytest
 
 from unittest import TestCase
 
+from aries_cloudagent.config.plugin_settings import PluginSettings
+
 from ..base import SettingsError
 from ..settings import Settings
+from ..plugin_settings import PLUGIN_CONFIG_KEY
 
 
 class TestSettings(TestCase):
@@ -59,3 +62,25 @@ class TestSettings(TestCase):
         assert self.test_instance[self.test_key] == self.test_value
         self.test_instance.set_default("BOOL", "True")
         assert self.test_instance["BOOL"] == "True"
+
+    def test_plugin_setting_retrieval(self):
+        plugin_setting_values = {
+            "value0": 0,
+            "value1": 1,
+            "value2": 2,
+            "value3": 3,
+            "value4": 4,
+        }
+        self.test_instance[PLUGIN_CONFIG_KEY] = {"my_plugin": plugin_setting_values}
+
+        plugin_settings = self.test_instance.for_plugin("my_plugin")
+        assert isinstance(plugin_settings, PluginSettings)
+        assert plugin_settings._values == plugin_setting_values
+        for key in plugin_setting_values:
+            assert key in plugin_settings
+            assert plugin_settings[key] == plugin_setting_values[key]
+            assert plugin_settings.get_value(key) == plugin_setting_values[key]
+        with self.assertRaises(KeyError):
+            plugin_settings["MISSING"]
+        assert len(plugin_settings) == 5
+        assert len(plugin_settings) == 5

@@ -3,25 +3,23 @@
 from aiohttp import web
 from aiohttp_apispec import (
     docs,
-    request_schema,
     match_info_schema,
-    response_schema,
     querystring_schema,
+    request_schema,
+    response_schema,
 )
-from marshmallow import fields, validate, validates_schema, ValidationError
+from marshmallow import ValidationError, fields, validate, validates_schema
 
 from ...admin.request_context import AdminRequestContext
-from ...messaging.valid import JSONWebToken, UUIDFour
-from ...messaging.models.base import BaseModelError
-from ...messaging.models.openapi import OpenAPISchema
-from ...multitenant.base import BaseMultitenantManager
-from ...storage.error import StorageError, StorageNotFoundError
-from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
-from ...wallet.error import WalletSettingsError
-
 from ...core.error import BaseError
 from ...core.profile import ProfileManagerProvider
-
+from ...messaging.models.base import BaseModelError
+from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.valid import JSONWebToken, UUIDFour
+from ...multitenant.base import BaseMultitenantManager
+from ...storage.error import StorageError, StorageNotFoundError
+from ...wallet.error import WalletSettingsError
+from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ..error import WalletKeyMissingError
 
 
@@ -56,6 +54,13 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
     wallet_key = fields.Str(
         description="Master key used for key derivation.", example="MySecretKey123"
+    )
+
+    wallet_key_derivation = fields.Str(
+        description="Key derivation",
+        required=False,
+        example="RAW",
+        validate=validate.OneOf(["ARGON2I_MOD", "ARGON2I_INT", "RAW"]),
     )
 
     wallet_type = fields.Str(
@@ -303,10 +308,13 @@ async def wallet_create(request: web.BaseRequest):
 
     label = body.get("label")
     image_url = body.get("image_url")
+    key_derivation = body.get("wallet_key_derivation")
     if label:
         settings["default_label"] = label
     if image_url:
         settings["image_url"] = image_url
+    if key_derivation:  # allow lower levels to handle default
+        settings["wallet.key_derivation_method"] = key_derivation
 
     try:
         multitenant_mgr = context.profile.inject(BaseMultitenantManager)
@@ -315,7 +323,7 @@ async def wallet_create(request: web.BaseRequest):
             settings, key_management_mode
         )
 
-        token = multitenant_mgr.create_auth_token(wallet_record, wallet_key)
+        token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -413,7 +421,7 @@ async def wallet_create_token(request: web.BaseRequest):
                 " the wallet key to be provided"
             )
 
-        token = multitenant_mgr.create_auth_token(wallet_record, wallet_key)
+        token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except WalletKeyMissingError as err:

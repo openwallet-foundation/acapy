@@ -311,17 +311,20 @@ class TestIndySdkIssuer(AsyncTestCase):
             values = json.loads(call_values)
             assert "attr1" in values
 
-            mock_indy_revoke_credential.side_effect = [
-                json.dumps(TEST_RR_DELTA),
-                IndyError(
-                    error_code=ErrorCode.AnoncredsInvalidUserRevocId,
-                    error_details={"message": "already revoked"},
-                ),
-                IndyError(
+            def mock_revoke(_h, _t, _r, cred_rev_id):
+                if cred_rev_id == "42":
+                    return json.dumps(TEST_RR_DELTA)
+                if cred_rev_id == "54":
+                    raise IndyError(
+                        error_code=ErrorCode.AnoncredsInvalidUserRevocId,
+                        error_details={"message": "already revoked"},
+                    )
+                raise IndyError(
                     error_code=ErrorCode.UnknownCryptoTypeError,
                     error_details={"message": "truly an outlier"},
-                ),
-            ]
+                )
+
+            mock_indy_revoke_credential.side_effect = mock_revoke
             mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
             (result, failed) = await self.issuer.revoke_credentials(
                 REV_REG_ID, tails_file_path="dummy", cred_rev_ids=test_cred_rev_ids

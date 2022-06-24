@@ -144,27 +144,6 @@ class TestArgParse(AsyncTestCase):
         with self.assertRaises(argparse.ArgsParseError):
             settings = group.get_settings(result)
 
-    async def test_outbound_queue(self):
-        """Test outbound queue class path string."""
-        parser = argparse.create_argument_parser()
-        group = argparse.TransportGroup()
-        group.add_arguments(parser)
-
-        result = parser.parse_args(
-            [
-                "--inbound-transport",
-                "http",
-                "0.0.0.0",
-                "80",
-                "--outbound-queue",
-                "my_queue.mod.path",
-            ]
-        )
-
-        settings = group.get_settings(result)
-
-        assert settings.get("transport.outbound_queue") == "my_queue.mod.path"
-
     async def test_general_settings_file(self):
         """Test file argument parsing."""
 
@@ -252,7 +231,26 @@ class TestArgParse(AsyncTestCase):
                 "--jwt-secret",
                 "secret",
                 "--multitenancy-config",
-                '{"wallet_type":"askar","wallet_name":"test"}',
+                '{"wallet_type":"askar","wallet_name":"test", "cache_size": 10}',
+            ]
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("multitenant.enabled") == True
+        assert settings.get("multitenant.jwt_secret") == "secret"
+        assert settings.get("multitenant.wallet_type") == "askar"
+        assert settings.get("multitenant.wallet_name") == "test"
+
+        result = parser.parse_args(
+            [
+                "--multitenant",
+                "--jwt-secret",
+                "secret",
+                "--multitenancy-config",
+                "wallet_type=askar",
+                "wallet_name=test",
+                "cache_size=10",
             ]
         )
 

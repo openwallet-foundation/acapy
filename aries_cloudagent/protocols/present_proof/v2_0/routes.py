@@ -32,6 +32,7 @@ from ....messaging.valid import (
     UUID4,
 )
 from ....storage.error import StorageError, StorageNotFoundError
+from ....storage.base import BaseStorage
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
@@ -1086,15 +1087,22 @@ async def present_proof_send_presentation(request: web.BaseRequest):
             )
         )
 
-    connection_id = pres_ex_record.connection_id
-    try:
-        async with profile.session() as session:
-            conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-    except StorageNotFoundError as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    # Fetch connection if exchange has record
+    conn_record = None
+    if pres_ex_record.connection_id:
+        try:
+            async with profile.session() as session:
 
-    if not conn_record.is_ready:
-        raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
+                conn_record = await ConnRecord.retrieve_by_id(
+                    session, pres_ex_record.connection_id
+                )
+        except StorageNotFoundError as err:
+            raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    if conn_record and not conn_record.is_ready:
+        raise web.HTTPForbidden(
+            reason=f"Connection {pres_ex_record.connection_id} not ready"
+        )
 
     pres_manager = V20PresManager(profile)
     try:
@@ -1128,7 +1136,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         context.settings,
         trace_msg,
     )
-    await outbound_handler(pres_message, connection_id=connection_id)
+    await outbound_handler(pres_message, connection_id=pres_ex_record.connection_id)
 
     trace_event(
         context.settings,
@@ -1265,8 +1273,17 @@ async def present_proof_remove(request: web.BaseRequest):
     pres_ex_record = None
     try:
         async with context.profile.session() as session:
-            pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
-            await pres_ex_record.delete_record(session)
+            try:
+                pres_ex_record = await V20PresExRecord.retrieve_by_id(
+                    session, pres_ex_id
+                )
+                await pres_ex_record.delete_record(session)
+            except (BaseModelError, ValidationError):
+                storage = session.inject(BaseStorage)
+                storage_record = await storage.get_record(
+                    record_type=V20PresExRecord.RECORD_TYPE, record_id=pres_ex_id
+                )
+                await storage.delete_record(storage_record)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:

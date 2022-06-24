@@ -83,7 +83,6 @@ class LoggingConfigurator:
         agent_label,
         inbound_transports,
         outbound_transports,
-        outbound_queue,
         public_did,
         admin_server=None,
         banner_length=40,
@@ -96,7 +95,6 @@ class LoggingConfigurator:
             agent_label: Agent Label
             inbound_transports: Configured inbound transports
             outbound_transports: Configured outbound transports
-            outbound_queue: The outbound queue engine instance
             admin_server: Admin server info
             public_did: Public DID
             banner_length: (Default value = 40) Length of the banner
@@ -115,34 +113,53 @@ class LoggingConfigurator:
 
         # Inbound transports
         banner.print_subtitle("Inbound Transports")
-        banner.print_spacer()
-        banner.print_list(
-            [
-                f"{transport.scheme}://{transport.host}:{transport.port}"
-                for transport in inbound_transports.values()
-            ]
-        )
-        banner.print_spacer()
+        internal_in_transports = [
+            f"{transport.scheme}://{transport.host}:{transport.port}"
+            for transport in inbound_transports.values()
+            if not transport.is_external
+        ]
+        if internal_in_transports:
+            banner.print_spacer()
+            banner.print_list(internal_in_transports)
+            banner.print_spacer()
+        external_in_transports = [
+            f"{transport.scheme}://{transport.host}:{transport.port}"
+            for transport in inbound_transports.values()
+            if transport.is_external
+        ]
+        if external_in_transports:
+            banner.print_spacer()
+            banner.print_subtitle("  External Plugin")
+            banner.print_spacer()
+            banner.print_list(external_in_transports)
+            banner.print_spacer()
 
         # Outbound transports
-        schemes = set().union(
-            *(transport.schemes for transport in outbound_transports.values())
+        banner.print_subtitle("Outbound Transports")
+        internal_schemes = set().union(
+            *(
+                transport.schemes
+                for transport in outbound_transports.values()
+                if not transport.is_external
+            )
         )
-        if schemes:
-            banner.print_subtitle("Outbound Transports")
+        if internal_schemes:
             banner.print_spacer()
-            banner.print_list([f"{scheme}" for scheme in sorted(schemes)])
+            banner.print_list([f"{scheme}" for scheme in sorted(internal_schemes)])
             banner.print_spacer()
 
-        # Outbound queue
-        if outbound_queue:
-            banner.print_subtitle("Outbound Queue")
-            banner.print_spacer()
-            banner.print_list(
-                [
-                    f"{outbound_queue}",
-                ]
+        external_schemes = set().union(
+            *(
+                transport.schemes
+                for transport in outbound_transports.values()
+                if transport.is_external
             )
+        )
+        if external_schemes:
+            banner.print_spacer()
+            banner.print_subtitle("  External Plugin")
+            banner.print_spacer()
+            banner.print_list([f"{scheme}" for scheme in sorted(external_schemes)])
             banner.print_spacer()
 
         # DID info

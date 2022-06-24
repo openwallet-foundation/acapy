@@ -7,6 +7,7 @@ import re
 from typing import Callable, Coroutine
 import uuid
 import warnings
+import weakref
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -115,7 +116,11 @@ class AdminResponder(BaseResponder):
 
         """
         super().__init__(**kwargs)
-        self._profile = profile
+        # Weakly hold the profile so this reference doesn't prevent profiles
+        # from being cleaned up when appropriate.
+        # Binding this AdminResponder to the profile's context creates a circular
+        # reference.
+        self._profile = weakref.ref(profile)
         self._send = send
 
     async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
@@ -125,7 +130,10 @@ class AdminResponder(BaseResponder):
         Args:
             message: The `OutboundMessage` to be sent
         """
-        return await self._send(self._profile, message)
+        profile = self._profile()
+        if not profile:
+            raise RuntimeError("weakref to profile has expired")
+        return await self._send(profile, message)
 
     async def send_webhook(self, topic: str, payload: dict):
         """
@@ -139,7 +147,10 @@ class AdminResponder(BaseResponder):
             "responder.send_webhook is deprecated; please use the event bus instead.",
             DeprecationWarning,
         )
-        await self._profile.notify("acapy::webhook::" + topic, payload)
+        profile = self._profile()
+        if not profile:
+            raise RuntimeError("weakref to profile has expired")
+        await profile.notify("acapy::webhook::" + topic, payload)
 
     @property
     def send_fn(self) -> Coroutine:
@@ -323,6 +334,7 @@ class AdminServer(BaseAdminServer):
                         f"{UUIDFour.PATTERN}/default-mediator)",
                         path,
                     )
+                    or path.startswith("/mediation/default-mediator")
                 )
 
                 # base wallet is not allowed to perform ssi related actions.

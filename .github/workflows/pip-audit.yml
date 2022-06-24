@@ -1,0 +1,22 @@
+name: pip-audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install
+        run: |
+          python -m venv env/
+          source env/bin/activate
+          python -m pip install .
+      - uses: trailofbits/gh-action-pip-audit@v0.0.4
+        with:
+          virtual-environment: env/
+          local: true

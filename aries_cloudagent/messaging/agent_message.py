@@ -21,6 +21,7 @@ from .decorators.base import BaseDecoratorSet
 from .decorators.default import DecoratorSet
 from .decorators.signature_decorator import SignatureDecorator  # TODO deprecated
 from .decorators.thread_decorator import ThreadDecorator
+from .decorators.service_decorator import ServiceDecorator
 from .decorators.trace_decorator import (
     TraceDecorator,
     TraceReport,
@@ -248,6 +249,30 @@ class AgentMessage(BaseModel, BaseMessage):
             if "sig" in field and not await field["sig"].verify(wallet):
                 return False
         return True
+
+    @property
+    def _service(self) -> ServiceDecorator:
+        """
+        Accessor for the message's service decorator.
+
+        Returns:
+            The ServiceDecorator for this message
+
+        """
+        return self._decorators.get("service")
+
+    @_service.setter
+    def _service(self, val: Union[ServiceDecorator, dict]):
+        """
+        Setter for the message's service decorator.
+
+        Args:
+            val: ServiceDecorator or dict to set as the service
+        """
+        if val is None:
+            self._decorators.pop("service", None)
+        else:
+            self._decorators["service"] = val
 
     @property
     def _thread(self) -> ThreadDecorator:

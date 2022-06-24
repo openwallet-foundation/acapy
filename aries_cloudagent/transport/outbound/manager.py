@@ -100,12 +100,12 @@ class OutboundTransportManager:
         for outbound_transport in outbound_transports:
             self.register(outbound_transport)
 
-    def register(self, module: str) -> str:
+    def register(self, module_name: str) -> str:
         """
         Register a new outbound transport by module path.
 
         Args:
-            module: Module name to register
+            module_name: Module name to register
 
         Raises:
             OutboundTransportRegistrationError: If the imported class cannot
@@ -117,13 +117,19 @@ class OutboundTransportManager:
 
         """
         try:
+            if "." in module_name:
+                package, module = module_name.split(".", 1)
+            else:
+                package = MODULE_BASE_PATH
+                module = module_name
+
             imported_class = ClassLoader.load_subclass_of(
-                BaseOutboundTransport, module, MODULE_BASE_PATH
+                BaseOutboundTransport, module, package
             )
-        except (ModuleLoadError, ClassNotFoundError):
+        except (ModuleLoadError, ClassNotFoundError) as e:
             raise OutboundTransportRegistrationError(
                 f"Outbound transport module {module} could not be resolved."
-            )
+            ) from e
 
         return self.register_class(imported_class)
 
@@ -214,6 +220,17 @@ class OutboundTransportManager:
         except StopIteration:
             pass
 
+    def get_external_running_transport(self) -> str:
+        """Find the external running transport ID."""
+        try:
+            return next(
+                transport_id
+                for transport_id, transport in self.running_transports.items()
+                if transport.is_external
+            )
+        except StopIteration:
+            pass
+
     def get_running_transport_for_endpoint(self, endpoint: str):
         """Find the running transport ID to use for a given endpoint."""
         # Grab the scheme from the uri
@@ -235,7 +252,7 @@ class OutboundTransportManager:
         """Get an instance of a running transport by ID."""
         return self.running_transports[transport_id]
 
-    def enqueue_message(self, profile: Profile, outbound: OutboundMessage):
+    async def enqueue_message(self, profile: Profile, outbound: OutboundMessage):
         """
         Add an outbound message to the queue.
 
@@ -248,18 +265,28 @@ class OutboundTransportManager:
         for target in targets:
             endpoint = target.endpoint
             try:
-                transport_id = self.get_running_transport_for_endpoint(endpoint)
+                transport_id = self.get_external_running_transport()
+                if not transport_id:
+                    transport_id = self.get_running_transport_for_endpoint(endpoint)
             except OutboundDeliveryError:
                 pass
             if transport_id:
                 break
         if not transport_id:
             raise OutboundDeliveryError("No supported transport for outbound message")
-
-        queued = QueuedOutboundMessage(profile, outbound, target, transport_id)
-        queued.retries = self.MAX_RETRY_COUNT
-        self.outbound_new.append(queued)
-        self.process_queued()
+        transport = self.get_transport_instance(transport_id)
+        if transport.is_external:
+            encoded_outbound_message = await self.encode_outbound_message(
+                profile, outbound, target
+            )
+            await transport.handle_message(
+                profile, encoded_outbound_message.payload, target.endpoint
+            )
+        else:
+            queued = QueuedOutboundMessage(profile, outbound, target, transport_id)
+            queued.retries = self.MAX_RETRY_COUNT
+            self.outbound_new.append(queued)
+            self.process_queued()
 
     async def encode_outbound_message(
         self, profile: Profile, outbound: OutboundMessage, target: ConnectionTarget

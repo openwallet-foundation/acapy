@@ -208,6 +208,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
             presentation_id="https://presentation_id.com",
         )
 
+    @pytest.mark.ursa_bbs_signatures
     async def test_sign_presentation_bbsbls(self):
         unsigned_presentation = await create_presentation(
             credentials=[CREDENTIAL_ISSUED]

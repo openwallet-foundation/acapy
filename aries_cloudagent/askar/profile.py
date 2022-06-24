@@ -36,11 +36,18 @@ class AskarProfile(Profile):
 
     BACKEND_NAME = "askar"
 
-    def __init__(self, opened: AskarOpenStore, context: InjectionContext = None):
+    def __init__(
+        self,
+        opened: AskarOpenStore,
+        context: InjectionContext = None,
+        *,
+        profile_id: str = None
+    ):
         """Create a new AskarProfile instance."""
         super().__init__(context=context, name=opened.name, created=opened.created)
         self.opened = opened
         self.ledger_pool: IndyVdrLedgerPool = None
+        self.profile_id = profile_id
         self.init_ledger_pool()
         self.bind_providers()
 
@@ -56,8 +63,8 @@ class AskarProfile(Profile):
 
     async def remove(self):
         """Remove the profile."""
-        if self.settings.get("multitenant.wallet_type") == "askar-profile":
-            await self.store.remove_profile(self.settings.get("wallet.askar_profile"))
+        if self.profile_id:
+            await self.store.remove_profile(self.profile_id)
 
     def init_ledger_pool(self):
         """Initialize the ledger pool."""
@@ -160,11 +167,10 @@ class AskarProfileSession(ProfileSession):
     ):
         """Create a new IndySdkProfileSession instance."""
         super().__init__(profile=profile, context=context, settings=settings)
-        profile_id = profile.context.settings.get("wallet.askar_profile")
         if is_txn:
-            self._opener = self.profile.store.transaction(profile_id)
+            self._opener = self.profile.store.transaction(profile.profile_id)
         else:
-            self._opener = self.profile.store.session(profile_id)
+            self._opener = self.profile.store.session(profile.profile_id)
         self._handle: Session = None
         self._acquire_start: float = None
         self._acquire_end: float = None
@@ -213,6 +219,8 @@ class AskarProfileSession(ProfileSession):
                 await self._handle.commit()
             except AskarError as err:
                 raise ProfileError("Error committing transaction") from err
+        if self._handle:
+            await self._handle.close()
         self._handle = None
         self._check_duration()
 
