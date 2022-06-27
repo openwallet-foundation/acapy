@@ -1,6 +1,9 @@
-# 0.7.4-RC4
+# 0.7.4-RC5
 
-## June 21, 2022
+## June 23, 2022
+
+**NOTE** We expect 0.7.4-rc5 will the be the last Release Candidate prior to the
+official 0.7.4 release.
 
 **NOTE:** 0.7.4-rc4 contains a fix for a revocation-related issue introduced in
 0.7.4-rc3. We recommend updating to 0.7.4-rc4 immediately if you have been using
@@ -11,18 +14,18 @@
 
 The 0.7.4 release consists largely of internal fixes to ACA-Py, big increases in
 performance resulting from the now recommended use of [Aries
-Askar](https://github.com/bcgov/aries-askar) instead of the Indy-SDK, tools for
-dealing with revocation-related issues, plus a number of enhancements. There have been
-a lot of groups exercising ACA-Py and the updates made in this release are a
-reflection of those efforts. We have PRs that have been contributed by 20
-different people, which is likely a record for a single ACA-Py release.
+Askar](https://github.com/bcgov/aries-askar) instead of the Indy-SDK,
+improvements and tools for dealing with revocation-related issues, plus a number
+of general enhancements. There have been a lot of groups exercising ACA-Py and the
+updates made in this release are a reflection of those efforts. We have PRs that
+have been contributed by 21 different people.
 
-The largest enhancement is in the area of the Hyperledger Indy endorser,
-enabling an instance of ACA-Py to act as an Endorser for Indy authors needed
-endorsing to write objects to an Indy ledger. We're hoping to see an
-"aries-endorser-service" come from that work, an Endorser to be easily operated
-by an organization, ideally with a controller starter kit to allow an approvals
-business flow.
+The largest enhancement is in the area of the endorsing of Hyperledger Indy
+ledger transactions, enabling an instance of ACA-Py to act as an Endorser for
+Indy authors needing endorsements to write objects to an Indy ledger. We're
+hoping to see (and working on!) an "aries-endorser-service" come from that work,
+an Endorser to be easily operated by an organization, ideally with a controller
+starter kit supporting a basic approvals business workflow.
 
 A focus towards the end of the 0.7.4 development and release cycle was on the
 handling of AnonCreds revocation in ACA-Py. Most important, a production issue
@@ -82,6 +85,7 @@ stuff needed for a growing codebase.
   - Use provided connection_id if provided [\#1726](https://github.com/hyperledger/aries-cloudagent-python/pull/1726) ([ianco](https://github.com/ianco))
 
 - Additions to the startup parameters, Admin API and Web Hooks
+  - Improve typing of settings and add plugin settings object [\#1833](https://github.com/hyperledger/aries-cloudagent-python/pull/1833) ([dbluhm](https://github.com/dbluhm))
   - feat: accept taa using startup parameter --accept-taa [\#1643](https://github.com/hyperledger/aries-cloudagent-python/pull/1643) ([TimoGlastra](https://github.com/TimoGlastra))
   - Add auto_verify flag in present-proof protocol [\#1702](https://github.com/hyperledger/aries-cloudagent-python/pull/1702) ([DaevMithran](https://github.com/DaevMithran))
   - feat: query connections by their_public_did [\#1637](https://github.com/hyperledger/aries-cloudagent-python/pull/1637) ([TimoGlastra](https://github.com/TimoGlastra))
@@ -133,6 +137,7 @@ stuff needed for a growing codebase.
 
 - Multitenacy updates and fixes
   - feat: create new JWT tokens and invalidate older for multitenancy [\#1725](https://github.com/hyperledger/aries-cloudagent-python/pull/1725) ([TimoGlastra](https://github.com/TimoGlastra))
+  - Multi-tenancy stale wallet clean up [\#1692](https://github.com/hyperledger/aries-cloudagent-python/pull/1692) ([dbluhm](https://github.com/dbluhm))
   
 - Dependencies and internal code updates/fixes
   - Update pyjwt to 2.4 [\#1829](https://github.com/hyperledger/aries-cloudagent-python/pull/1829) ([andrewwhitehead](https://github.com/andrewwhitehead))
@@ -176,8 +181,11 @@ stuff needed for a growing codebase.
   - Remove references to play with von [\#1688](https://github.com/hyperledger/aries-cloudagent-python/pull/1688) ([ianco](https://github.com/ianco))
   - Add pre-commit as optional developer tool [\#1671](https://github.com/hyperledger/aries-cloudagent-python/pull/1671) ([dbluhm](https://github.com/dbluhm))
   - run_docker start - pass environment variables [\#1715](https://github.com/hyperledger/aries-cloudagent-python/pull/1715) ([shaangill025](https://github.com/shaangill025))
+  - Use local deps only [\#1834](https://github.com/hyperledger/aries-cloudagent-python/pull/1834) ([ryjones](https://github.com/ryjones))
+  - Enable pip-audit [\#1831](https://github.com/hyperledger/aries-cloudagent-python/pull/1831) ([ryjones](https://github.com/ryjones))
 
 - Release management pull requests
+  - 0.7.4-rc5 changelog, version and ReadTheDocs updates [\#1838](https://github.com/hyperledger/aries-cloudagent-python/pull/1838) ([swcurran](https://github.com/swcurran))
   - Update changelog and version for 0.7.4-rc4 [\#1830](https://github.com/hyperledger/aries-cloudagent-python/pull/1830) ([swcurran](https://github.com/swcurran))
   - Changelog, version and ReadTheDocs updates for 0.7.4-rc3 release [\#1817](https://github.com/hyperledger/aries-cloudagent-python/pull/1817) ([swcurran](https://github.com/swcurran))
   - 0.7.4-rc2 update [\#1771](https://github.com/hyperledger/aries-cloudagent-python/pull/1771) ([swcurran](https://github.com/swcurran))
