@@ -20,14 +20,10 @@ from runners.support.agent import (  # noqa:E402
     start_mediator_agent,
     connect_wallet_to_mediator,
     start_endorser_agent,
-    connect_wallet_to_endorser,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
-    DID_METHOD_SOV,
     DID_METHOD_KEY,
-    KEY_TYPE_ED255,
     KEY_TYPE_BLS,
-    SIG_TYPE_BLS,
 )
 from runners.support.utils import (  # noqa:E402
     check_requires,
@@ -615,6 +611,7 @@ class AgentContainer:
         self,
         ident: str,
         start_port: int,
+        prefix: str = None,
         no_auto: bool = False,
         revocation: bool = False,
         genesis_txns: str = None,
@@ -639,6 +636,7 @@ class AgentContainer:
         self.genesis_txn_list = genesis_txn_list
         self.ident = ident
         self.start_port = start_port
+        self.prefix = prefix or ident
         self.no_auto = no_auto
         self.revocation = revocation
         self.tails_server_base_url = tails_server_base_url
@@ -685,6 +683,7 @@ class AgentContainer:
                 self.ident,
                 self.start_port,
                 self.start_port + 1,
+                prefix=self.prefix,
                 genesis_data=self.genesis_txns,
                 genesis_txn_list=self.genesis_txn_list,
                 no_auto=self.no_auto,
