@@ -1,19 +1,8 @@
 import asyncio
-from aiohttp import (
-    web,
-    ClientSession,
-    ClientRequest,
-    ClientResponse,
-    ClientError,
-    ClientTimeout,
-)
 import json
-import os
-from time import sleep
 import uuid
 
 from runners.agent_container import AgentContainer, create_agent_with_args_list
-from runners.support.agent import DemoAgent
 
 
 ######################################################################
@@ -21,31 +10,7 @@ from runners.support.agent import DemoAgent
 ######################################################################
 
 
-def run_coroutine(coroutine):
-    loop = asyncio.get_event_loop()
-    if not loop:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coroutine())
-    finally:
-        pass
-        # loop.close()
-
-
-def run_coroutine_with_args(coroutine, *args):
-    loop = asyncio.get_event_loop()
-    if not loop:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coroutine(*args))
-    finally:
-        pass
-        # loop.close()
-
-
-def run_coroutine_with_kwargs(coroutine, *args, **kwargs):
+def run_coroutine(coroutine, *args, **kwargs):
     loop = asyncio.get_event_loop()
     if not loop:
         loop = asyncio.new_event_loop()
@@ -58,14 +23,14 @@ def run_coroutine_with_kwargs(coroutine, *args, **kwargs):
 
 
 def async_sleep(delay):
-    run_coroutine_with_args(asyncio.sleep, delay)
+    run_coroutine(asyncio.sleep, delay)
 
 
 ######################################################################
 # high level aries agent interface
 ######################################################################
 def create_agent_container_with_args(in_args: list):
-    return run_coroutine_with_args(create_agent_with_args_list, in_args)
+    return run_coroutine(create_agent_with_args_list, in_args)
 
 
 def aries_container_initialize(
@@ -73,7 +38,7 @@ def aries_container_initialize(
     schema_name: str = None,
     schema_attrs: list = None,
 ):
-    run_coroutine_with_kwargs(
+    run_coroutine(
         the_container.initialize,
         schema_name=schema_name,
         schema_attrs=schema_attrs,
@@ -86,7 +51,7 @@ def agent_container_register_did(
     verkey: str,
     role: str,
 ):
-    run_coroutine_with_args(
+    run_coroutine(
         the_container.register_did,
         did,
         verkey,
@@ -103,7 +68,7 @@ def aries_container_terminate(
 def aries_container_generate_invitation(
     the_container: AgentContainer,
 ):
-    return run_coroutine_with_kwargs(
+    return run_coroutine(
         the_container.generate_invitation,
     )
 
@@ -112,7 +77,7 @@ def aries_container_receive_invitation(
     the_container: AgentContainer,
     invite_details: dict,
 ):
-    return run_coroutine_with_kwargs(
+    return run_coroutine(
         the_container.input_invitation,
         invite_details,
     )
@@ -130,7 +95,7 @@ def aries_container_create_schema_cred_def(
     schema_attrs: list,
     version: str = None,
 ):
-    return run_coroutine_with_kwargs(
+    return run_coroutine(
         the_container.create_schema_and_cred_def,
         schema_name,
         schema_attrs,
@@ -143,7 +108,7 @@ def aries_container_issue_credential(
     cred_def_id: str,
     cred_attrs: list,
 ):
-    return run_coroutine_with_args(
+    return run_coroutine(
         the_container.issue_credential,
         cred_def_id,
         cred_attrs,
@@ -155,7 +120,7 @@ def aries_container_receive_credential(
     cred_def_id: str,
     cred_attrs: list,
 ):
-    return run_coroutine_with_args(
+    return run_coroutine(
         the_container.receive_credential,
         cred_def_id,
         cred_attrs,
@@ -166,7 +131,7 @@ def aries_container_request_proof(
     the_container: AgentContainer,
     proof_request: dict,
 ):
-    return run_coroutine_with_args(
+    return run_coroutine(
         the_container.request_proof,
         proof_request,
     )
@@ -176,7 +141,7 @@ def aries_container_verify_proof(
     the_container: AgentContainer,
     proof_request: dict,
 ):
-    return run_coroutine_with_args(
+    return run_coroutine(
         the_container.verify_proof,
         proof_request,
     )
@@ -228,7 +193,7 @@ def agent_container_GET(
     text: bool = False,
     params: dict = None,
 ) -> dict:
-    return run_coroutine_with_kwargs(
+    return run_coroutine(
         the_container.admin_GET,
         path,
         text=text,
@@ -243,7 +208,7 @@ def agent_container_POST(
     text: bool = False,
     params: dict = None,
 ) -> dict:
-    return run_coroutine_with_kwargs(
+    return run_coroutine(
         the_container.admin_POST,
         path,
         data=data,
@@ -259,7 +224,7 @@ def agent_container_PATCH(
     text: bool = False,
     params: dict = None,
 ) -> dict:
-    return run_coroutine_with_kwargs(
+    return run_coroutine(
         the_container.admin_PATCH,
         path,
         data=data,
@@ -275,7 +240,7 @@ def agent_container_PUT(
     text: bool = False,
     params: dict = None,
 ) -> dict:
-    return run_coroutine_with_kwargs(
+    return run_coroutine(
         the_container.admin_PUT,
         path,
         data=data,
