@@ -231,7 +231,6 @@ class TestArgParse(AsyncTestCase):
                 "--jwt-secret",
                 "secret",
                 "--multitenancy-config",
-                '{"wallet_type":"askar","wallet_name":"test"}',
                 '{"wallet_type":"askar","wallet_name":"test", "cache_size": 10}',
                 "--base-wallet-routes",
                 "/my_route",
