@@ -6,7 +6,7 @@ import logging
 import re
 import uuid
 
-from typing import Sequence, Tuple, Union
+from typing import Dict, Sequence, Tuple, Union
 
 from aries_askar import AskarError, AskarErrorCode
 from indy_credx import (
@@ -471,27 +471,26 @@ class IndyCredxHolder(IndyHolder):
 
         """
 
-        creds = {}
+        creds: Dict[str, Credential] = {}
 
-        def get_rev_state(cred_id, timestamp):
-            reg_id = creds[cred_id].rev_reg_id
-            if not reg_id:
-                raise IndyHolderError(
-                    f"Cannot prove credential '{cred_id}' for "
-                    "specific timestamp, credential has no rev_reg_id"
-                )
-            if not rev_states or reg_id not in rev_states:
-                raise IndyHolderError(
-                    f"No revocation states provided for credential '{cred_id}'"
-                    f"with rev_reg_id '{reg_id}'"
-                )
-            state = rev_states[reg_id].get(timestamp)
-            if not state:
-                raise IndyHolderError(
-                    f"No revocation states provided for credential '{cred_id}'"
-                    f"with rev_reg_id '{reg_id}' at timestamp {timestamp}"
-                )
-            return state
+        def get_rev_state(cred_id: str, detail: dict):
+            cred = creds[cred_id]
+            rev_reg_id = cred.rev_reg_id
+            timestamp = detail.get("timestamp") if rev_reg_id else None
+            rev_state = None
+            if timestamp:
+                if not rev_states or rev_reg_id not in rev_states:
+                    raise IndyHolderError(
+                        f"No revocation states provided for credential '{cred_id}' "
+                        f"with rev_reg_id '{rev_reg_id}'"
+                    )
+                rev_state = rev_states[rev_reg_id].get(timestamp)
+                if not rev_state:
+                    raise IndyHolderError(
+                        f"No revocation states provided for credential '{cred_id}' "
+                        f"with rev_reg_id '{rev_reg_id}' at timestamp {timestamp}"
+                    )
+            return timestamp, rev_state
 
         self_attest = requested_credentials.get("self_attested_attributes") or {}
         present_creds = PresentCredentials()
@@ -501,25 +500,26 @@ class IndyCredxHolder(IndyHolder):
             if cred_id not in creds:
                 # NOTE: could be optimized if multiple creds are requested
                 creds[cred_id] = await self._get_credential(cred_id)
-            timestamp = detail.get("timestamp")
+            timestamp, rev_state = get_rev_state(cred_id, detail)
             present_creds.add_attributes(
                 creds[cred_id],
                 reft,
                 reveal=detail["revealed"],
                 timestamp=timestamp,
-                rev_state=get_rev_state(cred_id, timestamp) if timestamp else None,
+                rev_state=rev_state,
             )
         req_preds = requested_credentials.get("requested_predicates") or {}
         for reft, detail in req_preds.items():
+            cred_id = detail["cred_id"]
             if cred_id not in creds:
                 # NOTE: could be optimized if multiple creds are requested
                 creds[cred_id] = await self._get_credential(cred_id)
-            timestamp = detail.get("timestamp")
+            timestamp, rev_state = get_rev_state(cred_id, detail)
             present_creds.add_predicates(
                 creds[cred_id],
                 reft,
                 timestamp=timestamp,
-                rev_state=get_rev_state(cred_id, timestamp) if timestamp else None,
+                rev_state=rev_state,
             )
 
         try:
