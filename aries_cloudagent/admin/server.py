@@ -56,15 +56,15 @@ EVENT_WEBHOOK_MAPPING = {
 }
 
 
-def get_aca_py_base_url():
-    """Determine swaggerBaseUrl depending on if ACA_PY_BASE_URL env value exists."""
+def get_acapy_base_url():
+    """Determine swaggerBaseUrl depending on if ACAPY_SWAGGER_PREFIX env value exists."""
     aca_py_base_url = ""
-    if environ.get("ACA_PY_BASE_URL") is not None:
-        aca_py_base_url = environ.get("ACA_PY_BASE_URL")
+    if environ.get("ACAPY_SWAGGER_PREFIX") is not None:
+        aca_py_base_url = environ.get("ACAPY_SWAGGER_PREFIX")
     return aca_py_base_url
 
 
-ACA_PY_BASE_URL = get_aca_py_base_url()
+ACAPY_SWAGGER_PREFIX = get_acapy_base_url()
 
 
 class AdminModulesSchema(OpenAPISchema):
@@ -277,12 +277,12 @@ class AdminServer(BaseAdminServer):
         def is_unprotected_path(path: str):
             return path in [
                 "/api/doc",
-                ACA_PY_BASE_URL + "/api/docs/swagger.json",
+                ACAPY_SWAGGER_PREFIX + "/api/docs/swagger.json",
                 "/favicon.ico",
                 "/ws",  # ws handler checks authentication
                 "/status/live",
                 "/status/ready",
-            ] or path.startswith(ACA_PY_BASE_URL + "/static/swagger/")
+            ] or path.startswith(ACAPY_SWAGGER_PREFIX + "/static/swagger/")
 
         # If admin_api_key is None, then admin_insecure_mode must be set so
         # we can safely enable the admin server with no security
@@ -449,9 +449,9 @@ class AdminServer(BaseAdminServer):
             title=agent_label,
             version=version_string,
             swagger_path="/api/doc",
-            static_path=ACA_PY_BASE_URL + "/static/swagger",
-            url=ACA_PY_BASE_URL + "/api/docs/swagger.json",
-            prefix=ACA_PY_BASE_URL,
+            static_path=ACAPY_SWAGGER_PREFIX + "/static/swagger",
+            url=ACAPY_SWAGGER_PREFIX + "/api/docs/swagger.json",
+            prefix=ACAPY_SWAGGER_PREFIX,
         )
         app.on_startup.append(self.on_startup)
 

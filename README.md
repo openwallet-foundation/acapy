@@ -78,6 +78,9 @@ An ACA-Py instance puts together an OpenAPI-documented REST interface based on t
 
 Technical note: the administrative API exposed by the agent for the controller to use must be protected with an API key (using the --admin-api-key command line arg) or deliberately left unsecured using the --admin-insecure-mode command line arg. The latter should not be used other than in development if the API is not otherwise secured.
 
+##  Customize your ACA-Py Deployment
+- `ACAPY_SWAGGER_PREFIX`: for setting some prefix to swaggerUI specific paths (interesting for service mesh). Prefix is set after the hostname and before the swagger paths (ex. in the swagger doc index.html: setting prefix before /static path. Second case is setting the prefix as basurl in curl commands for executing the API endpoints). When not set, no prefix is set.
+
 ## Troubleshooting
 
 There are a number of resources for getting help with ACA-Py and troubleshooting
