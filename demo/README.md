@@ -25,7 +25,7 @@ There are several demos available for ACA-Py mostly (but not only) aimed at deve
   - [Multi-ledger](#multi-ledger)
   - [DID Exchange](#did-exchange)
   - [Endorser](#endorser)
-  - [Run Askar Backend](#run-askar-backend)
+  - [Run Indy-SDK Backend](#run-indy-sdk-backend)
 - [Learning about the Alice/Faber code](#learning-about-the-alicefaber-code)
 - [OpenAPI (Swagger) Demo](#openapi-swagger-demo)
 - [Performance Demo](#performance-demo)
@@ -247,12 +247,12 @@ Note that you can't (currently) use the DID Exchange protocol to connect with an
 
 This is described in [Endorser.md](Endorser.md)
 
-### Run Askar Backend
+### Run Indy-SDK Backend
 
-This runs using the askar libraries instead of indy-sdk:
+This runs using the indy-sdk libraries instead of askar:
 
 ```bash
-./run_demo faber --wallet-type askar
+./run_demo faber --wallet-type indy
 ```
 
 ### Mediation
@@ -404,12 +404,18 @@ You can also run the demo against a postgres database using the following:
 
 (Obvs you need to be running a postgres database - the command to start postgres is in the yml file provided above.)
 
-You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option.
+You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option (or run using indy-sdk using `--wallet-type indy`).
 
 An example full set of options is:
 
 ```bash
 ./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type askar
+```
+
+Or:
+
+```bash
+./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type indy
 ```
 
 ## Coding Challenge: Adding ACME

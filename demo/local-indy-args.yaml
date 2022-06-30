@@ -25,7 +25,7 @@ auto-ping-connection: true
 #    curl -d '{"seed":"my_seed_000000000000000000000000", "role":"TRUST_ANCHOR", "alias":"My Agent"}' -X POST http://localhost:9000/register
 # note that the env var name is configured in argparse.py
 # seed = comes from ACAPY_WALLET_SEED
-wallet-type: indy
+wallet-type: askar
 wallet-name: testwallet
 # wallet-key = comes from ACAPY_WALLET_KEY
 # run a local postgres (docker) like:
