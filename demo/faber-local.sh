@@ -11,7 +11,7 @@ PYTHONPATH=.. ../bin/aca-py start \
    --outbound-transport http \
    --admin 0.0.0.0 8021 \
    --admin-insecure-mode \
-   --wallet-type indy \
+   --wallet-type askar \
    --wallet-name faber.agent916333 \
    --wallet-key faber.agent916333 \
    --preserve-exchange-records \
