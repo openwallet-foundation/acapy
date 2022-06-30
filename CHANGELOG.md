@@ -198,6 +198,7 @@ stuff needed for a healthy, growing codebase.
   - Only run pip-audit on main repo [\#1845](https://github.com/hyperledger/aries-cloudagent-python/pull/1845) ([ryjones](https://github.com/ryjones))
 
 - Release management pull requests
+  - 0.7.4 Release Changelog and version update [\#1849](https://github.com/hyperledger/aries-cloudagent-python/pull/1849) ([swcurran](https://github.com/swcurran))
   - 0.7.4-rc5 changelog, version and ReadTheDocs updates [\#1838](https://github.com/hyperledger/aries-cloudagent-python/pull/1838) ([swcurran](https://github.com/swcurran))
   - Update changelog and version for 0.7.4-rc4 [\#1830](https://github.com/hyperledger/aries-cloudagent-python/pull/1830) ([swcurran](https://github.com/swcurran))
   - Changelog, version and ReadTheDocs updates for 0.7.4-rc3 release [\#1817](https://github.com/hyperledger/aries-cloudagent-python/pull/1817) ([swcurran](https://github.com/swcurran))
