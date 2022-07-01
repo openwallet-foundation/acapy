@@ -8,16 +8,19 @@ from abc import ABC, abstractmethod
 import logging
 from typing import List, Optional, Tuple
 
-from aries_cloudagent.protocols.routing.v1_0.models.route_record import RouteRecord
-from aries_cloudagent.storage.error import StorageNotFoundError
+from aries_cloudagent.protocols.coordinate_mediation.v1_0.messages.keylist_update import (
+    KeylistUpdate,
+)
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
+from ....storage.error import StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import DIDMethod
 from ....wallet.key_type import KeyType
+from ...routing.v1_0.models.route_record import RouteRecord
 from .manager import MediationManager
 from .models.mediation_record import MediationRecord
 
@@ -36,6 +39,7 @@ class RouteManager(ABC):
         self.profile = profile
 
     async def get_or_create_my_did(self, conn_record: ConnRecord) -> DIDInfo:
+        """Create or retrieve DID info for a conneciton."""
         if not conn_record.my_did:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
@@ -51,6 +55,7 @@ class RouteManager(ABC):
         return my_info
 
     def _validate_mediation_state(self, mediation_record: MediationRecord):
+        """Perform mediation state validation"""
         if mediation_record.state != MediationRecord.STATE_GRANTED:
             raise RouteManagerError(
                 "Mediation is not granted for mediation identified by "
@@ -114,14 +119,14 @@ class RouteManager(ABC):
         *,
         skip_if_exists: bool = False,
         replace_key: Optional[str] = None,
-    ):
+    ) -> Optional[KeylistUpdate]:
         """Route a key."""
 
     async def route_connection_as_invitee(
         self,
         conn_record: ConnRecord,
         mediation_record: Optional[MediationRecord] = None,
-    ):
+    ) -> Optional[KeylistUpdate]:
         """Set up routing for a new connection when we are the invitee."""
         LOGGER.debug("Routing connection as invitee")
         my_info = await self.get_or_create_my_did(conn_record)
@@ -133,7 +138,7 @@ class RouteManager(ABC):
         self,
         conn_record: ConnRecord,
         mediation_record: Optional[MediationRecord] = None,
-    ):
+    ) -> Optional[KeylistUpdate]:
         """Set up routing for a new connection when we are the inviter."""
         LOGGER.debug("Routing connection as inviter")
         my_info = await self.get_or_create_my_did(conn_record)
@@ -148,7 +153,11 @@ class RouteManager(ABC):
         self,
         conn_record: ConnRecord,
         mediation_record: Optional[MediationRecord] = None,
-    ):
+    ) -> Optional[KeylistUpdate]:
+        """Setup routing for a connection.
+
+        This method will evaluate connection state and call the appropriate methods.
+        """
         if conn_record.rfc23_state == ConnRecord.State.INVITATION.rfc23strict(
             ConnRecord.Role.RESPONDER
         ):
@@ -165,7 +174,7 @@ class RouteManager(ABC):
         self,
         conn_record: ConnRecord,
         mediation_record: Optional[MediationRecord] = None,
-    ):
+    ) -> Optional[KeylistUpdate]:
         """Set up routing for receiving a response to an invitation."""
         await self.save_mediator_for_connection(conn_record, mediation_record)
 
@@ -184,7 +193,8 @@ class RouteManager(ABC):
         self,
         conn_record: ConnRecord,
         mediation_record: Optional[MediationRecord] = None,
-    ):
+    ) -> Optional[KeylistUpdate]:
+        """Establish routing for a static connection."""
         my_info = await self.get_or_create_my_did(conn_record)
         return await self._route_for_key(
             my_info.verkey, mediation_record, skip_if_exists=True
@@ -196,6 +206,7 @@ class RouteManager(ABC):
         mediation_record: Optional[MediationRecord] = None,
         mediation_id: Optional[str] = None,
     ):
+        """Save mediator info to connection metadata."""
         async with self.profile.session() as session:
             if mediation_id:
                 mediation_record = await MediationRecord.retrieve_by_id(
@@ -228,7 +239,7 @@ class CoordinateMediationV1RouteManager(RouteManager):
         *,
         skip_if_exists: bool = False,
         replace_key: Optional[str] = None,
-    ):
+    ) -> Optional[KeylistUpdate]:
         if not mediation_record:
             return None
 

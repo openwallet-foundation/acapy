@@ -292,6 +292,7 @@ class BaseMultitenantManager:
         """
 
     def get_route_manager(self, sub_profile: Profile, wallet_id: str):
+        """Return a route manager for handling multitenant routing."""
         return MultitenantRouteManager(self._profile, sub_profile, wallet_id)
 
     async def add_key(

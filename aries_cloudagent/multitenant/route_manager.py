@@ -26,15 +26,18 @@ class MultitenantRouteManager(RouteManager):
     """Multitenancy route manager."""
 
     def __init__(self, root_profile: Profile, sub_profile: Profile, wallet_id: str):
+        """Initialize multitenant route manager."""
         self.root_profile = root_profile
         self.wallet_id = wallet_id
         super().__init__(sub_profile)
 
     @property
     def sub_profile(self) -> Profile:
+        """Return reference to sub wallet profile."""
         return self.profile
 
     async def get_base_wallet_mediator(self) -> Optional[MediationRecord]:
+        """Get base wallet's default mediator."""
         return await MediationManager(self.root_profile).get_default_mediator()
 
     async def _route_for_key(
@@ -87,6 +90,7 @@ class MultitenantRouteManager(RouteManager):
     async def routing_info(
         self, my_endpoint: str, mediation_record: Optional[MediationRecord] = None
     ) -> Tuple[List[str], str]:
+        """Return routing info."""
         routing_keys = []
 
         base_mediation_record = await self.get_base_wallet_mediator()
