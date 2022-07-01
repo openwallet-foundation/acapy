@@ -69,12 +69,7 @@ class RouteManager(ABC):
         mediation_id: Optional[str] = None,
         or_default: bool = False,
     ):
-        """Validate mediation and return record.
-
-        If mediation_id is not None,
-        validate mediation record state and return record
-        else, return None
-        """
+        """Return relevant mediator for connection."""
         async with self.profile.session() as session:
             mediation_metadata = await conn_record.metadata_get(
                 session, MediationManager.METADATA_KEY, {}
