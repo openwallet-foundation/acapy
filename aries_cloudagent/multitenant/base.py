@@ -10,7 +10,6 @@ import jwt
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
-from ..messaging.responder import BaseResponder
 from ..multitenant.route_manager import MultitenantRouteManager
 from ..protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
@@ -19,7 +18,6 @@ from ..protocols.coordinate_mediation.v1_0.manager import (
 from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..storage.base import BaseStorage
-from ..storage.error import StorageNotFoundError
 from ..transport.wire_format import BaseWireFormat
 from ..wallet.base import BaseWallet
 from ..wallet.models.wallet_record import WalletRecord
@@ -294,49 +292,6 @@ class BaseMultitenantManager:
     def get_route_manager(self, sub_profile: Profile, wallet_id: str):
         """Return a route manager for handling multitenant routing."""
         return MultitenantRouteManager(self._profile, sub_profile, wallet_id)
-
-    async def add_key(
-        self, wallet_id: str, recipient_key: str, *, skip_if_exists: bool = False
-    ):
-        """
-        Add a wallet key to map incoming messages to specific subwallets.
-
-        Args:
-            wallet_id: The wallet id the key corresponds to
-            recipient_key: The recipient key belonging to the wallet
-            skip_if_exists: Whether to skip the action if the key is already registered
-                            for relaying / mediation
-        """
-
-        LOGGER.info(
-            f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
-        )
-        routing_mgr = RoutingManager(self._profile)
-        mediation_mgr = MediationManager(self._profile)
-        mediation_record = await mediation_mgr.get_default_mediator()
-
-        if skip_if_exists:
-            try:
-                async with self._profile.session() as session:
-                    await RouteRecord.retrieve_by_recipient_key(session, recipient_key)
-
-                # If no error is thrown, it means there is already a record
-                return
-            except (StorageNotFoundError):
-                pass
-
-        await routing_mgr.create_route_record(
-            recipient_key=recipient_key, internal_wallet_id=wallet_id
-        )
-
-        # External mediation
-        if mediation_record:
-            keylist_updates = await mediation_mgr.add_key(recipient_key)
-
-            responder = self._profile.inject(BaseResponder)
-            await responder.send(
-                keylist_updates, connection_id=mediation_record.connection_id
-            )
 
     async def create_auth_token(
         self, wallet_record: WalletRecord, wallet_key: str = None
