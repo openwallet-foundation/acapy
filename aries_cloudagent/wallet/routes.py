@@ -582,7 +582,9 @@ async def promote_wallet_public_did(
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
         # Add multitenant relay mapping so implicit invitations are still routed
         if multitenant_mgr and wallet_id:
-            await multitenant_mgr.add_key(wallet_id, info.verkey, skip_if_exists=True)
+            await multitenant_mgr.get_route_manager(
+                profile, wallet_id
+            ).route_public_did(info.verkey)
 
     return info, attrib_def
 

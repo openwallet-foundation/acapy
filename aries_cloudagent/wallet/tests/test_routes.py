@@ -1,15 +1,15 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from aiohttp.web import HTTPForbidden
+from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
+from .. import routes as test_module
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
-from ...wallet.key_type import KeyType
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...wallet.did_method import DIDMethod
-
-from .. import routes as test_module
+from ...wallet.key_type import KeyType
 from ..base import BaseWallet
 from ..did_info import DIDInfo
 from ..did_posture import DIDPosture
@@ -421,6 +421,10 @@ class TestWalletRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
+        route_manager = async_mock.MagicMock(RouteManager)
+        multitenant_mgr.get_route_manager = async_mock.MagicMock(
+            return_value=route_manager
+        )
         self.profile.context.injector.bind_instance(
             BaseMultitenantManager, multitenant_mgr
         )
@@ -436,9 +440,10 @@ class TestWalletRoutes(AsyncTestCase):
             )
             await test_module.wallet_set_public_did(self.request)
 
-            multitenant_mgr.add_key.assert_called_once_with(
-                "test_wallet", self.test_verkey, skip_if_exists=True
+            multitenant_mgr.get_route_manager.assert_called_once_with(
+                self.profile, "test_wallet"
             )
+            route_manager.route_public_did.assert_called_once_with(self.test_verkey)
 
     async def test_set_public_did_no_query_did(self):
         with self.assertRaises(test_module.web.HTTPBadRequest):
