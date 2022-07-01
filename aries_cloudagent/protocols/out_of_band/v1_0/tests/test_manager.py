@@ -447,6 +447,47 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             self.route_manager.route_invitation.assert_called_once()
 
+    async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
+        async with self.profile.session() as session:
+            mock_conn_rec = async_mock.MagicMock()
+
+            mediation_record = MediationRecord(
+                role=MediationRecord.ROLE_CLIENT,
+                state=MediationRecord.STATE_GRANTED,
+                connection_id=self.test_mediator_conn_id,
+                routing_keys=self.test_mediator_routing_keys,
+                endpoint=self.test_mediator_endpoint,
+            )
+            await mediation_record.save(session)
+            with async_mock.patch.object(
+                MediationManager,
+                "get_default_mediator_id",
+            ) as mock_get_default_mediator, async_mock.patch.object(
+                mock_conn_rec, "metadata_set", async_mock.CoroutineMock()
+            ) as mock_metadata_set:
+                invite = await self.manager.create_invitation(
+                    my_endpoint=TestConfig.test_endpoint,
+                    my_label="test123",
+                    hs_protos=[HSProto.RFC23],
+                    mediation_id=mediation_record.mediation_id,
+                )
+                assert isinstance(invite, InvitationRecord)
+                assert invite.invitation._type == DIDCommPrefix.qualify_current(
+                    INVITATION
+                )
+                assert invite.invitation.label == "test123"
+                assert (
+                    DIDKey.from_did(
+                        invite.invitation.services[0].routing_keys[0]
+                    ).public_key_b58
+                    == self.test_mediator_routing_keys[0]
+                )
+                assert (
+                    invite.invitation.services[0].service_endpoint
+                    == self.test_mediator_endpoint
+                )
+                mock_get_default_mediator.assert_not_called()
+
     async def test_create_invitation_no_handshake_no_attachments_x(self):
         with self.assertRaises(OutOfBandManagerError) as context:
             await self.manager.create_invitation(
