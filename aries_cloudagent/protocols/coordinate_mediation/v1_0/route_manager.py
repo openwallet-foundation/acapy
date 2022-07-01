@@ -36,6 +36,7 @@ class RouteManager(ABC):
     """Base Route Manager."""
 
     def __init__(self, profile: Profile):
+        """Initialize route manager."""
         self.profile = profile
 
     async def get_or_create_my_did(self, conn_record: ConnRecord) -> DIDInfo:
@@ -55,7 +56,7 @@ class RouteManager(ABC):
         return my_info
 
     def _validate_mediation_state(self, mediation_record: MediationRecord):
-        """Perform mediation state validation"""
+        """Perform mediation state validation."""
         if mediation_record.state != MediationRecord.STATE_GRANTED:
             raise RouteManagerError(
                 "Mediation is not granted for mediation identified by "
@@ -154,7 +155,7 @@ class RouteManager(ABC):
         conn_record: ConnRecord,
         mediation_record: Optional[MediationRecord] = None,
     ) -> Optional[KeylistUpdate]:
-        """Setup routing for a connection.
+        """Set up routing for a connection.
 
         This method will evaluate connection state and call the appropriate methods.
         """
@@ -267,6 +268,7 @@ class CoordinateMediationV1RouteManager(RouteManager):
     async def routing_info(
         self, my_endpoint: str, mediation_record: Optional[MediationRecord] = None
     ) -> Tuple[List[str], str]:
+        """Return routing info for mediator."""
         if mediation_record:
             return mediation_record.routing_keys, mediation_record.endpoint
 
