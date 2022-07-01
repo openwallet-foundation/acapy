@@ -198,10 +198,9 @@ class TestAdminServer(AsyncTestCase):
         context = InjectionContext()
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
-        profile = InMemoryProfile.test_profile()
         context.injector.bind_instance(
             test_module.BaseMultitenantManager,
-            test_module.BaseMultitenantManager(profile),
+            async_mock.MagicMock(spec=test_module.BaseMultitenantManager),
         )
         await DefaultContextBuilder().load_plugins(context)
         server = self.get_admin_server(
@@ -486,3 +485,17 @@ async def test_on_record_event(server, event_topic, webhook_topic):
     ) as mock_send_webhook:
         await server._on_record_event(profile, Event(event_topic, None))
         mock_send_webhook.assert_called_once_with(profile, webhook_topic, None)
+
+
+@pytest.mark.asyncio
+async def test_admin_responder_profile_expired_x():
+    def _smaller_scope():
+        profile = InMemoryProfile.test_profile()
+        return test_module.AdminResponder(profile, None)
+
+    responder = _smaller_scope()
+    with pytest.raises(RuntimeError):
+        await responder.send_outbound(None)
+
+    with pytest.raises(RuntimeError):
+        await responder.send_webhook("test", {})

@@ -231,7 +231,26 @@ class TestArgParse(AsyncTestCase):
                 "--jwt-secret",
                 "secret",
                 "--multitenancy-config",
-                '{"wallet_type":"askar","wallet_name":"test"}',
+                '{"wallet_type":"askar","wallet_name":"test", "cache_size": 10}',
+            ]
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("multitenant.enabled") == True
+        assert settings.get("multitenant.jwt_secret") == "secret"
+        assert settings.get("multitenant.wallet_type") == "askar"
+        assert settings.get("multitenant.wallet_name") == "test"
+
+        result = parser.parse_args(
+            [
+                "--multitenant",
+                "--jwt-secret",
+                "secret",
+                "--multitenancy-config",
+                "wallet_type=askar",
+                "wallet_name=test",
+                "cache_size=10",
             ]
         )
 

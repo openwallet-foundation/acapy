@@ -1,12 +1,16 @@
 """Manager for multitenancy."""
 
-from ..core.profile import (
-    Profile,
-)
-from ..config.wallet import wallet_config
+import logging
+from typing import Iterable
+
 from ..config.injection_context import InjectionContext
-from ..wallet.models.wallet_record import WalletRecord
+from ..config.wallet import wallet_config
+from ..core.profile import Profile
 from ..multitenant.base import BaseMultitenantManager
+from ..wallet.models.wallet_record import WalletRecord
+from .cache import ProfileCache
+
+LOGGER = logging.getLogger(__name__)
 
 
 class MultitenantManager(BaseMultitenantManager):
@@ -19,6 +23,14 @@ class MultitenantManager(BaseMultitenantManager):
             profile: The profile for this manager
         """
         super().__init__(profile)
+        self._profiles = ProfileCache(
+            profile.settings.get_int("multitenant.cache_size") or 100
+        )
+
+    @property
+    def open_profiles(self) -> Iterable[Profile]:
+        """Return iterator over open profiles."""
+        yield from self._profiles.profiles.values()
 
     async def get_wallet_profile(
         self,
@@ -40,7 +52,8 @@ class MultitenantManager(BaseMultitenantManager):
 
         """
         wallet_id = wallet_record.wallet_id
-        if wallet_id not in self._instances:
+        profile = self._profiles.get(wallet_id)
+        if not profile:
             # Extend base context
             context = base_context.copy()
 
@@ -68,9 +81,37 @@ class MultitenantManager(BaseMultitenantManager):
 
             # MTODO: add ledger config
             profile, _ = await wallet_config(context, provision=provision)
-            self._instances[wallet_id] = profile
+            self._profiles.put(wallet_id, profile)
 
-        return self._instances[wallet_id]
+        return profile
+
+    async def update_wallet(self, wallet_id: str, new_settings: dict) -> WalletRecord:
+        """Update an existing wallet and wallet record.
+
+        Args:
+            wallet_id: The wallet id of the wallet record
+            new_settings: The context settings to be updated for this wallet
+
+        Returns:
+            WalletRecord: The updated wallet record
+
+        """
+        wallet_record = await super().update_wallet(wallet_id, new_settings)
+
+        # Wallet record has been updated but profile settings in memory must
+        # also be refreshed; update profile only if loaded
+        profile = self._profiles.get(wallet_id)
+        if profile:
+            profile.settings.update(wallet_record.settings)
+
+            extra_settings = {
+                "admin.webhook_urls": self.get_webhook_urls(
+                    self._profile.context, wallet_record
+                ),
+            }
+            profile.settings.update(extra_settings)
+
+        return wallet_record
 
     async def remove_wallet_profile(self, profile: Profile):
         """Remove the wallet profile instance.
@@ -79,6 +120,6 @@ class MultitenantManager(BaseMultitenantManager):
             profile: The wallet profile instance
 
         """
-        wallet_id = profile.settings.get("wallet.id")
-        del self._instances[wallet_id]
+        wallet_id = profile.settings.get_str("wallet.id")
+        self._profiles.remove(wallet_id)
         await profile.remove()

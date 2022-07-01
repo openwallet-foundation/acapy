@@ -1,9 +1,9 @@
 """Manager for multitenancy."""
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from datetime import datetime
 import logging
-from typing import List, Optional, cast
+from typing import Iterable, List, Optional, cast
 
 import jwt
 
@@ -30,7 +30,7 @@ class MultitenantManagerError(BaseError):
     """Generic multitenant error."""
 
 
-class BaseMultitenantManager:
+class BaseMultitenantManager(ABC):
     """Base class for handling multitenancy."""
 
     def __init__(self, profile: Profile):
@@ -43,7 +43,10 @@ class BaseMultitenantManager:
         if not profile:
             raise MultitenantManagerError("Missing profile")
 
-        self._instances: dict[str, Profile] = {}
+    @property
+    @abstractmethod
+    def open_profiles(self) -> Iterable[Profile]:
+        """Return iterator over open profiles."""
 
     async def get_default_mediator(self) -> Optional[MediationRecord]:
         """Retrieve the default mediator used for subwallet routing.
@@ -210,7 +213,7 @@ class BaseMultitenantManager:
         wallet_id: str,
         new_settings: dict,
     ) -> WalletRecord:
-        """Update a existing wallet and wallet record.
+        """Update an existing wallet record.
 
         Args:
             wallet_id: The wallet id of the wallet record
@@ -225,18 +228,6 @@ class BaseMultitenantManager:
             wallet_record = await WalletRecord.retrieve_by_id(session, wallet_id)
             wallet_record.update_settings(new_settings)
             await wallet_record.save(session)
-
-        # update profile only if loaded
-        if wallet_id in self._instances:
-            profile = self._instances[wallet_id]
-            profile.settings.update(wallet_record.settings)
-
-            extra_settings = {
-                "admin.webhook_urls": self.get_webhook_urls(
-                    self._profile.context, wallet_record
-                ),
-            }
-            profile.settings.update(extra_settings)
 
         return wallet_record
 

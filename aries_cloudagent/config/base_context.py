@@ -1,7 +1,7 @@
 """Base injection context builder classes."""
 
 from abc import ABC, abstractmethod
-from typing import Mapping
+from typing import Any, Mapping, Optional
 
 from .injection_context import InjectionContext
 from .settings import Settings
@@ -10,7 +10,7 @@ from .settings import Settings
 class ContextBuilder(ABC):
     """Base injection context builder class."""
 
-    def __init__(self, settings: Mapping[str, object] = None):
+    def __init__(self, settings: Optional[Mapping[str, Any]] = None):
         """
         Initialize an instance of the context builder.
 

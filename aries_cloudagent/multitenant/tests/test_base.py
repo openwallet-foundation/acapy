@@ -26,6 +26,25 @@ from ..error import WalletKeyMissingError
 from .. import base as test_module
 
 
+class MockMultitenantManager(BaseMultitenantManager):
+    async def get_wallet_profile(
+        self,
+        base_context,
+        wallet_record: WalletRecord,
+        extra_settings: dict = ...,
+        *,
+        provision=False
+    ):
+        """Do nothing."""
+
+    async def remove_wallet_profile(self, profile):
+        """Do nothing."""
+
+    @property
+    def open_profiles(self):
+        """Do nothing."""
+
+
 class TestBaseMultitenantManager(AsyncTestCase):
     async def setUp(self):
         self.profile = InMemoryProfile.test_profile()
@@ -34,11 +53,11 @@ class TestBaseMultitenantManager(AsyncTestCase):
         self.responder = async_mock.CoroutineMock(send=async_mock.CoroutineMock())
         self.context.injector.bind_instance(BaseResponder, self.responder)
 
-        self.manager = BaseMultitenantManager(self.profile)
+        self.manager = MockMultitenantManager(self.profile)
 
     async def test_init_throws_no_profile(self):
         with self.assertRaises(MultitenantManagerError):
-            BaseMultitenantManager(None)
+            MockMultitenantManager(None)
 
     async def test_get_default_mediator(self):
         with async_mock.patch.object(
@@ -161,7 +180,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
 
     async def test_create_wallet_removes_key_only_unmanaged_mode(self):
         with async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile:
             get_wallet_profile.return_value = InMemoryProfile.test_profile()
 
@@ -177,7 +196,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
 
     async def test_create_wallet_fails_if_wallet_name_exists(self):
         with async_mock.patch.object(
-            BaseMultitenantManager, "_wallet_name_exists"
+            self.manager, "_wallet_name_exists"
         ) as _wallet_name_exists:
             _wallet_name_exists.return_value = True
 
@@ -197,9 +216,9 @@ class TestBaseMultitenantManager(AsyncTestCase):
         with async_mock.patch.object(
             WalletRecord, "save"
         ) as wallet_record_save, async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile, async_mock.patch.object(
-            BaseMultitenantManager,
+            self.manager,
             "get_route_manager",
             async_mock.MagicMock(return_value=mock_route_manager),
         ):
@@ -238,9 +257,9 @@ class TestBaseMultitenantManager(AsyncTestCase):
         with async_mock.patch.object(
             WalletRecord, "save"
         ) as wallet_record_save, async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile, async_mock.patch.object(
-            BaseMultitenantManager,
+            self.manager,
             "get_route_manager",
             async_mock.MagicMock(return_value=mock_route_manager),
         ), async_mock.patch.object(
@@ -268,15 +287,13 @@ class TestBaseMultitenantManager(AsyncTestCase):
             assert wallet_record.key_management_mode == WalletRecord.MODE_MANAGED
             assert wallet_record.wallet_key == "test_key"
 
-    async def test_update_wallet_update_wallet_profile(self):
+    async def test_update_wallet(self):
         with async_mock.patch.object(
             WalletRecord, "retrieve_by_id"
         ) as retrieve_by_id, async_mock.patch.object(
             WalletRecord, "save"
         ) as wallet_record_save:
             wallet_id = "test-wallet-id"
-            wallet_profile = InMemoryProfile.test_profile()
-            self.manager._instances["test-wallet-id"] = wallet_profile
             retrieve_by_id.return_value = WalletRecord(
                 wallet_id=wallet_id,
                 settings={
@@ -296,10 +313,6 @@ class TestBaseMultitenantManager(AsyncTestCase):
             assert isinstance(wallet_record, WalletRecord)
             assert wallet_record.wallet_webhook_urls == ["new-webhook-url"]
             assert wallet_record.wallet_dispatch_type == "default"
-            assert wallet_profile.settings.get("wallet.webhook_urls") == [
-                "new-webhook-url"
-            ]
-            assert wallet_profile.settings.get("wallet.dispatch_type") == "default"
 
     async def test_remove_wallet_fails_no_wallet_key_but_required(self):
         with async_mock.patch.object(WalletRecord, "retrieve_by_id") as retrieve_by_id:
@@ -316,9 +329,9 @@ class TestBaseMultitenantManager(AsyncTestCase):
         with async_mock.patch.object(
             WalletRecord, "retrieve_by_id"
         ) as retrieve_by_id, async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile, async_mock.patch.object(
-            BaseMultitenantManager, "remove_wallet_profile"
+            self.manager, "remove_wallet_profile"
         ) as remove_wallet_profile, async_mock.patch.object(
             WalletRecord, "delete_record"
         ) as wallet_delete_record, async_mock.patch.object(
@@ -447,7 +460,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile:
             mock_profile = InMemoryProfile.test_profile()
             get_wallet_profile.return_value = mock_profile
@@ -484,7 +497,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile:
             mock_profile = InMemoryProfile.test_profile()
             get_wallet_profile.return_value = mock_profile
@@ -522,7 +535,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile, self.assertRaises(
             MultitenantManagerError, msg="Token not valid"
         ):
@@ -558,7 +571,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            BaseMultitenantManager, "get_wallet_profile"
+            self.manager, "get_wallet_profile"
         ) as get_wallet_profile:
             mock_profile = InMemoryProfile.test_profile()
             get_wallet_profile.return_value = mock_profile
@@ -598,7 +611,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         ]
 
         with async_mock.patch.object(
-            BaseMultitenantManager, "_get_wallet_by_key"
+            self.manager, "_get_wallet_by_key"
         ) as get_wallet_by_key:
             get_wallet_by_key.side_effect = return_wallets
 
