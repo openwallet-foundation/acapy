@@ -53,9 +53,10 @@ class MultitenantRouteManager(RouteManager):
         )
         routing_mgr = RoutingManager(self.root_profile)
         mediation_mgr = MediationManager(self.root_profile)
-        # Passed in mediation_record is ignored altogether.
-        # Only the base mediator needs updates.
-        mediation_record = await self.get_base_wallet_mediator()
+        # If base wallet had mediator, only notify that mediator.
+        # Else, if subwallet has mediator, notify that mediator.
+        base_mediation_record = await self.get_base_wallet_mediator()
+        mediation_record = base_mediation_record or mediation_record
 
         if skip_if_exists:
             try:
