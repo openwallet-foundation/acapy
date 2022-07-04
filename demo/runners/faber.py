@@ -397,6 +397,7 @@ async def main(args):
             multitenant=faber_agent.multitenant,
             mediation=faber_agent.mediation,
             wallet_type=faber_agent.wallet_type,
+            wallet_ledger=faber_agent.wallet_ledger,
             seed=faber_agent.seed,
             aip=faber_agent.aip,
             endorser_role=faber_agent.endorser_role,

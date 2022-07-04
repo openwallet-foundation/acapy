@@ -1465,6 +1465,18 @@ class WalletGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--wallet-ledger",
+            type=str,
+            metavar="<wallet-ledger>",
+            default="indy",
+            env_var="ACAPY_WALLET_LEDGER",
+            help=(
+                "Specifies the type of the ledger to use together with the wallet. "
+                "Supported internal ledger types depend on the wallet type specified. "
+                "The default (if not specified) is 'indy'."
+            ),
+        )
+        parser.add_argument(
             "--wallet-storage-type",
             type=str,
             metavar="<storage-type>",
@@ -1585,6 +1597,8 @@ class WalletGroup(ArgumentGroup):
                         "Parameters --wallet-storage-config and --wallet-storage-creds "
                         "must be provided for indy postgres wallets"
                     )
+        if args.wallet_ledger:
+            settings["wallet.ledger"] = args.wallet_ledger
         return settings
 
 

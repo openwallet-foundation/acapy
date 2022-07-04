@@ -623,6 +623,7 @@ class AgentContainer:
         mediation: bool = False,
         use_did_exchange: bool = False,
         wallet_type: str = None,
+        wallet_ledger: str = None,
         public_did: bool = True,
         seed: str = "random",
         aip: int = 20,
@@ -646,6 +647,7 @@ class AgentContainer:
         self.mediation = mediation
         self.use_did_exchange = use_did_exchange
         self.wallet_type = wallet_type
+        self.wallet_ledger = wallet_ledger
         self.public_did = public_did
         self.seed = seed
         self.aip = aip
@@ -1159,6 +1161,12 @@ def arg_parser(ident: str = None, port: int = 8020):
         help="Set the agent wallet type",
     )
     parser.add_argument(
+        "--wallet-ledger",
+        type=str,
+        metavar="<wallet-ledger>",
+        help="Set the ledger interacting with the wallet",
+    )
+    parser.add_argument(
         "--endorser-role",
         type=str.lower,
         choices=["author", "endorser", "none"],
@@ -1287,8 +1295,10 @@ async def create_agent_with_args(args, ident: str = None):
         cred_type=cred_type,
         use_did_exchange=(aip == 20) if ("aip" in args) else args.did_exchange,
         wallet_type=arg_file_dict.get("wallet-type") or args.wallet_type,
+        wallet_ledger=arg_file_dict.get("wallet-ledger") or args.wallet_ledger,
         public_did=public_did,
-        seed="random" if public_did else None,
+        #seed="random" if public_did else None,
+        seed="d_000000000000000000000000855981" if public_did else None,
         arg_file=arg_file,
         aip=aip,
         endorser_role=args.endorser_role,

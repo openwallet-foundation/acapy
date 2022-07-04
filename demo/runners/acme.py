@@ -133,6 +133,7 @@ async def main(args):
             multitenant=acme_agent.multitenant,
             mediation=acme_agent.mediation,
             wallet_type=acme_agent.wallet_type,
+            wallet_ledger=acme_agent.wallet_ledger,
             seed=acme_agent.seed,
         )
 

@@ -27,3 +27,4 @@ python-dateutil~=2.8.1
 rlp==0.5.1
 unflatten~=0.1
 qrcode[pil]~=6.1
+python3-indy~=1.16.0

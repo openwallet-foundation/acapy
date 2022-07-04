@@ -11,7 +11,8 @@ from ...config.provider import ClassProvider
 from ...core.profile import Profile, ProfileManager, ProfileSession
 from ...core.error import ProfileError
 from ...ledger.base import BaseLedger
-from ...ledger.indy import IndySdkLedger, IndySdkLedgerPool
+from ...ledger.indy import IndySdkLedgerPool
+from ...ledger.provider import LedgerProvider
 from ...storage.base import BaseStorage, BaseStorageSearch
 from ...storage.vc_holder.base import VCHolder
 from ...wallet.base import BaseWallet
@@ -91,8 +92,9 @@ class IndySdkProfile(Profile):
         )
 
         if self.ledger_pool:
+            ledger_provider = self.inject(LedgerProvider)
             injector.bind_provider(
-                BaseLedger, ClassProvider(IndySdkLedger, self.ledger_pool, ref(self))
+                BaseLedger, ClassProvider(ledger_provider.get_ledger(), self.ledger_pool, ref(self))
             )
         if self.ledger_pool or self.settings.get("ledger.ledger_config_list"):
             injector.bind_provider(

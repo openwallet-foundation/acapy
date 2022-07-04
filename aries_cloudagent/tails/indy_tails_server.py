@@ -4,6 +4,7 @@ from typing import Tuple
 import logging
 
 from ..config.injection_context import InjectionContext
+from ..ledger.base import BaseLedger
 from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..utils.http import put_file, PutError
 
@@ -38,6 +39,7 @@ class IndyTailsServer(BaseTailsServer):
         """
         tails_server_upload_url = context.settings.get("tails_server_upload_url")
         genesis_transactions = context.settings.get("ledger.genesis_transactions")
+        ledger = context.injector.inject(BaseLedger)
 
         if not genesis_transactions:
             ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
@@ -64,7 +66,10 @@ class IndyTailsServer(BaseTailsServer):
                 await put_file(
                     f"{tails_server_upload_url}/{rev_reg_id}",
                     {"tails": tails_file_path},
-                    {"genesis": genesis_transactions},
+                    {
+                        "ledger_type": ledger.BACKEND_NAME,
+                        "genesis": genesis_transactions
+                    },
                     interval=interval,
                     backoff=backoff,
                     max_attempts=max_attempts,

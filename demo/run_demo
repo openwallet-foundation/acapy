@@ -21,8 +21,10 @@ if [ -z "$DOCKER_NET" ]; then
 fi
 DOCKER_VOL=""
 
+j=1
 for i in "$@"
 do
+  ((j++))
   if [ ! -z "$SKIP" ]; then
     SKIP=""
     continue
@@ -65,12 +67,12 @@ do
       continue
     ;;
     --debug-pycharm-controller-port)
-      PYDEVD_PYCHARM_CONTROLLER_PORT=$2
+      PYDEVD_PYCHARM_CONTROLLER_PORT=${!j}
       SKIP=1
       continue
     ;;
     --debug-pycharm-agent-port)
-      PYDEVD_PYCHARM_AGENT_PORT=$2
+      PYDEVD_PYCHARM_AGENT_PORT=${!j}
       SKIP=1
       continue
     ;;
@@ -248,6 +250,13 @@ if [ "$OSTYPE" = "msys" ]; then
   DOCKER="winpty docker"
 fi
 DOCKER=${DOCKER:-docker}
+
+echo "$DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
+  --network=${DOCKER_NET} \
+  -p 0.0.0.0:$AGENT_PORT_RANGE:$AGENT_PORT_RANGE \
+  ${DOCKER_VOL} \
+  $DOCKER_ENV \
+  faber-alice-demo $AGENT_MODULE --port $AGENT_PORT $ARGS"
 
 $DOCKER run --name $AGENT --rm -it ${DOCKER_OPTS} \
   --network=${DOCKER_NET} \

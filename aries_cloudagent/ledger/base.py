@@ -281,6 +281,18 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     ) -> Tuple[dict, int]:
         """Get revocation registry entry by revocation registry ID and timestamp."""
 
+    @abstractmethod
+    async def credential_definition_id2schema_id(
+            self, credential_definition_id
+    ):
+        """
+        From a credential definition, get the identifier for its schema.
+
+        Args:
+            credential_definition_id: The identifier of the credential definition
+                from which to identify a schema
+        """
+
 
 class Role(Enum):
     """Enum for indy roles."""

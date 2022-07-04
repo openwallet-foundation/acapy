@@ -200,6 +200,7 @@ class DemoAgent:
             params.get("wallet_name") or self.ident.lower().replace(" ", "") + rand_name
         )
         self.wallet_key = params.get("wallet_key") or self.ident + rand_name
+        self.wallet_ledger = params.get("wallet_ledger") or "indy"
         self.did = None
         self.wallet_stats = []
 
@@ -331,6 +332,7 @@ class DemoAgent:
             ("--wallet-type", self.wallet_type),
             ("--wallet-name", self.wallet_name),
             ("--wallet-key", self.wallet_key),
+            ("--wallet-ledger", self.wallet_ledger),
             "--preserve-exchange-records",
             "--auto-provision",
             "--public-invites",

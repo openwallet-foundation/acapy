@@ -128,6 +128,7 @@ async def main(args):
             multitenant=alice_agent.multitenant,
             mediation=alice_agent.mediation,
             wallet_type=alice_agent.wallet_type,
+            wallet_ledger=alice_agent.wallet_ledger,
             aip=alice_agent.aip,
             endorser_role=alice_agent.endorser_role,
         )

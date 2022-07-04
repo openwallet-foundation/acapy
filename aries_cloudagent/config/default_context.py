@@ -11,6 +11,7 @@ from ..core.plugin_registry import PluginRegistry
 from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
 from ..core.goal_code_registry import GoalCodeRegistry
+from ..ledger.provider import LedgerProvider
 from ..resolver.did_resolver import DIDResolver
 from ..resolver.did_resolver_registry import DIDResolverRegistry
 from ..tails.base import BaseTailsServer
@@ -56,6 +57,9 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Global did resolver
         context.injector.bind_instance(DIDResolver, DIDResolver(did_resolver_registry))
+
+        # Global ledger provider
+        context.injector.bind_instance(LedgerProvider, LedgerProvider(self.settings))
 
         await self.bind_providers(context)
         await self.load_plugins(context)
