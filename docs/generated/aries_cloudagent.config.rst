@@ -89,6 +89,14 @@ aries\_cloudagent.config.logging module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.config.plugin\_settings module
+------------------------------------------------
+
+.. automodule:: aries_cloudagent.config.plugin_settings
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.config.provider module
 ----------------------------------------
 

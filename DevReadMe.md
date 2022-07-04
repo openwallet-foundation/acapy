@@ -18,6 +18,7 @@ See the [README](README.md) for details about this repository and information ab
 - [Developing](#developing)
   - [Prerequisites](#prerequisites)
   - [Running Locally](#running-locally)
+  - [Logging](#logging)
   - [Running Tests](#running-tests)
   - [Running Aries Agent Test Harness Tests](#running-aries-agent-test-harness-tests)
 - [Development Workflow](#development-workflow)
@@ -148,7 +149,7 @@ To enable the [ptvsd](https://github.com/Microsoft/ptvsd) Python debugger for Vi
 Any ports you will be using from the docker container should be published using the `PORTS` environment variable. For example:
 
 ```bash
-PORTS="5000:5000 8000:8000 1000:1000" ./scripts/run_docker start --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
+PORTS="5000:5000 8000:8000 10000:10000" ./scripts/run_docker start --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
 ```
 
 Refer to [the previous section](#Running) for instructions on how to run the software.

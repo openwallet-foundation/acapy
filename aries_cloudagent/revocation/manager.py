@@ -133,7 +133,7 @@ class RevocationManager:
             rev_reg = await revoc.get_ledger_registry(rev_reg_id)
             await rev_reg.get_or_fetch_local_tails_path()
             # pick up pending revocations on input revocation registry
-            crids = list(set(issuer_rr_rec.pending_pub + [cred_rev_id]))
+            crids = (issuer_rr_rec.pending_pub or []) + [cred_rev_id]
             (delta_json, _) = await issuer.revoke_credentials(
                 issuer_rr_rec.revoc_reg_id, issuer_rr_rec.tails_local_path, crids
             )
@@ -145,9 +145,9 @@ class RevocationManager:
                     issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
                 await issuer_rr_upd.clear_pending(txn, crids)
                 await txn.commit()
+            await self.set_cred_revoked_state(rev_reg_id, crids)
             if delta_json:
                 await issuer_rr_upd.send_entry(self._profile)
-            await self.set_cred_revoked_state(rev_reg_id, [cred_rev_id])
             await notify_revocation_published_event(
                 self._profile, rev_reg_id, [cred_rev_id]
             )
@@ -215,11 +215,11 @@ class RevocationManager:
                         issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
                     await issuer_rr_upd.clear_pending(txn, crids)
                     await txn.commit()
+                await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
                 if delta_json:
                     await issuer_rr_upd.send_entry(self._profile)
                 published = sorted(crid for crid in crids if crid not in failed_crids)
                 result[issuer_rr_rec.revoc_reg_id] = published
-                await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
                 await notify_revocation_published_event(
                     self._profile, issuer_rr_rec.revoc_reg_id, crids
                 )
@@ -289,34 +289,40 @@ class RevocationManager:
 
         """
         for cred_rev_id in cred_rev_ids:
+            cred_ex_id = None
+
+            try:
+                async with self._profile.transaction() as txn:
+                    rev_rec = await IssuerCredRevRecord.retrieve_by_ids(
+                        txn, rev_reg_id, cred_rev_id, for_update=True
+                    )
+                    cred_ex_id = rev_rec.cred_ex_id
+                    rev_rec.state = IssuerCredRevRecord.STATE_REVOKED
+                    await rev_rec.save(txn, reason="revoke credential")
+                    await txn.commit()
+            except StorageNotFoundError:
+                continue
+
             async with self._profile.transaction() as txn:
                 try:
-                    rev_rec = await IssuerCredRevRecord.retrieve_by_ids(
-                        txn, rev_reg_id, cred_rev_id
+                    cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                        txn, cred_ex_id, for_update=True
                     )
-                    try:
-                        cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                            txn, rev_rec.cred_ex_id, for_update=True
-                        )
-                        cred_ex_record.state = (
-                            V10CredentialExchange.STATE_CREDENTIAL_REVOKED
-                        )
-                        await cred_ex_record.save(txn, reason="revoke credential")
-                        await txn.commit()
+                    cred_ex_record.state = (
+                        V10CredentialExchange.STATE_CREDENTIAL_REVOKED
+                    )
+                    await cred_ex_record.save(txn, reason="revoke credential")
+                    await txn.commit()
+                    continue  # skip 2.0 record check
+                except StorageNotFoundError:
+                    pass
 
-                    except StorageNotFoundError:
-                        try:
-                            cred_ex_record = await V20CredExRecord.retrieve_by_id(
-                                txn, rev_rec.cred_ex_id, for_update=True
-                            )
-                            cred_ex_record.state = (
-                                V20CredExRecord.STATE_CREDENTIAL_REVOKED
-                            )
-                            await cred_ex_record.save(txn, reason="revoke credential")
-                            await txn.commit()
-
-                        except StorageNotFoundError:
-                            pass
-
+                try:
+                    cred_ex_record = await V20CredExRecord.retrieve_by_id(
+                        txn, cred_ex_id, for_update=True
+                    )
+                    cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_REVOKED
+                    await cred_ex_record.save(txn, reason="revoke credential")
+                    await txn.commit()
                 except StorageNotFoundError:
                     pass

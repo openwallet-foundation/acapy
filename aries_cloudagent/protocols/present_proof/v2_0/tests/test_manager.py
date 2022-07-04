@@ -1400,6 +1400,164 @@ class TestV20PresManager(AsyncTestCase):
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
 
+    async def test_receive_pres_indy_no_predicate_restrictions(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        indy_proof_req = {
+            "name": PROOF_REQ_NAME,
+            "version": PROOF_REQ_VERSION,
+            "nonce": PROOF_REQ_NONCE,
+            "requested_attributes": {
+                "0_player_uuid": {
+                    "name": "player",
+                    "restrictions": [{"cred_def_id": CD_ID}],
+                    "non_revoked": {"from": NOW, "to": NOW},
+                },
+                "0_screencapture_uuid": {
+                    "name": "screenCapture",
+                    "restrictions": [{"cred_def_id": CD_ID}],
+                    "non_revoked": {"from": NOW, "to": NOW},
+                },
+            },
+            "requested_predicates": {
+                "0_highscore_GE_uuid": {
+                    "name": "highScore",
+                    "p_type": ">=",
+                    "p_value": 1000000,
+                    "restrictions": [],
+                    "non_revoked": {"from": NOW, "to": NOW},
+                }
+            },
+        }
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
+            ],
+        )
+        pres.assign_thread_id("thread-id")
+
+        px_rec_dummy = V20PresExRecord(
+            pres_request=pres_request.serialize(),
+        )
+
+        # cover by_format property
+        by_format = px_rec_dummy.by_format
+
+        assert by_format.get("pres_request").get("indy") == indy_proof_req
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.side_effect = [px_rec_dummy]
+            px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": "thread-id"},
+                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
+
+    async def test_receive_pres_indy_no_attr_restrictions(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        indy_proof_req = {
+            "name": PROOF_REQ_NAME,
+            "version": PROOF_REQ_VERSION,
+            "nonce": PROOF_REQ_NONCE,
+            "requested_attributes": {
+                "0_player_uuid": {
+                    "name": "player",
+                    "restrictions": [],
+                    "non_revoked": {"from": NOW, "to": NOW},
+                }
+            },
+            "requested_predicates": {},
+        }
+        proof = deepcopy(INDY_PROOF)
+        proof["requested_proof"]["revealed_attrs"] = {
+            "0_player_uuid": {
+                "sub_proof_index": 0,
+                "raw": "Richie Knucklez",
+                "encoded": "516439982",
+            }
+        }
+        proof["requested_proof"]["predicates"] = {}
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(indy_proof_req, ident="indy")
+            ],
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[AttachDecorator.data_base64(proof, ident="indy")],
+        )
+        pres.assign_thread_id("thread-id")
+
+        px_rec_dummy = V20PresExRecord(
+            pres_request=pres_request.serialize(),
+        )
+
+        # cover by_format property
+        by_format = px_rec_dummy.by_format
+
+        assert by_format.get("pres_request").get("indy") == indy_proof_req
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.side_effect = [px_rec_dummy]
+            px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": "thread-id"},
+                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
+
     async def test_receive_pres_bait_and_switch_attr_name(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
         indy_proof_req = deepcopy(INDY_PROOF_REQ_NAME)
@@ -1918,13 +2076,31 @@ class TestV20PresManager(AsyncTestCase):
         messages = responder.messages
         assert len(messages) == 1
 
+        px_rec = V20PresExRecord(verified="true")
+
+        responder = MockResponder()
+        self.profile.context.injector.bind_instance(BaseResponder, responder)
+
+        await self.manager.send_pres_ack(px_rec)
+        messages = responder.messages
+        assert len(messages) == 1
+
+        px_rec = V20PresExRecord(verified="false")
+
+        responder = MockResponder()
+        self.profile.context.injector.bind_instance(BaseResponder, responder)
+
+        await self.manager.send_pres_ack(px_rec)
+        messages = responder.messages
+        assert len(messages) == 1
+
     async def test_send_pres_ack_no_responder(self):
         px_rec = V20PresExRecord()
 
         self.profile.context.injector.clear_binding(BaseResponder)
         await self.manager.send_pres_ack(px_rec)
 
-    async def test_receive_pres_ack(self):
+    async def test_receive_pres_ack_a(self):
         conn_record = async_mock.MagicMock(connection_id=CONN_ID)
 
         px_rec_dummy = V20PresExRecord()
@@ -1940,6 +2116,24 @@ class TestV20PresManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             assert px_rec_out.state == V20PresExRecord.STATE_DONE
+
+    async def test_receive_pres_ack_b(self):
+        conn_record = async_mock.MagicMock(connection_id=CONN_ID)
+
+        px_rec_dummy = V20PresExRecord()
+        message = async_mock.MagicMock(_verification_result="true")
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex:
+            retrieve_ex.return_value = px_rec_dummy
+            px_rec_out = await self.manager.receive_pres_ack(message, conn_record)
+            save_ex.assert_called_once()
+
+            assert px_rec_out.state == V20PresExRecord.STATE_DONE
+            assert px_rec_out.verified == "true"
 
     async def test_receive_problem_report(self):
         connection_id = "connection-id"

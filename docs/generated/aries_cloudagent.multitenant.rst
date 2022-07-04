@@ -33,6 +33,14 @@ aries\_cloudagent.multitenant.base module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.multitenant.cache module
+------------------------------------------
+
+.. automodule:: aries_cloudagent.multitenant.cache
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.multitenant.error module
 ------------------------------------------
 

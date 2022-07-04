@@ -10,6 +10,7 @@ jobs:
   CodeQL-Build:
     # CodeQL runs on ubuntu-latest and windows-latest
     runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
 
     steps:
       - name: Checkout repository
