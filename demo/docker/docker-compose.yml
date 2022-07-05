@@ -36,7 +36,7 @@ services:
         --tails-server-base-url 'https://tails-test.vonx.io' \
         --notify-revocation \
         --monitor-revocation-notification \
-        --wallet-type 'indy' \
+        --wallet-type 'askar' \
         --wallet-name 'acapy_agent_wallet' \
         --wallet-key 'key' \
         --wallet-storage-type 'postgres_storage' \

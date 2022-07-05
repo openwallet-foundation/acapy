@@ -404,3 +404,20 @@ class TestDispatcher(AsyncTestCase):
         ) as mock_send_outbound:
             await responder.send(message)
             assert mock_send_outbound.called_once()
+
+    async def test_expired_context_x(self):
+        def _smaller_scope():
+            profile = make_profile()
+            context = RequestContext(profile)
+            message = b"abc123xyz7890000"
+            return test_module.DispatcherResponder(context, message, None)
+
+        responder = _smaller_scope()
+        with self.assertRaises(RuntimeError):
+            await responder.create_outbound(b"test")
+
+        with self.assertRaises(RuntimeError):
+            await responder.send_outbound(None)
+
+        with self.assertRaises(RuntimeError):
+            await responder.send_webhook("test", {})
