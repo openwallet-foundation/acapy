@@ -4,6 +4,7 @@ from aries_cloudagent.admin.request_context import AdminRequestContext
 from aries_cloudagent.protocols.coordinate_mediation.v1_0.route_manager import (
     RouteManager,
 )
+from aries_cloudagent.storage.error import StorageError, StorageNotFoundError
 
 from .. import routes as test_module
 from .....core.in_memory import InMemoryProfile
@@ -748,6 +749,56 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         ):
             await test_module.update_keylist_for_connection(self.request)
             json_response.assert_called_once_with({"mock": "serialized"}, status=200)
+
+    async def test_update_keylist_for_connection_not_found(self):
+        self.request.query = {}
+        self.request.json.return_value = {"mediation_id": "test-mediation-id"}
+        self.request.match_info = {
+            "conn_id": "test-conn-id",
+        }
+        mock_route_manager = async_mock.MagicMock(RouteManager)
+        mock_keylist_update = async_mock.MagicMock()
+        mock_keylist_update.serialize.return_value = {"mock": "serialized"}
+        mock_route_manager.route_connection = async_mock.CoroutineMock(
+            return_value=mock_keylist_update
+        )
+        mock_route_manager.mediation_record_for_connection = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.ConnRecord,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(side_effect=StorageNotFoundError),
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            test_module,
+            "CoordinateMediationV1RouteManager",
+            async_mock.MagicMock(return_value=mock_route_manager),
+        ):
+            with self.assertRaises(test_module.web.HTTPNotFound):
+                await test_module.update_keylist_for_connection(self.request)
+
+    async def test_update_keylist_for_connection_storage_error(self):
+        self.request.query = {}
+        self.request.json.return_value = {"mediation_id": "test-mediation-id"}
+        self.request.match_info = {
+            "conn_id": "test-conn-id",
+        }
+        mock_route_manager = async_mock.MagicMock(RouteManager)
+        mock_keylist_update = async_mock.MagicMock()
+        mock_keylist_update.serialize.return_value = {"mock": "serialized"}
+        mock_route_manager.route_connection = async_mock.CoroutineMock(
+            return_value=mock_keylist_update
+        )
+        mock_route_manager.mediation_record_for_connection = async_mock.CoroutineMock()
+        with async_mock.patch.object(
+            test_module.ConnRecord,
+            "retrieve_by_id",
+            async_mock.CoroutineMock(side_effect=StorageError),
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            test_module,
+            "CoordinateMediationV1RouteManager",
+            async_mock.MagicMock(return_value=mock_route_manager),
+        ):
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.update_keylist_for_connection(self.request)
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()
