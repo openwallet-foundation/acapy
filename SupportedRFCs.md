@@ -45,10 +45,11 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | Issuer   | :white_check_mark:        |            |
 | Holder   | :white_check_mark:        |            |
 | Verifier | :white_check_mark:        |            |
-| Mediator Service | :white_check_mark:        | Coming Soon: An `aries-mediator-service` repository that is a pre-configured, production ready Aries Mediator Service based on a released version of ACA-Py. |
+| Mediator Service | :white_check_mark:        | See the [aries-mediator-service](https://github.com/hyperledger/aries-mediator-service), a pre-configured, production ready Aries Mediator Service based on a released version of ACA-Py. |
 | Mediator Client | :white_check_mark: |
 | Indy Transaction Author | :white_check_mark:        |    |
 | Indy Transaction Endorser | :white_check_mark:  | |
+| Indy Endorser Service | :construction:        | Help Wanted! See the [aries-endorser-service](https://github.com/bcgov/aries-endorser-service), an under-construction, pre-configured, production ready Aries Endorser Service based on a released version of ACA-Py. On completion, we expect this repository to be moved into the Hyperledger GitHub organization. |
 
 ## Credential Types
 
@@ -65,13 +66,14 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | `did:web` | :white_check_mark: | Resolution only |
 | `did:key` | :white_check_mark: | |
 | `did:peer` | :warning:| AIP 1.0-based `did:peer` DIDs are used, meaning the DIDs are not prefixed with `did:peer` and are not following the conventions of AIP 2.0's [RFC 0627: Static Peer DIDs](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0627-static-peer-dids) |
+| Universal Resolver | :construction: | A [plug in](https://github.com/sicpa-dlab/acapy-resolver-universal) from [SICPA](https://www.sicpa.com/) is available that can be added to an ACA-Py installation to support a [universal resolver](https://dev.uniresolver.io/) capability, providing support for most DID methods in the [W3C DID Method Registry](https://w3c.github.io/did-spec-registries/#did-methods). |
 
 ## Secure Storage Types
 
 | Secure Storage Types | Supported | Notes |
  --- | :--: | -- |
+| [Aries Askar](https://github.com/hyperledger/aries-askar) | :white_check_mark: | Recommended - Aries Askar provides equivalent/evolved secure storage and cryptography support to the "indy-wallet" part of the Indy SDK. When using Askar (via the `--wallet-type askar` startup parameter), other Indy SDK functionality is handled by [Indy Shared RS](https://github.com/hyperledger/indy-shared-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions). |
 | [Indy SDK "indy-wallet"](https://github.com/hyperledger/indy-sdk/tree/master/docs/design/003-wallet-storage) | :white_check_mark: | Full support for the features of the "indy-wallet" secure storage capabilities found in the Indy SDK. |
-| [Aries Askar](https://github.com/hyperledger/aries-askar) | :warning: | Aries Askar provides equivalent/evolved secure storage and cryptography support to the "indy-wallet" part of the Indy SDK. Available in ACA-Py (activated using a startup parameters but not yet widely used. When using Askar, other Indy SDK capabilities are handled by [Indy Shared RS](https://github.com/hyperledger/indy-shared-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions). |
 
 ## Miscellaneous Features
 
@@ -86,8 +88,8 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | Connection-less (OOB protocol / AIP 2.0)               | :white_check_mark:        | Only for present proof          |
 | Signed Attachments               | :white_check_mark:        | Used for OOB         |
 | Multi Indy ledger support (with automatic detection) | :white_check_mark: | Support added in the 0.7.3 Release.   |
-| Persistence of mediated messages | :construction:        | Messages are currently stored in an in-memory and so are subject to loss in the case of a sudden termination of an ACA-Py process. The in-memory queue is properly handled in the case of a graceful shutdown of an ACA-Py process (e.g. processing of the queue completes and no new messages are accepted). Work is underway to add useful external queues handling, including support for multiple external queue implementations (e.g., redis and kafka). |
-| Storage Import & Export           | :warning:        | Supported by directly interacting with the indy-sdk or Aries Askar (e.g., no Admin API endpoint available for wallet import & export). Aries Askar support includes the ability to import storage exported from the Indy SDK's "indy-wallet" component. |
+| Persistence of mediated messages | :construction:        | Work is mostly complete to add external, persistent queue handling, including support for multiple external queue implementations (notably, plugins for [Redis](https://github.com/bcgov/aries-acapy-plugin-redis-events) and [Kafka](https://github.com/sicpa-dlab/aries-acapy-plugin-kafka-events)). Documentation for that is being worked on. Without persistent queue support, messages are stored in an in-memory queue and so are subject to loss in the case of a sudden termination of an ACA-Py process. The in-memory queue is properly handled in the case of a graceful shutdown of an ACA-Py process (e.g. processing of the queue completes and no new messages are accepted).  |
+| Storage Import & Export           | :warning:        | Supported by directly interacting with the indy-sdk or Aries Askar (e.g., no Admin API endpoint available for wallet import & export). Aries Askar support includes the ability to import storage exported from the Indy SDK's "indy-wallet" component. However, a full migration approach from a production ACA-Py using the Indy-SDK storage to use Aries Askar storage has not been implemeted and documented. |
 
 ## Supported RFCs
 
@@ -109,12 +111,9 @@ are fully supported in ACA-Py **EXCEPT** as noted in the table below.
 | RFC | Supported | Notes |
  --- | :--: | -- |
 | [0023-did-exchange](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0023-did-exchange)   | :warning:   |   Not using DIDDoc conventions yet, still using DID format of 0160-connections (which is incorrect and outdated). Also using incorrect format for `did:peer`  (or not using a `did:` prefix at all) |
-| [0183-revocation-notification](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0183-revocation-notification)  | :white_check_mark:      | :new: This was added in release 0.7.3 and will be removed from this list with the next update. |
 | [0211-route-coordination](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0211-route-coordination)   | :warning:  | Only pre-AIP 2.0 version. Must be updated to use `did:key` for full AIP 2.0 support  |
 | [0317-please-ack](https://github.com/hyperledger/aries-rfcs/tree/main/features/0317-please-ack) |  :x: | |
 | [0360-use-did-key](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0360-use-did-key)     | :warning:  |  Creating and resolving `did:key` DIDs is supported, but not all protocols are updated yet to use `did:key`. This is a breaking change for AIP 1.0 -> AIP 2.0.                |
-| [0519-goal-codes](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/concepts/0519-goal-codes) | :white_check_mark: | :new:  This was added in release 0.7.3 and will be removed from this list with the next update. |
-| [0557-discover-features-v2](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0557-discover-features-v2)  | :white_check_mark:        | :new: This was added in release 0.7.3 and will be removed from this list with the next update. |
 | [0587-encryption-envelope-v2](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0587-encryption-envelope-v2) | :construction: | Support for the DIDComm V2 envelope format is a work in progress, including the PRs ([AIP-2 base64url consistency](https://github.com/hyperledger/aries-cloudagent-python/pull/1188) and [Small AIP-2 updates](https://github.com/hyperledger/aries-cloudagent-python/pull/1056)) |
 | [0627-static-peer-dids](https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0627-static-peer-dids)          | :x:  |  |
 
