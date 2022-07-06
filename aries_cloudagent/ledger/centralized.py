@@ -42,7 +42,7 @@ class CentralizedSdkLedger(BaseLedger):
             profile: Profile,
     ):
         """
-        Initialize an IndySdkLedger instance.
+        Initialize a CentralizedSdkLedger instance.
 
         Args:
             pool: The pool instance handling the raw ledger connection
@@ -84,7 +84,7 @@ class CentralizedSdkLedger(BaseLedger):
             endorse_did: DIDInfo = None,
     ) -> str:
         """Endorse a (signed) ledger transaction."""
-        return await self._endorse(request_json, endorse_did=endorse_did)
+        return ""
 
     async def txn_submit(
             self,
@@ -94,9 +94,7 @@ class CentralizedSdkLedger(BaseLedger):
             sign_did: DIDInfo = sentinel,
     ) -> str:
         """Submit a signed (and endorsed) transaction to the ledger."""
-        return await self._submit(
-            request_json, sign=sign, taa_accept=taa_accept, sign_did=sign_did
-        )
+        return ""
 
     async def create_and_send_schema(
             self,
@@ -153,7 +151,16 @@ class CentralizedSdkLedger(BaseLedger):
             schema_version: str,
             attribute_names: Sequence[str],
     ) -> Tuple[str, dict]:
-        """Check if a schema has already been published."""
+        """
+        Check if a schema has already been published.
+
+        Args:
+            public_did: The public did used for publishing the schema
+            schema_name: The schema name
+            schema_version: The schema version
+            attribute_names: Schema attributes to compare
+        """
+
         fetch_schema_id = f"{public_did}:2:{schema_name}:{schema_version}"
         schema = await self.fetch_schema_by_id(fetch_schema_id)
         if schema:
@@ -258,7 +265,6 @@ class CentralizedSdkLedger(BaseLedger):
                             )
                 except IndyIssuerError as err:
                     raise LedgerError(err.message) from err
-                credential_definition_json = json.dumps(ledger_cred_def)
                 break
             else:  # no such cred def on ledger
                 try:
