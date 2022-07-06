@@ -531,24 +531,21 @@ async def update_keylist_for_connection(request: web.BaseRequest):
         multitenant_mgr = context.inject_or(BaseMultitenantManager)
         wallet_id = context.settings.get_str("wallet.id")
         if multitenant_mgr and wallet_id:
-            routing_manager = multitenant_mgr.get_route_manager(
+            route_manager = multitenant_mgr.get_route_manager(
                 context.profile, wallet_id
             )
         else:
-            routing_manager = CoordinateMediationV1RouteManager(context.profile)
+            route_manager = CoordinateMediationV1RouteManager(context.profile)
 
         async with context.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
-            mediation_record = await routing_manager.mediation_record_for_connection(
+            mediation_record = await route_manager.mediation_record_for_connection(
                 connection_record, mediation_id, or_default=True
             )
 
-        if not mediation_record:
-            raise web.HTTPBadRequest(
-                reason="No mediation_id specified and no default mediator"
-            )
-
-        keylist_update = await routing_manager.route_connection(
+        # MediationRecord is permitted to be None; route manager will
+        # ensure the correct mediator is notified.
+        keylist_update = await route_manager.route_connection(
             connection_record, mediation_record
         )
 
