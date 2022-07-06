@@ -799,8 +799,9 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         message_body = "{}"
         receipt = MessageReceipt(direct_response_mode="snail mail")
         message = InboundMessage(message_body, receipt)
+        exc = KeyError("sample exception")
         mock_task = async_mock.MagicMock(
-            exc_info=(KeyError, KeyError("sample exception"), "..."),
+            exc_info=(type(exc), exc, exc.__traceback__),
             ident="abc",
             timing={
                 "queued": 1234567890,
@@ -831,11 +832,12 @@ class TestConductor(AsyncTestCase, Config, TestDIDs):
         message_body = "{}"
         receipt = MessageReceipt(direct_response_mode="snail mail")
         message = InboundMessage(message_body, receipt)
+        exc = test_module.LedgerTransactionError("Ledger is wobbly")
         mock_task = async_mock.MagicMock(
             exc_info=(
-                test_module.LedgerTransactionError,
-                test_module.LedgerTransactionError("Ledger is wobbly"),
-                "...",
+                type(exc),
+                exc,
+                exc.__traceback__,
             ),
             ident="abc",
             timing={

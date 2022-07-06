@@ -632,6 +632,7 @@ class OutOfBandManager(BaseConnectionManager):
             timeout: The timeout in seconds to wait for the reuse state [default=15]
 
         Returns:
+            OobRecord
 
         """
         OOB_REUSE_RESPONSE_STATE = re.compile(
@@ -875,6 +876,7 @@ class OutOfBandManager(BaseConnectionManager):
             conn_record: Connection record associated with the oob record
 
         Returns:
+            OobRecord
 
         Raises:
             OutOfBandManagerError: If there is an issue creating or
@@ -938,8 +940,6 @@ class OutOfBandManager(BaseConnectionManager):
         Args:
             reuse_msg: The `HandshakeReuse` to process
             receipt: The message receipt
-
-        Returns:
 
         Raises:
             OutOfBandManagerError: If the existing connection is not active
@@ -1013,8 +1013,6 @@ class OutOfBandManager(BaseConnectionManager):
         Args:
             reuse_accepted_msg: The `HandshakeReuseAccept` to process
             receipt: The message receipt
-
-        Returns:
 
         Raises:
             OutOfBandManagerError: if there is an error in processing the
@@ -1092,8 +1090,6 @@ class OutOfBandManager(BaseConnectionManager):
         Args:
             problem_report: The `OOBProblemReport` to process
             receipt: The message receipt
-
-        Returns:
 
         Raises:
             OutOfBandManagerError: if there is an error in processing the

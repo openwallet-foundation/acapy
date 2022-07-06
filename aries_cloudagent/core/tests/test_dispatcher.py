@@ -362,8 +362,9 @@ class TestDispatcher(AsyncTestCase):
         dispatcher = test_module.Dispatcher(profile)
         await dispatcher.setup()
 
+        exc = KeyError("sample exception")
         mock_task = async_mock.MagicMock(
-            exc_info=(KeyError, KeyError("sample exception"), "..."),
+            exc_info=(type(exc), exc, exc.__traceback__),
             ident="abc",
             timing={
                 "queued": 1234567890,

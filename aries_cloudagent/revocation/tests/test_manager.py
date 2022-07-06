@@ -2,7 +2,6 @@ import json
 
 from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
-from more_itertools import side_effect
 
 from aries_cloudagent.revocation.models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
