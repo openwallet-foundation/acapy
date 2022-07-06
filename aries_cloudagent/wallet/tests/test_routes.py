@@ -420,14 +420,8 @@ class TestWalletRoutes(AsyncTestCase):
         ledger.__aenter__ = async_mock.CoroutineMock(return_value=ledger)
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
-        multitenant_mgr = async_mock.MagicMock(MultitenantManager, autospec=True)
         route_manager = async_mock.MagicMock(RouteManager)
-        multitenant_mgr.get_route_manager = async_mock.MagicMock(
-            return_value=route_manager
-        )
-        self.profile.context.injector.bind_instance(
-            BaseMultitenantManager, multitenant_mgr
-        )
+        self.profile.context.injector.bind_instance(RouteManager, route_manager)
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ):
@@ -440,9 +434,6 @@ class TestWalletRoutes(AsyncTestCase):
             )
             await test_module.wallet_set_public_did(self.request)
 
-            multitenant_mgr.get_route_manager.assert_called_once_with(
-                self.profile, "test_wallet"
-            )
             route_manager.route_public_did.assert_called_once_with(self.test_verkey)
 
     async def test_set_public_did_no_query_did(self):

@@ -15,7 +15,6 @@ from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUIDFour
-from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ...connections.v1_0.routes import ConnectionsConnIdMatchInfoSchema
 from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
@@ -30,7 +29,7 @@ from .messages.keylist_update import KeylistUpdateSchema
 from .messages.mediate_deny import MediationDenySchema
 from .messages.mediate_grant import MediationGrantSchema
 from .models.mediation_record import MediationRecord, MediationRecordSchema
-from .route_manager import CoordinateMediationV1RouteManager
+from .route_manager import RouteManager
 
 
 CONNECTION_ID_SCHEMA = fields.UUID(
@@ -528,14 +527,7 @@ async def update_keylist_for_connection(request: web.BaseRequest):
     mediation_id = body.get("mediation_id")
     connection_id = request.match_info["conn_id"]
     try:
-        multitenant_mgr = context.inject_or(BaseMultitenantManager)
-        wallet_id = context.settings.get_str("wallet.id")
-        if multitenant_mgr and wallet_id:
-            route_manager = multitenant_mgr.get_route_manager(
-                context.profile, wallet_id
-            )
-        else:
-            route_manager = CoordinateMediationV1RouteManager(context.profile)
+        route_manager = context.inject(RouteManager)
 
         async with context.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)

@@ -1,29 +1,29 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
-
-import jwt
-
 from datetime import datetime
 
-from ...core.in_memory import InMemoryProfile
+from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock
+import jwt
+
+from .. import base as test_module
 from ...config.base import InjectionError
+from ...core.in_memory import InMemoryProfile
 from ...messaging.responder import BaseResponder
-from ...wallet.models.wallet_record import WalletRecord
-from ...wallet.in_memory import InMemoryWallet
-from ...wallet.did_info import DIDInfo
-from ...storage.error import StorageNotFoundError
-from ...storage.in_memory import InMemoryStorage
+from ...protocols.coordinate_mediation.v1_0.manager import (
+    MediationManager,
+    MediationRecord,
+)
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
-from ...protocols.coordinate_mediation.v1_0.manager import (
-    MediationRecord,
-    MediationManager,
-)
-from ...wallet.key_type import KeyType
+from ...storage.error import StorageNotFoundError
+from ...storage.in_memory import InMemoryStorage
+from ...wallet.did_info import DIDInfo
 from ...wallet.did_method import DIDMethod
+from ...wallet.in_memory import InMemoryWallet
+from ...wallet.key_type import KeyType
+from ...wallet.models.wallet_record import WalletRecord
 from ..base import BaseMultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
-from .. import base as test_module
 
 
 class MockMultitenantManager(BaseMultitenantManager):
@@ -212,16 +212,13 @@ class TestBaseMultitenantManager(AsyncTestCase):
 
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.route_public_did = async_mock.CoroutineMock()
+        self.context.injector.bind_instance(RouteManager, mock_route_manager)
 
         with async_mock.patch.object(
             WalletRecord, "save"
         ) as wallet_record_save, async_mock.patch.object(
             self.manager, "get_wallet_profile"
-        ) as get_wallet_profile, async_mock.patch.object(
-            self.manager,
-            "get_route_manager",
-            async_mock.MagicMock(return_value=mock_route_manager),
-        ):
+        ) as get_wallet_profile:
             get_wallet_profile.return_value = InMemoryProfile.test_profile()
 
             wallet_record = await self.manager.create_wallet(
@@ -253,16 +250,13 @@ class TestBaseMultitenantManager(AsyncTestCase):
 
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.route_public_did = async_mock.CoroutineMock()
+        self.context.injector.bind_instance(RouteManager, mock_route_manager)
 
         with async_mock.patch.object(
             WalletRecord, "save"
         ) as wallet_record_save, async_mock.patch.object(
             self.manager, "get_wallet_profile"
         ) as get_wallet_profile, async_mock.patch.object(
-            self.manager,
-            "get_route_manager",
-            async_mock.MagicMock(return_value=mock_route_manager),
-        ), async_mock.patch.object(
             InMemoryWallet, "get_public_did"
         ) as get_public_did:
             get_wallet_profile.return_value = InMemoryProfile.test_profile()

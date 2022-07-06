@@ -199,8 +199,8 @@ class BaseMultitenantManager(ABC):
                 public_did_info = await wallet.get_public_did()
 
             if public_did_info:
-                await self.get_route_manager(
-                    profile, wallet_record.wallet_id
+                await MultitenantRouteManager(
+                    self._profile, profile, wallet_record.wallet_id
                 ).route_public_did(public_did_info.verkey)
         except Exception:
             await wallet_record.delete_record(session)
@@ -279,10 +279,6 @@ class BaseMultitenantManager(ABC):
             profile: The wallet profile instance
 
         """
-
-    def get_route_manager(self, sub_profile: Profile, wallet_id: str):
-        """Return a route manager for handling multitenant routing."""
-        return MultitenantRouteManager(self._profile, sub_profile, wallet_id)
 
     async def create_auth_token(
         self, wallet_record: WalletRecord, wallet_key: str = None

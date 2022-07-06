@@ -3,7 +3,6 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from .. import routes as test_module
 from .....admin.request_context import AdminRequestContext
 from .....core.in_memory import InMemoryProfile
-from .....multitenant.base import BaseMultitenantManager
 from .....storage.error import StorageError, StorageNotFoundError
 from ..models.mediation_record import MediationRecord
 from ..route_manager import RouteManager
@@ -701,9 +700,6 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         self.request.match_info = {
             "conn_id": "test-conn-id",
         }
-        multitenant_mgr = async_mock.MagicMock(BaseMultitenantManager)
-        self.context.injector.bind_instance(BaseMultitenantManager, multitenant_mgr)
-        self.context.settings["wallet.id"] = "test-wallet-id"
         mock_route_manager = async_mock.MagicMock(RouteManager)
         mock_keylist_update = async_mock.MagicMock()
         mock_keylist_update.serialize.return_value = {"mock": "serialized"}
@@ -711,9 +707,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             return_value=mock_keylist_update
         )
         mock_route_manager.mediation_record_for_connection = async_mock.CoroutineMock()
-        multitenant_mgr.get_route_manager = async_mock.MagicMock(
-            return_value=mock_route_manager
-        )
+        self.context.injector.bind_instance(RouteManager, mock_route_manager)
         with async_mock.patch.object(
             test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
