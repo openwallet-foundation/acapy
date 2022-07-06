@@ -19,7 +19,7 @@ from ..route_manager import (
 )
 
 
-class TestRouteManager(RouteManager):
+class MockRouteManager(RouteManager):
     """Concretion of RouteManager for testing."""
 
     _route_for_key = mock.CoroutineMock()
@@ -38,7 +38,7 @@ def profile(mock_responder: MockResponder):
 
 @pytest.fixture
 def route_manager(profile: Profile):
-    manager = TestRouteManager(profile)
+    manager = MockRouteManager(profile)
     manager._route_for_key = mock.CoroutineMock(
         return_value=mock.MagicMock(KeylistUpdate)
     )
