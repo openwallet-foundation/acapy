@@ -8,7 +8,7 @@ Once ready to do a release, create a local branch that includes the following up
 
 1. Create a PR branch from an updated `main` branch.
 
-2. Update the CHANGELOG.md to add the new release.  If transitioning for a Release Candidate to the final release for the tag, do not create a new section -- just drop the "RC" designation. Check the date of the new release.
+2. Update the CHANGELOG.md to add the new release.  Only create a new section when working on the first release candidate for a new release. When transitioning from one release candidate to the next, or to an official release, just update the title and date of the change log section.
 
 3. Include details of the merged PRs included in this release. General process to follow:
 

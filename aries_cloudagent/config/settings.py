@@ -1,14 +1,15 @@
 """Settings implementation."""
 
-from typing import Mapping
+from typing import Any, Mapping, MutableMapping, Optional
 
 from .base import BaseSettings
+from .plugin_settings import PluginSettings
 
 
-class Settings(BaseSettings):
+class Settings(BaseSettings, MutableMapping[str, Any]):
     """Mutable settings implementation."""
 
-    def __init__(self, values: Mapping[str, object] = None):
+    def __init__(self, values: Optional[Mapping[str, Any]] = None):
         """Initialize a Settings object.
 
         Args:
@@ -90,12 +91,16 @@ class Settings(BaseSettings):
         """Produce a copy of the settings instance."""
         return Settings(self._values)
 
-    def extend(self, other: Mapping[str, object]) -> BaseSettings:
+    def extend(self, other: Mapping[str, Any]) -> BaseSettings:
         """Merge another settings instance to produce a new instance."""
         vals = self._values.copy()
         vals.update(other)
         return Settings(vals)
 
-    def update(self, other: Mapping[str, object]):
+    def update(self, other: Mapping[str, Any]):
         """Update the settings in place."""
         self._values.update(other)
+
+    def for_plugin(self, plugin: str, default: Optional[Mapping[str, Any]] = None):
+        """Retrieve settings for plugin."""
+        return PluginSettings.for_plugin(self, plugin, default)
