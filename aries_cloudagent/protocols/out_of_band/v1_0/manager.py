@@ -110,6 +110,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         """
         mediation_record = await self._route_manager.mediation_record_if_id(
+            self.profile,
             mediation_id,
             or_default=True,
         )
@@ -296,7 +297,7 @@ class OutOfBandManager(BaseConnectionManager):
                     await conn_rec.save(session, reason="Created new connection")
 
             routing_keys, my_endpoint = await self._route_manager.routing_info(
-                my_endpoint, mediation_record
+                self.profile, my_endpoint, mediation_record
             )
 
             if not conn_rec:
@@ -358,7 +359,9 @@ class OutOfBandManager(BaseConnectionManager):
         async with self.profile.session() as session:
             await oob_record.save(session, reason="Created new oob invitation")
 
-        await self._route_manager.route_invitation(conn_rec, mediation_record)
+        await self._route_manager.route_invitation(
+            self.profile, conn_rec, mediation_record
+        )
 
         return InvitationRecord(  # for return via admin API, not storage
             oob_id=oob_record.oob_id,
@@ -392,7 +395,9 @@ class OutOfBandManager(BaseConnectionManager):
         """
         if mediation_id:
             try:
-                await self._route_manager.mediation_record_if_id(mediation_id)
+                await self._route_manager.mediation_record_if_id(
+                    self.profile, mediation_id
+                )
             except StorageNotFoundError:
                 mediation_id = None
 

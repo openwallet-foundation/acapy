@@ -22,16 +22,12 @@ LOGGER = logging.getLogger(__name__)
 class MultitenantRouteManager(RouteManager):
     """Multitenancy route manager."""
 
-    def __init__(self, root_profile: Profile, sub_profile: Profile, wallet_id: str):
+    def __init__(
+        self,
+        root_profile: Profile,
+    ):
         """Initialize multitenant route manager."""
         self.root_profile = root_profile
-        self.wallet_id = wallet_id
-        super().__init__(sub_profile)
-
-    @property
-    def sub_profile(self) -> Profile:
-        """Return reference to sub wallet profile."""
-        return self.profile
 
     async def get_base_wallet_mediator(self) -> Optional[MediationRecord]:
         """Get base wallet's default mediator."""
@@ -39,14 +35,16 @@ class MultitenantRouteManager(RouteManager):
 
     async def _route_for_key(
         self,
+        profile: Profile,
         recipient_key: str,
         mediation_record: Optional[MediationRecord] = None,
         *,
         skip_if_exists: bool = False,
         replace_key: Optional[str] = None,
     ):
+        wallet_id = profile.settings["wallet.id"]
         LOGGER.info(
-            f"Add route record for recipient {recipient_key} to wallet {self.wallet_id}"
+            f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
         )
         routing_mgr = RoutingManager(self.root_profile)
         mediation_mgr = MediationManager(self.root_profile)
@@ -66,7 +64,7 @@ class MultitenantRouteManager(RouteManager):
                 pass
 
         await routing_mgr.create_route_record(
-            recipient_key=recipient_key, internal_wallet_id=self.wallet_id
+            recipient_key=recipient_key, internal_wallet_id=wallet_id
         )
 
         # External mediation
@@ -86,7 +84,10 @@ class MultitenantRouteManager(RouteManager):
         return keylist_updates
 
     async def routing_info(
-        self, my_endpoint: str, mediation_record: Optional[MediationRecord] = None
+        self,
+        profile: Profile,
+        my_endpoint: str,
+        mediation_record: Optional[MediationRecord] = None,
     ) -> Tuple[List[str], str]:
         """Return routing info."""
         routing_keys = []

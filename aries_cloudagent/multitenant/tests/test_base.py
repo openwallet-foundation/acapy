@@ -268,7 +268,9 @@ class TestBaseMultitenantManager(AsyncTestCase):
                 WalletRecord.MODE_MANAGED,
             )
 
-            mock_route_manager.route_public_did.assert_called_once_with(did_info.verkey)
+            mock_route_manager.route_public_did.assert_called_once_with(
+                get_wallet_profile.return_value, did_info.verkey
+            )
 
             wallet_record_save.assert_called_once()
             get_wallet_profile.assert_called_once_with(

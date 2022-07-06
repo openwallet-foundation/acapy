@@ -200,7 +200,7 @@ class BaseMultitenantManager(ABC):
 
             if public_did_info:
                 await profile.inject(RouteManager).route_public_did(
-                    public_did_info.verkey
+                    profile, public_did_info.verkey
                 )
         except Exception:
             await wallet_record.delete_record(session)

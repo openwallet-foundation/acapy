@@ -122,6 +122,7 @@ class ConnectionManager(BaseConnectionManager):
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await self._route_manager.mediation_record_if_id(
+            self.profile,
             mediation_id,
             or_default=True,
         )
@@ -159,7 +160,7 @@ class ConnectionManager(BaseConnectionManager):
 
             # Add mapping for multitenant relaying.
             # Mediation of public keys is not supported yet
-            await self._route_manager.route_public_did(public_did.verkey)
+            await self._route_manager.route_public_did(self.profile, public_did.verkey)
 
             return None, invitation
 
@@ -206,8 +207,11 @@ class ConnectionManager(BaseConnectionManager):
         async with self.profile.session() as session:
             await connection.save(session, reason="Created new invitation")
 
-        await self._route_manager.route_invitation(connection, mediation_record)
+        await self._route_manager.route_invitation(
+            self.profile, connection, mediation_record
+        )
         routing_keys, my_endpoint = await self._route_manager.routing_info(
+            self.profile,
             my_endpoint or cast(str, self.profile.settings.get("default_endpoint")),
             mediation_record,
         )
@@ -297,7 +301,7 @@ class ConnectionManager(BaseConnectionManager):
             await connection.attach_invitation(session, invitation)
 
         await self._route_manager.save_mediator_for_connection(
-            connection, mediation_id=mediation_id
+            self.profile, connection, mediation_id=mediation_id
         )
 
         if connection.accept == ConnRecord.ACCEPT_AUTO:
@@ -335,6 +339,7 @@ class ConnectionManager(BaseConnectionManager):
         """
 
         mediation_record = await self._route_manager.mediation_record_for_connection(
+            self.profile,
             connection,
             mediation_id,
             or_default=True,
@@ -360,7 +365,7 @@ class ConnectionManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
-            connection, mediation_record
+            self.profile, connection, mediation_record
         )
 
         # Create connection request message
@@ -579,7 +584,7 @@ class ConnectionManager(BaseConnectionManager):
         )
 
         mediation_record = await self._route_manager.mediation_record_for_connection(
-            connection, mediation_id
+            self.profile, connection, mediation_id
         )
 
         # Multitenancy setup
@@ -613,7 +618,7 @@ class ConnectionManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
-            connection, mediation_record
+            self.profile, connection, mediation_record
         )
 
         # Create connection response message
@@ -863,7 +868,7 @@ class ConnectionManager(BaseConnectionManager):
 
         # Routing
         mediation_record = await self._route_manager.mediation_record_if_id(
-            mediation_id, or_default=True
+            self.profile, mediation_id, or_default=True
         )
 
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
@@ -873,7 +878,9 @@ class ConnectionManager(BaseConnectionManager):
         if multitenant_mgr and wallet_id:
             base_mediation_record = await multitenant_mgr.get_default_mediator()
 
-        await self._route_manager.route_static(connection, mediation_record)
+        await self._route_manager.route_static(
+            self.profile, connection, mediation_record
+        )
 
         # Synthesize their DID doc
         did_doc = await self.create_did_document(

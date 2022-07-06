@@ -155,7 +155,7 @@ class DIDXManager(BaseConnectionManager):
                 ].public_key_base58
 
         await self._route_manager.save_mediator_for_connection(
-            conn_rec, mediation_id=mediation_id
+            self.profile, conn_rec, mediation_id=mediation_id
         )
 
         if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
@@ -259,6 +259,7 @@ class DIDXManager(BaseConnectionManager):
         """
         # Mediation Support
         mediation_record = await self._route_manager.mediation_record_for_connection(
+            self.profile,
             conn_rec,
             mediation_id,
             or_default=True,
@@ -290,7 +291,7 @@ class DIDXManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
-            conn_rec, mediation_record
+            self.profile, conn_rec, mediation_record
         )
 
         # Create connection request message
@@ -550,7 +551,7 @@ class DIDXManager(BaseConnectionManager):
         )
 
         mediation_record = await self._route_manager.mediation_record_for_connection(
-            conn_rec, mediation_id
+            self.profile, conn_rec, mediation_id
         )
 
         # Multitenancy setup
@@ -583,7 +584,7 @@ class DIDXManager(BaseConnectionManager):
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_inviter(
-            conn_rec, mediation_record
+            self.profile, conn_rec, mediation_record
         )
 
         # Create connection response message

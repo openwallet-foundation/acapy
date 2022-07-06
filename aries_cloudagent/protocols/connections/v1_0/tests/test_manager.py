@@ -177,7 +177,7 @@ class TestConnectionManager(AsyncTestCase):
             assert connect_record is None
             assert connect_invite.did.endswith(self.test_did)
             self.route_manager.route_public_did.assert_called_once_with(
-                self.test_verkey
+                self.profile, self.test_verkey
             )
 
     async def test_create_invitation_public_no_public_invites(self):
@@ -356,7 +356,7 @@ class TestConnectionManager(AsyncTestCase):
                 assert invite.routing_keys == self.test_mediator_routing_keys
                 assert invite.endpoint == self.test_mediator_endpoint
                 self.route_manager.routing_info.assert_awaited_once_with(
-                    self.test_endpoint, mediation_record
+                    self.profile, self.test_endpoint, mediation_record
                 )
 
     async def test_receive_invitation(self):

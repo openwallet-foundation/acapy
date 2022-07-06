@@ -570,7 +570,7 @@ async def promote_wallet_public_did(
 
         # Route the public DID
         route_manager = profile.inject(RouteManager)
-        await route_manager.route_public_did(info.verkey)
+        await route_manager.route_public_did(profile, info.verkey)
 
     return info, attrib_def
 

@@ -37,8 +37,8 @@ def profile(mock_responder: MockResponder):
 
 
 @pytest.fixture
-def route_manager(profile: Profile):
-    manager = MockRouteManager(profile)
+def route_manager():
+    manager = MockRouteManager()
     manager._route_for_key = mock.CoroutineMock(
         return_value=mock.MagicMock(KeylistUpdate)
     )
@@ -47,8 +47,8 @@ def route_manager(profile: Profile):
 
 
 @pytest.fixture
-def mediation_route_manager(profile: Profile):
-    yield CoordinateMediationV1RouteManager(profile)
+def mediation_route_manager():
+    yield CoordinateMediationV1RouteManager()
 
 
 @pytest.fixture
@@ -61,7 +61,7 @@ def conn_record():
 
 @pytest.mark.asyncio
 async def test_get_or_create_my_did_no_did(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     conn_record.my_did = None
     mock_did_info = mock.MagicMock()
@@ -72,7 +72,7 @@ async def test_get_or_create_my_did_no_did(
     ) as mock_create_local_did, mock.patch.object(
         conn_record, "save", mock.CoroutineMock()
     ) as mock_save:
-        info = await route_manager.get_or_create_my_did(conn_record)
+        info = await route_manager.get_or_create_my_did(profile, conn_record)
         assert mock_did_info == info
         mock_create_local_did.assert_called_once()
         mock_save.assert_called_once()
@@ -80,21 +80,21 @@ async def test_get_or_create_my_did_no_did(
 
 @pytest.mark.asyncio
 async def test_get_or_create_my_did_existing_did(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     conn_record.my_did = "test-did"
     mock_did_info = mock.MagicMock(DIDInfo)
     with mock.patch.object(
         InMemoryWallet, "get_local_did", mock.CoroutineMock(return_value=mock_did_info)
     ) as mock_get_local_did:
-        info = await route_manager.get_or_create_my_did(conn_record)
+        info = await route_manager.get_or_create_my_did(profile, conn_record)
         assert mock_did_info == info
         mock_get_local_did.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_mediation_record_for_connection_mediation_id(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     with mock.patch.object(
@@ -106,18 +106,18 @@ async def test_mediation_record_for_connection_mediation_id(
     ):
         assert (
             await route_manager.mediation_record_for_connection(
-                conn_record, mediation_record.mediation_id
+                profile, conn_record, mediation_record.mediation_id
             )
             == mediation_record
         )
         mock_mediation_record_if_id.assert_called_once_with(
-            mediation_record.mediation_id, False
+            profile, mediation_record.mediation_id, False
         )
 
 
 @pytest.mark.asyncio
 async def test_mediation_record_for_connection_mediation_metadata(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     conn_record.metadata_get.return_value = {
@@ -132,18 +132,18 @@ async def test_mediation_record_for_connection_mediation_metadata(
     ):
         assert (
             await route_manager.mediation_record_for_connection(
-                conn_record, "another-mediation-id"
+                profile, conn_record, "another-mediation-id"
             )
             == mediation_record
         )
         mock_mediation_record_if_id.assert_called_once_with(
-            mediation_record.mediation_id, False
+            profile, mediation_record.mediation_id, False
         )
 
 
 @pytest.mark.asyncio
 async def test_mediation_record_for_connection_default(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     with mock.patch.object(
@@ -155,15 +155,17 @@ async def test_mediation_record_for_connection_default(
     ):
         assert (
             await route_manager.mediation_record_for_connection(
-                conn_record, None, or_default=True
+                profile, conn_record, None, or_default=True
             )
             == mediation_record
         )
-        mock_mediation_record_if_id.assert_called_once_with(None, True)
+        mock_mediation_record_if_id.assert_called_once_with(profile, None, True)
 
 
 @pytest.mark.asyncio
-async def test_mediation_record_if_id_with_id(route_manager: RouteManager):
+async def test_mediation_record_if_id_with_id(
+    profile: Profile, route_manager: RouteManager
+):
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id", state=MediationRecord.STATE_GRANTED
     )
@@ -173,14 +175,16 @@ async def test_mediation_record_if_id_with_id(route_manager: RouteManager):
         mock.CoroutineMock(return_value=mediation_record),
     ) as mock_retrieve_by_id:
         actual = await route_manager.mediation_record_if_id(
-            mediation_id=mediation_record.mediation_id
+            profile, mediation_id=mediation_record.mediation_id
         )
         assert mediation_record == actual
         mock_retrieve_by_id.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_mediation_record_if_id_with_id_bad_state(route_manager: RouteManager):
+async def test_mediation_record_if_id_with_id_bad_state(
+    profile: Profile, route_manager: RouteManager
+):
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id", state=MediationRecord.STATE_DENIED
     )
@@ -191,12 +195,14 @@ async def test_mediation_record_if_id_with_id_bad_state(route_manager: RouteMana
     ):
         with pytest.raises(RouteManagerError):
             await route_manager.mediation_record_if_id(
-                mediation_id=mediation_record.mediation_id
+                profile, mediation_id=mediation_record.mediation_id
             )
 
 
 @pytest.mark.asyncio
-async def test_mediation_record_if_id_with_id_and_default(route_manager: RouteManager):
+async def test_mediation_record_if_id_with_id_and_default(
+    profile: Profile, route_manager: RouteManager
+):
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id", state=MediationRecord.STATE_GRANTED
     )
@@ -208,7 +214,7 @@ async def test_mediation_record_if_id_with_id_and_default(route_manager: RouteMa
         MediationManager, "get_default_mediator", mock.CoroutineMock()
     ) as mock_get_default_mediator:
         actual = await route_manager.mediation_record_if_id(
-            mediation_id=mediation_record.mediation_id, or_default=True
+            profile, mediation_id=mediation_record.mediation_id, or_default=True
         )
         assert mediation_record == actual
         mock_retrieve_by_id.assert_called_once()
@@ -217,6 +223,7 @@ async def test_mediation_record_if_id_with_id_and_default(route_manager: RouteMa
 
 @pytest.mark.asyncio
 async def test_mediation_record_if_id_without_id_and_default(
+    profile: Profile,
     route_manager: RouteManager,
 ):
     mediation_record = MediationRecord(
@@ -230,7 +237,7 @@ async def test_mediation_record_if_id_without_id_and_default(
         mock.CoroutineMock(return_value=mediation_record),
     ) as mock_get_default_mediator:
         actual = await route_manager.mediation_record_if_id(
-            mediation_id=None, or_default=True
+            profile, mediation_id=None, or_default=True
         )
         assert mediation_record == actual
         mock_retrieve_by_id.assert_not_called()
@@ -239,6 +246,7 @@ async def test_mediation_record_if_id_without_id_and_default(
 
 @pytest.mark.asyncio
 async def test_mediation_record_if_id_without_id_and_no_default(
+    profile: Profile,
     route_manager: RouteManager,
 ):
     with mock.patch.object(
@@ -248,7 +256,7 @@ async def test_mediation_record_if_id_without_id_and_no_default(
     ) as mock_get_default_mediator:
         assert (
             await route_manager.mediation_record_if_id(
-                mediation_id=None, or_default=True
+                profile, mediation_id=None, or_default=True
             )
             is None
         )
@@ -258,7 +266,7 @@ async def test_mediation_record_if_id_without_id_and_no_default(
 
 @pytest.mark.asyncio
 async def test_route_connection_as_invitee(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     mock_did_info = mock.MagicMock(DIDInfo)
@@ -267,15 +275,17 @@ async def test_route_connection_as_invitee(
         "get_or_create_my_did",
         mock.CoroutineMock(return_value=mock_did_info),
     ):
-        await route_manager.route_connection_as_invitee(conn_record, mediation_record)
+        await route_manager.route_connection_as_invitee(
+            profile, conn_record, mediation_record
+        )
         route_manager._route_for_key.assert_called_once_with(
-            mock_did_info.verkey, mediation_record, skip_if_exists=True
+            profile, mock_did_info.verkey, mediation_record, skip_if_exists=True
         )
 
 
 @pytest.mark.asyncio
 async def test_route_connection_as_inviter(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     mock_did_info = mock.MagicMock(DIDInfo)
@@ -285,8 +295,11 @@ async def test_route_connection_as_inviter(
         "get_or_create_my_did",
         mock.CoroutineMock(return_value=mock_did_info),
     ):
-        await route_manager.route_connection_as_inviter(conn_record, mediation_record)
+        await route_manager.route_connection_as_inviter(
+            profile, conn_record, mediation_record
+        )
         route_manager._route_for_key.assert_called_once_with(
+            profile,
             mock_did_info.verkey,
             mediation_record,
             replace_key="test-invitation-key",
@@ -296,7 +309,7 @@ async def test_route_connection_as_inviter(
 
 @pytest.mark.asyncio
 async def test_route_connection_state_invitee(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     conn_record.state = "invitation"
@@ -306,14 +319,14 @@ async def test_route_connection_state_invitee(
     ) as mock_route_connection_as_invitee, mock.patch.object(
         route_manager, "route_connection_as_inviter", mock.CoroutineMock()
     ) as mock_route_connection_as_inviter:
-        await route_manager.route_connection(conn_record, mediation_record)
+        await route_manager.route_connection(profile, conn_record, mediation_record)
         mock_route_connection_as_invitee.assert_called_once()
         mock_route_connection_as_inviter.assert_not_called()
 
 
 @pytest.mark.asyncio
 async def test_route_connection_state_inviter(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     conn_record.state = "request"
@@ -323,57 +336,62 @@ async def test_route_connection_state_inviter(
     ) as mock_route_connection_as_invitee, mock.patch.object(
         route_manager, "route_connection_as_inviter", mock.CoroutineMock()
     ) as mock_route_connection_as_inviter:
-        await route_manager.route_connection(conn_record, mediation_record)
+        await route_manager.route_connection(profile, conn_record, mediation_record)
         mock_route_connection_as_inviter.assert_called_once()
         mock_route_connection_as_invitee.assert_not_called()
 
 
 @pytest.mark.asyncio
 async def test_route_connection_state_other(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     conn_record.state = "response"
     conn_record.their_role = "requester"
-    assert await route_manager.route_connection(conn_record, mediation_record) is None
+    assert (
+        await route_manager.route_connection(profile, conn_record, mediation_record)
+        is None
+    )
 
 
 @pytest.mark.asyncio
 async def test_route_invitation_with_key(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     conn_record.invitation_key = "test-invitation-key"
     with mock.patch.object(
         route_manager, "save_mediator_for_connection", mock.CoroutineMock()
     ):
-        await route_manager.route_invitation(conn_record, mediation_record)
+        await route_manager.route_invitation(profile, conn_record, mediation_record)
         route_manager._route_for_key.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_route_invitation_without_key(
-    route_manager: RouteManager, conn_record: ConnRecord
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     with mock.patch.object(
         route_manager, "save_mediator_for_connection", mock.CoroutineMock()
     ):
         with pytest.raises(ValueError):
-            await route_manager.route_invitation(conn_record, mediation_record)
+            await route_manager.route_invitation(profile, conn_record, mediation_record)
         route_manager._route_for_key.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_route_public_did(route_manager: RouteManager):
-    await route_manager.route_public_did("test-verkey")
+async def test_route_public_did(profile: Profile, route_manager: RouteManager):
+    await route_manager.route_public_did(profile, "test-verkey")
     route_manager._route_for_key.assert_called_once_with(
-        "test-verkey", skip_if_exists=True
+        profile, "test-verkey", skip_if_exists=True
     )
 
 
 @pytest.mark.asyncio
-async def test_route_static(route_manager: RouteManager, conn_record: ConnRecord):
+async def test_route_static(
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
+):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     mock_did_info = mock.MagicMock(DIDInfo)
     conn_record.invitation_key = "test-invitation-key"
@@ -382,8 +400,9 @@ async def test_route_static(route_manager: RouteManager, conn_record: ConnRecord
         "get_or_create_my_did",
         mock.CoroutineMock(return_value=mock_did_info),
     ):
-        await route_manager.route_static(conn_record, mediation_record)
+        await route_manager.route_static(profile, conn_record, mediation_record)
         route_manager._route_for_key.assert_called_once_with(
+            profile,
             mock_did_info.verkey,
             mediation_record,
             skip_if_exists=True,
@@ -392,7 +411,9 @@ async def test_route_static(route_manager: RouteManager, conn_record: ConnRecord
 
 @pytest.mark.asyncio
 async def test_save_mediator_for_connection_record(
-    route_manager: RouteManager, conn_record: ConnRecord, profile: Profile
+    profile: Profile,
+    route_manager: RouteManager,
+    conn_record: ConnRecord,
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     session = mock.MagicMock()
@@ -402,7 +423,9 @@ async def test_save_mediator_for_connection_record(
     with mock.patch.object(
         MediationRecord, "retrieve_by_id", mock.CoroutineMock()
     ) as mock_retrieve_by_id:
-        await route_manager.save_mediator_for_connection(conn_record, mediation_record)
+        await route_manager.save_mediator_for_connection(
+            profile, conn_record, mediation_record
+        )
         mock_retrieve_by_id.assert_not_called()
         conn_record.metadata_set.assert_called_once_with(
             session,
@@ -413,7 +436,9 @@ async def test_save_mediator_for_connection_record(
 
 @pytest.mark.asyncio
 async def test_save_mediator_for_connection_id(
-    route_manager: RouteManager, conn_record: ConnRecord, profile: Profile
+    profile: Profile,
+    route_manager: RouteManager,
+    conn_record: ConnRecord,
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     session = mock.MagicMock()
@@ -426,7 +451,7 @@ async def test_save_mediator_for_connection_id(
         mock.CoroutineMock(return_value=mediation_record),
     ) as mock_retrieve_by_id:
         await route_manager.save_mediator_for_connection(
-            conn_record, mediation_id=mediation_record.mediation_id
+            profile, conn_record, mediation_id=mediation_record.mediation_id
         )
         mock_retrieve_by_id.assert_called_once()
         conn_record.metadata_set.assert_called_once_with(
@@ -438,18 +463,21 @@ async def test_save_mediator_for_connection_id(
 
 @pytest.mark.asyncio
 async def test_save_mediator_for_connection_no_mediator(
-    route_manager: RouteManager, conn_record: ConnRecord, profile: Profile
+    profile: Profile,
+    route_manager: RouteManager,
+    conn_record: ConnRecord,
 ):
     with mock.patch.object(
         MediationRecord, "retrieve_by_id", mock.CoroutineMock()
     ) as mock_retrieve_by_id:
-        await route_manager.save_mediator_for_connection(conn_record)
+        await route_manager.save_mediator_for_connection(profile, conn_record)
         mock_retrieve_by_id.assert_not_called()
         conn_record.metadata_set.assert_not_called()
 
 
 @pytest.mark.asyncio
 async def test_mediation_route_for_key(
+    profile: Profile,
     mediation_route_manager: CoordinateMediationV1RouteManager,
     mock_responder: MockResponder,
 ):
@@ -457,7 +485,11 @@ async def test_mediation_route_for_key(
         mediation_id="test-mediation-id", connection_id="test-mediator-conn-id"
     )
     keylist_update = await mediation_route_manager._route_for_key(
-        "test-recipient-key", mediation_record, skip_if_exists=False, replace_key=None
+        profile,
+        "test-recipient-key",
+        mediation_record,
+        skip_if_exists=False,
+        replace_key=None,
     )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
@@ -472,6 +504,7 @@ async def test_mediation_route_for_key(
 
 @pytest.mark.asyncio
 async def test_mediation_route_for_key_skip_if_exists_and_exists(
+    profile: Profile,
     mediation_route_manager: CoordinateMediationV1RouteManager,
     mock_responder: MockResponder,
 ):
@@ -482,6 +515,7 @@ async def test_mediation_route_for_key_skip_if_exists_and_exists(
         RouteRecord, "retrieve_by_recipient_key", mock.CoroutineMock()
     ):
         keylist_update = await mediation_route_manager._route_for_key(
+            profile,
             "test-recipient-key",
             mediation_record,
             skip_if_exists=True,
@@ -493,6 +527,7 @@ async def test_mediation_route_for_key_skip_if_exists_and_exists(
 
 @pytest.mark.asyncio
 async def test_mediation_route_for_key_skip_if_exists_and_absent(
+    profile: Profile,
     mediation_route_manager: CoordinateMediationV1RouteManager,
     mock_responder: MockResponder,
 ):
@@ -505,6 +540,7 @@ async def test_mediation_route_for_key_skip_if_exists_and_absent(
         mock.CoroutineMock(side_effect=StorageNotFoundError),
     ):
         keylist_update = await mediation_route_manager._route_for_key(
+            profile,
             "test-recipient-key",
             mediation_record,
             skip_if_exists=True,
@@ -523,6 +559,7 @@ async def test_mediation_route_for_key_skip_if_exists_and_absent(
 
 @pytest.mark.asyncio
 async def test_mediation_route_for_key_replace_key(
+    profile: Profile,
     mediation_route_manager: CoordinateMediationV1RouteManager,
     mock_responder: MockResponder,
 ):
@@ -530,6 +567,7 @@ async def test_mediation_route_for_key_replace_key(
         mediation_id="test-mediation-id", connection_id="test-mediator-conn-id"
     )
     keylist_update = await mediation_route_manager._route_for_key(
+        profile,
         "test-recipient-key",
         mediation_record,
         skip_if_exists=False,
@@ -549,10 +587,12 @@ async def test_mediation_route_for_key_replace_key(
 
 @pytest.mark.asyncio
 async def test_mediation_route_for_key_no_mediator(
+    profile: Profile,
     mediation_route_manager: CoordinateMediationV1RouteManager,
 ):
     assert (
         await mediation_route_manager._route_for_key(
+            profile,
             "test-recipient-key",
             None,
             skip_if_exists=True,
@@ -564,6 +604,7 @@ async def test_mediation_route_for_key_no_mediator(
 
 @pytest.mark.asyncio
 async def test_mediation_routing_info_with_mediator(
+    profile: Profile,
     mediation_route_manager: CoordinateMediationV1RouteManager,
 ):
     mediation_record = MediationRecord(
@@ -573,7 +614,7 @@ async def test_mediation_routing_info_with_mediator(
         endpoint="http://mediator.example.com",
     )
     keys, endpoint = await mediation_route_manager.routing_info(
-        "http://example.com", mediation_record
+        profile, "http://example.com", mediation_record
     )
     assert keys == mediation_record.routing_keys
     assert endpoint == mediation_record.endpoint
@@ -581,10 +622,11 @@ async def test_mediation_routing_info_with_mediator(
 
 @pytest.mark.asyncio
 async def test_mediation_routing_info_no_mediator(
+    profile: Profile,
     mediation_route_manager: CoordinateMediationV1RouteManager,
 ):
     keys, endpoint = await mediation_route_manager.routing_info(
-        "http://example.com", None
+        profile, "http://example.com", None
     )
     assert keys == []
     assert endpoint == "http://example.com"

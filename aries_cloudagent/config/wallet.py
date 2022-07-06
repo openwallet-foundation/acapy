@@ -2,7 +2,6 @@
 
 import logging
 from typing import Tuple
-import weakref
 
 from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager, ProfileSession
@@ -136,8 +135,6 @@ async def wallet_config(
         )
 
     await txn.commit()
-
-    context.injector.bind_instance(Profile, weakref.ref(profile))
 
     return (profile, public_did_info)
 

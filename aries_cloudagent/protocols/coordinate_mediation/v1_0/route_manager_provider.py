@@ -20,8 +20,7 @@ class RouteManagerProvider(BaseProvider):
         """Create the appropriate route manager instance."""
         wallet_id = settings.get("wallet.id")
         multitenant_mgr = injector.inject_or(BaseMultitenantManager)
-        profile = injector.inject(Profile)
         if multitenant_mgr and wallet_id:
-            return MultitenantRouteManager(self.root_profile, profile, wallet_id)
+            return MultitenantRouteManager(self.root_profile)
 
-        return CoordinateMediationV1RouteManager(profile)
+        return CoordinateMediationV1RouteManager()
