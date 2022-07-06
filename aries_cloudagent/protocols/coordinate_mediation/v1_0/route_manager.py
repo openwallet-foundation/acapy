@@ -8,10 +8,6 @@ from abc import ABC, abstractmethod
 import logging
 from typing import List, Optional, Tuple
 
-from aries_cloudagent.protocols.coordinate_mediation.v1_0.messages.keylist_update import (
-    KeylistUpdate,
-)
-
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
@@ -22,6 +18,7 @@ from ....wallet.did_method import DIDMethod
 from ....wallet.key_type import KeyType
 from ...routing.v1_0.models.route_record import RouteRecord
 from .manager import MediationManager
+from .messages.keylist_update import KeylistUpdate
 from .models.mediation_record import MediationRecord
 
 

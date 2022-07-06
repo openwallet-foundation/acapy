@@ -1,7 +1,5 @@
-import pytest
 from asynctest import mock
-
-from aries_cloudagent.protocols.routing.v1_0.manager import RoutingManager
+import pytest
 
 from ...core.in_memory import InMemoryProfile
 from ...core.profile import Profile
@@ -10,6 +8,7 @@ from ...messaging.responder import BaseResponder, MockResponder
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
 from ...storage.error import StorageNotFoundError
 from ..route_manager import MultitenantRouteManager

@@ -1,8 +1,7 @@
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
-from aries_cloudagent.admin.request_context import AdminRequestContext
-
 from .. import routes as test_module
+from .....admin.request_context import AdminRequestContext
 from .....core.in_memory import InMemoryProfile
 from .....multitenant.base import BaseMultitenantManager
 from .....storage.error import StorageError, StorageNotFoundError

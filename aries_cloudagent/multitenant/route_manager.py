@@ -4,9 +4,8 @@
 import logging
 from typing import List, Optional, Tuple
 
-from aries_cloudagent.core.profile import Profile
-from aries_cloudagent.messaging.responder import BaseResponder
-
+from ..core.profile import Profile
+from ..messaging.responder import BaseResponder
 from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
