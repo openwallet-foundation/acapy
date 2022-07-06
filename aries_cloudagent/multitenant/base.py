@@ -10,11 +10,11 @@ import jwt
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
 from ..core.profile import Profile, ProfileSession
-from ..multitenant.route_manager import MultitenantRouteManager
 from ..protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
     MediationRecord,
 )
+from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
 from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..storage.base import BaseStorage
@@ -199,9 +199,9 @@ class BaseMultitenantManager(ABC):
                 public_did_info = await wallet.get_public_did()
 
             if public_did_info:
-                await MultitenantRouteManager(
-                    self._profile, profile, wallet_record.wallet_id
-                ).route_public_did(public_did_info.verkey)
+                await profile.inject(RouteManager).route_public_did(
+                    public_did_info.verkey
+                )
         except Exception:
             await wallet_record.delete_record(session)
             raise

@@ -250,7 +250,6 @@ class TestBaseMultitenantManager(AsyncTestCase):
 
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.route_public_did = async_mock.CoroutineMock()
-        self.context.injector.bind_instance(RouteManager, mock_route_manager)
 
         with async_mock.patch.object(
             WalletRecord, "save"
@@ -259,7 +258,9 @@ class TestBaseMultitenantManager(AsyncTestCase):
         ) as get_wallet_profile, async_mock.patch.object(
             InMemoryWallet, "get_public_did"
         ) as get_public_did:
-            get_wallet_profile.return_value = InMemoryProfile.test_profile()
+            get_wallet_profile.return_value = InMemoryProfile.test_profile(
+                bind={RouteManager: mock_route_manager}
+            )
             get_public_did.return_value = did_info
 
             wallet_record = await self.manager.create_wallet(

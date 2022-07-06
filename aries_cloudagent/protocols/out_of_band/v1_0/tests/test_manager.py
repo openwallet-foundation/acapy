@@ -313,6 +313,17 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.responder = MockResponder()
         self.responder.send = async_mock.CoroutineMock()
 
+        self.test_mediator_routing_keys = [
+            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
+        ]
+        self.test_mediator_conn_id = "mediator-conn-id"
+        self.test_mediator_endpoint = "http://mediator.example.com"
+
+        self.route_manager = async_mock.MagicMock(RouteManager)
+        self.route_manager.routing_info = async_mock.CoroutineMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
+
         self.profile = InMemoryProfile.test_profile(
             {
                 "default_endpoint": TestConfig.test_endpoint,
@@ -320,7 +331,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
                 "debug.auto_accept_requests": True,
-            }
+            },
+            bind={
+                RouteManager: self.route_manager,
+            },
         )
 
         self.profile.context.injector.bind_instance(BaseResponder, self.responder)
@@ -353,18 +367,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             their_public_did=self.their_public_did,
             save=async_mock.CoroutineMock(),
         )
-
-        self.test_mediator_routing_keys = [
-            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
-        ]
-        self.test_mediator_conn_id = "mediator-conn-id"
-        self.test_mediator_endpoint = "http://mediator.example.com"
-
-        self.route_manager = async_mock.MagicMock(RouteManager)
-        self.route_manager.routing_info = async_mock.CoroutineMock(
-            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
-        )
-        self.manager._route_manager = self.route_manager
 
     async def test_create_invitation_handshake_succeeds(self):
         self.profile.context.update_settings({"public_invites": True})

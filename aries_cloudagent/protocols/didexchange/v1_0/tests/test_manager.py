@@ -36,10 +36,6 @@ from .....connections.base_manager import BaseConnectionManagerError
 
 from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....coordinate_mediation.v1_0.route_manager import RouteManager
-from ....coordinate_mediation.v1_0.messages.keylist_update import (
-    KeylistUpdate,
-    KeylistUpdateRule,
-)
 from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ....discovery.v2_0.manager import V20DiscoveryMgr
 from ....didcomm_prefix import DIDCommPrefix
@@ -87,6 +83,17 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             clean_finished_oob_record=async_mock.CoroutineMock(return_value=None)
         )
 
+        self.route_manager = async_mock.MagicMock(RouteManager)
+        self.route_manager.routing_info = async_mock.CoroutineMock(
+            return_value=([], self.test_endpoint)
+        )
+        self.route_manager.mediation_record_if_id = async_mock.CoroutineMock(
+            return_value=None
+        )
+        self.route_manager.mediation_record_for_connection = async_mock.CoroutineMock(
+            return_value=None
+        )
+
         self.profile = InMemoryProfile.test_profile(
             {
                 "default_endpoint": "http://aries.ca/endpoint",
@@ -101,6 +108,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 BaseResponder: self.responder,
                 BaseCache: InMemoryCache(),
                 OobMessageProcessor: self.oob_mock,
+                RouteManager: self.route_manager,
             },
         )
         self.context = self.profile.context
@@ -139,19 +147,6 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         ]
         self.test_mediator_conn_id = "mediator-conn-id"
         self.test_mediator_endpoint = "http://mediator.example.com"
-
-        self.route_manager = async_mock.MagicMock(RouteManager)
-        self.route_manager.routing_info = async_mock.CoroutineMock(
-            return_value=([], self.test_endpoint)
-        )
-        self.route_manager.mediation_record_if_id = async_mock.CoroutineMock(
-            return_value=None
-        )
-        self.route_manager.mediation_record_for_connection = async_mock.CoroutineMock(
-            return_value=None
-        )
-        self.manager._route_manager = self.route_manager
-        self.oob_manager._route_manager = self.route_manager
 
     async def test_verify_diddoc(self):
         async with self.profile.session() as session:

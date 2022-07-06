@@ -569,7 +569,7 @@ async def promote_wallet_public_did(
         #     await ledger.update_endpoint_for_did(info.did, endpoint)
 
         # Route the public DID
-        route_manager = context.inject(RouteManager)
+        route_manager = profile.inject(RouteManager)
         await route_manager.route_public_did(info.verkey)
 
     return info, attrib_def

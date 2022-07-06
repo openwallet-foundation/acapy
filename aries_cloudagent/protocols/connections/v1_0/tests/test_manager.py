@@ -30,10 +30,6 @@ from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import KeyType
 from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....coordinate_mediation.v1_0.route_manager import RouteManager
-from ....coordinate_mediation.v1_0.messages.inner.keylist_update_rule import (
-    KeylistUpdateRule,
-)
-from ....coordinate_mediation.v1_0.messages.keylist_update import KeylistUpdate
 from ....coordinate_mediation.v1_0.messages.mediate_request import MediationRequest
 from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ....discovery.v2_0.manager import V20DiscoveryMgr
@@ -77,6 +73,13 @@ class TestConnectionManager(AsyncTestCase):
         self.oob_mock = async_mock.MagicMock(
             clean_finished_oob_record=async_mock.CoroutineMock(return_value=None)
         )
+        self.route_manager = async_mock.MagicMock(RouteManager)
+        self.route_manager.routing_info = async_mock.CoroutineMock(
+            return_value=([], self.test_endpoint)
+        )
+        self.route_manager.mediation_record_if_id = async_mock.CoroutineMock(
+            return_value=None
+        )
 
         self.profile = InMemoryProfile.test_profile(
             {
@@ -90,6 +93,7 @@ class TestConnectionManager(AsyncTestCase):
                 BaseResponder: self.responder,
                 BaseCache: InMemoryCache(),
                 OobMessageProcessor: self.oob_mock,
+                RouteManager: self.route_manager,
             },
         )
         self.context = self.profile.context
@@ -106,14 +110,6 @@ class TestConnectionManager(AsyncTestCase):
         self.test_mediator_endpoint = "http://mediator.example.com"
 
         self.manager = ConnectionManager(self.profile)
-        self.route_manager = async_mock.MagicMock(RouteManager)
-        self.route_manager.routing_info = async_mock.CoroutineMock(
-            return_value=([], self.test_endpoint)
-        )
-        self.route_manager.mediation_record_if_id = async_mock.CoroutineMock(
-            return_value=None
-        )
-        self.manager._route_manager = self.route_manager
         assert self.manager.profile
 
     async def test_create_invitation_public_and_multi_use_fails(self):
