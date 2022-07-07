@@ -447,7 +447,13 @@ class CentralizedSdkLedger(BaseLedger):
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
         """
-        request_json = {"did": did, "verKey": verkey}
+        request_json = {
+            "did": did,
+            "verKey": verkey,
+            "alias": alias,
+            "role": role,
+            "endpoint": await self.get_all_endpoints_for_did(did)
+        }
         async with ClientSession() as session:
             async with session.post(self.ledger_url + "/api/did/" + did, json=request_json) as resp:
                 resp = await resp.json()
@@ -501,6 +507,21 @@ class CentralizedSdkLedger(BaseLedger):
             next_seed: seed for incoming ed25519 keypair (default random)
         """
         # generate new key
+        public_info = await self.get_wallet_public_did()
+        public_did = public_info.did
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            verkey = await wallet.rotate_did_keypair_start(public_did, next_seed)
+
+            # get current nym from ledger
+            current_nym = await self.get_did_doc_for_did(public_did)
+            # submit to ledger (retain role and alias)
+            alias = current_nym["alias"]
+            role_token = current_nym["role"]
+            await self.register_nym(public_did, verkey, alias, role_token)
+
+            # update wallet
+            await wallet.rotate_did_keypair_apply(public_did)
         return None
 
     async def get_txn_author_agreement(self, reload: bool = False) -> dict:
