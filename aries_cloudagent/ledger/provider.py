@@ -12,9 +12,11 @@ class LedgerProvider:
 
     WALLET_SUPPORTED_LEDGERS = {
         "askar": {
+            "default": IndyVdrLedger,
             IndyVdrLedger.BACKEND_NAME: IndyVdrLedger
         },
         "indy": {
+            "default": IndySdkLedger,
             IndySdkLedger.BACKEND_NAME: IndySdkLedger,
             CentralizedSdkLedger.BACKEND_NAME: CentralizedSdkLedger
         },

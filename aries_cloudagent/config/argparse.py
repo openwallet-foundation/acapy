@@ -1468,7 +1468,7 @@ class WalletGroup(ArgumentGroup):
             "--wallet-ledger",
             type=str,
             metavar="<wallet-ledger>",
-            default="indy",
+            default="default",
             env_var="ACAPY_WALLET_LEDGER",
             help=(
                 "Specifies the type of the ledger to use together with the wallet. "
