@@ -13,8 +13,9 @@ from .base import BaseLedger, Role
 from .endpoint_type import EndpointType
 from .error import (
     BadLedgerRequestError,
+    LedgerConfigError,
     LedgerError,
-    LedgerTransactionError,
+    LedgerTransactionError
 )
 from .util import TAA_ACCEPTED_RECORD_TYPE
 from ..core.profile import Profile
@@ -46,11 +47,33 @@ class CentralizedSdkLedger(BaseLedger):
 
         Args:
             pool: The pool instance handling the raw ledger connection
-            wallet: The IndySdkWallet instance
+            profile: The instantiated profile
         """
         self.pool = None
         self.profile = profile
-        self.ledger_url = "http://host.docker.internal:8080"
+        self.ledger_url = self.get_ledger_url(profile.settings.get_value("ledger.genesis_transactions"))
+
+    @staticmethod
+    def get_ledger_url(genesis_data) -> str:
+        """
+        Retrieve the URL to access the centralized ledger.
+
+        Args:
+            genesis_data: The genesis file content.
+
+        Returns:
+            The centralized ledger URL.
+        """
+
+        if not genesis_data:
+            raise LedgerConfigError("Cannot connect to the centralized ledger: missing genesis file")
+        genesis_data = json.loads(genesis_data)
+        if "client_ip" not in genesis_data:
+            raise LedgerConfigError("Bad genesis file for CentralizedSdkLedger: missing required field \"client_ip\"")
+        elif "client_port" not in genesis_data:
+            raise LedgerConfigError("Bad genesis file for CentralizedSdkLedger: missing required field \"client_data\"")
+        else:
+            return genesis_data["client_ip"] + ":" + genesis_data["client_port"]
 
     @property
     def read_only(self) -> bool:
@@ -140,8 +163,8 @@ class CentralizedSdkLedger(BaseLedger):
 
             async with ClientSession() as session:
                 async with session.post(self.ledger_url + "/api/schema/" + schema_id, json=schema_def) as resp:
-                    if resp.status == 200:
-                        resp = await resp.json()
+                    if resp.status != 200:
+                        raise LedgerTransactionError(f"Error occurred creating the schema {schema_id}")
         return schema_id, schema_def
 
     async def check_existing_schema(
@@ -302,13 +325,15 @@ class CentralizedSdkLedger(BaseLedger):
                         self.ledger_url + "/api/credentialDefinition/" + credential_definition_id,
                         json=request_json
                 ) as resp:
-                    if resp.status == 200:
+                    if resp.status != 200:
+                        raise LedgerTransactionError(
+                            f"Error occurred creating the credential definition {credential_definition_id}"
+                        )
+                    else:
                         resp = await resp.json()
-
-            if not write_ledger:
-                return credential_definition_id, {"signed_txn": resp}, novel
-
-        return credential_definition_id, request_json, novel
+                        if not write_ledger:
+                            return credential_definition_id, {"signed_txn": resp}, novel
+                        return credential_definition_id, request_json, novel
 
     async def get_credential_definition(self, credential_definition_id: str) -> dict:
         """
@@ -425,7 +450,8 @@ class CentralizedSdkLedger(BaseLedger):
                 request_json["endpoint"] = {endpoint_type.indy: endpoint}
             async with ClientSession() as session:
                 async with session.post(self.ledger_url + "/api/did/" + did, json=request_json) as resp:
-                    await resp.json()
+                    if resp.status != 200:
+                        raise LedgerTransactionError(f"Error occurred updating the endpoint for the did {did}")
                     return True
         return False
 
@@ -456,8 +482,10 @@ class CentralizedSdkLedger(BaseLedger):
         }
         async with ClientSession() as session:
             async with session.post(self.ledger_url + "/api/did/" + did, json=request_json) as resp:
+                if resp.status != 200:
+                    raise LedgerTransactionError(f"Error occurred creating the did {did}")
                 resp = await resp.json()
-        return True, {"signed_txn": resp}
+                return True, {"signed_txn": resp}
 
     async def credential_definition_id2schema_id(self, credential_definition_id):
         """
@@ -522,7 +550,6 @@ class CentralizedSdkLedger(BaseLedger):
 
             # update wallet
             await wallet.rotate_did_keypair_apply(public_did)
-        return None
 
     async def get_txn_author_agreement(self, reload: bool = False) -> dict:
         """Get the current transaction author agreement, fetching it if necessary."""
@@ -641,6 +668,10 @@ class CentralizedSdkLedger(BaseLedger):
                     self.ledger_url + "/api/revocationDefinition/" + revoc_reg_def_id,
                     json=revoc_reg_def
             ) as resp:
+                if resp.status != 200:
+                    raise LedgerTransactionError(
+                        f"Error occurred creating the revocation definition {revoc_reg_def_id}"
+                    )
                 return {"result": resp}
 
     async def send_revoc_reg_entry(
@@ -663,4 +694,6 @@ class CentralizedSdkLedger(BaseLedger):
                     self.ledger_url + "/api/revocationEntry/" + revoc_reg_id,
                     json=request_data
             ) as resp:
+                if resp.status != 200:
+                    raise LedgerTransactionError(f"Error occurred creating the revocation entry {revoc_reg_id}")
                 return {"result": resp}
