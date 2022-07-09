@@ -7,10 +7,10 @@ from marshmallow import EXCLUDE, fields
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
-    INDY_REV_REG_ID,
-    INDY_SCHEMA_ID,
+    IndyCredDefId,
+    IndyCredRevId,
+    IndyRevRegId,
+    IndySchemaId,
     UUIDFour,
 )
 
@@ -63,20 +63,24 @@ class IndyCredInfoSchema(BaseModelSchema):
     )
     schema_id = fields.Str(
         description="Schema identifier",
-        **INDY_SCHEMA_ID,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     cred_def_id = fields.Str(
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     rev_reg_id = fields.Str(
         description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=IndyRevRegId(),
+        example=IndyRevRegId.EXAMPLE,
         allow_none=True,
     )
     cred_rev_id = fields.Str(
         description="Credential revocation identifier",
-        **INDY_CRED_REV_ID,
+        validate=IndyCredRevId(),
+        example=IndyCredRevId.EXAMPLE,
         allow_none=True,
     )
 

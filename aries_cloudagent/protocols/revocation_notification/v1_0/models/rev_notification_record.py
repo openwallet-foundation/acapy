@@ -8,7 +8,7 @@ from marshmallow.utils import EXCLUDE
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
-from .....messaging.valid import INDY_CRED_REV_ID, INDY_REV_REG_ID, UUID4
+from .....messaging.valid import IndyCredRevId, IndyRevRegId, UUIDFour
 from .....storage.error import StorageNotFoundError, StorageDuplicateError
 from ..messages.revoke import Revoke
 
@@ -136,12 +136,14 @@ class RevNotificationRecordSchema(BaseRecordSchema):
     rev_reg_id = fields.Str(
         required=False,
         description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=IndyRevRegId(),
+        example=IndyRevRegId.EXAMPLE,
     )
     cred_rev_id = fields.Str(
         required=False,
         description="Credential revocation identifier",
-        **INDY_CRED_REV_ID,
+        validate=IndyCredRevId(),
+        example=IndyCredRevId.EXAMPLE,
     )
     connection_id = fields.Str(
         description=(
@@ -149,7 +151,8 @@ class RevNotificationRecordSchema(BaseRecordSchema):
             "required if notify is true"
         ),
         required=False,
-        **UUID4,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
     thread_id = fields.Str(
         description=(

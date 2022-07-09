@@ -23,12 +23,11 @@ from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
+    IndyCredDefId,
+    IndyDID,
+    IndySchemaId,
+    IndyVersion,
     UUIDFour,
-    UUID4,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
@@ -110,22 +109,35 @@ class V10CredentialCreateSchema(AdminAPIMessageTracingSchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     schema_id = fields.Str(
-        description="Schema identifier", required=False, **INDY_SCHEMA_ID
+        description="Schema identifier",
+        required=False,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID", required=False, **INDY_DID
+        description="Schema issuer DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     schema_name = fields.Str(
         description="Schema name", required=False, example="preferences"
     )
     schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
+        description="Schema version",
+        required=False,
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
     )
     issuer_did = fields.Str(
-        description="Credential issuer DID", required=False, **INDY_DID
+        description="Credential issuer DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     auto_remove = fields.Bool(
         description=(
@@ -151,22 +163,35 @@ class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     schema_id = fields.Str(
-        description="Schema identifier", required=False, **INDY_SCHEMA_ID
+        description="Schema identifier",
+        required=False,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID", required=False, **INDY_DID
+        description="Schema issuer DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     schema_name = fields.Str(
         description="Schema name", required=False, example="preferences"
     )
     schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
+        description="Schema version",
+        required=False,
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
     )
     issuer_did = fields.Str(
-        description="Credential issuer DID", required=False, **INDY_DID
+        description="Credential issuer DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     auto_remove = fields.Bool(
         description=(
@@ -213,7 +238,8 @@ class V10CredentialFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     auto_issue = fields.Bool(
         description=(
@@ -242,7 +268,8 @@ class V10CredentialConnFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     auto_issue = fields.Bool(
         description=(
@@ -291,7 +318,10 @@ class CredExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential exchange id."""
 
     cred_ex_id = fields.Str(
-        description="Credential exchange identifier", required=True, **UUID4
+        description="Credential exchange identifier",
+        required=True,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
 
 

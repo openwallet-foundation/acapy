@@ -12,11 +12,11 @@ from ..connections.models.conn_record import ConnRecord
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
-    ENDPOINT,
-    ENDPOINT_TYPE,
-    INDY_DID,
-    INDY_RAW_PUBLIC_KEY,
-    INT_EPOCH,
+    EndpointType as ValidEndpointType,
+    Endpoint,
+    IndyDID,
+    IndyRawPublicKey,
+    IntEpoch,
     UUIDFour,
 )
 from ..multitenant.base import BaseMultitenantManager
@@ -81,7 +81,7 @@ class TAAAcceptanceSchema(OpenAPISchema):
     """TAA acceptance record."""
 
     mechanism = fields.Str()
-    time = fields.Int(strict=True, **INT_EPOCH)
+    time = fields.Int(strict=True, validate=IntEpoch(), example=IntEpoch.EXAMPLE)
 
 
 class TAAInfoSchema(OpenAPISchema):
@@ -113,10 +113,14 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     did = fields.Str(
         description="DID to register",
         required=True,
-        **INDY_DID,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     verkey = fields.Str(
-        description="Verification key", required=True, **INDY_RAW_PUBLIC_KEY
+        description="Verification key",
+        required=True,
+        validate=IndyRawPublicKey(),
+        example=IndyRawPublicKey.EXAMPLE,
     )
     alias = fields.Str(
         description="Alias",
@@ -152,19 +156,30 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
 class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(
+        description="DID of interest",
+        required=True,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
 
 
 class QueryStringEndpointSchema(OpenAPISchema):
     """Parameters and validators for query string with DID and endpoint type."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(
+        description="DID of interest",
+        required=True,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
     endpoint_type = fields.Str(
         description=(
             f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"
         ),
         required=False,
-        **ENDPOINT_TYPE,
+        validate=ValidEndpointType(),
+        example=ValidEndpointType.EXAMPLE,
     )
 
 
@@ -199,7 +214,8 @@ class GetDIDVerkeyResponseSchema(OpenAPISchema):
     verkey = fields.Str(
         description="Full verification key",
         allow_none=True,
-        **INDY_RAW_PUBLIC_KEY,
+        validate=IndyRawPublicKey(),
+        example=IndyRawPublicKey.EXAMPLE,
     )
 
 
@@ -209,7 +225,8 @@ class GetDIDEndpointResponseSchema(OpenAPISchema):
     endpoint = fields.Str(
         description="Full verification key",
         allow_none=True,
-        **ENDPOINT,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
     )
 
 

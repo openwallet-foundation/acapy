@@ -7,7 +7,7 @@ This decorator allows changes to agent response behaviour and queue status updat
 from marshmallow import EXCLUDE, fields, validate
 
 from ..models.base import BaseModel, BaseModelSchema
-from ..valid import UUIDFour, WHOLE_NUM
+from ..valid import UUIDFour, WholeNumber
 
 
 class TransportDecorator(BaseModel):
@@ -63,5 +63,6 @@ class TransportDecoratorSchema(BaseModelSchema):
         required=False,
         description="Number of queued messages",
         strict=True,
-        **WHOLE_NUM,
+        validate=WholeNumber(),
+        example=WholeNumber.EXAMPLE,
     )

@@ -18,9 +18,9 @@ from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    ENDPOINT,
-    INDY_DID,
-    INDY_RAW_PUBLIC_KEY,
+    Endpoint,
+    IndyDID,
+    IndyRawPublicKey,
     UUIDFour,
 )
 from ....storage.error import StorageError, StorageNotFoundError
@@ -88,7 +88,11 @@ class CreateInvitationRequestSchema(OpenAPISchema):
     """Request schema for invitation connection target."""
 
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            description="Recipient public key",
+            validate=IndyRawPublicKey(),
+            example=IndyRawPublicKey.EXAMPLE,
+        ),
         required=False,
         description="List of recipient keys",
     )
@@ -98,7 +102,11 @@ class CreateInvitationRequestSchema(OpenAPISchema):
         example="http://192.168.56.102:8020",
     )
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            description="Routing key",
+            validate=IndyRawPublicKey(),
+            example=IndyRawPublicKey.EXAMPLE,
+        ),
         required=False,
         description="List of routing keys",
     )
@@ -136,14 +144,27 @@ class ConnectionStaticRequestSchema(OpenAPISchema):
     """Request schema for a new static connection."""
 
     my_seed = fields.Str(description="Seed to use for the local DID", required=False)
-    my_did = fields.Str(description="Local DID", required=False, **INDY_DID)
+    my_did = fields.Str(
+        description="Local DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
     their_seed = fields.Str(
         description="Seed to use for the remote DID", required=False
     )
-    their_did = fields.Str(description="Remote DID", required=False, **INDY_DID)
+    their_did = fields.Str(
+        description="Remote DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
     their_verkey = fields.Str(description="Remote verification key", required=False)
     their_endpoint = fields.Str(
-        description="URL endpoint for other party", required=False, **ENDPOINT
+        description="URL endpoint for other party",
+        required=False,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
     )
     their_label = fields.Str(
         description="Other party's label for this connection", required=False
@@ -154,14 +175,35 @@ class ConnectionStaticRequestSchema(OpenAPISchema):
 class ConnectionStaticResultSchema(OpenAPISchema):
     """Result schema for new static connection."""
 
-    my_did = fields.Str(description="Local DID", required=True, **INDY_DID)
-    my_verkey = fields.Str(
-        description="My verification key", required=True, **INDY_RAW_PUBLIC_KEY
+    my_did = fields.Str(
+        description="Local DID",
+        required=True,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
-    my_endpoint = fields.Str(description="My URL endpoint", required=True, **ENDPOINT)
-    their_did = fields.Str(description="Remote DID", required=True, **INDY_DID)
+    my_verkey = fields.Str(
+        description="My verification key",
+        required=True,
+        validate=IndyRawPublicKey(),
+        example=IndyRawPublicKey.EXAMPLE,
+    )
+    my_endpoint = fields.Str(
+        description="My URL endpoint",
+        required=True,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
+    )
+    their_did = fields.Str(
+        description="Remote DID",
+        required=True,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
     their_verkey = fields.Str(
-        description="Remote verification key", required=True, **INDY_RAW_PUBLIC_KEY
+        description="Remote verification key",
+        required=True,
+        validate=IndyRawPublicKey(),
+        example=IndyRawPublicKey.EXAMPLE,
     )
     record = fields.Nested(ConnRecordSchema, required=True)
 
@@ -175,9 +217,17 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
         example="Barry",
     )
     invitation_key = fields.Str(
-        description="invitation key", required=False, **INDY_RAW_PUBLIC_KEY
+        description="invitation key",
+        required=False,
+        validate=IndyRawPublicKey(),
+        example=IndyRawPublicKey.EXAMPLE,
     )
-    my_did = fields.Str(description="My DID", required=False, **INDY_DID)
+    my_did = fields.Str(
+        description="My DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
     state = fields.Str(
         description="Connection state",
         required=False,
@@ -185,9 +235,17 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
             {label for state in ConnRecord.State for label in state.value}
         ),
     )
-    their_did = fields.Str(description="Their DID", required=False, **INDY_DID)
+    their_did = fields.Str(
+        description="Their DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
     their_public_did = fields.Str(
-        description="Their Public DID", required=False, **INDY_DID
+        description="Their Public DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     their_role = fields.Str(
         description="Their role in the connection protocol",
@@ -254,7 +312,12 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
 class AcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
 
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(
+        description="My URL endpoint",
+        required=False,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
+    )
     my_label = fields.Str(
         description="Label for connection", required=False, example="Broker"
     )
@@ -268,7 +331,12 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
 class AcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept conn-request web-request query string."""
 
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(
+        description="My URL endpoint",
+        required=False,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
+    )
 
 
 class ConnectionsConnIdMatchInfoSchema(OpenAPISchema):
@@ -296,8 +364,12 @@ class ConnIdRefIdMatchInfoSchema(OpenAPISchema):
 class EndpointsResultSchema(OpenAPISchema):
     """Result schema for connection endpoints."""
 
-    my_endpoint = fields.Str(description="My endpoint", **ENDPOINT)
-    their_endpoint = fields.Str(description="Their endpoint", **ENDPOINT)
+    my_endpoint = fields.Str(
+        description="My endpoint", validate=Endpoint(), example=Endpoint.EXAMPLE
+    )
+    their_endpoint = fields.Str(
+        description="Their endpoint", validate=Endpoint(), example=Endpoint.EXAMPLE
+    )
 
 
 def connection_sort_key(conn):

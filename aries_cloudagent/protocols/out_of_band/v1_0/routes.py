@@ -12,7 +12,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import UUID4
+from ....messaging.valid import UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 
 from ...didcomm_prefix import DIDCommPrefix
@@ -100,7 +100,8 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
 
 
@@ -124,7 +125,8 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
 
 

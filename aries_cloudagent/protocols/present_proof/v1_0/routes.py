@@ -25,11 +25,10 @@ from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    INDY_EXTRA_WQL,
-    NUM_STR_NATURAL,
-    NUM_STR_WHOLE,
+    IndyExtraWQL,
+    NumericStrNatural,
+    NumericStrWhole,
     UUIDFour,
-    UUID4,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
@@ -179,17 +178,20 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
         description="Start index",
         required=False,
         strict=True,
-        **NUM_STR_WHOLE,
+        validate=NumericStrWhole(),
+        example=NumericStrWhole.EXAMPLE,
     )
     count = fields.Str(
         description="Maximum number to retrieve",
         required=False,
-        **NUM_STR_NATURAL,
+        validate=NumericStrNatural(),
+        example=NumericStrNatural.EXAMPLE,
     )
     extra_query = fields.Str(
         description="(JSON) object mapping referents to extra WQL queries",
         required=False,
-        **INDY_EXTRA_WQL,
+        validate=IndyExtraWQL(),
+        example=IndyExtraWQL.EXAMPLE,
     )
 
 
@@ -203,7 +205,10 @@ class V10PresExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking presentation exchange id."""
 
     pres_ex_id = fields.Str(
-        description="Presentation exchange identifier", required=True, **UUID4
+        description="Presentation exchange identifier",
+        required=True,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
 
 

@@ -44,7 +44,7 @@ from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 
 from ..models.openapi import OpenAPISchema
-from ..valid import B58, INDY_SCHEMA_ID, INDY_VERSION
+from ..valid import B58, IndySchemaId, IndyVersion
 
 from .util import (
     SchemaQueryStringSchema,
@@ -70,7 +70,10 @@ class SchemaSendRequestSchema(OpenAPISchema):
         example="prefs",
     )
     schema_version = fields.Str(
-        required=True, description="Schema version", **INDY_VERSION
+        required=True,
+        description="Schema version",
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
     )
     attributes = fields.List(
         fields.Str(
@@ -86,7 +89,10 @@ class SchemaSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     schema_id = fields.Str(
-        description="Schema identifier", required=True, **INDY_SCHEMA_ID
+        description="Schema identifier",
+        required=True,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     schema = fields.Nested(
         SchemaSchema(),
@@ -119,7 +125,11 @@ class SchemasCreatedResultSchema(OpenAPISchema):
     """Result schema for a schemas-created request."""
 
     schema_ids = fields.List(
-        fields.Str(description="Schema identifiers", **INDY_SCHEMA_ID)
+        fields.Str(
+            description="Schema identifiers",
+            validate=IndySchemaId(),
+            example=IndySchemaId.EXAMPLE,
+        )
     )
 
 
@@ -130,7 +140,7 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
         description="Schema identifier",
         required=True,
         validate=Regexp(rf"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
-        example=INDY_SCHEMA_ID["example"],
+        example=IndySchemaId.EXAMPLE,
     )
 
 

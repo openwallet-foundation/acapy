@@ -12,9 +12,9 @@ from typing import Sequence, Union, Mapping
 
 from ....messaging.models.base import BaseModelSchema, BaseModel
 from ....messaging.valid import (
-    UUID4,
     StrOrDictField,
     StrOrNumberField,
+    UUIDFour,
 )
 from ....vc.vc_ld import LinkedDataProofSchema
 
@@ -286,7 +286,8 @@ class DIFHolderSchema(BaseModelSchema):
         fields.Str(
             description="FieldID",
             required=False,
-            **UUID4,
+            validate=UUIDFour(),
+            example=UUIDFour.EXAMPLE,
         ),
         required=False,
         data_key="field_id",
@@ -767,7 +768,8 @@ class PresentationDefinitionSchema(BaseModelSchema):
     id = fields.Str(
         required=False,
         description="Unique Resource Identifier",
-        **UUID4,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
     name = fields.Str(
         description=(
@@ -877,12 +879,14 @@ class PresentationSubmissionSchema(BaseModelSchema):
     id = fields.Str(
         description="ID",
         required=False,
-        **UUID4,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
     definition_id = fields.Str(
         description="DefinitionID",
         required=False,
-        **UUID4,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
     descriptor_maps = fields.List(
         fields.Nested(InputDescriptorMappingSchema),
@@ -930,7 +934,8 @@ class VerifiablePresentationSchema(BaseModelSchema):
     id = fields.Str(
         description="ID",
         required=False,
-        **UUID4,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
     contexts = fields.List(
         StrOrDictField(),
@@ -983,7 +988,8 @@ class DIFOptionsSchema(BaseModelSchema):
     challenge = fields.String(
         description="Challenge protect against replay attack",
         required=False,
-        **UUID4,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
     domain = fields.String(
         description="Domain protect against replay attack",

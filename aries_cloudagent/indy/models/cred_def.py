@@ -3,26 +3,32 @@
 from marshmallow import fields, Schema
 
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import INDY_CRED_DEF_ID, INDY_VERSION, NUM_STR_WHOLE
+from ...messaging.valid import IndyCredDefId, IndyVersion, NumericStrWhole
 
 
 class CredDefValuePrimarySchema(OpenAPISchema):
     """Cred def value primary schema."""
 
-    n = fields.Str(**NUM_STR_WHOLE)
-    s = fields.Str(**NUM_STR_WHOLE)
+    n = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
+    s = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
     r = fields.Nested(
         Schema.from_dict(
             {
-                "master_secret": fields.Str(**NUM_STR_WHOLE),
-                "number": fields.Str(**NUM_STR_WHOLE),
-                "remainder": fields.Str(**NUM_STR_WHOLE),
+                "master_secret": fields.Str(
+                    validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE
+                ),
+                "number": fields.Str(
+                    validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE
+                ),
+                "remainder": fields.Str(
+                    validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE
+                ),
             }
         ),
         name="CredDefValuePrimaryRSchema",
     )
-    rctxt = fields.Str(**NUM_STR_WHOLE)
-    z = fields.Str(**NUM_STR_WHOLE)
+    rctxt = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
+    z = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
 
 
 class CredDefValueRevocationSchema(OpenAPISchema):
@@ -57,15 +63,20 @@ class CredDefValueSchema(OpenAPISchema):
 class CredentialDefinitionSchema(OpenAPISchema):
     """Marshmallow schema for indy cred def."""
 
-    ver = fields.Str(description="Node protocol version", **INDY_VERSION)
+    ver = fields.Str(
+        description="Node protocol version",
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
+    )
     ident = fields.Str(
         description="Credential definition identifier",
         data_key="id",
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     schemaId = fields.Str(
         description="Schema identifier within credential definition identifier",
-        example=":".join(INDY_CRED_DEF_ID["example"].split(":")[3:-1]),  # long or short
+        example=":".join(IndyCredDefId.EXAMPLE.split(":")[3:-1]),  # long or short
     )
     typ = fields.Constant(
         constant="CL",
@@ -75,7 +86,7 @@ class CredentialDefinitionSchema(OpenAPISchema):
     )
     tag = fields.Str(
         description="Tag within credential definition identifier",
-        example=INDY_CRED_DEF_ID["example"].split(":")[-1],
+        example=IndyCredDefId.EXAMPLE.split(":")[-1],
     )
     value = fields.Nested(
         CredDefValueSchema(),

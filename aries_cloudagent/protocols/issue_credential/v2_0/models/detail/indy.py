@@ -6,7 +6,7 @@ from marshmallow import EXCLUDE, fields
 
 from ......core.profile import ProfileSession
 from ......messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ......messaging.valid import INDY_CRED_REV_ID, INDY_REV_REG_ID, UUIDFour
+from ......messaging.valid import IndyCredRevId, IndyRevRegId, UUIDFour
 
 from .. import UNENCRYPTED_TAGS
 
@@ -109,10 +109,12 @@ class V20CredExRecordIndySchema(BaseRecordSchema):
     rev_reg_id = fields.Str(
         required=False,
         description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=IndyRevRegId(),
+        example=IndyRevRegId.EXAMPLE,
     )
     cred_rev_id = fields.Str(
         required=False,
         description="Credential revocation identifier within revocation registry",
-        **INDY_CRED_REV_ID,
+        validate=IndyCredRevId(),
+        example=IndyCredRevId.EXAMPLE,
     )

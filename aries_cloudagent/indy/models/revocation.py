@@ -6,11 +6,11 @@ from marshmallow import EXCLUDE, fields, validate
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
-    BASE58_SHA256_HASH,
-    INDY_CRED_DEF_ID,
-    INDY_REV_REG_ID,
-    INDY_VERSION,
-    NATURAL_NUM,
+    Base58SHA256Hash,
+    IndyCredDefId,
+    IndyRevRegId,
+    IndyVersion,
+    NaturalNumber,
 )
 
 
@@ -112,7 +112,8 @@ class IndyRevRegDefValueSchema(BaseModelSchema):
         description="Maximum number of credentials; registry size",
         strict=True,
         data_key="maxCredNum",
-        **NATURAL_NUM,
+        validate=NaturalNumber(),
+        example=NaturalNumber.EXAMPLE,
     )
     public_keys = fields.Nested(
         IndyRevRegDefValuePublicKeysSchema(),
@@ -122,7 +123,8 @@ class IndyRevRegDefValueSchema(BaseModelSchema):
     tails_hash = fields.Str(
         data_key="tailsHash",
         description="Tails hash value",
-        **BASE58_SHA256_HASH,
+        validate=Base58SHA256Hash(),
+        example=Base58SHA256Hash.EXAMPLE,
     )
     tails_location = fields.Str(
         description="Tails file location",
@@ -168,12 +170,14 @@ class IndyRevRegDefSchema(BaseModelSchema):
 
     ver = fields.Str(
         description="Version of revocation registry definition",
-        **INDY_VERSION,
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
     )
     id_ = fields.Str(
         description="Indy revocation registry identifier",
         data_key="id",
-        **INDY_REV_REG_ID,
+        validate=IndyRevRegId(),
+        example=IndyRevRegId.EXAMPLE,
     )
     revoc_def_type = fields.Str(
         description="Revocation registry type (specify CL_ACCUM)",
@@ -185,7 +189,8 @@ class IndyRevRegDefSchema(BaseModelSchema):
     cred_def_id = fields.Str(
         data_key="credDefId",
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     value = fields.Nested(
         IndyRevRegDefValueSchema(), description="Revocation registry definition value"
@@ -264,7 +269,8 @@ class IndyRevRegEntrySchema(BaseModelSchema):
 
     ver = fields.Str(
         description="Version of revocation registry entry",
-        **INDY_VERSION,
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
     )
     value = fields.Nested(
         IndyRevRegEntryValueSchema(),

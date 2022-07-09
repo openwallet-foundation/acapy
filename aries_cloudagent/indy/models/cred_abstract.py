@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, NUM_STR_WHOLE
+from ...messaging.valid import IndyCredDefId, IndySchemaId, NumericStrWhole
 
 
 class IndyKeyCorrectnessProof(BaseModel):
@@ -43,12 +43,14 @@ class IndyKeyCorrectnessProofSchema(BaseModelSchema):
     c = fields.Str(
         required=True,
         description="c in key correctness proof",
-        **NUM_STR_WHOLE,
+        validate=NumericStrWhole(),
+        example=NumericStrWhole.EXAMPLE,
     )
     xz_cap = fields.Str(
         required=True,
         description="xz_cap in key correctness proof",
-        **NUM_STR_WHOLE,
+        validate=NumericStrWhole(),
+        example=NumericStrWhole.EXAMPLE,
     )
     xr_cap = fields.List(
         fields.List(
@@ -111,17 +113,20 @@ class IndyCredAbstractSchema(BaseModelSchema):
     schema_id = fields.Str(
         required=True,
         description="Schema identifier",
-        **INDY_SCHEMA_ID,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     cred_def_id = fields.Str(
         required=True,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     nonce = fields.Str(
         required=True,
         description="Nonce in credential abstract",
-        **NUM_STR_WHOLE,
+        validate=NumericStrWhole(),
+        example=NumericStrWhole.EXAMPLE,
     )
     key_correctness_proof = fields.Nested(
         IndyKeyCorrectnessProofSchema(),

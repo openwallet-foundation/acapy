@@ -28,11 +28,11 @@ from ...wallet.key_type import KeyType
 from ...did.did_key import DIDKey
 from ..models.base import BaseModel, BaseModelError, BaseModelSchema
 from ..valid import (
-    BASE64,
-    BASE64URL_NO_PAD,
-    INDY_ISO8601_DATETIME,
-    JWS_HEADER_KID,
-    SHA256,
+    Base64,
+    Base64URLNoPad,
+    IndyISO8601DateTime,
+    JWSHeaderKid,
+    SHA256Hash,
     UUIDFour,
 )
 
@@ -67,7 +67,8 @@ class AttachDecoratorDataJWSHeaderSchema(BaseModelSchema):
     kid = fields.Str(
         description="Key identifier, in W3C did:key or DID URL format",
         required=True,
-        **JWS_HEADER_KID,
+        validate=JWSHeaderKid(),
+        example=JWSHeaderKid.EXAMPLE,
     )
 
 
@@ -113,9 +114,17 @@ class AttachDecoratorData1JWSSchema(BaseModelSchema):
 
     header = fields.Nested(AttachDecoratorDataJWSHeaderSchema, required=True)
     protected = fields.Str(
-        description="protected JWS header", required=False, **BASE64URL_NO_PAD
+        description="protected JWS header",
+        required=False,
+        validate=Base64URLNoPad(),
+        example=Base64URLNoPad.EXAMPLE,
     )
-    signature = fields.Str(description="signature", required=True, **BASE64URL_NO_PAD)
+    signature = fields.Str(
+        description="signature",
+        required=True,
+        validate=Base64URLNoPad(),
+        example=Base64URLNoPad.EXAMPLE,
+    )
 
 
 class AttachDecoratorDataJWS(BaseModel):
@@ -181,12 +190,14 @@ class AttachDecoratorDataJWSSchema(BaseModelSchema):
     protected = fields.Str(
         description="protected JWS header",
         required=False,  # packed in signatures if multi-sig
-        **BASE64URL_NO_PAD,
+        validate=Base64URLNoPad(),
+        example=Base64URLNoPad.EXAMPLE,
     )
     signature = fields.Str(
         description="signature",
         required=False,  # packed in signatures if multi-sig
-        **BASE64URL_NO_PAD,
+        validate=Base64URLNoPad(),
+        example=Base64URLNoPad.EXAMPLE,
     )
     signatures = fields.List(
         fields.Nested(AttachDecoratorData1JWSSchema),
@@ -484,7 +495,11 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         return data
 
     base64_ = fields.Str(
-        description="Base64-encoded data", required=False, data_key="base64", **BASE64
+        description="Base64-encoded data",
+        required=False,
+        data_key="base64",
+        validate=Base64(),
+        example=Base64.EXAMPLE,
     )
     jws_ = fields.Nested(
         AttachDecoratorDataJWSSchema,
@@ -508,7 +523,8 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         description="SHA256 hash (binhex encoded) of content",
         required=False,
         data_key="sha256",
-        **SHA256,
+        validate=SHA256Hash(),
+        example=SHA256Hash.EXAMPLE,
     )
 
 
@@ -727,7 +743,8 @@ class AttachDecoratorSchema(BaseModelSchema):
     lastmod_time = fields.Str(
         description="Hint regarding last modification datetime, in ISO-8601 format",
         required=False,
-        **INDY_ISO8601_DATETIME,
+        validate=IndyISO8601DateTime(),
+        example=IndyISO8601DateTime.EXAMPLE,
     )
     description = fields.Str(
         description="Human-readable description of content",

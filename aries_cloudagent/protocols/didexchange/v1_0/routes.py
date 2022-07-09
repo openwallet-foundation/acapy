@@ -17,7 +17,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import ENDPOINT, GENERIC_DID, UUIDFour, UUID4
+from ....messaging.valid import Endpoint, MaybeIndyDID, UUIDFour, UUID4
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 
@@ -29,7 +29,12 @@ from .messages.request import DIDXRequest, DIDXRequestSchema
 class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
 
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(
+        description="My URL endpoint",
+        required=False,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
+    )
     my_label = fields.Str(
         description="Label for connection request", required=False, example="Broker"
     )
@@ -42,14 +47,20 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         required=True,
         allow_none=False,
         description="Qualified public DID to which to request connection",
-        **GENERIC_DID,
+        validate=MaybeIndyDID(),
+        example=MaybeIndyDID.EXAMPLE,
     )
     alias = fields.Str(
         description="Alias for connection",
         required=False,
         example="Barry",
     )
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(
+        description="My URL endpoint",
+        required=False,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
+    )
     my_label = fields.Str(
         description="Label for connection request", required=False, example="Broker"
     )
@@ -72,7 +83,12 @@ class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
         required=False,
         example="Barry",
     )
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(
+        description="My URL endpoint",
+        required=False,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
+    )
     auto_accept = fields.Boolean(
         description="Auto-accept connection (defaults to configuration)",
         required=False,
@@ -87,7 +103,12 @@ class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
 class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept-request request query string."""
 
-    my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
+    my_endpoint = fields.Str(
+        description="My URL endpoint",
+        required=False,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
+    )
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",

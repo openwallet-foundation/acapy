@@ -23,10 +23,10 @@ from ...indy.util import indy_client_dir
 from ...ledger.base import BaseLedger
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    BASE58_SHA256_HASH,
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_REV_REG_ID,
+    Base58SHA256Hash,
+    IndyCredDefId,
+    IndyDID,
+    IndyRevRegId,
     UUIDFour,
 )
 from ..error import RevocationError
@@ -431,14 +431,20 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
     cred_def_id = fields.Str(
         required=False,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     error_msg = fields.Str(
         required=False,
         description="Error message",
         example="Revocation registry undefined",
     )
-    issuer_did = fields.Str(required=False, description="Issuer DID", **INDY_DID)
+    issuer_did = fields.Str(
+        required=False,
+        description="Issuer DID",
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
     max_cred_num = fields.Int(
         required=False,
         description="Maximum number of credentials for revocation registry",
@@ -452,7 +458,10 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         validate=validate.Equal("CL_ACCUM"),
     )
     revoc_reg_id = fields.Str(
-        required=False, description="Revocation registry identifier", **INDY_REV_REG_ID
+        required=False,
+        description="Revocation registry identifier",
+        validate=IndyRevRegId(),
+        example=IndyRevRegId.EXAMPLE,
     )
     revoc_reg_def = fields.Nested(
         IndyRevRegDefSchema(),
@@ -466,7 +475,10 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         required=False, description="Tag within issuer revocation registry identifier"
     )
     tails_hash = fields.Str(
-        required=False, description="Tails hash", **BASE58_SHA256_HASH
+        required=False,
+        description="Tails hash",
+        validate=Base58SHA256Hash(),
+        example=Base58SHA256Hash.EXAMPLE,
     )
     tails_public_uri = fields.Str(
         required=False, description="Public URI for tails file"

@@ -46,7 +46,7 @@ from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 
 from ..models.openapi import OpenAPISchema
-from ..valid import INDY_CRED_DEF_ID, INDY_REV_REG_SIZE, INDY_SCHEMA_ID
+from ..valid import IndyCredDefId, IndyRevRegSize, IndySchemaId
 
 
 from .util import (
@@ -67,7 +67,11 @@ from ..models.base import BaseModelError
 class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
-    schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
+    schema_id = fields.Str(
+        description="Schema identifier",
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
+    )
     support_revocation = fields.Boolean(
         required=False, description="Revocation supported flag"
     )
@@ -75,7 +79,8 @@ class CredentialDefinitionSendRequestSchema(OpenAPISchema):
         description="Revocation registry size",
         required=False,
         strict=True,
-        **INDY_REV_REG_SIZE,
+        validate=IndyRevRegSize(),
+        example=IndyRevRegSize.EXAMPLE,
     )
     tag = fields.Str(
         required=False,
@@ -89,7 +94,9 @@ class CredentialDefinitionSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     credential_definition_id = fields.Str(
-        description="Credential definition identifier", **INDY_CRED_DEF_ID
+        description="Credential definition identifier",
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
 
 
@@ -118,7 +125,11 @@ class CredentialDefinitionsCreatedResultSchema(OpenAPISchema):
     """Result schema for cred-defs-created request."""
 
     credential_definition_ids = fields.List(
-        fields.Str(description="Credential definition identifiers", **INDY_CRED_DEF_ID)
+        fields.Str(
+            description="Credential definition identifiers",
+            validate=IndyCredDefId(),
+            example=IndyCredDefId.EXAMPLE,
+        )
     )
 
 
@@ -128,7 +139,8 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=True,
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
 
 

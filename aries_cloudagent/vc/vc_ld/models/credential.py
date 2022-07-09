@@ -8,12 +8,12 @@ from marshmallow import INCLUDE, fields, post_dump, ValidationError
 
 from ....messaging.models.base import BaseModel, BaseModelSchema
 from ....messaging.valid import (
-    CREDENTIAL_CONTEXT,
-    CREDENTIAL_TYPE,
-    CREDENTIAL_SUBJECT,
+    CredentialContext,
+    CredentialSubject,
+    CredentialType,
     DIDKey,
     DictOrDictListField,
-    RFC3339_DATETIME,
+    RFC3339DateTime,
     StrOrDictField,
     Uri,
     UriOrDictField,
@@ -278,7 +278,8 @@ class CredentialSchema(BaseModelSchema):
         data_key="@context",
         required=True,
         description="The JSON-LD context of the credential",
-        **CREDENTIAL_CONTEXT,
+        validate=CredentialContext(),
+        example=CredentialContext.EXAMPLE,
     )
 
     id = fields.Str(
@@ -292,7 +293,8 @@ class CredentialSchema(BaseModelSchema):
         fields.Str(required=True),
         required=True,
         description="The JSON-LD type of the credential",
-        **CREDENTIAL_TYPE,
+        validate=CredentialType(),
+        example=CredentialType.EXAMPLE,
     )
 
     issuer = StrOrDictField(
@@ -308,20 +310,23 @@ class CredentialSchema(BaseModelSchema):
         data_key="issuanceDate",
         required=True,
         description="The issuance date",
-        **RFC3339_DATETIME,
+        validate=RFC3339DateTime(),
+        example=RFC3339DateTime.EXAMPLE,
     )
 
     expiration_date = fields.Str(
         data_key="expirationDate",
         required=False,
         description="The expiration date",
-        **RFC3339_DATETIME,
+        validate=RFC3339DateTime(),
+        example=RFC3339DateTime.EXAMPLE,
     )
 
     credential_subject = DictOrDictListField(
         required=True,
         data_key="credentialSubject",
-        **CREDENTIAL_SUBJECT,
+        validate=CredentialSubject(),
+        example=CredentialSubject.EXAMPLE,
     )
 
     proof = fields.Nested(

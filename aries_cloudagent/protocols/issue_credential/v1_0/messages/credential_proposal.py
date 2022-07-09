@@ -4,10 +4,10 @@ from marshmallow import EXCLUDE, fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
+    IndyCredDefId,
+    IndyDID,
+    IndySchemaId,
+    IndyVersion,
 )
 
 from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
@@ -83,9 +83,28 @@ class CredentialProposalSchema(AgentMessageSchema):
     credential_proposal = fields.Nested(
         CredentialPreviewSchema, required=False, allow_none=False
     )
-    schema_id = fields.Str(required=False, allow_none=False, **INDY_SCHEMA_ID)
-    schema_issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)
+    schema_id = fields.Str(
+        required=False,
+        allow_none=False,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
+    )
+    schema_issuer_did = fields.Str(
+        required=False, allow_none=False, validate=IndyDID(), example=IndyDID.EXAMPLE
+    )
     schema_name = fields.Str(required=False, allow_none=False)
-    schema_version = fields.Str(required=False, allow_none=False, **INDY_VERSION)
-    cred_def_id = fields.Str(required=False, allow_none=False, **INDY_CRED_DEF_ID)
-    issuer_did = fields.Str(required=False, allow_none=False, **INDY_DID)
+    schema_version = fields.Str(
+        required=False,
+        allow_none=False,
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
+    )
+    cred_def_id = fields.Str(
+        required=False,
+        allow_none=False,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
+    )
+    issuer_did = fields.Str(
+        required=False, allow_none=False, validate=IndyDID(), example=IndyDID.EXAMPLE
+    )

@@ -5,7 +5,7 @@ from typing import Mapping, Sequence
 from marshmallow import EXCLUDE, fields, validate, validates_schema, ValidationError
 
 from ....messaging.agent_message import AgentMessage, AgentMessageSchema
-from ....messaging.valid import RFC3339_DATETIME
+from ....messaging.valid import RFC3339DateTime
 
 from .message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
 
@@ -118,7 +118,8 @@ class ProblemReportSchema(AgentMessageSchema):
         data_key="time-noticed",
         required=False,
         description="Problem detection time, precision at least day up to millisecond",
-        **RFC3339_DATETIME,
+        validate=RFC3339DateTime(),
+        example=RFC3339DateTime.EXAMPLE,
     )
     tracking_uri = fields.Str(
         required=False,

@@ -6,12 +6,12 @@ from marshmallow import EXCLUDE, fields, validate
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_REV_REG_ID,
-    INDY_SCHEMA_ID,
-    INT_EPOCH,
-    NUM_STR_WHOLE,
-    NUM_STR_ANY,
+    IndyCredDefId,
+    IndyRevRegId,
+    IndySchemaId,
+    IntEpoch,
+    NumericStrAny,
+    NumericStrWhole,
 )
 from ...utils.tracing import AdminAPIMessageTracingSchema
 
@@ -61,16 +61,16 @@ class IndyEQProofSchema(BaseModelSchema):
 
     revealed_attrs = fields.Dict(
         keys=fields.Str(example="preference"),
-        values=fields.Str(**NUM_STR_ANY),
+        values=fields.Str(validate=NumericStrAny(), example=NumericStrAny.EXAMPLE),
     )
-    a_prime = fields.Str(**NUM_STR_WHOLE)
-    e = fields.Str(**NUM_STR_WHOLE)
-    v = fields.Str(**NUM_STR_WHOLE)
+    a_prime = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
+    e = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
+    v = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
     m = fields.Dict(
         keys=fields.Str(example="master_secret"),
-        values=fields.Str(**NUM_STR_WHOLE),
+        values=fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE),
     )
-    m2 = fields.Str(**NUM_STR_WHOLE)
+    m2 = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
 
 
 class IndyGEProofPred(BaseModel):
@@ -149,11 +149,20 @@ class IndyGEProofSchema(BaseModelSchema):
         model_class = IndyGEProof
         unknown = EXCLUDE
 
-    u = fields.Dict(keys=fields.Str(), values=fields.Str(**NUM_STR_WHOLE))
-    r = fields.Dict(keys=fields.Str(), values=fields.Str(**NUM_STR_WHOLE))
-    mj = fields.Str(**NUM_STR_WHOLE)
-    alpha = fields.Str(**NUM_STR_WHOLE)
-    t = fields.Dict(keys=fields.Str(), values=fields.Str(**NUM_STR_WHOLE))
+    u = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE),
+    )
+    r = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE),
+    )
+    mj = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
+    alpha = fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE)
+    t = fields.Dict(
+        keys=fields.Str(),
+        values=fields.Str(validate=NumericStrWhole(), example=NumericStrWhole.EXAMPLE),
+    )
     predicate = fields.Nested(IndyGEProofPredSchema)
 
 
@@ -376,7 +385,11 @@ class RawEncodedSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     raw = fields.Str(description="Raw value")
-    encoded = fields.Str(description="Encoded value", **NUM_STR_ANY)
+    encoded = fields.Str(
+        description="Encoded value",
+        validate=NumericStrAny(),
+        example=NumericStrAny.EXAMPLE,
+    )
 
 
 class IndyProofRequestedProofRevealedAttr(RawEncoded):
@@ -572,21 +585,28 @@ class IndyProofIdentifierSchema(BaseModelSchema):
         model_class = IndyProofIdentifier
         unknown = EXCLUDE
 
-    schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
+    schema_id = fields.Str(
+        description="Schema identifier",
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
+    )
     cred_def_id = fields.Str(
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     rev_reg_id = fields.Str(
         description="Revocation registry identifier",
         allow_none=True,
-        **INDY_REV_REG_ID,
+        validate=IndyRevRegId(),
+        example=IndyRevRegId.EXAMPLE,
     )
     timestamp = fields.Int(
         strict=True,
         allow_none=True,
         description="Timestamp epoch",
-        **INT_EPOCH,
+        validate=IntEpoch(),
+        example=IntEpoch.EXAMPLE,
     )
 
 

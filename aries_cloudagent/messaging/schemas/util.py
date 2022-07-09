@@ -7,7 +7,7 @@ from marshmallow import fields
 from ...core.profile import Profile
 
 from ..models.openapi import OpenAPISchema
-from ..valid import INDY_DID, INDY_SCHEMA_ID, INDY_VERSION
+from ..valid import IndyDID, IndySchemaId, IndyVersion
 
 
 class SchemaQueryStringSchema(OpenAPISchema):
@@ -16,12 +16,14 @@ class SchemaQueryStringSchema(OpenAPISchema):
     schema_id = fields.Str(
         description="Schema identifier",
         required=False,
-        **INDY_SCHEMA_ID,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     schema_issuer_did = fields.Str(
         description="Schema issuer DID",
         required=False,
-        **INDY_DID,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     schema_name = fields.Str(
         description="Schema name",
@@ -29,7 +31,10 @@ class SchemaQueryStringSchema(OpenAPISchema):
         example="membership",
     )
     schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
+        description="Schema version",
+        required=False,
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
     )
 
 

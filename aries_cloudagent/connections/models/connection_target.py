@@ -5,7 +5,7 @@ from typing import Sequence
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from ...messaging.valid import IndyDID, IndyRawPublicKey
 
 
 class ConnectionTarget(BaseModel):
@@ -53,7 +53,9 @@ class ConnectionTargetSchema(BaseModelSchema):
         model_class = ConnectionTarget
         unknown = EXCLUDE
 
-    did = fields.Str(required=False, description="", **INDY_DID)
+    did = fields.Str(
+        required=False, description="", validate=IndyDID(), example=IndyDID.EXAMPLE
+    )
     endpoint = fields.Str(
         required=False,
         description="Connection endpoint",
@@ -61,16 +63,27 @@ class ConnectionTargetSchema(BaseModelSchema):
     )
     label = fields.Str(required=False, description="Connection label", example="Bob")
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            description="Recipient public key",
+            validate=IndyRawPublicKey(),
+            example=IndyRawPublicKey.EXAMPLE,
+        ),
         required=False,
         description="List of recipient keys",
     )
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            description="Routing key",
+            validate=IndyRawPublicKey(),
+            example=IndyRawPublicKey.EXAMPLE,
+        ),
         data_key="routingKeys",
         required=False,
         description="List of routing keys",
     )
     sender_key = fields.Str(
-        required=False, description="Sender public key", **INDY_RAW_PUBLIC_KEY
+        required=False,
+        description="Sender public key",
+        validate=IndyRawPublicKey(),
+        example=IndyRawPublicKey.EXAMPLE,
     )

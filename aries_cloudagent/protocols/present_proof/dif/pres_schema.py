@@ -3,8 +3,8 @@ from marshmallow import fields
 
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    UUID4,
     StrOrDictField,
+    UUIDFour,
 )
 from ....vc.vc_ld import LinkedDataProofSchema
 
@@ -17,7 +17,8 @@ class DIFProofSchema(OpenAPISchema):
     id = fields.Str(
         description="ID",
         required=False,
-        **UUID4,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
     contexts = fields.List(
         StrOrDictField(),

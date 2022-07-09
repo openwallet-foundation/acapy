@@ -5,7 +5,7 @@ from time import time
 from marshmallow import fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import INT_EPOCH
+from ...messaging.valid import IntEpoch
 
 
 class NonRevocationInterval(BaseModel):
@@ -59,11 +59,13 @@ class NonRevocationIntervalSchema(BaseModelSchema):
         description="Earliest time of interest in non-revocation interval",
         data_key="from",
         strict=True,
-        **INT_EPOCH
+        validate=IntEpoch(),
+        example=IntEpoch.EXAMPLE,
     )
     to = fields.Int(
         required=False,
         description="Latest time of interest in non-revocation interval",
         strict=True,
-        **INT_EPOCH
+        validate=IntEpoch(),
+        example=IntEpoch.EXAMPLE,
     )

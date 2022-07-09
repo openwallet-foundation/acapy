@@ -4,7 +4,7 @@ from typing import Optional
 from marshmallow import fields, Schema, INCLUDE
 
 from .......messaging.models.base import BaseModel, BaseModelSchema
-from .......messaging.valid import INDY_ISO8601_DATETIME, UUIDFour
+from .......messaging.valid import IndyISO8601DateTime, UUIDFour
 
 
 class LDProofVCDetailOptions(BaseModel):
@@ -101,7 +101,8 @@ class LDProofVCDetailOptionsSchema(BaseModelSchema):
             "The date and time of the proof (with a maximum accuracy in seconds)."
             " Defaults to current system time"
         ),
-        **INDY_ISO8601_DATETIME,
+        validate=IndyISO8601DateTime(),
+        example=IndyISO8601DateTime.EXAMPLE,
     )
 
     domain = fields.Str(

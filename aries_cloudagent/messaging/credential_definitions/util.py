@@ -8,10 +8,10 @@ from ...core.profile import Profile
 
 from ..models.openapi import OpenAPISchema
 from ..valid import (
-    INDY_DID,
-    INDY_CRED_DEF_ID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
+    IndyCredDefId,
+    IndyDID,
+    IndySchemaId,
+    IndyVersion,
 )
 
 
@@ -24,12 +24,14 @@ class CredDefQueryStringSchema(OpenAPISchema):
     schema_id = fields.Str(
         description="Schema identifier",
         required=False,
-        **INDY_SCHEMA_ID,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     schema_issuer_did = fields.Str(
         description="Schema issuer DID",
         required=False,
-        **INDY_DID,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     schema_name = fields.Str(
         description="Schema name",
@@ -37,17 +39,22 @@ class CredDefQueryStringSchema(OpenAPISchema):
         example="membership",
     )
     schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
+        description="Schema version",
+        required=False,
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
     )
     issuer_did = fields.Str(
         description="Issuer DID",
         required=False,
-        **INDY_DID,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     cred_def_id = fields.Str(
         description="Credential definition id",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
 
 

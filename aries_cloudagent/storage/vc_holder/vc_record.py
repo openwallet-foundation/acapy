@@ -8,7 +8,7 @@ from uuid import uuid4
 from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import ENDPOINT, UUIDFour
+from ...messaging.valid import Endpoint, UUIDFour
 
 LOGGER = logging.getLogger(__name__)
 
@@ -94,7 +94,9 @@ class VCRecordSchema(BaseModelSchema):
         model_class = VCRecord
         unknown = EXCLUDE
 
-    contexts = fields.List(fields.Str(description="Context", **ENDPOINT))
+    contexts = fields.List(
+        fields.Str(description="Context", validate=Endpoint(), example=Endpoint.EXAMPLE)
+    )
     expanded_types = fields.List(
         fields.Str(
             description="JSON-LD expanded type extracted from type and context",

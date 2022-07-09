@@ -6,10 +6,10 @@ from marshmallow import EXCLUDE, fields
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_REV_REG_ID,
-    INDY_SCHEMA_ID,
-    NUM_STR_ANY,
+    IndyCredDefId,
+    IndyRevRegId,
+    IndySchemaId,
+    NumericStrAny,
 )
 
 
@@ -44,7 +44,8 @@ class IndyAttrValueSchema(BaseModelSchema):
     encoded = fields.Str(
         required=True,
         description="Attribute encoded value",
-        **NUM_STR_ANY,
+        validate=NumericStrAny(),
+        example=NumericStrAny.EXAMPLE,
     )
 
 
@@ -90,17 +91,20 @@ class IndyCredentialSchema(BaseModelSchema):
     schema_id = fields.Str(
         required=True,
         description="Schema identifier",
-        **INDY_SCHEMA_ID,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     cred_def_id = fields.Str(
         required=True,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     rev_reg_id = fields.Str(
         allow_none=True,
         description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        validate=IndyRevRegId(),
+        example=IndyRevRegId.EXAMPLE,
     )
     values = fields.Dict(
         keys=fields.Str(description="Attribute name"),

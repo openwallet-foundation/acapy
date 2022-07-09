@@ -22,12 +22,12 @@ from ..ledger.error import LedgerConfigError, LedgerError
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
-    DID_POSTURE,
-    INDY_OR_KEY_DID,
-    INDY_DID,
-    ENDPOINT,
-    ENDPOINT_TYPE,
-    INDY_RAW_PUBLIC_KEY,
+    DIDPosture as ValidDIDPosture,
+    EndpointType as ValidEndpointType,
+    Endpoint,
+    IndyDID,
+    IndyOrKeyDID,
+    IndyRawPublicKey,
 )
 from ..multitenant.base import BaseMultitenantManager
 from ..protocols.endorse_transaction.v1_0.manager import (
@@ -58,15 +58,24 @@ class WalletModuleResponseSchema(OpenAPISchema):
 class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
-    did = fields.Str(description="DID of interest", **INDY_OR_KEY_DID)
-    verkey = fields.Str(description="Public verification key", **INDY_RAW_PUBLIC_KEY)
+    did = fields.Str(
+        description="DID of interest",
+        validate=IndyOrKeyDID(),
+        example=IndyOrKeyDID.EXAMPLE,
+    )
+    verkey = fields.Str(
+        description="Public verification key",
+        validate=IndyRawPublicKey(),
+        example=IndyRawPublicKey.EXAMPLE,
+    )
     posture = fields.Str(
         description=(
             "Whether DID is current public DID, "
             "posted to ledger but not current public DID, "
             "or local to the wallet"
         ),
-        **DID_POSTURE,
+        validate=ValidDIDPosture(),
+        example=ValidDIDPosture.EXAMPLE,
     )
     method = fields.Str(
         description="Did method associated with the DID",
@@ -97,9 +106,17 @@ class DIDListSchema(OpenAPISchema):
 class DIDEndpointWithTypeSchema(OpenAPISchema):
     """Request schema to set DID endpoint of particular type."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(
+        description="DID of interest",
+        required=True,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
     endpoint = fields.Str(
-        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
+        description="Endpoint to set (omit to delete)",
+        required=False,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
     )
     endpoint_type = fields.Str(
         description=(
@@ -107,27 +124,42 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
             "affects only public or posted DIDs"
         ),
         required=False,
-        **ENDPOINT_TYPE,
+        validate=ValidEndpointType(),
+        example=ValidEndpointType.EXAMPLE,
     )
 
 
 class DIDEndpointSchema(OpenAPISchema):
     """Request schema to set DID endpoint; response schema to get DID endpoint."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(
+        description="DID of interest",
+        required=True,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
     endpoint = fields.Str(
-        description="Endpoint to set (omit to delete)", required=False, **ENDPOINT
+        description="Endpoint to set (omit to delete)",
+        required=False,
+        validate=Endpoint(),
+        example=Endpoint.EXAMPLE,
     )
 
 
 class DIDListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for DID list request query string."""
 
-    did = fields.Str(description="DID of interest", required=False, **INDY_OR_KEY_DID)
+    did = fields.Str(
+        description="DID of interest",
+        required=False,
+        validate=IndyOrKeyDID(),
+        example=IndyOrKeyDID.EXAMPLE,
+    )
     verkey = fields.Str(
         description="Verification key of interest",
         required=False,
-        **INDY_RAW_PUBLIC_KEY,
+        validate=IndyRawPublicKey(),
+        example=IndyRawPublicKey.EXAMPLE,
     )
     posture = fields.Str(
         description=(
@@ -136,7 +168,8 @@ class DIDListQueryStringSchema(OpenAPISchema):
             "or local to the wallet"
         ),
         required=False,
-        **DID_POSTURE,
+        validate=ValidDIDPosture(),
+        example=ValidDIDPosture.EXAMPLE,
     )
     method = fields.Str(
         required=False,
@@ -157,7 +190,12 @@ class DIDListQueryStringSchema(OpenAPISchema):
 class DIDQueryStringSchema(OpenAPISchema):
     """Parameters and validators for set public DID request query string."""
 
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(
+        description="DID of interest",
+        required=True,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
+    )
 
 
 class DIDCreateOptionsSchema(OpenAPISchema):
@@ -294,7 +332,7 @@ async def wallet_did_list(request: web.BaseRequest):
                 and (
                     filter_posture is None
                     or (
-                        filter_posture is DID_POSTURE.WALLET_ONLY
+                        filter_posture is DIDPosture.WALLET_ONLY
                         and not info.metadata.get("posted")
                     )
                 )

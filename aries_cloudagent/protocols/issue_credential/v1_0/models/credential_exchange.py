@@ -12,7 +12,7 @@ from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSch
 from .....indy.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
 from .....indy.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
+from .....messaging.valid import IndyCredDefId, IndySchemaId, UUIDFour
 from .....storage.base import StorageError
 
 from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
@@ -337,10 +337,14 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
     credential_definition_id = fields.Str(
         required=False,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     schema_id = fields.Str(
-        required=False, description="Schema identifier", **INDY_SCHEMA_ID
+        required=False,
+        description="Schema identifier",
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     credential_proposal_dict = fields.Nested(
         CredentialProposalSchema(),

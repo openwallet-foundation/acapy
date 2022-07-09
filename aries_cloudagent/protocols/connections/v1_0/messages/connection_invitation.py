@@ -6,7 +6,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from .....messaging.valid import IndyDID, IndyRawPublicKey
 from .....wallet.util import b64_to_bytes, bytes_to_b64
 
 from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
@@ -106,10 +106,17 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         example="Bob",
     )
     did = fields.Str(
-        required=False, description="DID for connection invitation", **INDY_DID
+        required=False,
+        description="DID for connection invitation",
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            description="Recipient public key",
+            validate=IndyRawPublicKey(),
+            example=IndyRawPublicKey.EXAMPLE,
+        ),
         data_key="recipientKeys",
         required=False,
         description="List of recipient keys",
@@ -121,7 +128,11 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         example="http://192.168.56.101:8020",
     )
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(
+            description="Routing key",
+            validate=IndyRawPublicKey(),
+            example=IndyRawPublicKey.EXAMPLE,
+        ),
         data_key="routingKeys",
         required=False,
         description="List of routing keys",

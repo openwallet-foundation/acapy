@@ -27,12 +27,11 @@ from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
+    IndyCredDefId,
+    IndyDID,
+    IndySchemaId,
+    IndyVersion,
     UUIDFour,
-    UUID4,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
@@ -135,22 +134,35 @@ class V20CredFilterIndySchema(OpenAPISchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     schema_id = fields.Str(
-        description="Schema identifier", required=False, **INDY_SCHEMA_ID
+        description="Schema identifier",
+        required=False,
+        validate=IndySchemaId(),
+        example=IndySchemaId.EXAMPLE,
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID", required=False, **INDY_DID
+        description="Schema issuer DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
     schema_name = fields.Str(
         description="Schema name", required=False, example="preferences"
     )
     schema_version = fields.Str(
-        description="Schema version", required=False, **INDY_VERSION
+        description="Schema version",
+        required=False,
+        validate=IndyVersion(),
+        example=IndyVersion.EXAMPLE,
     )
     issuer_did = fields.Str(
-        description="Credential issuer DID", required=False, **INDY_DID
+        description="Credential issuer DID",
+        required=False,
+        validate=IndyDID(),
+        example=IndyDID.EXAMPLE,
     )
 
 
@@ -372,7 +384,10 @@ class V20CredExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential exchange id."""
 
     cred_ex_id = fields.Str(
-        description="Credential exchange identifier", required=True, **UUID4
+        description="Credential exchange identifier",
+        required=True,
+        validate=UUIDFour(),
+        example=UUIDFour.EXAMPLE,
     )
 
 

@@ -13,7 +13,7 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
 )
 from ...messaging.models.base import BaseModel, BaseModelSchema
 from ...messaging.util import canon
-from ...messaging.valid import INDY_CRED_DEF_ID, INDY_PREDICATE
+from ...messaging.valid import IndyCredDefId, IndyPredicate
 from ...multitenant.base import BaseMultitenantManager
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...wallet.util import b64_to_str
@@ -87,12 +87,14 @@ class IndyPresPredSpecSchema(BaseModelSchema):
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         required=False,
-        **INDY_CRED_DEF_ID,
+        validate=IndyCredDefId(),
+        example=IndyCredDefId.EXAMPLE,
     )
     predicate = fields.Str(
         description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
-        **INDY_PREDICATE,
+        validate=IndyPredicate(),
+        example=IndyPredicate.EXAMPLE,
     )
     threshold = fields.Int(description="Threshold value", required=True, strict=True)
 
@@ -224,7 +226,9 @@ class IndyPresAttrSpecSchema(BaseModelSchema):
     name = fields.Str(
         description="Attribute name", required=True, example="favourite_drink"
     )
-    cred_def_id = fields.Str(required=False, **INDY_CRED_DEF_ID)
+    cred_def_id = fields.Str(
+        required=False, validate=IndyCredDefId(), example=IndyCredDefId.EXAMPLE
+    )
     mime_type = fields.Str(
         description="MIME type (default null)",
         required=False,

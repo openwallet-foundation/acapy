@@ -17,7 +17,7 @@ from ...storage.base import BaseStorage, StorageDuplicateError, StorageNotFoundE
 from ...storage.record import StorageRecord
 
 from ..util import datetime_to_str, time_now
-from ..valid import INDY_ISO8601_DATETIME
+from ..valid import IndyISO8601DateTime
 
 from .base import BaseModel, BaseModelSchema, BaseModelError
 
@@ -537,12 +537,16 @@ class BaseRecordSchema(BaseModelSchema):
         example="active",
     )
     created_at = fields.Str(
-        required=False, description="Time of record creation", **INDY_ISO8601_DATETIME
+        required=False,
+        description="Time of record creation",
+        validate=IndyISO8601DateTime(),
+        example=IndyISO8601DateTime.EXAMPLE,
     )
     updated_at = fields.Str(
         required=False,
         description="Time of last record update",
-        **INDY_ISO8601_DATETIME,
+        validate=IndyISO8601DateTime(),
+        example=IndyISO8601DateTime.EXAMPLE,
     )
 
 

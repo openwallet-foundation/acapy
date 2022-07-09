@@ -19,10 +19,10 @@ from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
-    ENDPOINT,
-    INDY_WQL,
-    NUM_STR_NATURAL,
-    NUM_STR_WHOLE,
+    Endpoint,
+    IndyWQL,
+    NumericStrNatural,
+    NumericStrWhole,
     UUIDFour,
 )
 from ..storage.error import StorageError, StorageNotFoundError
@@ -57,17 +57,20 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
     start = fields.Str(
         description="Start index",
         required=False,
-        **NUM_STR_WHOLE,
+        validate=NumericStrWhole(),
+        example=NumericStrWhole.EXAMPLE,
     )
     count = fields.Str(
         description="Maximum number to retrieve",
         required=False,
-        **NUM_STR_NATURAL,
+        validate=NumericStrNatural(),
+        example=NumericStrNatural.EXAMPLE,
     )
     wql = fields.Str(
         description="(JSON) WQL query",
         required=False,
-        **INDY_WQL,
+        validate=IndyWQL(),
+        example=IndyWQL.EXAMPLE,
     )
 
 
@@ -77,21 +80,24 @@ class W3CCredentialsListRequestSchema(OpenAPISchema):
     contexts = fields.List(
         fields.Str(
             description="Credential context to match",
-            **ENDPOINT,
+            validate=Endpoint(),
+            example=Endpoint.EXAMPLE,
         ),
         required=False,
     )
     types = fields.List(
         fields.Str(
             description="Credential type to match",
-            **ENDPOINT,
+            validate=Endpoint(),
+            example=Endpoint.EXAMPLE,
         ),
         required=False,
     )
     schema_ids = fields.List(
         fields.Str(
             description="Credential schema identifier",
-            **ENDPOINT,
+            validate=Endpoint(),
+            example=Endpoint.EXAMPLE,
         ),
         description="Schema identifiers, all of which to match",
         required=False,
@@ -143,12 +149,14 @@ class CredRevokedQueryStringSchema(OpenAPISchema):
         data_key="from",
         description="Earliest epoch of revocation status interval of interest",
         required=False,
-        **NUM_STR_WHOLE,
+        validate=NumericStrWhole(),
+        example=NumericStrWhole.EXAMPLE,
     )
     to = fields.Str(
         description="Latest epoch of revocation status interval of interest",
         required=False,
-        **NUM_STR_WHOLE,
+        validate=NumericStrWhole(),
+        example=NumericStrWhole.EXAMPLE,
     )
 
 

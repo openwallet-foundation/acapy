@@ -3,7 +3,7 @@
 from marshmallow import fields
 
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import INT_EPOCH
+from ...messaging.valid import IntEpoch
 
 
 class IndyRequestedCredsRequestedAttrSchema(OpenAPISchema):
@@ -35,5 +35,6 @@ class IndyRequestedCredsRequestedPredSchema(OpenAPISchema):
         description="Epoch timestamp of interest for non-revocation proof",
         required=False,
         strict=True,
-        **INT_EPOCH,
+        validate=IntEpoch(),
+        example=IntEpoch.EXAMPLE,
     )

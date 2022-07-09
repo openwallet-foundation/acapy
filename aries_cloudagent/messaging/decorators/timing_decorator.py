@@ -12,7 +12,7 @@ from marshmallow import EXCLUDE, fields
 
 from ..models.base import BaseModel, BaseModelSchema
 from ..util import datetime_to_str
-from ..valid import INDY_ISO8601_DATETIME
+from ..valid import IndyISO8601DateTime
 
 
 class TimingDecorator(BaseModel):
@@ -63,20 +63,28 @@ class TimingDecoratorSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     in_time = fields.Str(
-        required=False, description="Time of message receipt", **INDY_ISO8601_DATETIME
+        required=False,
+        description="Time of message receipt",
+        validate=IndyISO8601DateTime(),
+        example=IndyISO8601DateTime.EXAMPLE,
     )
     out_time = fields.Str(
-        required=False, description="Time of message dispatch", **INDY_ISO8601_DATETIME
+        required=False,
+        description="Time of message dispatch",
+        validate=IndyISO8601DateTime(),
+        example=IndyISO8601DateTime.EXAMPLE,
     )
     stale_time = fields.Str(
         required=False,
         description="Time when message should be considered stale",
-        **INDY_ISO8601_DATETIME,
+        validate=IndyISO8601DateTime(),
+        example=IndyISO8601DateTime.EXAMPLE,
     )
     expires_time = fields.Str(
         required=False,
         description="Time when message should be considered expired",
-        **INDY_ISO8601_DATETIME,
+        validate=IndyISO8601DateTime(),
+        example=IndyISO8601DateTime.EXAMPLE,
     )
     delay_milli = fields.Int(
         required=False,
@@ -87,5 +95,6 @@ class TimingDecoratorSchema(BaseModelSchema):
     wait_until_time = fields.Str(
         required=False,
         description="Earliest time at which to perform processing",
-        **INDY_ISO8601_DATETIME,
+        validate=IndyISO8601DateTime(),
+        example=IndyISO8601DateTime.EXAMPLE,
     )
