@@ -102,7 +102,7 @@ We developed an example ledger adapter named as `CentralizedSdkLedger` which sho
 
 ### Run the tails server
 
-The tails server needs to be run if you plan to use the revocation capabilities of the Aries agent for *anonCreds*. If so, you must download the source code from this [repository](https://github.ibm.com/Pasquale-Convertini/indy-tails-server). Follow the README to start the tails server by using docker.
+The tails server needs to be run if you plan to use the revocation capabilities of the Aries agent for *anonCreds*. If so, you must download the source code from this [repository](https://github.ibm.com/Pasquale-Convertini/indy-tails-server/tree/develop). Follow the README to start the tails server by using docker.
 
 ### Run the centralized ledger
 
