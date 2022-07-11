@@ -59,35 +59,41 @@ class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
     did = fields.Str(
-        description="DID of interest",
         validate=IndyOrKeyDID(),
-        example=IndyOrKeyDID.EXAMPLE,
+        metadata={"description": "DID of interest", "example": IndyOrKeyDID.EXAMPLE},
     )
     verkey = fields.Str(
-        description="Public verification key",
         validate=IndyRawPublicKey(),
-        example=IndyRawPublicKey.EXAMPLE,
+        metadata={
+            "description": "Public verification key",
+            "example": IndyRawPublicKey.EXAMPLE,
+        },
     )
     posture = fields.Str(
-        description=(
-            "Whether DID is current public DID, "
-            "posted to ledger but not current public DID, "
-            "or local to the wallet"
-        ),
         validate=ValidDIDPosture(),
-        example=ValidDIDPosture.EXAMPLE,
+        metadata={
+            "description": (
+                "Whether DID is current public DID, posted to ledger but not current"
+                " public DID, or local to the wallet"
+            ),
+            "example": ValidDIDPosture.EXAMPLE,
+        },
     )
     method = fields.Str(
-        description="Did method associated with the DID",
-        example=DIDMethod.SOV.method_name,
         validate=validate.OneOf([method.method_name for method in DIDMethod]),
+        metadata={
+            "description": "Did method associated with the DID",
+            "example": DIDMethod.SOV.method_name,
+        },
     )
     key_type = fields.Str(
-        description="Key type associated with the DID",
-        example=KeyType.ED25519.key_type,
         validate=validate.OneOf(
             [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
         ),
+        metadata={
+            "description": "Key type associated with the DID",
+            "example": KeyType.ED25519.key_type,
+        },
     )
 
 
@@ -100,32 +106,37 @@ class DIDResultSchema(OpenAPISchema):
 class DIDListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
-    results = fields.List(fields.Nested(DIDSchema()), description="DID list")
+    results = fields.List(
+        fields.Nested(DIDSchema()), metadata={"description": "DID list"}
+    )
 
 
 class DIDEndpointWithTypeSchema(OpenAPISchema):
     """Request schema to set DID endpoint of particular type."""
 
     did = fields.Str(
-        description="DID of interest",
         required=True,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "DID of interest", "example": IndyDID.EXAMPLE},
     )
     endpoint = fields.Str(
-        description="Endpoint to set (omit to delete)",
         required=False,
         validate=Endpoint(),
-        example=Endpoint.EXAMPLE,
+        metadata={
+            "description": "Endpoint to set (omit to delete)",
+            "example": Endpoint.EXAMPLE,
+        },
     )
     endpoint_type = fields.Str(
-        description=(
-            f"Endpoint type to set (default '{EndpointType.ENDPOINT.w3c}'); "
-            "affects only public or posted DIDs"
-        ),
         required=False,
         validate=ValidEndpointType(),
-        example=ValidEndpointType.EXAMPLE,
+        metadata={
+            "description": (
+                f"Endpoint type to set (default '{EndpointType.ENDPOINT.w3c}'); affects"
+                " only public or posted DIDs"
+            ),
+            "example": ValidEndpointType.EXAMPLE,
+        },
     )
 
 
@@ -133,16 +144,17 @@ class DIDEndpointSchema(OpenAPISchema):
     """Request schema to set DID endpoint; response schema to get DID endpoint."""
 
     did = fields.Str(
-        description="DID of interest",
         required=True,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "DID of interest", "example": IndyDID.EXAMPLE},
     )
     endpoint = fields.Str(
-        description="Endpoint to set (omit to delete)",
         required=False,
         validate=Endpoint(),
-        example=Endpoint.EXAMPLE,
+        metadata={
+            "description": "Endpoint to set (omit to delete)",
+            "example": Endpoint.EXAMPLE,
+        },
     )
 
 
@@ -150,40 +162,48 @@ class DIDListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for DID list request query string."""
 
     did = fields.Str(
-        description="DID of interest",
         required=False,
         validate=IndyOrKeyDID(),
-        example=IndyOrKeyDID.EXAMPLE,
+        metadata={"description": "DID of interest", "example": IndyOrKeyDID.EXAMPLE},
     )
     verkey = fields.Str(
-        description="Verification key of interest",
         required=False,
         validate=IndyRawPublicKey(),
-        example=IndyRawPublicKey.EXAMPLE,
+        metadata={
+            "description": "Verification key of interest",
+            "example": IndyRawPublicKey.EXAMPLE,
+        },
     )
     posture = fields.Str(
-        description=(
-            "Whether DID is current public DID, "
-            "posted to ledger but current public DID, "
-            "or local to the wallet"
-        ),
         required=False,
         validate=ValidDIDPosture(),
-        example=ValidDIDPosture.EXAMPLE,
+        metadata={
+            "description": (
+                "Whether DID is current public DID, posted to ledger but current public"
+                " DID, or local to the wallet"
+            ),
+            "example": ValidDIDPosture.EXAMPLE,
+        },
     )
     method = fields.Str(
         required=False,
-        example=DIDMethod.KEY.method_name,
         validate=validate.OneOf([DIDMethod.KEY.method_name, DIDMethod.SOV.method_name]),
-        description="DID method to query for. e.g. sov to only fetch indy/sov DIDs",
+        metadata={
+            "example": DIDMethod.KEY.method_name,
+            "description": (
+                "DID method to query for. e.g. sov to only fetch indy/sov DIDs"
+            ),
+        },
     )
     key_type = fields.Str(
         required=False,
-        example=KeyType.ED25519.key_type,
         validate=validate.OneOf(
             [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
         ),
-        description="Key type to query for.",
+        metadata={
+            "example": KeyType.ED25519.key_type,
+            "description": "Key type to query for.",
+        },
     )
 
 
@@ -191,10 +211,9 @@ class DIDQueryStringSchema(OpenAPISchema):
     """Parameters and validators for set public DID request query string."""
 
     did = fields.Str(
-        description="DID of interest",
         required=True,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "DID of interest", "example": IndyDID.EXAMPLE},
     )
 
 
@@ -203,10 +222,10 @@ class DIDCreateOptionsSchema(OpenAPISchema):
 
     key_type = fields.Str(
         required=True,
-        example=KeyType.ED25519.key_type,
         validate=validate.OneOf(
             [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
         ),
+        metadata={"example": KeyType.ED25519.key_type},
     )
 
 
@@ -215,15 +234,15 @@ class DIDCreateSchema(OpenAPISchema):
 
     method = fields.Str(
         required=False,
-        default=DIDMethod.SOV.method_name,
-        example=DIDMethod.SOV.method_name,
+        dump_default=DIDMethod.SOV.method_name,
         validate=validate.OneOf([DIDMethod.KEY.method_name, DIDMethod.SOV.method_name]),
+        metadata={"example": DIDMethod.SOV.method_name},
     )
 
     options = fields.Nested(
         DIDCreateOptionsSchema,
         required=False,
-        description="To define a key type for a did:key",
+        metadata={"description": "To define a key type for a did:key"},
     )
 
 
@@ -231,15 +250,17 @@ class CreateAttribTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
 class AttribConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
-    conn_id = fields.Str(description="Connection identifier", required=False)
+    conn_id = fields.Str(
+        required=False, metadata={"description": "Connection identifier"}
+    )
 
 
 def format_did_info(info: DIDInfo):
@@ -578,13 +599,17 @@ async def promote_wallet_public_did(
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -686,13 +711,17 @@ async def wallet_set_did_endpoint(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 
@@ -839,7 +868,8 @@ async def on_register_nym_event(profile: Profile, event: Event):
         except Exception:
             # log the error, but continue
             LOGGER.exception(
-                "Error accepting endorser invitation/configuring endorser connection: %s",
+                "Error accepting endorser invitation/configuring endorser"
+                " connection: %s",
             )
 
 

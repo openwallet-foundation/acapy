@@ -61,13 +61,10 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -95,13 +92,10 @@ class TestProofRoutes(AsyncTestCase):
         }
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -116,13 +110,10 @@ class TestProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -152,13 +143,10 @@ class TestProofRoutes(AsyncTestCase):
         mock_px_rec = async_mock.MagicMock(save_error_state=async_mock.CoroutineMock())
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -185,13 +173,10 @@ class TestProofRoutes(AsyncTestCase):
         )
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -223,13 +208,10 @@ class TestProofRoutes(AsyncTestCase):
         )
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -247,13 +229,10 @@ class TestProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_pres_ex:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -274,13 +253,10 @@ class TestProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_pres_ex:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -301,13 +277,10 @@ class TestProofRoutes(AsyncTestCase):
             save_error_state=async_mock.CoroutineMock(),
         )
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_pres_ex:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -334,7 +307,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -360,7 +332,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -382,13 +353,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "messages.presentation_proposal.PresentationProposal"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "messages.presentation_proposal.PresentationProposal",
             autospec=True,
         ) as mock_proposal:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -411,7 +379,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -447,16 +414,13 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange, async_mock.patch(
             "aries_cloudagent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -501,16 +465,13 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange, async_mock.patch(
             "aries_cloudagent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -556,13 +517,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -601,7 +559,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -620,7 +577,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -658,13 +614,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -731,7 +684,6 @@ class TestProofRoutes(AsyncTestCase):
             "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -787,13 +739,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -832,13 +781,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -877,13 +823,10 @@ class TestProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -917,13 +860,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -992,13 +932,10 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_presentation_manager, async_mock.patch.object(
             test_module, "IndyPresPreview", autospec=True
         ) as mock_presentation_proposal, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1069,13 +1006,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1114,13 +1048,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1144,13 +1075,10 @@ class TestProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1190,13 +1118,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1245,13 +1170,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
             autospec=True,
         ) as mock_attach_decorator, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1305,13 +1227,10 @@ class TestProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1348,13 +1267,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_presentation_manager, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1399,10 +1315,8 @@ class TestProofRoutes(AsyncTestCase):
         magic_report = async_mock.MagicMock()
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_pres_ex, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1412,7 +1326,6 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_problem_report, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1438,13 +1351,10 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
             autospec=True,
         ) as mock_pres_mgr_cls, async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_pres_ex:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1461,10 +1371,8 @@ class TestProofRoutes(AsyncTestCase):
         magic_report = async_mock.MagicMock()
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_pres_ex, async_mock.patch(
             "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
@@ -1474,7 +1382,6 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_problem_report, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             # Since we are mocking import
             importlib.reload(test_module)
             mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock(
@@ -1488,13 +1395,10 @@ class TestProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1517,13 +1421,10 @@ class TestProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1539,13 +1440,10 @@ class TestProofRoutes(AsyncTestCase):
         self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch(
-            (
-                "aries_cloudagent.protocols.present_proof.v1_0."
-                "models.presentation_exchange.V10PresentationExchange"
-            ),
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 

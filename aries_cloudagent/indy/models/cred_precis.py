@@ -53,35 +53,39 @@ class IndyCredInfoSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     referent = fields.Str(
-        description="Wallet referent",
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Wallet referent", "example": UUIDFour.EXAMPLE}
     )
     attrs = fields.Dict(
-        description="Attribute names and value",
-        keys=fields.Str(example="userid"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Str(example="alice"),
+        keys=fields.Str(metadata={"example": "userid"}),
+        values=fields.Str(metadata={"example": "alice"}),
+        metadata={"description": "Attribute names and value"},
     )
     schema_id = fields.Str(
-        description="Schema identifier",
         validate=IndySchemaId(),
-        example=IndySchemaId.EXAMPLE,
+        metadata={"description": "Schema identifier", "example": IndySchemaId.EXAMPLE},
     )
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
         validate=IndyRevRegId(),
-        example=IndyRevRegId.EXAMPLE,
         allow_none=True,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": IndyRevRegId.EXAMPLE,
+        },
     )
     cred_rev_id = fields.Str(
-        description="Credential revocation identifier",
         validate=IndyCredRevId(),
-        example=IndyCredRevId.EXAMPLE,
         allow_none=True,
+        metadata={
+            "description": "Credential revocation identifier",
+            "example": IndyCredRevId.EXAMPLE,
+        },
     )
 
 
@@ -89,16 +93,14 @@ class IndyCredPrecisSchema(OpenAPISchema):
     """Schema for precis that indy credential search returns (and aca-py augments)."""
 
     cred_info = fields.Nested(
-        IndyCredInfoSchema(),
-        description="Credential info",
+        IndyCredInfoSchema(), metadata={"description": "Credential info"}
     )
     interval = fields.Nested(
         IndyNonRevocationIntervalSchema(),
-        description="Non-revocation interval from presentation request",
+        metadata={"description": "Non-revocation interval from presentation request"},
     )
-    presentation_referents = fields.List(  # aca-py augments with pres_referents
+    presentation_referents = fields.List(
         fields.Str(
-            description="presentation referent",
-            example="1_age_uuid",
-        ),
+            metadata={"description": "presentation referent", "example": "1_age_uuid"}
+        )
     )

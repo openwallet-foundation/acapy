@@ -8,8 +8,7 @@ from .....messaging.valid import UUIDFour
 from ..message_types import TRANSACTION_RESEND, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".transaction_resend_handler.TransactionResendHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.transaction_resend_handler.TransactionResendHandler"
 )
 
 
@@ -54,7 +53,9 @@ class TransactionResendSchema(AgentMessageSchema):
 
     state = fields.Str(
         required=False,
-        description="The State of the transaction Record",
-        example="resend",
+        metadata={
+            "description": "The State of the transaction Record",
+            "example": "resend",
+        },
     )
-    thread_id = fields.Str(required=False, example=UUIDFour.EXAMPLE)
+    thread_id = fields.Str(required=False, metadata={"example": UUIDFour.EXAMPLE})

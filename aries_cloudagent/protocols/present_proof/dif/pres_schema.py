@@ -15,28 +15,21 @@ class DIFProofSchema(OpenAPISchema):
     """Schema for DIF Proof."""
 
     id = fields.Str(
-        description="ID",
         required=False,
         validate=UUIDFour(),
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "ID", "example": UUIDFour.EXAMPLE},
     )
-    contexts = fields.List(
-        StrOrDictField(),
-        data_key="@context",
-        required=True,
-    )
+    contexts = fields.List(StrOrDictField(), data_key="@context", required=True)
     types = fields.List(
-        fields.Str(description="Types"),
-        data_key="type",
-        required=True,
+        fields.Str(metadata={"description": "Types"}), data_key="type", required=True
     )
     credentials = fields.List(
-        fields.Dict(description="Credentials", required=False),
+        fields.Dict(required=False, metadata={"description": "Credentials"}),
         data_key="verifiableCredential",
     )
     proof = fields.Nested(
         LinkedDataProofSchema(),
         required=False,
-        description="The proof of the credential",
+        metadata={"description": "The proof of the credential"},
     )
     presentation_submission = fields.Nested(PresentationSubmissionSchema())

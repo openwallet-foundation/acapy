@@ -122,13 +122,14 @@ class V20PresFormatSchema(BaseModelSchema):
     attach_id = fields.Str(
         required=True,
         allow_none=False,
-        description="Attachment identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Attachment identifier", "example": UUIDFour.EXAMPLE},
     )
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="Attachment format specifier",
         data_key="format",
-        example="dif/presentation-exchange/submission@v1.0",
+        metadata={
+            "description": "Attachment format specifier",
+            "example": "dif/presentation-exchange/submission@v1.0",
+        },
     )

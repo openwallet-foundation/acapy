@@ -133,22 +133,24 @@ class V20DiscoveryRecordSchema(BaseExchangeSchema):
 
     discovery_exchange_id = fields.Str(
         required=False,
-        description="Credential exchange identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     connection_id = fields.Str(
-        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
     thread_id = fields.Str(
-        required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
     )
     queries_msg = fields.Nested(
-        QueriesSchema(),
-        required=False,
-        description="Queries message",
+        QueriesSchema(), required=False, metadata={"description": "Queries message"}
     )
     disclosures = fields.Nested(
         DisclosuresSchema(),
         required=False,
-        description="Disclosures message",
+        metadata={"description": "Disclosures message"},
     )

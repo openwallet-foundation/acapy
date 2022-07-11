@@ -61,8 +61,14 @@ class BasicMessageSchema(AgentMessageSchema):
 
     sent_time = fields.Str(
         required=False,
-        description="Time message was sent, ISO8601 with space date/time separator",
         validate=IndyISO8601DateTime(),
-        example=IndyISO8601DateTime.EXAMPLE,
+        metadata={
+            "description": (
+                "Time message was sent, ISO8601 with space date/time separator"
+            ),
+            "example": IndyISO8601DateTime.EXAMPLE,
+        },
     )
-    content = fields.Str(required=True, description="Message content", example="Hello")
+    content = fields.Str(
+        required=True, metadata={"description": "Message content", "example": "Hello"}
+    )

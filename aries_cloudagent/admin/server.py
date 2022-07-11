@@ -60,23 +60,26 @@ class AdminModulesSchema(OpenAPISchema):
     """Schema for the modules endpoint."""
 
     result = fields.List(
-        fields.Str(description="admin module"), description="List of admin modules"
+        fields.Str(metadata={"description": "admin module"}),
+        metadata={"description": "List of admin modules"},
     )
 
 
 class AdminConfigSchema(OpenAPISchema):
     """Schema for the config endpoint."""
 
-    config = fields.Dict(description="Configuration settings")
+    config = fields.Dict(metadata={"description": "Configuration settings"})
 
 
 class AdminStatusSchema(OpenAPISchema):
     """Schema for the status endpoint."""
 
-    version = fields.Str(description="Version code")
-    label = fields.Str(description="Default label", allow_none=True)
-    timing = fields.Dict(description="Timing results", required=False)
-    conductor = fields.Dict(description="Conductor statistics", required=False)
+    version = fields.Str(metadata={"description": "Version code"})
+    label = fields.Str(allow_none=True, metadata={"description": "Default label"})
+    timing = fields.Dict(required=False, metadata={"description": "Timing results"})
+    conductor = fields.Dict(
+        required=False, metadata={"description": "Conductor statistics"}
+    )
 
 
 class AdminResetSchema(OpenAPISchema):
@@ -86,13 +89,17 @@ class AdminResetSchema(OpenAPISchema):
 class AdminStatusLivelinessSchema(OpenAPISchema):
     """Schema for the liveliness endpoint."""
 
-    alive = fields.Boolean(description="Liveliness status", example=True)
+    alive = fields.Boolean(
+        metadata={"description": "Liveliness status", "example": True}
+    )
 
 
 class AdminStatusReadinessSchema(OpenAPISchema):
     """Schema for the readiness endpoint."""
 
-    ready = fields.Boolean(description="Readiness status", example=True)
+    ready = fields.Boolean(
+        metadata={"description": "Readiness status", "example": True}
+    )
 
 
 class AdminShutdownSchema(OpenAPISchema):
@@ -465,7 +472,7 @@ class AdminServer(BaseAdminServer):
 
         def sort_dict(raw: dict) -> dict:
             """Order (JSON, string keys) dict asciibetically by key, recursively."""
-            for (k, v) in raw.items():
+            for k, v in raw.items():
                 if isinstance(v, dict):
                     raw[k] = sort_dict(v)
             return dict(sorted([item for item in raw.items()], key=lambda x: x[0]))

@@ -51,6 +51,8 @@ class TransactionJobToSendSchema(AgentMessageSchema):
 
     job = fields.Str(
         required=True,
-        description="Transaction job that is sent to the other agent",
-        example="TRANSACTION_AUTHOR",
+        metadata={
+            "description": "Transaction job that is sent to the other agent",
+            "example": "TRANSACTION_AUTHOR",
+        },
     )

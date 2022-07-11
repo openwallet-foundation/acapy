@@ -81,7 +81,9 @@ class TAAAcceptanceSchema(OpenAPISchema):
     """TAA acceptance record."""
 
     mechanism = fields.Str()
-    time = fields.Int(strict=True, validate=IntEpoch(), example=IntEpoch.EXAMPLE)
+    time = fields.Int(
+        validate=IntEpoch(), metadata={"strict": True, "example": IntEpoch.EXAMPLE}
+    )
 
 
 class TAAInfoSchema(OpenAPISchema):
@@ -111,28 +113,27 @@ class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for register ledger nym request."""
 
     did = fields.Str(
-        description="DID to register",
         required=True,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "DID to register", "example": IndyDID.EXAMPLE},
     )
     verkey = fields.Str(
-        description="Verification key",
         required=True,
         validate=IndyRawPublicKey(),
-        example=IndyRawPublicKey.EXAMPLE,
+        metadata={
+            "description": "Verification key",
+            "example": IndyRawPublicKey.EXAMPLE,
+        },
     )
     alias = fields.Str(
-        description="Alias",
-        required=False,
-        example="Barry",
+        required=False, metadata={"description": "Alias", "example": "Barry"}
     )
     role = fields.Str(
-        description="Role",
         required=False,
         validate=validate.OneOf(
             [r.name for r in LedgerRole if isinstance(r.value[0], int)] + ["reset"]
         ),
+        metadata={"description": "Role"},
     )
 
 
@@ -140,8 +141,8 @@ class CreateDidTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -149,7 +150,8 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
@@ -157,10 +159,9 @@ class QueryStringDIDSchema(OpenAPISchema):
     """Parameters and validators for query string with DID only."""
 
     did = fields.Str(
-        description="DID of interest",
         required=True,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "DID of interest", "example": IndyDID.EXAMPLE},
     )
 
 
@@ -168,18 +169,19 @@ class QueryStringEndpointSchema(OpenAPISchema):
     """Parameters and validators for query string with DID and endpoint type."""
 
     did = fields.Str(
-        description="DID of interest",
         required=True,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "DID of interest", "example": IndyDID.EXAMPLE},
     )
     endpoint_type = fields.Str(
-        description=(
-            f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"
-        ),
         required=False,
         validate=ValidEndpointType(),
-        example=ValidEndpointType.EXAMPLE,
+        metadata={
+            "description": (
+                f"Endpoint type of interest (default '{EndpointType.ENDPOINT.w3c}')"
+            ),
+            "example": ValidEndpointType.EXAMPLE,
+        },
     )
 
 
@@ -187,14 +189,16 @@ class TxnOrRegisterLedgerNymResponseSchema(OpenAPISchema):
     """Response schema for ledger nym registration."""
 
     success = fields.Bool(
-        description="Success of nym registration operation",
-        example=True,
+        metadata={
+            "description": "Success of nym registration operation",
+            "example": True,
+        }
     )
 
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="DID transaction to endorse",
+        metadata={"description": "DID transaction to endorse"},
     )
 
 
@@ -202,9 +206,8 @@ class GetNymRoleResponseSchema(OpenAPISchema):
     """Response schema to get nym role operation."""
 
     role = fields.Str(
-        description="Ledger role",
         validate=validate.OneOf([r.name for r in LedgerRole]),
-        example=LedgerRole.ENDORSER.name,
+        metadata={"description": "Ledger role", "example": LedgerRole.ENDORSER.name},
     )
 
 
@@ -212,10 +215,12 @@ class GetDIDVerkeyResponseSchema(OpenAPISchema):
     """Response schema to get DID verkey."""
 
     verkey = fields.Str(
-        description="Full verification key",
         allow_none=True,
         validate=IndyRawPublicKey(),
-        example=IndyRawPublicKey.EXAMPLE,
+        metadata={
+            "description": "Full verification key",
+            "example": IndyRawPublicKey.EXAMPLE,
+        },
     )
 
 
@@ -223,10 +228,9 @@ class GetDIDEndpointResponseSchema(OpenAPISchema):
     """Response schema to get DID endpoint."""
 
     endpoint = fields.Str(
-        description="Full verification key",
         allow_none=True,
         validate=Endpoint(),
-        example=Endpoint.EXAMPLE,
+        metadata={"description": "Full verification key", "example": Endpoint.EXAMPLE},
     )
 
 
@@ -302,13 +306,17 @@ async def register_ledger_nym(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 

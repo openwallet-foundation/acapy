@@ -53,8 +53,10 @@ from .did_resolver import DIDResolver
 class ResolutionResultSchema(OpenAPISchema):
     """Result schema for did document query."""
 
-    did_doc = fields.Dict(description="DID Document", required=True)
-    metadata = fields.Dict(description="Resolution metadata", required=True)
+    did_doc = fields.Dict(required=True, metadata={"description": "DID Document"})
+    metadata = fields.Dict(
+        required=True, metadata={"description": "Resolution metadata"}
+    )
 
 
 class W3cDID(validate.Regexp):
@@ -72,13 +74,14 @@ class W3cDID(validate.Regexp):
         )
 
 
-_W3cDID = {"validate": W3cDID(), "example": W3cDID.EXAMPLE}
-
-
 class DIDMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking DID."""
 
-    did = fields.Str(description="DID", required=True, **_W3cDID)
+    did = fields.Str(
+        required=True,
+        validate=W3cDID(),
+        metadata={"description": "DID", "example": W3cDID.EXAMPLE},
+    )
 
 
 @docs(tags=["resolver"], summary="Retrieve doc for requested did")

@@ -625,66 +625,79 @@ class ConnRecordSchema(BaseRecordSchema):
         model_class = ConnRecord
 
     connection_id = fields.Str(
-        required=False, description="Connection identifier", example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
     my_did = fields.Str(
         required=False,
-        description="Our DID for connection",
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "Our DID for connection", "example": IndyDID.EXAMPLE},
     )
     their_did = fields.Str(
         required=False,
-        description="Their DID for connection",
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={
+            "description": "Their DID for connection",
+            "example": IndyDID.EXAMPLE,
+        },
     )
     their_label = fields.Str(
-        required=False, description="Their label for connection", example="Bob"
+        required=False,
+        metadata={"description": "Their label for connection", "example": "Bob"},
     )
     their_role = fields.Str(
         required=False,
-        description="Their role in the connection protocol",
         validate=validate.OneOf(
             [label for role in ConnRecord.Role for label in role.value]
         ),
-        example=ConnRecord.Role.REQUESTER.rfc23,
+        metadata={
+            "description": "Their role in the connection protocol",
+            "example": ConnRecord.Role.REQUESTER.rfc23,
+        },
     )
     connection_protocol = fields.Str(
         required=False,
-        description="Connection protocol used",
         validate=validate.OneOf([proto.value for proto in ConnRecord.Protocol]),
-        example=ConnRecord.Protocol.RFC_0160.aries_protocol,
+        metadata={
+            "description": "Connection protocol used",
+            "example": ConnRecord.Protocol.RFC_0160.aries_protocol,
+        },
     )
     rfc23_state = fields.Str(
         dump_only=True,
-        description="State per RFC 23",
-        example="invitation-sent",
+        metadata={"description": "State per RFC 23", "example": "invitation-sent"},
     )
     inbound_connection_id = fields.Str(
         required=False,
-        description="Inbound routing connection id to use",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Inbound routing connection id to use",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     invitation_key = fields.Str(
         required=False,
-        description="Public key for connection",
         validate=IndyRawPublicKey(),
-        example=IndyRawPublicKey.EXAMPLE,
+        metadata={
+            "description": "Public key for connection",
+            "example": IndyRawPublicKey.EXAMPLE,
+        },
     )
     invitation_msg_id = fields.Str(
         required=False,
-        description="ID of out-of-band invitation message",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "ID of out-of-band invitation message",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     request_id = fields.Str(
         required=False,
-        description="Connection request identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Connection request identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     routing_state = fields.Str(
         required=False,
-        description="Routing state of connection",
         validate=validate.OneOf(
             [
                 getattr(ConnRecord, m)
@@ -692,12 +705,13 @@ class ConnRecordSchema(BaseRecordSchema):
                 if m.startswith("ROUTING_STATE_")
             ]
         ),
-        example=ConnRecord.ROUTING_STATE_ACTIVE,
+        metadata={
+            "description": "Routing state of connection",
+            "example": ConnRecord.ROUTING_STATE_ACTIVE,
+        },
     )
     accept = fields.Str(
         required=False,
-        description="Connection acceptance: manual or auto",
-        example=ConnRecord.ACCEPT_AUTO,
         validate=validate.OneOf(
             [
                 getattr(ConnRecord, a)
@@ -705,16 +719,20 @@ class ConnRecordSchema(BaseRecordSchema):
                 if a.startswith("ACCEPT_")
             ]
         ),
+        metadata={
+            "description": "Connection acceptance: manual or auto",
+            "example": ConnRecord.ACCEPT_AUTO,
+        },
     )
     error_msg = fields.Str(
         required=False,
-        description="Error message",
-        example="No DIDDoc provided; cannot connect to public DID",
+        metadata={
+            "description": "Error message",
+            "example": "No DIDDoc provided; cannot connect to public DID",
+        },
     )
     invitation_mode = fields.Str(
         required=False,
-        description="Invitation mode",
-        example=ConnRecord.INVITATION_MODE_ONCE,
         validate=validate.OneOf(
             [
                 getattr(ConnRecord, i)
@@ -722,14 +740,22 @@ class ConnRecordSchema(BaseRecordSchema):
                 if i.startswith("INVITATION_MODE_")
             ]
         ),
+        metadata={
+            "description": "Invitation mode",
+            "example": ConnRecord.INVITATION_MODE_ONCE,
+        },
     )
     alias = fields.Str(
         required=False,
-        description="Optional alias to apply to connection for later use",
-        example="Bob, providing quotes",
+        metadata={
+            "description": "Optional alias to apply to connection for later use",
+            "example": "Bob, providing quotes",
+        },
     )
     their_public_did = fields.Str(
         required=False,
-        description="Other agent's public DID for connection",
-        example="2cpBmR3FqGKWi5EyUbpRY8",
+        metadata={
+            "description": "Other agent's public DID for connection",
+            "example": "2cpBmR3FqGKWi5EyUbpRY8",
+        },
     )

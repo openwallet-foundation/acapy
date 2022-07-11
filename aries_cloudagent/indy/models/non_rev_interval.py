@@ -57,16 +57,20 @@ class IndyNonRevocationIntervalSchema(BaseModelSchema):
 
     fro = fields.Int(
         required=False,
-        description="Earliest time of interest in non-revocation interval",
         data_key="from",
-        strict=True,
         validate=IntEpoch(),
-        example=IntEpoch.EXAMPLE,
+        metadata={
+            "description": "Earliest time of interest in non-revocation interval",
+            "strict": True,
+            "example": IntEpoch.EXAMPLE,
+        },
     )
     to = fields.Int(
         required=False,
-        description="Latest time of interest in non-revocation interval",
-        strict=True,
         validate=IntEpoch(),
-        example=IntEpoch.EXAMPLE,
+        metadata={
+            "description": "Latest time of interest in non-revocation interval",
+            "strict": True,
+            "example": IntEpoch.EXAMPLE,
+        },
     )

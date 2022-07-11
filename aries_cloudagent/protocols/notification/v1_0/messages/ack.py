@@ -40,4 +40,6 @@ class V10AckSchema(AgentMessageSchema):
         model_class = V10Ack
         unknown = EXCLUDE
 
-    status = fields.Str(required=True, description="Status", example="OK")
+    status = fields.Str(
+        required=True, metadata={"description": "Status", "example": "OK"}
+    )

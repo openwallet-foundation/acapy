@@ -17,7 +17,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import Endpoint, MaybeIndyDID, UUIDFour, UUID4
+from ....messaging.valid import Endpoint, MaybeIndyDID, UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 
@@ -30,13 +30,13 @@ class DIDXAcceptInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept invitation request query string."""
 
     my_endpoint = fields.Str(
-        description="My URL endpoint",
         required=False,
         validate=Endpoint(),
-        example=Endpoint.EXAMPLE,
+        metadata={"description": "My URL endpoint", "example": Endpoint.EXAMPLE},
     )
     my_label = fields.Str(
-        description="Label for connection request", required=False, example="Broker"
+        required=False,
+        metadata={"description": "Label for connection request", "example": "Broker"},
     )
 
 
@@ -46,32 +46,35 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
     their_public_did = fields.Str(
         required=True,
         allow_none=False,
-        description="Qualified public DID to which to request connection",
         validate=MaybeIndyDID(),
-        example=MaybeIndyDID.EXAMPLE,
+        metadata={
+            "description": "Qualified public DID to which to request connection",
+            "example": MaybeIndyDID.EXAMPLE,
+        },
     )
     alias = fields.Str(
-        description="Alias for connection",
         required=False,
-        example="Barry",
+        metadata={"description": "Alias for connection", "example": "Barry"},
     )
     my_endpoint = fields.Str(
-        description="My URL endpoint",
         required=False,
         validate=Endpoint(),
-        example=Endpoint.EXAMPLE,
+        metadata={"description": "My URL endpoint", "example": Endpoint.EXAMPLE},
     )
     my_label = fields.Str(
-        description="Label for connection request", required=False, example="Broker"
+        required=False,
+        metadata={"description": "Label for connection request", "example": "Broker"},
     )
     mediation_id = fields.Str(
         required=False,
-        description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUIDFour(),
+        metadata={
+            "description": "Identifier for active mediation record to be used",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     use_public_did = fields.Boolean(
-        required=False,
-        description="Use public DID for this connection",
+        required=False, metadata={"description": "Use public DID for this connection"}
     )
 
 
@@ -79,24 +82,25 @@ class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive-request-implicit request query string."""
 
     alias = fields.Str(
-        description="Alias for connection",
         required=False,
-        example="Barry",
+        metadata={"description": "Alias for connection", "example": "Barry"},
     )
     my_endpoint = fields.Str(
-        description="My URL endpoint",
         required=False,
         validate=Endpoint(),
-        example=Endpoint.EXAMPLE,
+        metadata={"description": "My URL endpoint", "example": Endpoint.EXAMPLE},
     )
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
         required=False,
+        metadata={"description": "Auto-accept connection (defaults to configuration)"},
     )
     mediation_id = fields.Str(
         required=False,
-        description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUIDFour(),
+        metadata={
+            "description": "Identifier for active mediation record to be used",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
 
 
@@ -104,15 +108,17 @@ class DIDXAcceptRequestQueryStringSchema(OpenAPISchema):
     """Parameters and validators for accept-request request query string."""
 
     my_endpoint = fields.Str(
-        description="My URL endpoint",
         required=False,
         validate=Endpoint(),
-        example=Endpoint.EXAMPLE,
+        metadata={"description": "My URL endpoint", "example": Endpoint.EXAMPLE},
     )
     mediation_id = fields.Str(
         required=False,
-        description="Identifier for active mediation record to be used",
-        **UUID4,
+        validate=UUIDFour(),
+        metadata={
+            "description": "Identifier for active mediation record to be used",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
 
 
@@ -120,7 +126,8 @@ class DIDXConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
@@ -128,13 +135,16 @@ class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection and ref ids."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
 
     ref_id = fields.Str(
-        description="Inbound connection identifier",
         required=True,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Inbound connection identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
 
 

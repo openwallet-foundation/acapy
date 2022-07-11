@@ -72,7 +72,9 @@ class PresentationRequestSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     request_presentations_attach = fields.Nested(
         AttachDecoratorSchema,

@@ -90,31 +90,41 @@ class V20CredExRecordIndySchema(BaseRecordSchema):
 
     cred_ex_indy_id = fields.Str(
         required=False,
-        description="Record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Record identifier", "example": UUIDFour.EXAMPLE},
     )
     cred_ex_id = fields.Str(
         required=False,
-        description="Corresponding v2.0 credential exchange record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Corresponding v2.0 credential exchange record identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     cred_id_stored = fields.Str(
         required=False,
-        description="Credential identifier stored in wallet",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential identifier stored in wallet",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     cred_request_metadata = fields.Dict(
-        required=False, description="Credential request metadata for indy holder"
+        required=False,
+        metadata={"description": "Credential request metadata for indy holder"},
     )
     rev_reg_id = fields.Str(
         required=False,
-        description="Revocation registry identifier",
         validate=IndyRevRegId(),
-        example=IndyRevRegId.EXAMPLE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": IndyRevRegId.EXAMPLE,
+        },
     )
     cred_rev_id = fields.Str(
         required=False,
-        description="Credential revocation identifier within revocation registry",
         validate=IndyCredRevId(),
-        example=IndyCredRevId.EXAMPLE,
+        metadata={
+            "description": (
+                "Credential revocation identifier within revocation registry"
+            ),
+            "example": IndyCredRevId.EXAMPLE,
+        },
     )

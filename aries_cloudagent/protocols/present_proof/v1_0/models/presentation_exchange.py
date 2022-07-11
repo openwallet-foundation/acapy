@@ -239,70 +239,84 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
 
     presentation_exchange_id = fields.Str(
         required=False,
-        description="Presentation exchange identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={
+            "description": "Presentation exchange identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     connection_id = fields.Str(
         required=False,
-        description="Connection identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
     thread_id = fields.Str(
         required=False,
-        description="Thread identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
     )
     initiator = fields.Str(
         required=False,
-        description="Present-proof exchange initiator: self or external",
-        example=V10PresentationExchange.INITIATOR_SELF,
         validate=validate.OneOf(["self", "external"]),
+        metadata={
+            "description": "Present-proof exchange initiator: self or external",
+            "example": V10PresentationExchange.INITIATOR_SELF,
+        },
     )
     role = fields.Str(
         required=False,
-        description="Present-proof exchange role: prover or verifier",
-        example=V10PresentationExchange.ROLE_PROVER,
         validate=validate.OneOf(["prover", "verifier"]),
+        metadata={
+            "description": "Present-proof exchange role: prover or verifier",
+            "example": V10PresentationExchange.ROLE_PROVER,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Present-proof exchange state",
-        example=V10PresentationExchange.STATE_VERIFIED,
+        metadata={
+            "description": "Present-proof exchange state",
+            "example": V10PresentationExchange.STATE_VERIFIED,
+        },
     )
     presentation_proposal_dict = fields.Nested(
         PresentationProposalSchema(),
         required=False,
-        description="Presentation proposal message",
+        metadata={"description": "Presentation proposal message"},
     )
     presentation_request = fields.Nested(
         IndyProofRequestSchema(),
         required=False,
-        description="(Indy) presentation request (also known as proof request)",
+        metadata={
+            "description": "(Indy) presentation request (also known as proof request)"
+        },
     )
     presentation_request_dict = fields.Nested(
         PresentationRequestSchema(),
         required=False,
-        description="Presentation request message",
+        metadata={"description": "Presentation request message"},
     )
     presentation = fields.Nested(
         IndyProofSchema(),
         required=False,
-        description="(Indy) presentation (also known as proof)",
+        metadata={"description": "(Indy) presentation (also known as proof)"},
     )
-    verified = fields.Str(  # tag: must be a string
+    verified = fields.Str(
         required=False,
-        description="Whether presentation is verified: true or false",
-        example="true",
         validate=validate.OneOf(["true", "false"]),
+        metadata={
+            "description": "Whether presentation is verified: true or false",
+            "example": "true",
+        },
     )
     auto_present = fields.Bool(
         required=False,
-        description="Prover choice to auto-present proof as verifier requests",
-        example=False,
+        metadata={
+            "description": "Prover choice to auto-present proof as verifier requests",
+            "example": False,
+        },
     )
     auto_verify = fields.Bool(
-        required=False, description="Verifier choice to auto-verify proof presentation"
+        required=False,
+        metadata={"description": "Verifier choice to auto-verify proof presentation"},
     )
     error_msg = fields.Str(
-        required=False, description="Error message", example="Invalid structure"
+        required=False,
+        metadata={"description": "Error message", "example": "Invalid structure"},
     )

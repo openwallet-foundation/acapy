@@ -69,17 +69,14 @@ class V20PresExRecordListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for presentation exchange list query."""
 
     connection_id = fields.UUID(
-        description="Connection identifier",
         required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
     thread_id = fields.UUID(
-        description="Thread identifier",
         required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
     )
     role = fields.Str(
-        description="Role assigned in presentation exchange",
         required=False,
         validate=validate.OneOf(
             [
@@ -88,9 +85,9 @@ class V20PresExRecordListQueryStringSchema(OpenAPISchema):
                 if m.startswith("ROLE_")
             ]
         ),
+        metadata={"description": "Role assigned in presentation exchange"},
     )
     state = fields.Str(
-        description="Presentation exchange state",
         required=False,
         validate=validate.OneOf(
             [
@@ -99,6 +96,7 @@ class V20PresExRecordListQueryStringSchema(OpenAPISchema):
                 if m.startswith("STATE_")
             ]
         ),
+        metadata={"description": "Presentation exchange state"},
     )
 
 
@@ -107,7 +105,7 @@ class V20PresExRecordListSchema(OpenAPISchema):
 
     results = fields.List(
         fields.Nested(V20PresExRecordSchema()),
-        description="Presentation exchange records",
+        metadata={"description": "Presentation exchange records"},
     )
 
 
@@ -117,12 +115,12 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
     indy = fields.Nested(
         IndyProofRequestSchema,
         required=False,
-        description="Presentation proposal for indy",
+        metadata={"description": "Presentation proposal for indy"},
     )
     dif = fields.Nested(
         DIFProofProposalSchema,
         required=False,
-        description="Presentation proposal for DIF",
+        metadata={"description": "Presentation proposal for DIF"},
     )
 
     @validates_schema
@@ -147,27 +145,33 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
     connection_id = fields.UUID(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     presentation_proposal = fields.Nested(
-        V20PresProposalByFormatSchema(),
-        required=True,
+        V20PresProposalByFormatSchema(), required=True
     )
     auto_present = fields.Boolean(
-        description=(
-            "Whether to respond automatically to presentation requests, building "
-            "and presenting requested proof"
-        ),
         required=False,
-        default=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to respond automatically to presentation requests, building"
+                " and presenting requested proof"
+            )
+        },
     )
     trace = fields.Bool(
-        description="Whether to trace event (default false)",
         required=False,
-        example=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
     )
 
 
@@ -177,12 +181,12 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
     indy = fields.Nested(
         IndyProofRequestSchema,
         required=False,
-        description="Presentation request for indy",
+        metadata={"description": "Presentation request for indy"},
     )
     dif = fields.Nested(
         DIFProofRequestSchema,
         required=False,
-        description="Presentation request for DIF",
+        metadata={"description": "Presentation request for DIF"},
     )
 
     @validates_schema
@@ -209,14 +213,18 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     presentation_request = fields.Nested(V20PresRequestByFormatSchema(), required=True)
     comment = fields.Str(required=False, allow_none=True)
     auto_verify = fields.Bool(
-        description="Verifier choice to auto-verify proof presentation",
         required=False,
-        example=False,
+        metadata={
+            "description": "Verifier choice to auto-verify proof presentation",
+            "example": False,
+        },
     )
     trace = fields.Bool(
-        description="Whether to trace event (default false)",
         required=False,
-        example=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
     )
 
 
@@ -224,7 +232,8 @@ class V20PresSendRequestRequestSchema(V20PresCreateRequestRequestSchema):
     """Request schema for sending a proof request on a connection."""
 
     connection_id = fields.UUID(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
@@ -232,14 +241,18 @@ class V20PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a proof request bound to a proposal."""
 
     auto_verify = fields.Bool(
-        description="Verifier choice to auto-verify proof presentation",
         required=False,
-        example=False,
+        metadata={
+            "description": "Verifier choice to auto-verify proof presentation",
+            "example": False,
+        },
     )
     trace = fields.Bool(
-        description="Whether to trace event (default false)",
         required=False,
-        example=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
     )
 
 
@@ -249,15 +262,17 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
     indy = fields.Nested(
         IndyPresSpecSchema,
         required=False,
-        description="Presentation specification for indy",
+        metadata={"description": "Presentation specification for indy"},
     )
     dif = fields.Nested(
         DIFPresSpecSchema,
         required=False,
-        description=(
-            "Optional Presentation specification for DIF, "
-            "overrides the PresentionExchange record's PresRequest"
-        ),
+        metadata={
+            "description": (
+                "Optional Presentation specification for DIF, overrides the"
+                " PresentionExchange record's PresRequest"
+            )
+        },
     )
 
     @validates_schema
@@ -282,28 +297,36 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credentials fetch request query string."""
 
     referent = fields.Str(
-        description="Proof request referents of interest, comma-separated",
         required=False,
-        example="1_name_uuid,2_score_uuid",
+        metadata={
+            "description": "Proof request referents of interest, comma-separated",
+            "example": "1_name_uuid,2_score_uuid",
+        },
     )
     start = fields.Str(
-        description="Start index",
         required=False,
-        strict=True,
         validate=NumericStrWhole(),
-        example=NumericStrWhole.EXAMPLE,
+        metadata={
+            "description": "Start index",
+            "strict": True,
+            "example": NumericStrWhole.EXAMPLE,
+        },
     )
     count = fields.Str(
-        description="Maximum number to retrieve",
         required=False,
         validate=NumericStrNatural(),
-        example=NumericStrNatural.EXAMPLE,
+        metadata={
+            "description": "Maximum number to retrieve",
+            "example": NumericStrNatural.EXAMPLE,
+        },
     )
     extra_query = fields.Str(
-        description="(JSON) object mapping referents to extra WQL queries",
         required=False,
         validate=IndyExtraWQL(),
-        example=IndyExtraWQL.EXAMPLE,
+        metadata={
+            "description": "(JSON) object mapping referents to extra WQL queries",
+            "example": IndyExtraWQL.EXAMPLE,
+        },
     )
 
 
@@ -317,10 +340,12 @@ class V20PresExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters for request taking presentation exchange id."""
 
     pres_ex_id = fields.Str(
-        description="Presentation exchange identifier",
         required=True,
         validate=UUIDFour(),
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Presentation exchange identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
 
 
@@ -335,7 +360,7 @@ async def _add_nonce(indy_proof_request: Mapping) -> Mapping:
 def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
     """Break out formats and proposals/requests/presentations for v2.0 messages."""
     attach = []
-    for (fmt_api, item_by_fmt) in by_format.items():
+    for fmt_api, item_by_fmt in by_format.items():
         if fmt_api == V20PresFormat.Format.INDY.api:
             attach.append(
                 AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
@@ -1097,7 +1122,6 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     if pres_ex_record.connection_id:
         try:
             async with profile.session() as session:
-
                 conn_record = await ConnRecord.retrieve_by_id(
                     session, pres_ex_record.connection_id
                 )

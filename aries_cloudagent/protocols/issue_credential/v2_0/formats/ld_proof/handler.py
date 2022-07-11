@@ -196,8 +196,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             # Check if it is a proof type we can issue with
             if proof_type not in PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys():
                 raise V20CredFormatError(
-                    f"Unable to sign credential with unsupported proof type {proof_type}."
-                    f" Supported proof types: {PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys()}"
+                    "Unable to sign credential with unsupported proof type"
+                    f" {proof_type}. Supported proof types:"
+                    f" {PROOF_TYPE_SIGNATURE_SUITE_MAPPING.keys()}"
                 )
 
             if not issuer_id.startswith("did:"):
@@ -508,8 +509,8 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         if cred_dict != detail_dict["credential"]:
             raise V20CredFormatError(
-                f"Received credential for cred_ex_id {cred_ex_record.cred_ex_id} does not"
-                " match requested credential"
+                f"Received credential for cred_ex_id {cred_ex_record.cred_ex_id} does"
+                " not match requested credential"
             )
 
         # both credential and detail contain status. Check for equalness

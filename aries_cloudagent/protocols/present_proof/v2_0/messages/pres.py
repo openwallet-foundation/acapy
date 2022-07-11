@@ -86,13 +86,15 @@ class V20PresSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     formats = fields.Nested(
         V20PresFormatSchema,
         many=True,
         required=True,
-        description="Acceptable attachment formats",
+        metadata={"description": "Acceptable attachment formats"},
     )
     presentations_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="presentations~attach"

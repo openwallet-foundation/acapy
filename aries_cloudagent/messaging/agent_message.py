@@ -442,14 +442,15 @@ class AgentMessageSchema(BaseModelSchema):
         data_key="@type",
         dump_only=True,
         required=False,
-        description="Message type",
-        example="https://didcomm.org/my-family/1.0/my-message-type",
+        metadata={
+            "description": "Message type",
+            "example": "https://didcomm.org/my-family/1.0/my-message-type",
+        },
     )
     _id = fields.Str(
         data_key="@id",
         required=False,
-        description="Message identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Message identifier", "example": UUIDFour.EXAMPLE},
     )
 
     def __init__(self, *args, **kwargs):

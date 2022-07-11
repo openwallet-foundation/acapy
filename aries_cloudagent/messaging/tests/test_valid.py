@@ -231,14 +231,10 @@ class TestValid(TestCase):
             "WgWxqztrN:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
             "WgWxqztrNooG92RXvxSTWvZ:4:WgWxqztrNooG92RXvxSTWvZ:3:CL:20:tag:CL_XXXXX:0",
             "WgWxqztrNooG92RXvxSTWv::WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
-            (
-                "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:"
-                "Q4zqM7aXqm7gDQkUVLng9h:3:bc-reg:1.0:tag:CL_ACCUM:0"
-            ),
-            (
-                "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:"
-                "Q4zqM7aXqm7gDQkUVLng9I:2:bc-reg:1.0:tag:CL_ACCUM:0"
-            ),
+            "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:"
+            "Q4zqM7aXqm7gDQkUVLng9h:3:bc-reg:1.0:tag:CL_ACCUM:0",
+            "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:"
+            "Q4zqM7aXqm7gDQkUVLng9I:2:bc-reg:1.0:tag:CL_ACCUM:0",
         ]
         for non_rev_reg_id in non_rev_reg_ids:
             with self.assertRaises(ValidationError):

@@ -132,13 +132,14 @@ class V20CredFormatSchema(BaseModelSchema):
     attach_id = fields.Str(
         required=True,
         allow_none=False,
-        description="Attachment identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Attachment identifier", "example": UUIDFour.EXAMPLE},
     )
     format_ = fields.Str(
         required=True,
         allow_none=False,
-        description="Attachment format specifier",
         data_key="format",
-        example="aries/ld-proof-vc-detail@v1.0",
+        metadata={
+            "description": "Attachment format specifier",
+            "example": "aries/ld-proof-vc-detail@v1.0",
+        },
     )

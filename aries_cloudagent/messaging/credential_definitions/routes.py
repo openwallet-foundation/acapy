@@ -68,25 +68,28 @@ class CredentialDefinitionSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
     schema_id = fields.Str(
-        description="Schema identifier",
         validate=IndySchemaId(),
-        example=IndySchemaId.EXAMPLE,
+        metadata={"description": "Schema identifier", "example": IndySchemaId.EXAMPLE},
     )
     support_revocation = fields.Boolean(
-        required=False, description="Revocation supported flag"
+        required=False, metadata={"description": "Revocation supported flag"}
     )
     revocation_registry_size = fields.Int(
-        description="Revocation registry size",
         required=False,
-        strict=True,
         validate=IndyRevRegSize(),
-        example=IndyRevRegSize.EXAMPLE,
+        metadata={
+            "description": "Revocation registry size",
+            "strict": True,
+            "example": IndyRevRegSize.EXAMPLE,
+        },
     )
     tag = fields.Str(
         required=False,
-        description="Credential definition identifier tag",
-        default="default",
-        example="default",
+        dump_default="default",
+        metadata={
+            "description": "Credential definition identifier tag",
+            "example": "default",
+        },
     )
 
 
@@ -94,9 +97,11 @@ class CredentialDefinitionSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     credential_definition_id = fields.Str(
-        description="Credential definition identifier",
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
 
 
@@ -106,12 +111,12 @@ class TxnOrCredentialDefinitionSendResultSchema(OpenAPISchema):
     sent = fields.Nested(
         CredentialDefinitionSendResultSchema(),
         required=False,
-        definition="Content sent",
+        metadata={"definition": "Content sent"},
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Credential definition transaction to endorse",
+        metadata={"description": "Credential definition transaction to endorse"},
     )
 
 
@@ -126,9 +131,11 @@ class CredentialDefinitionsCreatedResultSchema(OpenAPISchema):
 
     credential_definition_ids = fields.List(
         fields.Str(
-            description="Credential definition identifiers",
             validate=IndyCredDefId(),
-            example=IndyCredDefId.EXAMPLE,
+            metadata={
+                "description": "Credential definition identifiers",
+                "example": IndyCredDefId.EXAMPLE,
+            },
         )
     )
 
@@ -137,10 +144,12 @@ class CredDefIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking cred def id."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=True,
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
 
 
@@ -148,8 +157,8 @@ class CreateCredDefTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -157,7 +166,8 @@ class CredDefConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
@@ -243,13 +253,17 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 

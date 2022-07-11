@@ -50,5 +50,5 @@ class KeylistUpdateSchema(AgentMessageSchema):
 
     updates = fields.List(
         fields.Nested(KeylistUpdateRuleSchema()),
-        description="List of update rules",
+        metadata={"description": "List of update rules"},
     )

@@ -96,7 +96,7 @@ class MediationRecord(BaseRecord):
         ]:
             raise ValueError(
                 f"{state} is not a valid state, "
-                f"must be one of ("
+                "must be one of ("
                 f"{MediationRecord.STATE_DENIED}, "
                 f"{MediationRecord.STATE_GRANTED}, "
                 f"{MediationRecord.STATE_REQUEST}"
@@ -173,7 +173,9 @@ class MediationRecordSchema(BaseRecordSchema):
     mediator_terms = fields.List(fields.Str(), required=False)
     recipient_terms = fields.List(fields.Str(), required=False)
     routing_keys = fields.List(
-        fields.Str(validate=IndyRawPublicKey(), example=IndyRawPublicKey.EXAMPLE),
+        fields.Str(
+            validate=IndyRawPublicKey(), metadata={"example": IndyRawPublicKey.EXAMPLE}
+        ),
         required=False,
     )
     endpoint = fields.Str(required=False)

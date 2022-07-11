@@ -51,5 +51,5 @@ class TransactionAcknowledgementSchema(V10AckSchema):
         model_class = TransactionAcknowledgement
         unknown = EXCLUDE
 
-    thread_id = fields.Str(required=True, example=UUIDFour.EXAMPLE)
+    thread_id = fields.Str(required=True, metadata={"example": UUIDFour.EXAMPLE})
     ledger_response = fields.Dict(required=False)

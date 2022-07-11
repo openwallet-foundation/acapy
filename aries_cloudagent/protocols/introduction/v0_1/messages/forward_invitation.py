@@ -53,6 +53,8 @@ class ForwardInvitationSchema(AgentMessageSchema):
     message = fields.Str(
         required=False,
         allow_none=True,
-        description="Comments on the introduction",
-        example="Hello Bob, it's Alice",
+        metadata={
+            "description": "Comments on the introduction",
+            "example": "Hello Bob, it's Alice",
+        },
     )

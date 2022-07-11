@@ -137,17 +137,15 @@ class WalletRecordSchema(BaseRecordSchema):
 
     wallet_id = fields.Str(
         required=True,
-        description="Wallet record ID",
-        example=UUIDFour.EXAMPLE,
+        metadata={"description": "Wallet record ID", "example": UUIDFour.EXAMPLE},
     )
     key_management_mode = fields.Str(
         required=True,
-        description="Mode regarding management of wallet key",
         validate=validate.OneOf(
-            [
-                WalletRecord.MODE_MANAGED,
-                WalletRecord.MODE_UNMANAGED,
-            ]
+            [WalletRecord.MODE_MANAGED, WalletRecord.MODE_UNMANAGED]
         ),
+        metadata={"description": "Mode regarding management of wallet key"},
     )
-    settings = fields.Dict(required=False, description="Settings for this wallet.")
+    settings = fields.Dict(
+        required=False, metadata={"description": "Settings for this wallet."}
+    )

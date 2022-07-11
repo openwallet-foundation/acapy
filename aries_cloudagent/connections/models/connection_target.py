@@ -54,36 +54,48 @@ class ConnectionTargetSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     did = fields.Str(
-        required=False, description="", validate=IndyDID(), example=IndyDID.EXAMPLE
+        required=False,
+        validate=IndyDID(),
+        metadata={"description": "", "example": IndyDID.EXAMPLE},
     )
     endpoint = fields.Str(
         required=False,
-        description="Connection endpoint",
-        example="http://192.168.56.102:8020",
+        metadata={
+            "description": "Connection endpoint",
+            "example": "http://192.168.56.102:8020",
+        },
     )
-    label = fields.Str(required=False, description="Connection label", example="Bob")
+    label = fields.Str(
+        required=False, metadata={"description": "Connection label", "example": "Bob"}
+    )
     recipient_keys = fields.List(
         fields.Str(
-            description="Recipient public key",
             validate=IndyRawPublicKey(),
-            example=IndyRawPublicKey.EXAMPLE,
+            metadata={
+                "description": "Recipient public key",
+                "example": IndyRawPublicKey.EXAMPLE,
+            },
         ),
         required=False,
-        description="List of recipient keys",
+        metadata={"description": "List of recipient keys"},
     )
     routing_keys = fields.List(
         fields.Str(
-            description="Routing key",
             validate=IndyRawPublicKey(),
-            example=IndyRawPublicKey.EXAMPLE,
+            metadata={
+                "description": "Routing key",
+                "example": IndyRawPublicKey.EXAMPLE,
+            },
         ),
         data_key="routingKeys",
         required=False,
-        description="List of routing keys",
+        metadata={"description": "List of routing keys"},
     )
     sender_key = fields.Str(
         required=False,
-        description="Sender public key",
         validate=IndyRawPublicKey(),
-        example=IndyRawPublicKey.EXAMPLE,
+        metadata={
+            "description": "Sender public key",
+            "example": IndyRawPublicKey.EXAMPLE,
+        },
     )

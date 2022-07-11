@@ -137,27 +137,35 @@ class SignatureDecoratorSchema(BaseModelSchema):
     signature_type = fields.Str(
         data_key="@type",
         required=True,
-        description="Signature type",
-        example=(DIDCommPrefix.NEW.qualify("signature/1.0/ed25519Sha512_single")),
+        metadata={
+            "description": "Signature type",
+            "example": DIDCommPrefix.NEW.qualify("signature/1.0/ed25519Sha512_single"),
+        },
     )
     signature = fields.Str(
         required=True,
-        description="signature value, base64url-encoded",
-        example=(
-            "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI-"
-            "l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg=="
-        ),
         validate=Base64URL(),
+        metadata={
+            "description": "signature value, base64url-encoded",
+            "example": (
+                "FpSxSohK3rhn9QhcJStUNRYUvD8OxLuwda3yhzHkWbZ0VxIbI"
+                "-l4mKOz7AmkMHDj2IgDEa1-GCFfWXNl96a7Bg=="
+            ),
+        },
     )
     sig_data = fields.Str(
         required=True,
-        description="Signature data, base64url-encoded",
         validate=Base64URL(),
-        example=Base64URL.EXAMPLE,
+        metadata={
+            "description": "Signature data, base64url-encoded",
+            "example": Base64URL.EXAMPLE,
+        },
     )
     signer = fields.Str(
         required=True,
-        description="Signer verification key",
         validate=IndyRawPublicKey(),
-        example=IndyRawPublicKey.EXAMPLE,
+        metadata={
+            "description": "Signer verification key",
+            "example": IndyRawPublicKey.EXAMPLE,
+        },
     )

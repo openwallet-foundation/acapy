@@ -83,20 +83,29 @@ class IndyPresPredSpecSchema(BaseModelSchema):
         model_class = IndyPresPredSpec
         unknown = EXCLUDE
 
-    name = fields.Str(description="Attribute name", required=True, example="high_score")
+    name = fields.Str(
+        required=True,
+        metadata={"description": "Attribute name", "example": "high_score"},
+    )
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=False,
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
     predicate = fields.Str(
-        description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
         validate=IndyPredicate(),
-        example=IndyPredicate.EXAMPLE,
+        metadata={
+            "description": "Predicate type ('<', '<=', '>=', or '>')",
+            "example": IndyPredicate.EXAMPLE,
+        },
     )
-    threshold = fields.Int(description="Threshold value", required=True, strict=True)
+    threshold = fields.Int(
+        required=True, metadata={"description": "Threshold value", "strict": True}
+    )
 
 
 class IndyPresAttrSpec(BaseModel):
@@ -224,20 +233,25 @@ class IndyPresAttrSpecSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     name = fields.Str(
-        description="Attribute name", required=True, example="favourite_drink"
+        required=True,
+        metadata={"description": "Attribute name", "example": "favourite_drink"},
     )
     cred_def_id = fields.Str(
-        required=False, validate=IndyCredDefId(), example=IndyCredDefId.EXAMPLE
+        required=False,
+        validate=IndyCredDefId(),
+        metadata={"example": IndyCredDefId.EXAMPLE},
     )
     mime_type = fields.Str(
-        description="MIME type (default null)",
         required=False,
         data_key="mime-type",
-        example="image/jpeg",
+        metadata={"description": "MIME type (default null)", "example": "image/jpeg"},
     )
-    value = fields.Str(description="Attribute value", required=False, example="martini")
+    value = fields.Str(
+        required=False,
+        metadata={"description": "Attribute value", "example": "martini"},
+    )
     referent = fields.Str(
-        description="Credential referent", required=False, example="0"
+        required=False, metadata={"description": "Credential referent", "example": "0"}
     )
 
 
@@ -407,7 +421,7 @@ class IndyPresPreview(BaseModel):
                     },
                 }
 
-        for (reft, attr_spec) in attr_specs_names.items():
+        for reft, attr_spec in attr_specs_names.items():
             proof_req["requested_attributes"][
                 "{}_{}_uuid".format(
                     len(proof_req["requested_attributes"]), canon(attr_spec["names"][0])
@@ -472,10 +486,12 @@ class IndyPresPreviewSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     _type = fields.Str(
-        description="Message type identifier",
         required=False,
-        example=DIDCommPrefix.qualify_current(PRESENTATION_PREVIEW),
         data_key="@type",
+        metadata={
+            "description": "Message type identifier",
+            "example": DIDCommPrefix.qualify_current(PRESENTATION_PREVIEW),
+        },
     )
     attributes = fields.Nested(IndyPresAttrSpecSchema, required=True, many=True)
     predicates = fields.Nested(IndyPresPredSpecSchema, required=True, many=True)

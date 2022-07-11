@@ -54,40 +54,45 @@ class ServiceSchema(BaseModelSchema):
         model_class = Service
         unknown = EXCLUDE
 
-    _id = fields.Str(required=True, description="Service identifier", data_key="id")
-    _type = fields.Str(required=True, description="Service type", data_key="type")
+    _id = fields.Str(
+        required=True, data_key="id", metadata={"description": "Service identifier"}
+    )
+    _type = fields.Str(
+        required=True, data_key="type", metadata={"description": "Service type"}
+    )
     did = fields.Str(
         required=False,
-        description="Service DID",
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "Service DID", "example": IndyDID.EXAMPLE},
     )
 
     recipient_keys = fields.List(
         fields.Str(
-            description="Recipient public key",
             validate=DIDKey(),
-            example=DIDKey.EXAMPLE,
+            metadata={"description": "Recipient public key", "example": DIDKey.EXAMPLE},
         ),
         data_key="recipientKeys",
         required=False,
-        description="List of recipient keys",
+        metadata={"description": "List of recipient keys"},
     )
 
     routing_keys = fields.List(
         fields.Str(
-            description="Routing key", validate=DIDKey(), example=DIDKey.EXAMPLE
+            validate=DIDKey(),
+            metadata={"description": "Routing key", "example": DIDKey.EXAMPLE},
         ),
         data_key="routingKeys",
         required=False,
-        description="List of routing keys",
+        metadata={"description": "List of routing keys"},
     )
 
     service_endpoint = fields.Str(
         data_key="serviceEndpoint",
         required=False,
-        description="Service endpoint at which to reach this agent",
-        example="http://192.168.56.101:8020",
+        metadata={
+            "description": "Service endpoint at which to reach this agent",
+            "example": "http://192.168.56.101:8020",
+        },
     )
 
     @post_dump

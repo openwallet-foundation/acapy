@@ -10,36 +10,37 @@ class SchemaSchema(OpenAPISchema):
     """Marshmallow schema for indy schema."""
 
     ver = fields.Str(
-        description="Node protocol version",
         validate=IndyVersion(),
-        example=IndyVersion.EXAMPLE,
+        metadata={
+            "description": "Node protocol version",
+            "example": IndyVersion.EXAMPLE,
+        },
     )
     ident = fields.Str(
         data_key="id",
-        description="Schema identifier",
         validate=IndySchemaId(),
-        example=IndySchemaId.EXAMPLE,
+        metadata={"description": "Schema identifier", "example": IndySchemaId.EXAMPLE},
     )
     name = fields.Str(
-        description="Schema name",
-        example=IndySchemaId.EXAMPLE.split(":")[2],
+        metadata={
+            "description": "Schema name",
+            "example": IndySchemaId.EXAMPLE.split(":")[2],
+        }
     )
     version = fields.Str(
-        description="Schema version",
         validate=IndyVersion(),
-        example=IndyVersion.EXAMPLE,
+        metadata={"description": "Schema version", "example": IndyVersion.EXAMPLE},
     )
     attr_names = fields.List(
-        fields.Str(
-            description="Attribute name",
-            example="score",
-        ),
-        description="Schema attribute names",
+        fields.Str(metadata={"description": "Attribute name", "example": "score"}),
         data_key="attrNames",
+        metadata={"description": "Schema attribute names"},
     )
     seqNo = fields.Int(
-        description="Schema sequence number",
-        strict=True,
         validate=NaturalNumber(),
-        example=NaturalNumber.EXAMPLE,
+        metadata={
+            "description": "Schema sequence number",
+            "strict": True,
+            "example": NaturalNumber.EXAMPLE,
+        },
     )

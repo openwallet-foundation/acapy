@@ -135,37 +135,47 @@ class RevNotificationRecordSchema(BaseRecordSchema):
 
     rev_reg_id = fields.Str(
         required=False,
-        description="Revocation registry identifier",
         validate=IndyRevRegId(),
-        example=IndyRevRegId.EXAMPLE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": IndyRevRegId.EXAMPLE,
+        },
     )
     cred_rev_id = fields.Str(
         required=False,
-        description="Credential revocation identifier",
         validate=IndyCredRevId(),
-        example=IndyCredRevId.EXAMPLE,
+        metadata={
+            "description": "Credential revocation identifier",
+            "example": IndyCredRevId.EXAMPLE,
+        },
     )
     connection_id = fields.Str(
-        description=(
-            "Connection ID to which the revocation notification will be sent; "
-            "required if notify is true"
-        ),
         required=False,
         validate=UUIDFour(),
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": (
+                "Connection ID to which the revocation notification will be sent;"
+                " required if notify is true"
+            ),
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     thread_id = fields.Str(
-        description=(
-            "Thread ID of the credential exchange message thread resulting in "
-            "the credential now being revoked; required if notify is true"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Thread ID of the credential exchange message thread resulting in the"
+                " credential now being revoked; required if notify is true"
+            )
+        },
     )
     comment = fields.Str(
-        description="Optional comment to include in revocation notification",
         required=False,
+        metadata={
+            "description": "Optional comment to include in revocation notification"
+        },
     )
     version = fields.Str(
-        description="Version of Revocation Notification to send out",
         required=False,
+        metadata={"description": "Version of Revocation Notification to send out"},
     )

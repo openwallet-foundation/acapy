@@ -26,58 +26,64 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
     """Schema for attribute specification in indy proof request."""
 
     name = fields.Str(
-        example="favouriteDrink", description="Attribute name", required=False
+        required=False,
+        metadata={"example": "favouriteDrink", "description": "Attribute name"},
     )
     names = fields.List(
-        fields.Str(example="age"),
-        description="Attribute name group",
+        fields.Str(metadata={"example": "age"}),
         required=False,
+        metadata={"description": "Attribute name group"},
     )
     restrictions = fields.List(
         fields.Dict(
             keys=fields.Str(
                 validate=validate.Regexp(
-                    "^schema_id|"
-                    "schema_issuer_did|"
-                    "schema_name|"
-                    "schema_version|"
-                    "issuer_did|"
-                    "cred_def_id|"
-                    "attr::.+::value$"  # indy does not support attr::...::marker here
+                    "^schema_id|schema_issuer_did|schema_name|schema_version"
+                    "|issuer_did|cred_def_id|attr::.+::value$"
                 ),
-                example="cred_def_id",  # marshmallow/apispec v3.0 ignores
+                metadata={"example": "cred_def_id"},
             ),
-            values=fields.Str(example=IndyCredDefId.EXAMPLE),
-        ),
-        description=(
-            "If present, credential must satisfy one of given restrictions: specify "
-            "schema_id, schema_issuer_did, schema_name, schema_version, "
-            "issuer_did, cred_def_id, and/or attr::<attribute-name>::value "
-            "where <attribute-name> represents a credential attribute name"
+            values=fields.Str(metadata={"example": IndyCredDefId.EXAMPLE}),
         ),
         required=False,
+        metadata={
+            "description": (
+                "If present, credential must satisfy one of given restrictions: specify"
+                " schema_id, schema_issuer_did, schema_name, schema_version,"
+                " issuer_did, cred_def_id, and/or attr::<attribute-name>::value where"
+                " <attribute-name> represents a credential attribute name"
+            )
+        },
     )
     non_revoked = fields.Nested(
         Schema.from_dict(
             {
                 "from": fields.Int(
                     required=False,
-                    description="Earliest time of interest in non-revocation interval",
-                    strict=True,
                     validate=IntEpoch(),
-                    example=IntEpoch.EXAMPLE,
+                    metadata={
+                        "description": (
+                            "Earliest time of interest in non-revocation interval"
+                        ),
+                        "strict": True,
+                        "example": IntEpoch.EXAMPLE,
+                    },
                 ),
                 "to": fields.Int(
                     required=False,
-                    description="Latest time of interest in non-revocation interval",
-                    strict=True,
                     validate=IntEpoch(),
-                    example=IntEpoch.EXAMPLE,
+                    metadata={
+                        "description": (
+                            "Latest time of interest in non-revocation interval"
+                        ),
+                        "strict": True,
+                        "example": IntEpoch.EXAMPLE,
+                    },
                 ),
             },
             name="IndyProofReqAttrSpecNonRevokedSchema",
         ),
-        allow_none=True,  # accommodate libvcx
+        allow_none=True,
         required=False,
     )
 
@@ -110,59 +116,70 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
 class IndyProofReqPredSpecSchema(OpenAPISchema):
     """Schema for predicate specification in indy proof request."""
 
-    name = fields.Str(example="index", description="Attribute name", required=True)
+    name = fields.Str(
+        required=True, metadata={"example": "index", "description": "Attribute name"}
+    )
     p_type = fields.Str(
-        description="Predicate type ('<', '<=', '>=', or '>')",
         required=True,
         validate=IndyPredicate(),
-        example=IndyPredicate.EXAMPLE,
+        metadata={
+            "description": "Predicate type ('<', '<=', '>=', or '>')",
+            "example": IndyPredicate.EXAMPLE,
+        },
     )
-    p_value = fields.Int(description="Threshold value", required=True, strict=True)
+    p_value = fields.Int(
+        required=True, metadata={"description": "Threshold value", "strict": True}
+    )
     restrictions = fields.List(
         fields.Dict(
             keys=fields.Str(
                 validate=validate.Regexp(
-                    "^schema_id|"
-                    "schema_issuer_did|"
-                    "schema_name|"
-                    "schema_version|"
-                    "issuer_did|"
-                    "cred_def_id|"
-                    "attr::.+::value$"  # indy does not support attr::...::marker here
+                    "^schema_id|schema_issuer_did|schema_name|schema_version|"
+                    "issuer_did|cred_def_id|attr::.+::value$"
                 ),
-                example="cred_def_id",
+                metadata={"example": "cred_def_id"},
             ),
-            values=fields.Str(example=IndyCredDefId.EXAMPLE),
-        ),
-        description=(
-            "If present, credential must satisfy one of given restrictions: specify "
-            "schema_id, schema_issuer_did, schema_name, schema_version, "
-            "issuer_did, cred_def_id, and/or attr::<attribute-name>::value "
-            "where <attribute-name> represents a credential attribute name"
+            values=fields.Str(metadata={"example": IndyCredDefId.EXAMPLE}),
         ),
         required=False,
+        metadata={
+            "description": (
+                "If present, credential must satisfy one of given restrictions: specify"
+                " schema_id, schema_issuer_did, schema_name, schema_version,"
+                " issuer_did, cred_def_id, and/or attr::<attribute-name>::value where"
+                " <attribute-name> represents a credential attribute name"
+            )
+        },
     )
     non_revoked = fields.Nested(
         Schema.from_dict(
             {
                 "from": fields.Int(
                     required=False,
-                    description="Earliest time of interest in non-revocation interval",
-                    strict=True,
                     validate=IntEpoch(),
-                    example=IntEpoch.EXAMPLE,
+                    metadata={
+                        "description": (
+                            "Earliest time of interest in non-revocation interval"
+                        ),
+                        "strict": True,
+                        "example": IntEpoch.EXAMPLE,
+                    },
                 ),
                 "to": fields.Int(
                     required=False,
-                    description="Latest time of interest in non-revocation interval",
-                    strict=True,
                     validate=IntEpoch(),
-                    example=IntEpoch.EXAMPLE,
+                    metadata={
+                        "description": (
+                            "Latest time of interest in non-revocation interval"
+                        ),
+                        "strict": True,
+                        "example": IntEpoch.EXAMPLE,
+                    },
                 ),
             },
             name="IndyProofReqPredSpecNonRevokedSchema",
         ),
-        allow_none=True,  # accommodate libvcx
+        allow_none=True,
         required=False,
     )
 
@@ -214,56 +231,68 @@ class IndyProofRequestSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     nonce = fields.Str(
-        description="Nonce",
         required=False,
         validate=NumericStrNatural(),
-        example=NumericStrNatural.EXAMPLE,
+        metadata={"description": "Nonce", "example": NumericStrNatural.EXAMPLE},
     )
     name = fields.Str(
-        description="Proof request name",
         required=False,
-        example="Proof request",
-        default="Proof request",
+        dump_default="Proof request",
+        metadata={"description": "Proof request name", "example": "Proof request"},
     )
     version = fields.Str(
-        description="Proof request version",
         required=False,
-        default="1.0",
+        dump_default="1.0",
         validate=IndyVersion(),
-        example=IndyVersion.EXAMPLE,
+        metadata={
+            "description": "Proof request version",
+            "example": IndyVersion.EXAMPLE,
+        },
     )
     requested_attributes = fields.Dict(
-        description="Requested attribute specifications of proof request",
         required=True,
-        keys=fields.Str(decription="Attribute referent", example="0_legalname_uuid"),
+        keys=fields.Str(
+            metadata={"decription": "Attribute referent", "example": "0_legalname_uuid"}
+        ),
         values=fields.Nested(IndyProofReqAttrSpecSchema()),
+        metadata={"description": "Requested attribute specifications of proof request"},
     )
     requested_predicates = fields.Dict(
-        description="Requested predicate specifications of proof request",
         required=True,
-        keys=fields.Str(description="Predicate referent", example="0_age_GE_uuid"),
+        keys=fields.Str(
+            metadata={"description": "Predicate referent", "example": "0_age_GE_uuid"}
+        ),
         values=fields.Nested(IndyProofReqPredSpecSchema()),
+        metadata={"description": "Requested predicate specifications of proof request"},
     )
     non_revoked = fields.Nested(
         Schema.from_dict(
             {
                 "from": fields.Int(
                     required=False,
-                    description="Earliest time of interest in non-revocation interval",
-                    strict=True,
                     validate=IntEpoch(),
-                    example=IntEpoch.EXAMPLE,
+                    metadata={
+                        "description": (
+                            "Earliest time of interest in non-revocation interval"
+                        ),
+                        "strict": True,
+                        "example": IntEpoch.EXAMPLE,
+                    },
                 ),
                 "to": fields.Int(
                     required=False,
-                    description="Latest time of interest in non-revocation interval",
-                    strict=True,
                     validate=IntEpoch(),
-                    example=IntEpoch.EXAMPLE,
+                    metadata={
+                        "description": (
+                            "Latest time of interest in non-revocation interval"
+                        ),
+                        "strict": True,
+                        "example": IntEpoch.EXAMPLE,
+                    },
                 ),
             },
             name="IndyProofRequestNonRevokedSchema",
         ),
-        allow_none=True,  # accommodate libvcx
+        allow_none=True,
         required=False,
     )

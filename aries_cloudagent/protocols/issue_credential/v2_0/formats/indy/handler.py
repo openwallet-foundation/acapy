@@ -397,7 +397,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
                 if retries > 0:
                     LOGGER.info(
-                        ("Waiting 2s on posted rev reg " "for cred def %s, retrying"),
+                        "Waiting 2s on posted rev reg for cred def %s, retrying",
                         cred_def_id,
                     )
                     await asyncio.sleep(2)
@@ -407,7 +407,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     )
 
                 raise V20CredFormatError(
-                    f"Cred def id {cred_def_id} " "has no active revocation registry"
+                    f"Cred def id {cred_def_id} has no active revocation registry"
                 )
             del revoc
 

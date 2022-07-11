@@ -533,20 +533,23 @@ class BaseRecordSchema(BaseModelSchema):
 
     state = fields.Str(
         required=False,
-        description="Current record state",
-        example="active",
+        metadata={"description": "Current record state", "example": "active"},
     )
     created_at = fields.Str(
         required=False,
-        description="Time of record creation",
         validate=IndyISO8601DateTime(),
-        example=IndyISO8601DateTime.EXAMPLE,
+        metadata={
+            "description": "Time of record creation",
+            "example": IndyISO8601DateTime.EXAMPLE,
+        },
     )
     updated_at = fields.Str(
         required=False,
-        description="Time of last record update",
         validate=IndyISO8601DateTime(),
-        example=IndyISO8601DateTime.EXAMPLE,
+        metadata={
+            "description": "Time of last record update",
+            "example": IndyISO8601DateTime.EXAMPLE,
+        },
     )
 
 
@@ -559,7 +562,9 @@ class BaseExchangeSchema(BaseRecordSchema):
         model_class = BaseExchangeRecord
 
     trace = fields.Boolean(
-        description="Record trace information, based on agent configuration",
         required=False,
-        default=False,
+        dump_default=False,
+        metadata={
+            "description": "Record trace information, based on agent configuration"
+        },
     )

@@ -57,15 +57,18 @@ class DIDXRequestSchema(AgentMessageSchema):
 
     label = fields.Str(
         required=True,
-        description="Label for DID exchange request",
-        example="Request to connect with Bob",
+        metadata={
+            "description": "Label for DID exchange request",
+            "example": "Request to connect with Bob",
+        },
     )
     did = fields.Str(
-        description="DID of exchange", validate=IndyDID(), example=IndyDID.EXAMPLE
+        validate=IndyDID(),
+        metadata={"description": "DID of exchange", "example": IndyDID.EXAMPLE},
     )
     did_doc_attach = fields.Nested(
         AttachDecoratorSchema,
         required=False,
-        description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",
+        metadata={"description": "As signed attachment, DID Doc associated with DID"},
     )

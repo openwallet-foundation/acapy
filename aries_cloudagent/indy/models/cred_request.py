@@ -44,28 +44,33 @@ class IndyCredRequestSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     prover_did = fields.Str(
-        requred=True,
-        description="Prover DID",
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={
+            "requred": True,
+            "description": "Prover DID",
+            "example": IndyDID.EXAMPLE,
+        },
     )
     cred_def_id = fields.Str(
         required=True,
-        description="Credential definition identifier",
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
     blinded_ms = fields.Dict(
-        required=True,
-        description="Blinded master secret",
+        required=True, metadata={"description": "Blinded master secret"}
     )
     blinded_ms_correctness_proof = fields.Dict(
         required=True,
-        description="Blinded master secret correctness proof",
+        metadata={"description": "Blinded master secret correctness proof"},
     )
     nonce = fields.Str(
         required=True,
-        description="Nonce in credential request",
         validate=NumericStrWhole(),
-        example=NumericStrWhole.EXAMPLE,
+        metadata={
+            "description": "Nonce in credential request",
+            "example": NumericStrWhole.EXAMPLE,
+        },
     )

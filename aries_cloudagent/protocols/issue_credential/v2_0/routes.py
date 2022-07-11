@@ -61,17 +61,14 @@ class V20CredExRecordListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential exchange record list query."""
 
     connection_id = fields.UUID(
-        description="Connection identifier",
         required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
     thread_id = fields.UUID(
-        description="Thread identifier",
         required=False,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
     )
     role = fields.Str(
-        description="Role assigned in credential exchange",
         required=False,
         validate=validate.OneOf(
             [
@@ -80,9 +77,9 @@ class V20CredExRecordListQueryStringSchema(OpenAPISchema):
                 if m.startswith("ROLE_")
             ]
         ),
+        metadata={"description": "Role assigned in credential exchange"},
     )
     state = fields.Str(
-        description="Credential exchange state",
         required=False,
         validate=validate.OneOf(
             [
@@ -91,6 +88,7 @@ class V20CredExRecordListQueryStringSchema(OpenAPISchema):
                 if m.startswith("STATE_")
             ]
         ),
+        metadata={"description": "Credential exchange state"},
     )
 
 
@@ -100,17 +98,11 @@ class V20CredExRecordDetailSchema(OpenAPISchema):
     cred_ex_record = fields.Nested(
         V20CredExRecordSchema,
         required=False,
-        description="Credential exchange record",
+        metadata={"description": "Credential exchange record"},
     )
 
-    indy = fields.Nested(
-        V20CredExRecordIndySchema,
-        required=False,
-    )
-    ld_proof = fields.Nested(
-        V20CredExRecordLDProofSchema,
-        required=False,
-    )
+    indy = fields.Nested(V20CredExRecordIndySchema, required=False)
+    ld_proof = fields.Nested(V20CredExRecordLDProofSchema, required=False)
 
 
 class V20CredExRecordListResultSchema(OpenAPISchema):
@@ -118,7 +110,11 @@ class V20CredExRecordListResultSchema(OpenAPISchema):
 
     results = fields.List(
         fields.Nested(V20CredExRecordDetailSchema),
-        description="Credential exchange records and corresponding detail records",
+        metadata={
+            "description": (
+                "Credential exchange records and corresponding detail records"
+            )
+        },
     )
 
 
@@ -132,37 +128,36 @@ class V20CredFilterIndySchema(OpenAPISchema):
     """Indy credential filtration criteria."""
 
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
         required=False,
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
     schema_id = fields.Str(
-        description="Schema identifier",
         required=False,
         validate=IndySchemaId(),
-        example=IndySchemaId.EXAMPLE,
+        metadata={"description": "Schema identifier", "example": IndySchemaId.EXAMPLE},
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID",
         required=False,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "Schema issuer DID", "example": IndyDID.EXAMPLE},
     )
     schema_name = fields.Str(
-        description="Schema name", required=False, example="preferences"
+        required=False,
+        metadata={"description": "Schema name", "example": "preferences"},
     )
     schema_version = fields.Str(
-        description="Schema version",
         required=False,
         validate=IndyVersion(),
-        example=IndyVersion.EXAMPLE,
+        metadata={"description": "Schema version", "example": IndyVersion.EXAMPLE},
     )
     issuer_did = fields.Str(
-        description="Credential issuer DID",
         required=False,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "Credential issuer DID", "example": IndyDID.EXAMPLE},
     )
 
 
@@ -172,12 +167,12 @@ class V20CredFilterSchema(OpenAPISchema):
     indy = fields.Nested(
         V20CredFilterIndySchema,
         required=False,
-        description="Credential filter for indy",
+        metadata={"description": "Credential filter for indy"},
     )
     ld_proof = fields.Nested(
         LDProofVCDetailSchema,
         required=False,
-        description="Credential filter for linked data proof",
+        metadata={"description": "Credential filter for linked data proof"},
     )
 
     @validates_schema
@@ -207,17 +202,21 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
         V20CredFilterSchema,
         required=True,
         data_key="filter",
-        description="Credential specification criteria by format",
+        metadata={"description": "Credential specification criteria by format"},
     )
     auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
 
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
@@ -238,7 +237,7 @@ class V20CredFilterLDProofSchema(OpenAPISchema):
     ld_proof = fields.Nested(
         LDProofVCDetailSchema,
         required=True,
-        description="Credential filter for linked data proof",
+        metadata={"description": "Credential filter for linked data proof"},
     )
 
 
@@ -246,37 +245,44 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
     """Filter, auto-remove, comment, trace."""
 
     connection_id = fields.UUID(
-        description="Connection identifier",
         required=True,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
     # Request can only start with LD Proof
     filter_ = fields.Nested(
         V20CredFilterLDProofSchema,
         required=True,
         data_key="filter",
-        description="Credential specification criteria by format",
+        metadata={"description": "Credential specification criteria by format"},
     )
     auto_remove = fields.Bool(
-        description=(
-            "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on completion"
+                " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
-    )
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
-        required=False,
-        example=False,
-    )
-    holder_did = fields.Str(
-        description="Holder DID to substitute for the credentialSubject.id",
         required=False,
         allow_none=True,
-        example="did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
+        metadata={"description": "Human-readable comment"},
+    )
+    trace = fields.Bool(
+        required=False,
+        metadata={
+            "description": "Whether to trace event (default false)",
+            "example": False,
+        },
+    )
+    holder_did = fields.Str(
+        required=False,
+        allow_none=True,
+        metadata={
+            "description": "Holder DID to substitute for the credentialSubject.id",
+            "example": "did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
+        },
     )
 
 
@@ -284,9 +290,8 @@ class V20CredExFreeSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential admin message."""
 
     connection_id = fields.UUID(
-        description="Connection identifier",
         required=True,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
@@ -297,12 +302,12 @@ class V20CredBoundOfferRequestSchema(OpenAPISchema):
         V20CredFilterSchema,
         required=False,
         data_key="filter",
-        description="Credential specification criteria by format",
+        metadata={"description": "Credential specification criteria by format"},
     )
     counter_preview = fields.Nested(
         V20CredPreviewSchema,
         required=False,
-        description="Optional content for counter-proposal",
+        metadata={"description": "Optional content for counter-proposal"},
     )
 
     @validates_schema
@@ -322,16 +327,17 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential offer admin message."""
 
     connection_id = fields.UUID(
-        description="Connection identifier",
         required=True,
-        example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
     auto_issue = fields.Bool(
-        description=(
-            "Whether to respond automatically to credential requests, creating "
-            "and issuing requested credentials"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Whether to respond automatically to credential requests, creating and"
+                " issuing requested credentials"
+            )
+        },
     )
 
 
@@ -339,11 +345,13 @@ class V20CredOfferConnFreeRequestSchema(V20IssueCredSchemaCore):
     """Request schema for creating credential offer free from connection."""
 
     auto_issue = fields.Bool(
-        description=(
-            "Whether to respond automatically to credential requests, creating "
-            "and issuing requested credentials"
-        ),
         required=False,
+        metadata={
+            "description": (
+                "Whether to respond automatically to credential requests, creating and"
+                " issuing requested credentials"
+            )
+        },
     )
 
 
@@ -351,10 +359,12 @@ class V20CredRequestRequestSchema(OpenAPISchema):
     """Request schema for sending credential request message."""
 
     holder_did = fields.Str(
-        description="Holder DID to substitute for the credentialSubject.id",
         required=False,
         allow_none=True,
-        example="did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
+        metadata={
+            "description": "Holder DID to substitute for the credentialSubject.id",
+            "example": "did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
+        },
     )
 
 
@@ -362,7 +372,9 @@ class V20CredIssueRequestSchema(OpenAPISchema):
     """Request schema for sending credential issue admin message."""
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
 
 
@@ -376,7 +388,8 @@ class V20CredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
     credential_id = fields.Str(
-        description="Credential identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Credential identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
@@ -384,10 +397,12 @@ class V20CredExIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential exchange id."""
 
     cred_ex_id = fields.Str(
-        description="Credential exchange identifier",
         required=True,
         validate=UUIDFour(),
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential exchange identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
 
 

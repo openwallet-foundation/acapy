@@ -42,41 +42,37 @@ class TestRevocationRoutes(AsyncTestCase):
         ):
             req.validate_fields(
                 {
-                    "rev_reg_id": test_module.INDY_REV_REG_ID["example"],
-                    "cred_rev_id": test_module.INDY_CRED_REV_ID["example"],
+                    "rev_reg_id": test_module.IndyRevRegId.EXAMPLE,
+                    "cred_rev_id": test_module.IndyCredRevId.EXAMPLE,
                 }
             )
-            req.validate_fields({"cred_ex_id": test_module.UUID4["example"]})
+            req.validate_fields({"cred_ex_id": test_module.UUIDFour.EXAMPLE})
             with self.assertRaises(test_module.ValidationError):
                 req.validate_fields({})
             with self.assertRaises(test_module.ValidationError):
-                req.validate_fields(
-                    {"rev_reg_id": test_module.INDY_REV_REG_ID["example"]}
-                )
+                req.validate_fields({"rev_reg_id": test_module.IndyRevRegId.EXAMPLE})
             with self.assertRaises(test_module.ValidationError):
-                req.validate_fields(
-                    {"cred_rev_id": test_module.INDY_CRED_REV_ID["example"]}
-                )
+                req.validate_fields({"cred_rev_id": test_module.IndyCredRevId.EXAMPLE})
             with self.assertRaises(test_module.ValidationError):
                 req.validate_fields(
                     {
-                        "rev_reg_id": test_module.INDY_REV_REG_ID["example"],
-                        "cred_ex_id": test_module.UUID4["example"],
+                        "rev_reg_id": test_module.IndyRevRegId.EXAMPLE,
+                        "cred_ex_id": test_module.UUIDFour.EXAMPLE,
                     }
                 )
             with self.assertRaises(test_module.ValidationError):
                 req.validate_fields(
                     {
-                        "cred_rev_id": test_module.INDY_CRED_REV_ID["example"],
-                        "cred_ex_id": test_module.UUID4["example"],
+                        "cred_rev_id": test_module.IndyCredRevId.EXAMPLE,
+                        "cred_ex_id": test_module.UUIDFour.EXAMPLE,
                     }
                 )
             with self.assertRaises(test_module.ValidationError):
                 req.validate_fields(
                     {
-                        "rev_reg_id": test_module.INDY_REV_REG_ID["example"],
-                        "cred_rev_id": test_module.INDY_CRED_REV_ID["example"],
-                        "cred_ex_id": test_module.UUID4["example"],
+                        "rev_reg_id": test_module.IndyRevRegId.EXAMPLE,
+                        "cred_rev_id": test_module.IndyCredRevId.EXAMPLE,
+                        "cred_ex_id": test_module.UUIDFour.EXAMPLE,
                     }
                 )
 
@@ -416,7 +412,7 @@ class TestRevocationRoutes(AsyncTestCase):
             assert result is mock_json_response.return_value
 
     async def test_get_cred_rev_record_by_cred_ex_id(self):
-        CRED_EX_ID = test_module.UUID4["example"]
+        CRED_EX_ID = test_module.UUIDFour.EXAMPLE
 
         self.request.query = {"cred_ex_id": CRED_EX_ID}
 

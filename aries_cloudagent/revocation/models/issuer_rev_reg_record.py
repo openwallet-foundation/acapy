@@ -420,77 +420,94 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
 
     record_id = fields.Str(
         required=False,
-        description="Issuer revocation registry record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Issuer revocation registry record identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Issue revocation registry record state",
-        example=IssuerRevRegRecord.STATE_ACTIVE,
+        metadata={
+            "description": "Issue revocation registry record state",
+            "example": IssuerRevRegRecord.STATE_ACTIVE,
+        },
     )
     cred_def_id = fields.Str(
         required=False,
-        description="Credential definition identifier",
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
     error_msg = fields.Str(
         required=False,
-        description="Error message",
-        example="Revocation registry undefined",
+        metadata={
+            "description": "Error message",
+            "example": "Revocation registry undefined",
+        },
     )
     issuer_did = fields.Str(
         required=False,
-        description="Issuer DID",
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "Issuer DID", "example": IndyDID.EXAMPLE},
     )
     max_cred_num = fields.Int(
         required=False,
-        description="Maximum number of credentials for revocation registry",
-        strict=True,
-        example=1000,
+        metadata={
+            "description": "Maximum number of credentials for revocation registry",
+            "strict": True,
+            "example": 1000,
+        },
     )
     revoc_def_type = fields.Str(
         required=False,
-        description="Revocation registry type (specify CL_ACCUM)",
-        example="CL_ACCUM",
         validate=validate.Equal("CL_ACCUM"),
+        metadata={
+            "description": "Revocation registry type (specify CL_ACCUM)",
+            "example": "CL_ACCUM",
+        },
     )
     revoc_reg_id = fields.Str(
         required=False,
-        description="Revocation registry identifier",
         validate=IndyRevRegId(),
-        example=IndyRevRegId.EXAMPLE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": IndyRevRegId.EXAMPLE,
+        },
     )
     revoc_reg_def = fields.Nested(
         IndyRevRegDefSchema(),
         required=False,
-        description="Revocation registry definition",
+        metadata={"description": "Revocation registry definition"},
     )
     revoc_reg_entry = fields.Nested(
-        IndyRevRegEntrySchema(), required=False, description="Revocation registry entry"
+        IndyRevRegEntrySchema(),
+        required=False,
+        metadata={"description": "Revocation registry entry"},
     )
     tag = fields.Str(
-        required=False, description="Tag within issuer revocation registry identifier"
+        required=False,
+        metadata={"description": "Tag within issuer revocation registry identifier"},
     )
     tails_hash = fields.Str(
         required=False,
-        description="Tails hash",
         validate=Base58SHA256Hash(),
-        example=Base58SHA256Hash.EXAMPLE,
+        metadata={"description": "Tails hash", "example": Base58SHA256Hash.EXAMPLE},
     )
     tails_public_uri = fields.Str(
-        required=False, description="Public URI for tails file"
+        required=False, metadata={"description": "Public URI for tails file"}
     )
     tails_local_path = fields.Str(
-        required=False, description="Local path to tails file"
+        required=False, metadata={"description": "Local path to tails file"}
     )
     pending_pub = fields.List(
-        fields.Str(example="23"),
-        description=(
-            "Credential revocation identifier for credential "
-            "revoked and pending publication to ledger"
-        ),
+        fields.Str(metadata={"example": "23"}),
         required=False,
+        metadata={
+            "description": (
+                "Credential revocation identifier for credential revoked and pending"
+                " publication to ledger"
+            )
+        },
     )

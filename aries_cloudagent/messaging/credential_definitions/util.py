@@ -22,39 +22,35 @@ class CredDefQueryStringSchema(OpenAPISchema):
     """Query string parameters for credential definition searches."""
 
     schema_id = fields.Str(
-        description="Schema identifier",
         required=False,
         validate=IndySchemaId(),
-        example=IndySchemaId.EXAMPLE,
+        metadata={"description": "Schema identifier", "example": IndySchemaId.EXAMPLE},
     )
     schema_issuer_did = fields.Str(
-        description="Schema issuer DID",
         required=False,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "Schema issuer DID", "example": IndyDID.EXAMPLE},
     )
     schema_name = fields.Str(
-        description="Schema name",
-        required=False,
-        example="membership",
+        required=False, metadata={"description": "Schema name", "example": "membership"}
     )
     schema_version = fields.Str(
-        description="Schema version",
         required=False,
         validate=IndyVersion(),
-        example=IndyVersion.EXAMPLE,
+        metadata={"description": "Schema version", "example": IndyVersion.EXAMPLE},
     )
     issuer_did = fields.Str(
-        description="Issuer DID",
         required=False,
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={"description": "Issuer DID", "example": IndyDID.EXAMPLE},
     )
     cred_def_id = fields.Str(
-        description="Credential definition id",
         required=False,
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition id",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
 
 

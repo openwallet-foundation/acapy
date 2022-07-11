@@ -44,12 +44,10 @@ class PerformSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     name = fields.Str(
-        required=True,
-        description="Menu option name",
-        example="Query",
+        required=True, metadata={"description": "Menu option name", "example": "Query"}
     )
     params = fields.Dict(
         required=False,
-        keys=fields.Str(example="parameter"),  # marshmallow/apispec v3.0 ignores
-        values=fields.Str(example="value"),
+        keys=fields.Str(metadata={"example": "parameter"}),
+        values=fields.Str(metadata={"example": "value"}),
     )

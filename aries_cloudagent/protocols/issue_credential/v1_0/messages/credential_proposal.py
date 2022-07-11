@@ -15,8 +15,7 @@ from ..message_types import CREDENTIAL_PROPOSAL, PROTOCOL_PACKAGE
 from .inner.credential_preview import CredentialPreview, CredentialPreviewSchema
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers."
-    "credential_proposal_handler.CredentialProposalHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_proposal_handler.CredentialProposalHandler"
 )
 
 
@@ -78,7 +77,9 @@ class CredentialProposalSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     credential_proposal = fields.Nested(
         CredentialPreviewSchema, required=False, allow_none=False
@@ -87,24 +88,30 @@ class CredentialProposalSchema(AgentMessageSchema):
         required=False,
         allow_none=False,
         validate=IndySchemaId(),
-        example=IndySchemaId.EXAMPLE,
+        metadata={"example": IndySchemaId.EXAMPLE},
     )
     schema_issuer_did = fields.Str(
-        required=False, allow_none=False, validate=IndyDID(), example=IndyDID.EXAMPLE
+        required=False,
+        allow_none=False,
+        validate=IndyDID(),
+        metadata={"example": IndyDID.EXAMPLE},
     )
     schema_name = fields.Str(required=False, allow_none=False)
     schema_version = fields.Str(
         required=False,
         allow_none=False,
         validate=IndyVersion(),
-        example=IndyVersion.EXAMPLE,
+        metadata={"example": IndyVersion.EXAMPLE},
     )
     cred_def_id = fields.Str(
         required=False,
         allow_none=False,
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={"example": IndyCredDefId.EXAMPLE},
     )
     issuer_did = fields.Str(
-        required=False, allow_none=False, validate=IndyDID(), example=IndyDID.EXAMPLE
+        required=False,
+        allow_none=False,
+        validate=IndyDID(),
+        metadata={"example": IndyDID.EXAMPLE},
     )

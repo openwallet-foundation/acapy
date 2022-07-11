@@ -130,34 +130,46 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
 
     record_id = fields.Str(
         required=False,
-        description="Issuer credential revocation record identifier",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Issuer credential revocation record identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Issue credential revocation record state",
-        example=IssuerCredRevRecord.STATE_ISSUED,
+        metadata={
+            "description": "Issue credential revocation record state",
+            "example": IssuerCredRevRecord.STATE_ISSUED,
+        },
     )
     cred_ex_id = fields.Str(
         required=False,
-        description="Credential exchange record identifier at credential issue",
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": "Credential exchange record identifier at credential issue",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     rev_reg_id = fields.Str(
         required=False,
-        description="Revocation registry identifier",
         validate=IndyRevRegId(),
-        example=IndyRevRegId.EXAMPLE,
+        metadata={
+            "description": "Revocation registry identifier",
+            "example": IndyRevRegId.EXAMPLE,
+        },
     )
     cred_def_id = fields.Str(
         required=False,
-        description="Credential definition identifier",
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
     cred_rev_id = fields.Str(
         required=False,
-        description="Credential revocation identifier",
         validate=IndyCredRevId(),
-        example=IndyCredRevId.EXAMPLE,
+        metadata={
+            "description": "Credential revocation identifier",
+            "example": IndyCredRevId.EXAMPLE,
+        },
     )

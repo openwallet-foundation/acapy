@@ -85,7 +85,9 @@ DIF_PROOF_REQ = {
                     "fields": [
                         {
                             "path": ["$.credentialSubject.givenName"],
-                            "purpose": "The claim must be from one of the specified issuers",
+                            "purpose": (
+                                "The claim must be from one of the specified issuers"
+                            ),
                             "filter": {
                                 "type": "string",
                                 "enum": ["JOHN", "CAI"],
@@ -114,7 +116,9 @@ DIF_PRES_PROPOSAL = {
                 "fields": [
                     {
                         "path": ["$.credentialSubject.givenName"],
-                        "purpose": "The claim must be from one of the specified issuers",
+                        "purpose": (
+                            "The claim must be from one of the specified issuers"
+                        ),
                         "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
                     }
                 ],
@@ -2473,7 +2477,9 @@ class TestPresentProofRoutes(AsyncTestCase):
                                 "constraints": {
                                     "fields": [
                                         {
-                                            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                            "id": (
+                                                "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                                            ),
                                             "path": ["$.credentialSubject.id"],
                                         }
                                     ],

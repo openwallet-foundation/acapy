@@ -37,31 +37,31 @@ class DocSchema(OpenAPISchema):
     """Schema for LD doc to sign."""
 
     credential = fields.Dict(
-        required=True,
-        description="Credential to sign",
+        required=True, metadata={"description": "Credential to sign"}
     )
     options = fields.Nested(
         SignatureOptionsSchema,
         required=True,
-        description="Signature options",
+        metadata={"description": "Signature options"},
     )
 
 
 class SignRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
-    verkey = fields.Str(required=True, description="Verkey to use for signing")
-    doc = fields.Nested(
-        DocSchema,
-        required=True,
+    verkey = fields.Str(
+        required=True, metadata={"description": "Verkey to use for signing"}
     )
+    doc = fields.Nested(DocSchema, required=True)
 
 
 class SignResponseSchema(OpenAPISchema):
     """Response schema for a signed jsonld doc."""
 
-    signed_doc = fields.Dict(description="Signed document", required=False)
-    error = fields.Str(description="Error text", required=False)
+    signed_doc = fields.Dict(
+        required=False, metadata={"description": "Signed document"}
+    )
+    error = fields.Str(required=False, metadata={"description": "Error text"})
 
 
 @docs(tags=["jsonld"], summary="Sign a JSON-LD structure and return it")
@@ -85,7 +85,7 @@ async def sign(request: web.BaseRequest):
                 session, doc.get("credential"), doc.get("options"), body.get("verkey")
             )
             response["signed_doc"] = doc_with_proof
-    except (BaseJSONLDMessagingError) as err:
+    except BaseJSONLDMessagingError as err:
         response["error"] = str(err)
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
@@ -102,9 +102,8 @@ class SignedDocSchema(OpenAPISchema):
 
     proof = fields.Nested(
         SignatureOptionsSchema,
-        unknown=INCLUDE,
         required=True,
-        description="Linked data proof",
+        metadata={"unknown": INCLUDE, "description": "Linked data proof"},
     )
 
 
@@ -112,16 +111,18 @@ class VerifyRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
     verkey = fields.Str(
-        required=False, description="Verkey to use for doc verification"
+        required=False, metadata={"description": "Verkey to use for doc verification"}
     )
-    doc = fields.Nested(SignedDocSchema, required=True, description="Signed document")
+    doc = fields.Nested(
+        SignedDocSchema, required=True, metadata={"description": "Signed document"}
+    )
 
 
 class VerifyResponseSchema(OpenAPISchema):
     """Response schema for verification result."""
 
     valid = fields.Bool(required=True)
-    error = fields.Str(description="Error text", required=False)
+    error = fields.Str(required=False, metadata={"description": "Error text"})
 
 
 @docs(tags=["jsonld"], summary="Verify a JSON-LD structure.")

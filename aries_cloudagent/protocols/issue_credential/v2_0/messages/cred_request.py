@@ -89,20 +89,22 @@ class V20CredRequestSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     formats = fields.Nested(
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable attachment formats",
+        metadata={"description": "Acceptable attachment formats"},
     )
     requests_attach = fields.Nested(
         AttachDecoratorSchema,
         required=True,
         many=True,
         data_key="requests~attach",
-        description="Request attachments",
+        metadata={"description": "Request attachments"},
     )
 
     @validates_schema

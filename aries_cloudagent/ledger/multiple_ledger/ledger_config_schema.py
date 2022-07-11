@@ -45,16 +45,15 @@ class LedgerConfigInstanceSchema(BaseModelSchema):
         model_class = LedgerConfigInstance
         unknown = EXCLUDE
 
-    id = fields.Str(
-        description="ledger_id",
-        required=False,
+    id = fields.Str(required=False, metadata={"description": "ledger_id"})
+    is_production = fields.Bool(
+        required=False, metadata={"description": "is_production"}
     )
-    is_production = fields.Bool(description="is_production", required=False)
     genesis_transactions = fields.Str(
-        description="genesis_transactions", required=False
+        required=False, metadata={"description": "genesis_transactions"}
     )
-    genesis_file = fields.Str(description="genesis_file", required=False)
-    genesis_url = fields.Str(description="genesis_url", required=False)
+    genesis_file = fields.Str(required=False, metadata={"description": "genesis_file"})
+    genesis_url = fields.Str(required=False, metadata={"description": "genesis_url"})
 
     @pre_load
     def validate_id(self, data, **kwargs):
@@ -68,11 +67,7 @@ class LedgerConfigListSchema(OpenAPISchema):
     """Schema for Ledger Config List."""
 
     ledger_config_list = fields.List(
-        fields.Nested(
-            LedgerConfigInstanceSchema(),
-            required=True,
-        ),
-        required=True,
+        fields.Nested(LedgerConfigInstanceSchema(), required=True), required=True
     )
 
 

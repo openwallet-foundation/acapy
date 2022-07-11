@@ -42,29 +42,36 @@ class IndyKeyCorrectnessProofSchema(BaseModelSchema):
 
     c = fields.Str(
         required=True,
-        description="c in key correctness proof",
         validate=NumericStrWhole(),
-        example=NumericStrWhole.EXAMPLE,
+        metadata={
+            "description": "c in key correctness proof",
+            "example": NumericStrWhole.EXAMPLE,
+        },
     )
     xz_cap = fields.Str(
         required=True,
-        description="xz_cap in key correctness proof",
         validate=NumericStrWhole(),
-        example=NumericStrWhole.EXAMPLE,
+        metadata={
+            "description": "xz_cap in key correctness proof",
+            "example": NumericStrWhole.EXAMPLE,
+        },
     )
     xr_cap = fields.List(
         fields.List(
             fields.Str(
                 required=True,
-                description="xr_cap component values in key correctness proof",
+                metadata={
+                    "description": "xr_cap component values in key correctness proof"
+                },
             ),
             required=True,
-            description="xr_cap components in key correctness proof",
-            many=True,
+            metadata={
+                "description": "xr_cap components in key correctness proof",
+                "many": True,
+            },
         ),
         required=True,
-        description="xr_cap in key correctness proof",
-        many=True,
+        metadata={"description": "xr_cap in key correctness proof", "many": True},
     )
 
 
@@ -112,24 +119,27 @@ class IndyCredAbstractSchema(BaseModelSchema):
 
     schema_id = fields.Str(
         required=True,
-        description="Schema identifier",
         validate=IndySchemaId(),
-        example=IndySchemaId.EXAMPLE,
+        metadata={"description": "Schema identifier", "example": IndySchemaId.EXAMPLE},
     )
     cred_def_id = fields.Str(
         required=True,
-        description="Credential definition identifier",
         validate=IndyCredDefId(),
-        example=IndyCredDefId.EXAMPLE,
+        metadata={
+            "description": "Credential definition identifier",
+            "example": IndyCredDefId.EXAMPLE,
+        },
     )
     nonce = fields.Str(
         required=True,
-        description="Nonce in credential abstract",
         validate=NumericStrWhole(),
-        example=NumericStrWhole.EXAMPLE,
+        metadata={
+            "description": "Nonce in credential abstract",
+            "example": NumericStrWhole.EXAMPLE,
+        },
     )
     key_correctness_proof = fields.Nested(
         IndyKeyCorrectnessProofSchema(),
         required=True,
-        description="Key correctness proof",
+        metadata={"description": "Key correctness proof"},
     )

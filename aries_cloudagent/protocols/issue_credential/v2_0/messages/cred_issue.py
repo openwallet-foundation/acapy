@@ -90,26 +90,32 @@ class V20CredIssueSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     replacement_id = fields.Str(
-        description="Issuer-unique identifier to coordinate credential replacement",
         required=False,
         allow_none=False,
-        example=UUIDFour.EXAMPLE,
+        metadata={
+            "description": (
+                "Issuer-unique identifier to coordinate credential replacement"
+            ),
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     formats = fields.Nested(
         V20CredFormatSchema,
         many=True,
         required=True,
-        description="Acceptable attachment formats",
+        metadata={"description": "Acceptable attachment formats"},
     )
     credentials_attach = fields.Nested(
         AttachDecoratorSchema,
         many=True,
         required=True,
         data_key="credentials~attach",
-        description="Credential attachments",
+        metadata={"description": "Credential attachments"},
     )
 
     @validates_schema

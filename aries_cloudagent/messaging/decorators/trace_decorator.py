@@ -239,51 +239,55 @@ class TraceReportSchema(BaseModelSchema):
     msg_id = fields.Str(
         required=True,
         allow_none=False,
-        description="Message Id",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Message Id", "example": UUIDFour.EXAMPLE},
     )
     thread_id = fields.Str(
         required=True,
         allow_none=False,
-        description="Message Id",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Message Id", "example": UUIDFour.EXAMPLE},
     )
     traced_type = fields.Str(
         required=False,
         allow_none=True,
-        description="Type of traced message",
-        example="TODO",
+        metadata={"description": "Type of traced message", "example": "TODO"},
     )
     timestamp = fields.Str(
         required=True,
         allow_none=False,
-        description="Timestamp of traced event",
-        example="123456789.123456",
+        metadata={
+            "description": "Timestamp of traced event",
+            "example": "123456789.123456",
+        },
     )
     str_time = fields.Str(
         required=True,
         allow_none=False,
-        description="Formatted timestamp of traced event",
-        example="2018-03-27 18:23:45.123Z",
+        metadata={
+            "description": "Formatted timestamp of traced event",
+            "example": "2018-03-27 18:23:45.123Z",
+        },
     )
     handler = fields.Str(
         required=False,
         allow_none=True,
-        description="Description of the message handler",
-        example="TODO",
+        metadata={
+            "description": "Description of the message handler",
+            "example": "TODO",
+        },
     )
     ellapsed_milli = fields.Int(
         required=False,
         allow_none=True,
-        description="Elapsed milliseconds processing time",
-        example=27,
-        strict=True,
+        metadata={
+            "description": "Elapsed milliseconds processing time",
+            "example": 27,
+            "strict": True,
+        },
     )
     outcome = fields.Str(
         required=False,
         allow_none=True,
-        description="Outcome description",
-        example="TODO",
+        metadata={"description": "Outcome description", "example": "TODO"},
     )
 
 
@@ -299,18 +303,23 @@ class TraceDecoratorSchema(BaseModelSchema):
     target = fields.Str(
         required=True,
         allow_none=False,
-        description="Trace report target",
-        example="'http://example.com/tracer', or 'message'",
+        metadata={
+            "description": "Trace report target",
+            "example": "'http://example.com/tracer', or 'message'",
+        },
     )
     full_thread = fields.Boolean(
         required=False,
         allow_none=True,
-        description="Parent thread identifier",
-        example="True",
+        metadata={"description": "Parent thread identifier", "example": "True"},
     )
     trace_reports = fields.List(
         fields.Nested(TraceReportSchema),
         required=False,
         allow_none=True,
-        description=("The set of reports collected so far for this message or thread"),
+        metadata={
+            "description": (
+                "The set of reports collected so far for this message or thread"
+            )
+        },
     )

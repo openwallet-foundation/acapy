@@ -52,16 +52,24 @@ class MediationRequestSchema(AgentMessageSchema):
 
     mediator_terms = fields.List(
         fields.Str(
-            description="Indicate terms that the mediator "
-            "requires the recipient to agree to"
+            metadata={
+                "description": (
+                    "Indicate terms that the mediator requires the recipient to"
+                    " agree to"
+                )
+            }
         ),
         required=False,
-        description="List of mediator rules for recipient",
+        metadata={"description": "List of mediator rules for recipient"},
     )
     recipient_terms = fields.List(
         fields.Str(
-            description="Indicate terms that the recipient "
-            "requires the mediator to agree to"
+            metadata={
+                "description": (
+                    "Indicate terms that the recipient requires the mediator to"
+                    " agree to"
+                )
+            }
         ),
         required=False,
     )

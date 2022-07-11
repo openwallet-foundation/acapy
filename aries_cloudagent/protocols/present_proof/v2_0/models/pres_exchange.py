@@ -223,23 +223,21 @@ class V20PresExRecordSchema(BaseExchangeSchema):
 
     pres_ex_id = fields.Str(
         required=False,
-        description="Presentation exchange identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={
+            "description": "Presentation exchange identifier",
+            "example": UUIDFour.EXAMPLE,
+        },
     )
     connection_id = fields.Str(
         required=False,
-        description="Connection identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
     thread_id = fields.Str(
         required=False,
-        description="Thread identifier",
-        example=UUIDFour.EXAMPLE,  # typically a UUID4 but not necessarily
+        metadata={"description": "Thread identifier", "example": UUIDFour.EXAMPLE},
     )
     initiator = fields.Str(
         required=False,
-        description="Present-proof exchange initiator: self or external",
-        example=V20PresExRecord.INITIATOR_SELF,
         validate=validate.OneOf(
             [
                 getattr(V20PresExRecord, m)
@@ -247,11 +245,13 @@ class V20PresExRecordSchema(BaseExchangeSchema):
                 if m.startswith("INITIATOR_")
             ]
         ),
+        metadata={
+            "description": "Present-proof exchange initiator: self or external",
+            "example": V20PresExRecord.INITIATOR_SELF,
+        },
     )
     role = fields.Str(
         required=False,
-        description="Present-proof exchange role: prover or verifier",
-        example=V20PresExRecord.ROLE_PROVER,
         validate=validate.OneOf(
             [
                 getattr(V20PresExRecord, m)
@@ -259,10 +259,13 @@ class V20PresExRecordSchema(BaseExchangeSchema):
                 if m.startswith("ROLE_")
             ]
         ),
+        metadata={
+            "description": "Present-proof exchange role: prover or verifier",
+            "example": V20PresExRecord.ROLE_PROVER,
+        },
     )
     state = fields.Str(
         required=False,
-        description="Present-proof exchange state",
         validate=validate.OneOf(
             [
                 getattr(V20PresExRecord, m)
@@ -270,21 +273,22 @@ class V20PresExRecordSchema(BaseExchangeSchema):
                 if m.startswith("STATE_")
             ]
         ),
+        metadata={"description": "Present-proof exchange state"},
     )
     pres_proposal = fields.Nested(
         V20PresProposalSchema(),
         required=False,
-        description="Presentation proposal message",
+        metadata={"description": "Presentation proposal message"},
     )
     pres_request = fields.Nested(
         V20PresRequestSchema(),
         required=False,
-        description="Presentation request message",
+        metadata={"description": "Presentation request message"},
     )
     pres = fields.Nested(
         V20PresSchema(),
         required=False,
-        description="Presentation message",
+        metadata={"description": "Presentation message"},
     )
     by_format = fields.Nested(
         Schema.from_dict(
@@ -296,25 +300,33 @@ class V20PresExRecordSchema(BaseExchangeSchema):
             name="V20PresExRecordByFormatSchema",
         ),
         required=False,
-        description=(
-            "Attachment content by format for proposal, request, and presentation"
-        ),
         dump_only=True,
+        metadata={
+            "description": (
+                "Attachment content by format for proposal, request, and presentation"
+            )
+        },
     )
-    verified = fields.Str(  # tag: must be a string
+    verified = fields.Str(
         required=False,
-        description="Whether presentation is verified: 'true' or 'false'",
-        example="true",
         validate=validate.OneOf(["true", "false"]),
+        metadata={
+            "description": "Whether presentation is verified: 'true' or 'false'",
+            "example": "true",
+        },
     )
     auto_present = fields.Bool(
         required=False,
-        description="Prover choice to auto-present proof as verifier requests",
-        example=False,
+        metadata={
+            "description": "Prover choice to auto-present proof as verifier requests",
+            "example": False,
+        },
     )
     auto_verify = fields.Bool(
-        required=False, description="Verifier choice to auto-verify proof presentation"
+        required=False,
+        metadata={"description": "Verifier choice to auto-verify proof presentation"},
     )
     error_msg = fields.Str(
-        required=False, description="Error message", example="Invalid structure"
+        required=False,
+        metadata={"description": "Error message", "example": "Invalid structure"},
     )

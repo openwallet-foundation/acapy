@@ -44,7 +44,7 @@ class TransactionListSchema(OpenAPISchema):
 
     results = fields.List(
         fields.Nested(TransactionRecordSchema()),
-        description="List of transaction records",
+        metadata={"description": "List of transaction records"},
     )
 
 
@@ -56,28 +56,26 @@ class TranIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking transaction id."""
 
     tran_id = fields.Str(
-        description="Transaction identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Transaction identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
 class EndorserDIDInfoSchema(OpenAPISchema):
     """Path parameters and validators for request Endorser DID."""
 
-    endorser_did = fields.Str(
-        description="Endorser DID",
-        required=False,
-    )
+    endorser_did = fields.Str(required=False, metadata={"description": "Endorser DID"})
 
 
 class AssignTransactionJobsSchema(OpenAPISchema):
     """Assign transaction related jobs to connection record."""
 
     transaction_my_job = fields.Str(
-        description="Transaction related jobs",
         required=False,
         validate=validate.OneOf(
             [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
         ),
+        metadata={"description": "Transaction related jobs"},
     )
 
 
@@ -85,18 +83,18 @@ class TransactionJobsSchema(OpenAPISchema):
     """Transaction jobs metadata on connection record."""
 
     transaction_my_job = fields.Str(
-        description="My transaction related job",
         required=False,
         validate=validate.OneOf(
             [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
         ),
+        metadata={"description": "My transaction related job"},
     )
     transaction_their_job = fields.Str(
-        description="Their transaction related job",
         required=False,
         validate=validate.OneOf(
             [r.name for r in TransactionJob if isinstance(r.value[0], int)] + ["reset"]
         ),
+        metadata={"description": "Their transaction related job"},
     )
 
 
@@ -104,7 +102,8 @@ class TransactionConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
@@ -112,7 +111,8 @@ class DateSchema(OpenAPISchema):
     """Sets Expiry date, till when the transaction should be endorsed."""
 
     expires_time = fields.DateTime(
-        description="Expiry Date", required=True, example="2021-03-29T05:22:19Z"
+        required=True,
+        metadata={"description": "Expiry Date", "example": "2021-03-29T05:22:19Z"},
     )
 
 
@@ -120,22 +120,20 @@ class EndorserWriteLedgerTransactionSchema(OpenAPISchema):
     """Sets endorser_write_txn. Option for the endorser to write the transaction."""
 
     endorser_write_txn = fields.Boolean(
-        description="Endorser will write the transaction after endorsing it",
         required=False,
+        metadata={
+            "description": "Endorser will write the transaction after endorsing it"
+        },
     )
 
 
 class EndorserInfoSchema(OpenAPISchema):
     """Class for user to input the DID associated with the requested endorser."""
 
-    endorser_did = fields.Str(
-        description="Endorser DID",
-        required=True,
-    )
+    endorser_did = fields.Str(required=True, metadata={"description": "Endorser DID"})
 
     endorser_name = fields.Str(
-        description="Endorser Name",
-        required=False,
+        required=False, metadata={"description": "Endorser Name"}
     )
 
 
@@ -700,7 +698,9 @@ async def transaction_write(request: web.BaseRequest):
 
     if transaction.state != TransactionRecord.STATE_TRANSACTION_ENDORSED:
         raise web.HTTPForbidden(
-            reason=" The transaction cannot be written to the ledger as it is in state: "
+            reason=(
+                " The transaction cannot be written to the ledger as it is in state: "
+            )
             + transaction.state
         )
 

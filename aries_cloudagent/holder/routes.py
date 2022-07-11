@@ -39,8 +39,8 @@ class AttributeMimeTypesResultSchema(OpenAPISchema):
     """Result schema for credential attribute MIME type."""
 
     results = fields.Dict(
-        keys=fields.Str(description="Attribute name"),
-        values=fields.Str(description="MIME type"),
+        keys=fields.Str(metadata={"description": "Attribute name"}),
+        values=fields.Str(metadata={"description": "MIME type"}),
         allow_none=True,
     )
 
@@ -55,22 +55,22 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
     start = fields.Str(
-        description="Start index",
         required=False,
         validate=NumericStrWhole(),
-        example=NumericStrWhole.EXAMPLE,
+        metadata={"description": "Start index", "example": NumericStrWhole.EXAMPLE},
     )
     count = fields.Str(
-        description="Maximum number to retrieve",
         required=False,
         validate=NumericStrNatural(),
-        example=NumericStrNatural.EXAMPLE,
+        metadata={
+            "description": "Maximum number to retrieve",
+            "example": NumericStrNatural.EXAMPLE,
+        },
     )
     wql = fields.Str(
-        description="(JSON) WQL query",
         required=False,
         validate=IndyWQL(),
-        example=IndyWQL.EXAMPLE,
+        metadata={"description": "(JSON) WQL query", "example": IndyWQL.EXAMPLE},
     )
 
 
@@ -79,52 +79,64 @@ class W3CCredentialsListRequestSchema(OpenAPISchema):
 
     contexts = fields.List(
         fields.Str(
-            description="Credential context to match",
             validate=Endpoint(),
-            example=Endpoint.EXAMPLE,
+            metadata={
+                "description": "Credential context to match",
+                "example": Endpoint.EXAMPLE,
+            },
         ),
         required=False,
     )
     types = fields.List(
         fields.Str(
-            description="Credential type to match",
             validate=Endpoint(),
-            example=Endpoint.EXAMPLE,
+            metadata={
+                "description": "Credential type to match",
+                "example": Endpoint.EXAMPLE,
+            },
         ),
         required=False,
     )
     schema_ids = fields.List(
         fields.Str(
-            description="Credential schema identifier",
             validate=Endpoint(),
-            example=Endpoint.EXAMPLE,
+            metadata={
+                "description": "Credential schema identifier",
+                "example": Endpoint.EXAMPLE,
+            },
         ),
-        description="Schema identifiers, all of which to match",
         required=False,
+        metadata={"description": "Schema identifiers, all of which to match"},
     )
     issuer_id = fields.Str(
         required=False,
-        description="Credential issuer identifier to match",
+        metadata={"description": "Credential issuer identifier to match"},
     )
     subject_ids = fields.List(
-        fields.Str(description="Subject identifier"),
-        description="Subject identifiers, all of which to match",
+        fields.Str(metadata={"description": "Subject identifier"}),
         required=False,
+        metadata={"description": "Subject identifiers, all of which to match"},
     )
     proof_types = fields.List(
         fields.Str(
-            description="Signature suite used for proof", example="Ed25519Signature2018"
+            metadata={
+                "description": "Signature suite used for proof",
+                "example": "Ed25519Signature2018",
+            }
         )
     )
-    given_id = fields.Str(required=False, description="Given credential id to match")
+    given_id = fields.Str(
+        required=False, metadata={"description": "Given credential id to match"}
+    )
     tag_query = fields.Dict(
-        keys=fields.Str(description="Tag name"),
-        values=fields.Str(description="Tag value"),
+        keys=fields.Str(metadata={"description": "Tag name"}),
+        values=fields.Str(metadata={"description": "Tag value"}),
         required=False,
-        description="Tag filter",
+        metadata={"description": "Tag filter"},
     )
     max_results = fields.Int(
-        strict=True, description="Maximum number of results to return", required=False
+        required=False,
+        metadata={"strict": True, "description": "Maximum number of results to return"},
     )
 
 
@@ -138,7 +150,8 @@ class HolderCredIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
     credential_id = fields.Str(
-        description="Credential identifier", required=True, example=UUIDFour.EXAMPLE
+        required=True,
+        metadata={"description": "Credential identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
@@ -147,23 +160,29 @@ class CredRevokedQueryStringSchema(OpenAPISchema):
 
     fro = fields.Str(
         data_key="from",
-        description="Earliest epoch of revocation status interval of interest",
         required=False,
         validate=NumericStrWhole(),
-        example=NumericStrWhole.EXAMPLE,
+        metadata={
+            "description": "Earliest epoch of revocation status interval of interest",
+            "example": NumericStrWhole.EXAMPLE,
+        },
     )
     to = fields.Str(
-        description="Latest epoch of revocation status interval of interest",
         required=False,
         validate=NumericStrWhole(),
-        example=NumericStrWhole.EXAMPLE,
+        metadata={
+            "description": "Latest epoch of revocation status interval of interest",
+            "example": NumericStrWhole.EXAMPLE,
+        },
     )
 
 
 class CredRevokedResultSchema(OpenAPISchema):
     """Result schema for credential revoked request."""
 
-    revoked = fields.Bool(description="Whether credential is revoked on the ledger")
+    revoked = fields.Bool(
+        metadata={"description": "Whether credential is revoked on the ledger"}
+    )
 
 
 @docs(tags=["credentials"], summary="Fetch credential from wallet by id")
@@ -485,7 +504,7 @@ def post_process_routes(app: web.Application):
             "description": "Holder credential management",
             "externalDocs": {
                 "description": "Overview",
-                "url": ("https://w3c.github.io/vc-data-model/#credentials"),
+                "url": "https://w3c.github.io/vc-data-model/#credentials",
             },
         }
     )

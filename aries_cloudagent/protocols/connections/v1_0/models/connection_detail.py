@@ -93,12 +93,16 @@ class ConnectionDetailSchema(BaseModelSchema):
     did = fields.Str(
         data_key="DID",
         required=False,
-        description="DID for connection detail",
         validate=IndyDID(),
-        example=IndyDID.EXAMPLE,
+        metadata={
+            "description": "DID for connection detail",
+            "example": IndyDID.EXAMPLE,
+        },
     )
     did_doc = DIDDocWrapper(
         data_key="DIDDoc",
         required=False,
-        description="DID document for connection detail",
+        metadata={
+            "description": "DID document for connection detail",
+        },
     )

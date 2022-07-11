@@ -33,9 +33,11 @@ class AdminAPIMessageTracingSchema(OpenAPISchema):
     """
 
     trace = fields.Boolean(
-        description="Record trace information, based on agent configuration",
         required=False,
-        default=False,
+        dump_default=False,
+        metadata={
+            "description": "Record trace information, based on agent configuration"
+        },
     )
 
 

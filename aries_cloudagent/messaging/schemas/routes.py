@@ -65,23 +65,17 @@ class SchemaSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
     schema_name = fields.Str(
-        required=True,
-        description="Schema name",
-        example="prefs",
+        required=True, metadata={"description": "Schema name", "example": "prefs"}
     )
     schema_version = fields.Str(
         required=True,
-        description="Schema version",
         validate=IndyVersion(),
-        example=IndyVersion.EXAMPLE,
+        metadata={"description": "Schema version", "example": IndyVersion.EXAMPLE},
     )
     attributes = fields.List(
-        fields.Str(
-            description="attribute name",
-            example="score",
-        ),
+        fields.Str(metadata={"description": "attribute name", "example": "score"}),
         required=True,
-        description="List of schema attributes",
+        metadata={"description": "List of schema attributes"},
     )
 
 
@@ -89,14 +83,12 @@ class SchemaSendResultSchema(OpenAPISchema):
     """Result schema content for schema send request with auto-endorse."""
 
     schema_id = fields.Str(
-        description="Schema identifier",
         required=True,
         validate=IndySchemaId(),
-        example=IndySchemaId.EXAMPLE,
+        metadata={"description": "Schema identifier", "example": IndySchemaId.EXAMPLE},
     )
     schema = fields.Nested(
-        SchemaSchema(),
-        description="Schema definition",
+        SchemaSchema(), metadata={"description": "Schema definition"}
     )
 
 
@@ -106,12 +98,12 @@ class TxnOrSchemaSendResultSchema(OpenAPISchema):
     sent = fields.Nested(
         SchemaSendResultSchema(),
         required=False,
-        description="Content sent",
+        metadata={"description": "Content sent"},
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
         required=False,
-        description="Schema transaction to endorse",
+        metadata={"description": "Schema transaction to endorse"},
     )
 
 
@@ -126,9 +118,11 @@ class SchemasCreatedResultSchema(OpenAPISchema):
 
     schema_ids = fields.List(
         fields.Str(
-            description="Schema identifiers",
             validate=IndySchemaId(),
-            example=IndySchemaId.EXAMPLE,
+            metadata={
+                "description": "Schema identifiers",
+                "example": IndySchemaId.EXAMPLE,
+            },
         )
     )
 
@@ -137,10 +131,9 @@ class SchemaIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""
 
     schema_id = fields.Str(
-        description="Schema identifier",
         required=True,
-        validate=Regexp(rf"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
-        example=IndySchemaId.EXAMPLE,
+        validate=Regexp(f"^[1-9][0-9]*|[{B58}]{{21,22}}:2:.+:[0-9.]+$"),
+        metadata={"description": "Schema identifier", "example": IndySchemaId.EXAMPLE},
     )
 
 
@@ -148,8 +141,8 @@ class CreateSchemaTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
         required=False,
+        metadata={"description": "Create Transaction For Endorser's signature"},
     )
 
 
@@ -157,7 +150,8 @@ class SchemaConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(
-        description="Connection identifier", required=False, example=UUIDFour.EXAMPLE
+        required=False,
+        metadata={"description": "Connection identifier", "example": UUIDFour.EXAMPLE},
     )
 
 
@@ -234,13 +228,17 @@ async def schemas_send_schema(request: web.BaseRequest):
             )
         if not endorser_info:
             raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
+                reason=(
+                    "Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
             )
         if "endorser_did" not in endorser_info.keys():
             raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
+                reason=(
+                    ' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
             )
         endorser_did = endorser_info["endorser_did"]
 

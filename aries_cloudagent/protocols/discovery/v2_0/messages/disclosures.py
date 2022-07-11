@@ -37,16 +37,18 @@ class ProtocolDescriptorSchema(Schema):
 
     id = fields.Str(required=True)
     feature_type = fields.Str(
-        required=True, description="feature-type", data_key="feature-type"
+        required=True, data_key="feature-type", metadata={"description": "feature-type"}
     )
     roles = fields.List(
         fields.Str(
-            description="Role: requester or responder",
-            example="requester",
+            metadata={
+                "description": "Role: requester or responder",
+                "example": "requester",
+            }
         ),
         required=False,
         allow_none=True,
-        description="List of roles",
+        metadata={"description": "List of roles"},
     )
 
 
@@ -55,7 +57,7 @@ class GoalCodeDescriptorSchema(Schema):
 
     id = fields.Str(required=True)
     feature_type = fields.Str(
-        required=True, description="feature-type", data_key="feature-type"
+        required=True, data_key="feature-type", metadata={"description": "feature-type"}
     )
 
 
@@ -92,5 +94,5 @@ class DisclosuresSchema(AgentMessageSchema):
     disclosures = fields.List(
         ProtocolOrGoalCodeDescriptorField(),
         required=True,
-        description="List of protocol or goal_code descriptors",
+        metadata={"description": "List of protocol or goal_code descriptors"},
     )

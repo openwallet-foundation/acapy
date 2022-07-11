@@ -13,8 +13,7 @@ from .....messaging.decorators.attach_decorator import (
 from ..message_types import ATTACH_DECO_IDS, CREDENTIAL_REQUEST, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers."
-    "credential_request_handler.CredentialRequestHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.credential_request_handler.CredentialRequestHandler"
 )
 
 
@@ -77,7 +76,9 @@ class CredentialRequestSchema(AgentMessageSchema):
         unknown = EXCLUDE
 
     comment = fields.Str(
-        description="Human-readable comment", required=False, allow_none=True
+        required=False,
+        allow_none=True,
+        metadata={"description": "Human-readable comment"},
     )
     requests_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="requests~attach"

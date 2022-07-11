@@ -45,14 +45,18 @@ class KeylistUpdateRuleSchema(BaseModelSchema):
         model_class = KeylistUpdateRule
 
     recipient_key = fields.Str(
-        description="Key to remove or add",
         required=True,
         validate=IndyRawPublicKey(),
-        example=IndyRawPublicKey.EXAMPLE,
+        metadata={
+            "description": "Key to remove or add",
+            "example": IndyRawPublicKey.EXAMPLE,
+        },
     )
     action = fields.Str(
         required=True,
-        description="Action for specific key",
-        example=KeylistUpdateRule.RULE_ADD,
         validate=OneOf(["add", "remove"]),
+        metadata={
+            "description": "Action for specific key",
+            "example": KeylistUpdateRule.RULE_ADD,
+        },
     )

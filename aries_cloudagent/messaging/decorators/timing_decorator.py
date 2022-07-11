@@ -64,37 +64,49 @@ class TimingDecoratorSchema(BaseModelSchema):
 
     in_time = fields.Str(
         required=False,
-        description="Time of message receipt",
         validate=IndyISO8601DateTime(),
-        example=IndyISO8601DateTime.EXAMPLE,
+        metadata={
+            "description": "Time of message receipt",
+            "example": IndyISO8601DateTime.EXAMPLE,
+        },
     )
     out_time = fields.Str(
         required=False,
-        description="Time of message dispatch",
         validate=IndyISO8601DateTime(),
-        example=IndyISO8601DateTime.EXAMPLE,
+        metadata={
+            "description": "Time of message dispatch",
+            "example": IndyISO8601DateTime.EXAMPLE,
+        },
     )
     stale_time = fields.Str(
         required=False,
-        description="Time when message should be considered stale",
         validate=IndyISO8601DateTime(),
-        example=IndyISO8601DateTime.EXAMPLE,
+        metadata={
+            "description": "Time when message should be considered stale",
+            "example": IndyISO8601DateTime.EXAMPLE,
+        },
     )
     expires_time = fields.Str(
         required=False,
-        description="Time when message should be considered expired",
         validate=IndyISO8601DateTime(),
-        example=IndyISO8601DateTime.EXAMPLE,
+        metadata={
+            "description": "Time when message should be considered expired",
+            "example": IndyISO8601DateTime.EXAMPLE,
+        },
     )
     delay_milli = fields.Int(
         required=False,
-        description="Number of milliseconds to delay processing",
-        example=1000,
-        strict=True,
+        metadata={
+            "description": "Number of milliseconds to delay processing",
+            "example": 1000,
+            "strict": True,
+        },
     )
     wait_until_time = fields.Str(
         required=False,
-        description="Earliest time at which to perform processing",
         validate=IndyISO8601DateTime(),
-        example=IndyISO8601DateTime.EXAMPLE,
+        metadata={
+            "description": "Earliest time at which to perform processing",
+            "example": IndyISO8601DateTime.EXAMPLE,
+        },
     )

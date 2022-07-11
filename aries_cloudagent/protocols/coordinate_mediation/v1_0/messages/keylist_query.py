@@ -53,9 +53,10 @@ class KeylistQuerySchema(AgentMessageSchema):
 
     filter = fields.Dict(
         required=False,
-        description="Query dictionary object",
-        example={"filter": {}},
+        metadata={"description": "Query dictionary object", "example": {"filter": {}}},
     )
     paginate = fields.Nested(
-        KeylistQueryPaginateSchema(), required=False, description="Pagination info"
+        KeylistQueryPaginateSchema(),
+        required=False,
+        metadata={"description": "Pagination info"},
     )

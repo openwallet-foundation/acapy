@@ -8,8 +8,7 @@ from .....messaging.valid import UUIDFour
 from ..message_types import CANCEL_TRANSACTION, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
-    f"{PROTOCOL_PACKAGE}.handlers"
-    ".transaction_cancel_handler.TransactionCancelHandler"
+    f"{PROTOCOL_PACKAGE}.handlers.transaction_cancel_handler.TransactionCancelHandler"
 )
 
 
@@ -54,7 +53,9 @@ class CancelTransactionSchema(AgentMessageSchema):
 
     state = fields.Str(
         required=False,
-        description="The State of the transaction Record",
-        example="cancelled",
+        metadata={
+            "description": "The State of the transaction Record",
+            "example": "cancelled",
+        },
     )
-    thread_id = fields.Str(required=False, example=UUIDFour.EXAMPLE)
+    thread_id = fields.Str(required=False, metadata={"example": UUIDFour.EXAMPLE})

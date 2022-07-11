@@ -75,7 +75,9 @@ DIF_PRES_REQUEST_A = {
                     "fields": [
                         {
                             "path": ["$.issuer.id", "$.vc.issuer.id", "$.issuer"],
-                            "purpose": "The claim must be from one of the specified issuers",
+                            "purpose": (
+                                "The claim must be from one of the specified issuers"
+                            ),
                             "filter": {
                                 "type": "string",
                                 "enum": [
@@ -121,7 +123,9 @@ DIF_PRES_REQUEST_B = {
                     "fields": [
                         {
                             "path": ["$.credentialSubject.givenName"],
-                            "purpose": "The claim must be from one of the specified issuers",
+                            "purpose": (
+                                "The claim must be from one of the specified issuers"
+                            ),
                             "filter": {
                                 "type": "string",
                                 "enum": ["JOHN", "CAI"],
@@ -148,7 +152,9 @@ DIF_PRES_PROPOSAL = {
                 "fields": [
                     {
                         "path": ["$.issuer.id", "$.vc.issuer.id", "$.issuer"],
-                        "purpose": "The claim must be from one of the specified issuers",
+                        "purpose": (
+                            "The claim must be from one of the specified issuers"
+                        ),
                         "filter": {
                             "type": "string",
                             "enum": [
@@ -301,7 +307,10 @@ class TestDIFFormatHandler(AsyncTestCase):
                         "fields": [
                             {
                                 "path": ["$.credentialSubject.givenName"],
-                                "purpose": "The claim must be from one of the specified issuers",
+                                "purpose": (
+                                    "The claim must be from one of the specified"
+                                    " issuers"
+                                ),
                                 "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
                             }
                         ],
@@ -357,7 +366,10 @@ class TestDIFFormatHandler(AsyncTestCase):
                         "fields": [
                             {
                                 "path": ["$.credentialSubject.givenName"],
-                                "purpose": "The claim must be from one of the specified issuers",
+                                "purpose": (
+                                    "The claim must be from one of the specified"
+                                    " issuers"
+                                ),
                                 "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
                             }
                         ],
@@ -413,7 +425,10 @@ class TestDIFFormatHandler(AsyncTestCase):
                         "fields": [
                             {
                                 "path": ["$.credentialSubject.givenName"],
-                                "purpose": "The claim must be from one of the specified issuers",
+                                "purpose": (
+                                    "The claim must be from one of the specified"
+                                    " issuers"
+                                ),
                                 "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
                             }
                         ],

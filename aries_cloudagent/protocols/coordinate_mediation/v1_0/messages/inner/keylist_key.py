@@ -45,5 +45,7 @@ class KeylistKeySchema(BaseModelSchema):
         unknown = EXCLUDE
 
     recipient_key = fields.Str(
-        required=True, validate=IndyRawPublicKey(), example=IndyRawPublicKey.EXAMPLE
+        required=True,
+        validate=IndyRawPublicKey(),
+        metadata={"example": IndyRawPublicKey.EXAMPLE},
     )

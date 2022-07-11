@@ -197,14 +197,17 @@ class InvitationMessageSchema(AgentMessageSchema):
         model_class = InvitationMessage
         unknown = EXCLUDE
 
-    label = fields.Str(required=False, description="Optional label", example="Bob")
+    label = fields.Str(
+        required=False, metadata={"description": "Optional label", "example": "Bob"}
+    )
     handshake_protocols = fields.List(
         fields.Str(
-            description="Handshake protocol",
-            example=DIDCommPrefix.qualify_current(HSProto.RFC23.name),
-            validate=lambda hsp: (
-                DIDCommPrefix.unqualify(hsp) in [p.name for p in HSProto]
-            ),
+            validate=lambda hsp: DIDCommPrefix.unqualify(hsp)
+            in [p.name for p in HSProto],
+            metadata={
+                "description": "Handshake protocol",
+                "example": DIDCommPrefix.qualify_current(HSProto.RFC23.name),
+            },
         ),
         required=False,
     )
@@ -213,30 +216,34 @@ class InvitationMessageSchema(AgentMessageSchema):
         required=False,
         many=True,
         data_key="requests~attach",
-        description="Optional request attachment",
+        metadata={"description": "Optional request attachment"},
     )
     services = fields.List(
         ServiceOrDIDField(
             required=True,
-            description=(
-                "Either a DIDComm service object (as per RFC0067) or a DID string."
-            ),
-        ),
-        example=[
-            {
-                "did": "WgWxqztrNooG92RXvxSTWv",
-                "id": "string",
-                "recipientKeys": [
-                    "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
-                ],
-                "routingKeys": [
-                    "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
-                ],
-                "serviceEndpoint": "http://192.168.56.101:8020",
-                "type": "string",
+            metadata={
+                "description": (
+                    "Either a DIDComm service object (as per RFC0067) or a DID string."
+                )
             },
-            "did:sov:WgWxqztrNooG92RXvxSTWv",
-        ],
+        ),
+        metadata={
+            "example": [
+                {
+                    "did": "WgWxqztrNooG92RXvxSTWv",
+                    "id": "string",
+                    "recipientKeys": [
+                        "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+                    ],
+                    "routingKeys": [
+                        "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
+                    ],
+                    "serviceEndpoint": "http://192.168.56.101:8020",
+                    "type": "string",
+                },
+                "did:sov:WgWxqztrNooG92RXvxSTWv",
+            ]
+        },
     )
 
     @validates_schema

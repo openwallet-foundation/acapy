@@ -87,27 +87,33 @@ class ServiceDecoratorSchema(BaseModelSchema):
 
     recipient_keys = fields.List(
         fields.Str(
-            description="Recipient public key",
             validate=IndyRawPublicKey(),
-            example=IndyRawPublicKey.EXAMPLE,
+            metadata={
+                "description": "Recipient public key",
+                "example": IndyRawPublicKey.EXAMPLE,
+            },
         ),
         data_key="recipientKeys",
         required=True,
-        description="List of recipient keys",
+        metadata={"description": "List of recipient keys"},
     )
     endpoint = fields.Str(
         data_key="serviceEndpoint",
         required=True,
-        description="Service endpoint at which to reach this agent",
-        example="http://192.168.56.101:8020",
+        metadata={
+            "description": "Service endpoint at which to reach this agent",
+            "example": "http://192.168.56.101:8020",
+        },
     )
     routing_keys = fields.List(
         fields.Str(
-            description="Routing key",
             validate=IndyRawPublicKey(),
-            example=IndyRawPublicKey.EXAMPLE,
+            metadata={
+                "description": "Routing key",
+                "example": IndyRawPublicKey.EXAMPLE,
+            },
         ),
         data_key="routingKeys",
         required=False,
-        description="List of routing keys",
+        metadata={"description": "List of routing keys"},
     )
