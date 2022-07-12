@@ -1,4 +1,4 @@
-name: Create and publish a Docker image for each tagged commit
+name: Build and publish a Docker image for each tagged commit
 
 on:
   push:
