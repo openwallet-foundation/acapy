@@ -1,11 +1,11 @@
 import json
+
 import pytest
+import mock as async_mock
+from async_case import IsolatedAsyncioTestCase
 
 from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
 from aiohttp.test_utils import unused_port
-
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
 
 from ...config.default_context import DefaultContextBuilder
 from ...config.injection_context import InjectionContext
@@ -13,7 +13,6 @@ from ...core.event_bus import Event
 from ...core.in_memory import InMemoryProfile
 from ...core.protocol_registry import ProtocolRegistry
 from ...core.goal_code_registry import GoalCodeRegistry
-from ...transport.outbound.message import OutboundMessage
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
 
@@ -21,19 +20,18 @@ from .. import server as test_module
 from ..server import AdminServer, AdminSetupError
 
 
-class TestAdminServer(AsyncTestCase):
-    async def setUp(self):
+class TestAdminServer(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
         self.message_results = []
         self.webhook_results = []
         self.port = 0
 
         self.connector = TCPConnector(limit=16, limit_per_host=4)
-        session_args = {"cookie_jar": DummyCookieJar(), "connector": self.connector}
         self.client_session = ClientSession(
             cookie_jar=DummyCookieJar(), connector=self.connector
         )
 
-    async def tearDown(self):
+    async def asyncTearDown(self):
         if self.client_session:
             await self.client_session.close()
             self.client_session = None
@@ -49,9 +47,9 @@ class TestAdminServer(AsyncTestCase):
                 method="GET",
                 path_qs="/hello/world?a=1&b=2",
                 match_info={"match": "info"},
-                text=async_mock.CoroutineMock(return_value="abc123"),
+                text=async_mock.AsyncMock(return_value="abc123"),
             )
-            handler = async_mock.CoroutineMock()
+            handler = async_mock.AsyncMock()
 
             await test_module.debug_middleware(request, handler)
             mock_logger.isEnabledFor.assert_called_once()
@@ -69,7 +67,7 @@ class TestAdminServer(AsyncTestCase):
             request = async_mock.MagicMock(
                 rel_url="/", app=async_mock.MagicMock(_state={"ready": False})
             )
-            handler = async_mock.CoroutineMock(return_value="OK")
+            handler = async_mock.AsyncMock(return_value="OK")
             with self.assertRaises(test_module.web.HTTPServiceUnavailable):
                 await test_module.ready_middleware(request, handler)
 
@@ -77,28 +75,28 @@ class TestAdminServer(AsyncTestCase):
             assert await test_module.ready_middleware(request, handler) == "OK"
 
             request.app._state["ready"] = True
-            handler = async_mock.CoroutineMock(
+            handler = async_mock.AsyncMock(
                 side_effect=test_module.LedgerConfigError("Bad config")
             )
             with self.assertRaises(test_module.LedgerConfigError):
                 await test_module.ready_middleware(request, handler)
 
             request.app._state["ready"] = True
-            handler = async_mock.CoroutineMock(
+            handler = async_mock.AsyncMock(
                 side_effect=test_module.web.HTTPFound(location="/api/doc")
             )
             with self.assertRaises(test_module.web.HTTPFound):
                 await test_module.ready_middleware(request, handler)
 
             request.app._state["ready"] = True
-            handler = async_mock.CoroutineMock(
+            handler = async_mock.AsyncMock(
                 side_effect=test_module.asyncio.CancelledError("Cancelled")
             )
             with self.assertRaises(test_module.asyncio.CancelledError):
                 await test_module.ready_middleware(request, handler)
 
             request.app._state["ready"] = True
-            handler = async_mock.CoroutineMock(side_effect=KeyError("No such thing"))
+            handler = async_mock.AsyncMock(side_effect=KeyError("No such thing"))
             with self.assertRaises(KeyError):
                 await test_module.ready_middleware(request, handler)
 
@@ -132,10 +130,10 @@ class TestAdminServer(AsyncTestCase):
             profile,
             self.outbound_message_router,
             self.webhook_router,
-            conductor_stop=async_mock.CoroutineMock(),
+            conductor_stop=async_mock.AsyncMock(),
             task_queue=TaskQueue(max_active=4) if task_queue else None,
             conductor_stats=(
-                None if task_queue else async_mock.CoroutineMock(return_value={"a": 1})
+                None if task_queue else async_mock.AsyncMock(return_value={"a": 1})
             ),
         )
 
@@ -177,7 +175,7 @@ class TestAdminServer(AsyncTestCase):
             await server.stop()
 
         with async_mock.patch.object(
-            web.TCPSite, "start", async_mock.CoroutineMock()
+            web.TCPSite, "start", async_mock.AsyncMock()
         ) as mock_start:
             mock_start.side_effect = OSError("Failure to launch")
             with self.assertRaises(AdminSetupError):
@@ -227,7 +225,7 @@ class TestAdminServer(AsyncTestCase):
             method="GET",
             headers={"Authorization": "Bearer ..."},
             path="/multitenancy/etc",
-            text=async_mock.CoroutineMock(return_value="abc123"),
+            text=async_mock.AsyncMock(return_value="abc123"),
         )
         with self.assertRaises(test_module.web.HTTPUnauthorized):
             await mt_authz_middle(mock_request, None)
@@ -236,7 +234,7 @@ class TestAdminServer(AsyncTestCase):
             method="GET",
             headers={},
             path="/protected/non-multitenancy/non-server",
-            text=async_mock.CoroutineMock(return_value="abc123"),
+            text=async_mock.AsyncMock(return_value="abc123"),
         )
         with self.assertRaises(test_module.web.HTTPUnauthorized):
             await mt_authz_middle(mock_request, None)
@@ -245,9 +243,9 @@ class TestAdminServer(AsyncTestCase):
             method="GET",
             headers={"Authorization": "Bearer ..."},
             path="/protected/non-multitenancy/non-server",
-            text=async_mock.CoroutineMock(return_value="abc123"),
+            text=async_mock.AsyncMock(return_value="abc123"),
         )
-        mock_handler = async_mock.CoroutineMock()
+        mock_handler = async_mock.AsyncMock()
         await mt_authz_middle(mock_request, mock_handler)
         assert mock_handler.called_once_with(mock_request)
 
@@ -255,9 +253,9 @@ class TestAdminServer(AsyncTestCase):
             method="GET",
             headers={"Authorization": "Non-bearer ..."},
             path="/test",
-            text=async_mock.CoroutineMock(return_value="abc123"),
+            text=async_mock.AsyncMock(return_value="abc123"),
         )
-        mock_handler = async_mock.CoroutineMock()
+        mock_handler = async_mock.AsyncMock()
         await mt_authz_middle(mock_request, mock_handler)
         assert mock_handler.called_once_with(mock_request)
 
@@ -268,7 +266,7 @@ class TestAdminServer(AsyncTestCase):
             method="GET",
             headers={"Authorization": "Non-bearer ..."},
             path="/protected/non-multitenancy/non-server",
-            text=async_mock.CoroutineMock(return_value="abc123"),
+            text=async_mock.AsyncMock(return_value="abc123"),
         )
         with self.assertRaises(test_module.web.HTTPUnauthorized):
             await setup_ctx_middle(mock_request, None)
@@ -277,12 +275,12 @@ class TestAdminServer(AsyncTestCase):
             method="GET",
             headers={"Authorization": "Bearer ..."},
             path="/protected/non-multitenancy/non-server",
-            text=async_mock.CoroutineMock(return_value="abc123"),
+            text=async_mock.AsyncMock(return_value="abc123"),
         )
         with async_mock.patch.object(
             server.multitenant_manager,
             "get_profile_for_token",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_get_profile:
             mock_get_profile.side_effect = [
                 test_module.MultitenantManagerError("corrupt token"),
@@ -295,11 +293,15 @@ class TestAdminServer(AsyncTestCase):
     async def test_register_external_plugin_x(self):
         context = InjectionContext()
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
-        with self.assertRaises(ValueError):
+        context.injector.bind_instance(GoalCodeRegistry, GoalCodeRegistry())
+        with self.assertLogs(level="ERROR") as logs:
             builder = DefaultContextBuilder(
-                settings={"external_plugins": "aries_cloudagent.nosuchmodule"}
+                settings={"external_plugins": ["aries_cloudagent.nosuchmodule"]}
             )
             await builder.load_plugins(context)
+        assert "Module doesn't exist: aries_cloudagent.nosuchmodule" in "\n".join(
+            logs.output
+        )
 
     async def test_visit_insecure_mode(self):
         settings = {"admin.admin_insecure_mode": True, "task_queue": True}
@@ -480,9 +482,9 @@ class TestAdminServer(AsyncTestCase):
 @pytest.fixture
 async def server():
     test_class = TestAdminServer()
-    await test_class.setUp()
+    await test_class.asyncSetUp()
     yield test_class.get_admin_server()
-    await test_class.tearDown()
+    await test_class.asyncTearDown()
 
 
 @pytest.mark.asyncio
@@ -493,7 +495,7 @@ async def server():
 async def test_on_record_event(server, event_topic, webhook_topic):
     profile = InMemoryProfile.test_profile()
     with async_mock.patch.object(
-        server, "send_webhook", async_mock.CoroutineMock()
+        server, "send_webhook", async_mock.AsyncMock()
     ) as mock_send_webhook:
         await server._on_record_event(profile, Event(event_topic, None))
         mock_send_webhook.assert_called_once_with(profile, webhook_topic, None)
