@@ -372,8 +372,9 @@ class CentralizedSdkLedger(BaseLedger):
         """
         Fetch from the ledger the DIDDoc associated with the given DID.
         """
+        nym = self.did_to_nym(did)
         async with ClientSession() as session:
-            async with session.get(self.ledger_url + "/api/did/" + did) as resp:
+            async with session.get(self.ledger_url + "/api/did/" + nym) as resp:
                 nym_info = await resp.json()
                 return nym_info
 
@@ -383,12 +384,10 @@ class CentralizedSdkLedger(BaseLedger):
         Args:
             did: The DID to look up on the ledger or in the cache
         """
-        async with ClientSession() as session:
-            async with session.get(self.ledger_url + "/api/did/" + did) as resp:
-                data_json = await resp.json()
+        did_doc = await self.get_did_doc_for_did(did)
 
-        if data_json and 'endpoint' in data_json:
-            endpoints = data_json['endpoint']
+        if did_doc and 'endpoint' in did_doc:
+            endpoints = did_doc['endpoint']
         else:
             endpoints = None
 
