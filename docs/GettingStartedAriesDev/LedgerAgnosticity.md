@@ -7,7 +7,7 @@ An Aries agent is in charge of communicating with the ledger in order to save, r
 - [Ledger agnosticity before our work](#ledger-agnosticity-before-our-work)
   - [Profiles](#profiles)
 - [Ledger agnosticity after our work](#ledger-agnosticity-after-our-work)
-  - [How to add an adapter for a new ledger in aries-cloudagent-python](#How to add an adapter for a new ledger in aries-cloudagent-python)
+  - [How to add an adapter for a new ledger in aries-cloudagent-python](#how-to-add-an-adapter-for-a-new-ledger-in-aries-cloudagent-python)
   - [Ledger agnosticity in indy-tails-server](#ledger-agnosticity-in-indy-tails-server)
   - [How to add an adapter for a new ledger in indy-tails-server](#how-to-add-an-adapter-for-a-new-ledger-in-indy-tails-server)
 - [Demo: CentralizedSdkLedger](#demo-centralizedsdkledger)
@@ -83,7 +83,7 @@ Being *credential agnostic* and *ledger agnostic* at same time requires the agen
 
 ### How to add an adapter for a new ledger in indy-tails-server
 
-We updated the indy-tails-server repository by adding the ledger agnosticity concept using the same pattern indicated in the section [How to add an adapter for a new ledger in aries-cloudagent-python](#how-to-add-an-adapter-for-a-new-ledger-in-aries-cloudagent-python). The new code can be downloaded from this [repository](https://github.ibm.com/Pasquale-Convertini/indy-tails-server).
+We updated the indy-tails-server repository by adding the ledger agnosticity concept using the same pattern indicated in the section [How to add an adapter for a new ledger in aries-cloudagent-python](#how-to-add-an-adapter-for-a-new-ledger-in-aries-cloudagent-python). The new code can be downloaded from this [repository](https://github.ibm.com/research-ssi/indy-tails-server/tree/develop).
 
 The ledger adapter class must always extend the abstract class `tails_server.ledger.base.BaseLedger`. Once implemented all the required methods, the ledger adapter must be added to the pool of ledger implementations in `tails_server.ledger_provider.LedgerProvider`, which looks as follows:
 
