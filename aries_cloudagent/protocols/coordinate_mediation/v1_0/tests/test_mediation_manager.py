@@ -1,19 +1,16 @@
 """Test MediationManager."""
 import logging
-
-import pytest
+from typing import AsyncIterable, Iterable
 
 from asynctest import mock as async_mock
-
-from .....core.profile import Profile, ProfileSession
-from .....connections.models.conn_record import ConnRecord
-from .....messaging.request_context import RequestContext
-from .....storage.error import StorageNotFoundError
-from .....transport.inbound.receipt import MessageReceipt
-
-from ....routing.v1_0.models.route_record import RouteRecord
+import pytest
 
 from .. import manager as test_module
+from .....core.event_bus import EventBus, MockEventBus
+from .....core.in_memory import InMemoryProfile
+from .....core.profile import Profile, ProfileSession
+from .....storage.error import StorageNotFoundError
+from ....routing.v1_0.models.route_record import RouteRecord
 from ..manager import (
     MediationAlreadyExists,
     MediationManager,
@@ -22,12 +19,14 @@ from ..manager import (
 )
 from ..messages.inner.keylist_update_rule import KeylistUpdateRule
 from ..messages.inner.keylist_updated import KeylistUpdated
+from ..messages.keylist_update_response import KeylistUpdateResponse
 from ..messages.mediate_deny import MediationDeny
 from ..messages.mediate_grant import MediationGrant
 from ..messages.mediate_request import MediationRequest
 from ..models.mediation_record import MediationRecord
 
 TEST_CONN_ID = "conn-id"
+TEST_THREAD_ID = "thread-id"
 TEST_ENDPOINT = "https://example.com"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
@@ -36,29 +35,32 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest.fixture
-async def profile() -> Profile:
+def profile() -> Iterable[Profile]:
     """Fixture for profile used in tests."""
     # pylint: disable=W0621
-    context = RequestContext.test_context()
-    context.message_receipt = MessageReceipt(sender_verkey=TEST_VERKEY)
-    context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
-    yield context.profile
+    yield InMemoryProfile.test_profile(bind={EventBus: MockEventBus()})
 
 
 @pytest.fixture
-async def session(profile) -> ProfileSession:  # pylint: disable=W0621
+def mock_event_bus(profile: Profile):
+    yield profile.inject(EventBus)
+
+
+@pytest.fixture
+async def session(profile) -> AsyncIterable[ProfileSession]:  # pylint: disable=W0621
     """Fixture for profile session used in tests."""
-    yield await profile.session()
+    async with profile.session() as session:
+        yield session
 
 
 @pytest.fixture
-async def manager(profile) -> MediationManager:  # pylint: disable=W0621
+def manager(profile) -> Iterable[MediationManager]:  # pylint: disable=W0621
     """Fixture for manager used in tests."""
     yield MediationManager(profile)
 
 
 @pytest.fixture
-def record() -> MediationRecord:
+def record() -> Iterable[MediationRecord]:
     """Fixture for record used in tests."""
     yield MediationRecord(
         state=MediationRecord.STATE_GRANTED, connection_id=TEST_CONN_ID
@@ -71,7 +73,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
     async def test_create_manager_no_profile(self):
         """test_create_manager_no_profile."""
         with pytest.raises(MediationManagerError):
-            await MediationManager(None)
+            MediationManager(None)
 
     async def test_create_did(self, manager, session):
         """test_create_did."""
@@ -363,7 +365,11 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert update.updates[0].recipient_key == TEST_VERKEY
         assert update.updates[1].recipient_key == TEST_ROUTE_VERKEY
 
-    async def test_store_update_results(self, session, manager):
+    async def test_store_update_results(
+        self,
+        session: ProfileSession,
+        manager: MediationManager,
+    ):
         """test_store_update_results."""
         await RouteRecord(
             role=RouteRecord.ROLE_CLIENT,
@@ -466,6 +472,34 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert "client_error" in caplog.text
         assert "server_error" in caplog.text
         print(caplog.text)
+
+    async def test_notify_keylist_updated(
+        self, manager: MediationManager, mock_event_bus: MockEventBus
+    ):
+        """test notify_keylist_updated."""
+        response = KeylistUpdateResponse(
+            updated=[
+                KeylistUpdated(
+                    recipient_key=TEST_ROUTE_VERKEY,
+                    action=KeylistUpdateRule.RULE_ADD,
+                    result=KeylistUpdated.RESULT_SUCCESS,
+                ),
+                KeylistUpdated(
+                    recipient_key=TEST_VERKEY,
+                    action=KeylistUpdateRule.RULE_REMOVE,
+                    result=KeylistUpdated.RESULT_SUCCESS,
+                ),
+            ],
+        )
+        response.assign_thread_id(TEST_THREAD_ID)
+        await manager.notify_keylist_updated(TEST_CONN_ID, response)
+        assert mock_event_bus.events
+        assert mock_event_bus.events[0][1].topic == manager.KEYLIST_UPDATED_EVENT
+        assert mock_event_bus.events[0][1].payload == {
+            "connection_id": TEST_CONN_ID,
+            "thread_id": TEST_THREAD_ID,
+            "updated": [result.serialize() for result in response.updated],
+        }
 
     async def test_get_my_keylist(self, session, manager):
         """test_get_my_keylist."""
