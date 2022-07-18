@@ -3,10 +3,10 @@
 Resolution is performed using the IndyLedger class.
 """
 
-from typing import Pattern
+from typing import Any, Mapping, Pattern
 
 from pydid import DID, DIDDocumentBuilder
-from pydid.verification_method import Ed25519VerificationKey2018
+from pydid.verification_method import Ed25519VerificationKey2018, VerificationMethod
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
@@ -29,7 +29,10 @@ class NoIndyLedger(ResolverError):
 class IndyDIDResolver(BaseDIDResolver):
     """Indy DID Resolver."""
 
-    AGENT_SERVICE_TYPE = "did-communication"
+    SERVICE_TYPE_DID_COMMUNICATION = "did-communication"
+    SERVICE_TYPE_DIDCOMM = "DIDComm"
+    SERVICE_TYPE_ENDPOINT = "endpoint"
+    CONTEXT_DIDCOMM_V2 = "https://didcomm.org/messaging/contexts/v2"
 
     def __init__(self):
         """Initialize Indy Resolver."""
@@ -42,6 +45,60 @@ class IndyDIDResolver(BaseDIDResolver):
     def supported_did_regex(self) -> Pattern:
         """Return supported_did_regex of Indy DID Resolver."""
         return IndyDID.PATTERN
+
+    def _add_endpoint_as_endpoint_value_pair(
+        self,
+        builder: DIDDocumentBuilder,
+        endpoint: str,
+        recipient_key: VerificationMethod,
+    ):
+        builder.service.add_didcomm(
+            ident=self.SERVICE_TYPE_DID_COMMUNICATION,
+            type_=self.SERVICE_TYPE_DID_COMMUNICATION,
+            service_endpoint=endpoint,
+            priority=1,
+            recipient_keys=[recipient_key],
+            routing_keys=[],
+        )
+
+    def _add_endpoint_as_map(
+        self,
+        builder: DIDDocumentBuilder,
+        endpoint: Mapping[str, Any],
+        recipient_key: VerificationMethod,
+    ):
+        types = endpoint.get("types", [self.SERVICE_TYPE_DID_COMMUNICATION])
+        routing_keys = endpoint.get("routingKeys", [])
+        endpoint_url = endpoint.get("endpoint")
+        if not endpoint_url:
+            raise ValueError("endpoint url not found in endpoint attrib")
+
+        if self.SERVICE_TYPE_DIDCOMM in types:
+            builder.service.add(
+                ident="#didcomm-1",
+                type_=self.SERVICE_TYPE_DIDCOMM,
+                service_endpoint=endpoint_url,
+                recipient_keys=[recipient_key.id],
+                routing_keys=routing_keys,
+                accept=["didcomm/v2"],
+            )
+            builder.context.append(self.CONTEXT_DIDCOMM_V2)
+        if self.SERVICE_TYPE_DID_COMMUNICATION in types:
+            builder.service.add(
+                ident="did-communication",
+                type_=self.SERVICE_TYPE_DID_COMMUNICATION,
+                service_endpoint=endpoint_url,
+                priority=0,
+                routing_keys=routing_keys,
+                recipient_keys=[recipient_key.id],
+                accept=["didcomm/aip2;env=rfc19"],
+            )
+        if self.SERVICE_TYPE_ENDPOINT in types:
+            builder.service.add(
+                ident="endpoint",
+                service_endpoint=endpoint_url,
+                type_=self.SERVICE_TYPE_ENDPOINT,
+            )
 
     async def _resolve(self, profile: Profile, did: str) -> dict:
         """Resolve an indy DID."""
@@ -76,16 +133,14 @@ class IndyDIDResolver(BaseDIDResolver):
         if endpoints:
             for type_, endpoint in endpoints.items():
                 if type_ == EndpointType.ENDPOINT.indy:
-                    builder.service.add_didcomm(
-                        ident=self.AGENT_SERVICE_TYPE,
-                        type_=self.AGENT_SERVICE_TYPE,
-                        service_endpoint=endpoint,
-                        priority=1,
-                        recipient_keys=[vmethod],
-                        routing_keys=[],
-                    )
+                    if isinstance(endpoint, dict):
+                        self._add_endpoint_as_map(builder, endpoint, vmethod)
+                    else:
+                        self._add_endpoint_as_endpoint_value_pair(
+                            builder, endpoint, vmethod
+                        )
                 else:
-                    # Accept all service types for now
+                    # Accept all service types for now, i.e. profile, linked_domains
                     builder.service.add(
                         ident=type_,
                         type_=type_,

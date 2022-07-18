@@ -107,3 +107,21 @@ class TestIndyResolver:
         ledger.get_key_for_did.side_effect = LedgerError
         with pytest.raises(DIDNotFound):
             await resolver.resolve(profile, TEST_DID0)
+
+    @pytest.mark.asyncio
+    async def test_supports_updated_did_sov_rules(
+        self, resolver: IndyDIDResolver, ledger: BaseLedger, profile: Profile
+    ):
+        """Test that new attrib structure is supported."""
+        example = {
+            "endpoint": {
+                "endpoint": "https://example.com/endpoint",
+                "routingKeys": ["a-routing-key"],
+                "types": ["DIDComm", "did-communication", "endpoint"],
+            }
+        }
+
+        ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
+            return_value=example
+        )
+        assert await resolver.resolve(profile, TEST_DID0)
