@@ -3,11 +3,11 @@
 import re
 from typing import Dict, Union
 
-import pytest
 from asynctest import mock as async_mock
+import pytest
 
-from aries_cloudagent.resolver.base import DIDNotFound, ResolverError
 from .. import universal as test_module
+from ...base import DIDNotFound, ResolverError
 from ..universal import UniversalResolver
 
 

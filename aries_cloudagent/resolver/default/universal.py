@@ -8,12 +8,7 @@ import aiohttp
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
-from ..base import (
-    BaseDIDResolver,
-    DIDNotFound,
-    ResolverError,
-    ResolverType,
-)
+from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
 LOGGER = logging.getLogger(__name__)
 DEFAULT_ENDPOINT = "https://dev.uniresolver.io"
