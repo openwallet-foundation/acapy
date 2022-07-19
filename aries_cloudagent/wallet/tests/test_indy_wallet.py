@@ -41,22 +41,22 @@ async def wallet():
     key = await IndySdkWallet.generate_wallet_key()
     context = InjectionContext()
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-    profile = cast(
-        IndySdkProfile,
-        await IndySdkProfileManager().provision(
-            context,
-            {
-                "auto_recreate": True,
-                "auto_remove": True,
-                "name": "test-wallet",
-                "key": key,
-                "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
-            },
-        ),
-    )
+    with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
+        profile = cast(
+            IndySdkProfile,
+            await IndySdkProfileManager().provision(
+                context,
+                {
+                    "auto_recreate": True,
+                    "auto_remove": True,
+                    "name": "test-wallet",
+                    "key": key,
+                    "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
+                },
+            ),
+        )
     async with profile.session() as session:
         yield session.inject(BaseWallet)
-    profile._finalizer()
     await profile.close()
 
 

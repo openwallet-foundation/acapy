@@ -1,8 +1,9 @@
 import pytest
+from asynctest import mock as async_mock
 
 
 from ....config.injection_context import InjectionContext
-from ....indy.sdk.profile import IndySdkProfileManager
+from ....indy.sdk.profile import IndySdkProfileManager, IndySdkProfile
 from ....ledger.indy import IndySdkLedgerPool
 from ....wallet.indy import IndySdkWallet
 
@@ -25,16 +26,18 @@ async def make_profile():
     key = await IndySdkWallet.generate_wallet_key()
     context = InjectionContext()
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-    return await IndySdkProfileManager().provision(
-        context,
-        {
-            "auto_recreate": True,
-            "auto_remove": True,
-            "name": "test-wallet",
-            "key": key,
-            "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
-        },
-    )
+
+    with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
+        return await IndySdkProfileManager().provision(
+            context,
+            {
+                "auto_recreate": True,
+                "auto_remove": True,
+                "name": "test-wallet",
+                "key": key,
+                "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
+            },
+        )
 
 
 @pytest.fixture()
