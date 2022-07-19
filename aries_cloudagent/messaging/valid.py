@@ -850,7 +850,7 @@ CREDENTIAL_SUBJECT = {
 }
 CREDENTIAL_STATUS = {
     "validate": CredentialStatus(),
-    "example": CredentialStatus.EXAMPLE
+    "example": CredentialStatus.EXAMPLE,
 }
 INDY_OR_KEY_DID = {
     "validate": IndyOrKeyDID(),
