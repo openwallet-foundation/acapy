@@ -770,7 +770,9 @@ class CredentialStatus(Validator):
     def __call__(self, value):
         """Validate input value."""
         if "type" not in value or value["type"] != CredentialStatus.CREDENTIAL_TYPE:
-            raise ValidationError(f"type must include {CredentialStatus.CREDENTIAL_TYPE}")
+            raise ValidationError(
+                f"type must include {CredentialStatus.CREDENTIAL_TYPE}"
+            )
 
         return value
 
@@ -846,7 +848,10 @@ CREDENTIAL_SUBJECT = {
     "validate": CredentialSubject(),
     "example": CredentialSubject.EXAMPLE,
 }
-CREDENTIAL_STATUS = {"validate": CredentialStatus(), "example": CredentialStatus.EXAMPLE}
+CREDENTIAL_STATUS = {
+    "validate": CredentialStatus(),
+    "example": CredentialStatus.EXAMPLE
+}
 INDY_OR_KEY_DID = {
     "validate": IndyOrKeyDID(),
     "example": IndyOrKeyDID.EXAMPLE,
