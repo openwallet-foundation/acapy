@@ -88,7 +88,7 @@ class IndyDIDResolver(BaseDIDResolver):
                 ident="did-communication",
                 type_=self.SERVICE_TYPE_DID_COMMUNICATION,
                 service_endpoint=endpoint_url,
-                priority=0,
+                priority=1,
                 routing_keys=routing_keys,
                 recipient_keys=[recipient_key.id],
                 accept=["didcomm/aip2;env=rfc19"],
