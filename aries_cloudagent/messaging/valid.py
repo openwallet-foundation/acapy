@@ -757,6 +757,24 @@ class CredentialSubject(Validator):
         return value
 
 
+class CredentialStatus(Validator):
+    """Credential Type."""
+
+    CREDENTIAL_TYPE = "CredentialStatusList2017"
+    EXAMPLE = [CREDENTIAL_TYPE]
+
+    def __init__(self) -> None:
+        """Initializer."""
+        super().__init__()
+
+    def __call__(self, value):
+        """Validate input value."""
+        if "type" not in value or value["type"] != CredentialStatus.CREDENTIAL_TYPE:
+            raise ValidationError(f"type must include {CredentialStatus.CREDENTIAL_TYPE}")
+
+        return value
+
+
 class IndyOrKeyDID(Regexp):
     """Indy or Key DID class."""
 
@@ -828,6 +846,7 @@ CREDENTIAL_SUBJECT = {
     "validate": CredentialSubject(),
     "example": CredentialSubject.EXAMPLE,
 }
+CREDENTIAL_STATUS = {"validate": CredentialStatus(), "example": CredentialStatus.EXAMPLE}
 INDY_OR_KEY_DID = {
     "validate": IndyOrKeyDID(),
     "example": IndyOrKeyDID.EXAMPLE,

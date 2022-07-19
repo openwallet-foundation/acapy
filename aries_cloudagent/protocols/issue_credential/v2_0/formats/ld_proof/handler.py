@@ -469,6 +469,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         )
         detail = LDProofVCDetail.deserialize(detail_dict)
         detail = await self._prepare_detail(detail)
+        detail.credential.credential_status = detail.options.credential_status
 
         # Get signature suite, proof purpose and document loader
         suite = await self._get_suite_for_detail(detail)
