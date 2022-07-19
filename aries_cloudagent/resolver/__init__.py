@@ -37,3 +37,10 @@ async def setup(context: InjectionContext):
     ).provide(context.settings, context.injector)
     await web_resolver.setup(context)
     registry.register(web_resolver)
+
+    if context.settings.get("resolver.universal"):
+        universal_resolver = ClassProvider(
+            "aries_cloudagent.resolver.default.universal.UniversalResolver"
+        ).provide(context.settings, context.injector)
+        await universal_resolver.setup(context)
+        registry.register(universal_resolver)
