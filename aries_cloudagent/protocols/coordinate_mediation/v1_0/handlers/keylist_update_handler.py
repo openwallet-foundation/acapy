@@ -32,6 +32,7 @@ class KeylistUpdateHandler(BaseHandler):
                     session, context.connection_record.connection_id
                 )
             response = await mgr.update_keylist(record, updates=context.message.updates)
+            response.assign_thread_from(context.message)
             await responder.send_reply(response)
         except (StorageNotFoundError, MediationNotGrantedError):
             reply = CMProblemReport(
