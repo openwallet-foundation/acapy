@@ -1,5 +1,6 @@
 import json
 import os
+from typing import cast
 
 import indy.anoncreds
 import indy.crypto
@@ -13,7 +14,7 @@ from ...core.in_memory import InMemoryProfile
 from ...config.injection_context import InjectionContext
 from ...core.error import ProfileError, ProfileDuplicateError, ProfileNotFoundError
 from ...indy.sdk import wallet_setup as test_setup_module
-from ...indy.sdk.profile import IndySdkProfileManager
+from ...indy.sdk.profile import IndySdkProfile, IndySdkProfileManager
 from ...indy.sdk.wallet_setup import IndyWalletConfig
 from ...ledger.endpoint_type import EndpointType
 from ...wallet.key_type import KeyType
@@ -40,16 +41,20 @@ async def wallet():
     key = await IndySdkWallet.generate_wallet_key()
     context = InjectionContext()
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-    profile = await IndySdkProfileManager().provision(
-        context,
-        {
-            "auto_recreate": True,
-            "auto_remove": True,
-            "name": "test-wallet",
-            "key": key,
-            "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
-        },
-    )
+    with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
+        profile = cast(
+            IndySdkProfile,
+            await IndySdkProfileManager().provision(
+                context,
+                {
+                    "auto_recreate": True,
+                    "auto_remove": True,
+                    "name": "test-wallet",
+                    "key": key,
+                    "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
+                },
+            ),
+        )
     async with profile.session() as session:
         yield session.inject(BaseWallet)
     await profile.close()
