@@ -776,7 +776,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         detail["options"]["credentialStatus"] = {"type": "CredentialStatusType"}
 
         vc = deepcopy(LD_PROOF_VC)
-        vc["credentialStatus"] = {"type": "SomeRandomType"}
+        vc["credentialStatus"] = {"type": "CredentialStatusList2017"}
 
         cred_issue = V20CredIssue(
             formats=[
