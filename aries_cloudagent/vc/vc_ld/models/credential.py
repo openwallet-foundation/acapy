@@ -242,19 +242,6 @@ class VerifiableCredential(BaseModel):
     def credential_status(self, credential_status: Union[dict, List[dict]]):
         """Setter for credential subject."""
 
-        # uri_validator = Uri()
-
-        # subjects = (
-        #     [credential_subject]
-        #     if isinstance(credential_subject, dict)
-        #     else credential_subject
-        # )
-
-        # # loop trough all credential subjects and check for valid id uri
-        # for subject in subjects:
-        #     if subject.get("id"):
-        #         uri_validator(subject.get("id"))
-
         self._credential_status = credential_status
 
     @property
