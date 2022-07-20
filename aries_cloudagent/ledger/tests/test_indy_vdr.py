@@ -237,8 +237,9 @@ class TestIndyVdrLedger:
                 endorser_did=test_did.did,
             )
             assert schema_id == issuer.create_schema.return_value[0]
-            assert signed_txn["signed_txn"].get("endorser") == test_did.did
-            assert signed_txn["signed_txn"].get("signature")
+            txn = json.loads(signed_txn["signed_txn"])
+            assert txn.get("endorser") == test_did.did
+            assert txn.get("signature")
 
     @pytest.mark.asyncio
     async def test_send_schema_no_public_did(
