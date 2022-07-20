@@ -769,9 +769,9 @@ class CredentialStatus(Validator):
 
     def __call__(self, value):
         """Validate input value."""
-        if "type" not in value or value["type"] != CredentialStatus.CREDENTIAL_TYPE:
+        if "type" not in value or type(value["type"]) != str:
             raise ValidationError(
-                f"type must include {CredentialStatus.CREDENTIAL_TYPE}"
+                f"type is a required string for CredentialStatus"
             )
 
         return value
