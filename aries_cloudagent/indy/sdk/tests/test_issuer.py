@@ -51,7 +51,8 @@ class TestIndySdkIssuer(AsyncTestCase):
                 "name": "test-wallet",
             }
         ).create_wallet()
-        self.profile = IndySdkProfile(self.wallet, self.context)
+        with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
+            self.profile = IndySdkProfile(self.wallet, self.context)
         self.issuer = test_module.IndySdkIssuer(self.profile)
 
     async def tearDown(self):
