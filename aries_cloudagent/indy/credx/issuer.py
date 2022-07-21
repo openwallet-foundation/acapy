@@ -109,7 +109,7 @@ class IndyCredxIssuer(IndyIssuer):
             async with self._profile.session() as session:
                 return (
                     await session.handle.fetch(
-                        CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
+                        CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                     )
                 ) is not None
         except AskarError as err:
