@@ -18,6 +18,7 @@ from ...protocols.issue_credential.v2_0.messages.cred_problem_report import (
     V20CredProblemReport,
 )
 from ...protocols.problem_report.v1_0.message import ProblemReport
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.message import OutboundMessage
@@ -31,6 +32,7 @@ def make_profile() -> Profile:
     profile.context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
     profile.context.injector.bind_instance(Collector, Collector())
     profile.context.injector.bind_instance(EventBus, EventBus())
+    profile.context.injector.bind_instance(RouteManager, async_mock.MagicMock())
     return profile
 
 
