@@ -469,3 +469,47 @@ class TestArgParse(AsyncTestCase):
         assert (["test_goal_code_1", "test_goal_code_2"]) == settings.get(
             "disclose_goal_code_list"
         )
+
+    def test_universal_resolver(self):
+        """Test universal resolver flags."""
+        parser = argparse.create_argument_parser()
+        group = argparse.GeneralGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(["-e", "test", "--universal-resolver"])
+        settings = group.get_settings(result)
+        endpoint = settings.get("resolver.universal")
+        assert endpoint
+        assert endpoint == "DEFAULT"
+
+        result = parser.parse_args(
+            ["-e", "test", "--universal-resolver", "https://example.com"]
+        )
+        settings = group.get_settings(result)
+        endpoint = settings.get("resolver.universal")
+        assert endpoint
+        assert endpoint == "https://example.com"
+
+        result = parser.parse_args(
+            [
+                "-e",
+                "test",
+                "--universal-resolver",
+                "https://example.com",
+                "--universal-resolver-regex",
+                "regex",
+            ]
+        )
+        settings = group.get_settings(result)
+        endpoint = settings.get("resolver.universal")
+        assert endpoint
+        assert endpoint == "https://example.com"
+        supported_regex = settings.get("resolver.universal.supported")
+        assert supported_regex
+        assert supported_regex == ["regex"]
+
+        result = parser.parse_args(
+            ["-e", "test", "--universal-resolver-regex", "regex"]
+        )
+        with self.assertRaises(argparse.ArgsParseError):
+            group.get_settings(result)

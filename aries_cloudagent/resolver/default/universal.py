@@ -20,7 +20,9 @@ async def _fetch_resolver_props(endpoint: str) -> dict:
         async with session.get(f"{endpoint}/1.0/properties/") as resp:
             if resp.status >= 200 and resp.status < 400:
                 return await resp.json()
-            raise ValueError(await resp.text())
+            raise ResolverError(
+                "Failed to retrieve resolver properties: " + await resp.text()
+            )
 
 
 async def _get_supported_did_regex(endpoint: str) -> Pattern:
@@ -64,11 +66,11 @@ class UniversalResolver(BaseDIDResolver):
         if endpoint == "DEFAULT" or not endpoint:
             endpoint = DEFAULT_ENDPOINT
 
-        supported = context.settings.get("resolver.universal.supported", [])
-        if supported:
-            supported_did_regex = _compile_supported_did_regex(supported)
-        else:
+        supported = context.settings.get("resolver.universal.supported")
+        if supported is None:
             supported_did_regex = await _get_supported_did_regex(endpoint)
+        else:
+            supported_did_regex = _compile_supported_did_regex(supported)
 
         self._endpoint = endpoint
         self._supported_did_regex = supported_did_regex
