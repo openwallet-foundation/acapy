@@ -1667,6 +1667,18 @@ class MultitenantGroup(ArgumentGroup):
                 '"wallet_type" is "askar-profile"'
             ),
         )
+        parser.add_argument(
+            "--base-wallet-routes",
+            type=str,
+            nargs="+",
+            required=False,
+            metavar="<REGEX>",
+            help=(
+                "Patterns matching admin routes that should be permitted for "
+                "base wallet. The base wallet is preconfigured to have access to "
+                "essential endpoints. This argument should be used sparingly."
+            ),
+        )
 
     def get_settings(self, args: Namespace):
         """Extract multitenant settings."""
@@ -1716,6 +1728,9 @@ class MultitenantGroup(ArgumentGroup):
                         key, value = value_str.split("=", maxsplit=1)
                         value = yaml.safe_load(value)
                         settings[f"multitenant.{key}"] = value
+
+            if args.base_wallet_routes:
+                settings["multitenant.base_wallet_routes"] = args.base_wallet_routes
 
         return settings
 
