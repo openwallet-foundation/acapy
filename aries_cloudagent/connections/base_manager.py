@@ -24,6 +24,9 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ..protocols.coordinate_mediation.v1_0.route_manager import (
+    RouteManager,
+)
 from ..resolver.base import ResolverError
 from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
@@ -56,6 +59,7 @@ class BaseConnectionManager:
         """
         self._logger = logging.getLogger(__name__)
         self._profile = profile
+        self._route_manager = profile.inject(RouteManager)
 
     async def create_did_document(
         self,
