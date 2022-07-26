@@ -13,7 +13,6 @@ from ....wallet.key_type import KeyType
 from ....wallet.did_method import DIDMethod
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
-from ....did.did_key import DIDKey
 
 from ...routing.v1_0.manager import RoutingManager
 from ...routing.v1_0.models.route_record import RouteRecord
@@ -180,8 +179,6 @@ class MediationManager:
                 routing_did = await self._create_routing_did(session)
 
             mediation_record.state = MediationRecord.STATE_GRANTED
-
-            routing_did = DIDKey.from_public_key_b58(routing_did.verkey, routing_did.key_type)
 
             await mediation_record.save(session, reason="Mediation request granted")
             grant = MediationGrant(
