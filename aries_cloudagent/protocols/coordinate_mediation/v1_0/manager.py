@@ -183,7 +183,7 @@ class MediationManager:
             await mediation_record.save(session, reason="Mediation request granted")
             grant = MediationGrant(
                 endpoint=session.settings.get("default_endpoint"),
-                routing_keys=[routing_did.verkey],
+                routing_keys=[routing_did.did],
             )
         return mediation_record, grant
 

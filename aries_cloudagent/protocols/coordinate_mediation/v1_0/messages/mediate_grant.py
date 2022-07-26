@@ -8,6 +8,8 @@ from typing import Sequence
 from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
+from .....did.did_key import DIDKey
+from .....wallet.key_type import KeyType
 from ..message_types import MEDIATE_GRANT, PROTOCOL_PACKAGE
 
 HANDLER_CLASS = (
@@ -41,7 +43,7 @@ class MediationGrant(AgentMessage):
         """
         super(MediationGrant, self).__init__(**kwargs)
         self.endpoint = endpoint
-        self.routing_keys = list(f"did:key:z{key}" for key in routing_keys) if routing_keys else []
+        self.routing_keys = list(f"did:key:z{DIDKey.from_public_key_b58(key, KeyType.ED25519).did}" for key in routing_keys) if routing_keys else []
 
 
 class MediationGrantSchema(AgentMessageSchema):
