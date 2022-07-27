@@ -190,7 +190,7 @@ class PackWireFormat(BaseWireFormat):
                 if key.startswith("did:key:"):
                     recip_keys.append(DIDKey.from_did(key).public_key_b58)
                 else:
-                    recip_keys.append(recipient_key)
+                    recip_keys.append(key)
             for router_key in routing_keys:
                 message = json.loads(message.decode("utf-8"))
                 fwd_msg = Forward(to=recip_keys[0], msg=message)
