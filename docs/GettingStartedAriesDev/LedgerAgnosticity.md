@@ -23,7 +23,12 @@ Before our work, the Aries agent codebase already defined the abstract class `ar
 
 The choice of the ledger to use with the agent was tightly linked to the chosen wallet type through *profiles*.
 
-A *profile* is an implementation of the base class `aries_cloudagent.core.profile.Profile`. The specific profile to use within the agent is chosen according to the `--wallet-type` command-line parameter indicated at start time. One of the goals of the profile is to inject the right classes to use at a later stage into the app context. This operation is performed also for the ledger class, hardcoded in the profile implementation. 
+A *profile* is an implementation of the base class `aries_cloudagent.core.profile.Profile`. The specific profile to use within the agent is chosen according to the `--wallet-type` command-line parameter indicated at start time. One of the goals of the profile is to inject the right classes to use at a later stage into the app context. This operation is performed also for the ledger class, hardcoded in the profile implementation.
+
+<figure align="center">
+<img src="../assets/ledgerAgnosticBefore.svg" alt="How to create a new ledger adapter after our work"/>
+<figcaption><b>New ledger implementation in the old world. In green the new classes needed to be created.</b></figcaption>
+</figure>
 
 This code choice makes the ledger choice dependent on the chosen wallet type. For instance, let's have a look at the code snippet below which has been taken from the Indy profile implementation `aries_cloudagent.indy.sdk.profile.IndySdkProfile` (used for the wallet of type `indy`):
 
@@ -41,6 +46,11 @@ As shown by the snippet, the ledger class `IndySdkLedger` is hardcoded inside th
 To decouple profiles from hardcoded ledgers we implemented the class `aries_cloudagent.ledger.provider.LedgerProvider` and added the command-line option `--wallet-ledger` to decide what specific ledger to use in combination with the specified wallet type. With this approach the ledger implementation to use is not coupled with the wallet type anymore and it does not need to be hardcoded into the profile implementation. 
 
 On the contrary, the new class called `LedgerProvider` is in charge of choosing the correct ledger adapter implementation according to the command line parameters passed to the agent.
+
+<figure align="center">
+<img src="../assets/ledgerAgnosticAfter.svg" alt="How to create a new ledger adapter after our work"/>
+<figcaption><b>New ledger implementation in the new world. In green the new classes needed to be created.</b></figcaption>
+</figure>
 
 The code snippet indicated in the section [Profiles](#profiles) becomes as follows:
 
