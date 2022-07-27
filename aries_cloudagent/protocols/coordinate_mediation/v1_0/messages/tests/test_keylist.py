@@ -18,7 +18,7 @@ class TestKeylist(MessageTest, TestCase):
         "pagination": KeylistQueryPaginate(10, 10),
         "keys": [
             KeylistKey(
-                recipient_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+                recipient_key="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                 action="added",
                 result="success",
             )

@@ -9,6 +9,7 @@ from .. import manager as test_module
 from .....core.event_bus import EventBus, MockEventBus
 from .....core.in_memory import InMemoryProfile
 from .....core.profile import Profile, ProfileSession
+from .....did.did_key import DIDKey
 from .....storage.error import StorageNotFoundError
 from ....routing.v1_0.models.route_record import RouteRecord
 from ..manager import (
@@ -113,8 +114,10 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert record.connection_id == TEST_CONN_ID
         record, grant = await manager.grant_request(record.mediation_id)
         assert grant.endpoint == session.settings.get("default_endpoint")
+        routing_key = (await manager._retrieve_routing_did(session))
+        routing_key = DIDKey.from_public_key_b58(routing_key.verkey, routing_key.key_type).did
         assert grant.routing_keys == [
-            (await manager._retrieve_routing_did(session)).verkey
+            routing_key
         ]
 
     async def test_deny_request(self, manager):

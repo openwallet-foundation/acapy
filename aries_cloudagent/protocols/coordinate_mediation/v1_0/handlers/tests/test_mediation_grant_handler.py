@@ -18,7 +18,7 @@ from ..mediation_grant_handler import MediationGrantHandler
 from .. import mediation_grant_handler as test_module
 
 TEST_CONN_ID = "conn-id"
-TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_ENDPOINT = "https://example.com"
 
 
