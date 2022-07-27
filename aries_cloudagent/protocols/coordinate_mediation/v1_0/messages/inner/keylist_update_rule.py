@@ -9,6 +9,8 @@ from marshmallow.validate import OneOf
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......messaging.valid import DID_KEY
+from ......did.did_key import DIDKey
+from ......wallet.key_type import KeyType
 
 
 class KeylistUpdateRule(BaseModel):
@@ -32,7 +34,10 @@ class KeylistUpdateRule(BaseModel):
 
         """
         super().__init__(**kwargs)
-        self.recipient_key = recipient_key
+        if key.startswith("did:key:"):
+            self.recipient_key = recipient_key
+        else:
+            self.recipient_key = DIDKey.from_public_key_b58(key, KeyType.ED25519).did
         self.action = action
 
 
