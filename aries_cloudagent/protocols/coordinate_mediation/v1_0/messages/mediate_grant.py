@@ -43,7 +43,10 @@ class MediationGrant(AgentMessage):
         """
         super(MediationGrant, self).__init__(**kwargs)
         self.endpoint = endpoint
-        self.routing_keys = list(f"did:key:z{DIDKey.from_public_key_b58(key, KeyType.ED25519).did}" for key in routing_keys) if routing_keys else []
+        self.routing_keys = list(
+            (key if key.startswith("did:key:z")
+                else DIDKey.from_public_key_b58(key, KeyType.ED25519).did)
+            for key in routing_keys) if routing_keys else []
 
 
 class MediationGrantSchema(AgentMessageSchema):
