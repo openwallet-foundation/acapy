@@ -25,10 +25,6 @@ The choice of the ledger to use with the agent was tightly linked to the chosen 
 
 A *profile* is an implementation of the base class `aries_cloudagent.core.profile.Profile`. The specific profile to use within the agent is chosen according to the `--wallet-type` command-line parameter indicated at start time. One of the goals of the profile is to inject the right classes to use at a later stage into the app context. This operation is performed also for the ledger class, hardcoded in the profile implementation.
 
-The class diagram below shows the architecture described above: in green the new classes which need to be created:
-
-![How to create a new ledger adapter before our work](../assets/ledgerAgnosticBefore.svg)
-
 This code choice makes the ledger choice dependent on the chosen wallet type. For instance, let's have a look at the code snippet below which has been taken from the Indy profile implementation `aries_cloudagent.indy.sdk.profile.IndySdkProfile` (used for the wallet of type `indy`):
 
 ```python
@@ -40,15 +36,15 @@ injector.bind_provider(
 
 As shown by the snippet, the ledger class `IndySdkLedger` is hardcoded inside the `IndySdkProfile` implementation as the `BaseLedger` implementation to use throughout the agent code. This means that whenever we start our agent with the cli option `--wallet-type indy` we have no power in choosing which ledger to use. With this approach the developer needs to create a new profile every time he needs to support a new ledger, also when only the ledger implementation of a specific profile has to be changed, leaving all the remaining context population unchanged. Such constraints can lead to code duplication and complexity inside the aries codebase.
 
+The class diagram below shows the architecture described above (in green the new classes which need to be created with the old approach):
+
+![How to create a new ledger adapter before our work](../assets/ledgerAgnosticBefore.svg)
+
 ## Ledger agnosticity after our work
 
 To decouple profiles from hardcoded ledgers we implemented the class `aries_cloudagent.ledger.provider.LedgerProvider` and added the command-line option `--wallet-ledger` to decide what specific ledger to use in combination with the specified wallet type. With this approach the ledger implementation to use is not coupled with the wallet type anymore and it does not need to be hardcoded into the profile implementation. 
 
 On the contrary, the new class called `LedgerProvider` is in charge of choosing the correct ledger adapter implementation according to the command line parameters passed to the agent.
-
-The class diagram below shows the architecture described above: in green the new classes which need to be created:
-
-![How to create a new ledger adapter after our work](../assets/ledgerAgnosticAfter.svg)
 
 The code snippet indicated in the section [Profiles](#profiles) becomes as follows:
 
@@ -60,7 +56,11 @@ injector.bind_provider(
 )
 ```
 
-There is no *hardcoded* ledger anymore and in this way a single profile can handle more ledger implementations. As a consequence the developer can now specify a new ledger adapter which works fine with a wallet type without writing an entire new profile, but only by adding the new ledger class implementation to the wallet pool of supported ledgers. 
+There is no *hardcoded* ledger anymore and in this way a single profile can handle more ledger implementations. As a consequence the developer can now specify a new ledger adapter which works fine with a wallet type without writing an entire new profile, but only by adding the new ledger class implementation to the wallet pool of supported ledgers.
+
+The class diagram below shows the architecture described above (in green the new classes which need to be created with the new approach):
+
+![How to create a new ledger adapter after our work](../assets/ledgerAgnosticAfter.svg)
 
 ### How to add an adapter for a new ledger in aries-cloudagent-python
 
