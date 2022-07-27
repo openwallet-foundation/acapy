@@ -25,12 +25,9 @@ The choice of the ledger to use with the agent was tightly linked to the chosen 
 
 A *profile* is an implementation of the base class `aries_cloudagent.core.profile.Profile`. The specific profile to use within the agent is chosen according to the `--wallet-type` command-line parameter indicated at start time. One of the goals of the profile is to inject the right classes to use at a later stage into the app context. This operation is performed also for the ledger class, hardcoded in the profile implementation.
 
-<figure>
-<br>
-<img src="../assets/ledgerAgnosticBefore.svg" alt="How to create a new ledger adapter after our work"/>
-<figcaption><b>New ledger implementation in the old world. In green the new classes needed to be created.</b></figcaption>
-<br>
-</figure>
+The class diagram below shows the architecture described above: in green the new classes which need to be created:
+
+![How to create a new ledger adapter before our work](../assets/ledgerAgnosticBefore.svg)
 
 This code choice makes the ledger choice dependent on the chosen wallet type. For instance, let's have a look at the code snippet below which has been taken from the Indy profile implementation `aries_cloudagent.indy.sdk.profile.IndySdkProfile` (used for the wallet of type `indy`):
 
@@ -49,12 +46,9 @@ To decouple profiles from hardcoded ledgers we implemented the class `aries_clou
 
 On the contrary, the new class called `LedgerProvider` is in charge of choosing the correct ledger adapter implementation according to the command line parameters passed to the agent.
 
-<figure>
-<br>
-<img src="../assets/ledgerAgnosticAfter.svg" alt="How to create a new ledger adapter after our work"/>
-<figcaption><b>New ledger implementation in the new world. In green the new classes needed to be created.</b></figcaption>
-<br>
-</figure>
+The class diagram below shows the architecture described above: in green the new classes which need to be created:
+
+![How to create a new ledger adapter after our work](../assets/ledgerAgnosticAfter.svg)
 
 The code snippet indicated in the section [Profiles](#profiles) becomes as follows:
 
