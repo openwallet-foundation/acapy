@@ -4,6 +4,8 @@ from typing import Coroutine, Sequence
 
 from ....core.error import BaseError
 from ....core.profile import Profile
+from ....did.did_key import DIDKey
+from ....wallet.key_type import KeyType
 from ....storage.error import (
     StorageError,
     StorageDuplicateError,
@@ -56,6 +58,8 @@ class RoutingManager:
 
         try:
             async with self._profile.session() as session:
+                if recip_verkey.startswith("did:key:"):
+                    recip_verkey = DIDKey.from_did(recip_verkey).public_key_b58
                 record = await RouteRecord.retrieve_by_recipient_key(
                     session, recip_verkey
                 )
