@@ -59,7 +59,7 @@ class RoutingManager:
         try:
             async with self._profile.session() as session:
                 if not recip_verkey.startswith("did:key:"):
-                    recip_verkey = DIDKey.from_public_key_b58(key, KeyType.ED25519).did
+                    recip_verkey = DIDKey.from_public_key_b58(recip_verkey, KeyType.ED25519).did
                 record = await RouteRecord.retrieve_by_recipient_key(
                     session, recip_verkey
                 )
