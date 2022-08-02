@@ -8,7 +8,7 @@ from marshmallow import fields
 from marshmallow.validate import OneOf
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
-from ......messaging.valid import DID_KEY
+from ......messaging.valid import ROUTING_KEY
 from ......did.did_key import DIDKey
 from ......wallet.key_type import KeyType
 
@@ -50,7 +50,7 @@ class KeylistUpdateRuleSchema(BaseModelSchema):
         model_class = KeylistUpdateRule
 
     recipient_key = fields.Str(
-        description="Key to remove or add", required=True, **DID_KEY
+        description="Key to remove or add", required=True, **ROUTING_KEY
     )
     action = fields.Str(
         required=True,
