@@ -8,7 +8,6 @@ from ..core.profile import ProfileSession
 
 from ..protocols.routing.v1_0.messages.forward import Forward
 from ..did.did_key import DIDKey
-from ..wallet.key_type import KeyType
 
 from ..messaging.util import time_now
 from ..utils.task_queue import TaskQueue

@@ -350,7 +350,12 @@ class IndyRawPublicKey(Regexp):
 
 
 class RoutingKey(Regexp):
-    """Validate value against indy (Ed25519VerificationKey2018) raw public key or DID key specification."""
+    """
+    Validate between indy or did key.
+
+    Validate value against indy (Ed25519VerificationKey2018)
+    raw public key or DID key specification.
+    """
 
     EXAMPLE = DIDKey.EXAMPLE
     PATTERN = re.compile(DIDKey.PATTERN.pattern + "|" + IndyRawPublicKey.PATTERN)
@@ -360,7 +365,8 @@ class RoutingKey(Regexp):
 
         super().__init__(
             RoutingKey.PATTERN,
-            error="Value {input} is not in W3C did:key or Ed25519VerificationKey2018 key format",
+            error=("Value {input} is not in W3C did:key"
+                   " or Ed25519VerificationKey2018 key format"),
         )
 
 

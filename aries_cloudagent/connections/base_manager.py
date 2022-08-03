@@ -18,7 +18,6 @@ from pydid.verification_method import Ed25519VerificationKey2018
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
-from ..wallet.key_type import KeyType
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
@@ -118,7 +117,10 @@ class BaseConnectionManager:
                         "Routing DIDDoc service has no recipient key(s)"
                     )
                 key = service.recip_keys[0].value
-                key = DIDKey.from_did(key).public_key_b58 if key.startswith("did:key:") else key
+                key = (
+                    DIDKey.from_did(key).public_key_b58
+                    if key.startswith("did:key:") else key
+                )
                 rk = PublicKey(
                     did_info.did,
                     f"routing-{router_idx}",
@@ -138,7 +140,8 @@ class BaseConnectionManager:
                     PublicKey(
                         did_info.did,
                         f"routing-{idx}",
-                        DIDKey.from_did(key).public_key_b58 if key.startswith("did:key:") else key,
+                        DIDKey.from_did(key).public_key_b58
+                        if key.startswith("did:key:") else key,
                         PublicKeyType.ED25519_SIG_2018,
                         did_controller,  # TODO: get correct controller did_info
                         True,  # TODO: should this be true?
