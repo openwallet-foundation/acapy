@@ -5,7 +5,8 @@ import json
 
 from abc import ABC
 from collections import namedtuple
-from typing import Literal, Mapping, Optional, Type, TypeVar, Union, cast, overload
+from typing import Mapping, Optional, Type, TypeVar, Union, cast, overload
+from typing_extensions import Literal
 
 from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError, EXCLUDE
 
@@ -57,7 +58,10 @@ def resolve_meta_property(obj, prop_name: str, defval=None):
         The meta property
 
     """
-    cls = obj.__class__
+    if isinstance(obj, type):
+        cls = obj
+    else:
+        cls = obj.__class__
     found = defval
     while cls:
         Meta = getattr(cls, "Meta", None)
@@ -184,7 +188,9 @@ class BaseModel(ABC):
             return None
 
         schema_cls = cls._get_schema_class()
-        schema = schema_cls(unknown=unknown or schema_cls.Meta.unknown)
+        schema = schema_cls(
+            unknown=unknown or resolve_meta_property(schema_cls, "unknown", EXCLUDE)
+        )
 
         try:
             return cast(
@@ -229,7 +235,9 @@ class BaseModel(ABC):
 
         """
         schema_cls = self._get_schema_class()
-        schema = schema_cls(unknown=unknown or schema_cls.Meta.unknown)
+        schema = schema_cls(
+            unknown=unknown or resolve_meta_property(schema_cls, "unknown", EXCLUDE)
+        )
         try:
             return (
                 schema.dumps(self, separators=(",", ":"))
@@ -320,7 +328,6 @@ class BaseModelSchema(Schema):
         model_class = None
         skip_values = [None]
         ordered = True
-        unknown = EXCLUDE
 
     def __init__(self, *args, **kwargs):
         """
