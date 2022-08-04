@@ -5,8 +5,9 @@ from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
+from .....did.did_key import DIDKey
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
-from .....messaging.valid import INDY_DID, INDY_RAW_PUBLIC_KEY
+from .....messaging.valid import INDY_DID, ROUTING_KEY
 from .....wallet.util import b64_to_bytes, bytes_to_b64
 
 from ..message_types import CONNECTION_INVITATION, PROTOCOL_PACKAGE
@@ -53,10 +54,25 @@ class ConnectionInvitation(AgentMessage):
         super().__init__(**kwargs)
         self.label = label
         self.did = did
-        self.recipient_keys = list(recipient_keys) if recipient_keys else None
         self.endpoint = endpoint
-        self.routing_keys = list(routing_keys) if routing_keys else None
         self.image_url = image_url
+
+        if recipient_keys:
+            public_keys = list()
+            for key in recipient_keys:
+                public_keys.append(
+                    DIDKey.from_did(key).public_key_b58
+                    if key.startswith("did:key:") else key
+                )
+        self.recipient_keys = public_keys if recipient_keys else None
+        if routing_keys:
+            public_keys = list()
+            for key in routing_keys:
+                public_keys.append(
+                    DIDKey.from_did(key).public_key_b58
+                    if key.startswith("did:key:") else key
+                )
+        self.routing_keys = public_keys if routing_keys else None
 
     def to_url(self, base_url: str = None) -> str:
         """
@@ -109,7 +125,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         required=False, description="DID for connection invitation", **INDY_DID
     )
     recipient_keys = fields.List(
-        fields.Str(description="Recipient public key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(description="Recipient public key", **ROUTING_KEY),
         data_key="recipientKeys",
         required=False,
         description="List of recipient keys",
@@ -121,7 +137,7 @@ class ConnectionInvitationSchema(AgentMessageSchema):
         example="http://192.168.56.101:8020",
     )
     routing_keys = fields.List(
-        fields.Str(description="Routing key", **INDY_RAW_PUBLIC_KEY),
+        fields.Str(description="Routing key", **ROUTING_KEY),
         data_key="routingKeys",
         required=False,
         description="List of routing keys",
