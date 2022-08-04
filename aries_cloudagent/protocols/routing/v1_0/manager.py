@@ -4,8 +4,6 @@ from typing import Coroutine, Sequence
 
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....did.did_key import DIDKey
-from ....wallet.key_type import KeyType
 from ....storage.error import (
     StorageError,
     StorageDuplicateError,
@@ -58,25 +56,8 @@ class RoutingManager:
 
         try:
             async with self._profile.session() as session:
-                if recip_verkey.startswith("did:key:"):
-                    recip_verkey = (
-                        DIDKey.from_did(recip_verkey, KeyType.ED25519)
-                    )
-                    # recip_verkey = recip_verkey.public_key_b58
-                else:
-                    recip_verkey = (
-                        DIDKey.from_public_key_b58(
-                            recip_verkey,
-                            KeyType.ED25519,
-                        )
-                    )
-                # record = await RouteRecord.retrieve_by_recipient_key(
-                tag_filter = {"$or":[
-                    {"recipient_key": recip_verkey.did},
-                    {"recipient_key": recip_verkey.public_key_b58}
-                ]}
-                record = await RouteRecord.retrieve_by_tag_filter(
-                    session, tag_filter
+                record = await RouteRecord.retrieve_by_recipient_key(
+                    session, recip_verkey
                 )
         except StorageDuplicateError:
             raise RouteNotFoundError(

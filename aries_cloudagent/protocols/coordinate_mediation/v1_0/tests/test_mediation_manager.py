@@ -29,8 +29,10 @@ from ..models.mediation_record import MediationRecord
 TEST_CONN_ID = "conn-id"
 TEST_THREAD_ID = "thread-id"
 TEST_ENDPOINT = "https://example.com"
-TEST_VERKEY = "did:key:z3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
-TEST_ROUTE_VERKEY = "did:key:z9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
+# TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+# TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
+TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
 
 pytestmark = pytest.mark.asyncio
 
