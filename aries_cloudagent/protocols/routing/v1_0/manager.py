@@ -62,9 +62,21 @@ class RoutingManager:
                     recip_verkey = (
                         DIDKey.from_did(recip_verkey, KeyType.ED25519)
                     )
-                    recip_verkey = recip_verkey.public_key_b58
-                record = await RouteRecord.retrieve_by_recipient_key(
-                    session, recip_verkey
+                    # recip_verkey = recip_verkey.public_key_b58
+                else:
+                    recip_verkey = (
+                        DIDKey.from_public_key_b58(
+                            recip_verkey,
+                            KeyType.ED25519,
+                        )
+                    )
+                # record = await RouteRecord.retrieve_by_recipient_key(
+                tag_filter = {"$or":[
+                    {"recipient_key": recip_verkey.did},
+                    {"recipient_key": recip_verkey.public_key_b58}
+                ]}
+                record = await RouteRecord.retrieve_by_tag_filter(
+                    session, tag_filter
                 )
         except StorageDuplicateError:
             raise RouteNotFoundError(
