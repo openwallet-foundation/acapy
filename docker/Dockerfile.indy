@@ -1,0 +1,43 @@
+ARG python_version
+ARG indy_version
+FROM ghcr.io/hyperledger/indy-python:py${python_version}-${indy_version}
+
+ARG uid=1001
+ARG user=indy
+ARG acapy_version
+ARG acapy_reqs
+ARG git_egg_ref
+
+ENV HOME="/home/$user" \
+    APP_ROOT="$HOME" \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8 \
+    PIP_NO_CACHE_DIR=off \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=UTF-8 \
+    RUST_LOG=warning \
+    SHELL=/bin/bash \
+    SUMMARY="aries-cloudagent image" \
+    DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \
+    This image layers the python implementation of aries-cloudagent $acapy_version. Based on indy-python, \
+    this image includes indy-sdk and supporting libraries."
+
+LABEL summary="$SUMMARY" \
+    description="$DESCRIPTION" \
+    io.k8s.description="$DESCRIPTION" \
+    io.k8s.display-name="aries-cloudagent $acapy_version" \
+    name="aries-cloudagent" \
+    version="$acapy_version" \
+    maintainer=""
+
+# Create standard directories to allow volume mounting and set permissions
+# Note: PIP_NO_CACHE_DIR environment variable should be cleared to allow caching
+RUN mkdir -p $HOME/.aries_cloudagent
+
+# The root group needs access the directories under $HOME/.indy_client for the container to function in OpenShift.
+# Also ensure the permissions on the python 'site-packages' folder are set correctly.
+RUN chmod -R ug+rw $HOME/.aries_cloudagent
+
+RUN pip install --no-cache-dir ${git_egg_ref}aries-cloudagent${acapy_reqs}==${acapy_version}
+
+ENTRYPOINT ["aca-py"]

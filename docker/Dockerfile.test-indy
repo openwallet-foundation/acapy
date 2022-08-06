@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:py36-1.15-1
+FROM ghcr.io/hyperledger/indy-python:py3.6-1.16.0
 
 USER indy
 
