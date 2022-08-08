@@ -59,7 +59,6 @@ from .models.issuer_cred_rev_record import (
     IssuerCredRevRecordSchema,
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
-from .recover import generate_ledger_rrrecovery_txn
 from .util import (
     REVOCATION_EVENT_PREFIX,
     REVOCATION_REG_INIT_EVENT,
@@ -728,13 +727,13 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
 @response_schema(RevRegWalletUpdatedResultSchema(), 200, description="")
 async def update_rev_reg_revoked_state(request: web.BaseRequest):
     """
-    Request handler to get number of credentials issued against revocation registry.
+    Request handler to fix ledger entry of credentials revoked against registry.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        Number of credentials updated in wallet
+        Number of credentials posted to ledger
 
     """
     context: AdminRequestContext = request["context"]
@@ -745,16 +744,8 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     LOGGER.debug(">>> apply_ledger_update_json = %s", apply_ledger_update_json)
     apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
 
-    # get rev reg delta (revocations published to ledger)
-    revoc = IndyRevocation(context.profile)
-    rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
-
-    # get rev reg records from wallet (revocations and status)
-    recs = []
-    rec_count = 0
-    accum_count = 0
-    recovery_txn = {}
-    applied_txn = {}
+    rev_reg_record = None
+    genesis_transactions = None
     async with context.profile.session() as session:
         try:
             rev_reg_record = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
@@ -762,72 +753,41 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
             )
         except StorageNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
-        recs = await IssuerCredRevRecord.query_by_ids(session, rev_reg_id=rev_reg_id)
 
-        revoked_ids = []
-        for rec in recs:
-            if rec.state == IssuerCredRevRecord.STATE_REVOKED:
-                revoked_ids.append(int(rec.cred_rev_id))
-                if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
-                    # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
-                    rec_count += 1
+        genesis_transactions = context.settings.get("ledger.genesis_transactions")
+        if not genesis_transactions:
+            ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
+            write_ledgers = await ledger_manager.get_write_ledger()
+            LOGGER.debug(f"write_ledgers = {write_ledgers}")
+            pool = write_ledgers[1].pool
+            LOGGER.debug(f"write_ledger pool = {pool}")
 
-        LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
-        LOGGER.debug(
-            ">>> rev_reg_record.revoc_reg_entry.value: %s",
-            rev_reg_record.revoc_reg_entry.value,
-        )
-        LOGGER.debug('>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value"))
+            genesis_transactions = pool.genesis_txns
 
-        # if we had any revocation discrepencies, check the accumulator value
-        if rec_count > 0:
-            if (
-                rev_reg_record.revoc_reg_entry.value and rev_reg_delta.get("value")
-            ) and not (
-                rev_reg_record.revoc_reg_entry.value.accum
-                == rev_reg_delta["value"]["accum"]
-            ):
-                # rev_reg_record.revoc_reg_entry = rev_reg_delta["value"]
-                # await rev_reg_record.save(session)
-                accum_count += 1
-
-            genesis_transactions = context.settings.get("ledger.genesis_transactions")
-            if not genesis_transactions:
-                ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
-                write_ledgers = await ledger_manager.get_write_ledger()
-                LOGGER.debug(f"write_ledgers = {write_ledgers}")
-                pool = write_ledgers[1].pool
-                LOGGER.debug(f"write_ledger pool = {pool}")
-
-                genesis_transactions = pool.genesis_txns
-
-            if not genesis_transactions:
-                raise web.HTTPInternalServerError(
-                    reason="no genesis_transactions for writable ledger"
-                )
-
-            calculated_txn = await generate_ledger_rrrecovery_txn(
-                genesis_transactions,
-                rev_reg_id,
-                revoked_ids,
+        if not genesis_transactions:
+            raise web.HTTPInternalServerError(
+                reason="no genesis_transactions for writable ledger"
             )
-            recovery_txn = json.loads(calculated_txn.to_json())
 
-            LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
-            if apply_ledger_update:
-                ledger = session.inject_or(BaseLedger)
-                if not ledger:
-                    reason = "No ledger available"
-                    if not session.context.settings.get_value("wallet.type"):
-                        reason += ": missing wallet-type?"
-                    raise web.HTTPInternalServerError(reason=reason)
+        if apply_ledger_update:
+            ledger = session.inject_or(BaseLedger)
+            if not ledger:
+                reason = "No ledger available"
+                if not session.context.settings.get_value("wallet.type"):
+                    reason += ": missing wallet-type?"
+                raise web.HTTPInternalServerError(reason=reason)
 
-                async with ledger:
-                    ledger_response = await ledger.send_revoc_reg_entry(
-                        rev_reg_id, "CL_ACCUM", recovery_txn
-                    )
-
-                applied_txn = ledger_response["result"]
+    rev_manager = RevocationManager(context.profile)
+    try:
+        (
+            rev_reg_delta,
+            recovery_txn,
+            applied_txn,
+        ) = await rev_manager.update_rev_reg_revoked_state(
+            rev_reg_id, apply_ledger_update, rev_reg_record, genesis_transactions
+        )
+    except Exception as err:
+        raise web.HTTPBadRequest(reason=err.roll_up)
 
     return web.json_response(
         {
