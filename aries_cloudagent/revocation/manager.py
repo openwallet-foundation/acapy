@@ -297,6 +297,7 @@ class RevocationManager:
                         txn, rev_reg_id, cred_rev_id, for_update=True
                     )
                     cred_ex_id = rev_rec.cred_ex_id
+                    cred_ex_version = rev_rec.cred_ex_version
                     rev_rec.state = IssuerCredRevRecord.STATE_REVOKED
                     await rev_rec.save(txn, reason="revoke credential")
                     await txn.commit()
@@ -304,25 +305,33 @@ class RevocationManager:
                 continue
 
             async with self._profile.transaction() as txn:
-                try:
-                    cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                        txn, cred_ex_id, for_update=True
-                    )
-                    cred_ex_record.state = (
-                        V10CredentialExchange.STATE_CREDENTIAL_REVOKED
-                    )
-                    await cred_ex_record.save(txn, reason="revoke credential")
-                    await txn.commit()
-                    continue  # skip 2.0 record check
-                except StorageNotFoundError:
-                    pass
+                if (
+                    not cred_ex_version
+                    or cred_ex_version == IssuerCredRevRecord.VERSION_1
+                ):
+                    try:
+                        cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                            txn, cred_ex_id, for_update=True
+                        )
+                        cred_ex_record.state = (
+                            V10CredentialExchange.STATE_CREDENTIAL_REVOKED
+                        )
+                        await cred_ex_record.save(txn, reason="revoke credential")
+                        await txn.commit()
+                        continue  # skip 2.0 record check
+                    except StorageNotFoundError:
+                        pass
 
-                try:
-                    cred_ex_record = await V20CredExRecord.retrieve_by_id(
-                        txn, cred_ex_id, for_update=True
-                    )
-                    cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_REVOKED
-                    await cred_ex_record.save(txn, reason="revoke credential")
-                    await txn.commit()
-                except StorageNotFoundError:
-                    pass
+                if (
+                    not cred_ex_version
+                    or cred_ex_version == IssuerCredRevRecord.VERSION_2
+                ):
+                    try:
+                        cred_ex_record = await V20CredExRecord.retrieve_by_id(
+                            txn, cred_ex_id, for_update=True
+                        )
+                        cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_REVOKED
+                        await cred_ex_record.save(txn, reason="revoke credential")
+                        await txn.commit()
+                    except StorageNotFoundError:
+                        pass

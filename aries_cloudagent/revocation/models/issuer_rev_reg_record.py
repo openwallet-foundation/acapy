@@ -5,6 +5,7 @@ import logging
 import uuid
 from functools import total_ordering
 from os.path import join
+from pathlib import Path
 from shutil import move
 from typing import Any, Mapping, Sequence, Union
 from urllib.parse import urlparse
@@ -29,7 +30,10 @@ from ...messaging.valid import (
     INDY_REV_REG_ID,
     UUIDFour,
 )
+from ...tails.base import BaseTailsServer
+
 from ..error import RevocationError
+
 from .revocation_registry import RevocationRegistry
 
 DEFAULT_REGISTRY_SIZE = 1000
@@ -62,7 +66,7 @@ class IssuerRevRegRecord(BaseRecord):
 
     STATE_INIT = "init"
     STATE_GENERATED = "generated"
-    STATE_POSTED = "posted"  # definition published: ephemeral, should last milliseconds
+    STATE_POSTED = "posted"  # definition published
     STATE_ACTIVE = "active"  # initial entry published, possibly subsequent entries
     STATE_FULL = "full"  # includes corrupt
 
@@ -227,7 +231,7 @@ class IssuerRevRegRecord(BaseRecord):
         profile: Profile,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Send the revocation registry definition to the ledger."""
         if not (self.revoc_reg_def and self.issuer_did):
             raise RevocationError(f"Revocation registry {self.revoc_reg_id} undefined")
@@ -261,7 +265,7 @@ class IssuerRevRegRecord(BaseRecord):
         profile: Profile,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Send a registry entry to the ledger."""
         if not (
             self.revoc_reg_id
@@ -303,6 +307,33 @@ class IssuerRevRegRecord(BaseRecord):
 
         return rev_entry_res
 
+    @property
+    def has_local_tails_file(self) -> bool:
+        """Check if a local copy of the tails file is available."""
+        return bool(self.tails_local_path) and Path(self.tails_local_path).is_file()
+
+    async def upload_tails_file(self, profile: Profile):
+        """Upload the local tails file to the tails server."""
+        tails_server = profile.inject_or(BaseTailsServer)
+        if not tails_server:
+            raise RevocationError("Tails server not configured")
+        if not self.has_local_tails_file:
+            raise RevocationError("Local tails file not found")
+
+        (upload_success, result) = await tails_server.upload_tails_file(
+            profile.context,
+            self.revoc_reg_id,
+            self.tails_local_path,
+            interval=0.8,
+            backoff=-0.5,
+            max_attempts=5,  # heuristic: respect HTTP timeout
+        )
+        if not upload_success:
+            raise RevocationError(
+                f"Tails file for rev reg {self.revoc_reg_id} failed to upload: {result}"
+            )
+        await self.set_tails_file_public_uri(profile, result)
+
     async def mark_pending(self, session: ProfileSession, cred_rev_id: str) -> None:
         """Mark a credential revocation id as revoked pending publication to ledger.
 
@@ -334,7 +365,7 @@ class IssuerRevRegRecord(BaseRecord):
                 self.pending_pub.clear()
             await self.save(session, reason="Cleared pending revocations")
 
-    async def get_registry(self) -> RevocationRegistry:
+    def get_registry(self) -> RevocationRegistry:
         """Create a `RevocationRegistry` instance from this record."""
         return RevocationRegistry(
             self.revoc_reg_id,
@@ -359,10 +390,12 @@ class IssuerRevRegRecord(BaseRecord):
             cred_def_id: The credential definition ID to filter by
             state: A state value to filter by
         """
-        tag_filter = {
-            **{"cred_def_id": cred_def_id for _ in [""] if cred_def_id},
-            **{"state": state for _ in [""] if state},
-        }
+        tag_filter = dict(
+            filter(
+                lambda f: f[1] is not None,
+                (("cred_def_id", cred_def_id), ("state", state)),
+            )
+        )
         return await cls.query(session, tag_filter)
 
     @classmethod
@@ -383,16 +416,19 @@ class IssuerRevRegRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_revoc_reg_id(
-        cls, session: ProfileSession, revoc_reg_id: str
+        cls, session: ProfileSession, revoc_reg_id: str, for_update: bool = False
     ) -> "IssuerRevRegRecord":
         """Retrieve a revocation registry record by revocation registry ID.
 
         Args:
             session: The profile session to use
             revoc_reg_id: The revocation registry ID
+            for_update: Retrieve for update
         """
         tag_filter = {"revoc_reg_id": revoc_reg_id}
-        return await cls.retrieve_by_tag_filter(session, tag_filter)
+        return await cls.retrieve_by_tag_filter(
+            session, tag_filter, for_update=for_update
+        )
 
     async def set_state(self, session: ProfileSession, state: str = None):
         """Change the registry state (default full)."""

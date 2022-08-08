@@ -11,7 +11,6 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 from ....storage.base import BaseStorage
-from ....tails.base import BaseTailsServer
 
 from .. import routes as test_module
 from ....connections.models.conn_record import ConnRecord

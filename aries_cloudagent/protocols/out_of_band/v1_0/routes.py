@@ -9,7 +9,6 @@ from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
 from ....admin.request_context import AdminRequestContext
-from ....connections.models.conn_record import ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4
@@ -22,6 +21,7 @@ from .manager import OutOfBandManager, OutOfBandManagerError
 from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from .message_types import SPEC_URI
 from .models.invitation import InvitationRecordSchema
+from .models.oob_record import OobRecordSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -188,7 +188,7 @@ async def invitation_create(request: web.BaseRequest):
 )
 @querystring_schema(InvitationReceiveQueryStringSchema())
 @request_schema(InvitationMessageSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(OobRecordSchema(), 200, description="")
 async def invitation_receive(request: web.BaseRequest):
     """
     Request handler for receiving a new connection invitation.

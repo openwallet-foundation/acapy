@@ -315,14 +315,14 @@ class ProfileManagerProvider(BaseProvider):
 
     def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create the profile manager instance."""
+        mgr_type = settings.get_value("wallet.type", default="in_memory")
 
-        mgr_type = settings.get_value("wallet.type", default="in_memory").lower()
-        if mgr_type == "basic":
+        if mgr_type.lower() == "basic":
             # map previous value
             mgr_type = "in_memory"
 
         # mgr_type may be a fully qualified class name
-        mgr_class = self.MANAGER_TYPES.get(mgr_type, mgr_type)
+        mgr_class = self.MANAGER_TYPES.get(mgr_type.lower(), mgr_type)
 
         if mgr_class not in self._inst:
             LOGGER.info("Create profile manager: %s", mgr_type)

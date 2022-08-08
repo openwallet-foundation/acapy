@@ -4,79 +4,59 @@ import re
 from typing import Sequence
 
 from ..core.profile import Profile
-from ..protocols.endorse_transaction.v1_0.util import (
-    get_endorser_connection_id,
-    is_author_role,
-)
 
 
 REVOCATION_EVENT_PREFIX = "acapy::REVOCATION::"
 EVENT_LISTENER_PATTERN = re.compile(f"^{REVOCATION_EVENT_PREFIX}(.*)?$")
-REVOCATION_REG_EVENT = "REGISTRY"
-REVOCATION_ENTRY_EVENT = "ENTRY"
-REVOCATION_TAILS_EVENT = "TAILS"
+REVOCATION_REG_INIT_EVENT = "REGISTRY_INIT"
+REVOCATION_REG_ENDORSED_EVENT = "REGISTRY_ENDORSED"
+REVOCATION_ENTRY_ENDORSED_EVENT = "ENTRY_ENDORSED"
+REVOCATION_ENTRY_EVENT = "SEND_ENTRY"
 REVOCATION_PUBLISHED_EVENT = "published"
 REVOCATION_CLEAR_PENDING_EVENT = "clear-pending"
 
 
-async def notify_revocation_reg_event(
+async def notify_revocation_reg_init_event(
     profile: Profile,
-    cred_def_id: str,
-    rev_reg_size: int,
-    auto_create_rev_reg: bool = False,
+    issuer_rev_id: str,
     create_pending_rev_reg: bool = False,
     endorser_connection_id: str = None,
 ):
-    """Send notification for a revocation registry event."""
+    """Send notification for a revocation registry init event."""
     meta_data = {
         "context": {
-            "cred_def_id": cred_def_id,
-            "support_revocation": True,
-            "rev_reg_size": rev_reg_size,
+            "issuer_rev_id": issuer_rev_id,
         },
-        "processing": {
-            "auto_create_rev_reg": auto_create_rev_reg,
-        },
+        "processing": {"create_pending_rev_reg": create_pending_rev_reg},
     }
-    if (
-        (not endorser_connection_id)
-        and is_author_role(profile)
-        and "endorser" not in meta_data
-    ):
-        endorser_connection_id = await get_endorser_connection_id(profile)
-        if not endorser_connection_id:
-            raise Exception(reason="No endorser connection found")
-    if create_pending_rev_reg:
-        meta_data["processing"]["create_pending_rev_reg"] = create_pending_rev_reg
     if endorser_connection_id:
         meta_data["endorser"] = {"connection_id": endorser_connection_id}
-    event_id = REVOCATION_EVENT_PREFIX + REVOCATION_REG_EVENT + "::" + cred_def_id
-    await profile.notify(
-        event_id,
-        meta_data,
-    )
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_REG_INIT_EVENT}::{issuer_rev_id}"
+    await profile.notify(topic, meta_data)
 
 
 async def notify_revocation_entry_event(
-    profile: Profile, rev_reg_id: str, meta_data: dict
+    profile: Profile, issuer_rev_id: str, meta_data: dict
 ):
-    """Send notification for a revocation registry event."""
-    event_id = REVOCATION_EVENT_PREFIX + REVOCATION_ENTRY_EVENT + "::" + rev_reg_id
-    await profile.notify(
-        event_id,
-        meta_data,
-    )
+    """Send notification for a revocation registry entry event."""
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_ENTRY_EVENT}::{issuer_rev_id}"
+    await profile.notify(topic, meta_data)
 
 
-async def notify_revocation_tails_file_event(
+async def notify_revocation_reg_endorsed_event(
     profile: Profile, rev_reg_id: str, meta_data: dict
 ):
-    """Send notification for a revocation tails file event."""
-    event_id = REVOCATION_EVENT_PREFIX + REVOCATION_TAILS_EVENT + "::" + rev_reg_id
-    await profile.notify(
-        event_id,
-        meta_data,
-    )
+    """Send notification for a revocation registry endorsement event."""
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_REG_ENDORSED_EVENT}::{rev_reg_id}"
+    await profile.notify(topic, meta_data)
+
+
+async def notify_revocation_entry_endorsed_event(
+    profile: Profile, rev_reg_id: str, meta_data: dict
+):
+    """Send notification for a revocation registry entry endorsement event."""
+    topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_ENTRY_ENDORSED_EVENT}::{rev_reg_id}"
+    await profile.notify(topic, meta_data)
 
 
 async def notify_revocation_published_event(

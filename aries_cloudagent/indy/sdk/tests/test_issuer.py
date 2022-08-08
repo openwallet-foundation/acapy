@@ -167,58 +167,46 @@ class TestIndySdkIssuer(AsyncTestCase):
             for cr_id in test_cred_rev_ids
         ]
 
-        with async_mock.patch.object(
-            test_module, "IssuerCredRevRecord", async_mock.MagicMock()
-        ) as mock_issuer_cr_rec:
-            mock_issuer_cr_rec.return_value.save = async_mock.CoroutineMock()
-            mock_issuer_cr_rec.retrieve_by_ids = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(
-                    set_state=async_mock.CoroutineMock(),
-                )
-            )
-
-            with self.assertRaises(test_module.IndyIssuerError):  # missing attribute
-                cred_json, revoc_id = await self.issuer.create_credential(
-                    test_schema,
-                    test_offer,
-                    test_request,
-                    {},
-                    "dummy-cxid",
-                )
-
-            (cred_json, cred_rev_id) = await self.issuer.create_credential(  # main line
+        with self.assertRaises(test_module.IndyIssuerError):  # missing attribute
+            cred_json, revoc_id = await self.issuer.create_credential(
                 test_schema,
                 test_offer,
                 test_request,
-                test_values,
-                "dummy-cxid",
-                REV_REG_ID,
-                "/tmp/tails/path/dummy",
+                {},
             )
-            mock_indy_create_credential.assert_called_once()
-            (
-                call_wallet,
-                call_offer,
-                call_request,
-                call_values,
-                call_etc1,
-                call_etc2,
-            ) = mock_indy_create_credential.call_args[0]
-            assert call_wallet is self.wallet.handle
-            assert json.loads(call_offer) == test_offer
-            assert json.loads(call_request) == test_request
-            values = json.loads(call_values)
-            assert "attr1" in values
 
-            mock_indy_revoke_credential.return_value = json.dumps(TEST_RR_DELTA)
-            mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
-            (result, failed) = await self.issuer.revoke_credentials(
-                REV_REG_ID, tails_file_path="dummy", cred_rev_ids=test_cred_rev_ids
-            )
-            assert json.loads(result) == TEST_RR_DELTA
-            assert not failed
-            assert mock_indy_revoke_credential.call_count == 2
-            mock_indy_merge_rr_deltas.assert_called_once()
+        (cred_json, cred_rev_id) = await self.issuer.create_credential(  # main line
+            test_schema,
+            test_offer,
+            test_request,
+            test_values,
+            REV_REG_ID,
+            "/tmp/tails/path/dummy",
+        )
+        mock_indy_create_credential.assert_called_once()
+        (
+            call_wallet,
+            call_offer,
+            call_request,
+            call_values,
+            call_etc1,
+            call_etc2,
+        ) = mock_indy_create_credential.call_args[0]
+        assert call_wallet is self.wallet.handle
+        assert json.loads(call_offer) == test_offer
+        assert json.loads(call_request) == test_request
+        values = json.loads(call_values)
+        assert "attr1" in values
+
+        mock_indy_revoke_credential.return_value = json.dumps(TEST_RR_DELTA)
+        mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
+        (result, failed) = await self.issuer.revoke_credentials(
+            REV_REG_ID, tails_file_path="dummy", cred_rev_ids=test_cred_rev_ids
+        )
+        assert json.loads(result) == TEST_RR_DELTA
+        assert not failed
+        assert mock_indy_revoke_credential.call_count == 2
+        mock_indy_merge_rr_deltas.assert_called_once()
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
     @async_mock.patch.object(test_module, "create_tails_reader", autospec=True)
@@ -267,73 +255,53 @@ class TestIndySdkIssuer(AsyncTestCase):
                 test_offer,
                 test_request,
                 {},
-                "dummy-cxid",
             )
 
-        with async_mock.patch.object(
-            test_module, "IssuerCredRevRecord", async_mock.MagicMock()
-        ) as mock_issuer_cr_rec:
-            mock_issuer_cr_rec.return_value.save = async_mock.CoroutineMock(
-                side_effect=test_module.StorageError(
-                    "could not store"  # not fatal; maximize coverage
-                )
-            )
-            mock_issuer_cr_rec.retrieve_by_ids = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(
-                    set_state=async_mock.CoroutineMock(
-                        side_effect=test_module.StorageError(
-                            "could not store"  # not fatal; maximize coverage
-                        )
-                    ),
-                )
-            )
+        (cred_json, cred_rev_id) = await self.issuer.create_credential(  # main line
+            test_schema,
+            test_offer,
+            test_request,
+            test_values,
+            REV_REG_ID,
+            "/tmp/tails/path/dummy",
+        )
+        mock_indy_create_credential.assert_called_once()
+        (
+            call_wallet,
+            call_offer,
+            call_request,
+            call_values,
+            call_etc1,
+            call_etc2,
+        ) = mock_indy_create_credential.call_args[0]
+        assert call_wallet is self.wallet.handle
+        assert json.loads(call_offer) == test_offer
+        assert json.loads(call_request) == test_request
+        values = json.loads(call_values)
+        assert "attr1" in values
 
-            (cred_json, cred_rev_id) = await self.issuer.create_credential(  # main line
-                test_schema,
-                test_offer,
-                test_request,
-                test_values,
-                "dummy-cxid",
-                REV_REG_ID,
-                "/tmp/tails/path/dummy",
-            )
-            mock_indy_create_credential.assert_called_once()
-            (
-                call_wallet,
-                call_offer,
-                call_request,
-                call_values,
-                call_etc1,
-                call_etc2,
-            ) = mock_indy_create_credential.call_args[0]
-            assert call_wallet is self.wallet.handle
-            assert json.loads(call_offer) == test_offer
-            assert json.loads(call_request) == test_request
-            values = json.loads(call_values)
-            assert "attr1" in values
-
-            def mock_revoke(_h, _t, _r, cred_rev_id):
-                if cred_rev_id == "42":
-                    return json.dumps(TEST_RR_DELTA)
-                if cred_rev_id == "54":
-                    raise IndyError(
-                        error_code=ErrorCode.AnoncredsInvalidUserRevocId,
-                        error_details={"message": "already revoked"},
-                    )
+        def mock_revoke(_h, _t, _r, cred_rev_id):
+            if cred_rev_id == "42":
+                return json.dumps(TEST_RR_DELTA)
+            if cred_rev_id == "54":
                 raise IndyError(
-                    error_code=ErrorCode.UnknownCryptoTypeError,
-                    error_details={"message": "truly an outlier"},
+                    error_code=ErrorCode.AnoncredsInvalidUserRevocId,
+                    error_details={"message": "already revoked"},
                 )
-
-            mock_indy_revoke_credential.side_effect = mock_revoke
-            mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
-            (result, failed) = await self.issuer.revoke_credentials(
-                REV_REG_ID, tails_file_path="dummy", cred_rev_ids=test_cred_rev_ids
+            raise IndyError(
+                error_code=ErrorCode.UnknownCryptoTypeError,
+                error_details={"message": "truly an outlier"},
             )
-            assert json.loads(result) == TEST_RR_DELTA
-            assert failed == ["54", "103"]
-            assert mock_indy_revoke_credential.call_count == 3
-            mock_indy_merge_rr_deltas.assert_not_called()
+
+        mock_indy_revoke_credential.side_effect = mock_revoke
+        mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
+        (result, failed) = await self.issuer.revoke_credentials(
+            REV_REG_ID, tails_file_path="dummy", cred_rev_ids=test_cred_rev_ids
+        )
+        assert json.loads(result) == TEST_RR_DELTA
+        assert failed == ["54", "103"]
+        assert mock_indy_revoke_credential.call_count == 3
+        mock_indy_merge_rr_deltas.assert_not_called()
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
     @async_mock.patch.object(test_module, "create_tails_reader", autospec=True)
@@ -358,24 +326,13 @@ class TestIndySdkIssuer(AsyncTestCase):
             error_code=ErrorCode.AnoncredsRevocationRegistryFullError
         )
 
-        with async_mock.patch.object(
-            test_module, "IssuerCredRevRecord", async_mock.MagicMock()
-        ) as mock_issuer_cr_rec:
-            mock_issuer_cr_rec.return_value.save = async_mock.CoroutineMock()
-            mock_issuer_cr_rec.retrieve_by_ids = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(
-                    set_state=async_mock.CoroutineMock(),
-                )
+        with self.assertRaises(IndyIssuerRevocationRegistryFullError):
+            await self.issuer.create_credential(
+                test_schema,
+                test_offer,
+                test_request,
+                test_values,
             )
-
-            with self.assertRaises(IndyIssuerRevocationRegistryFullError):
-                await self.issuer.create_credential(
-                    test_schema,
-                    test_offer,
-                    test_request,
-                    test_values,
-                    "dummy-cxid",
-                )
 
     @async_mock.patch("indy.anoncreds.issuer_create_credential")
     @async_mock.patch.object(test_module, "create_tails_reader", autospec=True)
@@ -401,24 +358,13 @@ class TestIndySdkIssuer(AsyncTestCase):
             error_code=ErrorCode.WalletInvalidHandle
         )
 
-        with async_mock.patch.object(
-            test_module, "IssuerCredRevRecord", async_mock.MagicMock()
-        ) as mock_issuer_cr_rec:
-            mock_issuer_cr_rec.return_value.save = async_mock.CoroutineMock()
-            mock_issuer_cr_rec.retrieve_by_ids = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(
-                    set_state=async_mock.CoroutineMock(),
-                )
+        with self.assertRaises(test_module.IndyIssuerError):
+            await self.issuer.create_credential(
+                test_schema,
+                test_offer,
+                test_request,
+                test_values,
             )
-
-            with self.assertRaises(test_module.IndyIssuerError):
-                await self.issuer.create_credential(
-                    test_schema,
-                    test_offer,
-                    test_request,
-                    test_values,
-                    "dummy-cxid",
-                )
 
     @async_mock.patch("indy.anoncreds.issuer_create_and_store_revoc_reg")
     @async_mock.patch.object(test_module, "create_tails_writer", autospec=True)
