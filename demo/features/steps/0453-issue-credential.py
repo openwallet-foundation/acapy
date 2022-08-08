@@ -155,9 +155,16 @@ def step_impl(context, holder):
 
     # get the required revocation info from the last credential exchange
     cred_exchange = context.cred_exchange
+    print("cred_exchange:", json.dumps(cred_exchange))
+
+    cred_ex_id = (
+        cred_exchange["cred_ex_id"]
+        if "cred_ex_id" in cred_exchange
+        else cred_exchange["cred_ex_record"]["cred_ex_id"]
+    )
 
     cred_exchange = agent_container_GET(
-        agent["agent"], "/issue-credential-2.0/records/" + cred_exchange["cred_ex_id"]
+        agent["agent"], "/issue-credential-2.0/records/" + cred_ex_id
     )
     context.cred_exchange = cred_exchange
     print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
