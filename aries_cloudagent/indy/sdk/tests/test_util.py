@@ -1,19 +1,14 @@
 import pytest
 
-from os import makedirs
-from os.path import join
-from pathlib import Path
 from shutil import rmtree
 
 import indy.blob_storage
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from ...util import indy_client_dir, generate_pr_nonce, tails_path
+from ...util import indy_client_dir, generate_pr_nonce
 
 from ..util import create_tails_reader, create_tails_writer
-
-from .. import util as test_module
 
 
 @pytest.mark.indy
@@ -49,19 +44,3 @@ class TestIndyUtils(AsyncTestCase):
 
     async def test_nonce(self):
         assert await generate_pr_nonce()
-
-    async def test_tails_path(self):
-        tails_dir = indy_client_dir("tails", create=False)
-        rmtree(tails_dir, ignore_errors=True)
-
-        tails_local_path = tails_path("rev-reg-id")
-        assert tails_local_path is None
-
-        tails_rr_dir = indy_client_dir(join("tails", "rev-reg-id"), create=True)
-        tails_local_path = tails_path("rev-reg-id")
-        assert tails_local_path is None
-
-        with open(join(tails_rr_dir, "tails-hash"), "w") as f:
-            f.write("content")
-        tails_local_path = tails_path("rev-reg-id")
-        assert tails_local_path

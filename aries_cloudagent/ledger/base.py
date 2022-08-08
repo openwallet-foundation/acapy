@@ -352,7 +352,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         issuer_did: str = None,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Publish a revocation registry definition to the ledger."""
 
     @abstractmethod
@@ -364,7 +364,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         issuer_did: str = None,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Publish a revocation registry entry to the ledger."""
 
     async def create_and_send_credential_definition(
