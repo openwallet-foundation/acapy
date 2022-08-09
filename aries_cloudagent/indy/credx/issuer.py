@@ -28,8 +28,6 @@ from ..issuer import (
     DEFAULT_CRED_DEF_TAG,
     DEFAULT_SIGNATURE_TYPE,
 )
-from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -225,7 +223,6 @@ class IndyCredxIssuer(IndyIssuer):
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        cred_ex_id: str,
         revoc_reg_id: str = None,
         tails_file_path: str = None,
     ) -> Tuple[str, str]:
@@ -237,7 +234,6 @@ class IndyCredxIssuer(IndyIssuer):
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
             credential_values: Values to go in credential
-            cred_ex_id: credential exchange identifier to use in issuer cred rev rec
             revoc_reg_id: ID of the revocation registry
             tails_file_path: The location of the tails file
 
@@ -323,20 +319,6 @@ class IndyCredxIssuer(IndyIssuer):
                     rev_info["curr_id"] = rev_reg_index
                     await txn.handle.replace(
                         CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
-                    )
-
-                    issuer_cr_rec = IssuerCredRevRecord(
-                        state=IssuerCredRevRecord.STATE_ISSUED,
-                        cred_ex_id=cred_ex_id,
-                        rev_reg_id=revoc_reg_id,
-                        cred_rev_id=str(rev_reg_index),
-                    )
-                    await issuer_cr_rec.save(
-                        txn,
-                        reason=(
-                            "Created issuer cred rev record for "
-                            f"rev reg id {revoc_reg_id}, {rev_reg_index}"
-                        ),
                     )
                     await txn.commit()
             except AskarError as err:
