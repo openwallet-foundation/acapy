@@ -12,6 +12,7 @@ from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError, LedgerTransactionError
+from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..storage.error import StorageNotFoundError
 from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
@@ -153,21 +154,49 @@ class RevocationManager:
                 try:
                     await issuer_rr_upd.send_entry(self._profile)
                 except LedgerTransactionError as err:
-                    if "InvalidClientTaaAcceptanceError" in err.roll_up:
+                    if "InvalidClientRequest" in err.roll_up:
                         # ... if the ledger write fails (with "InvalidClientRequest")
                         # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
                         #   Ledger rejected transaction request: client request invalid:
                         #   InvalidClientRequest(...)
-                        # TODO in this scenario we try to post a correction
-                        raise err
-                    elif "InvalidClientRequest" in err.roll_up:
+                        # In this scenario we try to post a correction
+                        self._logger.warn("Retry ledger update/fix due to error")
+                        self._logger.warn(err)
+
+                        async with self._profile.session() as session:
+                            genesis_transactions = session.context.settings.get(
+                                "ledger.genesis_transactions"
+                            )
+                            if not genesis_transactions:
+                                ledger_manager = session.context.injector.inject(
+                                    BaseMultipleLedgerManager
+                                )
+                                write_ledgers = await ledger_manager.get_write_ledger()
+                                self._logger.debug(f"write_ledgers = {write_ledgers}")
+                                pool = write_ledgers[1].pool
+                                self._logger.debug(f"write_ledger pool = {pool}")
+
+                                genesis_transactions = pool.genesis_txns
+
+                        (_, _, _) = await self.update_rev_reg_revoked_state(
+                            rev_reg_id,
+                            True,
+                            issuer_rr_upd,
+                            genesis_transactions,
+                        )
+                        self._logger.warn("Ledger update/fix applied")
+                    elif "InvalidClientTaaAcceptanceError" in err.roll_up:
                         # if no write access (with "InvalidClientTaaAcceptanceError")
                         # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
                         #   Ledger rejected transaction request: client request invalid:
                         #   InvalidClientTaaAcceptanceError(...)
+                        self._logger.error("Ledger update failed due to TAA issue")
+                        self._logger.error(err)
                         raise err
                     else:
                         # not sure what happened, raise an error
+                        self._logger.error("Ledger update failed due to unknown issue")
+                        self._logger.error(err)
                         raise err
             await notify_revocation_published_event(
                 self._profile, rev_reg_id, [cred_rev_id]
@@ -184,7 +213,7 @@ class RevocationManager:
         apply_ledger_update: bool,
         rev_reg_record: IssuerRevRegRecord,
         genesis_transactions: dict,
-    ):
+    ) -> (dict, dict, dict):
         """
         Request handler to fix ledger entry of credentials revoked against registry.
 
