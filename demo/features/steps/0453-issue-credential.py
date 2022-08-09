@@ -83,8 +83,14 @@ def step_impl(context, holder):
     # get the required revocation info from the last credential exchange
     cred_exchange = context.cred_exchange
 
+    cred_ex_id = (
+        cred_exchange["cred_ex_id"]
+        if "cred_ex_id" in cred_exchange
+        else cred_exchange["cred_ex_record"]["cred_ex_id"]
+    )
+
     cred_exchange = agent_container_GET(
-        agent["agent"], "/issue-credential-2.0/records/" + cred_exchange["cred_ex_id"]
+        agent["agent"], "/issue-credential-2.0/records/" + cred_ex_id
     )
     context.cred_exchange = cred_exchange
     print("rev_reg_id:", cred_exchange["indy"]["rev_reg_id"])
@@ -140,6 +146,13 @@ def step_impl(context, holder):
         "/revocation/registry/"
         + cred_exchange["indy"]["rev_reg_id"]
         + "/issued/indy_recs",
+    )
+    print("ledger_revoked_creds:", ledger_revoked_creds)
+    print(
+        "assert",
+        cred_exchange["indy"]["cred_rev_id"],
+        "in",
+        ledger_revoked_creds["rev_reg_delta"]["value"]["revoked"],
     )
     assert (
         int(cred_exchange["indy"]["cred_rev_id"])
@@ -224,6 +237,7 @@ def step_impl(context, holder):
         + cred_exchange["indy"]["rev_reg_id"]
         + "/issued/indy_recs",
     )
+    print("ledger_revoked_creds:", ledger_revoked_creds)
     assert (
         int(cred_exchange["indy"]["cred_rev_id"])
         not in ledger_revoked_creds["rev_reg_delta"]["value"]["revoked"]
