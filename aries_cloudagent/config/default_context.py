@@ -49,7 +49,6 @@ class DefaultContextBuilder(ContextBuilder):
         # Global event bus
         context.injector.bind_instance(EventBus, EventBus())
 
-
         # Global did resolver
         context.injector.bind_instance(DIDResolver, DIDResolver([]))
 
