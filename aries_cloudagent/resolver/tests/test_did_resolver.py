@@ -100,7 +100,7 @@ def profile():
 
 
 def test_create_resolver(resolver):
-    assert len(resolver.did_resolver_registry.resolvers) == len(TEST_DID_METHODS)
+    assert len(resolver.resolvers) == len(TEST_DID_METHODS)
 
 
 @pytest.mark.asyncio
