@@ -65,5 +65,6 @@ class ForwardHandler(BaseHandler):
                 "connection_id": recipient.connection_id,
                 "status": send_status.value,
                 "recipient_key": context.message.to,
+                "message": context.message.from_json(),
             },
         )
