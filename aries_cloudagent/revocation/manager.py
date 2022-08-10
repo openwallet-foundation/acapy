@@ -10,14 +10,10 @@ from ..protocols.revocation_notification.v1_0.models.rev_notification_record imp
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..indy.issuer import IndyIssuer
-from ..ledger.base import BaseLedger
-from ..ledger.error import LedgerError, LedgerTransactionError
-from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..storage.error import StorageNotFoundError
 from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
-from .recover import generate_ledger_rrrecovery_txn
 from .util import notify_pending_cleared_event, notify_revocation_published_event
 from ..protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
@@ -151,53 +147,7 @@ class RevocationManager:
                 await txn.commit()
             await self.set_cred_revoked_state(rev_reg_id, crids)
             if delta_json:
-                try:
-                    await issuer_rr_upd.send_entry(self._profile)
-                except LedgerTransactionError as err:
-                    if "InvalidClientRequest" in err.roll_up:
-                        # ... if the ledger write fails (with "InvalidClientRequest")
-                        # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
-                        #   Ledger rejected transaction request: client request invalid:
-                        #   InvalidClientRequest(...)
-                        # In this scenario we try to post a correction
-                        self._logger.warn("Retry ledger update/fix due to error")
-                        self._logger.warn(err)
-
-                        async with self._profile.session() as session:
-                            genesis_transactions = session.context.settings.get(
-                                "ledger.genesis_transactions"
-                            )
-                            if not genesis_transactions:
-                                ledger_manager = session.context.injector.inject(
-                                    BaseMultipleLedgerManager
-                                )
-                                write_ledgers = await ledger_manager.get_write_ledger()
-                                self._logger.debug(f"write_ledgers = {write_ledgers}")
-                                pool = write_ledgers[1].pool
-                                self._logger.debug(f"write_ledger pool = {pool}")
-
-                                genesis_transactions = pool.genesis_txns
-
-                        (_, _, _) = await self.update_rev_reg_revoked_state(
-                            rev_reg_id,
-                            True,
-                            issuer_rr_upd,
-                            genesis_transactions,
-                        )
-                        self._logger.warn("Ledger update/fix applied")
-                    elif "InvalidClientTaaAcceptanceError" in err.roll_up:
-                        # if no write access (with "InvalidClientTaaAcceptanceError")
-                        # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
-                        #   Ledger rejected transaction request: client request invalid:
-                        #   InvalidClientTaaAcceptanceError(...)
-                        self._logger.error("Ledger update failed due to TAA issue")
-                        self._logger.error(err)
-                        raise err
-                    else:
-                        # not sure what happened, raise an error
-                        self._logger.error("Ledger update failed due to unknown issue")
-                        self._logger.error(err)
-                        raise err
+                await issuer_rr_upd.send_entry(self._profile)
             await notify_revocation_published_event(
                 self._profile, rev_reg_id, [cred_rev_id]
             )
@@ -209,7 +159,6 @@ class RevocationManager:
 
     async def update_rev_reg_revoked_state(
         self,
-        rev_reg_id: str,
         apply_ledger_update: bool,
         rev_reg_record: IssuerRevRegRecord,
         genesis_transactions: dict,
@@ -225,77 +174,11 @@ class RevocationManager:
             Number of credentials posted to ledger
 
         """
-        # get rev reg delta (revocations published to ledger)
-        revoc = IndyRevocation(self._profile)
-        rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
-
-        # get rev reg records from wallet (revocations and status)
-        recs = []
-        rec_count = 0
-        accum_count = 0
-        recovery_txn = {}
-        applied_txn = {}
-        async with self._profile.session() as session:
-            # rev_reg_record = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
-            #     session, rev_reg_id
-            # )
-            recs = await IssuerCredRevRecord.query_by_ids(
-                session, rev_reg_id=rev_reg_id
-            )
-
-            revoked_ids = []
-            for rec in recs:
-                if rec.state == IssuerCredRevRecord.STATE_REVOKED:
-                    revoked_ids.append(int(rec.cred_rev_id))
-                    if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
-                        # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
-                        rec_count += 1
-
-            self._logger.debug(">>> fixed entry recs count = %s", rec_count)
-            self._logger.debug(
-                ">>> rev_reg_record.revoc_reg_entry.value: %s",
-                rev_reg_record.revoc_reg_entry.value,
-            )
-            self._logger.debug(
-                '>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value")
-            )
-
-            # if we had any revocation discrepencies, check the accumulator value
-            if rec_count > 0:
-                if (
-                    rev_reg_record.revoc_reg_entry.value and rev_reg_delta.get("value")
-                ) and not (
-                    rev_reg_record.revoc_reg_entry.value.accum
-                    == rev_reg_delta["value"]["accum"]
-                ):
-                    # rev_reg_record.revoc_reg_entry = rev_reg_delta["value"]
-                    # await rev_reg_record.save(session)
-                    accum_count += 1
-
-                calculated_txn = await generate_ledger_rrrecovery_txn(
-                    genesis_transactions,
-                    rev_reg_id,
-                    revoked_ids,
-                )
-                recovery_txn = json.loads(calculated_txn.to_json())
-
-                self._logger.debug(">>> apply_ledger_update = %s", apply_ledger_update)
-                if apply_ledger_update:
-                    ledger = session.inject_or(BaseLedger)
-                    if not ledger:
-                        reason = "No ledger available"
-                        if not session.context.settings.get_value("wallet.type"):
-                            reason += ": missing wallet-type?"
-                        raise LedgerError(reason=reason)
-
-                    async with ledger:
-                        ledger_response = await ledger.send_revoc_reg_entry(
-                            rev_reg_id, "CL_ACCUM", recovery_txn
-                        )
-
-                    applied_txn = ledger_response["result"]
-
-        return (rev_reg_delta, recovery_txn, applied_txn)
+        return await rev_reg_record.fix_ledger_entry(
+            self._profile,
+            apply_ledger_update,
+            genesis_transactions,
+        )
 
     async def publish_pending_revocations(
         self,
