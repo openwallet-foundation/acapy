@@ -785,10 +785,18 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
             recovery_txn,
             applied_txn,
         ) = await rev_manager.update_rev_reg_revoked_state(
-            rev_reg_id, apply_ledger_update, rev_reg_record, genesis_transactions
+            apply_ledger_update, rev_reg_record, genesis_transactions
         )
-    except Exception as err:
+    except (
+        RevocationManagerError,
+        RevocationError,
+        StorageError,
+        IndyIssuerError,
+        LedgerError,
+    ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up)
+    except Exception as err:
+        raise web.HTTPBadRequest(reason=str(err))
 
     return web.json_response(
         {
