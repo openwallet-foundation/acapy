@@ -366,8 +366,20 @@ def step_impl(context, agent_name):
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
-    # TODO not sure what to check here, let's just do a short pause
-    async_sleep(2.0)
+    # a registry is promoted to active when its initial entry is sent
+    i = 5
+    while i > 0:
+        async_sleep(1.0)
+        reg_info = agent_container_GET(
+            agent["agent"],
+            f"/revocation/registry/{context.rev_reg_id}",
+        )
+        state = reg_info["result"]["state"]
+        if state == "active":
+            return
+        i = i - 1
+
+    assert False
 
 
 @when(

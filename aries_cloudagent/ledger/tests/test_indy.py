@@ -76,10 +76,11 @@ class TestIndySdkLedger(AsyncTestCase):
         self.test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
         context = InjectionContext()
         context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-        self.profile = IndySdkProfile(
-            async_mock.CoroutineMock(),
-            context,
-        )
+        with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
+            self.profile = IndySdkProfile(
+                async_mock.CoroutineMock(),
+                context,
+            )
         self.session = await self.profile.session()
 
     @async_mock.patch("indy.pool.create_pool_ledger_config")
@@ -592,8 +593,9 @@ class TestIndySdkLedger(AsyncTestCase):
 
                 mock_submit.assert_called_once_with(
                     mock_build_schema_req.return_value,
-                    True,
+                    sign=True,
                     sign_did=mock_wallet_get_public_did.return_value,
+                    taa_accept=None,
                     write_ledger=True,
                 )
 

@@ -66,15 +66,16 @@ class TestMultiIndyLedgerManagerProvider(AsyncTestCase):
     @pytest.mark.indy
     async def test_provide_indy_manager(self):
         context = InjectionContext()
-        profile = IndySdkProfile(
-            IndyOpenWallet(
-                config=IndyWalletConfig({"name": "test-profile"}),
-                created=True,
-                handle=1,
-                master_secret_id="master-secret",
-            ),
-            context,
-        )
+        with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
+            profile = IndySdkProfile(
+                IndyOpenWallet(
+                    config=IndyWalletConfig({"name": "test-profile"}),
+                    created=True,
+                    handle=1,
+                    master_secret_id="master-secret",
+                ),
+                context,
+            )
         context.injector.bind_instance(
             BaseLedger, IndySdkLedger(IndySdkLedgerPool("name"), profile)
         )

@@ -2,7 +2,6 @@ import json
 
 from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
-from more_itertools import side_effect
 
 from aries_cloudagent.revocation.models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
@@ -13,6 +12,8 @@ from ...indy.issuer import IndyIssuer
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
+from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+
 
 from ..manager import RevocationManager, RevocationManagerError
 
@@ -427,7 +428,7 @@ class TestRevocationManager(AsyncTestCase):
                 assert ret_ex.connection_id == str(index)
                 assert ret_ex.thread_id == str(1000 + index)
 
-    async def test_set_revoked_state(self):
+    async def test_set_revoked_state_v1(self):
         CRED_REV_ID = "1"
 
         async with self.profile.session() as session:
@@ -460,6 +461,43 @@ class TestRevocationManager(AsyncTestCase):
             assert (
                 check_exchange_record.state
                 == V10CredentialExchange.STATE_CREDENTIAL_REVOKED
+            )
+
+            check_crev_record = await IssuerCredRevRecord.retrieve_by_id(
+                session, crev_record.record_id
+            )
+            assert check_crev_record.state == IssuerCredRevRecord.STATE_REVOKED
+
+    async def test_set_revoked_state_v2(self):
+        CRED_REV_ID = "1"
+
+        async with self.profile.session() as session:
+            exchange_record = V20CredExRecord(
+                connection_id="mark-revoked-cid",
+                thread_id="mark-revoked-tid",
+                initiator=V20CredExRecord.INITIATOR_SELF,
+                role=V20CredExRecord.ROLE_ISSUER,
+                state=V20CredExRecord.STATE_ISSUED,
+            )
+            await exchange_record.save(session)
+
+            crev_record = IssuerCredRevRecord(
+                cred_ex_id=exchange_record.cred_ex_id,
+                cred_def_id=CRED_DEF_ID,
+                rev_reg_id=REV_REG_ID,
+                cred_rev_id=CRED_REV_ID,
+                state=IssuerCredRevRecord.STATE_ISSUED,
+            )
+            await crev_record.save(session)
+
+        await self.manager.set_cred_revoked_state(REV_REG_ID, [CRED_REV_ID])
+
+        async with self.profile.session() as session:
+            check_exchange_record = await V20CredExRecord.retrieve_by_id(
+                session, exchange_record.cred_ex_id
+            )
+            assert (
+                check_exchange_record.state == V20CredExRecord.STATE_CREDENTIAL_REVOKED
             )
 
             check_crev_record = await IssuerCredRevRecord.retrieve_by_id(

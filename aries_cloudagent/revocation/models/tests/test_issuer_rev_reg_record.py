@@ -65,7 +65,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
         self.tails_server = TailsServer()
         self.tails_server.upload_tails_file = async_mock.CoroutineMock(
-            return_value=(False, "Internal Server Error")
+            return_value=(True, "http://1.2.3.4:8088/rev-reg-id")
         )
         self.profile.context.injector.bind_instance(BaseTailsServer, self.tails_server)
 
@@ -124,11 +124,19 @@ class TestIssuerRevRegRecord(AsyncTestCase):
         assert rec.state == IssuerRevRegRecord.STATE_POSTED
         self.ledger.send_revoc_reg_def.assert_called_once()
 
+        with async_mock.patch.object(test_module.Path, "is_file", lambda _: True):
+            await rec.upload_tails_file(self.profile)
+        assert (
+            rec.tails_public_uri
+            and rec.revoc_reg_def.value.tails_location == rec.tails_public_uri
+        )
+        self.tails_server.upload_tails_file.assert_called_once()
+
         await rec.send_entry(self.profile)
         assert rec.state == IssuerRevRegRecord.STATE_ACTIVE
         self.ledger.send_revoc_reg_entry.assert_called_once()
 
-        rev_reg = await rec.get_registry()
+        rev_reg = rec.get_registry()
         assert type(rev_reg) == RevocationRegistry
 
         async with self.profile.session() as session:

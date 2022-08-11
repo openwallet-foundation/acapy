@@ -7,13 +7,12 @@ from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager, ProfileSession
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
-from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
+from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ..wallet.base import BaseWallet
-from ..wallet.did_info import DIDInfo
 from ..wallet.crypto import seed_to_did
-from ..wallet.key_type import KeyType
+from ..wallet.did_info import DIDInfo
 from ..wallet.did_method import DIDMethod
-
+from ..wallet.key_type import KeyType
 from .base import ConfigError
 from .injection_context import InjectionContext
 

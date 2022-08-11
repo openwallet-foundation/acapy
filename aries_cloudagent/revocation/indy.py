@@ -1,6 +1,6 @@
 """Indy revocation registry management."""
 
-from typing import Sequence
+from typing import Optional, Sequence, Tuple
 
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
@@ -10,11 +10,20 @@ from ..ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ..multitenant.base import BaseMultitenantManager
+from ..protocols.endorse_transaction.v1_0.util import (
+    get_endorser_connection_id,
+    is_author_role,
+)
 from ..storage.base import StorageNotFoundError
 
-from .error import RevocationNotSupportedError, RevocationRegistryBadSizeError
+from .error import (
+    RevocationError,
+    RevocationNotSupportedError,
+    RevocationRegistryBadSizeError,
+)
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.revocation_registry import RevocationRegistry
+from .util import notify_revocation_reg_init_event
 
 
 class IndyRevocation:
@@ -32,6 +41,9 @@ class IndyRevocation:
         max_cred_num: int = None,
         revoc_def_type: str = None,
         tag: str = None,
+        create_pending_rev_reg: bool = False,
+        endorser_connection_id: str = None,
+        notify: bool = True,
     ) -> "IssuerRevRegRecord":
         """Create a new revocation registry record for a credential definition."""
         multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
@@ -69,11 +81,45 @@ class IndyRevocation:
         )
         async with self._profile.session() as session:
             await record.save(session, reason="Init revocation registry")
+
+        if endorser_connection_id is None and is_author_role(self._profile):
+            endorser_connection_id = await get_endorser_connection_id(self._profile)
+            if not endorser_connection_id:
+                raise RevocationError(reason="Endorser connection not found")
+
+        if notify:
+            await notify_revocation_reg_init_event(
+                self._profile,
+                record.record_id,
+                create_pending_rev_reg=create_pending_rev_reg,
+                endorser_connection_id=endorser_connection_id,
+            )
+
         return record
+
+    async def handle_full_registry(self, revoc_reg_id: str):
+        """Update the registry status and start the next registry generation."""
+        async with self._profile.transaction() as txn:
+            registry = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
+                txn, revoc_reg_id, for_update=True
+            )
+            if registry.state == IssuerRevRegRecord.STATE_FULL:
+                return
+            await registry.set_state(
+                txn,
+                IssuerRevRegRecord.STATE_FULL,
+            )
+            await txn.commit()
+
+        await self.init_issuer_registry(
+            registry.cred_def_id,
+            registry.max_cred_num,
+            registry.revoc_def_type,
+        )
 
     async def get_active_issuer_rev_reg_record(
         self, cred_def_id: str
-    ) -> "IssuerRevRegRecord":
+    ) -> IssuerRevRegRecord:
         """Return current active registry for issuing a given credential definition.
 
         Args:
@@ -91,9 +137,7 @@ class IndyRevocation:
             f"No active issuer revocation record found for cred def id {cred_def_id}"
         )
 
-    async def get_issuer_rev_reg_record(
-        self, revoc_reg_id: str
-    ) -> "IssuerRevRegRecord":
+    async def get_issuer_rev_reg_record(self, revoc_reg_id: str) -> IssuerRevRegRecord:
         """Return a revocation registry record by identifier.
 
         Args:
@@ -104,7 +148,7 @@ class IndyRevocation:
                 session, revoc_reg_id
             )
 
-    async def list_issuer_registries(self) -> Sequence["IssuerRevRegRecord"]:
+    async def list_issuer_registries(self) -> Sequence[IssuerRevRegRecord]:
         """List the issuer's current revocation registries."""
         async with self._profile.session() as session:
             return await IssuerRevRegRecord.query(session)
@@ -129,7 +173,36 @@ class IndyRevocation:
 
         return rev_reg_delta
 
-    async def get_ledger_registry(self, revoc_reg_id: str) -> "RevocationRegistry":
+    async def get_or_create_active_registry(
+        self, cred_def_id: str, max_cred_num: int = None
+    ) -> Optional[Tuple[IssuerRevRegRecord, RevocationRegistry]]:
+        """Fetch the active revocation registry.
+
+        If there is no active registry then creation of a new registry will be
+        triggered and the caller should retry after a delay.
+        """
+        try:
+            active_rev_reg_rec = await self.get_active_issuer_rev_reg_record(
+                cred_def_id
+            )
+            rev_reg = active_rev_reg_rec.get_registry()
+            await rev_reg.get_or_fetch_local_tails_path()
+            return active_rev_reg_rec, rev_reg
+        except StorageNotFoundError:
+            pass
+
+        async with self._profile.session() as session:
+            rev_reg_recs = await IssuerRevRegRecord.query_by_cred_def_id(
+                session, cred_def_id, {"$neq": IssuerRevRegRecord.STATE_FULL}
+            )
+            if not rev_reg_recs:
+                await self.init_issuer_registry(
+                    cred_def_id,
+                    max_cred_num=max_cred_num,
+                )
+        return None
+
+    async def get_ledger_registry(self, revoc_reg_id: str) -> RevocationRegistry:
         """Get a revocation registry from the ledger, fetching as necessary."""
         if revoc_reg_id in IndyRevocation.REV_REG_CACHE:
             return IndyRevocation.REV_REG_CACHE[revoc_reg_id]
@@ -143,7 +216,7 @@ class IndyRevocation:
             IndyRevocation.REV_REG_CACHE[revoc_reg_id] = rev_reg
             return rev_reg
 
-    async def get_ledger_for_registry(self, revoc_reg_id: str) -> "BaseLedger":
+    async def get_ledger_for_registry(self, revoc_reg_id: str) -> BaseLedger:
         """Get the ledger for the given registry."""
         multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
