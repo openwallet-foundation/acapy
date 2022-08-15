@@ -7,7 +7,6 @@ from typing import List, Sequence, Tuple, Union
 from ..core.profile import ProfileSession
 
 from ..protocols.routing.v1_0.messages.forward import Forward
-from ..did.did_key import DIDKey
 
 from ..messaging.util import time_now
 from ..utils.task_queue import TaskQueue
@@ -176,28 +175,20 @@ class PackWireFormat(BaseWireFormat):
         if not wallet:
             raise WireFormatEncodeError("No wallet instance")
 
-        recip_keys = []
-        for key in recipient_keys:
-            if key.startswith("did:key:"):
-                recip_keys.append(DIDKey.from_did(key).public_key_b58)
-            else:
-                recip_keys.append(key)
-
         try:
             message = await wallet.pack_message(
-                message_json, recip_keys, sender_key
+                message_json, recipient_keys, sender_key
             )
         except WalletError as e:
             raise WireFormatEncodeError("Message pack failed") from e
 
         if routing_keys:
+            recip_keys = recipient_keys
             for router_key in routing_keys:
                 message = json.loads(message.decode("utf-8"))
                 fwd_msg = Forward(to=recip_keys[0], msg=message)
                 # Forwards are anon packed
                 recip_keys = [router_key]
-                if router_key.startswith("did:key:"):
-                    recip_keys = [DIDKey.from_did(router_key).public_key_b58]
                 try:
                     message = await wallet.pack_message(fwd_msg.to_json(), recip_keys)
                 except WalletError as e:

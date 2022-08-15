@@ -1052,10 +1052,7 @@ class TestConnectionManager(AsyncTestCase):
             assert len(message.updates) == 1
             (remove,) = message.updates
             assert remove.action == KeylistUpdateRule.RULE_REMOVE
-            did_key = DIDKey.from_public_key_b58(
-                record.invitation_key, KeyType.ED25519
-            ).did
-            assert remove.recipient_key == did_key
+            assert remove.recipient_key == record.invitation_key
 
     async def test_receive_request_bad_mediation(self):
         mock_request = async_mock.MagicMock()

@@ -4,8 +4,6 @@ from marshmallow import EXCLUDE, fields, validates_schema, ValidationError
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
-from .....did.did_key import DIDKey
-from .....wallet.key_type import KeyType
 
 
 class RouteRecord(BaseRecord):
@@ -77,24 +75,7 @@ class RouteRecord(BaseRecord):
             RouteRecord: retrieved route record
 
         """
-        if recipient_key.startswith("did:key:"):
-            recipient_key = (
-                DIDKey.from_did(recipient_key)
-            )
-            # recipient_key = recipient_key.public_key_b58
-        else:
-            recipient_key = (
-                DIDKey.from_public_key_b58(
-                    recipient_key,
-                    KeyType.ED25519,
-                )
-            )
-        # record = await RouteRecord.retrieve_by_recipient_key(
-        tag_filter = {"recipient_key": {"$in": [
-            recipient_key.did,
-            recipient_key.public_key_b58,
-        ]}}
-        # tag_filter = {"recipient_key": recipient_key}
+        tag_filter = {"recipient_key": recipient_key}
         return await cls.retrieve_by_tag_filter(session, tag_filter)
 
     @classmethod

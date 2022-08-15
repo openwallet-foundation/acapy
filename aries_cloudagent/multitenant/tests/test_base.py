@@ -25,8 +25,6 @@ from ..base import BaseMultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
 from .. import base as test_module
 
-RECIPIENT_KEY = "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
-
 
 class MockMultitenantManager(BaseMultitenantManager):
     async def get_wallet_profile(
@@ -143,7 +141,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         assert wallet_name_exists is False
 
     async def test_get_wallet_by_key_routing_record_does_not_exist(self):
-        recipient_key = RECIPIENT_KEY
+        recipient_key = "test"
 
         with async_mock.patch.object(WalletRecord, "retrieve_by_id") as retrieve_by_id:
             wallet = await self.manager._get_wallet_by_key(recipient_key)
@@ -154,7 +152,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         await self.manager._get_wallet_by_key(recipient_key)
 
     async def test_get_wallet_by_key_wallet_record_does_not_exist(self):
-        recipient_key = RECIPIENT_KEY
+        recipient_key = "test-recipient-key"
         wallet_id = "test-wallet-id"
 
         route_record = RouteRecord(wallet_id=wallet_id, recipient_key=recipient_key)
@@ -165,7 +163,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             await self.manager._get_wallet_by_key(recipient_key)
 
     async def test_get_wallet_by_key(self):
-        recipient_key = RECIPIENT_KEY
+        recipient_key = "test-recipient-key"
 
         wallet_record = WalletRecord(settings={})
         async with self.profile.session() as session:
@@ -358,10 +356,10 @@ class TestBaseMultitenantManager(AsyncTestCase):
         ) as create_route_record, async_mock.patch.object(
             MediationManager, "add_key"
         ) as mediation_add_key:
-            await self.manager.add_key("wallet_id", RECIPIENT_KEY)
+            await self.manager.add_key("wallet_id", "recipient_key")
 
             create_route_record.assert_called_once_with(
-                recipient_key=RECIPIENT_KEY, internal_wallet_id="wallet_id"
+                recipient_key="recipient_key", internal_wallet_id="wallet_id"
             )
             mediation_add_key.assert_not_called()
 
@@ -374,11 +372,11 @@ class TestBaseMultitenantManager(AsyncTestCase):
             retrieve_by_recipient_key.side_effect = StorageNotFoundError()
 
             await self.manager.add_key(
-                "wallet_id", RECIPIENT_KEY, skip_if_exists=True
+                "wallet_id", "recipient_key", skip_if_exists=True
             )
 
             create_route_record.assert_called_once_with(
-                recipient_key=RECIPIENT_KEY, internal_wallet_id="wallet_id"
+                recipient_key="recipient_key", internal_wallet_id="wallet_id"
             )
 
     async def test_add_key_skip_if_exists_does_exist(self):
@@ -388,7 +386,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             RouteRecord, "retrieve_by_recipient_key"
         ) as retrieve_by_recipient_key:
             await self.manager.add_key(
-                "wallet_id", RECIPIENT_KEY, skip_if_exists=True
+                "wallet_id", "recipient_key", skip_if_exists=True
             )
 
             create_route_record.assert_not_called()
@@ -407,14 +405,14 @@ class TestBaseMultitenantManager(AsyncTestCase):
             get_default_mediator.return_value = default_mediator
             mediation_add_key.return_value = keylist_updates
 
-            await self.manager.add_key("wallet_id", RECIPIENT_KEY)
+            await self.manager.add_key("wallet_id", "recipient_key")
 
             create_route_record.assert_called_once_with(
-                recipient_key=RECIPIENT_KEY, internal_wallet_id="wallet_id"
+                recipient_key="recipient_key", internal_wallet_id="wallet_id"
             )
 
             get_default_mediator.assert_called_once()
-            mediation_add_key.assert_called_once_with(RECIPIENT_KEY)
+            mediation_add_key.assert_called_once_with("recipient_key")
             self.responder.send.assert_called_once_with(
                 keylist_updates, connection_id=default_mediator.connection_id
             )

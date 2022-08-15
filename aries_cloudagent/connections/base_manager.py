@@ -116,15 +116,10 @@ class BaseConnectionManager:
                     raise BaseConnectionManagerError(
                         "Routing DIDDoc service has no recipient key(s)"
                     )
-                key = service.recip_keys[0].value
-                key = (
-                    DIDKey.from_did(key).public_key_b58
-                    if key.startswith("did:key:") else key
-                )
                 rk = PublicKey(
                     did_info.did,
                     f"routing-{router_idx}",
-                    key,
+                    service.recip_keys[0].value,
                     PublicKeyType.ED25519_SIG_2018,
                     did_controller,
                     True,
@@ -140,8 +135,7 @@ class BaseConnectionManager:
                     PublicKey(
                         did_info.did,
                         f"routing-{idx}",
-                        DIDKey.from_did(key).public_key_b58
-                        if key.startswith("did:key:") else key,
+                        key,
                         PublicKeyType.ED25519_SIG_2018,
                         did_controller,  # TODO: get correct controller did_info
                         True,  # TODO: should this be true?
