@@ -455,11 +455,9 @@ async def wallet_set_public_did(request: web.BaseRequest):
     profile = context.profile
     route_manager = profile.inject(RouteManager)
     mediation_record = await route_manager.mediation_record_if_id(
-        profile=profile,
-        mediation_id=mediation_id,
-        or_default=True,
+        profile=profile, mediation_id=mediation_id, or_default=True
     )
-    routing_keys=None
+    routing_keys = None
     if mediation_record:
         routing_keys = mediation_record.routing_keys
 

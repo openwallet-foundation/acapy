@@ -613,15 +613,17 @@ class TestIndyVdrLedger:
         [
             (
                 {"Endpoint": "https://endpoint"},
-                ['3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn'],
+                ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
                 {
                     "endpoint": {
-                            "Endpoint": "https://endpoint",
-                            "endpoint": {
-                                "endpoint": "https://url",
-                                "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
-                            }
-                        }
+                        "Endpoint": "https://endpoint",
+                        "endpoint": {
+                            "endpoint": "https://url",
+                            "routingKeys": [
+                                "3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"
+                            ],
+                        },
+                    }
                 },
             ),
             (
@@ -630,62 +632,48 @@ class TestIndyVdrLedger:
                 {
                     "endpoint": {
                         "Endpoint": "https://endpoint",
+                        "endpoint": {"endpoint": "https://url", "routingKeys": []},
+                    }
+                },
+            ),
+            (
+                None,
+                ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                {
+                    "endpoint": {
                         "endpoint": {
                             "endpoint": "https://url",
-                            "routingKeys": []
+                            "routingKeys": [
+                                "3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"
+                            ],
                         }
                     }
                 },
             ),
             (
                 None,
-                ['3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn'],
+                None,
                 {
                     "endpoint": {
-                        "endpoint": {
-                            "endpoint": "https://url",
-                            "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
-                        }
+                        "endpoint": {"endpoint": "https://url", "routingKeys": []}
                     }
                 },
             ),
-            (
-                None,
-                None,
-                {
-                    "endpoint": {
-                        "endpoint": {
-                            "endpoint": "https://url",
-                            "routingKeys": []
-                        }
-                    }
-                },
-            )
-        ]
+        ],
     )
     @pytest.mark.asyncio
     async def test_construct_attr_json(
-        self,
-        ledger: IndyVdrLedger,
-        all_exist_endpoints,
-        routing_keys,
-        result,
+        self, ledger: IndyVdrLedger, all_exist_endpoints, routing_keys, result
     ):
         async with ledger:
             attr_json = await ledger.construct_attr_json(
-                "https://url",
-                EndpointType.ENDPOINT,
-                all_exist_endpoints,
-                routing_keys,
+                "https://url", EndpointType.ENDPOINT, all_exist_endpoints, routing_keys
             )
         assert attr_json == json.dumps(result)
 
     @pytest.mark.asyncio
-    async def test_update_endpoint_for_did_calls_attr_json(
-        self,
-        ledger: IndyVdrLedger,
-    ):
-        routing_keys = ['3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn']
+    async def test_update_endpoint_for_did_calls_attr_json(self, ledger: IndyVdrLedger):
+        routing_keys = ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
 
@@ -699,7 +687,7 @@ class TestIndyVdrLedger:
                             "endpoint": {
                                 "endpoint": {
                                     "endpoint": "https://url",
-                                    "routingKeys": []
+                                    "routingKeys": [],
                                 }
                             }
                         }
@@ -708,9 +696,7 @@ class TestIndyVdrLedger:
             ) as mock_construct_attr_json, async_mock.patch.object(
                 ledger,
                 "get_all_endpoints_for_did",
-                async_mock.CoroutineMock(
-                    return_value={}
-                )
+                async_mock.CoroutineMock(return_value={}),
             ):
                 await ledger.update_endpoint_for_did(
                     test_did.did,

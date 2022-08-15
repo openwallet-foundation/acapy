@@ -140,16 +140,17 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
         assert "No ledger available" in str(excinfo.value)
 
     @pytest.mark.asyncio
-    async def test_set_did_endpoint_ledger_with_routing_keys(self, wallet: IndySdkWallet):
-        routing_keys = ['3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn']
+    async def test_set_did_endpoint_ledger_with_routing_keys(
+        self, wallet: IndySdkWallet
+    ):
+        routing_keys = ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
         mock_ledger = async_mock.MagicMock(
             read_only=False, update_endpoint_for_did=async_mock.CoroutineMock()
         )
-        info_pub = await wallet.create_public_did(
-            DIDMethod.SOV,
-            KeyType.ED25519,
+        info_pub = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        await wallet.set_did_endpoint(
+            info_pub.did, "http://1.2.3.4:8021", mock_ledger, routing_keys=routing_keys
         )
-        await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", mock_ledger, routing_keys=routing_keys)
 
         mock_ledger.update_endpoint_for_did.assert_called_once_with(
             info_pub.did,

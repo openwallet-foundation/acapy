@@ -771,7 +771,6 @@ class IndySdkLedger(BaseLedger):
 
         return attr_json
 
-
     async def update_endpoint_for_did(
         self,
         did: str,
@@ -813,10 +812,7 @@ class IndySdkLedger(BaseLedger):
             nym = self.did_to_nym(did)
 
             attr_json = await self.construct_attr_json(
-                endpoint,
-                endpoint_type,
-                all_exist_endpoints,
-                routing_keys,
+                endpoint, endpoint_type, all_exist_endpoints, routing_keys
             )
 
             with IndyErrorHandler("Exception building attribute request", LedgerError):
