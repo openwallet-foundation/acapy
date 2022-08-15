@@ -28,7 +28,8 @@ class ForwardHandler(BaseHandler):
         )
 
         packed = context.message.msg
-        packed = json.dumps(packed).encode("ascii")
+        packed = json.dumps(packed)
+        packed_bytes = packed.encode("ascii")
         rt_mgr = RoutingManager(context.profile)
         target = context.message.to
 
@@ -52,7 +53,7 @@ class ForwardHandler(BaseHandler):
         )
 
         send_status = await responder.send(
-            packed,
+            packed_bytes,
             connection_id=recipient.connection_id,
             target_list=connection_targets,
             reply_to_verkey=connection_verkey,
@@ -65,6 +66,6 @@ class ForwardHandler(BaseHandler):
                 "connection_id": recipient.connection_id,
                 "status": send_status.value,
                 "recipient_key": context.message.to,
-                "message": context.message.from_json(),
+                "message": packed,
             },
         )
