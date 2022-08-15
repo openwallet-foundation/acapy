@@ -12,7 +12,7 @@ from datetime import datetime, date
 from io import StringIO
 from pathlib import Path
 from time import time
-from typing import Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional
 
 from indy_vdr import ledger, open_pool, Pool, Request, VdrError
 
@@ -672,6 +672,39 @@ class IndyVdrLedger(BaseLedger):
 
         return address
 
+    async def construct_attr_json(
+        self,
+        endpoint: str,
+        endpoint_type: EndpointType = None,
+        all_exist_endpoints: dict = None,
+        routing_keys: List[str] = None,
+    ) -> str:
+        """Create attr_json string.
+
+        Args:
+            all_exist_endpoings: Dictionary of all existing endpoints
+            endpoint: The endpoint address
+            endpoint_type: The type of the endpoint
+            routing_keys: List of routing_keys if mediator is present
+        """
+
+        if not routing_keys:
+            routing_keys = []
+
+        endpoint_dict = {"endpoint": endpoint}
+
+        if all_exist_endpoints:
+            all_exist_endpoints[endpoint_type.indy] = endpoint_dict
+            endpoint_dict["routingKeys"] = routing_keys
+            attr_json = json.dumps({"endpoint": all_exist_endpoints})
+
+        else:
+            endpoint_val = {endpoint_type.indy: endpoint_dict}
+            endpoint_dict["routingKeys"] = routing_keys
+            attr_json = json.dumps({"endpoint": endpoint_val})
+
+        return attr_json
+
     async def update_endpoint_for_did(
         self,
         did: str,
@@ -679,6 +712,7 @@ class IndyVdrLedger(BaseLedger):
         endpoint_type: EndpointType = None,
         write_ledger: bool = True,
         endorser_did: str = None,
+        routing_keys: List[str] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 
@@ -711,11 +745,12 @@ class IndyVdrLedger(BaseLedger):
 
             nym = self.did_to_nym(did)
 
-            if all_exist_endpoints:
-                all_exist_endpoints[endpoint_type.indy] = endpoint
-                attr_json = json.dumps({"endpoint": all_exist_endpoints})
-            else:
-                attr_json = json.dumps({"endpoint": {endpoint_type.indy: endpoint}})
+            attr_json = await self.construct_attr_json(
+                endpoint,
+                endpoint_type,
+                all_exist_endpoints,
+                routing_keys,
+            )
 
             try:
                 attrib_req = ledger.build_attrib_request(
