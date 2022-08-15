@@ -2302,28 +2302,24 @@ class TestIndySdkLedger(AsyncTestCase):
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
     @pytest.mark.asyncio
-    async def test_construct_attr_json_with_routing_keys(
-        self,
-        mock_close,
-        mock_open,
-    ):
+    async def test_construct_attr_json_with_routing_keys(self, mock_close, mock_open):
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         async with ledger:
             attr_json = await ledger.construct_attr_json(
                 "https://url",
                 EndpointType.ENDPOINT,
                 all_exist_endpoints={"Endpoint": "https://endpoint"},
-                routing_keys=['3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn'],
+                routing_keys=["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
             )
         assert attr_json == json.dumps(
             {
                 "endpoint": {
-                        "Endpoint": "https://endpoint",
-                        "endpoint": {
-                            "endpoint": "https://url",
-                            "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
-                        }
-                    }
+                    "Endpoint": "https://endpoint",
+                    "endpoint": {
+                        "endpoint": "https://url",
+                        "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    },
+                }
             }
         )
 
@@ -2341,7 +2337,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_close,
         mock_open,
     ):
-        routing_keys = ['3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn']
+        routing_keys = ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
@@ -2357,7 +2353,7 @@ class TestIndySdkLedger(AsyncTestCase):
                             "endpoint": {
                                 "endpoint": {
                                     "endpoint": "https://url",
-                                    "routingKeys": []
+                                    "routingKeys": [],
                                 }
                             }
                         }
@@ -2366,12 +2362,9 @@ class TestIndySdkLedger(AsyncTestCase):
             ) as mock_construct_attr_json, async_mock.patch.object(
                 ledger,
                 "get_all_endpoints_for_did",
-                async_mock.CoroutineMock(
-                    return_value={}
-                )
+                async_mock.CoroutineMock(return_value={}),
             ), async_mock.patch.object(
-                ledger,
-                "did_to_nym",
+                ledger, "did_to_nym"
             ):
                 mock_wallet_get_public_did.return_value = self.test_did_info
                 await ledger.update_endpoint_for_did(
@@ -2381,10 +2374,7 @@ class TestIndySdkLedger(AsyncTestCase):
                     routing_keys=routing_keys,
                 )
                 mock_construct_attr_json.assert_called_once_with(
-                    "https://url",
-                    EndpointType.ENDPOINT,
-                    {},
-                    routing_keys,
+                    "https://url", EndpointType.ENDPOINT, {}, routing_keys
                 )
 
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
