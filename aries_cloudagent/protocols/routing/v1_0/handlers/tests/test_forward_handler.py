@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 import json
@@ -57,6 +58,7 @@ class TestForwardHandler(AsyncTestCase):
                     "connection_id": "dummy",
                     "status": "queued_for_delivery",
                     "recipient_key": "sample-did",
+                    "message": '{"msg": "sample-message"}',
                 },
             )
 
