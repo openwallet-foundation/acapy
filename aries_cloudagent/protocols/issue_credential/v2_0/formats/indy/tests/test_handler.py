@@ -5,6 +5,7 @@ import json
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
+from more_itertools import side_effect
 
 from .. import handler as test_module
 
@@ -678,7 +679,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             in str(context.exception)
         )
 
-    async def test_issue_credential(self):
+    async def test_issue_credential_revocable(self):
         attr_values = {
             "legalName": "value",
             "jurisdictionId": "value",
@@ -729,22 +730,17 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
-        ) as revoc, async_mock.patch.object(
-            asyncio, "ensure_future", autospec=True
-        ) as asyncio_mock:
-            revoc.return_value.get_active_issuer_rev_reg_record = (
-                async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(  # active_rev_reg_rec
+        ) as revoc:
+            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+                return_value=(
+                    async_mock.MagicMock(  # active_rev_reg_rec
                         revoc_reg_id=REV_REG_ID,
-                        get_registry=async_mock.CoroutineMock(
-                            return_value=async_mock.MagicMock(  # rev_reg
-                                tails_local_path="dummy-path",
-                                get_or_fetch_local_tails_path=(
-                                    async_mock.CoroutineMock()
-                                ),
-                            )
-                        ),
-                    )
+                    ),
+                    async_mock.MagicMock(  # rev_reg
+                        tails_local_path="dummy-path",
+                        get_or_fetch_local_tails_path=(async_mock.CoroutineMock()),
+                        max_creds=10,
+                    ),
                 )
             )
 
@@ -757,7 +753,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                 INDY_OFFER,
                 INDY_CRED_REQ,
                 attr_values,
-                cred_ex_record.cred_ex_id,
                 REV_REG_ID,
                 "dummy-path",
             )
@@ -841,7 +836,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                 INDY_OFFER,
                 INDY_CRED_REQ,
                 attr_values,
-                cred_ex_record.cred_ex_id,
                 None,
                 None,
             )
@@ -869,109 +863,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                 await self.handler.issue_credential(cred_ex_record)
 
             assert "indy detail record already exists" in str(context.exception)
-
-    async def test_issue_credential_fills_revocation_registry(self):
-        attr_values = {
-            "legalName": "value",
-            "jurisdictionId": "value",
-            "incorporationDate": "value",
-        }
-        cred_rev_id = "1000"
-
-        cred_preview = V20CredPreview(
-            attributes=[
-                V20CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
-            ]
-        )
-        cred_offer = V20CredOffer(
-            credential_preview=cred_preview,
-            formats=[
-                V20CredFormat(
-                    attach_id="0",
-                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
-                        V20CredFormat.Format.INDY.api
-                    ],
-                )
-            ],
-            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
-        )
-        cred_request = V20CredRequest(
-            formats=[
-                V20CredFormat(
-                    attach_id="0",
-                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
-                        V20CredFormat.Format.INDY.api
-                    ],
-                )
-            ],
-            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
-        )
-
-        cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            cred_offer=cred_offer.serialize(),
-            cred_request=cred_request.serialize(),
-            initiator=V20CredExRecord.INITIATOR_SELF,
-            role=V20CredExRecord.ROLE_ISSUER,
-            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
-        )
-
-        self.issuer.create_credential = async_mock.CoroutineMock(
-            return_value=(json.dumps(INDY_CRED), cred_rev_id)
-        )
-
-        with async_mock.patch.object(
-            test_module, "IndyRevocation", autospec=True
-        ) as revoc, async_mock.patch.object(
-            asyncio, "ensure_future", autospec=True
-        ) as asyncio_mock:
-            revoc.return_value = async_mock.MagicMock(
-                get_active_issuer_rev_reg_record=(
-                    async_mock.CoroutineMock(
-                        return_value=async_mock.MagicMock(  # active_rev_reg_rec
-                            revoc_reg_id=REV_REG_ID,
-                            get_registry=async_mock.CoroutineMock(
-                                return_value=async_mock.MagicMock(  # rev_reg
-                                    tails_local_path="dummy-path",
-                                    max_creds=1000,
-                                    get_or_fetch_local_tails_path=(
-                                        async_mock.CoroutineMock()
-                                    ),
-                                )
-                            ),
-                            set_state=async_mock.CoroutineMock(),
-                        )
-                    )
-                ),
-                init_issuer_registry=async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(  # pending_rev_reg_rec
-                        stage_pending_registry=async_mock.CoroutineMock()
-                    )
-                ),
-            )
-
-            (cred_format, attachment) = await self.handler.issue_credential(
-                cred_ex_record, retries=0
-            )
-
-            self.issuer.create_credential.assert_called_once_with(
-                SCHEMA,
-                INDY_OFFER,
-                INDY_CRED_REQ,
-                attr_values,
-                cred_ex_record.cred_ex_id,
-                REV_REG_ID,
-                "dummy-path",
-            )
-
-            # assert identifier match
-            assert cred_format.attach_id == self.handler.format.api == attachment.ident
-
-            # assert content of attachment is proposal data
-            assert attachment.content == INDY_CRED
-
-            # assert data is encoded as base64
-            assert attachment.data.base64
 
     async def test_issue_credential_no_active_rr_no_retries(self):
         attr_values = {
@@ -1024,22 +915,11 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module, "IssuerRevRegRecord", autospec=True
-        ) as issuer_rr_rec, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
-            revoc.return_value.get_active_issuer_rev_reg_record = (
-                async_mock.CoroutineMock(side_effect=StorageNotFoundError())
+            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+                return_value=()
             )
-            revoc.return_value.init_issuer_registry = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(  # pending_rev_reg_rec
-                    stage_pending_registry=async_mock.CoroutineMock()
-                )
-            )
-            issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
-                return_value=[]
-            )
-
             with self.assertRaises(V20CredFormatError) as context:
                 await self.handler.issue_credential(cred_ex_record, retries=0)
             assert "has no active revocation registry" in str(context.exception)
@@ -1095,24 +975,22 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module, "IssuerRevRegRecord", autospec=True
-        ) as issuer_rr_rec, async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
-            revoc.return_value.get_active_issuer_rev_reg_record = (
-                async_mock.CoroutineMock(side_effect=StorageNotFoundError())
-            )
-            issuer_rr_rec.query_by_cred_def_id = async_mock.CoroutineMock(
+            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
                 side_effect=[
-                    [],  # posted_rev_reg_recs
-                    [async_mock.MagicMock(max_cred_num=1000)],  # old_rev_reg_recs
+                    None,
+                    (
+                        async_mock.MagicMock(  # active_rev_reg_rec
+                            revoc_reg_id=REV_REG_ID,
+                            set_state=async_mock.CoroutineMock(),
+                        ),
+                        async_mock.MagicMock(  # rev_reg
+                            tails_local_path="dummy-path",
+                            get_or_fetch_local_tails_path=(async_mock.CoroutineMock()),
+                        ),
+                    ),
                 ]
-                * 2
-            )
-            revoc.return_value.init_issuer_registry = async_mock.CoroutineMock(
-                return_value=async_mock.MagicMock(  # pending_rev_reg_rec
-                    stage_pending_registry=async_mock.CoroutineMock()
-                )
             )
 
             with self.assertRaises(V20CredFormatError) as context:
@@ -1171,25 +1049,22 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
         ) as revoc:
-            revoc.return_value.get_active_issuer_rev_reg_record = (
-                async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(  # active_rev_reg_rec
+            revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
+                return_value=(
+                    async_mock.MagicMock(  # active_rev_reg_rec
                         revoc_reg_id=REV_REG_ID,
                         set_state=async_mock.CoroutineMock(),
-                        get_registry=async_mock.CoroutineMock(
-                            return_value=async_mock.MagicMock(  # rev_reg
-                                tails_local_path="dummy-path",
-                                get_or_fetch_local_tails_path=(
-                                    async_mock.CoroutineMock()
-                                ),
-                            )
-                        ),
-                    )
+                    ),
+                    async_mock.MagicMock(  # rev_reg
+                        tails_local_path="dummy-path",
+                        get_or_fetch_local_tails_path=(async_mock.CoroutineMock()),
+                    ),
                 )
             )
 
-            with self.assertRaises(test_module.IndyIssuerRevocationRegistryFullError):
+            with self.assertRaises(V20CredFormatError) as context:
                 await self.handler.issue_credential(cred_ex_record, retries=1)
+            assert "has no active revocation registry" in str(context.exception)
 
     async def test_receive_credential(self):
         cred_ex_record = async_mock.MagicMock()

@@ -43,7 +43,6 @@ class DIDXRequestHandler(BaseHandler):
                     if context.message_receipt.recipient_did_public
                     else context.message_receipt.recipient_verkey
                 ),
-                mediation_id=mediation_id,
             )
 
             # Auto respond

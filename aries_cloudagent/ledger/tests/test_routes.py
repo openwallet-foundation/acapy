@@ -1,5 +1,7 @@
-from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from typing import Tuple
+
+from async_case import IsolatedAsyncioTestCase
+import mock as async_mock
 
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
@@ -18,7 +20,7 @@ from ..indy import Role
 from ...connections.models.conn_record import ConnRecord
 
 
-class TestLedgerRoutes(AsyncTestCase):
+class TestLedgerRoutes(IsolatedAsyncioTestCase):
     def setUp(self):
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.pool_name = "pool.0"
@@ -28,7 +30,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
         self.request_dict = {
             "context": self.context,
-            "outbound_message_router": async_mock.CoroutineMock(),
+            "outbound_message_router": async_mock.AsyncMock(),
         }
         self.request = async_mock.MagicMock(
             app={},
@@ -47,7 +49,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=(None, None)
                 )
             ),
@@ -82,7 +84,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -102,7 +104,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -130,7 +132,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
         ), async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
@@ -153,7 +155,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -167,7 +169,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -181,7 +183,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -206,7 +208,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
         ), async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
@@ -224,7 +226,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -257,7 +259,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -325,21 +327,21 @@ class TestLedgerRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             test_module, "TransactionManager", async_mock.MagicMock()
         ) as mock_txn_mgr, async_mock.patch.object(
             test_module.web, "json_response", async_mock.MagicMock()
         ) as mock_response:
             mock_txn_mgr.return_value = async_mock.MagicMock(
-                create_record=async_mock.CoroutineMock(
+                create_record=async_mock.AsyncMock(
                     return_value=async_mock.MagicMock(
                         serialize=async_mock.MagicMock(return_value={"...": "..."})
                     )
                 )
             )
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
+                metadata_get=async_mock.AsyncMock(
                     return_value={
                         "endorser_did": ("did"),
                         "endorser_name": ("name"),
@@ -368,18 +370,18 @@ class TestLedgerRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             test_module, "TransactionManager", async_mock.MagicMock()
         ) as mock_txn_mgr:
 
             mock_txn_mgr.return_value = async_mock.MagicMock(
-                create_record=async_mock.CoroutineMock(
+                create_record=async_mock.AsyncMock(
                     side_effect=test_module.StorageError()
                 )
             )
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
+                metadata_get=async_mock.AsyncMock(
                     return_value={
                         "endorser_did": ("did"),
                         "endorser_name": ("name"),
@@ -405,7 +407,7 @@ class TestLedgerRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.side_effect = test_module.StorageNotFoundError()
             self.ledger.register_nym.return_value: Tuple[bool, dict] = (
@@ -427,7 +429,7 @@ class TestLedgerRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.side_effect = test_module.BaseModelError()
             self.ledger.register_nym.return_value: Tuple[bool, dict] = (
@@ -451,10 +453,10 @@ class TestLedgerRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(return_value=None)
+                metadata_get=async_mock.AsyncMock(return_value=None)
             )
             self.ledger.register_nym.return_value: Tuple[bool, dict] = (
                 True,
@@ -475,10 +477,10 @@ class TestLedgerRoutes(AsyncTestCase):
         }
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.CoroutineMock(
+                metadata_get=async_mock.AsyncMock(
                     return_value={
                         "endorser_name": ("name"),
                     }
@@ -496,7 +498,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -515,7 +517,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -542,7 +544,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
-            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+            async_mock.AsyncMock(return_value=("test_ledger_id", self.ledger)),
         ), async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
@@ -562,7 +564,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -578,7 +580,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -594,7 +596,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             IndyLedgerRequestsExecutor,
             async_mock.MagicMock(
-                get_ledger_for_identifier=async_mock.CoroutineMock(
+                get_ledger_for_identifier=async_mock.AsyncMock(
                     return_value=(None, self.ledger)
                 )
             ),
@@ -608,7 +610,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            self.ledger.rotate_public_did_keypair = async_mock.CoroutineMock()
+            self.ledger.rotate_public_did_keypair = async_mock.AsyncMock()
 
             await test_module.rotate_public_did_keypair(self.request)
             json_response.assert_called_once_with({})
@@ -617,7 +619,7 @@ class TestLedgerRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
-            self.ledger.rotate_public_did_keypair = async_mock.CoroutineMock(
+            self.ledger.rotate_public_did_keypair = async_mock.AsyncMock(
                 side_effect=test_module.WalletError("Exception")
             )
 
@@ -660,7 +662,7 @@ class TestLedgerRoutes(AsyncTestCase):
             await test_module.ledger_get_taa(self.request)
 
     async def test_taa_accept_not_required(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "version": "version",
                 "text": "text",
@@ -673,7 +675,7 @@ class TestLedgerRoutes(AsyncTestCase):
             await test_module.ledger_accept_taa(self.request)
 
     async def test_accept_taa(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "version": "version",
                 "text": "text",
@@ -701,7 +703,7 @@ class TestLedgerRoutes(AsyncTestCase):
             assert result is json_response.return_value
 
     async def test_accept_taa_x(self):
-        self.request.json = async_mock.CoroutineMock(
+        self.request.json = async_mock.AsyncMock(
             return_value={
                 "version": "version",
                 "text": "text",
@@ -732,7 +734,7 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             async_mock.MagicMock(
-                get_write_ledger=async_mock.CoroutineMock(
+                get_write_ledger=async_mock.AsyncMock(
                     return_value=("test_ledger_id", self.ledger)
                 )
             ),
@@ -757,14 +759,14 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.injector.bind_instance(
             BaseMultipleLedgerManager,
             async_mock.MagicMock(
-                get_prod_ledgers=async_mock.CoroutineMock(
+                get_prod_ledgers=async_mock.AsyncMock(
                     return_value={
                         "test_1": async_mock.MagicMock(),
                         "test_2": async_mock.MagicMock(),
                         "test_5": async_mock.MagicMock(),
                     }
                 ),
-                get_nonprod_ledgers=async_mock.CoroutineMock(
+                get_nonprod_ledgers=async_mock.AsyncMock(
                     return_value={
                         "test_3": async_mock.MagicMock(),
                         "test_4": async_mock.MagicMock(),

@@ -620,6 +620,28 @@ class GeneralGroup(ArgumentGroup):
             env_var="ACAPY_READ_ONLY_LEDGER",
             help="Sets ledger to read-only to prevent updates. Default: false.",
         )
+        parser.add_argument(
+            "--universal-resolver",
+            type=str,
+            nargs="?",
+            metavar="<universal_resolver_endpoint>",
+            env_var="ACAPY_UNIVERSAL_RESOLVER",
+            const="DEFAULT",
+            help="Enable resolution from a universal resolver.",
+        )
+        parser.add_argument(
+            "--universal-resolver-regex",
+            type=str,
+            nargs="+",
+            metavar="<did_regex>",
+            env_var="ACAPY_UNIVERSAL_RESOLVER_REGEX",
+            help=(
+                "Regex matching DIDs to resolve using the unversal resolver. "
+                "Multiple can be specified. "
+                "Defaults to a regex matching all DIDs resolvable by universal "
+                "resolver instance."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -659,6 +681,18 @@ class GeneralGroup(ArgumentGroup):
 
         if args.read_only_ledger:
             settings["read_only_ledger"] = True
+
+        if args.universal_resolver_regex and not args.universal_resolver:
+            raise ArgsParseError(
+                "--universal-resolver-regex cannot be used without --universal-resolver"
+            )
+
+        if args.universal_resolver:
+            settings["resolver.universal"] = args.universal_resolver
+
+        if args.universal_resolver_regex:
+            settings["resolver.universal.supported"] = args.universal_resolver_regex
+
         return settings
 
 

@@ -83,7 +83,7 @@ class TestRequestHandler:
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         mock_conn_mgr.return_value.receive_request.assert_called_once_with(
-            request_context.message, request_context.message_receipt, mediation_id=None
+            request_context.message, request_context.message_receipt
         )
         assert not responder.messages
 
@@ -101,31 +101,38 @@ class TestRequestHandler:
         responder = MockResponder()
         await handler_inst.handle(request_context, responder)
         mock_conn_mgr.return_value.receive_request.assert_called_once_with(
-            request_context.message, request_context.message_receipt, mediation_id=None
+            request_context.message, request_context.message_receipt
+        )
+        mock_conn_mgr.return_value.create_response.assert_called_once_with(
+            mock_conn_rec, mediation_id=None
         )
         assert responder.messages
 
     @pytest.mark.asyncio
     @async_mock.patch.object(handler, "ConnectionManager")
-    async def test_connection_record_with_mediation_metadata(
+    async def test_connection_record_with_mediation_metadata_auto_response(
         self, mock_conn_mgr, request_context, connection_record
     ):
-        mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock()
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.accept = ConnRecord.ACCEPT_AUTO
+        mock_conn_mgr.return_value.receive_request = async_mock.CoroutineMock(
+            return_value=mock_conn_rec
+        )
+        mock_conn_mgr.return_value.create_response = async_mock.CoroutineMock()
         request_context.message = ConnectionRequest()
         with async_mock.patch.object(
             connection_record,
             "metadata_get",
             async_mock.CoroutineMock(return_value={"id": "test-mediation-id"}),
-        ) as mock_metadata_get:
+        ):
             handler_inst = handler.ConnectionRequestHandler()
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
-            mock_conn_mgr.return_value.receive_request.assert_called_once_with(
-                request_context.message,
-                request_context.message_receipt,
-                mediation_id="test-mediation-id",
+            mock_conn_mgr.return_value.receive_request.assert_called_once()
+            mock_conn_mgr.return_value.create_response.assert_called_once_with(
+                mock_conn_rec, mediation_id="test-mediation-id"
             )
-            assert not responder.messages
+            assert responder.messages
 
     @pytest.mark.asyncio
     @async_mock.patch.object(handler, "ConnectionManager")
@@ -146,7 +153,6 @@ class TestRequestHandler:
             mock_conn_mgr.return_value.receive_request.assert_called_once_with(
                 request_context.message,
                 request_context.message_receipt,
-                mediation_id=None,
             )
             assert not responder.messages
 

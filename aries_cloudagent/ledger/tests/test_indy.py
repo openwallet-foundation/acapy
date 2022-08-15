@@ -593,8 +593,9 @@ class TestIndySdkLedger(AsyncTestCase):
 
                 mock_submit.assert_called_once_with(
                     mock_build_schema_req.return_value,
-                    True,
+                    sign=True,
                     sign_did=mock_wallet_get_public_did.return_value,
+                    taa_accept=None,
                     write_ledger=True,
                 )
 
