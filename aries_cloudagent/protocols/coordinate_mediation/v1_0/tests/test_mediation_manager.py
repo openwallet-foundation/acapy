@@ -29,9 +29,9 @@ from ..models.mediation_record import MediationRecord
 TEST_CONN_ID = "conn-id"
 TEST_THREAD_ID = "thread-id"
 TEST_ENDPOINT = "https://example.com"
-# TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+# TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-# TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
+TEST_ROUTE_RECORD_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
 
 pytestmark = pytest.mark.asyncio
@@ -294,7 +294,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         await manager.request_granted(record, grant)
         assert record.state == MediationRecord.STATE_GRANTED
         assert record.endpoint == TEST_ENDPOINT
-        assert record.routing_keys == [TEST_ROUTE_VERKEY]
+        assert record.routing_keys == [TEST_ROUTE_RECORD_VERKEY]
 
     async def test_request_denied(self, manager):
         """test_request_denied."""

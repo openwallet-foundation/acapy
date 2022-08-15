@@ -6,6 +6,7 @@ from typing import Optional, Sequence, Tuple
 
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
+from ....did.did_key import DIDKey
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
@@ -447,7 +448,14 @@ class MediationManager:
         """
         record.state = MediationRecord.STATE_GRANTED
         record.endpoint = grant.endpoint
-        record.routing_keys = grant.routing_keys
+        # record.routing_keys = grant.routing_keys
+        routing_keys = []
+        for key in grant.routing_keys:
+            routing_keys.append(
+                DIDKey.from_did(key).public_key_b58
+                if key.startswith("did:key:") else key
+            )
+        record.routing_keys = routing_keys
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request granted.")
 
