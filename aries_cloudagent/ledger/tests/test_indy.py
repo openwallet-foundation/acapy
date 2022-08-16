@@ -2381,11 +2381,11 @@ class TestIndySdkLedger(AsyncTestCase):
             for i in range(len(endpoint))
         ]
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
-        #ledger = async_mock.patch.object(
+        # ledger = async_mock.patch.object(
         #    ledger,
         #    "is_ledger_read_only",
         #    async_mock.CoroutineMock(return_value=False),
-        #)
+        # )
         with async_mock.patch.object(
             IndySdkWallet, "get_public_did"
         ) as mock_wallet_get_public_did:
