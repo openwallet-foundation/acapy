@@ -7,7 +7,7 @@ from functools import total_ordering
 from os.path import join
 from pathlib import Path
 from shutil import move
-from typing import Any, Mapping, Sequence, Union
+from typing import Any, Mapping, Sequence, Union, Tuple
 from urllib.parse import urlparse
 
 from marshmallow import fields, validate
@@ -345,7 +345,7 @@ class IssuerRevRegRecord(BaseRecord):
         profile: Profile,
         apply_ledger_update: bool,
         genesis_transactions: str,
-    ) -> (dict, dict, dict):
+    ) -> Tuple[dict, dict, dict]:
         """Fix the ledger entry to match wallet-recorded credentials."""
         # get rev reg delta (revocations published to ledger)
         ledger = profile.inject(BaseLedger)
