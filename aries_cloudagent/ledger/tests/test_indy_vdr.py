@@ -37,7 +37,8 @@ def ledger():
         ledger.pool.handle = None
 
     with async_mock.patch.object(ledger.pool, "open", open), async_mock.patch.object(
-        ledger.pool, "close", close), async_mock.patch.object(
+        ledger.pool, "close", close
+    ), async_mock.patch.object(
         ledger, "is_ledger_read_only", async_mock.CoroutineMock(return_value=False)
     ):
         yield ledger
