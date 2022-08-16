@@ -1,0 +1,38 @@
+name: Tests
+
+on:
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: 'requirements*.txt'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip3 install --no-cache-dir \
+            -r requirements.txt \
+            -r requirements.askar.txt \
+            -r requirements.bbs.txt \
+            -r requirements.dev.txt
+      - name: Tests
+        run: |
+          pytest --junitxml=pytest.xml
+      - name: Test Report
+        uses: mikepenz/action-junit-report@v3
+        if: always()
+        with:
+          report_paths: pytest.xml
