@@ -365,8 +365,10 @@ class RoutingKey(Regexp):
 
         super().__init__(
             RoutingKey.PATTERN,
-            error=("Value {input} is not in W3C did:key"
-                   " or Ed25519VerificationKey2018 key format"),
+            error=(
+                "Value {input} is not in W3C did:key"
+                " or Ed25519VerificationKey2018 key format"
+            ),
         )
 
 

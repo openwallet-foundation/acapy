@@ -15,6 +15,8 @@ class TestKeylistUpdate(MessageTest, TestCase):
     SCHEMA = KeylistUpdateSchema
     VALUES = {
         "updates": [
-            KeylistUpdateRule("did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL", "add")
+            KeylistUpdateRule(
+                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL", "add"
+            )
         ]
     }

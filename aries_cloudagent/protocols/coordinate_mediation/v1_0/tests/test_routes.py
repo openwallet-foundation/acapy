@@ -449,14 +449,26 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     async def test_send_keylist_update(self):
         body = {
             "updates": [
-                {"recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up", "action": "add"},
-                {"recipient_key": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx", "action": "remove"},
+                {
+                    "recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up",
+                    "action": "add",
+                },
+                {
+                    "recipient_key": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+                    "action": "remove",
+                },
             ]
         }
         body_with_didkey = {
             "updates": [
-                {"recipient_key": "did:key:z6MktPjNKjb39Fpv2JM8vTBmhnQcsaWLN9Kx2fXLh2FC1GGC", "action": "add"},
-                {"recipient_key": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL", "action": "remove"},
+                {
+                    "recipient_key": "did:key:z6MktPjNKjb39Fpv2JM8vTBmhnQcsaWLN9Kx2fXLh2FC1GGC",
+                    "action": "add",
+                },
+                {
+                    "recipient_key": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+                    "action": "remove",
+                },
             ]
         }
 
@@ -484,7 +496,10 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     async def test_send_keylist_update_bad_action(self):
         self.request.json.return_value = {
             "updates": [
-                {"recipient_key": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx", "action": "wrong"},
+                {
+                    "recipient_key": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
+                    "action": "wrong",
+                },
             ]
         }
 
@@ -494,7 +509,10 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     async def test_send_keylist_update_bad_mediation_state(self):
         self.request.json.return_value = {
             "updates": [
-                {"recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up", "action": "add"},
+                {
+                    "recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up",
+                    "action": "add",
+                },
             ]
         }
 
@@ -517,7 +535,10 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     async def test_send_keylist_update_x_no_mediation_rec(self):
         self.request.json.return_value = {
             "updates": [
-                {"recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up", "action": "add"},
+                {
+                    "recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up",
+                    "action": "add",
+                },
             ]
         }
         with async_mock.patch.object(
@@ -530,7 +551,10 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     async def test_send_keylist_update_x_storage_error(self):
         self.request.json.return_value = {
             "updates": [
-                {"recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up", "action": "add"},
+                {
+                    "recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up",
+                    "action": "add",
+                },
             ]
         }
 

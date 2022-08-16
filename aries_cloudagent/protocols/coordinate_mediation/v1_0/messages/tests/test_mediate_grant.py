@@ -12,4 +12,7 @@ class TestMediateGrant(MessageTest, TestCase):
     TYPE = MEDIATE_GRANT
     CLASS = MediationGrant
     SCHEMA = MediationGrantSchema
-    VALUES = {"endpoint": "http://localhost:3000", "routing_keys": ["did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"]}
+    VALUES = {
+        "endpoint": "http://localhost:3000",
+        "routing_keys": ["did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"],
+    }

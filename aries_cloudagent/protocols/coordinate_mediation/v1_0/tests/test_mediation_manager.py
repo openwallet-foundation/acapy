@@ -116,11 +116,11 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert record.connection_id == TEST_CONN_ID
         record, grant = await manager.grant_request(record.mediation_id)
         assert grant.endpoint == session.settings.get("default_endpoint")
-        routing_key = (await manager._retrieve_routing_did(session))
-        routing_key = DIDKey.from_public_key_b58(routing_key.verkey, routing_key.key_type).did
-        assert grant.routing_keys == [
-            routing_key
-        ]
+        routing_key = await manager._retrieve_routing_did(session)
+        routing_key = DIDKey.from_public_key_b58(
+            routing_key.verkey, routing_key.key_type
+        ).did
+        assert grant.routing_keys == [routing_key]
 
     async def test_deny_request(self, manager):
         """test_deny_request."""
@@ -133,9 +133,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_update_keylist_delete(self, session, manager, record):
         """test_update_keylist_delete."""
-        await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_RECORD_VERKEY).save(
-            session
-        )
+        await RouteRecord(
+            connection_id=TEST_CONN_ID, recipient_key=TEST_RECORD_VERKEY
+        ).save(session)
         response = await manager.update_keylist(
             record=record,
             updates=[
@@ -168,9 +168,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_update_keylist_create_existing(self, session, manager, record):
         """test_update_keylist_create_existing."""
-        await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_RECORD_VERKEY).save(
-            session
-        )
+        await RouteRecord(
+            connection_id=TEST_CONN_ID, recipient_key=TEST_RECORD_VERKEY
+        ).save(session)
         response = await manager.update_keylist(
             record=record,
             updates=[

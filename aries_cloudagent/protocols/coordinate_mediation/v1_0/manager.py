@@ -458,7 +458,8 @@ class MediationManager:
         for key in grant.routing_keys:
             routing_keys.append(
                 DIDKey.from_did(key).public_key_b58
-                if key.startswith("did:key:") else key
+                if key.startswith("did:key:")
+                else key
             )
         record.routing_keys = routing_keys
         async with self._profile.session() as session:

@@ -37,9 +37,9 @@ class KeylistUpdateRule(BaseModel):
         if recipient_key.startswith("did:key:"):
             self.recipient_key = recipient_key
         else:
-            self.recipient_key = (
-                DIDKey.from_public_key_b58(recipient_key, KeyType.ED25519).did
-            )
+            self.recipient_key = DIDKey.from_public_key_b58(
+                recipient_key, KeyType.ED25519
+            ).did
         self.action = action
 
 
