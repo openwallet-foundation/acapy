@@ -58,7 +58,7 @@ def mediation_route_manager():
 
 @pytest.fixture
 def conn_record():
-    record = ConnRecord()
+    record = ConnRecord(connection_id="12345")
     record.metadata_get = mock.CoroutineMock(return_value={})
     record.metadata_set = mock.CoroutineMock()
     yield record
