@@ -20,3 +20,4 @@ ptvsd==4.3.2
 pydevd==2.8.0
 
 pydevd-pycharm~=222.3048.9
+more-itertools~=2.2
