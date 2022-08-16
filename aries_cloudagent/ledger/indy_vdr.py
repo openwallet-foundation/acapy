@@ -1068,7 +1068,7 @@ class IndyVdrLedger(BaseLedger):
         issuer_did: str = None,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Publish a revocation registry definition to the ledger."""
         # NOTE - issuer DID could be extracted from the revoc_reg_def ID
         async with self.profile.session() as session:
@@ -1105,7 +1105,7 @@ class IndyVdrLedger(BaseLedger):
         issuer_did: str = None,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Publish a revocation registry entry to the ledger."""
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)

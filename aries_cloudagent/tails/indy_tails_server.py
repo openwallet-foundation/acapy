@@ -1,7 +1,8 @@
 """Indy tails server interface class."""
 
-from typing import Tuple
 import logging
+
+from typing import Tuple
 
 from ..config.injection_context import InjectionContext
 from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
@@ -58,17 +59,18 @@ class IndyTailsServer(BaseTailsServer):
                 "tails_server_upload_url setting is not set"
             )
 
+        upload_url = tails_server_upload_url.rstrip("/") + f"/{rev_reg_id}"
+
         try:
-            return (
-                True,
-                await put_file(
-                    f"{tails_server_upload_url}/{rev_reg_id}",
-                    {"tails": tails_file_path},
-                    {"genesis": genesis_transactions},
-                    interval=interval,
-                    backoff=backoff,
-                    max_attempts=max_attempts,
-                ),
+            await put_file(
+                upload_url,
+                {"tails": tails_file_path},
+                {"genesis": genesis_transactions},
+                interval=interval,
+                backoff=backoff,
+                max_attempts=max_attempts,
             )
         except PutError as x_put:
             return (False, x_put.message)
+
+        return True, upload_url

@@ -7,6 +7,7 @@ import logging
 from typing import Mapping, Optional, Tuple
 
 from ....cache.base import BaseCache
+from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....indy.holder import IndyHolder, IndyHolderError
@@ -23,12 +24,10 @@ from ....messaging.credential_definitions.util import (
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
 from ....revocation.indy import IndyRevocation
+from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation.models.revocation_registry import RevocationRegistry
-from ....revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
-from ....revocation.util import notify_revocation_reg_event
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
-from ....connections.models.conn_record import ConnRecord
 
 from ...out_of_band.v1_0.models.oob_record import OobRecord
 from .messages.credential_ack import CredentialAck
@@ -593,13 +592,25 @@ class CredentialManager:
             )
             credential_ser = cred_ex_record._credential.ser
 
-        elif cred_ex_record.state == V10CredentialExchange.STATE_REQUEST_RECEIVED:
-            rev_reg = None
-            rev_reg_id = None
-            cred_rev_id = None
+        elif cred_ex_record.state != V10CredentialExchange.STATE_REQUEST_RECEIVED:
+            raise CredentialManagerError(
+                f"Credential exchange {cred_ex_record.credential_exchange_id} "
+                f"in {cred_ex_record.state} state "
+                f"(must be {V10CredentialExchange.STATE_REQUEST_RECEIVED})"
+            )
+
+        else:
             cred_offer_ser = cred_ex_record._credential_offer.ser
             cred_req_ser = cred_ex_record._credential_request.ser
+            cred_values = (
+                cred_ex_record.credential_proposal_dict.credential_proposal.attr_dict(
+                    decode=False
+                )
+            )
             schema_id = cred_ex_record.schema_id
+            cred_def_id = cred_ex_record.credential_definition_id
+
+            issuer = self.profile.inject(IndyIssuer)
             multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
                 ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
@@ -616,129 +627,76 @@ class CredentialManager:
                 credential_definition = await ledger.get_credential_definition(
                     cred_ex_record.credential_definition_id
                 )
+            revocable = credential_definition["value"].get("revocation")
 
-            tails_path = None
-            if credential_definition["value"].get("revocation"):
-                revoc = IndyRevocation(self._profile)
-                try:
-                    active_rev_reg_rec = await revoc.get_active_issuer_rev_reg_record(
-                        cred_ex_record.credential_definition_id
-                    )
-                    rev_reg = await active_rev_reg_rec.get_registry()
-                    rev_reg_id = rev_reg.registry_id
-                    tails_path = rev_reg.tails_local_path
-                    await rev_reg.get_or_fetch_local_tails_path()
-
-                except StorageNotFoundError:
-                    async with self._profile.session() as session:
-                        posted_rev_reg_recs = (
-                            await IssuerRevRegRecord.query_by_cred_def_id(
-                                session,
-                                cred_ex_record.credential_definition_id,
-                                state=IssuerRevRegRecord.STATE_POSTED,
-                            )
-                        )
-                    if not posted_rev_reg_recs:
-                        # Send next 2 rev regs, publish tails files in background
-                        async with self._profile.session() as session:
-                            old_rev_reg_recs = sorted(
-                                await IssuerRevRegRecord.query_by_cred_def_id(
-                                    session,
-                                    cred_ex_record.credential_definition_id,
-                                )
-                            )  # prefer to reuse prior rev reg size
-                        cred_def_id = cred_ex_record.credential_definition_id
-                        rev_reg_size = (
-                            old_rev_reg_recs[0].max_cred_num
-                            if old_rev_reg_recs
-                            else None
-                        )
-                        for _ in range(2):
-                            await notify_revocation_reg_event(
-                                self.profile,
-                                cred_def_id,
-                                rev_reg_size,
-                                auto_create_rev_reg=True,
-                            )
-
-                    if retries > 0:
-                        LOGGER.info(
-                            "Waiting 2s on posted rev reg for cred def %s, retrying",
-                            cred_ex_record.credential_definition_id,
-                        )
-                        await asyncio.sleep(2)
-                        return await self.issue_credential(
-                            cred_ex_record=cred_ex_record,
-                            comment=comment,
-                            retries=retries - 1,
-                        )
-
-                    raise CredentialManagerError(
-                        f"Cred def id {cred_ex_record.credential_definition_id} "
-                        "has no active revocation registry"
-                    ) from None
-                del revoc
-
-            credential_values = (
-                cred_ex_record.credential_proposal_dict.credential_proposal.attr_dict(
-                    decode=False
-                )
-            )
-            issuer = self._profile.inject(IndyIssuer)
-            try:
-                (credential_json, cred_rev_id) = await issuer.create_credential(
-                    schema,
-                    cred_offer_ser,
-                    cred_req_ser,
-                    credential_values,
-                    cred_ex_record.credential_exchange_id,
-                    rev_reg_id,
-                    tails_path,
-                )
-                credential_ser = json.loads(credential_json)
-
-                # If the rev reg is now full
-                if rev_reg and rev_reg.max_creds == int(cred_rev_id):
-                    async with self._profile.session() as session:
-                        await active_rev_reg_rec.set_state(
-                            session,
-                            IssuerRevRegRecord.STATE_FULL,
-                        )
-
-                    # Send next 1 rev reg, publish tails file in background
-                    cred_def_id = cred_ex_record.credential_definition_id
-                    rev_reg_size = active_rev_reg_rec.max_cred_num
-                    await notify_revocation_reg_event(
-                        self.profile,
-                        cred_def_id,
-                        rev_reg_size,
-                        auto_create_rev_reg=True,
-                    )
-
-            except IndyIssuerRevocationRegistryFullError:
-                # unlucky: duelling instance issued last cred near same time as us
-                async with self._profile.session() as session:
-                    await active_rev_reg_rec.set_state(
-                        session,
-                        IssuerRevRegRecord.STATE_FULL,
-                    )
-
-                if retries > 0:
-                    # use next rev reg; at worst, lucky instance is putting one up
+            for attempt in range(max(retries, 1)):
+                if attempt > 0:
                     LOGGER.info(
-                        "Waiting 1s and retrying: revocation registry %s is full",
-                        active_rev_reg_rec.revoc_reg_id,
+                        "Waiting 2s before retrying credential issuance "
+                        "for cred def '%s'",
+                        cred_def_id,
                     )
-                    await asyncio.sleep(1)
-                    return await self.issue_credential(
-                        cred_ex_record=cred_ex_record,
-                        comment=comment,
-                        retries=retries - 1,
-                    )
+                    await asyncio.sleep(2)
 
-                raise
+                if revocable:
+                    revoc = IndyRevocation(self._profile)
+                    registry_info = await revoc.get_or_create_active_registry(
+                        cred_def_id
+                    )
+                    if not registry_info:
+                        continue
+                    del revoc
+                    issuer_rev_reg, rev_reg = registry_info
+                    rev_reg_id = issuer_rev_reg.revoc_reg_id
+                    tails_path = rev_reg.tails_local_path
+                else:
+                    rev_reg_id = None
+                    tails_path = None
+
+                try:
+                    (credential_json, cred_rev_id) = await issuer.create_credential(
+                        schema,
+                        cred_offer_ser,
+                        cred_req_ser,
+                        cred_values,
+                        rev_reg_id,
+                        tails_path,
+                    )
+                except IndyIssuerRevocationRegistryFullError:
+                    # unlucky, another instance filled the registry first
+                    continue
+
+                if revocable and rev_reg.max_creds <= int(cred_rev_id):
+                    revoc = IndyRevocation(self._profile)
+                    await revoc.handle_full_registry(rev_reg_id)
+                    del revoc
+
+                credential_ser = json.loads(credential_json)
+                break
+
+            if not credential_ser:
+                raise CredentialManagerError(
+                    f"Cred def id {cred_ex_record.credential_definition_id} "
+                    "has no active revocation registry"
+                ) from None
 
             async with self._profile.transaction() as txn:
+                if revocable and cred_rev_id:
+                    issuer_cr_rec = IssuerCredRevRecord(
+                        state=IssuerCredRevRecord.STATE_ISSUED,
+                        cred_ex_id=cred_ex_record.credential_exchange_id,
+                        cred_ex_version=IssuerCredRevRecord.VERSION_1,
+                        rev_reg_id=rev_reg_id,
+                        cred_rev_id=cred_rev_id,
+                    )
+                    await issuer_cr_rec.save(
+                        txn,
+                        reason=(
+                            "Created issuer cred rev record for "
+                            f"rev reg id {rev_reg_id}, index {cred_rev_id}"
+                        ),
+                    )
+
                 cred_ex_record = await V10CredentialExchange.retrieve_by_id(
                     txn, cred_ex_record.credential_exchange_id, for_update=True
                 )
@@ -754,12 +712,6 @@ class CredentialManager:
                 cred_ex_record.revocation_id = cred_rev_id
                 await cred_ex_record.save(txn, reason="issue credential")
                 await txn.commit()
-        else:
-            raise CredentialManagerError(
-                f"Credential exchange {cred_ex_record.credential_exchange_id} "
-                f"in {cred_ex_record.state} state "
-                f"(must be {V10CredentialExchange.STATE_REQUEST_RECEIVED})"
-            )
 
         credential_message = CredentialIssue(
             comment=comment,
