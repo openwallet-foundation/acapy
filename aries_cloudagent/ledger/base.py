@@ -49,6 +49,10 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Accessor for the ledger read-only flag."""
 
     @abstractmethod
+    async def is_ledger_read_only(self) -> bool:
+        """Check if ledger is read-only including TAA."""
+
+    @abstractmethod
     async def get_key_for_did(self, did: str) -> str:
         """Fetch the verkey for a ledger DID.
 
@@ -266,7 +270,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             LOGGER.warning("Schema already exists on ledger. Returning details.")
             schema_id, schema_def = schema_info
         else:
-            if self.read_only:
+            if await self.is_ledger_read_only():
                 raise LedgerError(
                     "Error cannot write schema when ledger is in read only mode"
                 )
@@ -461,7 +465,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             except IndyIssuerError as err:
                 raise LedgerError(err.message) from err
 
-            if self.read_only:
+            if await self.is_ledger_read_only():
                 raise LedgerError(
                     "Error cannot write cred def when ledger is in read only mode"
                 )

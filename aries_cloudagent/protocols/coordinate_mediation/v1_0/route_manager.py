@@ -66,13 +66,14 @@ class RouteManager(ABC):
         or_default: bool = False,
     ):
         """Return relevant mediator for connection."""
-        async with profile.session() as session:
-            mediation_metadata = await conn_record.metadata_get(
-                session, MediationManager.METADATA_KEY, {}
-            )
-            mediation_id = (
-                mediation_metadata.get(MediationManager.METADATA_ID) or mediation_id
-            )
+        if conn_record.connection_id:
+            async with profile.session() as session:
+                mediation_metadata = await conn_record.metadata_get(
+                    session, MediationManager.METADATA_KEY, {}
+                )
+                mediation_id = (
+                    mediation_metadata.get(MediationManager.METADATA_ID) or mediation_id
+                )
 
         mediation_record = await self.mediation_record_if_id(
             profile, mediation_id, or_default
