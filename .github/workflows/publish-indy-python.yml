@@ -39,10 +39,10 @@ jobs:
           echo "::set-output name=repo-owner::${GITHUB_REPOSITORY_OWNER,,}"
 
           [ -n "${{ inputs.indy_sdk_url }}"] && echo "::set-output name=indy-sdk-url::${{ inputs.indy_sdk_url }}"
-          [ -z "${{ inputs.indy_sdk_url }}"] && echo "::set-output name=indy-sdk-url::${{ env.INDY_SDK_TAG_URL }}v${{ env.INDY_VERSION }}"
+          [ -z "${{ inputs.indy_sdk_url }}"] && echo "::set-output name=indy-sdk-url::${{ env.INDY_SDK_TAG_URL }}v${{ inputs.indy_version }}"
 
           [ -n "${{ inputs.indy_postgres_url }}"] && echo "::set-output name=indy-postgres-url::${{ inputs.indy_postgres_url }}"
-          [ -z "${{ inputs.indy_postgres_url }}"] && echo "::set-output name=indy-postgres-url::${{ env.INDY_SDK_TAG_URL }}v${{ env.INDY_VERSION }}"
+          [ -z "${{ inputs.indy_postgres_url }}"] && echo "::set-output name=indy-postgres-url::${{ env.INDY_SDK_TAG_URL }}v${{ inputs.indy_version }}"
 
           [ -n "${{ inputs.tag }}" ] && echo "::set-output name=tag::${{ inputs.tag }}"
           [ -z "${{ inputs.tag }}" ] && echo "::set-output name=tag::py${{ matrix.python-version }}-${{ inputs.indy_version }}"
@@ -67,7 +67,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Base Image Metadata
+      - name: Setup Image Metadata
         id: base-meta
         uses: docker/metadata-action@v3
         with:
@@ -76,7 +76,7 @@ jobs:
           tags: |
             type=raw,value=${{ steps.info.outputs.tag }}
 
-      - name: Build and Push Base Image to ghcr.io
+      - name: Build and Push Image to ghcr.io
         uses: docker/build-push-action@v3
         with:
           push: true

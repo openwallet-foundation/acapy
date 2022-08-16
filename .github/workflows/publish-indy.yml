@@ -1,7 +1,12 @@
-name: Publish ACA-Py
+name: Publish ACA-Py (Indy)
 on:
   workflow_dispatch:
     inputs:
+      indy_version:
+        description: 'Indy SDK Version'
+        required: false
+        type: string
+        default: '1.16.0'
       tag:
         description: 'Image tag'
         required: false
@@ -18,7 +23,7 @@ jobs:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10']
 
-    name: Publish
+    name: Publish (Indy)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -33,7 +38,7 @@ jobs:
         id: tag
         run: |
           [ -n "${{ inputs.tag }}" ] && echo "::set-output name=tag::${{ inputs.tag }}"
-          [ -z "${{ inputs.tag }}" ] && echo "::set-output name=tag::py${{ matrix.python-version }}-${{ steps.info.outputs.acapy-version }}"
+          [ -z "${{ inputs.tag }}" ] && echo "::set-output name=tag::py${{ matrix.python-version }}-indy-${{ inputs.indy_version }}-${{ steps.info.outputs.acapy-version }}"
 
       - name: Cache Docker layers
         uses: actions/cache@v3
@@ -67,13 +72,15 @@ jobs:
         with:
           push: true
           context: .
-          file: docker/Dockerfile
+          file: docker/Dockerfile.indy
           tags: ${{ steps.base-meta.outputs.tags }}
           labels: ${{ steps.base-meta.outputs.labels }}
           build-args: |
             python_version=${{ matrix.python-version }}
+            indy_version=${{ inputs.indy_version }}
             acapy_version=${{ steps.info.outputs.acapy-version }}
             acapy_reqs=${{ env.ACAPY_REQS }}
+            org=${{ steps.info.outputs.repo-owner }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
 
