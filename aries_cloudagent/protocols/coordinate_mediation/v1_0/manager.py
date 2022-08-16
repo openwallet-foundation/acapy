@@ -249,9 +249,16 @@ class MediationManager:
             RouteUpdate.ACTION_CREATE: KeylistUpdateRule.RULE_ADD,
         }
 
+        def normalize_public_key(key: str):
+            if key.startswith("did:key:"):
+                return DIDKey.from_did(key).public_key_b58
+
+            return key
+
         def rule_to_update(rule: KeylistUpdateRule):
+            recipient_key = normalize_public_key(rule.recipient_key)
             return RouteUpdate(
-                recipient_key=rule.recipient_key, action=action_map[rule.action]
+                recipient_key=recipient_key, action=action_map[rule.action]
             )
 
         def updated_to_keylist_updated(updated: RouteUpdated):
