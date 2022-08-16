@@ -25,3 +25,6 @@ class KeylistUpdateResponseHandler(BaseHandler):
         await mgr.store_update_results(
             context.connection_record.connection_id, context.message.updated
         )
+        await mgr.notify_keylist_updated(
+            context.connection_record.connection_id, context.message
+        )

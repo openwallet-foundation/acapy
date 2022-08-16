@@ -1,8 +1,9 @@
 import json
 
+from async_case import IsolatedAsyncioTestCase
+import mock as async_mock
 import pytest
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from marshmallow import EXCLUDE
 
 from ...config.injection_context import InjectionContext
@@ -18,6 +19,7 @@ from ...protocols.issue_credential.v2_0.messages.cred_problem_report import (
     V20CredProblemReport,
 )
 from ...protocols.problem_report.v1_0.message import ProblemReport
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...transport.inbound.message import InboundMessage
 from ...transport.inbound.receipt import MessageReceipt
 from ...transport.outbound.message import OutboundMessage
@@ -31,6 +33,7 @@ def make_profile() -> Profile:
     profile.context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
     profile.context.injector.bind_instance(Collector, Collector())
     profile.context.injector.bind_instance(EventBus, EventBus())
+    profile.context.injector.bind_instance(RouteManager, async_mock.MagicMock())
     return profile
 
 
@@ -87,7 +90,7 @@ class StubV1_2AgentMessageHandler:
         pass
 
 
-class TestDispatcher(AsyncTestCase):
+class TestDispatcher(IsolatedAsyncioTestCase):
     async def test_dispatch(self):
         profile = make_profile()
         registry = profile.inject(ProtocolRegistry)
@@ -110,7 +113,7 @@ class TestDispatcher(AsyncTestCase):
             test_module, "ConnectionManager", autospec=True
         ) as conn_mgr_mock:
             conn_mgr_mock.return_value = async_mock.MagicMock(
-                find_inbound_connection=async_mock.CoroutineMock(
+                find_inbound_connection=async_mock.AsyncMock(
                     return_value=async_mock.MagicMock(connection_id="dummy")
                 )
             )
@@ -384,7 +387,7 @@ class TestDispatcher(AsyncTestCase):
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         outbound_message = await responder.create_outbound(message)
-        with async_mock.patch.object(responder, "_send", async_mock.CoroutineMock()):
+        with async_mock.patch.object(responder, "_send", async_mock.AsyncMock()):
             await responder.send_outbound(outbound_message)
 
     async def test_create_send_webhook(self):
@@ -401,7 +404,7 @@ class TestDispatcher(AsyncTestCase):
         message = b"abc123xyz7890000"
         responder = test_module.DispatcherResponder(context, message, None)
         with async_mock.patch.object(
-            responder, "send_outbound", async_mock.CoroutineMock()
+            responder, "send_outbound", async_mock.AsyncMock()
         ) as mock_send_outbound:
             await responder.send(message)
             assert mock_send_outbound.called_once()

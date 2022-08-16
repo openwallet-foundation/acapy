@@ -10,7 +10,6 @@ from indy.error import AnoncredsRevocationRegistryFullError, IndyError, ErrorCod
 
 from ...indy.sdk.profile import IndySdkProfile
 from ...messaging.util import encode
-from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ...storage.error import StorageError
 
 from ..issuer import (
@@ -162,7 +161,6 @@ class IndySdkIssuer(IndyIssuer):
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        cred_ex_id: str,
         rev_reg_id: str = None,
         tails_file_path: str = None,
     ) -> Tuple[str, str]:
@@ -174,7 +172,6 @@ class IndySdkIssuer(IndyIssuer):
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
             credential_values: Values to go in credential
-            cred_ex_id: credential exchange identifier to use in issuer cred rev rec
             rev_reg_id: ID of the revocation registry
             tails_file_path: Path to the local tails file
 
@@ -219,22 +216,6 @@ class IndySdkIssuer(IndyIssuer):
                 rev_reg_id,
                 tails_reader_handle,
             )
-
-            if cred_rev_id:
-                issuer_cr_rec = IssuerCredRevRecord(
-                    state=IssuerCredRevRecord.STATE_ISSUED,
-                    cred_ex_id=cred_ex_id,
-                    rev_reg_id=rev_reg_id,
-                    cred_rev_id=cred_rev_id,
-                )
-                async with self.profile.session() as session:
-                    await issuer_cr_rec.save(
-                        session,
-                        reason=(
-                            "Created issuer cred rev record for "
-                            f"rev reg id {rev_reg_id}, {cred_rev_id}"
-                        ),
-                    )
         except AnoncredsRevocationRegistryFullError:
             LOGGER.warning(
                 "Revocation registry %s is full: cannot create credential",

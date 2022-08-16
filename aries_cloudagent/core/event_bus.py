@@ -15,6 +15,7 @@ from typing import (
     Optional,
     Pattern,
     TYPE_CHECKING,
+    Tuple,
 )
 from functools import partial
 
@@ -193,7 +194,7 @@ class MockEventBus(EventBus):
     def __init__(self):
         """Initialize MockEventBus."""
         super().__init__()
-        self.events = []
+        self.events: List[Tuple[Profile, Event]] = []
 
     async def notify(self, profile: "Profile", event: Event):
         """Append the event to MockEventBus.events."""

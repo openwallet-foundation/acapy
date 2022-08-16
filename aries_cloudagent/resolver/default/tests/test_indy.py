@@ -16,7 +16,6 @@ from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 
 from ...base import DIDNotFound, ResolverError
-from .. import indy as test_module
 from ..indy import IndyDIDResolver
 
 # pylint: disable=W0621
@@ -33,8 +32,11 @@ def resolver():
 def ledger():
     """Ledger fixture."""
     ledger = async_mock.MagicMock(spec=BaseLedger)
-    ledger.get_endpoint_for_did = async_mock.CoroutineMock(
-        return_value="https://github.com/"
+    ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
+        return_value={
+            "endpoint": "https://github.com/",
+            "profile": "https://example.com/profile",
+        }
     )
     ledger.get_key_for_did = async_mock.CoroutineMock(return_value="key")
     yield ledger
@@ -106,4 +108,40 @@ class TestIndyResolver:
         """Test resolve method when no did is found."""
         ledger.get_key_for_did.side_effect = LedgerError
         with pytest.raises(DIDNotFound):
+            await resolver.resolve(profile, TEST_DID0)
+
+    @pytest.mark.asyncio
+    async def test_supports_updated_did_sov_rules(
+        self, resolver: IndyDIDResolver, ledger: BaseLedger, profile: Profile
+    ):
+        """Test that new attrib structure is supported."""
+        example = {
+            "endpoint": {
+                "endpoint": "https://example.com/endpoint",
+                "routingKeys": ["a-routing-key"],
+                "types": ["DIDComm", "did-communication", "endpoint"],
+            }
+        }
+
+        ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
+            return_value=example
+        )
+        assert await resolver.resolve(profile, TEST_DID0)
+
+    @pytest.mark.asyncio
+    async def test_supports_updated_did_sov_rules_x_no_endpoint_url(
+        self, resolver: IndyDIDResolver, ledger: BaseLedger, profile: Profile
+    ):
+        """Test that new attrib structure is supported."""
+        example = {
+            "endpoint": {
+                "routingKeys": ["a-routing-key"],
+                "types": ["DIDComm", "did-communication", "endpoint"],
+            }
+        }
+
+        ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
+            return_value=example
+        )
+        with pytest.raises(ValueError):
             await resolver.resolve(profile, TEST_DID0)

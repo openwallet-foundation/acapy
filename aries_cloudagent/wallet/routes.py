@@ -1,21 +1,16 @@
 """Wallet admin routes."""
 
 import json
+import logging
 
 from aiohttp import web
-from aiohttp_apispec import (
-    docs,
-    querystring_schema,
-    request_schema,
-    response_schema,
-)
-import logging
+from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
 
 from ..admin.request_context import AdminRequestContext
+from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
-from ..connections.models.conn_record import ConnRecord
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
@@ -29,21 +24,20 @@ from ..messaging.valid import (
     IndyOrKeyDID,
     IndyRawPublicKey,
 )
-from ..multitenant.base import BaseMultitenantManager
+from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
 )
 from ..protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
-from ..storage.error import StorageNotFoundError, StorageError
-
+from ..storage.error import StorageError, StorageNotFoundError
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_posture import DIDPosture
 from .did_method import DIDMethod
+from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import KeyType
 from .util import EVENT_LISTENER_PATTERN
@@ -554,10 +548,6 @@ async def promote_wallet_public_did(
     connection_id: str = None,
 ) -> DIDInfo:
     """Promote supplied DID to the wallet public DID."""
-
-    # if running in multitenant mode this will be the sub-wallet
-    wallet_id = context.settings.get("wallet.id")
-
     info: DIDInfo = None
     endorser_did = None
     ledger = profile.inject_or(BaseLedger)
@@ -641,11 +631,9 @@ async def promote_wallet_public_did(
         # async with ledger:
         #     await ledger.update_endpoint_for_did(info.did, endpoint)
 
-        # Multitenancy setup
-        multitenant_mgr = profile.inject_or(BaseMultitenantManager)
-        # Add multitenant relay mapping so implicit invitations are still routed
-        if multitenant_mgr and wallet_id:
-            await multitenant_mgr.add_key(wallet_id, info.verkey, skip_if_exists=True)
+        # Route the public DID
+        route_manager = profile.inject(RouteManager)
+        await route_manager.route_public_did(profile, info.verkey)
 
     return info, attrib_def
 

@@ -38,6 +38,8 @@ def ledger():
 
     with async_mock.patch.object(ledger.pool, "open", open), async_mock.patch.object(
         ledger.pool, "close", close
+    ), async_mock.patch.object(
+        ledger, "is_ledger_read_only", async_mock.CoroutineMock(return_value=False)
     ):
         yield ledger
 
@@ -237,8 +239,9 @@ class TestIndyVdrLedger:
                 endorser_did=test_did.did,
             )
             assert schema_id == issuer.create_schema.return_value[0]
-            assert signed_txn["signed_txn"].get("endorser") == test_did.did
-            assert signed_txn["signed_txn"].get("signature")
+            txn = json.loads(signed_txn["signed_txn"])
+            assert txn.get("endorser") == test_did.did
+            assert txn.get("signature")
 
     @pytest.mark.asyncio
     async def test_send_schema_no_public_did(
@@ -301,6 +304,10 @@ class TestIndyVdrLedger:
                 ledger,
                 "check_existing_schema",
                 async_mock.CoroutineMock(return_value=False),
+            ), async_mock.patch.object(
+                ledger,
+                "is_ledger_read_only",
+                async_mock.CoroutineMock(return_value=True),
             ):
                 with pytest.raises(LedgerError):
                     schema_id, schema_def = await ledger.create_and_send_schema(
