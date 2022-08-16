@@ -666,7 +666,7 @@ class TestIndyVdrLedger:
         self, ledger: IndyVdrLedger, all_exist_endpoints, routing_keys, result
     ):
         async with ledger:
-            attr_json = await ledger.construct_attr_json(
+            attr_json = await ledger._construct_attr_json(
                 "https://url", EndpointType.ENDPOINT, all_exist_endpoints, routing_keys
             )
         assert attr_json == json.dumps(result)
@@ -680,7 +680,7 @@ class TestIndyVdrLedger:
         async with ledger:
             with async_mock.patch.object(
                 ledger,
-                "construct_attr_json",
+                "_construct_attr_json",
                 async_mock.CoroutineMock(
                     return_value=json.dumps(
                         {

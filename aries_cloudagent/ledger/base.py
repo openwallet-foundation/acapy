@@ -79,8 +79,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             did: The DID to look up on the ledger or in the cache
         """
 
-    @abstractmethod
-    async def construct_attr_json(
+    async def _construct_attr_json(
         self,
         endpoint: str,
         endpoint_type: EndpointType = None,
@@ -95,6 +94,23 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             endpoint_type: The type of the endpoint
             routing_keys: List of routing_keys if mediator is present
         """
+
+        if not routing_keys:
+            routing_keys = []
+
+        endpoint_dict = {"endpoint": endpoint}
+
+        if all_exist_endpoints:
+            all_exist_endpoints[endpoint_type.indy] = endpoint_dict
+            endpoint_dict["routingKeys"] = routing_keys
+            attr_json = json.dumps({"endpoint": all_exist_endpoints})
+
+        else:
+            endpoint_val = {endpoint_type.indy: endpoint_dict}
+            endpoint_dict["routingKeys"] = routing_keys
+            attr_json = json.dumps({"endpoint": endpoint_val})
+
+        return attr_json
 
     @abstractmethod
     async def update_endpoint_for_did(

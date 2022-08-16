@@ -2305,7 +2305,7 @@ class TestIndySdkLedger(AsyncTestCase):
     async def test_construct_attr_json_with_routing_keys(self, mock_close, mock_open):
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         async with ledger:
-            attr_json = await ledger.construct_attr_json(
+            attr_json = await ledger._construct_attr_json(
                 "https://url",
                 EndpointType.ENDPOINT,
                 all_exist_endpoints={"Endpoint": "https://endpoint"},
@@ -2346,7 +2346,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 IndySdkWallet, "get_public_did"
             ) as mock_wallet_get_public_did, async_mock.patch.object(
                 ledger,
-                "construct_attr_json",
+                "_construct_attr_json",
                 async_mock.CoroutineMock(
                     return_value=json.dumps(
                         {

@@ -672,39 +672,6 @@ class IndyVdrLedger(BaseLedger):
 
         return address
 
-    async def construct_attr_json(
-        self,
-        endpoint: str,
-        endpoint_type: EndpointType = None,
-        all_exist_endpoints: dict = None,
-        routing_keys: List[str] = None,
-    ) -> str:
-        """Create attr_json string.
-
-        Args:
-            all_exist_endpoings: Dictionary of all existing endpoints
-            endpoint: The endpoint address
-            endpoint_type: The type of the endpoint
-            routing_keys: List of routing_keys if mediator is present
-        """
-
-        if not routing_keys:
-            routing_keys = []
-
-        endpoint_dict = {"endpoint": endpoint}
-
-        if all_exist_endpoints:
-            all_exist_endpoints[endpoint_type.indy] = endpoint_dict
-            endpoint_dict["routingKeys"] = routing_keys
-            attr_json = json.dumps({"endpoint": all_exist_endpoints})
-
-        else:
-            endpoint_val = {endpoint_type.indy: endpoint_dict}
-            endpoint_dict["routingKeys"] = routing_keys
-            attr_json = json.dumps({"endpoint": endpoint_val})
-
-        return attr_json
-
     async def update_endpoint_for_did(
         self,
         did: str,
@@ -745,11 +712,8 @@ class IndyVdrLedger(BaseLedger):
 
             nym = self.did_to_nym(did)
 
-            attr_json = await self.construct_attr_json(
-                endpoint,
-                endpoint_type,
-                all_exist_endpoints,
-                routing_keys,
+            attr_json = await self._construct_attr_json(
+                endpoint, endpoint_type, all_exist_endpoints, routing_keys
             )
 
             try:
