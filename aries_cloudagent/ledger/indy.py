@@ -294,6 +294,18 @@ class IndySdkLedger(BaseLedger):
         """Accessor for the ledger read-only flag."""
         return self.pool.read_only
 
+    async def is_ledger_read_only(self) -> bool:
+        """Check if ledger is read-only including TAA."""
+        if self.read_only:
+            return self.read_only
+        # if TAA is required and not accepted we should be in read-only mode
+        taa = await self.get_txn_author_agreement()
+        if taa["taa_required"]:
+            taa_acceptance = await self.get_latest_txn_author_acceptance()
+            if "mechanism" not in taa_acceptance:
+                return True
+        return self.read_only
+
     async def __aenter__(self) -> "IndySdkLedger":
         """
         Context manager entry.
@@ -758,7 +770,7 @@ class IndySdkLedger(BaseLedger):
         )
 
         if exist_endpoint_of_type != endpoint:
-            if self.pool.read_only:
+            if await self.is_ledger_read_only():
                 raise LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"
                 )
@@ -811,7 +823,7 @@ class IndySdkLedger(BaseLedger):
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
         """
-        if self.pool.read_only:
+        if await self.is_ledger_read_only():
             raise LedgerError(
                 "Error cannot register nym when ledger is in read only mode"
             )

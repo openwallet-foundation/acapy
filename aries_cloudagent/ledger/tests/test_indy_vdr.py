@@ -38,6 +38,8 @@ def ledger():
 
     with async_mock.patch.object(ledger.pool, "open", open), async_mock.patch.object(
         ledger.pool, "close", close
+    ), async_mock.patch.object(
+        ledger, "is_ledger_read_only", async_mock.CoroutineMock(return_value=False)
     ):
         yield ledger
 
@@ -302,6 +304,10 @@ class TestIndyVdrLedger:
                 ledger,
                 "check_existing_schema",
                 async_mock.CoroutineMock(return_value=False),
+            ), async_mock.patch.object(
+                ledger,
+                "is_ledger_read_only",
+                async_mock.CoroutineMock(return_value=True),
             ):
                 with pytest.raises(LedgerError):
                     schema_id, schema_def = await ledger.create_and_send_schema(
