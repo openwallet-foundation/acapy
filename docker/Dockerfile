@@ -1,11 +1,19 @@
 ARG python_version=3.6.13
-FROM python:${python_version}-slim-buster
+FROM python:${python_version}-slim-buster AS build
+
+WORKDIR /src
+
+ADD . .
+
+RUN pip install setuptools wheel
+RUN python setup.py sdist bdist_wheel
+
+FROM python:${python_version}-slim-buster AS main
 
 ARG uid=1001
 ARG user=aries
 ARG acapy_version
 ARG acapy_reqs
-ARG git_egg_ref
 
 ENV HOME="/home/$user" \
     APP_ROOT="$HOME" \
@@ -76,7 +84,9 @@ RUN mkdir -p \
 # Also ensure the permissions on the python 'site-packages' folder are set correctly.
 RUN chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache
 
-RUN pip install --no-cache-dir ${git_egg_ref}aries-cloudagent${acapy_reqs}==${acapy_version}
+COPY --from=build /src/dist/aries_cloudagent*.whl .
+
+RUN pip install --no-cache-dir --find-links=. aries_cloudagent${acapy_reqs} && rm aries_cloudagent*.whl
 
 USER $user
 
