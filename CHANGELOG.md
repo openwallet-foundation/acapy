@@ -48,7 +48,7 @@ more work is still to be done on that before the final v1.0.0 release.
   - Unit test fixes for python 3.9 [\#1858](https://github.com/hyperledger/aries-cloudagent-python/pull/1858) ([andrewwhitehead](https://github.com/andrewwhitehead))
 
 - Release management pull requests
-  - Release 1.0.0-rc0 [\#1903](https://github.com/hyperledger/aries-cloudagent-python/pull/1903) ([swcurran](https://github.com/swcurran))
+  - Release 1.0.0-rc0 [\#1904](https://github.com/hyperledger/aries-cloudagent-python/pull/1904) ([swcurran](https://github.com/swcurran))
 
 # 0.7.4
 
