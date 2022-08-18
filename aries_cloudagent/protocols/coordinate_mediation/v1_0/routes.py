@@ -532,13 +532,13 @@ async def update_keylist_for_connection(request: web.BaseRequest):
         async with context.session() as session:
             connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
             mediation_record = await route_manager.mediation_record_for_connection(
-                connection_record, mediation_id, or_default=True
+                context.profile, connection_record, mediation_id, or_default=True
             )
 
         # MediationRecord is permitted to be None; route manager will
         # ensure the correct mediator is notified.
         keylist_update = await route_manager.route_connection(
-            connection_record, mediation_record
+            context.profile, connection_record, mediation_record
         )
 
         results = keylist_update.serialize() if keylist_update else {}
