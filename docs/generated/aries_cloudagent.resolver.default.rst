@@ -25,6 +25,14 @@ aries\_cloudagent.resolver.default.key module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.resolver.default.universal module
+---------------------------------------------------
+
+.. automodule:: aries_cloudagent.resolver.default.universal
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.resolver.default.web module
 ---------------------------------------------
 
