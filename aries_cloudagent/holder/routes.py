@@ -378,7 +378,7 @@ async def w3c_cred_remove(request: web.BaseRequest):
         try:
             vc_record = await holder.retrieve_credential_by_id(credential_id)
             await holder.delete_credential(vc_record)
-            topic = f"acapy::record::credential::delete"
+            topic = f"acapy::record::w3c_credential::delete"
             await session.profile.notify(topic, {"id": credential_id, "state": "deleted"})
         except StorageNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
