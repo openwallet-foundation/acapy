@@ -64,3 +64,11 @@ aries\_cloudagent.multitenant.manager\_provider module
    :members:
    :undoc-members:
    :show-inheritance:
+
+aries\_cloudagent.multitenant.route\_manager module
+---------------------------------------------------
+
+.. automodule:: aries_cloudagent.multitenant.route_manager
+   :members:
+   :undoc-members:
+   :show-inheritance:
