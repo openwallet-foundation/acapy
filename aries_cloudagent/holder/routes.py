@@ -274,7 +274,7 @@ async def credentials_remove(request: web.BaseRequest):
         async with context.profile.session() as session:
             holder = session.inject(IndyHolder)
             await holder.delete_credential(credential_id)
-            topic = f"acapy::record::credential::delete"
+            topic = "acapy::record::credential::delete"
             await session.profile.notify(
                 topic, {"id": credential_id, "state": "deleted"}
             )
@@ -380,7 +380,7 @@ async def w3c_cred_remove(request: web.BaseRequest):
         try:
             vc_record = await holder.retrieve_credential_by_id(credential_id)
             await holder.delete_credential(vc_record)
-            topic = f"acapy::record::w3c_credential::delete"
+            topic = "acapy::record::w3c_credential::delete"
             await session.profile.notify(
                 topic, {"id": credential_id, "state": "deleted"}
             )
