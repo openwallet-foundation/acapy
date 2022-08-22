@@ -133,10 +133,10 @@ class OutOfBandManager(BaseConnectionManager):
                 "Cannot store metadata without handshake protocols"
             )
         if public:
-            if multi_use:
-                raise OutOfBandManagerError(
-                    "Cannot create public invitation with multi_use"
-                )
+            # if multi_use:
+            #     raise OutOfBandManagerError(
+            #         "Cannot create public invitation with multi_use"
+            #     )
             if metadata:
                 raise OutOfBandManagerError(
                     "Cannot store metadata on public invitations"
@@ -235,9 +235,15 @@ class OutOfBandManager(BaseConnectionManager):
 
             # Only create connection record if hanshake_protocols is defined
             if handshake_protocols:
+                invitation_mode = (
+                    ConnRecord.INVITATION_MODE_MULTI
+                    if multi_use
+                    else ConnRecord.INVITATION_MODE_ONCE
+                )
                 conn_rec = ConnRecord(  # create connection record
                     invitation_key=public_did.verkey,
                     invitation_msg_id=invi_msg._id,
+                    invitation_mode=invitation_mode,
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                     state=ConnRecord.State.INVITATION.rfc23,
                     accept=ConnRecord.ACCEPT_AUTO
