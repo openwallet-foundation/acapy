@@ -218,7 +218,7 @@ class PluginRegistry:
     ):
         """Load a particular protocol version."""
         protocol_registry = context.inject(ProtocolRegistry)
-        goal_code_resgistry = context.inject(GoalCodeRegistry)
+        goal_code_registry = context.inject(GoalCodeRegistry)
         if hasattr(mod, "MESSAGE_TYPES"):
             protocol_registry.register_message_types(
                 mod.MESSAGE_TYPES, version_definition=version_definition
@@ -227,7 +227,7 @@ class PluginRegistry:
             protocol_registry.register_controllers(
                 mod.CONTROLLERS, version_definition=version_definition
             )
-            goal_code_resgistry.register_controllers(mod.CONTROLLERS)
+            goal_code_registry.register_controllers(mod.CONTROLLERS)
 
     async def load_protocols(self, context: InjectionContext, plugin: ModuleType):
         """For modules that don't implement setup, register protocols manually."""

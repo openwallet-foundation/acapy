@@ -20,9 +20,12 @@ runs:
     - name: run-integration-tests-acapy
       # to run with external ledger and tails server run as follows (and remove the ledger and tails actions from the workflow):
       # run: LEDGER_URL=http://test.bcovrin.vonx.io PUBLIC_TAILS_URL=https://tails.vonx.io ./run_bdd ${{ inputs.TEST_SCOPE }}
-      run: LEDGER_URL=${{inputs.IN_LEDGER_URL}} PUBLIC_TAILS_URL=${{inputs.IN_PUBLIC_TAILS_URL}} ./run_bdd ${{ inputs.TEST_SCOPE }}
+      run: ./run_bdd ${{ inputs.TEST_SCOPE }}
       shell: bash
       env:
+        LEDGER_URL: ${{ inputs.IN_LEDGER_URL }}
+        PUBLIC_TAILS_URL: ${{ inputs.IN_PUBLIC_TAILS_URL }}
+        LOG_LEVEL: warning
         NO_TTY: "1"
       working-directory: acapy/demo
 branding:

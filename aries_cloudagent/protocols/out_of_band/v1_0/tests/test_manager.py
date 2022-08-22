@@ -22,6 +22,7 @@ from .....messaging.util import datetime_now, datetime_to_str, str_to_epoch
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.coordinate_mediation.v1_0.manager import MediationManager
+from .....protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
@@ -312,6 +313,17 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.responder = MockResponder()
         self.responder.send = async_mock.CoroutineMock()
 
+        self.test_mediator_routing_keys = [
+            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
+        ]
+        self.test_mediator_conn_id = "mediator-conn-id"
+        self.test_mediator_endpoint = "http://mediator.example.com"
+
+        self.route_manager = async_mock.MagicMock(RouteManager)
+        self.route_manager.routing_info = async_mock.CoroutineMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
+
         self.profile = InMemoryProfile.test_profile(
             {
                 "default_endpoint": TestConfig.test_endpoint,
@@ -319,7 +331,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
                 "debug.auto_accept_requests": True,
-            }
+            },
+            bind={
+                RouteManager: self.route_manager,
+            },
         )
 
         self.profile.context.injector.bind_instance(BaseResponder, self.responder)
@@ -353,12 +368,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             save=async_mock.CoroutineMock(),
         )
 
-        self.test_mediator_routing_keys = [
-            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
-        ]
-        self.test_mediator_conn_id = "mediator-conn-id"
-        self.test_mediator_endpoint = "http://mediator.example.com"
-
     async def test_create_invitation_handshake_succeeds(self):
         self.profile.context.update_settings({"public_invites": True})
 
@@ -387,6 +396,58 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 in invi_rec.invitation.handshake_protocols
             )
             assert invi_rec.invitation.services == [f"did:sov:{TestConfig.test_did}"]
+
+    async def test_create_invitation_multitenant_local(self):
+        self.profile.context.update_settings(
+            {
+                "multitenant.enabled": True,
+                "wallet.id": "test_wallet",
+            }
+        )
+
+        with async_mock.patch.object(
+            InMemoryWallet, "create_signing_key", autospec=True
+        ) as mock_wallet_create_signing_key, async_mock.patch.object(
+            self.multitenant_mgr, "get_default_mediator"
+        ) as mock_get_default_mediator:
+            mock_wallet_create_signing_key.return_value = KeyInfo(
+                TestConfig.test_verkey, None, KeyType.ED25519
+            )
+            mock_get_default_mediator.return_value = MediationRecord()
+            await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                hs_protos=[HSProto.RFC23],
+                multi_use=False,
+            )
+
+            self.route_manager.route_invitation.assert_called_once()
+
+    async def test_create_invitation_multitenant_public(self):
+        self.profile.context.update_settings(
+            {
+                "multitenant.enabled": True,
+                "wallet.id": "test_wallet",
+                "public_invites": True,
+            }
+        )
+
+        with async_mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                self.test_did,
+                self.test_verkey,
+                None,
+                method=DIDMethod.SOV,
+                key_type=KeyType.ED25519,
+            )
+            await self.manager.create_invitation(
+                hs_protos=[HSProto.RFC23],
+                public=True,
+                multi_use=False,
+            )
+
+            self.route_manager.route_invitation.assert_called_once()
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
         async with self.profile.session() as session:
@@ -417,67 +478,17 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     INVITATION
                 )
                 assert invite.invitation.label == "test123"
+                assert (
+                    DIDKey.from_did(
+                        invite.invitation.services[0].routing_keys[0]
+                    ).public_key_b58
+                    == self.test_mediator_routing_keys[0]
+                )
+                assert (
+                    invite.invitation.services[0].service_endpoint
+                    == self.test_mediator_endpoint
+                )
                 mock_get_default_mediator.assert_not_called()
-
-    async def test_create_invitation_multitenant_local(self):
-        self.profile.context.update_settings(
-            {
-                "multitenant.enabled": True,
-                "wallet.id": "test_wallet",
-            }
-        )
-
-        self.multitenant_mgr.add_key = async_mock.CoroutineMock()
-
-        with async_mock.patch.object(
-            InMemoryWallet, "create_signing_key", autospec=True
-        ) as mock_wallet_create_signing_key, async_mock.patch.object(
-            self.multitenant_mgr, "get_default_mediator"
-        ) as mock_get_default_mediator:
-            mock_wallet_create_signing_key.return_value = KeyInfo(
-                TestConfig.test_verkey, None, KeyType.ED25519
-            )
-            mock_get_default_mediator.return_value = MediationRecord()
-            await self.manager.create_invitation(
-                my_endpoint=TestConfig.test_endpoint,
-                hs_protos=[HSProto.RFC23],
-                multi_use=False,
-            )
-
-            self.multitenant_mgr.add_key.assert_called_once_with(
-                "test_wallet", TestConfig.test_verkey
-            )
-
-    async def test_create_invitation_multitenant_public(self):
-        self.profile.context.update_settings(
-            {
-                "multitenant.enabled": True,
-                "wallet.id": "test_wallet",
-                "public_invites": True,
-            }
-        )
-
-        self.multitenant_mgr.add_key = async_mock.CoroutineMock()
-
-        with async_mock.patch.object(
-            InMemoryWallet, "get_public_did", autospec=True
-        ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = DIDInfo(
-                self.test_did,
-                self.test_verkey,
-                None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
-            )
-            await self.manager.create_invitation(
-                hs_protos=[HSProto.RFC23],
-                public=True,
-                multi_use=False,
-            )
-
-            self.multitenant_mgr.add_key.assert_called_once_with(
-                "test_wallet", TestConfig.test_verkey, skip_if_exists=True
-            )
 
     async def test_create_invitation_no_handshake_no_attachments_x(self):
         with self.assertRaises(OutOfBandManagerError) as context:
@@ -1214,6 +1225,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_didx_recv_invi.return_value = mock_conn
             mock_retrieve_conn_by_id.return_value = mock_conn
             invi_msg = invite.invitation
+            self.route_manager.mediation_record_if_id = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError
+            )
             await self.manager.receive_invitation(
                 invi_msg,
                 mediation_id="test-mediation-id",
@@ -1457,8 +1471,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             ConnRecord,
             "retrieve_by_id",
             async_mock.CoroutineMock(return_value=test_exist_conn),
-        ), async_mock.patch.object(
-            test_module, "mediation_record_if_id", async_mock.CoroutineMock()
         ):
             oob_invitation = InvitationMessage(
                 handshake_protocols=[

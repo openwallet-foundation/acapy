@@ -146,7 +146,7 @@ class AskarStoreConfig:
         """
 
         try:
-            if provision:
+            if provision or self.in_memory:
                 store = await Store.provision(
                     self.get_uri(create=True),
                     self.key_derivation_method,

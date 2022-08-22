@@ -235,7 +235,7 @@ def progress(*args, **kwargs):
 
 
 def check_requires(args):
-    wtype = args.wallet_type or "indy"
+    wtype = args.wallet_type or "askar"
 
     if wtype == "indy":
         try:
