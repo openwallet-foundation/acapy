@@ -223,6 +223,12 @@ class MediationManager:
         )
         return mediation_record, deny
 
+    def normalize_public_key(self, key: str):
+        if key.startswith("did:key:"):
+            return DIDKey.from_did(key).public_key_b58
+
+        return key
+
     async def update_keylist(
         self, record: MediationRecord, updates: Sequence[KeylistUpdateRule]
     ) -> KeylistUpdateResponse:
@@ -249,14 +255,8 @@ class MediationManager:
             RouteUpdate.ACTION_CREATE: KeylistUpdateRule.RULE_ADD,
         }
 
-        def normalize_public_key(key: str):
-            if key.startswith("did:key:"):
-                return DIDKey.from_did(key).public_key_b58
-
-            return key
-
         def rule_to_update(rule: KeylistUpdateRule):
-            recipient_key = normalize_public_key(rule.recipient_key)
+            recipient_key = self.normalize_public_key(rule.recipient_key)
             return RouteUpdate(
                 recipient_key=recipient_key, action=action_map[rule.action]
             )
@@ -456,11 +456,7 @@ class MediationManager:
         # record.routing_keys = grant.routing_keys
         routing_keys = []
         for key in grant.routing_keys:
-            routing_keys.append(
-                DIDKey.from_did(key).public_key_b58
-                if key.startswith("did:key:")
-                else key
-            )
+            routing_keys.append(self.normalize_public_key(key))
         record.routing_keys = routing_keys
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request granted.")
