@@ -275,7 +275,9 @@ async def credentials_remove(request: web.BaseRequest):
             holder = session.inject(IndyHolder)
             await holder.delete_credential(credential_id)
             topic = f"acapy::record::credential::delete"
-            await session.profile.notify(topic, {"id": credential_id, "state": "deleted"})
+            await session.profile.notify(
+                topic, {"id": credential_id, "state": "deleted"}
+            )
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -379,7 +381,9 @@ async def w3c_cred_remove(request: web.BaseRequest):
             vc_record = await holder.retrieve_credential_by_id(credential_id)
             await holder.delete_credential(vc_record)
             topic = f"acapy::record::w3c_credential::delete"
-            await session.profile.notify(topic, {"id": credential_id, "state": "deleted"})
+            await session.profile.notify(
+                topic, {"id": credential_id, "state": "deleted"}
+            )
         except StorageNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
         except StorageError as err:
