@@ -2328,9 +2328,11 @@ class TestIndySdkLedger(AsyncTestCase):
     @async_mock.patch("indy.ledger.build_get_attrib_request")
     @async_mock.patch("indy.ledger.build_attrib_request")
     @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedger._submit")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedger.is_ledger_read_only")
     @pytest.mark.asyncio
     async def test_update_endpoint_for_did_calls_attr_json(
         self,
+        mock_is_ledger_read_only,
         mock_submit,
         mock_build_attrib_req,
         mock_build_get_attrib_req,
@@ -2341,6 +2343,7 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
+        mock_is_ledger_read_only.return_value = False
         async with ledger:
             with async_mock.patch.object(
                 IndySdkWallet, "get_public_did"
