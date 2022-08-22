@@ -7,8 +7,7 @@ from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......messaging.valid import DID_KEY
-from ......did.did_key import DIDKey
-from ......wallet.key_type import KeyType
+from ...normalization import normalize_from_public_key
 
 
 class KeylistUpdated(BaseModel):
@@ -42,12 +41,7 @@ class KeylistUpdated(BaseModel):
 
         """
         super().__init__(**kwargs)
-        if recipient_key.startswith("did:key:"):
-            self.recipient_key = recipient_key
-        else:
-            self.recipient_key = DIDKey.from_public_key_b58(
-                recipient_key, KeyType.ED25519
-            ).did
+        self.recipient_key = normalize_from_public_key(recipient_key)
         self.action = action
         self.result = result
 

@@ -6,7 +6,6 @@ from typing import Optional, Sequence, Tuple
 
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
-from ....did.did_key import DIDKey
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
@@ -30,6 +29,7 @@ from .messages.mediate_deny import MediationDeny
 from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
+from .normalization import normalize_from_did_key
 
 LOGGER = logging.getLogger(__name__)
 
@@ -223,12 +223,6 @@ class MediationManager:
         )
         return mediation_record, deny
 
-    def normalize_public_key(self, key: str):
-        if key.startswith("did:key:"):
-            return DIDKey.from_did(key).public_key_b58
-
-        return key
-
     async def update_keylist(
         self, record: MediationRecord, updates: Sequence[KeylistUpdateRule]
     ) -> KeylistUpdateResponse:
@@ -256,7 +250,7 @@ class MediationManager:
         }
 
         def rule_to_update(rule: KeylistUpdateRule):
-            recipient_key = self.normalize_public_key(rule.recipient_key)
+            recipient_key = normalize_from_did_key(rule.recipient_key)
             return RouteUpdate(
                 recipient_key=recipient_key, action=action_map[rule.action]
             )
@@ -456,7 +450,7 @@ class MediationManager:
         # record.routing_keys = grant.routing_keys
         routing_keys = []
         for key in grant.routing_keys:
-            routing_keys.append(self.normalize_public_key(key))
+            routing_keys.append(normalize_from_did_key(key))
         record.routing_keys = routing_keys
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request granted.")
