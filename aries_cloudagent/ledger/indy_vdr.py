@@ -12,7 +12,7 @@ from datetime import datetime, date
 from io import StringIO
 from pathlib import Path
 from time import time
-from typing import Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional
 
 from indy_vdr import ledger, open_pool, Pool, Request, VdrError
 
@@ -679,6 +679,7 @@ class IndyVdrLedger(BaseLedger):
         endpoint_type: EndpointType = None,
         write_ledger: bool = True,
         endorser_did: str = None,
+        routing_keys: List[str] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 
@@ -711,11 +712,9 @@ class IndyVdrLedger(BaseLedger):
 
             nym = self.did_to_nym(did)
 
-            if all_exist_endpoints:
-                all_exist_endpoints[endpoint_type.indy] = endpoint
-                attr_json = json.dumps({"endpoint": all_exist_endpoints})
-            else:
-                attr_json = json.dumps({"endpoint": {endpoint_type.indy: endpoint}})
+            attr_json = await self._construct_attr_json(
+                endpoint, endpoint_type, all_exist_endpoints, routing_keys
+            )
 
             try:
                 attrib_req = ledger.build_attrib_request(

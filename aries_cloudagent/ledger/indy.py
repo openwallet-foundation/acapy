@@ -8,7 +8,7 @@ from datetime import date, datetime
 from io import StringIO
 from os import path
 from time import time
-from typing import TYPE_CHECKING, Tuple, Optional
+from typing import TYPE_CHECKING, List, Tuple, Optional
 
 import indy.ledger
 import indy.pool
@@ -745,6 +745,7 @@ class IndySdkLedger(BaseLedger):
         endpoint_type: EndpointType = None,
         write_ledger: bool = True,
         endorser_did: str = None,
+        routing_keys: List[str] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 
@@ -777,11 +778,9 @@ class IndySdkLedger(BaseLedger):
 
             nym = self.did_to_nym(did)
 
-            if all_exist_endpoints:
-                all_exist_endpoints[endpoint_type.indy] = endpoint
-                attr_json = json.dumps({"endpoint": all_exist_endpoints})
-            else:
-                attr_json = json.dumps({"endpoint": {endpoint_type.indy: endpoint}})
+            attr_json = await self._construct_attr_json(
+                endpoint, endpoint_type, all_exist_endpoints, routing_keys
+            )
 
             with IndyErrorHandler("Exception building attribute request", LedgerError):
                 request_json = await indy.ledger.build_attrib_request(
