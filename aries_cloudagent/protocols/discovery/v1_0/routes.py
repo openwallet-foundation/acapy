@@ -70,7 +70,7 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
     summary="Query supported features",
 )
 @querystring_schema(QueryFeaturesQueryStringSchema())
-@response_schema(V10DiscoveryExchangeResultSchema(), 200, description="")
+@response_schema(V10DiscoveryRecordSchema(), 200, description="")
 async def query_features(request: web.BaseRequest):
     """
     Request handler for creating and sending feature query.
