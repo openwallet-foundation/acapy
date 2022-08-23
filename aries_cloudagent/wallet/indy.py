@@ -707,6 +707,7 @@ class IndySdkWallet(BaseWallet):
         endpoint_type: EndpointType = None,
         write_ledger: bool = True,
         endorser_did: str = None,
+        routing_keys: List[str] = None,
     ):
         """
         Update the endpoint for a DID in the wallet, send to ledger if public or posted.
@@ -746,6 +747,7 @@ class IndySdkWallet(BaseWallet):
                         endpoint_type,
                         write_ledger=write_ledger,
                         endorser_did=endorser_did,
+                        routing_keys=routing_keys,
                     )
                     if not write_ledger:
                         return attrib_def

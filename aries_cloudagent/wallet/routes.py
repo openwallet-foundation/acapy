@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import List
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -207,6 +208,12 @@ class AttribConnIdMatchInfoSchema(OpenAPISchema):
     conn_id = fields.Str(description="Connection identifier", required=False)
 
 
+class MediationIDSchema(OpenAPISchema):
+    """Class for user to optionally input a mediation_id."""
+
+    mediation_id = fields.Str(description="Mediation identifier", required=False)
+
+
 def format_did_info(info: DIDInfo):
     """Serialize a DIDInfo object."""
     if info:
@@ -410,6 +417,7 @@ async def wallet_get_public_did(request: web.BaseRequest):
 @querystring_schema(DIDQueryStringSchema())
 @querystring_schema(CreateAttribTxnForEndorserOptionSchema())
 @querystring_schema(AttribConnIdMatchInfoSchema())
+@querystring_schema(MediationIDSchema())
 @response_schema(DIDResultSchema, 200, description="")
 async def wallet_set_public_did(request: web.BaseRequest):
     """
@@ -442,6 +450,17 @@ async def wallet_set_public_did(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     info: DIDInfo = None
+
+    mediation_id = request.query.get("mediation_id")
+    profile = context.profile
+    route_manager = profile.inject(RouteManager)
+    mediation_record = await route_manager.mediation_record_if_id(
+        profile=profile, mediation_id=mediation_id, or_default=True
+    )
+    routing_keys = None
+    if mediation_record:
+        routing_keys = mediation_record.routing_keys
+
     try:
         info, attrib_def = await promote_wallet_public_did(
             context.profile,
@@ -450,6 +469,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
             did,
             write_ledger=write_ledger,
             connection_id=connection_id,
+            routing_keys=routing_keys,
         )
     except LookupError as err:
         raise web.HTTPNotFound(reason=str(err)) from err
@@ -496,6 +516,7 @@ async def promote_wallet_public_did(
     did: str,
     write_ledger: bool = False,
     connection_id: str = None,
+    routing_keys: List[str] = None,
 ) -> DIDInfo:
     """Promote supplied DID to the wallet public DID."""
     info: DIDInfo = None
@@ -570,6 +591,7 @@ async def promote_wallet_public_did(
                     ledger,
                     write_ledger=write_ledger,
                     endorser_did=endorser_did,
+                    routing_keys=routing_keys,
                 )
 
         # Commented the below lines as the function set_did_endpoint
