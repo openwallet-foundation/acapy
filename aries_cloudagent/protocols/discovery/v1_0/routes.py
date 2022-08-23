@@ -18,15 +18,6 @@ from .models.discovery_record import (
 )
 
 
-class V10DiscoveryExchangeResultSchema(OpenAPISchema):
-    """Result schema for Discover Features v1.0 exchange record."""
-
-    results = fields.Nested(
-        V10DiscoveryRecordSchema,
-        description="Discover Features v1.0 exchange record",
-    )
-
-
 class V10DiscoveryExchangeListResultSchema(OpenAPISchema):
     """Result schema for Discover Features v1.0 exchange records."""
 
