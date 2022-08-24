@@ -43,6 +43,20 @@
       "url" : "https://github.com/hyperledger/aries-rfcs/tree/25464a5c8f8a17b14edaa4310393df6094ace7b0/features/0023-did-exchange"
     }
   }, {
+    "name" : "discover-features",
+    "description" : "Feature discovery",
+    "externalDocs" : {
+      "description" : "Specification",
+      "url" : "https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0031-discover-features"
+    }
+  }, {
+    "name" : "discover-features v2.0",
+    "description" : "Feature discovery v2",
+    "externalDocs" : {
+      "description" : "Specification",
+      "url" : "https://github.com/hyperledger/aries-rfcs/tree/b3a3942ef052039e73cd23d847f42947f8287da2/features/0557-discover-features-v2"
+    }
+  }, {
     "name" : "endorse-transaction",
     "description" : "Endorse a Transaction"
   }, {
@@ -126,13 +140,6 @@
     "externalDocs" : {
       "description" : "Specification",
       "url" : "https://github.com/hyperledger/indy-node/blob/master/design/anoncreds.md#schema"
-    }
-  }, {
-    "name" : "server",
-    "description" : "Feature discovery",
-    "externalDocs" : {
-      "description" : "Specification",
-      "url" : "https://github.com/hyperledger/aries-rfcs/tree/9b7ab9814f2e7d1108f74aca6f3d2e5d62899473/features/0031-discover-features"
     }
   }, {
     "name" : "trustping",
@@ -303,6 +310,13 @@
           "type" : "string",
           "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$"
         }, {
+          "name" : "invitation_msg_id",
+          "in" : "query",
+          "description" : "Identifier of the associated Invitation Mesage",
+          "required" : false,
+          "type" : "string",
+          "format" : "uuid"
+        }, {
           "name" : "my_did",
           "in" : "query",
           "description" : "My DID",
@@ -315,11 +329,18 @@
           "description" : "Connection state",
           "required" : false,
           "type" : "string",
-          "enum" : [ "start", "abandoned", "active", "completed", "response", "init", "invitation", "error", "request" ]
+          "enum" : [ "init", "active", "request", "invitation", "completed", "error", "response", "abandoned", "start" ]
         }, {
           "name" : "their_did",
           "in" : "query",
           "description" : "Their DID",
+          "required" : false,
+          "type" : "string",
+          "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+        }, {
+          "name" : "their_public_did",
+          "in" : "query",
+          "description" : "Their Public DID",
           "required" : false,
           "type" : "string",
           "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
@@ -1137,6 +1158,12 @@
           "type" : "string",
           "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$|^did:([a-zA-Z0-9_]+):([a-zA-Z0-9_.%-]+(:[a-zA-Z0-9_.%-]+)*)((;[a-zA-Z0-9_.:%-]+=[a-zA-Z0-9_.:%-]*)*)(\\/[^#?]*)?([?][^#]*)?(\\#.*)?$$"
         }, {
+          "name" : "alias",
+          "in" : "query",
+          "description" : "Alias for connection",
+          "required" : false,
+          "type" : "string"
+        }, {
           "name" : "mediation_id",
           "in" : "query",
           "description" : "Identifier for active mediation record to be used",
@@ -1293,15 +1320,27 @@
         }
       }
     },
-    "/features" : {
+    "/discover-features-2.0/queries" : {
       "get" : {
-        "tags" : [ "server" ],
+        "tags" : [ "discover-features v2.0" ],
         "summary" : "Query supported features",
         "produces" : [ "application/json" ],
         "parameters" : [ {
-          "name" : "query",
+          "name" : "connection_id",
           "in" : "query",
-          "description" : "Query",
+          "description" : "Connection identifier, if none specified, then the query will provide features for this agent.",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "query_goal_code",
+          "in" : "query",
+          "description" : "Goal-code feature-type query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "query_protocol",
+          "in" : "query",
+          "description" : "Protocol feature-type query",
           "required" : false,
           "type" : "string"
         } ],
@@ -1309,7 +1348,85 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/QueryResult"
+              "$ref" : "#/definitions/V20DiscoveryExchangeResult"
+            }
+          }
+        }
+      }
+    },
+    "/discover-features-2.0/records" : {
+      "get" : {
+        "tags" : [ "discover-features v2.0" ],
+        "summary" : "Discover Features v2.0 records",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "connection_id",
+          "in" : "query",
+          "description" : "Connection identifier",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/V20DiscoveryExchangeListResult"
+            }
+          }
+        }
+      }
+    },
+    "/discover-features/query" : {
+      "get" : {
+        "tags" : [ "discover-features" ],
+        "summary" : "Query supported features",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "comment",
+          "in" : "query",
+          "description" : "Comment",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "connection_id",
+          "in" : "query",
+          "description" : "Connection identifier, if none specified, then the query will provide features for this agent.",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "query",
+          "in" : "query",
+          "description" : "Protocol feature query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/V10DiscoveryExchangeResult"
+            }
+          }
+        }
+      }
+    },
+    "/discover-features/records" : {
+      "get" : {
+        "tags" : [ "discover-features" ],
+        "summary" : "Discover Features records",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "connection_id",
+          "in" : "query",
+          "description" : "Connection identifier",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/V10DiscoveryExchangeListResult"
             }
           }
         }
@@ -1386,7 +1503,7 @@
           "description" : "Credential exchange state",
           "required" : false,
           "type" : "string",
-          "enum" : [ "proposal-sent", "proposal-received", "offer-sent", "offer-received", "request-sent", "request-received", "credential-issued", "credential-received", "done" ]
+          "enum" : [ "proposal-sent", "proposal-received", "offer-sent", "offer-received", "request-sent", "request-received", "credential-issued", "credential-received", "done", "credential-revoked", "abandoned" ]
         }, {
           "name" : "thread_id",
           "in" : "query",
@@ -1762,7 +1879,7 @@
           "description" : "Credential exchange state",
           "required" : false,
           "type" : "string",
-          "enum" : [ "proposal_sent", "proposal_received", "offer_sent", "offer_received", "request_sent", "request_received", "credential_issued", "credential_received", "credential_acked" ]
+          "enum" : [ "proposal_sent", "proposal_received", "offer_sent", "offer_received", "request_sent", "request_received", "credential_issued", "credential_received", "credential_acked", "credential_revoked", "abandoned" ]
         }, {
           "name" : "thread_id",
           "in" : "query",
@@ -2159,6 +2276,38 @@
         }
       }
     },
+    "/ledger/multiple/config" : {
+      "get" : {
+        "tags" : [ "ledger" ],
+        "summary" : "Fetch the multiple ledger configuration currently in use",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/LedgerConfigList"
+            }
+          }
+        }
+      }
+    },
+    "/ledger/multiple/get-write-ledger" : {
+      "get" : {
+        "tags" : [ "ledger" ],
+        "summary" : "Fetch the current write ledger",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/WriteLedgerRequest"
+            }
+          }
+        }
+      }
+    },
     "/ledger/register-nym" : {
       "post" : {
         "tags" : [ "ledger" ],
@@ -2185,6 +2334,18 @@
           "required" : false,
           "type" : "string"
         }, {
+          "name" : "conn_id",
+          "in" : "query",
+          "description" : "Connection identifier",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "create_transaction_for_endorser",
+          "in" : "query",
+          "description" : "Create Transaction For Endorser's signature",
+          "required" : false,
+          "type" : "boolean"
+        }, {
           "name" : "role",
           "in" : "query",
           "description" : "Role",
@@ -2196,7 +2357,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/RegisterLedgerNymResponse"
+              "$ref" : "#/definitions/TxnOrRegisterLedgerNymResponse"
             }
           }
         }
@@ -2265,7 +2426,7 @@
         "parameters" : [ ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationRecord"
             }
@@ -2279,7 +2440,7 @@
         "parameters" : [ ],
         "responses" : {
           "201" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationRecord"
             }
@@ -2310,7 +2471,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/Keylist"
             }
@@ -2356,7 +2517,7 @@
         } ],
         "responses" : {
           "201" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/KeylistQuery"
             }
@@ -2386,7 +2547,7 @@
         } ],
         "responses" : {
           "201" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/KeylistUpdate"
             }
@@ -2415,7 +2576,7 @@
         } ],
         "responses" : {
           "201" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationRecord"
             }
@@ -2467,7 +2628,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationList"
             }
@@ -2490,7 +2651,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationRecord"
             }
@@ -2511,7 +2672,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationRecord"
             }
@@ -2541,7 +2702,7 @@
         } ],
         "responses" : {
           "201" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationDeny"
             }
@@ -2564,9 +2725,38 @@
         } ],
         "responses" : {
           "201" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationGrant"
+            }
+          }
+        }
+      }
+    },
+    "/mediation/update-keylist/{conn_id}" : {
+      "post" : {
+        "tags" : [ "mediation" ],
+        "summary" : "Update keylist for a connection",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/MediationIdMatchInfo"
+          }
+        }, {
+          "name" : "conn_id",
+          "in" : "path",
+          "description" : "Connection identifier",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/KeylistUpdate"
             }
           }
         }
@@ -2587,7 +2777,7 @@
         } ],
         "responses" : {
           "201" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/MediationRecord"
             }
@@ -2823,7 +3013,7 @@
           "200" : {
             "description" : "",
             "schema" : {
-              "$ref" : "#/definitions/ConnRecord"
+              "$ref" : "#/definitions/OobRecord"
             }
           }
         }
@@ -3079,7 +3269,7 @@
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/AdminAPIMessageTracing"
+            "$ref" : "#/definitions/V20PresentationSendRequestToProposal"
           }
         }, {
           "name" : "pres_ex_id",
@@ -3216,7 +3406,7 @@
           "description" : "Presentation exchange state",
           "required" : false,
           "type" : "string",
-          "enum" : [ "proposal_sent", "proposal_received", "request_sent", "request_received", "presentation_sent", "presentation_received", "verified", "presentation_acked" ]
+          "enum" : [ "proposal_sent", "proposal_received", "request_sent", "request_received", "presentation_sent", "presentation_received", "verified", "presentation_acked", "abandoned" ]
         }, {
           "name" : "thread_id",
           "in" : "query",
@@ -3402,7 +3592,7 @@
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/AdminAPIMessageTracing"
+            "$ref" : "#/definitions/V10PresentationSendRequestToProposal"
           }
         }, {
           "name" : "pres_ex_id",
@@ -3506,7 +3696,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/ResolutionResult"
             }
@@ -3632,18 +3822,6 @@
           "schema" : {
             "$ref" : "#/definitions/PublishRevocations"
           }
-        }, {
-          "name" : "conn_id",
-          "in" : "query",
-          "description" : "Connection identifier",
-          "required" : false,
-          "type" : "string"
-        }, {
-          "name" : "create_transaction_for_endorser",
-          "in" : "query",
-          "description" : "Create Transaction For Endorser's signature",
-          "required" : false,
-          "type" : "boolean"
         } ],
         "responses" : {
           "200" : {
@@ -3806,6 +3984,35 @@
         }
       }
     },
+    "/revocation/registry/{rev_reg_id}/fix-revocation-entry-state" : {
+      "put" : {
+        "tags" : [ "revocation" ],
+        "summary" : "Fix revocation state in wallet and return number of updated entries",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "rev_reg_id",
+          "in" : "path",
+          "description" : "Revocation Registry identifier",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+        }, {
+          "name" : "apply_ledger_update",
+          "in" : "query",
+          "description" : "Apply updated accumulator transaction to ledger",
+          "required" : true,
+          "type" : "boolean"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/RevRegWalletUpdatedResult"
+            }
+          }
+        }
+      }
+    },
     "/revocation/registry/{rev_reg_id}/issued" : {
       "get" : {
         "tags" : [ "revocation" ],
@@ -3824,6 +4031,52 @@
             "description" : "",
             "schema" : {
               "$ref" : "#/definitions/RevRegIssuedResult"
+            }
+          }
+        }
+      }
+    },
+    "/revocation/registry/{rev_reg_id}/issued/details" : {
+      "get" : {
+        "tags" : [ "revocation" ],
+        "summary" : "Get details of credentials issued against revocation registry",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "rev_reg_id",
+          "in" : "path",
+          "description" : "Revocation Registry identifier",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/CredRevRecordDetailsResult"
+            }
+          }
+        }
+      }
+    },
+    "/revocation/registry/{rev_reg_id}/issued/indy_recs" : {
+      "get" : {
+        "tags" : [ "revocation" ],
+        "summary" : "Get details of revoked credentials from ledger",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "rev_reg_id",
+          "in" : "path",
+          "description" : "Revocation Registry identifier",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/CredRevIndyRecordsResult"
             }
           }
         }
@@ -4161,7 +4414,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/TransactionRecord"
             }
@@ -4177,7 +4430,7 @@
         "parameters" : [ ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/TransactionList"
             }
@@ -4212,7 +4465,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/TransactionRecord"
             }
@@ -4246,7 +4499,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/EndorserInfo"
             }
@@ -4275,7 +4528,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/TransactionJobs"
             }
@@ -4297,7 +4550,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/TransactionRecord"
             }
@@ -4319,7 +4572,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/TransactionRecord"
             }
@@ -4338,10 +4591,16 @@
           "description" : "Transaction identifier",
           "required" : true,
           "type" : "string"
+        }, {
+          "name" : "endorser_did",
+          "in" : "query",
+          "description" : "Endorser DID",
+          "required" : false,
+          "type" : "string"
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/TransactionRecord"
             }
@@ -4363,7 +4622,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/TransactionRecord"
             }
@@ -4385,7 +4644,7 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "null",
+            "description" : "",
             "schema" : {
               "$ref" : "#/definitions/TransactionRecord"
             }
@@ -4516,6 +4775,18 @@
           "required" : true,
           "type" : "string",
           "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+        }, {
+          "name" : "conn_id",
+          "in" : "query",
+          "description" : "Connection identifier",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "create_transaction_for_endorser",
+          "in" : "query",
+          "description" : "Create Transaction For Endorser's signature",
+          "required" : false,
+          "type" : "boolean"
         } ],
         "responses" : {
           "200" : {
@@ -4562,6 +4833,18 @@
           "schema" : {
             "$ref" : "#/definitions/DIDEndpointWithType"
           }
+        }, {
+          "name" : "conn_id",
+          "in" : "query",
+          "description" : "Connection identifier",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "create_transaction_for_endorser",
+          "in" : "query",
+          "description" : "Create Transaction For Endorser's signature",
+          "required" : false,
+          "type" : "boolean"
         } ],
         "responses" : {
           "200" : {
@@ -4610,15 +4893,6 @@
     },
     "ActionMenuModulesResult" : {
       "type" : "object"
-    },
-    "AdminAPIMessageTracing" : {
-      "type" : "object",
-      "properties" : {
-        "trace" : {
-          "type" : "boolean",
-          "description" : "Record trace information, based on agent configuration"
-        }
-      }
     },
     "AdminConfig" : {
       "type" : "object",
@@ -4744,7 +5018,7 @@
         },
         "lastmod_time" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Hint regarding last modification datetime, in ISO-8601 format",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -4955,7 +5229,7 @@
         },
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -5038,7 +5312,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -5184,14 +5458,8 @@
     },
     "ConnectionStaticResult" : {
       "type" : "object",
-      "required" : [ "mv_verkey", "my_did", "my_endpoint", "record", "their_did", "their_verkey" ],
+      "required" : [ "my_did", "my_endpoint", "my_verkey", "record", "their_did", "their_verkey" ],
       "properties" : {
-        "mv_verkey" : {
-          "type" : "string",
-          "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
-          "description" : "My verification key",
-          "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$"
-        },
         "my_did" : {
           "type" : "string",
           "example" : "WgWxqztrNooG92RXvxSTWv",
@@ -5203,6 +5471,12 @@
           "example" : "https://myhost:8021",
           "description" : "My URL endpoint",
           "pattern" : "^[A-Za-z0-9\\.\\-\\+]+://([A-Za-z0-9][.A-Za-z0-9-_]+[A-Za-z0-9])+(:[1-9][0-9]*)?(/[^?&#]+)?$"
+        },
+        "my_verkey" : {
+          "type" : "string",
+          "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+          "description" : "My verification key",
+          "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$"
         },
         "record" : {
           "$ref" : "#/definitions/ConnRecord"
@@ -5335,6 +5609,12 @@
           "example" : "MySecretKey123",
           "description" : "Master key used for key derivation."
         },
+        "wallet_key_derivation" : {
+          "type" : "string",
+          "example" : "RAW",
+          "description" : "Key derivation",
+          "enum" : [ "ARGON2I_MOD", "ARGON2I_INT", "RAW" ]
+        },
         "wallet_name" : {
           "type" : "string",
           "example" : "MyNewWallet",
@@ -5363,7 +5643,7 @@
       "properties" : {
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -5389,7 +5669,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -5537,6 +5817,27 @@
           "type" : "array",
           "items" : {
             "$ref" : "#/definitions/IndyCredInfo"
+          }
+        }
+      }
+    },
+    "CredRevIndyRecordsResult" : {
+      "type" : "object",
+      "properties" : {
+        "rev_reg_delta" : {
+          "type" : "object",
+          "description" : "Indy revocation registry delta",
+          "properties" : { }
+        }
+      }
+    },
+    "CredRevRecordDetailsResult" : {
+      "type" : "object",
+      "properties" : {
+        "results" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/IssuerCredRevRecord"
           }
         }
       }
@@ -5856,6 +6157,11 @@
         },
         "options" : {
           "$ref" : "#/definitions/DIDCreate_options"
+        },
+        "seed" : {
+          "type" : "string",
+          "example" : "000000000000000000000000Trustee1",
+          "description" : "Optional seed to use for DID, Must beenabled in configuration before use."
         }
       }
     },
@@ -6048,22 +6354,21 @@
         "reveal_doc" : {
           "type" : "object",
           "example" : {
-            "@context": [
-                "https://www.w3.org/2018/credentials/v1",
-                "https://w3id.org/security/bbs/v1"
-            ],
-            "type": ["VerifiableCredential", "LabReport"],
-            "@explicit": true,
-            "@requireAll": true,
-            "issuanceDate": {},
-            "issuer": {},
-            "credentialSubject": {
-                "Observation": [
-                    {"effectiveDateTime": {}, "@explicit": true, "@requireAll": true}
-                ],
-                "@explicit": true,
-                "@requireAll": true
-            }
+            "@context" : [ "https://www.w3.org/2018/credentials/v1", "https://w3id.org/security/bbs/v1" ],
+            "@explicit" : true,
+            "@requireAll" : true,
+            "credentialSubject" : {
+              "@explicit" : true,
+              "@requireAll" : true,
+              "Observation" : [ {
+                "effectiveDateTime" : { },
+                "@explicit" : true,
+                "@requireAll" : true
+              } ]
+            },
+            "issuanceDate" : { },
+            "issuer" : { },
+            "type" : [ "VerifiableCredential", "LabReport" ]
           },
           "description" : "reveal doc [JSON-LD frame] dict used to derive the credential when selective disclosure is required",
           "properties" : { }
@@ -6078,6 +6383,9 @@
           "items" : {
             "$ref" : "#/definitions/InputDescriptors"
           }
+        },
+        "options" : {
+          "$ref" : "#/definitions/DIFOptions"
         }
       }
     },
@@ -6102,6 +6410,52 @@
           "format" : "date-time",
           "example" : "2021-03-29T05:22:19Z",
           "description" : "Expiry Date"
+        }
+      }
+    },
+    "Disclose" : {
+      "type" : "object",
+      "required" : [ "protocols" ],
+      "properties" : {
+        "@id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Message identifier"
+        },
+        "@type" : {
+          "type" : "string",
+          "example" : "https://didcomm.org/my-family/1.0/my-message-type",
+          "description" : "Message type",
+          "readOnly" : true
+        },
+        "protocols" : {
+          "type" : "array",
+          "description" : "List of protocol descriptors",
+          "items" : {
+            "$ref" : "#/definitions/ProtocolDescriptor"
+          }
+        }
+      }
+    },
+    "Disclosures" : {
+      "type" : "object",
+      "required" : [ "disclosures" ],
+      "properties" : {
+        "@id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Message identifier"
+        },
+        "@type" : {
+          "type" : "string",
+          "example" : "https://didcomm.org/my-family/1.0/my-message-type",
+          "description" : "Message type",
+          "readOnly" : true
+        },
+        "disclosures" : {
+          "type" : "array",
+          "description" : "List of protocol or goal_code descriptors",
+          "items" : { }
         }
       }
     },
@@ -6269,9 +6623,9 @@
       "properties" : {
         "encoded" : {
           "type" : "string",
-          "example" : "0",
+          "example" : "-1",
           "description" : "Attribute encoded value",
-          "pattern" : "^[0-9]*$"
+          "pattern" : "^-?[0-9]*$"
         },
         "raw" : {
           "type" : "string",
@@ -6491,8 +6845,8 @@
           "type" : "object",
           "additionalProperties" : {
             "type" : "string",
-            "example" : "0",
-            "pattern" : "^[0-9]*$"
+            "example" : "-1",
+            "pattern" : "^-?[0-9]*$"
           }
         },
         "v" : {
@@ -6972,6 +7326,7 @@
     },
     "IndyProofRequest" : {
       "type" : "object",
+      "required" : [ "requested_attributes", "requested_predicates" ],
       "properties" : {
         "name" : {
           "type" : "string",
@@ -7083,9 +7438,9 @@
       "properties" : {
         "encoded" : {
           "type" : "string",
-          "example" : "0",
+          "example" : "-1",
           "description" : "Encoded value",
-          "pattern" : "^[0-9]*$"
+          "pattern" : "^-?[0-9]*$"
         },
         "raw" : {
           "type" : "string",
@@ -7299,6 +7654,9 @@
         "purpose" : {
           "type" : "string",
           "description" : "Purpose"
+        },
+        "schema" : {
+          "$ref" : "#/definitions/InputDescriptors_schema"
         }
       }
     },
@@ -7406,7 +7764,7 @@
       "properties" : {
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -7428,6 +7786,11 @@
           "example" : "https://example.com/endpoint?c_i=eyJAdHlwZSI6ICIuLi4iLCAiLi4uIjogIi4uLiJ9XX0=",
           "description" : "Invitation message URL"
         },
+        "oob_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Out of band record identifier"
+        },
         "state" : {
           "type" : "string",
           "example" : "await_response",
@@ -7439,7 +7802,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -7471,7 +7834,7 @@
       "properties" : {
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -7485,6 +7848,10 @@
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "description" : "Credential exchange record identifier at credential issue"
+        },
+        "cred_ex_version" : {
+          "type" : "string",
+          "description" : "Credential exchange version"
         },
         "cred_rev_id" : {
           "type" : "string",
@@ -7510,7 +7877,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -7521,7 +7888,7 @@
       "properties" : {
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -7604,7 +7971,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -7751,7 +8118,7 @@
         },
         "created" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "The date and time of the proof (with a maximum accuracy in seconds). Defaults to current system time",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -7775,6 +8142,43 @@
         }
       }
     },
+    "LedgerConfigInstance" : {
+      "type" : "object",
+      "properties" : {
+        "genesis_file" : {
+          "type" : "string",
+          "description" : "genesis_file"
+        },
+        "genesis_transactions" : {
+          "type" : "string",
+          "description" : "genesis_transactions"
+        },
+        "genesis_url" : {
+          "type" : "string",
+          "description" : "genesis_url"
+        },
+        "id" : {
+          "type" : "string",
+          "description" : "ledger_id"
+        },
+        "is_production" : {
+          "type" : "boolean",
+          "description" : "is_production"
+        }
+      }
+    },
+    "LedgerConfigList" : {
+      "type" : "object",
+      "required" : [ "ledger_config_list" ],
+      "properties" : {
+        "ledger_config_list" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/LedgerConfigInstance"
+          }
+        }
+      }
+    },
     "LedgerModulesResult" : {
       "type" : "object"
     },
@@ -7789,7 +8193,7 @@
         },
         "created" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "The string value of an ISO8601 combined date and time string generated by the Signature Algorithm",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -7911,6 +8315,17 @@
         }
       }
     },
+    "MediationIdMatchInfo" : {
+      "type" : "object",
+      "properties" : {
+        "mediation_id" : {
+          "type" : "string",
+          "format" : "uuid",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Mediation record identifier"
+        }
+      }
+    },
     "MediationList" : {
       "type" : "object",
       "properties" : {
@@ -7932,7 +8347,7 @@
         },
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -7972,7 +8387,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -8140,6 +8555,69 @@
     "MultitenantModuleResponse" : {
       "type" : "object"
     },
+    "OobRecord" : {
+      "type" : "object",
+      "required" : [ "invi_msg_id", "invitation", "oob_id", "state" ],
+      "properties" : {
+        "attach_thread_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Connection record identifier"
+        },
+        "connection_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Connection record identifier"
+        },
+        "created_at" : {
+          "type" : "string",
+          "example" : "2021-12-31T23:59:59Z",
+          "description" : "Time of record creation",
+          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
+        },
+        "invi_msg_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Invitation message identifier"
+        },
+        "invitation" : {
+          "$ref" : "#/definitions/InvitationRecord_invitation"
+        },
+        "oob_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Oob record identifier"
+        },
+        "our_recipient_key" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Recipient key used for oob invitation"
+        },
+        "role" : {
+          "type" : "string",
+          "example" : "receiver",
+          "description" : "OOB Role"
+        },
+        "state" : {
+          "type" : "string",
+          "example" : "await-response",
+          "description" : "Out of band message exchange state"
+        },
+        "their_service" : {
+          "$ref" : "#/definitions/ServiceDecorator"
+        },
+        "trace" : {
+          "type" : "boolean",
+          "description" : "Record trace information, based on agent configuration"
+        },
+        "updated_at" : {
+          "type" : "string",
+          "example" : "2021-12-31T23:59:59Z",
+          "description" : "Time of last record update",
+          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
+        }
+      }
+    },
     "PerformRequest" : {
       "type" : "object",
       "properties" : {
@@ -8264,6 +8742,25 @@
         }
       }
     },
+    "ProtocolDescriptor" : {
+      "type" : "object",
+      "required" : [ "pid" ],
+      "properties" : {
+        "pid" : {
+          "type" : "string"
+        },
+        "roles" : {
+          "type" : "array",
+          "description" : "List of roles",
+          "items" : {
+            "type" : "string",
+            "example" : "requester",
+            "description" : "Role: requester or responder"
+          },
+          "x-nullable" : true
+        }
+      }
+    },
     "PublishRevocations" : {
       "type" : "object",
       "properties" : {
@@ -8282,17 +8779,64 @@
         }
       }
     },
-    "QueryResult" : {
+    "Queries" : {
       "type" : "object",
       "properties" : {
-        "results" : {
-          "type" : "object",
-          "description" : "Query results keyed by protocol",
-          "additionalProperties" : {
-            "type" : "object",
-            "description" : "Protocol descriptor",
-            "properties" : { }
+        "@id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Message identifier"
+        },
+        "@type" : {
+          "type" : "string",
+          "example" : "https://didcomm.org/my-family/1.0/my-message-type",
+          "description" : "Message type",
+          "readOnly" : true
+        },
+        "queries" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/QueryItem"
           }
+        }
+      }
+    },
+    "Query" : {
+      "type" : "object",
+      "required" : [ "query" ],
+      "properties" : {
+        "@id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Message identifier"
+        },
+        "@type" : {
+          "type" : "string",
+          "example" : "https://didcomm.org/my-family/1.0/my-message-type",
+          "description" : "Message type",
+          "readOnly" : true
+        },
+        "comment" : {
+          "type" : "string",
+          "x-nullable" : true
+        },
+        "query" : {
+          "type" : "string"
+        }
+      }
+    },
+    "QueryItem" : {
+      "type" : "object",
+      "required" : [ "feature-type", "match" ],
+      "properties" : {
+        "feature-type" : {
+          "type" : "string",
+          "description" : "feature type",
+          "enum" : [ "protocol", "goal-code" ]
+        },
+        "match" : {
+          "type" : "string",
+          "description" : "match"
         }
       }
     },
@@ -8301,9 +8845,9 @@
       "properties" : {
         "encoded" : {
           "type" : "string",
-          "example" : "0",
+          "example" : "-1",
           "description" : "Encoded value",
-          "pattern" : "^[0-9]*$"
+          "pattern" : "^-?[0-9]*$"
         },
         "raw" : {
           "type" : "string",
@@ -8367,16 +8911,6 @@
           "type" : "string",
           "example" : "http://192.168.56.101:8020",
           "description" : "Service endpoint at which to reach this agent"
-        }
-      }
-    },
-    "RegisterLedgerNymResponse" : {
-      "type" : "object",
-      "properties" : {
-        "success" : {
-          "type" : "boolean",
-          "example" : true,
-          "description" : "Success of nym registration operation"
         }
       }
     },
@@ -8457,6 +8991,26 @@
         }
       }
     },
+    "RevRegWalletUpdatedResult" : {
+      "type" : "object",
+      "properties" : {
+        "accum_calculated" : {
+          "type" : "object",
+          "description" : "Calculated accumulator for phantom revocations",
+          "properties" : { }
+        },
+        "accum_fixed" : {
+          "type" : "object",
+          "description" : "Applied ledger transaction to fix revocations",
+          "properties" : { }
+        },
+        "rev_reg_delta" : {
+          "type" : "object",
+          "description" : "Indy revocation registry delta",
+          "properties" : { }
+        }
+      }
+    },
     "RevRegsCreated" : {
       "type" : "object",
       "properties" : {
@@ -8477,6 +9031,16 @@
     "RevokeRequest" : {
       "type" : "object",
       "properties" : {
+        "comment" : {
+          "type" : "string",
+          "description" : "Optional comment to include in revocation notification"
+        },
+        "connection_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Connection ID to which the revocation notification will be sent; required if notify is true",
+          "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+        },
         "cred_ex_id" : {
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -8489,6 +9053,15 @@
           "description" : "Credential revocation identifier",
           "pattern" : "^[1-9][0-9]*$"
         },
+        "notify" : {
+          "type" : "boolean",
+          "description" : "Send a notification to the credential recipient"
+        },
+        "notify_version" : {
+          "type" : "string",
+          "description" : "Specify which version of the revocation notification should be sent",
+          "enum" : [ "v1_0", "v2_0" ]
+        },
         "publish" : {
           "type" : "boolean",
           "description" : "(True) publish revocation to ledger immediately, or (default, False) mark it pending"
@@ -8498,6 +9071,10 @@
           "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
           "description" : "Revocation registry identifier",
           "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)"
+        },
+        "thread_id" : {
+          "type" : "string",
+          "description" : "Thread ID of the credential exchange message thread resulting in the credential now being revoked; required if notify is true"
         }
       }
     },
@@ -8510,7 +9087,7 @@
         },
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -8530,7 +9107,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -8659,6 +9236,24 @@
         }
       }
     },
+    "SchemasInputDescriptorFilter" : {
+      "type" : "object",
+      "properties" : {
+        "oneof_filter" : {
+          "type" : "boolean",
+          "description" : "oneOf"
+        },
+        "uri_groups" : {
+          "type" : "array",
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/SchemaInputDescriptor"
+            }
+          }
+        }
+      }
+    },
     "SendMenu" : {
       "type" : "object",
       "required" : [ "menu" ],
@@ -8675,6 +9270,37 @@
           "type" : "string",
           "example" : "Hello",
           "description" : "Message content"
+        }
+      }
+    },
+    "ServiceDecorator" : {
+      "type" : "object",
+      "required" : [ "recipientKeys", "serviceEndpoint" ],
+      "properties" : {
+        "recipientKeys" : {
+          "type" : "array",
+          "description" : "List of recipient keys",
+          "items" : {
+            "type" : "string",
+            "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+            "description" : "Recipient public key",
+            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$"
+          }
+        },
+        "routingKeys" : {
+          "type" : "array",
+          "description" : "List of routing keys",
+          "items" : {
+            "type" : "string",
+            "example" : "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV",
+            "description" : "Routing key",
+            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$"
+          }
+        },
+        "serviceEndpoint" : {
+          "type" : "string",
+          "example" : "http://192.168.56.101:8020",
+          "description" : "Service endpoint at which to reach this agent"
         }
       }
     },
@@ -8891,7 +9517,7 @@
         },
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -8927,16 +9553,30 @@
             "properties" : { }
           }
         },
+        "meta_data" : {
+          "type" : "object",
+          "example" : {
+            "context" : {
+              "param1" : "param1_value",
+              "param2" : "param2_value"
+            },
+            "post_process" : [ {
+              "topic" : "topic_value",
+              "other" : "other_value"
+            } ]
+          },
+          "properties" : { }
+        },
         "signature_request" : {
           "type" : "array",
           "items" : {
             "type" : "object",
             "example" : {
-              "author_goal_code" : "transaction.ledger.write",
+              "author_goal_code" : "aries.transaction.ledger.write",
               "context" : "did:sov",
               "method" : "add-signature",
               "signature_type" : "<requested signature type>",
-              "signer_goal_code" : "transaction.endorse"
+              "signer_goal_code" : "aries.transaction.endorse"
             },
             "properties" : { }
           }
@@ -8949,7 +9589,7 @@
               "context" : "did:sov",
               "message_id" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               "method" : "add-signature",
-              "signer_goal_code" : "transaction.refuse"
+              "signer_goal_code" : "aries.transaction.refuse"
             },
             "properties" : { }
           }
@@ -8982,7 +9622,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -9007,6 +9647,19 @@
         },
         "txn" : {
           "$ref" : "#/definitions/TxnOrPublishRevocationsResult_txn"
+        }
+      }
+    },
+    "TxnOrRegisterLedgerNymResponse" : {
+      "type" : "object",
+      "properties" : {
+        "success" : {
+          "type" : "boolean",
+          "example" : true,
+          "description" : "Success of nym registration operation"
+        },
+        "txn" : {
+          "$ref" : "#/definitions/TxnOrRegisterLedgerNymResponse_txn"
         }
       }
     },
@@ -9096,6 +9749,12 @@
         "credential_preview" : {
           "$ref" : "#/definitions/CredentialPreview"
         },
+        "offers_attach" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/AttachDecorator"
+          }
+        },
         "trace" : {
           "type" : "boolean",
           "description" : "Record trace information, based on agent configuration"
@@ -9184,7 +9843,7 @@
         },
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -9279,7 +9938,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -9328,6 +9987,12 @@
         },
         "credential_preview" : {
           "$ref" : "#/definitions/CredentialPreview"
+        },
+        "offers_attach" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/AttachDecorator"
+          }
         },
         "trace" : {
           "type" : "boolean",
@@ -9387,6 +10052,12 @@
           "example" : "WgWxqztrNooG92RXvxSTWv",
           "description" : "Credential issuer DID",
           "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
+        },
+        "offers_attach" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/AttachDecorator"
+          }
         },
         "schema_id" : {
           "type" : "string",
@@ -9451,6 +10122,12 @@
           "description" : "Credential issuer DID",
           "pattern" : "^(did:sov:)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$"
         },
+        "offers_attach" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/AttachDecorator"
+          }
+        },
         "schema_id" : {
           "type" : "string",
           "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
@@ -9488,6 +10165,76 @@
         }
       }
     },
+    "V10DiscoveryExchangeListResult" : {
+      "type" : "object",
+      "properties" : {
+        "results" : {
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "description" : "Discover Features v1.0 exchange record",
+            "allOf" : [ {
+              "$ref" : "#/definitions/V10DiscoveryRecord"
+            } ]
+          }
+        }
+      }
+    },
+    "V10DiscoveryExchangeResult" : {
+      "type" : "object",
+      "properties" : {
+        "results" : {
+          "$ref" : "#/definitions/V10DiscoveryExchangeResult_results"
+        }
+      }
+    },
+    "V10DiscoveryRecord" : {
+      "type" : "object",
+      "properties" : {
+        "connection_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Connection identifier"
+        },
+        "created_at" : {
+          "type" : "string",
+          "example" : "2021-12-31T23:59:59Z",
+          "description" : "Time of record creation",
+          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
+        },
+        "disclose" : {
+          "$ref" : "#/definitions/V10DiscoveryRecord_disclose"
+        },
+        "discovery_exchange_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Credential exchange identifier"
+        },
+        "query_msg" : {
+          "$ref" : "#/definitions/V10DiscoveryRecord_query_msg"
+        },
+        "state" : {
+          "type" : "string",
+          "example" : "active",
+          "description" : "Current record state"
+        },
+        "thread_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Thread identifier"
+        },
+        "trace" : {
+          "type" : "boolean",
+          "description" : "Record trace information, based on agent configuration"
+        },
+        "updated_at" : {
+          "type" : "string",
+          "example" : "2021-12-31T23:59:59Z",
+          "description" : "Time of last record update",
+          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
+        }
+      }
+    },
     "V10PresentProofModuleResponse" : {
       "type" : "object"
     },
@@ -9495,6 +10242,11 @@
       "type" : "object",
       "required" : [ "proof_request" ],
       "properties" : {
+        "auto_verify" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Verifier choice to auto-verify proof presentation"
+        },
         "comment" : {
           "type" : "string",
           "x-nullable" : true
@@ -9517,6 +10269,10 @@
           "example" : false,
           "description" : "Prover choice to auto-present proof as verifier requests"
         },
+        "auto_verify" : {
+          "type" : "boolean",
+          "description" : "Verifier choice to auto-verify proof presentation"
+        },
         "connection_id" : {
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -9524,7 +10280,7 @@
         },
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -9578,7 +10334,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -9644,6 +10400,11 @@
       "type" : "object",
       "required" : [ "connection_id", "proof_request" ],
       "properties" : {
+        "auto_verify" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Verifier choice to auto-verify proof presentation"
+        },
         "comment" : {
           "type" : "string",
           "x-nullable" : true
@@ -9656,6 +10417,21 @@
         },
         "proof_request" : {
           "$ref" : "#/definitions/IndyProofRequest"
+        },
+        "trace" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Whether to trace event (default false)"
+        }
+      }
+    },
+    "V10PresentationSendRequestToProposal" : {
+      "type" : "object",
+      "properties" : {
+        "auto_verify" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Verifier choice to auto-verify proof presentation"
         },
         "trace" : {
           "type" : "boolean",
@@ -9756,7 +10532,7 @@
         },
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -9806,7 +10582,7 @@
           "type" : "string",
           "example" : "done",
           "description" : "Issue-credential exchange state",
-          "enum" : [ "proposal-sent", "proposal-received", "offer-sent", "offer-received", "request-sent", "request-received", "credential-issued", "credential-received", "done" ]
+          "enum" : [ "proposal-sent", "proposal-received", "offer-sent", "offer-received", "request-sent", "request-received", "credential-issued", "credential-received", "done", "credential-revoked", "abandoned" ]
         },
         "thread_id" : {
           "type" : "string",
@@ -9819,7 +10595,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -9865,7 +10641,7 @@
       "properties" : {
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -9908,7 +10684,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -9919,7 +10695,7 @@
       "properties" : {
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -9945,7 +10721,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         }
@@ -10353,6 +11129,76 @@
         }
       }
     },
+    "V20DiscoveryExchangeListResult" : {
+      "type" : "object",
+      "properties" : {
+        "results" : {
+          "type" : "array",
+          "items" : {
+            "type" : "object",
+            "description" : "Discover Features v2.0 exchange record",
+            "allOf" : [ {
+              "$ref" : "#/definitions/V20DiscoveryRecord"
+            } ]
+          }
+        }
+      }
+    },
+    "V20DiscoveryExchangeResult" : {
+      "type" : "object",
+      "properties" : {
+        "results" : {
+          "$ref" : "#/definitions/V20DiscoveryExchangeResult_results"
+        }
+      }
+    },
+    "V20DiscoveryRecord" : {
+      "type" : "object",
+      "properties" : {
+        "connection_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Connection identifier"
+        },
+        "created_at" : {
+          "type" : "string",
+          "example" : "2021-12-31T23:59:59Z",
+          "description" : "Time of record creation",
+          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
+        },
+        "disclosures" : {
+          "$ref" : "#/definitions/V20DiscoveryRecord_disclosures"
+        },
+        "discovery_exchange_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Credential exchange identifier"
+        },
+        "queries_msg" : {
+          "$ref" : "#/definitions/V20DiscoveryRecord_queries_msg"
+        },
+        "state" : {
+          "type" : "string",
+          "example" : "active",
+          "description" : "Current record state"
+        },
+        "thread_id" : {
+          "type" : "string",
+          "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "description" : "Thread identifier"
+        },
+        "trace" : {
+          "type" : "boolean",
+          "description" : "Record trace information, based on agent configuration"
+        },
+        "updated_at" : {
+          "type" : "string",
+          "example" : "2021-12-31T23:59:59Z",
+          "description" : "Time of last record update",
+          "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
+        }
+      }
+    },
     "V20IssueCredSchemaCore" : {
       "type" : "object",
       "required" : [ "filter" ],
@@ -10420,6 +11266,11 @@
       "type" : "object",
       "required" : [ "presentation_request" ],
       "properties" : {
+        "auto_verify" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Verifier choice to auto-verify proof presentation"
+        },
         "comment" : {
           "type" : "string",
           "x-nullable" : true
@@ -10442,6 +11293,10 @@
           "example" : false,
           "description" : "Prover choice to auto-present proof as verifier requests"
         },
+        "auto_verify" : {
+          "type" : "boolean",
+          "description" : "Verifier choice to auto-verify proof presentation"
+        },
         "by_format" : {
           "$ref" : "#/definitions/V20PresExRecord_by_format"
         },
@@ -10452,7 +11307,7 @@
         },
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -10503,7 +11358,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -10696,6 +11551,11 @@
       "type" : "object",
       "required" : [ "connection_id", "presentation_request" ],
       "properties" : {
+        "auto_verify" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Verifier choice to auto-verify proof presentation"
+        },
         "comment" : {
           "type" : "string",
           "x-nullable" : true
@@ -10733,6 +11593,21 @@
     },
     "V20PresentProofModuleResponse" : {
       "type" : "object"
+    },
+    "V20PresentationSendRequestToProposal" : {
+      "type" : "object",
+      "properties" : {
+        "auto_verify" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Verifier choice to auto-verify proof presentation"
+        },
+        "trace" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Whether to trace event (default false)"
+        }
+      }
     },
     "VCRecord" : {
       "type" : "object",
@@ -10935,7 +11810,7 @@
       "properties" : {
         "created_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of record creation",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -10956,7 +11831,7 @@
         },
         "updated_at" : {
           "type" : "string",
-          "example" : "2021-12-31 23:59:59Z",
+          "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
         },
@@ -10964,6 +11839,14 @@
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "description" : "Wallet record ID"
+        }
+      }
+    },
+    "WriteLedgerRequest" : {
+      "type" : "object",
+      "properties" : {
+        "ledger_id" : {
+          "type" : "string"
         }
       }
     },
@@ -11058,6 +11941,11 @@
       "type" : "object",
       "description" : "Revocation registry entry value"
     },
+    "InputDescriptors_schema" : {
+      "type" : "object",
+      "description" : "Accepts a list of schema or a dict containing filters like oneof_filter.",
+      "example" : "{\"oneof_filter\":[[{\"uri\":\"https://www.w3.org/Test1#Test1\"},{\"uri\":\"https://www.w3.org/Test2#Test2\"}],{\"oneof_filter\":[[{\"uri\":\"https://www.w3.org/Test1#Test1\"}],[{\"uri\":\"https://www.w3.org/Test2#Test2\"}]]}]}"
+    },
     "InvitationRecord_invitation" : {
       "type" : "object",
       "description" : "Out of band invitation message"
@@ -11108,6 +11996,10 @@
       "type" : "object",
       "description" : "Revocation registry revocations transaction to endorse"
     },
+    "TxnOrRegisterLedgerNymResponse_txn" : {
+      "type" : "object",
+      "description" : "DID transaction to endorse"
+    },
     "TxnOrRevRegResult_txn" : {
       "type" : "object",
       "description" : "Revocation registry definition transaction to endorse"
@@ -11147,6 +12039,18 @@
     "V10CredentialExchange_raw_credential" : {
       "type" : "object",
       "description" : "Credential as received, prior to storage in holder wallet"
+    },
+    "V10DiscoveryExchangeResult_results" : {
+      "type" : "object",
+      "description" : "Discover Features v1.0 exchange record"
+    },
+    "V10DiscoveryRecord_disclose" : {
+      "type" : "object",
+      "description" : "Disclose message"
+    },
+    "V10DiscoveryRecord_query_msg" : {
+      "type" : "object",
+      "description" : "Query message"
     },
     "V10PresentationExchange_presentation" : {
       "type" : "object",
@@ -11203,6 +12107,18 @@
     "V20CredProposal_credential_preview" : {
       "type" : "object",
       "description" : "Credential preview"
+    },
+    "V20DiscoveryExchangeResult_results" : {
+      "type" : "object",
+      "description" : "Discover Features v2.0 exchange record"
+    },
+    "V20DiscoveryRecord_disclosures" : {
+      "type" : "object",
+      "description" : "Disclosures message"
+    },
+    "V20DiscoveryRecord_queries_msg" : {
+      "type" : "object",
+      "description" : "Queries message"
     },
     "V20PresExRecord_by_format" : {
       "type" : "object",

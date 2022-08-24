@@ -9,6 +9,8 @@ from aiohttp_apispec import (
     response_schema,
 )
 from json.decoder import JSONDecodeError
+from aries_cloudagent.messaging.decorators.attach_decorator import AttachDecoratorSchema
+
 from marshmallow import fields, validate
 
 from ...out_of_band.v1_0.models.oob_record import OobRecord
@@ -178,6 +180,7 @@ class V10CredentialProposalRequestSchemaBase(AdminAPIMessageTracingSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
+    offers_attach = fields.Nested(AttachDecoratorSchema, many=True, required=False)
 
 
 class V10CredentialProposalRequestOptSchema(V10CredentialProposalRequestSchemaBase):
@@ -234,6 +237,7 @@ class V10CredentialFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
         description="Human-readable comment", required=False, allow_none=True
     )
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
+    offers_attach = fields.Nested(AttachDecoratorSchema, many=True, required=False)
 
 
 class V10CredentialConnFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
@@ -263,6 +267,7 @@ class V10CredentialConnFreeOfferRequestSchema(AdminAPIMessageTracingSchema):
         description="Human-readable comment", required=False, allow_none=True
     )
     credential_preview = fields.Nested(CredentialPreviewSchema, required=True)
+    offers_attach = fields.Nested(AttachDecoratorSchema, many=True, required=False)
 
 
 class V10CredentialIssueRequestSchema(OpenAPISchema):
