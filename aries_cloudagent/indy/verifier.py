@@ -159,6 +159,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
 
         # timestamp superfluous, missing, or outside non-revocation interval
         revealed_attrs = pres["requested_proof"].get("revealed_attrs", {})
+        unrevealed_attrs = pres["requested_proof"].get("unrevealed_attrs", {})
         revealed_groups = pres["requested_proof"].get("revealed_attr_groups", {})
         self_attested = pres["requested_proof"].get("self_attested_attrs", {})
         preds = pres["requested_proof"].get("predicates", {})
@@ -190,6 +191,9 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                                 f"{uuid} falls outside non-revocation interval "
                                 f"{non_revoc_intervals[uuid]}"
                             )
+                elif uuid in unrevealed_attrs:
+                    # nothing to do, attribute value is not revealed
+                    pass
                 elif uuid not in self_attested:
                     raise ValueError(
                         f"Presentation attributes mismatch requested attribute {uuid}"
@@ -297,12 +301,16 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                 raise ValueError(f"Missing requested predicate '{uuid}'")
 
         revealed_attrs = pres["requested_proof"].get("revealed_attrs", {})
+        unrevealed_attrs = pres["requested_proof"].get("unrevealed_attrs", {})
         revealed_groups = pres["requested_proof"].get("revealed_attr_groups", {})
         self_attested = pres["requested_proof"].get("self_attested_attrs", {})
         for (uuid, req_attr) in pres_req["requested_attributes"].items():
             if "name" in req_attr:
                 if uuid in revealed_attrs:
                     pres_req_attr_spec = {req_attr["name"]: revealed_attrs[uuid]}
+                elif uuid in unrevealed_attrs:
+                    # unrevealed attribute, nothing to do
+                    pres_req_attr_spec = {}
                 elif uuid in self_attested:
                     if not req_attr.get("restrictions"):
                         continue
