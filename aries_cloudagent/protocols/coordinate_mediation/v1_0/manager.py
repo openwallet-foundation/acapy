@@ -598,12 +598,30 @@ class MediationManager:
         self, connection_id: str, response: KeylistUpdateResponse
     ):
         """Notify of keylist update response received."""
+        # Retrieve connection IDs associated with recipient keys
+        # recipient key -> connection id
+        async with self._profile.session() as session:
+            try:
+                routes = [
+                    await RouteRecord.retrieve_by_recipient_key(
+                        session, updated.recipient_key
+                    )
+                    for updated in response.updated
+                ]
+            except StorageNotFoundError as err:
+                raise MediationManagerError(
+                    "Unknown recipient key received in keylist update response"
+                ) from err
+
         await self._profile.notify(
             self.KEYLIST_UPDATED_EVENT,
             {
                 "connection_id": connection_id,
                 "thread_id": response._thread_id,
                 "updated": [update.serialize() for update in response.updated],
+                "mediated_connections": {
+                    route.recipient_key: route.connection_id for route in routes
+                },
             },
         )
 

@@ -474,7 +474,55 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         print(caplog.text)
 
     async def test_notify_keylist_updated(
-        self, manager: MediationManager, mock_event_bus: MockEventBus
+        self,
+        manager: MediationManager,
+        mock_event_bus: MockEventBus,
+        session: ProfileSession,
+    ):
+        """test notify_keylist_updated."""
+        await RouteRecord(
+            role=RouteRecord.ROLE_CLIENT,
+            connection_id="conn_id_1",
+            recipient_key=TEST_ROUTE_VERKEY,
+        ).save(session)
+        await RouteRecord(
+            role=RouteRecord.ROLE_CLIENT,
+            connection_id="conn_id_2",
+            recipient_key=TEST_VERKEY,
+        ).save(session)
+
+        response = KeylistUpdateResponse(
+            updated=[
+                KeylistUpdated(
+                    recipient_key=TEST_ROUTE_VERKEY,
+                    action=KeylistUpdateRule.RULE_ADD,
+                    result=KeylistUpdated.RESULT_SUCCESS,
+                ),
+                KeylistUpdated(
+                    recipient_key=TEST_VERKEY,
+                    action=KeylistUpdateRule.RULE_REMOVE,
+                    result=KeylistUpdated.RESULT_SUCCESS,
+                ),
+            ],
+        )
+
+        response.assign_thread_id(TEST_THREAD_ID)
+        await manager.notify_keylist_updated(TEST_CONN_ID, response)
+        assert mock_event_bus.events
+        assert mock_event_bus.events[0][1].topic == manager.KEYLIST_UPDATED_EVENT
+        assert mock_event_bus.events[0][1].payload == {
+            "connection_id": TEST_CONN_ID,
+            "thread_id": TEST_THREAD_ID,
+            "updated": [result.serialize() for result in response.updated],
+            "mediated_connections": {
+                TEST_ROUTE_VERKEY: "conn_id_1",
+                TEST_VERKEY: "conn_id_2",
+            },
+        }
+
+    async def test_notify_keylist_updated_x_unknown_recip_key(
+        self,
+        manager: MediationManager,
     ):
         """test notify_keylist_updated."""
         response = KeylistUpdateResponse(
@@ -491,15 +539,10 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
                 ),
             ],
         )
+
         response.assign_thread_id(TEST_THREAD_ID)
-        await manager.notify_keylist_updated(TEST_CONN_ID, response)
-        assert mock_event_bus.events
-        assert mock_event_bus.events[0][1].topic == manager.KEYLIST_UPDATED_EVENT
-        assert mock_event_bus.events[0][1].payload == {
-            "connection_id": TEST_CONN_ID,
-            "thread_id": TEST_THREAD_ID,
-            "updated": [result.serialize() for result in response.updated],
-        }
+        with pytest.raises(MediationManagerError):
+            await manager.notify_keylist_updated(TEST_CONN_ID, response)
 
     async def test_get_my_keylist(self, session, manager):
         """test_get_my_keylist."""
