@@ -46,7 +46,7 @@ A presentation verification may include multiple messages, for example:
 
 ## Presentation Modifications and Warnings
 
-The following modifications/warnings may be done by Aca-Py 9which shouldn't affect the verification of the received proof):
+The following modifications/warnings may be done by Aca-Py which shouldn't affect the verification of the received proof):
 
 - "RMV_RFNT_NRI":  Referent contains a non-revocation interval for a non-revocable credential (timestamp is removed)
 - "RMV_GLB_NRI":  Presentation contains a global interval for a non-revocable credential (timestamp is removed)
