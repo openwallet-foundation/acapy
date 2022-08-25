@@ -442,7 +442,9 @@ class TestIndySdkVerifier(AsyncTestCase):
         assert verified is False
         assert len(msgs) == 2
         assert "TS_OUT_NRI::19_uuid" in msgs
-        assert "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        assert (
+            "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr_tamper_encoded(self, mock_verify):
@@ -468,7 +470,9 @@ class TestIndySdkVerifier(AsyncTestCase):
         assert verified is False
         assert len(msgs) == 2
         assert "TS_OUT_NRI::19_uuid" in msgs
-        assert "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        assert (
+            "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names(self, mock_verify):
@@ -530,7 +534,10 @@ class TestIndySdkVerifier(AsyncTestCase):
         assert "RMV_RFNT_NRI::18_uuid" in msgs
         assert "RMV_RFNT_NRI::18_busid_GE_uuid" in msgs
         assert "RMV_RFNT_NRI::18_id_GE_uuid" in msgs
-        assert "VALUE_ERROR::Timestamp on sub-proof #0 is superfluous vs. requested attribute group 18_uuid" in msgs
+        assert (
+            "VALUE_ERROR::Timestamp on sub-proof #0 is superfluous vs. requested attribute group 18_uuid"
+            in msgs
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_pred_req_attr(self, mock_verify):
@@ -556,7 +563,10 @@ class TestIndySdkVerifier(AsyncTestCase):
         assert "RMV_RFNT_NRI::18_uuid" in msgs
         assert "RMV_RFNT_NRI::18_busid_GE_uuid" in msgs
         assert "RMV_RFNT_NRI::18_id_GE_uuid" in msgs
-        assert "VALUE_ERROR::Timestamp on sub-proof #0 is superfluous vs. requested attribute group 18_uuid" in msgs
+        assert (
+            "VALUE_ERROR::Timestamp on sub-proof #0 is superfluous vs. requested attribute group 18_uuid"
+            in msgs
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_attr_groups(self, mock_verify):
