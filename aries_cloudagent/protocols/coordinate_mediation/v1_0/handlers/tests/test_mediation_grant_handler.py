@@ -18,7 +18,8 @@ from ..mediation_grant_handler import MediationGrantHandler
 from .. import mediation_grant_handler as test_module
 
 TEST_CONN_ID = "conn-id"
-TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 TEST_ENDPOINT = "https://example.com"
 
 
@@ -58,7 +59,7 @@ class TestMediationGrantHandler(AsyncTestCase):
         assert record
         assert record.state == MediationRecord.STATE_GRANTED
         assert record.endpoint == TEST_ENDPOINT
-        assert record.routing_keys == [TEST_VERKEY]
+        assert record.routing_keys == [TEST_RECORD_VERKEY]
 
     async def test_handler_connection_has_set_to_default_meta(self):
         handler, responder = MediationGrantHandler(), MockResponder()
