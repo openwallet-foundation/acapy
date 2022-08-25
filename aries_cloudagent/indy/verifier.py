@@ -20,7 +20,10 @@ from .models.xform import indy_proof_req2non_revoc_intervals
 
 LOGGER = logging.getLogger(__name__)
 
+
 class PresVerifyMsg(str, Enum):
+    """Credential verification codes."""
+
     RMV_REFERENT_NON_REVOC_INTERVAL = "RMV_RFNT_NRI"
     RMV_GLOBAL_NON_REVOC_INTERVAL = "RMV_GLB_NRI"
     TSTMP_OUT_NON_REVOC_INTRVAL = "TS_OUT_NRI"
@@ -216,8 +219,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                 elif uuid in unrevealed_attrs:
                     # nothing to do, attribute value is not revealed
                     msgs.append(
-                        f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::"
-                        f"{uuid}"
+                        f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::" f"{uuid}"
                     )
                 elif uuid not in self_attested:
                     raise ValueError(
@@ -277,8 +279,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     < non_revoc_intervals[uuid].get("to", now)
                 ):
                     msgs.append(
-                        f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::"
-                        f"{uuid}"
+                        f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::" f"{uuid}"
                     )
                     LOGGER.warning(
                         f"Best-effort timestamp {timestamp} "
@@ -347,8 +348,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     # unrevealed attribute, nothing to do
                     pres_req_attr_spec = {}
                     msgs.append(
-                        f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::"
-                        f"{uuid}"
+                        f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::" f"{uuid}"
                     )
                 elif uuid in self_attested:
                     if not req_attr.get("restrictions"):

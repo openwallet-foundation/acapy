@@ -49,12 +49,13 @@ class IndyCredxVerifier(IndyVerifier):
         msgs = []
         try:
             msgs += self.non_revoc_intervals(pres_req, pres, credential_definitions)
-            msgs += await self.check_timestamps(self.profile, pres_req, pres, rev_reg_defs)
+            msgs += await self.check_timestamps(
+                self.profile, pres_req, pres, rev_reg_defs
+            )
             msgs += await self.pre_verify(pres_req, pres)
         except ValueError as err:
-            msgs.append(
-                f"{PresVerifyMsg.PRES_VALUE_ERROR.value}::{err}"
-            )
+            s = str(err)
+            msgs.append(f"{PresVerifyMsg.PRES_VALUE_ERROR.value}::{s}")
             LOGGER.error(
                 f"Presentation on nonce={pres_req['nonce']} "
                 f"cannot be validated: {str(err)}"
@@ -72,10 +73,9 @@ class IndyCredxVerifier(IndyVerifier):
                 rev_reg_defs.values(),
                 rev_reg_entries,
             )
-        except CredxError:
-            msgs.append(
-                f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{err}"
-            )
+        except CredxError as err:
+            s = str(err)
+            msgs.append(f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{s}")
             LOGGER.exception(
                 f"Validation of presentation on nonce={pres_req['nonce']} "
                 "failed with error"

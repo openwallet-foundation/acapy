@@ -338,5 +338,5 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             rev_reg_entries,
         )
         pres_ex_record.verified = json.dumps(verified)
-        pres_ex_record.verified_msgs = verified_msgs
+        pres_ex_record.verified_msgs = list(set(verified_msgs))
         return pres_ex_record
