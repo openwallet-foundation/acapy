@@ -7,4 +7,4 @@ if [ -z "$PYTHON" ]; then
     fi
 fi
 
-exec $PYTHON -m aries_cloudagent "$@"
+$PYTHON -m aries_cloudagent "$@"
