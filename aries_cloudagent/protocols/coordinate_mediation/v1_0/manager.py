@@ -29,6 +29,7 @@ from .messages.mediate_deny import MediationDeny
 from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
+from .normalization import normalize_from_did_key
 
 LOGGER = logging.getLogger(__name__)
 
@@ -249,8 +250,9 @@ class MediationManager:
         }
 
         def rule_to_update(rule: KeylistUpdateRule):
+            recipient_key = normalize_from_did_key(rule.recipient_key)
             return RouteUpdate(
-                recipient_key=rule.recipient_key, action=action_map[rule.action]
+                recipient_key=recipient_key, action=action_map[rule.action]
             )
 
         def updated_to_keylist_updated(updated: RouteUpdated):
@@ -445,7 +447,11 @@ class MediationManager:
         """
         record.state = MediationRecord.STATE_GRANTED
         record.endpoint = grant.endpoint
-        record.routing_keys = grant.routing_keys
+        # record.routing_keys = grant.routing_keys
+        routing_keys = []
+        for key in grant.routing_keys:
+            routing_keys.append(normalize_from_did_key(key))
+        record.routing_keys = routing_keys
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request granted.")
 
