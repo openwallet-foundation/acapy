@@ -9,6 +9,7 @@ from marshmallow import fields
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from ..message_types import MEDIATE_GRANT, PROTOCOL_PACKAGE
+from ..normalization import normalize_from_public_key
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.mediation_grant_handler.MediationGrantHandler"
@@ -41,7 +42,11 @@ class MediationGrant(AgentMessage):
         """
         super(MediationGrant, self).__init__(**kwargs)
         self.endpoint = endpoint
-        self.routing_keys = list(routing_keys) if routing_keys else []
+        self.routing_keys = (
+            list(normalize_from_public_key(key) for key in routing_keys)
+            if routing_keys
+            else []
+        )
 
 
 class MediationGrantSchema(AgentMessageSchema):
