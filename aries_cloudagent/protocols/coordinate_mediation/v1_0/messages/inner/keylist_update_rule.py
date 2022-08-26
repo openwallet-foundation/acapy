@@ -8,7 +8,8 @@ from marshmallow import fields
 from marshmallow.validate import OneOf
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
-from ......messaging.valid import INDY_RAW_PUBLIC_KEY
+from ......messaging.valid import ROUTING_KEY
+from ...normalization import normalize_from_public_key
 
 
 class KeylistUpdateRule(BaseModel):
@@ -32,7 +33,7 @@ class KeylistUpdateRule(BaseModel):
 
         """
         super().__init__(**kwargs)
-        self.recipient_key = recipient_key
+        self.recipient_key = normalize_from_public_key(recipient_key)
         self.action = action
 
 
@@ -45,7 +46,7 @@ class KeylistUpdateRuleSchema(BaseModelSchema):
         model_class = KeylistUpdateRule
 
     recipient_key = fields.Str(
-        description="Key to remove or add", required=True, **INDY_RAW_PUBLIC_KEY
+        description="Key to remove or add", required=True, **ROUTING_KEY
     )
     action = fields.Str(
         required=True,

@@ -6,7 +6,7 @@ from marshmallow import EXCLUDE, fields
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
-from .....messaging.valid import INDY_RAW_PUBLIC_KEY
+from .....messaging.valid import DID_KEY
 from .....storage.base import StorageDuplicateError, StorageNotFoundError
 
 
@@ -172,5 +172,5 @@ class MediationRecordSchema(BaseRecordSchema):
     connection_id = fields.Str(required=True)
     mediator_terms = fields.List(fields.Str(), required=False)
     recipient_terms = fields.List(fields.Str(), required=False)
-    routing_keys = fields.List(fields.Str(**INDY_RAW_PUBLIC_KEY), required=False)
+    routing_keys = fields.List(fields.Str(**DID_KEY), required=False)
     endpoint = fields.Str(required=False)
