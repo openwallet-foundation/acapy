@@ -29,7 +29,7 @@ In practice, DIDs and DID Documents are used for a variety of purposes but espec
 
 ## `DIDResolver`
 
-In ACA-Py, the `DIDResolver` provides the interface to resolve DIDs using registered method resolvers. Method resolver registration happens on startup in a `did_resolers` list. This registry enables additional resolvers to be loaded via plugin.
+In ACA-Py, the `DIDResolver` provides the interface to resolve DIDs using registered method resolvers. Method resolver registration happens on startup in a `did_resolvers` list. This registry enables additional resolvers to be loaded via plugin.
 
 #### Example usage:
 ```python=
