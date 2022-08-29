@@ -133,10 +133,6 @@ class OutOfBandManager(BaseConnectionManager):
                 "Cannot store metadata without handshake protocols"
             )
         if public:
-            # if multi_use:
-            #     raise OutOfBandManagerError(
-            #         "Cannot create public invitation with multi_use"
-            #     )
             if metadata:
                 raise OutOfBandManagerError(
                     "Cannot store metadata on public invitations"
