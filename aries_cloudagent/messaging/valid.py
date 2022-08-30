@@ -349,6 +349,29 @@ class IndyRawPublicKey(Regexp):
         )
 
 
+class RoutingKey(Regexp):
+    """
+    Validate between indy or did key.
+
+    Validate value against indy (Ed25519VerificationKey2018)
+    raw public key or DID key specification.
+    """
+
+    EXAMPLE = DIDKey.EXAMPLE
+    PATTERN = re.compile(DIDKey.PATTERN.pattern + "|" + IndyRawPublicKey.PATTERN)
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            RoutingKey.PATTERN,
+            error=(
+                "Value {input} is not in W3C did:key"
+                " or Ed25519VerificationKey2018 key format"
+            ),
+        )
+
+
 class IndyCredDefId(Regexp):
     """Validate value against indy credential definition identifier specification."""
 
@@ -788,6 +811,7 @@ JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
 DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
+ROUTING_KEY = {"validate": RoutingKey(), "example": RoutingKey.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
 GENERIC_DID = {"validate": MaybeIndyDID(), "example": MaybeIndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {

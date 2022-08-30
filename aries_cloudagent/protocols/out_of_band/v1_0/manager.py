@@ -359,9 +359,10 @@ class OutOfBandManager(BaseConnectionManager):
         async with self.profile.session() as session:
             await oob_record.save(session, reason="Created new oob invitation")
 
-        await self._route_manager.route_invitation(
-            self.profile, conn_rec, mediation_record
-        )
+        if conn_rec:
+            await self._route_manager.route_invitation(
+                self.profile, conn_rec, mediation_record
+            )
 
         return InvitationRecord(  # for return via admin API, not storage
             oob_id=oob_record.oob_id,

@@ -8,7 +8,7 @@ from datetime import date, datetime
 from io import StringIO
 from os import path
 from time import time
-from typing import TYPE_CHECKING, Tuple, Optional
+from typing import TYPE_CHECKING, List, Tuple, Optional
 
 import indy.ledger
 import indy.pool
@@ -293,6 +293,18 @@ class IndySdkLedger(BaseLedger):
     def read_only(self) -> bool:
         """Accessor for the ledger read-only flag."""
         return self.pool.read_only
+
+    async def is_ledger_read_only(self) -> bool:
+        """Check if ledger is read-only including TAA."""
+        if self.read_only:
+            return self.read_only
+        # if TAA is required and not accepted we should be in read-only mode
+        taa = await self.get_txn_author_agreement()
+        if taa["taa_required"]:
+            taa_acceptance = await self.get_latest_txn_author_acceptance()
+            if "mechanism" not in taa_acceptance:
+                return True
+        return self.read_only
 
     async def __aenter__(self) -> "IndySdkLedger":
         """
@@ -733,6 +745,7 @@ class IndySdkLedger(BaseLedger):
         endpoint_type: EndpointType = None,
         write_ledger: bool = True,
         endorser_did: str = None,
+        routing_keys: List[str] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 
@@ -758,18 +771,16 @@ class IndySdkLedger(BaseLedger):
         )
 
         if exist_endpoint_of_type != endpoint:
-            if self.pool.read_only:
+            if await self.is_ledger_read_only():
                 raise LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"
                 )
 
             nym = self.did_to_nym(did)
 
-            if all_exist_endpoints:
-                all_exist_endpoints[endpoint_type.indy] = endpoint
-                attr_json = json.dumps({"endpoint": all_exist_endpoints})
-            else:
-                attr_json = json.dumps({"endpoint": {endpoint_type.indy: endpoint}})
+            attr_json = await self._construct_attr_json(
+                endpoint, endpoint_type, all_exist_endpoints, routing_keys
+            )
 
             with IndyErrorHandler("Exception building attribute request", LedgerError):
                 request_json = await indy.ledger.build_attrib_request(
@@ -811,7 +822,7 @@ class IndySdkLedger(BaseLedger):
             alias: Human-friendly alias to assign to the DID.
             role: For permissioned ledgers, what role should the new DID have.
         """
-        if self.pool.read_only:
+        if await self.is_ledger_read_only():
             raise LedgerError(
                 "Error cannot register nym when ledger is in read only mode"
             )

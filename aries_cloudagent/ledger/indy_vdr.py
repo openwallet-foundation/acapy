@@ -12,7 +12,7 @@ from datetime import datetime, date
 from io import StringIO
 from pathlib import Path
 from time import time
-from typing import Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional
 
 from indy_vdr import ledger, open_pool, Pool, Request, VdrError
 
@@ -282,6 +282,18 @@ class IndyVdrLedger(BaseLedger):
     def read_only(self) -> bool:
         """Accessor for the ledger read-only flag."""
         return self.pool.read_only
+
+    async def is_ledger_read_only(self) -> bool:
+        """Check if ledger is read-only including TAA."""
+        if self.read_only:
+            return self.read_only
+        # if TAA is required and not accepted we should be in read-only mode
+        taa = await self.get_txn_author_agreement()
+        if taa["taa_required"]:
+            taa_acceptance = await self.get_latest_txn_author_acceptance()
+            if "mechanism" not in taa_acceptance:
+                return True
+        return self.read_only
 
     async def __aenter__(self) -> "IndyVdrLedger":
         """
@@ -667,6 +679,7 @@ class IndyVdrLedger(BaseLedger):
         endpoint_type: EndpointType = None,
         write_ledger: bool = True,
         endorser_did: str = None,
+        routing_keys: List[str] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 
@@ -699,11 +712,9 @@ class IndyVdrLedger(BaseLedger):
 
             nym = self.did_to_nym(did)
 
-            if all_exist_endpoints:
-                all_exist_endpoints[endpoint_type.indy] = endpoint
-                attr_json = json.dumps({"endpoint": all_exist_endpoints})
-            else:
-                attr_json = json.dumps({"endpoint": {endpoint_type.indy: endpoint}})
+            attr_json = await self._construct_attr_json(
+                endpoint, endpoint_type, all_exist_endpoints, routing_keys
+            )
 
             try:
                 attrib_req = ledger.build_attrib_request(
