@@ -1,7 +1,8 @@
 """Test MediationManager."""
 import logging
-from typing import AsyncIterable, Iterable
+from typing import AsyncGenerator, AsyncIterable, Iterable
 
+from functools import partial
 from asynctest import mock as async_mock
 import pytest
 
@@ -482,37 +483,40 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         self,
         manager: MediationManager,
         mock_event_bus: MockEventBus,
-        session: ProfileSession,
     ):
         """test notify_keylist_updated."""
-        await RouteRecord(
-            role=RouteRecord.ROLE_CLIENT,
-            connection_id="conn_id_1",
-            recipient_key=TEST_ROUTE_VERKEY,
-        ).save(session)
-        await RouteRecord(
-            role=RouteRecord.ROLE_CLIENT,
-            connection_id="conn_id_2",
-            recipient_key=TEST_VERKEY,
-        ).save(session)
 
-        response = KeylistUpdateResponse(
-            updated=[
-                KeylistUpdated(
-                    recipient_key=TEST_ROUTE_VERKEY,
-                    action=KeylistUpdateRule.RULE_ADD,
-                    result=KeylistUpdated.RESULT_SUCCESS,
-                ),
-                KeylistUpdated(
-                    recipient_key=TEST_VERKEY,
-                    action=KeylistUpdateRule.RULE_REMOVE,
-                    result=KeylistUpdated.RESULT_SUCCESS,
-                ),
-            ],
-        )
+        async def _result_generator():
+            yield "conn_id_1"
+            yield "conn_id_2"
 
-        response.assign_thread_id(TEST_THREAD_ID)
-        await manager.notify_keylist_updated(TEST_CONN_ID, response)
+        async def _retrieve_by_invitation_key(
+            generator: AsyncGenerator, *args, **kwargs
+        ):
+            return await generator.__anext__()
+
+        with async_mock.patch.object(
+            manager,
+            "_conn_id_from_recipient_key",
+            partial(_retrieve_by_invitation_key, _result_generator()),
+        ):
+            response = KeylistUpdateResponse(
+                updated=[
+                    KeylistUpdated(
+                        recipient_key=TEST_ROUTE_VERKEY,
+                        action=KeylistUpdateRule.RULE_ADD,
+                        result=KeylistUpdated.RESULT_SUCCESS,
+                    ),
+                    KeylistUpdated(
+                        recipient_key=TEST_VERKEY,
+                        action=KeylistUpdateRule.RULE_REMOVE,
+                        result=KeylistUpdated.RESULT_SUCCESS,
+                    ),
+                ],
+            )
+
+            response.assign_thread_id(TEST_THREAD_ID)
+            await manager.notify_keylist_updated(TEST_CONN_ID, response)
         assert mock_event_bus.events
         assert mock_event_bus.events[0][1].topic == manager.KEYLIST_UPDATED_EVENT
         assert mock_event_bus.events[0][1].payload == {
