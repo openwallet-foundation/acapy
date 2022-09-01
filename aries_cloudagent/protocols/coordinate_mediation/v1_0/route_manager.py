@@ -20,6 +20,7 @@ from ...routing.v1_0.models.route_record import RouteRecord
 from .manager import MediationManager
 from .messages.keylist_update import KeylistUpdate
 from .models.mediation_record import MediationRecord
+from .normalization import normalize_from_did_key
 
 
 LOGGER = logging.getLogger(__name__)
@@ -241,6 +242,27 @@ class RouteManager(ABC):
         mediation_record: Optional[MediationRecord] = None,
     ) -> Tuple[List[str], str]:
         """Retrieve routing keys."""
+
+    async def connection_from_recipient_key(
+        self, profile: Profile, recipient_key: str
+    ) -> ConnRecord:
+        """Retrieve connection for a recipient_key.
+
+        The recipient key is expected to be a local key owned by this agent.
+        """
+        async with profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            try:
+                conn = await ConnRecord.retrieve_by_invitation_key(
+                    session, invitation_key=normalize_from_did_key(recipient_key)
+                )
+            except StorageNotFoundError:
+                did_info = await wallet.get_local_did_for_verkey(
+                    normalize_from_did_key(recipient_key)
+                )
+                conn = await ConnRecord.retrieve_by_did(session, my_did=did_info.did)
+
+            return conn
 
 
 class CoordinateMediationV1RouteManager(RouteManager):

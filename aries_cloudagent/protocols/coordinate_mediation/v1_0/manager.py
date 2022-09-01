@@ -3,17 +3,14 @@ import json
 import logging
 from typing import Optional, Sequence, Tuple
 
-
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
-from ....connections.models.conn_record import ConnRecord
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import DIDMethod
-from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import KeyType
 from ...routing.v1_0.manager import RoutingManager
 from ...routing.v1_0.models.route_record import RouteRecord
@@ -601,48 +598,6 @@ class MediationManager:
                 )
             for record_for_removal in to_remove:
                 await record_for_removal.delete_record(session)
-
-    async def _conn_id_from_recipient_key(
-        self, session: ProfileSession, wallet: BaseWallet, recipient_key: str
-    ) -> str:
-        try:
-            conn = await ConnRecord.retrieve_by_invitation_key(
-                session, invitation_key=normalize_from_did_key(recipient_key)
-            )
-        except StorageNotFoundError:
-            did_info = await wallet.get_local_did_for_verkey(
-                normalize_from_did_key(recipient_key)
-            )
-            conn = await ConnRecord.retrieve_by_did(session, my_did=did_info.did)
-        return conn.connection_id
-
-    async def notify_keylist_updated(
-        self, connection_id: str, response: KeylistUpdateResponse
-    ):
-        """Notify of keylist update response received."""
-        async with self._profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            try:
-                routes = {
-                    updated.recipient_key: await self._conn_id_from_recipient_key(
-                        session, wallet, updated.recipient_key
-                    )
-                    for updated in response.updated
-                }
-            except (StorageNotFoundError, WalletNotFoundError) as err:
-                raise MediationManagerError(
-                    "Unknown recipient key received in keylist update response"
-                ) from err
-
-        await self._profile.notify(
-            self.KEYLIST_UPDATED_EVENT,
-            {
-                "connection_id": connection_id,
-                "thread_id": response._thread_id,
-                "updated": [update.serialize() for update in response.updated],
-                "mediated_connections": routes,
-            },
-        )
 
     async def get_my_keylist(
         self, connection_id: Optional[str] = None
