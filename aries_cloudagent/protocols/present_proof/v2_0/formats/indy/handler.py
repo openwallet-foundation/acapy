@@ -329,14 +329,14 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
 
         verifier = self._profile.inject(IndyVerifier)
-        pres_ex_record.verified = json.dumps(  # tag: needs string value
-            await verifier.verify_presentation(
-                indy_proof_request,
-                indy_proof,
-                schemas,
-                cred_defs,
-                rev_reg_defs,
-                rev_reg_entries,
-            )
+        (verified, verified_msgs) = await verifier.verify_presentation(
+            indy_proof_request,
+            indy_proof,
+            schemas,
+            cred_defs,
+            rev_reg_defs,
+            rev_reg_entries,
         )
+        pres_ex_record.verified = json.dumps(verified)
+        pres_ex_record.verified_msgs = list(set(verified_msgs))
         return pres_ex_record
