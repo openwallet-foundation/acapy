@@ -620,3 +620,18 @@ class TestBaseMultitenantManager(AsyncTestCase):
             assert wallets[0] == return_wallets[0]
             assert wallets[1] == return_wallets[3]
             assert get_wallet_by_key.call_count == 4
+
+    async def test_get_profile_for_key(self):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.requires_external_key = False
+        with async_mock.patch.object(
+            self.manager,
+            "_get_wallet_by_key",
+            async_mock.CoroutineMock(return_value=mock_wallet),
+        ), async_mock.patch.object(
+            self.manager, "get_wallet_profile", async_mock.CoroutineMock()
+        ) as mock_get_wallet_profile:
+            profile = await self.manager.get_profile_for_key(
+                self.context, "test-verkey"
+            )
+            assert profile == mock_get_wallet_profile.return_value
