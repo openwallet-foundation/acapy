@@ -18,6 +18,7 @@ from ..keylist_query_handler import KeylistQueryHandler
 
 TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_VERKEY_DIDKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 
 
 class TestKeylistQueryHandler(AsyncTestCase):
@@ -77,4 +78,4 @@ class TestKeylistQueryHandler(AsyncTestCase):
         result, _target = responder.messages[0]
         assert isinstance(result, Keylist)
         assert len(result.keys) == 1
-        assert result.keys[0].recipient_key == TEST_VERKEY
+        assert result.keys[0].recipient_key == TEST_VERKEY_DIDKEY

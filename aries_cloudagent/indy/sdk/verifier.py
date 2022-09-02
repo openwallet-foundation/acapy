@@ -8,7 +8,7 @@ from indy.error import IndyError
 
 from ...core.profile import Profile
 
-from ..verifier import IndyVerifier
+from ..verifier import IndyVerifier, PresVerifyMsg
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class IndySdkVerifier(IndyVerifier):
         credential_definitions,
         rev_reg_defs,
         rev_reg_entries,
-    ) -> bool:
+    ) -> (bool, list):
         """
         Verify a presentation.
 
@@ -49,16 +49,21 @@ class IndySdkVerifier(IndyVerifier):
 
         LOGGER.debug(f">>> received presentation: {pres}")
         LOGGER.debug(f">>> for pres_req: {pres_req}")
+        msgs = []
         try:
-            self.non_revoc_intervals(pres_req, pres, credential_definitions)
-            await self.check_timestamps(self.profile, pres_req, pres, rev_reg_defs)
-            await self.pre_verify(pres_req, pres)
+            msgs += self.non_revoc_intervals(pres_req, pres, credential_definitions)
+            msgs += await self.check_timestamps(
+                self.profile, pres_req, pres, rev_reg_defs
+            )
+            msgs += await self.pre_verify(pres_req, pres)
         except ValueError as err:
+            s = str(err)
+            msgs.append(f"{PresVerifyMsg.PRES_VALUE_ERROR.value}::{s}")
             LOGGER.error(
                 f"Presentation on nonce={pres_req['nonce']} "
                 f"cannot be validated: {str(err)}"
             )
-            return False
+            return (False, msgs)
 
         LOGGER.debug(f">>> verifying presentation: {pres}")
         LOGGER.debug(f">>> for pres_req: {pres_req}")
@@ -71,11 +76,13 @@ class IndySdkVerifier(IndyVerifier):
                 json.dumps(rev_reg_defs),
                 json.dumps(rev_reg_entries),
             )
-        except IndyError:
+        except IndyError as err:
+            s = str(err)
+            msgs.append(f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{s}")
             LOGGER.exception(
                 f"Validation of presentation on nonce={pres_req['nonce']} "
                 "failed with error"
             )
             verified = False
 
-        return verified
+        return (verified, msgs)

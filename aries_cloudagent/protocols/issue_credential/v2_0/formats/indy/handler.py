@@ -25,13 +25,10 @@ from ......messaging.credential_definitions.util import (
 )
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
-from ......revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
-from ......revocation.models.revocation_registry import RevocationRegistry
 from ......revocation.indy import IndyRevocation
-from ......revocation.util import notify_revocation_reg_event
+from ......revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
+from ......revocation.models.revocation_registry import RevocationRegistry
 from ......storage.base import BaseStorage
-from ......storage.error import StorageNotFoundError
-
 
 from ...message_types import (
     ATTACHMENT_FORMAT,
@@ -334,12 +331,13 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_request = cred_ex_record.cred_request.attachment(
             IndyCredFormatHandler.format
         )
-
+        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
+            decode=False
+        )
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
 
-        rev_reg_id = None
-        rev_reg = None
+        issuer = self.profile.inject(IndyIssuer)
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
@@ -354,124 +352,82 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         async with ledger:
             schema = await ledger.get_schema(schema_id)
             cred_def = await ledger.get_credential_definition(cred_def_id)
+        revocable = cred_def["value"].get("revocation")
+        result = None
 
-        tails_path = None
-        if cred_def["value"].get("revocation"):
-            revoc = IndyRevocation(self.profile)
-            try:
-                active_rev_reg_rec = await revoc.get_active_issuer_rev_reg_record(
-                    cred_def_id
+        for attempt in range(max(retries, 1)):
+            if attempt > 0:
+                LOGGER.info(
+                    "Waiting 2s before retrying credential issuance for cred def '%s'",
+                    cred_def_id,
                 )
-                rev_reg = await active_rev_reg_rec.get_registry()
-                rev_reg_id = active_rev_reg_rec.revoc_reg_id
+                await asyncio.sleep(2)
 
+            if revocable:
+                revoc = IndyRevocation(self.profile)
+                registry_info = await revoc.get_or_create_active_registry(cred_def_id)
+                if not registry_info:
+                    continue
+                del revoc
+                issuer_rev_reg, rev_reg = registry_info
+                rev_reg_id = issuer_rev_reg.revoc_reg_id
                 tails_path = rev_reg.tails_local_path
-                await rev_reg.get_or_fetch_local_tails_path()
+            else:
+                rev_reg_id = None
+                tails_path = None
 
-            except StorageNotFoundError:
-                async with self.profile.session() as session:
-                    posted_rev_reg_recs = await IssuerRevRegRecord.query_by_cred_def_id(
-                        session,
-                        cred_def_id,
-                        state=IssuerRevRegRecord.STATE_POSTED,
-                    )
-                if not posted_rev_reg_recs:
-                    # Send next 2 rev regs, publish tails files in background
-                    async with self.profile.session() as session:
-                        old_rev_reg_recs = sorted(
-                            await IssuerRevRegRecord.query_by_cred_def_id(
-                                session,
-                                cred_def_id,
-                            )
-                        )  # prefer to reuse prior rev reg size
-                    rev_reg_size = (
-                        old_rev_reg_recs[0].max_cred_num if old_rev_reg_recs else None
-                    )
-                    for _ in range(2):
-                        await notify_revocation_reg_event(
-                            self.profile,
-                            cred_def_id,
-                            rev_reg_size,
-                            auto_create_rev_reg=True,
-                        )
-
-                if retries > 0:
-                    LOGGER.info(
-                        ("Waiting 2s on posted rev reg " "for cred def %s, retrying"),
-                        cred_def_id,
-                    )
-                    await asyncio.sleep(2)
-                    return await self.issue_credential(
-                        cred_ex_record,
-                        retries - 1,
-                    )
-
-                raise V20CredFormatError(
-                    f"Cred def id {cred_def_id} " "has no active revocation registry"
+            try:
+                (cred_json, cred_rev_id) = await issuer.create_credential(
+                    schema,
+                    cred_offer,
+                    cred_request,
+                    cred_values,
+                    rev_reg_id,
+                    tails_path,
                 )
-            del revoc
+            except IndyIssuerRevocationRegistryFullError:
+                # unlucky, another instance filled the registry first
+                continue
 
-        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
-            decode=False
-        )
-        issuer = self.profile.inject(IndyIssuer)
-        try:
-            (cred_json, cred_rev_id,) = await issuer.create_credential(
-                schema,
-                cred_offer,
-                cred_request,
-                cred_values,
-                cred_ex_record.cred_ex_id,
-                rev_reg_id,
-                tails_path,
+            if revocable and rev_reg.max_creds <= int(cred_rev_id):
+                revoc = IndyRevocation(self.profile)
+                await revoc.handle_full_registry(rev_reg_id)
+                del revoc
+
+            result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
+            break
+
+        if not result:
+            raise V20CredFormatError(
+                f"Cred def '{cred_def_id}' has no active revocation registry"
             )
 
+        async with self._profile.transaction() as txn:
             detail_record = V20CredExRecordIndy(
                 cred_ex_id=cred_ex_record.cred_ex_id,
                 rev_reg_id=rev_reg_id,
                 cred_rev_id=cred_rev_id,
             )
+            await detail_record.save(txn, reason="v2.0 issue credential")
 
-            # If the rev reg is now full
-            if rev_reg and rev_reg.max_creds == int(cred_rev_id):
-                async with self.profile.session() as session:
-                    await active_rev_reg_rec.set_state(
-                        session,
-                        IssuerRevRegRecord.STATE_FULL,
-                    )
-
-                # Send next 1 rev reg, publish tails file in background
-                rev_reg_size = active_rev_reg_rec.max_cred_num
-                await notify_revocation_reg_event(
-                    self.profile, cred_def_id, rev_reg_size, auto_create_rev_reg=True
+            if revocable and cred_rev_id:
+                issuer_cr_rec = IssuerCredRevRecord(
+                    state=IssuerCredRevRecord.STATE_ISSUED,
+                    cred_ex_id=cred_ex_record.cred_ex_id,
+                    cred_ex_version=IssuerCredRevRecord.VERSION_2,
+                    rev_reg_id=rev_reg_id,
+                    cred_rev_id=cred_rev_id,
                 )
-
-            async with self.profile.session() as session:
-                await detail_record.save(session, reason="v2.0 issue credential")
-
-        except IndyIssuerRevocationRegistryFullError:
-            # unlucky: duelling instance issued last cred near same time as us
-            async with self.profile.session() as session:
-                await active_rev_reg_rec.set_state(
-                    session,
-                    IssuerRevRegRecord.STATE_FULL,
+                await issuer_cr_rec.save(
+                    txn,
+                    reason=(
+                        "Created issuer cred rev record for "
+                        f"rev reg id {rev_reg_id}, index {cred_rev_id}"
+                    ),
                 )
+            await txn.commit()
 
-            if retries > 0:
-                # use next rev reg; at worst, lucky instance is putting one up
-                LOGGER.info(
-                    "Waiting 1s and retrying: revocation registry %s is full",
-                    active_rev_reg_rec.revoc_reg_id,
-                )
-                await asyncio.sleep(1)
-                return await self.issue_credential(
-                    cred_ex_record,
-                    retries - 1,
-                )
-
-            raise
-
-        return self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
+        return result
 
     async def receive_credential(
         self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue

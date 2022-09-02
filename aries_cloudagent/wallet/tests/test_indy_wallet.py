@@ -1,5 +1,6 @@
 import json
 import os
+from typing import cast
 
 import indy.anoncreds
 import indy.crypto
@@ -13,7 +14,7 @@ from ...core.in_memory import InMemoryProfile
 from ...config.injection_context import InjectionContext
 from ...core.error import ProfileError, ProfileDuplicateError, ProfileNotFoundError
 from ...indy.sdk import wallet_setup as test_setup_module
-from ...indy.sdk.profile import IndySdkProfileManager
+from ...indy.sdk.profile import IndySdkProfile, IndySdkProfileManager
 from ...indy.sdk.wallet_setup import IndyWalletConfig
 from ...ledger.endpoint_type import EndpointType
 from ...wallet.key_type import KeyType
@@ -40,16 +41,20 @@ async def wallet():
     key = await IndySdkWallet.generate_wallet_key()
     context = InjectionContext()
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-    profile = await IndySdkProfileManager().provision(
-        context,
-        {
-            "auto_recreate": True,
-            "auto_remove": True,
-            "name": "test-wallet",
-            "key": key,
-            "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
-        },
-    )
+    with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
+        profile = cast(
+            IndySdkProfile,
+            await IndySdkProfileManager().provision(
+                context,
+                {
+                    "auto_recreate": True,
+                    "auto_remove": True,
+                    "name": "test-wallet",
+                    "key": key,
+                    "key_derivation_method": "RAW",  # much slower tests with argon-hashed keys
+                },
+            ),
+        )
     async with profile.session() as session:
         yield session.inject(BaseWallet)
     await profile.close()
@@ -118,20 +123,43 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
             DIDMethod.SOV,
             KeyType.ED25519,
         )
-        await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", mock_ledger)
+        await wallet.set_did_endpoint(info_pub.did, "https://example.com", mock_ledger)
         mock_ledger.update_endpoint_for_did.assert_called_once_with(
             info_pub.did,
-            "http://1.2.3.4:8021",
+            "https://example.com",
             EndpointType.ENDPOINT,
             endorser_did=None,
             write_ledger=True,
+            routing_keys=None,
         )
         info_pub2 = await wallet.get_public_did()
-        assert info_pub2.metadata["endpoint"] == "http://1.2.3.4:8021"
+        assert info_pub2.metadata["endpoint"] == "https://example.com"
 
         with pytest.raises(test_module.LedgerConfigError) as excinfo:
-            await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", None)
+            await wallet.set_did_endpoint(info_pub.did, "https://example.com", None)
         assert "No ledger available" in str(excinfo.value)
+
+    @pytest.mark.asyncio
+    async def test_set_did_endpoint_ledger_with_routing_keys(
+        self, wallet: IndySdkWallet
+    ):
+        routing_keys = ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
+        mock_ledger = async_mock.MagicMock(
+            read_only=False, update_endpoint_for_did=async_mock.CoroutineMock()
+        )
+        info_pub = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        await wallet.set_did_endpoint(
+            info_pub.did, "https://example.com", mock_ledger, routing_keys=routing_keys
+        )
+
+        mock_ledger.update_endpoint_for_did.assert_called_once_with(
+            info_pub.did,
+            "https://example.com",
+            EndpointType.ENDPOINT,
+            endorser_did=None,
+            write_ledger=True,
+            routing_keys=routing_keys,
+        )
 
     @pytest.mark.asyncio
     async def test_set_did_endpoint_readonly_ledger(self, wallet: IndySdkWallet):
@@ -142,13 +170,13 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
             DIDMethod.SOV,
             KeyType.ED25519,
         )
-        await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", mock_ledger)
+        await wallet.set_did_endpoint(info_pub.did, "https://example.com", mock_ledger)
         mock_ledger.update_endpoint_for_did.assert_not_called()
         info_pub2 = await wallet.get_public_did()
-        assert info_pub2.metadata["endpoint"] == "http://1.2.3.4:8021"
+        assert info_pub2.metadata["endpoint"] == "https://example.com"
 
         with pytest.raises(test_module.LedgerConfigError) as excinfo:
-            await wallet.set_did_endpoint(info_pub.did, "http://1.2.3.4:8021", None)
+            await wallet.set_did_endpoint(info_pub.did, "https://example.com", None)
         assert "No ledger available" in str(excinfo.value)
 
     @pytest.mark.asyncio

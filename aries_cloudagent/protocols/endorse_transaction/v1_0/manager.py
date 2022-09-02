@@ -15,8 +15,8 @@ from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import notify_cred_def_event
 from ....messaging.schemas.util import notify_schema_event
 from ....revocation.util import (
-    notify_revocation_entry_event,
-    notify_revocation_tails_file_event,
+    notify_revocation_reg_endorsed_event,
+    notify_revocation_entry_endorsed_event,
 )
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
@@ -255,13 +255,12 @@ class TransactionManager:
             endorser_did = endorser_did_info.did
             endorser_verkey = endorser_did_info.verkey
 
-        async with self._profile.session() as session:
-            ledger = session.context.inject_or(BaseLedger)
-            if not ledger:
-                reason = "No ledger available"
-                if not session.context.settings.get_value("wallet.type"):
-                    reason += ": missing wallet-type?"
-                raise LedgerError(reason=reason)
+        ledger = self._profile.context.inject_or(BaseLedger)
+        if not ledger:
+            reason = "No ledger available"
+            if not self._profile.context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise LedgerError(reason=reason)
 
         async with ledger:
             endorsed_msg = await shield(
@@ -371,23 +370,20 @@ class TransactionManager:
         """
         ledger_transaction = transaction.messages_attach[0]["data"]["json"]
 
-        async with self._profile.session() as session:
-            ledger = self._profile.inject(BaseLedger)
-            if not ledger:
-                reason = "No ledger available"
-                if not session.context.settings.get_value("wallet.type"):
-                    reason += ": missing wallet-type?"
-                raise TransactionManagerError(reason)
+        ledger = self._profile.inject(BaseLedger)
+        if not ledger:
+            reason = "No ledger available"
+            if not self._profile.context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise TransactionManagerError(reason)
 
-            async with ledger:
-                try:
-                    ledger_response_json = await shield(
-                        ledger.txn_submit(
-                            ledger_transaction, sign=False, taa_accept=False
-                        )
-                    )
-                except (IndyIssuerError, LedgerError) as err:
-                    raise TransactionManagerError(err.roll_up) from err
+        async with ledger:
+            try:
+                ledger_response_json = await shield(
+                    ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
+                )
+            except (IndyIssuerError, LedgerError) as err:
+                raise TransactionManagerError(err.roll_up) from err
 
         ledger_response = json.loads(ledger_response_json)
 
@@ -734,13 +730,12 @@ class TransactionManager:
                          would be stored in wallet.
         """
 
-        async with self._profile.session() as session:
-            ledger = self._profile.inject(BaseLedger)
-            if not ledger:
-                reason = "No ledger available"
-                if not session.context.settings.get_value("wallet.type"):
-                    reason += ": missing wallet-type?"
-                raise TransactionManagerError(reason)
+        ledger = self._profile.inject(BaseLedger)
+        if not ledger:
+            reason = "No ledger available"
+            if not self._profile.context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise TransactionManagerError(reason)
 
         # setup meta_data to pass to future events, if necessary
         meta_data = transaction.meta_data
@@ -782,29 +777,17 @@ class TransactionManager:
             # revocation registry transaction
             rev_reg_id = ledger_response["result"]["txnMetadata"]["txnId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
-            auto_create_rev_reg = meta_data["processing"].get(
-                "auto_create_rev_reg", False
+            await notify_revocation_reg_endorsed_event(
+                self._profile, rev_reg_id, meta_data
             )
-
-            # If "auto_processing" is enabled, also create the revocation entry record
-            if auto_create_rev_reg:
-                await notify_revocation_entry_event(
-                    self._profile, rev_reg_id, meta_data
-                )
 
         elif ledger_response["result"]["txn"]["type"] == "114":
             # revocation entry transaction
             rev_reg_id = ledger_response["result"]["txn"]["data"]["revocRegDefId"]
             meta_data["context"]["rev_reg_id"] = rev_reg_id
-            auto_create_rev_reg = meta_data["processing"].get(
-                "auto_create_rev_reg", False
+            await notify_revocation_entry_endorsed_event(
+                self._profile, rev_reg_id, meta_data
             )
-
-            # If "auto_processing" is enabled, also upload tails file for this registry
-            if auto_create_rev_reg:
-                await notify_revocation_tails_file_event(
-                    self._profile, rev_reg_id, meta_data
-                )
 
         elif ledger_response["result"]["txn"]["type"] == "1":
             # write DID to ledger

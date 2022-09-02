@@ -24,11 +24,3 @@ aries\_cloudagent.connections.base\_manager module
    :members:
    :undoc-members:
    :show-inheritance:
-
-aries\_cloudagent.connections.util module
------------------------------------------
-
-.. automodule:: aries_cloudagent.connections.util
-   :members:
-   :undoc-members:
-   :show-inheritance:

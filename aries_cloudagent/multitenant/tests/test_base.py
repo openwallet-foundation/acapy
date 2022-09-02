@@ -1,29 +1,29 @@
-from asynctest import TestCase as AsyncTestCase
-from asynctest import mock as async_mock
-
-import jwt
-
 from datetime import datetime
 
-from ...core.in_memory import InMemoryProfile
+from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock
+import jwt
+
+from .. import base as test_module
 from ...config.base import InjectionError
+from ...core.in_memory import InMemoryProfile
 from ...messaging.responder import BaseResponder
-from ...wallet.models.wallet_record import WalletRecord
-from ...wallet.in_memory import InMemoryWallet
-from ...wallet.did_info import DIDInfo
-from ...storage.error import StorageNotFoundError
-from ...storage.in_memory import InMemoryStorage
+from ...protocols.coordinate_mediation.v1_0.manager import (
+    MediationManager,
+    MediationRecord,
+)
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
-from ...protocols.coordinate_mediation.v1_0.manager import (
-    MediationRecord,
-    MediationManager,
-)
-from ...wallet.key_type import KeyType
+from ...storage.error import StorageNotFoundError
+from ...storage.in_memory import InMemoryStorage
+from ...wallet.did_info import DIDInfo
 from ...wallet.did_method import DIDMethod
+from ...wallet.in_memory import InMemoryWallet
+from ...wallet.key_type import KeyType
+from ...wallet.models.wallet_record import WalletRecord
 from ..base import BaseMultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
-from .. import base as test_module
 
 
 class MockMultitenantManager(BaseMultitenantManager):
@@ -210,13 +210,15 @@ class TestBaseMultitenantManager(AsyncTestCase):
 
     async def test_create_wallet_saves_wallet_record_creates_profile(self):
 
+        mock_route_manager = async_mock.MagicMock()
+        mock_route_manager.route_public_did = async_mock.CoroutineMock()
+        self.context.injector.bind_instance(RouteManager, mock_route_manager)
+
         with async_mock.patch.object(
             WalletRecord, "save"
         ) as wallet_record_save, async_mock.patch.object(
             self.manager, "get_wallet_profile"
-        ) as get_wallet_profile, async_mock.patch.object(
-            self.manager, "add_key"
-        ) as add_key:
+        ) as get_wallet_profile:
             get_wallet_profile.return_value = InMemoryProfile.test_profile()
 
             wallet_record = await self.manager.create_wallet(
@@ -231,7 +233,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
                 {"wallet.key": "test_key"},
                 provision=True,
             )
-            add_key.assert_not_called()
+            mock_route_manager.route_public_did.assert_not_called()
             assert isinstance(wallet_record, WalletRecord)
             assert wallet_record.wallet_name == "test_wallet"
             assert wallet_record.key_management_mode == WalletRecord.MODE_MANAGED
@@ -246,16 +248,19 @@ class TestBaseMultitenantManager(AsyncTestCase):
             key_type=KeyType.ED25519,
         )
 
+        mock_route_manager = async_mock.MagicMock()
+        mock_route_manager.route_public_did = async_mock.CoroutineMock()
+
         with async_mock.patch.object(
             WalletRecord, "save"
         ) as wallet_record_save, async_mock.patch.object(
             self.manager, "get_wallet_profile"
         ) as get_wallet_profile, async_mock.patch.object(
-            self.manager, "add_key"
-        ) as add_key, async_mock.patch.object(
             InMemoryWallet, "get_public_did"
         ) as get_public_did:
-            get_wallet_profile.return_value = InMemoryProfile.test_profile()
+            get_wallet_profile.return_value = InMemoryProfile.test_profile(
+                bind={RouteManager: mock_route_manager}
+            )
             get_public_did.return_value = did_info
 
             wallet_record = await self.manager.create_wallet(
@@ -263,8 +268,8 @@ class TestBaseMultitenantManager(AsyncTestCase):
                 WalletRecord.MODE_MANAGED,
             )
 
-            add_key.assert_called_once_with(
-                wallet_record.wallet_id, did_info.verkey, skip_if_exists=True
+            mock_route_manager.route_public_did.assert_called_once_with(
+                get_wallet_profile.return_value, did_info.verkey
             )
 
             wallet_record_save.assert_called_once()
@@ -348,73 +353,6 @@ class TestBaseMultitenantManager(AsyncTestCase):
             assert wallet_delete_record.call_count == 1
             delete_all_records.assert_called_once_with(
                 RouteRecord.RECORD_TYPE, {"wallet_id": "test"}
-            )
-
-    async def test_add_key_no_mediation(self):
-        with async_mock.patch.object(
-            RoutingManager, "create_route_record"
-        ) as create_route_record, async_mock.patch.object(
-            MediationManager, "add_key"
-        ) as mediation_add_key:
-            await self.manager.add_key("wallet_id", "recipient_key")
-
-            create_route_record.assert_called_once_with(
-                recipient_key="recipient_key", internal_wallet_id="wallet_id"
-            )
-            mediation_add_key.assert_not_called()
-
-    async def test_add_key_skip_if_exists_does_not_exist(self):
-        with async_mock.patch.object(
-            RoutingManager, "create_route_record"
-        ) as create_route_record, async_mock.patch.object(
-            RouteRecord, "retrieve_by_recipient_key"
-        ) as retrieve_by_recipient_key:
-            retrieve_by_recipient_key.side_effect = StorageNotFoundError()
-
-            await self.manager.add_key(
-                "wallet_id", "recipient_key", skip_if_exists=True
-            )
-
-            create_route_record.assert_called_once_with(
-                recipient_key="recipient_key", internal_wallet_id="wallet_id"
-            )
-
-    async def test_add_key_skip_if_exists_does_exist(self):
-        with async_mock.patch.object(
-            RoutingManager, "create_route_record"
-        ) as create_route_record, async_mock.patch.object(
-            RouteRecord, "retrieve_by_recipient_key"
-        ) as retrieve_by_recipient_key:
-            await self.manager.add_key(
-                "wallet_id", "recipient_key", skip_if_exists=True
-            )
-
-            create_route_record.assert_not_called()
-
-    async def test_add_key_mediation(self):
-        with async_mock.patch.object(
-            RoutingManager, "create_route_record"
-        ) as create_route_record, async_mock.patch.object(
-            MediationManager, "get_default_mediator"
-        ) as get_default_mediator, async_mock.patch.object(
-            MediationManager, "add_key"
-        ) as mediation_add_key:
-            default_mediator = async_mock.CoroutineMock()
-            keylist_updates = async_mock.CoroutineMock()
-
-            get_default_mediator.return_value = default_mediator
-            mediation_add_key.return_value = keylist_updates
-
-            await self.manager.add_key("wallet_id", "recipient_key")
-
-            create_route_record.assert_called_once_with(
-                recipient_key="recipient_key", internal_wallet_id="wallet_id"
-            )
-
-            get_default_mediator.assert_called_once()
-            mediation_add_key.assert_called_once_with("recipient_key")
-            self.responder.send.assert_called_once_with(
-                keylist_updates, connection_id=default_mediator.connection_id
             )
 
     async def test_create_auth_token_fails_no_wallet_key_but_required(self):
