@@ -8,9 +8,11 @@ from ...messaging.responder import BaseResponder, MockResponder
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
 from ...storage.error import StorageNotFoundError
+from ..base import BaseMultitenantManager
 from ..route_manager import MultitenantRouteManager
 
 TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -360,3 +362,21 @@ async def test_routing_info_with_base_mediator_and_sub_mediator(
         )
     assert keys == [*base_mediation_record.routing_keys, *mediation_record.routing_keys]
     assert endpoint == mediation_record.endpoint
+
+
+@pytest.mark.asyncio
+async def test_connection_from_recipient_key(
+    sub_profile: Profile, route_manager: MultitenantRouteManager
+):
+    manager = mock.MagicMock()
+    manager.get_profile_for_key = mock.CoroutineMock(return_value=sub_profile)
+    route_manager.root_profile.context.injector.bind_instance(
+        BaseMultitenantManager, manager
+    )
+    with mock.patch.object(
+        RouteManager, "connection_from_recipient_key", mock.CoroutineMock()
+    ) as mock_conn_for_recip:
+        result = await route_manager.connection_from_recipient_key(
+            route_manager.root_profile, TEST_VERKEY
+        )
+        assert result == mock_conn_for_recip.return_value

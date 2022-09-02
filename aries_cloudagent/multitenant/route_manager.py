@@ -15,7 +15,7 @@ from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ..protocols.routing.v1_0.manager import RoutingManager
 from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..storage.error import StorageNotFoundError
-from .manager import MultitenantManager
+from .base import BaseMultitenantManager
 
 
 LOGGER = logging.getLogger(__name__)
@@ -117,7 +117,7 @@ class MultitenantRouteManager(RouteManager):
         for sub wallets, we check the sub wallet's connections before the base
         wallet.
         """
-        manager = MultitenantManager(self.root_profile)
+        manager = self.root_profile.inject(BaseMultitenantManager)
         profile_to_search = (
             await manager.get_profile_for_key(profile.context, recipient_key) or profile
         )
