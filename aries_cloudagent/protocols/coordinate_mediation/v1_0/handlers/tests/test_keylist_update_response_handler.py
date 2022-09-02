@@ -43,9 +43,13 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
         self.context.connection_ready = True
         self.context.connection_record = ConnRecord(connection_id=TEST_CONN_ID)
         self.mock_event_bus = MockEventBus()
-        self.context.injector.bind_instance(EventBus, self.mock_event_bus)
+        self.context.profile.context.injector.bind_instance(
+            EventBus, self.mock_event_bus
+        )
         self.route_manager = MockRouteManager()
-        self.context.injector.bind_instance(RouteManager, self.route_manager)
+        self.context.profile.context.injector.bind_instance(
+            RouteManager, self.route_manager
+        )
 
     async def test_handler_no_active_connection(self):
         handler, responder = KeylistUpdateResponseHandler(), MockResponder()
