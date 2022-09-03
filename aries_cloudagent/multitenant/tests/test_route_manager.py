@@ -13,7 +13,7 @@ from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
 from ...storage.error import StorageNotFoundError
 from ..base import BaseMultitenantManager
-from ..route_manager import MultitenantRouteManager
+from ..route_manager import BaseWalletRouteManager, MultitenantRouteManager
 
 TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
@@ -55,6 +55,11 @@ def sub_profile(mock_responder: MockResponder, wallet_id: str):
 @pytest.fixture
 def route_manager(root_profile: Profile, sub_profile: Profile, wallet_id: str):
     yield MultitenantRouteManager(root_profile)
+
+
+@pytest.fixture
+def base_route_manager(root_profile: Profile, sub_profile: Profile, wallet_id: str):
+    yield BaseWalletRouteManager(root_profile)
 
 
 @pytest.mark.asyncio
@@ -366,7 +371,7 @@ async def test_routing_info_with_base_mediator_and_sub_mediator(
 
 @pytest.mark.asyncio
 async def test_connection_from_recipient_key(
-    sub_profile: Profile, route_manager: MultitenantRouteManager
+    sub_profile: Profile, base_route_manager: MultitenantRouteManager
 ):
     manager = mock.MagicMock()
     manager.get_profile_for_key = mock.CoroutineMock(return_value=sub_profile)

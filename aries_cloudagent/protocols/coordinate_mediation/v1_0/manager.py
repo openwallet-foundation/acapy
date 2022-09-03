@@ -538,6 +538,8 @@ class MediationManager:
             session: An active profile session
 
         """
+        # TODO The stored recipient keys are did:key!
+
         to_save: Sequence[RouteRecord] = []
         to_remove: Sequence[RouteRecord] = []
 

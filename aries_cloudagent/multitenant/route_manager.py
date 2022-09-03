@@ -11,7 +11,11 @@ from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
-from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ..protocols.coordinate_mediation.v1_0.normalization import normalize_from_did_key
+from ..protocols.coordinate_mediation.v1_0.route_manager import (
+    CoordinateMediationV1RouteManager,
+    RouteManager,
+)
 from ..protocols.routing.v1_0.manager import RoutingManager
 from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..storage.error import StorageNotFoundError
@@ -106,6 +110,10 @@ class MultitenantRouteManager(RouteManager):
 
         return routing_keys, my_endpoint
 
+
+class BaseWalletRouteManager(CoordinateMediationV1RouteManager):
+    """Route manager for operations specific to the base wallet."""
+
     async def connection_from_recipient_key(
         self, profile: Profile, recipient_key: str
     ) -> ConnRecord:
@@ -117,9 +125,13 @@ class MultitenantRouteManager(RouteManager):
         for sub wallets, we check the sub wallet's connections before the base
         wallet.
         """
-        manager = self.root_profile.inject(BaseMultitenantManager)
+        LOGGER.debug("Retrieving connection for recipient key for multitenant wallet")
+        manager = profile.inject(BaseMultitenantManager)
         profile_to_search = (
-            await manager.get_profile_for_key(profile.context, recipient_key) or profile
+            await manager.get_profile_for_key(
+                profile.context, normalize_from_did_key(recipient_key)
+            )
+            or profile
         )
 
         return await super().connection_from_recipient_key(

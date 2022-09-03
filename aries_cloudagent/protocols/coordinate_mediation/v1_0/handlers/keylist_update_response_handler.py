@@ -37,6 +37,10 @@ class KeylistUpdateResponseHandler(BaseHandler):
     ):
         """Notify of keylist update response received."""
         route_manager = profile.inject(RouteManager)
+        self._logger.debug(
+            "Retrieving connection ID from route manager of type %s",
+            type(route_manager).__name__,
+        )
         try:
             key_to_connection = {
                 updated.recipient_key: await route_manager.connection_from_recipient_key(

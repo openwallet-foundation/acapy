@@ -253,8 +253,8 @@ class RouteManager(ABC):
         async with profile.session() as session:
             wallet = session.inject(BaseWallet)
             try:
-                conn = await ConnRecord.retrieve_by_invitation_key(
-                    session, invitation_key=normalize_from_did_key(recipient_key)
+                conn = await ConnRecord.retrieve_by_tag_filter(
+                    session, {"invitation_key": normalize_from_did_key(recipient_key)}
                 )
             except StorageNotFoundError:
                 did_info = await wallet.get_local_did_for_verkey(
