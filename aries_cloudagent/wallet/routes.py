@@ -470,8 +470,10 @@ async def wallet_set_public_did(request: web.BaseRequest):
         profile=profile, mediation_id=mediation_id, or_default=True
     )
     routing_keys = None
+    mediator_endpoint = None
     if mediation_record:
         routing_keys = mediation_record.routing_keys
+        mediator_endpoint = mediation_record.endpoint
 
     try:
         info, attrib_def = await promote_wallet_public_did(
@@ -482,6 +484,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
             write_ledger=write_ledger,
             connection_id=connection_id,
             routing_keys=routing_keys,
+            mediator_endpoint=mediator_endpoint,
         )
     except LookupError as err:
         raise web.HTTPNotFound(reason=str(err)) from err
@@ -529,6 +532,7 @@ async def promote_wallet_public_did(
     write_ledger: bool = False,
     connection_id: str = None,
     routing_keys: List[str] = None,
+    mediator_endpoint: str = None,
 ) -> DIDInfo:
     """Promote supplied DID to the wallet public DID."""
     info: DIDInfo = None
@@ -595,7 +599,7 @@ async def promote_wallet_public_did(
         if not endpoint:
             async with session_fn() as session:
                 wallet = session.inject_or(BaseWallet)
-                endpoint = context.settings.get("default_endpoint")
+                endpoint = mediator_endpoint or context.settings.get("default_endpoint")
                 attrib_def = await wallet.set_did_endpoint(
                     info.did,
                     endpoint,
