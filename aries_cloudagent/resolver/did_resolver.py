@@ -8,7 +8,7 @@ retrieving did's from different sources provided by the method type.
 from datetime import datetime
 from itertools import chain
 import logging
-from typing import Sequence, Tuple, Type, TypeVar, Union
+from typing import List, Sequence, Tuple, Type, TypeVar, Union
 
 from pydid import DID, DIDError, DIDUrl, Resource, NonconformantDocument
 from pydid.doc.doc import IDNotFoundError
@@ -22,7 +22,6 @@ from .base import (
     ResolutionResult,
     ResolverError,
 )
-from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,9 +32,13 @@ ResourceType = TypeVar("ResourceType", bound=Resource)
 class DIDResolver:
     """did resolver singleton."""
 
-    def __init__(self, registry: DIDResolverRegistry):
+    def __init__(self, resolvers: List[BaseDIDResolver] = None):
         """Create DID Resolver."""
-        self.did_resolver_registry = registry
+        self.resolvers = resolvers or []
+
+    def register_resolver(self, resolver: BaseDIDResolver):
+        """Register a new resolver."""
+        self.resolvers.append(resolver)
 
     async def _resolve(
         self, profile: Profile, did: Union[str, DID]
@@ -90,7 +93,7 @@ class DIDResolver:
         """
         valid_resolvers = [
             resolver
-            for resolver in self.did_resolver_registry.resolvers
+            for resolver in self.resolvers
             if await resolver.supports(profile, did)
         ]
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)

@@ -17,6 +17,7 @@ from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
+from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
     DID_POSTURE,
     ENDPOINT,
@@ -442,6 +443,17 @@ async def wallet_set_public_did(request: web.BaseRequest):
     connection_id = request.query.get("conn_id")
     attrib_def = None
 
+    # check if we need to endorse
+    if is_author_role(context.profile):
+        # authors cannot write to the ledger
+        write_ledger = False
+        create_transaction_for_endorser = True
+        if not connection_id:
+            # author has not provided a connection id, so determine which to use
+            connection_id = await get_endorser_connection_id(context.profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
+
     wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
@@ -542,7 +554,6 @@ async def promote_wallet_public_did(
             connection_id = await get_endorser_connection_id(context.profile)
         if not connection_id:
             raise web.HTTPBadRequest(reason="No endorser connection found")
-
     if not write_ledger:
         try:
             async with profile.session() as session:
@@ -593,11 +604,6 @@ async def promote_wallet_public_did(
                     endorser_did=endorser_did,
                     routing_keys=routing_keys,
                 )
-
-        # Commented the below lines as the function set_did_endpoint
-        # was calling update_endpoint_for_did of ledger
-        # async with ledger:
-        #     await ledger.update_endpoint_for_did(info.did, endpoint)
 
         # Route the public DID
         route_manager = profile.inject(RouteManager)
@@ -814,14 +820,60 @@ async def on_register_nym_event(profile: Profile, event: Event):
         did = event.payload["did"]
         connection_id = event.payload.get("connection_id")
         try:
-            await promote_wallet_public_did(
+            info, attrib_def = await promote_wallet_public_did(
                 profile, profile.context, profile.session, did, connection_id
             )
-        except Exception:
+        except Exception as err:
+            # log the error, but continue
+            LOGGER.exception(
+                "Error promoting to public DID: %s",
+                err,
+            )
+            return
+
+        transaction_mgr = TransactionManager(profile)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
+            )
+        except StorageError as err:
             # log the error, but continue
             LOGGER.exception(
                 "Error accepting endorser invitation/configuring endorser connection: %s",
+                err,
             )
+            return
+
+        # if auto-request, send the request to the endorser
+        if profile.settings.get_value("endorser.auto_request"):
+            try:
+                transaction, transaction_request = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                # log the error, but continue
+                LOGGER.exception(
+                    "Error creating endorser transaction request: %s",
+                    err,
+                )
+
+            # TODO not sure how to get outbound_handler in an event ...
+            # await outbound_handler(transaction_request, connection_id=connection_id)
+            responder = profile.inject_or(BaseResponder)
+            if responder:
+                await responder.send(
+                    transaction_request,
+                    connection_id=connection_id,
+                )
+            else:
+                LOGGER.warning(
+                    "Configuration has no BaseResponder: cannot update "
+                    "ATTRIB record on DID: %s",
+                    did,
+                )
 
 
 async def register(app: web.Application):
