@@ -20,7 +20,6 @@ from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.routing.v1_0.manager import RoutingManager
 from .....resolver.did_resolver import DIDResolver
-from .....resolver.did_resolver_registry import DIDResolverRegistry
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo
@@ -2024,9 +2023,7 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_conn_invitation_did_no_resolver(self):
         async with self.profile.session() as session:
-            self.context.injector.bind_instance(
-                DIDResolver, DIDResolver(DIDResolverRegistry())
-            )
+            self.context.injector.bind_instance(DIDResolver, DIDResolver([]))
             await session.wallet.create_local_did(
                 method=DIDMethod.SOV,
                 key_type=KeyType.ED25519,
@@ -2320,9 +2317,7 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_no_resolver(self):
         async with self.profile.session() as session:
-            self.context.injector.bind_instance(
-                DIDResolver, DIDResolver(DIDResolverRegistry())
-            )
+            self.context.injector.bind_instance(DIDResolver, DIDResolver([]))
             await session.wallet.create_local_did(
                 method=DIDMethod.SOV,
                 key_type=KeyType.ED25519,
