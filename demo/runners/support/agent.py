@@ -600,8 +600,10 @@ class DemoAgent:
                 if self.endorser_role and self.endorser_role == "author":
                     if endorser_agent:
                         await self.admin_POST("/wallet/did/public?did=" + self.did)
+                        await asyncio.sleep(3.0)
                 else:
                     await self.admin_POST("/wallet/did/public?did=" + self.did)
+                    await asyncio.sleep(3.0)
             elif cred_type == CRED_FORMAT_JSON_LD:
                 # create did of appropriate type
                 data = {"method": DID_METHOD_KEY, "options": {"key_type": KEY_TYPE_BLS}}
