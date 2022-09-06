@@ -21,7 +21,10 @@ from ....revocation.util import (
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.util import notify_endorse_did_event
+from ....wallet.util import (
+    notify_endorse_did_event,
+    notify_endorse_did_attrib_event,
+)
 
 from .messages.cancel_transaction import CancelTransaction
 from .messages.endorsed_transaction_response import EndorsedTransactionResponse
@@ -793,6 +796,11 @@ class TransactionManager:
             # write DID to ledger
             did = ledger_response["result"]["txn"]["data"]["dest"]
             await notify_endorse_did_event(self._profile, did, meta_data)
+
+        elif ledger_response["result"]["txn"]["type"] == "100":
+            # write DID ATTRIB to ledger
+            did = ledger_response["result"]["txn"]["data"]["dest"]
+            await notify_endorse_did_attrib_event(self._profile, did, meta_data)
 
         else:
             # TODO unknown ledger transaction type, just ignore for now ...

@@ -1,3 +1,4 @@
+@RFC0586
 Feature: RFC 0586 Aries sign (endorse) transactions functions
 
    @T001-RFC0586
