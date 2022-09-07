@@ -274,10 +274,8 @@ async def credentials_remove(request: web.BaseRequest):
         async with context.profile.session() as session:
             holder = session.inject(IndyHolder)
             await holder.delete_credential(credential_id)
-            topic = "acapy::record::credential::delete"
-            await session.profile.notify(
-                topic, {"id": credential_id, "state": "deleted"}
-            )
+        topic = "acapy::record::credential::delete"
+        await context.profile.notify(topic, {"id": credential_id, "state": "deleted"})
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
