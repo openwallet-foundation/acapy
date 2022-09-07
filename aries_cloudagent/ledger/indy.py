@@ -793,7 +793,7 @@ class IndySdkLedger(BaseLedger):
                     )
                     resp = await self._submit(
                         request_json,
-                        True,
+                        sign=True,
                         sign_did=public_info,
                         write_ledger=write_ledger,
                     )
@@ -802,6 +802,7 @@ class IndySdkLedger(BaseLedger):
 
             await self._submit(request_json, True, True)
             return True
+
         return False
 
     async def register_nym(

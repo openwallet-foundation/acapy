@@ -331,14 +331,17 @@ class AriesAgent(DemoAgent):
                             if referent not in credentials_by_reft:
                                 credentials_by_reft[referent] = row
 
+                # submit the proof wit one unrevealed revealed attribute
+                revealed_flag = False
                 for referent in presentation_request["requested_attributes"]:
                     if referent in credentials_by_reft:
                         revealed[referent] = {
                             "cred_id": credentials_by_reft[referent]["cred_info"][
                                 "referent"
                             ],
-                            "revealed": True,
+                            "revealed": revealed_flag,
                         }
+                        revealed_flag = True
                     else:
                         self_attested[referent] = "my self-attested value"
 
@@ -419,14 +422,17 @@ class AriesAgent(DemoAgent):
                                 if referent not in creds_by_reft:
                                     creds_by_reft[referent] = row
 
+                    # submit the proof wit one unrevealed revealed attribute
+                    revealed_flag = False
                     for referent in pres_request_indy["requested_attributes"]:
                         if referent in creds_by_reft:
                             revealed[referent] = {
                                 "cred_id": creds_by_reft[referent]["cred_info"][
                                     "referent"
                                 ],
-                                "revealed": True,
+                                "revealed": revealed_flag,
                             }
+                            revealed_flag = True
                         else:
                             self_attested[referent] = "my self-attested value"
 

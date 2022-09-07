@@ -198,7 +198,7 @@ class RevocationRegistry:
                 "The hash of the downloaded tails file does not match."
             )
 
-        self.tails_local_path = tails_file_path
+        self.tails_local_path = str(tails_file_path)
         return self.tails_local_path
 
     async def get_or_fetch_local_tails_path(self):
