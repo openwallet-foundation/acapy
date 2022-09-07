@@ -5,6 +5,7 @@ import logging
 from typing import Tuple
 
 from ..config.injection_context import InjectionContext
+from ..ledger.base import BaseLedger
 from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..utils.http import put_file, PutError
 
@@ -59,13 +60,17 @@ class IndyTailsServer(BaseTailsServer):
                 "tails_server_upload_url setting is not set"
             )
 
+        ledger = context.injector.inject(BaseLedger)
         upload_url = tails_server_upload_url.rstrip("/") + f"/{rev_reg_id}"
 
         try:
             await put_file(
                 upload_url,
                 {"tails": tails_file_path},
-                {"genesis": genesis_transactions},
+                {
+                    "ledger_type": ledger.BACKEND_NAME,
+                    "genesis": genesis_transactions
+                },
                 interval=interval,
                 backoff=backoff,
                 max_attempts=max_attempts,
