@@ -418,8 +418,11 @@ class BaseRecord(BaseModel):
 
         if self._id:
             storage = session.inject(BaseStorage)
+            if self.state:
+                self._previous_state = self.state
+                self.state = "deleted"
+                await self.emit_event(session, self.serialize())
             await storage.delete_record(self.storage_record)
-        # FIXME - update state and send webhook?
 
     async def emit_event(self, session: ProfileSession, payload: Any = None):
         """
