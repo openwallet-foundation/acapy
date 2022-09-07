@@ -620,6 +620,28 @@ class GeneralGroup(ArgumentGroup):
             env_var="ACAPY_READ_ONLY_LEDGER",
             help="Sets ledger to read-only to prevent updates. Default: false.",
         )
+        parser.add_argument(
+            "--universal-resolver",
+            type=str,
+            nargs="?",
+            metavar="<universal_resolver_endpoint>",
+            env_var="ACAPY_UNIVERSAL_RESOLVER",
+            const="DEFAULT",
+            help="Enable resolution from a universal resolver.",
+        )
+        parser.add_argument(
+            "--universal-resolver-regex",
+            type=str,
+            nargs="+",
+            metavar="<did_regex>",
+            env_var="ACAPY_UNIVERSAL_RESOLVER_REGEX",
+            help=(
+                "Regex matching DIDs to resolve using the unversal resolver. "
+                "Multiple can be specified. "
+                "Defaults to a regex matching all DIDs resolvable by universal "
+                "resolver instance."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -659,6 +681,18 @@ class GeneralGroup(ArgumentGroup):
 
         if args.read_only_ledger:
             settings["read_only_ledger"] = True
+
+        if args.universal_resolver_regex and not args.universal_resolver:
+            raise ArgsParseError(
+                "--universal-resolver-regex cannot be used without --universal-resolver"
+            )
+
+        if args.universal_resolver:
+            settings["resolver.universal"] = args.universal_resolver
+
+        if args.universal_resolver_regex:
+            settings["resolver.universal.supported"] = args.universal_resolver_regex
+
         return settings
 
 
@@ -1647,6 +1681,18 @@ class MultitenantGroup(ArgumentGroup):
                 '"wallet_type" is "askar-profile"'
             ),
         )
+        parser.add_argument(
+            "--base-wallet-routes",
+            type=str,
+            nargs="+",
+            required=False,
+            metavar="<REGEX>",
+            help=(
+                "Patterns matching admin routes that should be permitted for "
+                "base wallet. The base wallet is preconfigured to have access to "
+                "essential endpoints. This argument should be used sparingly."
+            ),
+        )
 
     def get_settings(self, args: Namespace):
         """Extract multitenant settings."""
@@ -1696,6 +1742,9 @@ class MultitenantGroup(ArgumentGroup):
                         key, value = value_str.split("=", maxsplit=1)
                         value = yaml.safe_load(value)
                         settings[f"multitenant.{key}"] = value
+
+            if args.base_wallet_routes:
+                settings["multitenant.base_wallet_routes"] = args.base_wallet_routes
 
         return settings
 

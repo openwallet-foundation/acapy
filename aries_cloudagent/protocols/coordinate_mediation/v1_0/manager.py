@@ -1,24 +1,22 @@
 """Manager for Mediation coordination."""
 import json
 import logging
-
 from typing import Optional, Sequence, Tuple
+
 
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
-from ....wallet.key_type import KeyType
-from ....wallet.did_method import DIDMethod
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
-
+from ....wallet.did_method import DIDMethod
+from ....wallet.key_type import KeyType
 from ...routing.v1_0.manager import RoutingManager
 from ...routing.v1_0.models.route_record import RouteRecord
 from ...routing.v1_0.models.route_update import RouteUpdate
 from ...routing.v1_0.models.route_updated import RouteUpdated
-
 from .messages.inner.keylist_key import KeylistKey
 from .messages.inner.keylist_query_paginate import KeylistQueryPaginate
 from .messages.inner.keylist_update_rule import KeylistUpdateRule
@@ -31,6 +29,7 @@ from .messages.mediate_deny import MediationDeny
 from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
+from .normalization import normalize_from_did_key
 
 LOGGER = logging.getLogger(__name__)
 
@@ -60,6 +59,7 @@ class MediationManager:
     SET_TO_DEFAULT_ON_GRANTED = "set_to_default_on_granted"
     METADATA_KEY = "mediation"
     METADATA_ID = "id"
+    KEYLIST_UPDATED_EVENT = "acapy::keylist::updated"
 
     def __init__(self, profile: Profile):
         """Initialize Mediation Manager.
@@ -250,8 +250,9 @@ class MediationManager:
         }
 
         def rule_to_update(rule: KeylistUpdateRule):
+            recipient_key = normalize_from_did_key(rule.recipient_key)
             return RouteUpdate(
-                recipient_key=rule.recipient_key, action=action_map[rule.action]
+                recipient_key=recipient_key, action=action_map[rule.action]
             )
 
         def updated_to_keylist_updated(updated: RouteUpdated):
@@ -446,7 +447,11 @@ class MediationManager:
         """
         record.state = MediationRecord.STATE_GRANTED
         record.endpoint = grant.endpoint
-        record.routing_keys = grant.routing_keys
+        # record.routing_keys = grant.routing_keys
+        routing_keys = []
+        for key in grant.routing_keys:
+            routing_keys.append(normalize_from_did_key(key))
+        record.routing_keys = routing_keys
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request granted.")
 
@@ -534,63 +539,79 @@ class MediationManager:
             session: An active profile session
 
         """
-        session = await self._profile.session()
         to_save: Sequence[RouteRecord] = []
         to_remove: Sequence[RouteRecord] = []
-        for updated in results:
-            if updated.result != KeylistUpdated.RESULT_SUCCESS:
-                # TODO better handle different results?
-                LOGGER.warning(
-                    "Keylist update failure: %s(%s): %s",
-                    updated.action,
-                    updated.recipient_key,
-                    updated.result,
-                )
-                continue
-            if updated.action == KeylistUpdateRule.RULE_ADD:
-                # Multi-tenancy uses route record for internal relaying of wallets
-                # So the record could already exist. We update in that case
-                try:
-                    record = await RouteRecord.retrieve_by_recipient_key(
-                        session, updated.recipient_key
-                    )
-                    record.connection_id = connection_id
-                    record.role = RouteRecord.ROLE_CLIENT
-                except StorageNotFoundError:
-                    record = RouteRecord(
-                        role=RouteRecord.ROLE_CLIENT,
-                        recipient_key=updated.recipient_key,
-                        connection_id=connection_id,
-                    )
-                to_save.append(record)
-            elif updated.action == KeylistUpdateRule.RULE_REMOVE:
-                try:
-                    records = await RouteRecord.query(
-                        session,
-                        {
-                            "role": RouteRecord.ROLE_CLIENT,
-                            "connection_id": connection_id,
-                            "recipient_key": updated.recipient_key,
-                        },
-                    )
-                except StorageNotFoundError as err:
-                    LOGGER.error(
-                        "No route found while processing keylist update response: %s",
-                        err,
-                    )
-                else:
-                    if len(records) > 1:
-                        LOGGER.error(
-                            f"Too many ({len(records)}) routes found "
-                            "while processing keylist update response"
-                        )
-                    record = records[0]
-                    to_remove.append(record)
 
-        for record_for_saving in to_save:
-            await record_for_saving.save(session, reason="Route successfully added.")
-        for record_for_removal in to_remove:
-            await record_for_removal.delete_record(session)
+        async with self._profile.session() as session:
+            for updated in results:
+                if updated.result != KeylistUpdated.RESULT_SUCCESS:
+                    # TODO better handle different results?
+                    LOGGER.warning(
+                        "Keylist update failure: %s(%s): %s",
+                        updated.action,
+                        updated.recipient_key,
+                        updated.result,
+                    )
+                    continue
+                if updated.action == KeylistUpdateRule.RULE_ADD:
+                    # Multi-tenancy uses route record for internal relaying of wallets
+                    # So the record could already exist. We update in that case
+                    try:
+                        record = await RouteRecord.retrieve_by_recipient_key(
+                            session, updated.recipient_key
+                        )
+                        record.connection_id = connection_id
+                        record.role = RouteRecord.ROLE_CLIENT
+                    except StorageNotFoundError:
+                        record = RouteRecord(
+                            role=RouteRecord.ROLE_CLIENT,
+                            recipient_key=updated.recipient_key,
+                            connection_id=connection_id,
+                        )
+                    to_save.append(record)
+                elif updated.action == KeylistUpdateRule.RULE_REMOVE:
+                    try:
+                        records = await RouteRecord.query(
+                            session,
+                            {
+                                "role": RouteRecord.ROLE_CLIENT,
+                                "connection_id": connection_id,
+                                "recipient_key": updated.recipient_key,
+                            },
+                        )
+                    except StorageNotFoundError as err:
+                        LOGGER.error(
+                            "No route found while processing keylist update response: %s",
+                            err,
+                        )
+                    else:
+                        if len(records) > 1:
+                            LOGGER.error(
+                                f"Too many ({len(records)}) routes found "
+                                "while processing keylist update response"
+                            )
+                        record = records[0]
+                        to_remove.append(record)
+
+            for record_for_saving in to_save:
+                await record_for_saving.save(
+                    session, reason="Route successfully added."
+                )
+            for record_for_removal in to_remove:
+                await record_for_removal.delete_record(session)
+
+    async def notify_keylist_updated(
+        self, connection_id: str, response: KeylistUpdateResponse
+    ):
+        """Notify of keylist update response received."""
+        await self._profile.notify(
+            self.KEYLIST_UPDATED_EVENT,
+            {
+                "connection_id": connection_id,
+                "thread_id": response._thread_id,
+                "updated": [update.serialize() for update in response.updated],
+            },
+        )
 
     async def get_my_keylist(
         self, connection_id: Optional[str] = None

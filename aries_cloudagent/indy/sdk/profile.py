@@ -130,9 +130,15 @@ class IndySdkProfile(Profile):
         See docs for weakref.finalize for more details on behavior of finalizers.
         """
 
+        async def _closer(opened: IndyOpenWallet):
+            try:
+                await opened.close()
+            except Exception:
+                LOGGER.exception("Failed to close wallet from finalizer")
+
         def _finalize(opened: IndyOpenWallet):
             LOGGER.debug("Profile finalizer called; closing wallet")
-            asyncio.get_event_loop().create_task(opened.close())
+            asyncio.get_event_loop().create_task(_closer(opened))
 
         return finalize(self, _finalize, opened)
 

@@ -3,25 +3,18 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from aries_cloudagent.core.in_memory import InMemoryProfile
+from aries_cloudagent.revocation.error import RevocationError
 
-from ...admin.request_context import AdminRequestContext
 from ...storage.in_memory import InMemoryStorage
-from ...tails.base import BaseTailsServer
 
 from .. import routes as test_module
 
 
 class TestRevocationRoutes(AsyncTestCase):
     def setUp(self):
-        TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
-        self.tails_server = TailsServer()
-        self.tails_server.upload_tails_file = async_mock.CoroutineMock(
-            return_value=(True, None)
-        )
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
-        self.context.injector.bind_instance(BaseTailsServer, self.tails_server)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -539,33 +532,31 @@ class TestRevocationRoutes(AsyncTestCase):
                 result = await test_module.get_tails_file(self.request)
             mock_file_response.assert_not_called()
 
-    async def test_upload_tails_file(self):
+    async def test_upload_tails_file_basic(self):
         REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
             self.test_did, self.test_did
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
-            test_module, "tails_path", async_mock.MagicMock()
-        ) as mock_tails_path, async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_tails_path.return_value = f"/tmp/tails/{REV_REG_ID}"
-
+            mock_upload = async_mock.CoroutineMock()
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        tails_local_path=f"/tmp/tails/{REV_REG_ID}",
+                        has_local_tails_file=True,
+                        upload_tails_file=mock_upload,
+                    )
+                )
+            )
             result = await test_module.upload_tails_file(self.request)
+            mock_upload.assert_awaited_once()
             mock_json_response.assert_called_once_with({})
             assert result is mock_json_response.return_value
-
-    async def test_upload_tails_file_no_tails_server(self):
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
-
-        self.context.injector.clear_binding(BaseTailsServer)
-
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.upload_tails_file(self.request)
 
     async def test_upload_tails_file_no_local_tails_file(self):
         REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
@@ -574,9 +565,16 @@ class TestRevocationRoutes(AsyncTestCase):
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
-            test_module, "tails_path", async_mock.MagicMock()
-        ) as mock_tails_path:
-            mock_tails_path.return_value = None
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc:
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        tails_local_path=f"/tmp/tails/{REV_REG_ID}",
+                        has_local_tails_file=False,
+                    )
+                )
+            )
 
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.upload_tails_file(self.request)
@@ -587,17 +585,20 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
-        self.tails_server = TailsServer()
-        self.tails_server.upload_tails_file = async_mock.CoroutineMock(
-            return_value=(False, "Internal Server Error")
-        )
-        self.context.injector.clear_binding(BaseTailsServer)
-        self.context.injector.bind_instance(BaseTailsServer, self.tails_server)
-
         with async_mock.patch.object(
-            test_module, "tails_path", async_mock.MagicMock()
-        ) as mock_tails_path:
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc:
+            mock_upload = async_mock.CoroutineMock(side_effect=RevocationError("test"))
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        tails_local_path=f"/tmp/tails/{REV_REG_ID}",
+                        has_local_tails_file=True,
+                        upload_tails_file=mock_upload,
+                    )
+                )
+            )
+
             with self.assertRaises(test_module.web.HTTPInternalServerError):
                 await test_module.upload_tails_file(self.request)
 

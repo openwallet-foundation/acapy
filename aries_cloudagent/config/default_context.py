@@ -13,7 +13,6 @@ from ..core.protocol_registry import ProtocolRegistry
 from ..core.goal_code_registry import GoalCodeRegistry
 from ..ledger.provider import LedgerProvider
 from ..resolver.did_resolver import DIDResolver
-from ..resolver.did_resolver_registry import DIDResolverRegistry
 from ..tails.base import BaseTailsServer
 
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
@@ -51,12 +50,8 @@ class DefaultContextBuilder(ContextBuilder):
         # Global event bus
         context.injector.bind_instance(EventBus, EventBus())
 
-        # Global did resolver registry
-        did_resolver_registry = DIDResolverRegistry()
-        context.injector.bind_instance(DIDResolverRegistry, did_resolver_registry)
-
         # Global did resolver
-        context.injector.bind_instance(DIDResolver, DIDResolver(did_resolver_registry))
+        context.injector.bind_instance(DIDResolver, DIDResolver([]))
 
         # Global ledger provider
         context.injector.bind_instance(LedgerProvider, LedgerProvider(self.settings))

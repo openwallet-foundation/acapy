@@ -1,35 +1,42 @@
+import asyncio
 import logging
-import pytest
 
 from asynctest import mock as async_mock
+import pytest
 
 from ....config.injection_context import InjectionContext
 from ....core.error import ProfileError
 from ....ledger.indy import IndySdkLedgerPool
-
 from ..profile import IndySdkProfile
-from ..wallet_setup import IndyWalletConfig, IndyOpenWallet
+from ..wallet_setup import IndyOpenWallet, IndyWalletConfig
 
 
 @pytest.fixture
 async def open_wallet():
-    yield IndyOpenWallet(
+    opened = IndyOpenWallet(
         config=IndyWalletConfig({"name": "test-profile"}),
         created=True,
         handle=1,
         master_secret_id="master-secret",
     )
+    with async_mock.patch.object(opened, "close", async_mock.CoroutineMock()):
+        yield opened
 
 
 @pytest.fixture()
 async def profile(open_wallet):
     context = InjectionContext()
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
-    yield IndySdkProfile(open_wallet, context)
+    profile = IndySdkProfile(open_wallet, context)
+
+    yield profile
+
+    # Trigger finalizer before event loop fixture is closed
+    profile._finalizer()
 
 
 @pytest.mark.asyncio
-async def test_properties(profile):
+async def test_properties(profile: IndySdkProfile):
     assert profile.name == "test-profile"
     assert profile.backend == "indy"
     assert profile.wallet and profile.wallet.handle == 1

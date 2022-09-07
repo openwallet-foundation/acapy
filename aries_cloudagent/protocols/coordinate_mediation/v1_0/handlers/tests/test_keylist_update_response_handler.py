@@ -46,6 +46,9 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
         handler, responder = KeylistUpdateResponseHandler(), MockResponder()
         with async_mock.patch.object(
             MediationManager, "store_update_results"
-        ) as mock_method:
+        ) as mock_store, async_mock.patch.object(
+            MediationManager, "notify_keylist_updated"
+        ) as mock_notify:
             await handler.handle(self.context, responder)
-            mock_method.assert_called_once_with(TEST_CONN_ID, self.updated)
+            mock_store.assert_called_once_with(TEST_CONN_ID, self.updated)
+            mock_notify.assert_called_once_with(TEST_CONN_ID, self.context.message)

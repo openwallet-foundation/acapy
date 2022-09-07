@@ -122,7 +122,6 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        cred_ex_id: str,
         revoc_reg_id: str = None,
         tails_file_path: str = None,
     ) -> Tuple[str, str]:
@@ -134,7 +133,6 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
             credential_values: Values to go in credential
-            cred_ex_id: credential exchange identifier to use in issuer cred rev rec
             revoc_reg_id: ID of the revocation registry
             tails_file_path: The location of the tails file
 

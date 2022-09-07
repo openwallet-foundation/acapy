@@ -336,7 +336,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
             INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
-            verified = await self.verifier.verify_presentation(
+            (verified, msgs) = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_X,
                 INDY_PROOF_PRED_NAMES,
                 "schemas",
@@ -370,7 +370,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = ("test", self.ledger)
-            verified = await self.verifier.verify_presentation(
+            (verified, msgs) = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_NAME,
                 "schemas",
@@ -397,7 +397,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
             mock_verify.return_value = True
-            verified = await self.verifier.verify_presentation(
+            (verified, msgs) = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_NAME,
                 "schemas",
@@ -415,6 +415,8 @@ class TestIndySdkVerifier(AsyncTestCase):
             json.dumps("rev_reg_entries"),
         )
         assert verified is True
+        assert len(msgs) == 1
+        assert "TS_OUT_NRI::19_uuid" in msgs
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr_tamper_raw(self, mock_verify):
@@ -426,7 +428,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = ("test", self.ledger)
-            verified = await self.verifier.verify_presentation(
+            (verified, msgs) = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_X,
                 "schemas",
@@ -438,6 +440,11 @@ class TestIndySdkVerifier(AsyncTestCase):
         mock_verify.assert_not_called()
 
         assert verified is False
+        assert len(msgs) == 2
+        assert "TS_OUT_NRI::19_uuid" in msgs
+        assert (
+            "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_encoding_attr_tamper_encoded(self, mock_verify):
@@ -449,7 +456,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
-            verified = await self.verifier.verify_presentation(
+            (verified, msgs) = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_NAME,
                 INDY_PROOF_X,
                 "schemas",
@@ -461,6 +468,11 @@ class TestIndySdkVerifier(AsyncTestCase):
         mock_verify.assert_not_called()
 
         assert verified is False
+        assert len(msgs) == 2
+        assert "TS_OUT_NRI::19_uuid" in msgs
+        assert (
+            "VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'" in msgs
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names(self, mock_verify):
@@ -470,7 +482,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             mock_get_ledger.return_value = ("test", self.ledger)
             mock_verify.return_value = True
             INDY_PROOF_REQ_X = deepcopy(INDY_PROOF_REQ_PRED_NAMES)
-            verified = await self.verifier.verify_presentation(
+            (verified, msgs) = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_X,
                 INDY_PROOF_PRED_NAMES,
                 "schemas",
@@ -491,6 +503,10 @@ class TestIndySdkVerifier(AsyncTestCase):
         )
 
         assert verified is True
+        assert len(msgs) == 3
+        assert "TS_OUT_NRI::18_uuid" in msgs
+        assert "TS_OUT_NRI::18_id_GE_uuid" in msgs
+        assert "TS_OUT_NRI::18_busid_GE_uuid" in msgs
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_pred_value(self, mock_verify):
@@ -502,7 +518,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
-            verified = await self.verifier.verify_presentation(
+            (verified, msgs) = await self.verifier.verify_presentation(
                 deepcopy(INDY_PROOF_REQ_PRED_NAMES),
                 INDY_PROOF_X,
                 "schemas",
@@ -514,6 +530,14 @@ class TestIndySdkVerifier(AsyncTestCase):
         mock_verify.assert_not_called()
 
         assert verified is False
+        assert len(msgs) == 4
+        assert "RMV_RFNT_NRI::18_uuid" in msgs
+        assert "RMV_RFNT_NRI::18_busid_GE_uuid" in msgs
+        assert "RMV_RFNT_NRI::18_id_GE_uuid" in msgs
+        assert (
+            "VALUE_ERROR::Timestamp on sub-proof #0 is superfluous vs. requested attribute group 18_uuid"
+            in msgs
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_pred_req_attr(self, mock_verify):
@@ -523,7 +547,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
-            verified = await self.verifier.verify_presentation(
+            (verified, msgs) = await self.verifier.verify_presentation(
                 INDY_PROOF_REQ_X,
                 INDY_PROOF_PRED_NAMES,
                 "schemas",
@@ -535,6 +559,14 @@ class TestIndySdkVerifier(AsyncTestCase):
         mock_verify.assert_not_called()
 
         assert verified is False
+        assert len(msgs) == 4
+        assert "RMV_RFNT_NRI::18_uuid" in msgs
+        assert "RMV_RFNT_NRI::18_busid_GE_uuid" in msgs
+        assert "RMV_RFNT_NRI::18_id_GE_uuid" in msgs
+        assert (
+            "VALUE_ERROR::Timestamp on sub-proof #0 is superfluous vs. requested attribute group 18_uuid"
+            in msgs
+        )
 
     @async_mock.patch("indy.anoncreds.verifier_verify_proof")
     async def test_check_pred_names_tamper_attr_groups(self, mock_verify):
@@ -546,7 +578,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             IndyLedgerRequestsExecutor, "get_ledger_for_identifier"
         ) as mock_get_ledger:
             mock_get_ledger.return_value = ("test", self.ledger)
-            verified = await self.verifier.verify_presentation(
+            (verified, msgs) = await self.verifier.verify_presentation(
                 deepcopy(INDY_PROOF_REQ_PRED_NAMES),
                 INDY_PROOF_X,
                 "schemas",
@@ -558,3 +590,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         mock_verify.assert_not_called()
 
         assert verified is False
+        assert len(msgs) == 3
+        assert "RMV_RFNT_NRI::18_busid_GE_uuid" in msgs
+        assert "RMV_RFNT_NRI::18_id_GE_uuid" in msgs
+        assert "VALUE_ERROR::Missing requested attribute group 18_uuid" in msgs

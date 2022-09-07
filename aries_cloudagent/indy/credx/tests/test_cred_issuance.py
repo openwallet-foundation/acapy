@@ -137,7 +137,6 @@ class TestIndyCredxIssuance(AsyncTestCase):
             cred_offer,
             cred_req,
             {"name": "NAME", "moniker": "MONIKER"},
-            cred_ex_id="cred_ex_id",
             revoc_reg_id=None,
             tails_file_path=None,
         )
@@ -255,7 +254,6 @@ class TestIndyCredxIssuance(AsyncTestCase):
                 cred_offer,
                 cred_req,
                 {"name": "NAME", "moniker": "MONIKER"},
-                cred_ex_id="cred_ex_id",
                 revoc_reg_id=reg_id,
                 tails_file_path=tails_path,
             )
