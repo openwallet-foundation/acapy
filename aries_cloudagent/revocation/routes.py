@@ -585,9 +585,19 @@ async def rev_regs_created(request: web.BaseRequest):
         tag: request.query[tag] for tag in search_tags if tag in request.query
     }
     async with context.profile.session() as session:
-        found = await IssuerRevRegRecord.query(session, tag_filter)
+        found = await IssuerRevRegRecord.query(
+            session,
+            tag_filter,
+            post_filter_negative={"state": IssuerRevRegRecord.STATE_INIT},
+        )
 
-    return web.json_response({"rev_reg_ids": [record.revoc_reg_id for record in found]})
+    return web.json_response(
+        {
+            "rev_reg_ids": [
+                record.revoc_reg_id for record in found if record.revoc_reg_id
+            ]
+        }
+    )
 
 
 @docs(
