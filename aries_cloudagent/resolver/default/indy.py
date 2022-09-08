@@ -50,8 +50,10 @@ class IndyDIDResolver(BaseDIDResolver):
         return IndyDID.PATTERN
 
     def process_endpoint_types(self, types):
-        """Process endpoint types to return only expected types,
-        subset of expected types, or default types.
+        """Process endpoint types.
+
+        Returns expected types, subset of expected types,
+        or default types.
         """
         expected_types = ["endpoint", "did-communication", "DIDComm"]
         default_types = ["endpoint", "did-communication"]
