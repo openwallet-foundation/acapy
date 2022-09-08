@@ -1,21 +1,21 @@
-# Ledger Agnosticity
+# Ledger Agnosticism
 
-An Aries agent is in charge of communicating with the ledger in order to save, read and update all the public information necessary for issuance, verification and revocation of digital credentials. Given the range of different ledgers available outside, the Aries agent should be open to extension in order to give the developers the possibility to easily implement new adapters for new ledgers. We call this agent property as **ledger agnosticity** and we present here our updates on the codebase to make it possible together with a quick guide for developers to build new adapters for ledgers which are not supported yet.
+An Aries agent is in charge of communicating with the ledger in order to save, read and update all the public information necessary for issuance, verification and revocation of digital credentials. Given the range of different ledgers available outside, the Aries agent should be open to extension in order to give the developers the possibility to easily implement new adapters for new ledgers. We call this agent property as **ledger agnosticism** and we present here our updates on the codebase to make it possible together with a quick guide for developers to build new adapters for ledgers which are not supported yet.
 
 ## Table of contents
 
-- [Ledger agnosticity before our work](#ledger-agnosticity-before-our-work)
+- [Ledger agnosticism before our work](#ledger-agnosticism-before-our-work)
   - [Profiles](#profiles)
-- [Ledger agnosticity after our work](#ledger-agnosticity-after-our-work)
+- [Ledger agnosticism after our work](#ledger-agnosticism-after-our-work)
   - [How to add an adapter for a new ledger in aries-cloudagent-python](#how-to-add-an-adapter-for-a-new-ledger-in-aries-cloudagent-python)
-  - [Ledger agnosticity in indy-tails-server](#ledger-agnosticity-in-indy-tails-server)
+  - [Ledger agnosticism in indy-tails-server](#ledger-agnosticism-in-indy-tails-server)
   - [How to add an adapter for a new ledger in indy-tails-server](#how-to-add-an-adapter-for-a-new-ledger-in-indy-tails-server)
 - [Demo: CentralizedSdkLedger](#demo-centralizedsdkledger)
   - [Setup the tails server](#setup-the-tails-server)
   - [Setup the centralized ledger](#setup-the-centralized-ledger)
   - [Run the demo with the centralized ledger](#run-the-demo-with-the-centralized-ledger)
 
-## Ledger agnosticity before our work
+## Ledger agnosticism before our work
 
 Before our work, the Aries agent codebase already defined the abstract class `aries_cloudagent.ledger.base.BaseLedger` to use as superclass for the ledger adapter implementation.
 
@@ -40,7 +40,7 @@ The class diagram below shows the architecture described above (in green the new
 
 ![How to create a new ledger adapter before our work](../assets/ledgerAgnosticBefore.svg)
 
-## Ledger agnosticity after our work
+## Ledger agnosticism after our work
 
 To decouple profiles from hardcoded ledgers we implemented the class `aries_cloudagent.ledger.provider.LedgerProvider` and added the command-line option `--wallet-ledger` to decide what specific ledger to use in combination with the specified wallet type. With this approach the ledger implementation to use is not coupled with the wallet type anymore and it does not need to be hardcoded into the profile implementation. 
 
@@ -85,13 +85,13 @@ The ledger adapter must be added to each wallet it will support. The `BACKEND_NA
 
 The `"default"` ledger indicates the ledger adapter which is going to be used in case no `--wallet-ledger` option is specified from the command line.
 
-### Ledger agnosticity in indy-tails-server
+### Ledger agnosticism in indy-tails-server
 
-Being *credential agnostic* and *ledger agnostic* at same time requires the agent's capability to make the choice of the credential type to use independently of the ledger (and vice-versa). This property was not satisfied when using *anonCreds* credentials which require a running **tails-server** to let revocation working. The tails-server requires access to the ledger in order to retrieve the **revocation registry definition**, but what we found out was that the tails-server implementation was able to connect to the **Indy ledger** only, making it an obstacle for achieving the ledger agnosticity.
+Being *credential agnostic* and *ledger agnostic* at same time requires the agent's capability to make the choice of the credential type to use independently of the ledger (and vice-versa). This property was not satisfied when using *anonCreds* credentials which require a running **tails-server** to let revocation working. The tails-server requires access to the ledger in order to retrieve the **revocation registry definition**, but what we found out was that the tails-server implementation was able to connect to the **Indy ledger** only, making it an obstacle for achieving the ledger agnosticism.
 
 ### How to add an adapter for a new ledger in indy-tails-server
 
-We updated the indy-tails-server repository by adding the ledger agnosticity concept using the same pattern indicated in the section [How to add an adapter for a new ledger in aries-cloudagent-python](#how-to-add-an-adapter-for-a-new-ledger-in-aries-cloudagent-python). The new code can be downloaded from this [repository](https://github.ibm.com/research-ssi/indy-tails-server/tree/develop).
+We updated the indy-tails-server repository by adding the ledger agnosticism concept using the same pattern indicated in the section [How to add an adapter for a new ledger in aries-cloudagent-python](#how-to-add-an-adapter-for-a-new-ledger-in-aries-cloudagent-python). The new code can be downloaded from this [repository](https://github.ibm.com/research-ssi/indy-tails-server/tree/develop).
 
 The ledger adapter class must always extend the abstract class `tails_server.ledger.base.BaseLedger`. Once implemented all the required methods, the ledger adapter must be added to the pool of ledger implementations in `tails_server.ledger_provider.LedgerProvider`, which looks as follows:
 
