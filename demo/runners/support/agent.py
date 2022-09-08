@@ -781,7 +781,7 @@ class DemoAgent:
             return web.Response(status=404)
         proof_reg_txn = proof_exch["presentation_request_dict"]
         proof_reg_txn["~service"] = await self.service_decorator()
-        if request.headers["Accept"] == "application/json":
+        if request.headers.get("Accept") == "application/json":
             return web.json_response(proof_reg_txn)
         objJsonStr = json.dumps(proof_reg_txn)
         objJsonB64 = base64.b64encode(objJsonStr.encode("ascii"))
