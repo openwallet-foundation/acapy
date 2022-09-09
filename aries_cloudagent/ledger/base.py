@@ -101,12 +101,12 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         if all_exist_endpoints:
             all_exist_endpoints[endpoint_type.indy] = endpoint
             all_exist_endpoints["routingKeys"] = routing_keys
-            attr_json = json.dumps(all_exist_endpoints)
+            attr_json = json.dumps({"endpoint": all_exist_endpoints})
 
         else:
             endpoint_dict = {endpoint_type.indy: endpoint}
             endpoint_dict["routingKeys"] = routing_keys
-            attr_json = json.dumps(endpoint_dict)
+            attr_json = json.dumps({"endpoint": endpoint_dict})
 
         return attr_json
 

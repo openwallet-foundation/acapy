@@ -2312,8 +2312,10 @@ class TestIndySdkLedger(AsyncTestCase):
             )
         assert attr_json == json.dumps(
             {
-                "endpoint": "https://url",
-                "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                "endpoint": {
+                    "endpoint": "https://url",
+                    "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                }
             }
         )
 
@@ -2333,9 +2335,11 @@ class TestIndySdkLedger(AsyncTestCase):
             )
         assert attr_json == json.dumps(
             {
-                "profile": "https://endpoint/profile",
-                "endpoint": "https://url",
-                "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                "endpoint": {
+                    "profile": "https://endpoint/profile",
+                    "endpoint": "https://url",
+                    "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                }
             }
         )
 
