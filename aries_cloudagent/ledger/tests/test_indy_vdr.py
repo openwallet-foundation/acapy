@@ -615,29 +615,35 @@ class TestIndyVdrLedger:
                 {"profile": "https://endpoint/profile"},
                 ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
                 {
-                    "profile": "https://endpoint/profile",
-                    "endpoint": "https://url",
-                    "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    "endpoint": {
+                        "profile": "https://endpoint/profile",
+                        "endpoint": "https://url",
+                        "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    }
                 },
             ),
             (
                 {"profile": "https://endpoint/profile"},
                 None,
                 {
-                    "profile": "https://endpoint/profile",
-                    "endpoint": "https://url",
-                    "routingKeys": [],
+                    "endpoint": {
+                        "profile": "https://endpoint/profile",
+                        "endpoint": "https://url",
+                        "routingKeys": [],
+                    }
                 },
             ),
             (
                 None,
                 ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
                 {
-                    "endpoint": "https://url",
-                    "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    "endpoint": {
+                        "endpoint": "https://url",
+                        "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    }
                 },
             ),
-            (None, None, {"endpoint": "https://url", "routingKeys": []}),
+            (None, None, {"endpoint": {"endpoint": "https://url", "routingKeys": []}}),
             (
                 {
                     "profile": "https://endpoint/profile",
@@ -645,10 +651,12 @@ class TestIndyVdrLedger:
                 },
                 ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
                 {
-                    "profile": "https://endpoint/profile",
-                    "spec_divergent_endpoint": "https://endpoint",
-                    "endpoint": "https://url",
-                    "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    "endpoint": {
+                        "profile": "https://endpoint/profile",
+                        "spec_divergent_endpoint": "https://endpoint",
+                        "endpoint": "https://url",
+                        "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    }
                 },
             ),
         ],
