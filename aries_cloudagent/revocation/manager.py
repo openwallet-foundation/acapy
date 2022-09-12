@@ -157,6 +157,29 @@ class RevocationManager:
                 await issuer_rr_rec.mark_pending(txn, cred_rev_id)
                 await txn.commit()
 
+    async def update_rev_reg_revoked_state(
+        self,
+        apply_ledger_update: bool,
+        rev_reg_record: IssuerRevRegRecord,
+        genesis_transactions: dict,
+    ) -> (dict, dict, dict):
+        """
+        Request handler to fix ledger entry of credentials revoked against registry.
+
+        Args:
+            rev_reg_id: revocation registry id
+            apply_ledger_update: whether to apply an update to the ledger
+
+        Returns:
+            Number of credentials posted to ledger
+
+        """
+        return await rev_reg_record.fix_ledger_entry(
+            self._profile,
+            apply_ledger_update,
+            genesis_transactions,
+        )
+
     async def publish_pending_revocations(
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,

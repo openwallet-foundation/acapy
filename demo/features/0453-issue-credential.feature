@@ -1,3 +1,4 @@
+@RFC0453
 Feature: RFC 0453 Aries agent issue credential
 
   @T003-RFC0453 @GHA

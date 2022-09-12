@@ -47,7 +47,8 @@ class DIDMethod(Enum):
         """Check whether the current method supports the key type."""
         return key_type in self.supported_key_types
 
-    def from_metadata(metadata: Mapping) -> "DIDMethod":
+    @classmethod
+    def from_metadata(cls, metadata: Mapping) -> "DIDMethod":
         """Get DID method instance from metadata object.
 
         Returns SOV if no metadata was found for backwards compatability.
@@ -63,7 +64,8 @@ class DIDMethod(Enum):
         # return default SOV for backward compat
         return DIDMethod.SOV
 
-    def from_method(method: str) -> Optional["DIDMethod"]:
+    @classmethod
+    def from_method(cls, method: str) -> Optional["DIDMethod"]:
         """Get DID method instance from the method name."""
         for did_method in DIDMethod:
             if method == did_method.method_name:
@@ -71,7 +73,8 @@ class DIDMethod(Enum):
 
         return None
 
-    def from_did(did: str) -> "DIDMethod":
+    @classmethod
+    def from_did(cls, did: str) -> "DIDMethod":
         """Get DID method instance from the method name."""
         if not did.startswith("did:"):
             # sov has no prefix
