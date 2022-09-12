@@ -1,6 +1,7 @@
 """Handle registration and publication of supported protocols."""
 
 import logging
+import re
 
 from typing import Mapping, Sequence
 
@@ -74,6 +75,36 @@ class ProtocolRegistry:
             "minor_version": int(version_string_tokens[1]),
         }
 
+    def create_msg_types_for_minor_version(self, typesets, version_definition):
+        """
+        Return a mapping of message type string [missing] with minor versions to module path.
+
+        Args:
+            typesets: Mappings of message types to register
+            version_definition: Optional version definition dict
+
+        Returns:
+            Typesets mapping
+
+        """
+        updated_typeset = None
+        curr_minor_version = version_definition["current_minor_version"]
+        min_minor_version = version_definition["minimum_minor_version"]
+        major_version = version_definition["major_version"]
+        if curr_minor_version >= min_minor_version and curr_minor_version >= 1:
+            for version_index in range(min_minor_version, curr_minor_version + 1):
+                to_check = f"/{str(major_version)}.{str(version_index)}/"
+                for typeset in typesets:
+                    for msg_type_string, module_path in typeset.items():
+                        if to_check not in msg_type_string:
+                            updated_msg_type_string = re.sub(
+                                "(\/\d+\.)?(\*|\d+\/)", to_check, msg_type_string
+                            )
+                            if not updated_typeset:
+                                updated_typeset = {}
+                            updated_typeset[updated_msg_type_string] = module_path
+        return updated_typeset
+
     def register_message_types(self, *typesets, version_definition=None):
         """
         Add new supported message types.
@@ -90,6 +121,12 @@ class ProtocolRegistry:
 
         # Track versioned modules for version routing
         if version_definition:
+            # create updated typesets for minor versions and register them
+            updated_typeset = self.create_msg_types_for_minor_version(
+                typesets, version_definition
+            )
+            if updated_typeset:
+                self._typemap.update(updated_typeset)
             for typeset in typesets:
                 for message_type_string, module_path in typeset.items():
                     parsed_type_string = self.parse_type_string(message_type_string)
