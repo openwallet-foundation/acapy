@@ -77,7 +77,7 @@ class ProtocolRegistry:
 
     def create_msg_types_for_minor_version(self, typesets, version_definition):
         """
-        Return a mapping of message type string [missing] with minor versions to module path.
+        Return mapping of message type to module path for minor versions.
 
         Args:
             typesets: Mappings of message types to register
@@ -98,7 +98,7 @@ class ProtocolRegistry:
                     for msg_type_string, module_path in typeset.items():
                         if to_check not in msg_type_string:
                             updated_msg_type_string = re.sub(
-                                "(\/\d+\.)?(\*|\d+\/)", to_check, msg_type_string
+                                r"(\/\d+\.)?(\*|\d+\/)", to_check, msg_type_string
                             )
                             if not updated_typeset:
                                 updated_typeset = {}
