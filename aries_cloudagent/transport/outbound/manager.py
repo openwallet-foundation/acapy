@@ -7,6 +7,8 @@ import time
 
 from typing import Callable, Type, Union
 from urllib.parse import urlparse
+from collections import MutableMapping
+from contextlib import suppress
 
 from ...connections.models.connection_target import ConnectionTarget
 from ...core.profile import Profile
@@ -24,6 +26,8 @@ from .base import (
     OutboundTransportRegistrationError,
 )
 from .message import OutboundMessage
+
+from .constants import ( REMOVE_KEY )
 
 LOGGER = logging.getLogger(__name__)
 MODULE_BASE_PATH = "aries_cloudagent.transport.outbound"
@@ -87,10 +91,13 @@ class OutboundTransportManager:
         self.running_transports = {}
         self.task_queue = TaskQueue(max_active=200)
         self._process_task: asyncio.Task = None
+        self.light_webhook = False
         if self.root_profile.settings.get("transport.max_outbound_retry"):
             self.MAX_RETRY_COUNT = self.root_profile.settings[
                 "transport.max_outbound_retry"
             ]
+        if self.root_profile.settings.get("transport.light_weight_webhook"):
+            self.light_webhook = True
 
     async def setup(self):
         """Perform setup operations."""
@@ -309,6 +316,14 @@ class OutboundTransportManager:
 
         return outbound_message
 
+    def delete_keys_from_dict(self, dictionary, keys):
+        for key in keys:
+            with suppress(KeyError):
+                del dictionary[key]
+        for value in dictionary.values():
+            if isinstance(value, MutableMapping):
+                self.delete_keys_from_dict(value, keys)
+
     def enqueue_webhook(
         self,
         topic: str,
@@ -343,6 +358,10 @@ class OutboundTransportManager:
         queued.payload = json.dumps(payload)
         queued.state = QueuedOutboundMessage.STATE_PENDING
         queued.retries = 4 if max_attempts is None else max_attempts - 1
+
+        if self.light_webhook:
+            self.delete_keys_from_dict(payload, REMOVE_KEY)
+            queued.payload = json.dumps(payload)
         self.outbound_new.append(queued)
         self.process_queued()
 
