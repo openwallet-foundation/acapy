@@ -317,7 +317,7 @@ class TestPresentationManager(AsyncTestCase):
         Verifier = async_mock.MagicMock(IndyVerifier, autospec=True)
         self.verifier = Verifier()
         self.verifier.verify_presentation = async_mock.CoroutineMock(
-            return_value="true"
+            return_value=("true", [])
         )
         injector.bind_instance(IndyVerifier, self.verifier)
 

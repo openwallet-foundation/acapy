@@ -74,6 +74,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         ] = None,  # aries message
         presentation: Union[IndyProof, Mapping] = None,  # indy proof
         verified: str = None,
+        verified_msgs: list = None,
         auto_present: bool = False,
         auto_verify: bool = False,
         error_msg: str = None,
@@ -96,6 +97,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         )
         self._presentation = IndyProof.serde(presentation)
         self.verified = verified
+        self.verified_msgs = verified_msgs
         self.auto_present = auto_present
         self.auto_verify = auto_verify
         self.error_msg = error_msg
@@ -208,6 +210,7 @@ class V10PresentationExchange(BaseExchangeRecord):
                     "auto_verify",
                     "error_msg",
                     "verified",
+                    "verified_msgs",
                     "trace",
                 )
             },
@@ -294,6 +297,13 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
         description="Whether presentation is verified: true or false",
         example="true",
         validate=validate.OneOf(["true", "false"]),
+    )
+    verified_msgs = fields.List(
+        fields.Str(
+            required=False,
+            description="Proof verification warning or error information",
+        ),
+        required=False,
     )
     auto_present = fields.Bool(
         required=False,

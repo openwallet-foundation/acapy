@@ -1,4 +1,5 @@
 import json
+from aries_cloudagent.messaging.valid import ENDPOINT_TYPE
 import pytest
 
 from asynctest import mock as async_mock
@@ -606,6 +607,109 @@ class TestIndyVdrLedger:
             result = await ledger.update_endpoint_for_did(
                 "55GkHamhTU1ZbTbV2ab9DE", "https://url", EndpointType.ENDPOINT
             )
+
+    @pytest.mark.parametrize(
+        "all_exist_endpoints, routing_keys, result",
+        [
+            (
+                {"profile": "https://endpoint/profile"},
+                ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                {
+                    "endpoint": {
+                        "profile": "https://endpoint/profile",
+                        "endpoint": "https://url",
+                        "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    }
+                },
+            ),
+            (
+                {"profile": "https://endpoint/profile"},
+                None,
+                {
+                    "endpoint": {
+                        "profile": "https://endpoint/profile",
+                        "endpoint": "https://url",
+                        "routingKeys": [],
+                    }
+                },
+            ),
+            (
+                None,
+                ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                {
+                    "endpoint": {
+                        "endpoint": "https://url",
+                        "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    }
+                },
+            ),
+            (None, None, {"endpoint": {"endpoint": "https://url", "routingKeys": []}}),
+            (
+                {
+                    "profile": "https://endpoint/profile",
+                    "spec_divergent_endpoint": "https://endpoint",
+                },
+                ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                {
+                    "endpoint": {
+                        "profile": "https://endpoint/profile",
+                        "spec_divergent_endpoint": "https://endpoint",
+                        "endpoint": "https://url",
+                        "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                    }
+                },
+            ),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_construct_attr_json(
+        self, ledger: IndyVdrLedger, all_exist_endpoints, routing_keys, result
+    ):
+        async with ledger:
+            attr_json = await ledger._construct_attr_json(
+                "https://url", EndpointType.ENDPOINT, all_exist_endpoints, routing_keys
+            )
+        assert attr_json == json.dumps(result)
+
+    @pytest.mark.asyncio
+    async def test_update_endpoint_for_did_calls_attr_json(self, ledger: IndyVdrLedger):
+        routing_keys = ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
+        wallet = (await ledger.profile.session()).wallet
+        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+
+        async with ledger:
+            with async_mock.patch.object(
+                ledger,
+                "_construct_attr_json",
+                async_mock.CoroutineMock(
+                    return_value=json.dumps(
+                        {
+                            "endpoint": {
+                                "endpoint": {
+                                    "endpoint": "https://url",
+                                    "routingKeys": [],
+                                }
+                            }
+                        }
+                    )
+                ),
+            ) as mock_construct_attr_json, async_mock.patch.object(
+                ledger,
+                "get_all_endpoints_for_did",
+                async_mock.CoroutineMock(return_value={}),
+            ):
+                await ledger.update_endpoint_for_did(
+                    test_did.did,
+                    "https://url",
+                    EndpointType.ENDPOINT,
+                    routing_keys=routing_keys,
+                )
+                mock_construct_attr_json.assert_called_once_with(
+                    "https://url",
+                    EndpointType.ENDPOINT,
+                    {},
+                    routing_keys,
+                )
 
     @pytest.mark.asyncio
     async def test_update_endpoint_for_did_no_public(
