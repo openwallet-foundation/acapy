@@ -114,7 +114,7 @@ The tails server needs to be run if you plan to use the revocation capabilities 
 
 ### Run the centralized ledger
 
-To test locally such implementation it is necessary to start and run the centralized ledger instance on your local machine. You can download the source code from this [repository](https://github.ibm.com/research-ssi/ssi-centralized-ledger/tree/aca-py). Follow the guide to locally build and run the centralized ledger.
+To test locally such implementation it is necessary to start and run the centralized ledger instance on your local machine. You can download the source code from this [repository](https://github.com/pasquale95/centralized-ssi-ledger). Follow the guide to locally build and run the centralized ledger.
 
 ### Run the demo with the centralized ledger
 
