@@ -27,7 +27,7 @@ from .base import (
 )
 from .message import OutboundMessage
 
-from .constants import ( REMOVE_KEY )
+from .constants import REMOVE_KEY
 
 LOGGER = logging.getLogger(__name__)
 MODULE_BASE_PATH = "aries_cloudagent.transport.outbound"
