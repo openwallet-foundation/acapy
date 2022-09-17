@@ -116,3 +116,38 @@ acapy-test:py{{python-version}}-{{indy-version}}-{{hash of requirements*.txt and
 Several Github Actions are used to produce the above described images.
 
 **TODO:** Add descriptions of actions
+
+## Key Differences
+
+There are several key differences that should be noted between the two image
+variants and between the BC Gov ACA-Py images and VON images and the images
+produced by this project.
+
+- Standard Image
+    - Based on slim variant of Debian
+    - Does **NOT** include `libindy`
+    - Default user is `aries`
+    - Uses container's system python environment rather than `pyenv`
+    - Askar and Indy Shared libraries are installed through pip from
+      pre-compiled binaries included in the python wrappers.
+    - Built from repo contents
+- Indy Image
+    - Based on slim variant of Debian
+    - Based on `indy-python`
+    - Includes `libindy` but does **NOT** include the Indy CLI
+    - Default user is `indy`
+    - Based on `indy-python`
+    - Uses container's system python environment rather than `pyenv`
+    - Askar and Indy Shared libraries are installed through pip from
+      pre-compiled binaries included in the python wrappers
+    - Built from repo contents
+    - Includes Indy postgres storage plugin
+- `bcgovimages/aries-cloudagent`
+    - (Usually) based on Ubuntu
+    - Based on `von-image`
+    - Default user is `indy`
+    - Includes `libindy` and Indy CLI
+    - Uses `pyenv`
+    - Askar and Indy Shared libraries built from source
+    - Built from ACA-Py python package uploaded to PyPI
+    - Includes Indy postgres storage plugin
