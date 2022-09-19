@@ -1,6 +1,7 @@
 """Indy revocation registry management."""
 
 from typing import Optional, Sequence, Tuple
+from uuid import uuid4
 
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
@@ -44,7 +45,7 @@ class IndyRevocation:
         create_pending_rev_reg: bool = False,
         endorser_connection_id: str = None,
         notify: bool = True,
-    ) -> "IssuerRevRegRecord":
+    ) -> IssuerRevRegRecord:
         """Create a new revocation registry record for a credential definition."""
         multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
@@ -72,13 +73,20 @@ class IndyRevocation:
                 f"Bad revocation registry size: {max_cred_num}"
             )
 
+        record_id = str(uuid4())
+        issuer_did = cred_def_id.split(":")[0]
         record = IssuerRevRegRecord(
+            new_with_id=True,
+            record_id=record_id,
             cred_def_id=cred_def_id,
-            issuer_did=cred_def_id.split(":")[0],
+            issuer_did=issuer_did,
             max_cred_num=max_cred_num,
             revoc_def_type=revoc_def_type,
             tag=tag,
         )
+        revoc_def_type = record.revoc_def_type
+        rtag = record.tag or record_id
+        record.revoc_reg_id = f"{issuer_did}:4:{cred_def_id}:{revoc_def_type}:{rtag}"
         async with self._profile.session() as session:
             await record.save(session, reason="Init revocation registry")
 

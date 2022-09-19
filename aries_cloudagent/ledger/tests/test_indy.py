@@ -2308,17 +2308,37 @@ class TestIndySdkLedger(AsyncTestCase):
             attr_json = await ledger._construct_attr_json(
                 "https://url",
                 EndpointType.ENDPOINT,
-                all_exist_endpoints={"Endpoint": "https://endpoint"},
                 routing_keys=["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
             )
         assert attr_json == json.dumps(
             {
                 "endpoint": {
-                    "Endpoint": "https://endpoint",
-                    "endpoint": {
-                        "endpoint": "https://url",
-                        "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
-                    },
+                    "endpoint": "https://url",
+                    "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                }
+            }
+        )
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
+    @pytest.mark.asyncio
+    async def test_construct_attr_json_with_routing_keys_all_exist_endpoints(
+        self, mock_close, mock_open
+    ):
+        ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
+        async with ledger:
+            attr_json = await ledger._construct_attr_json(
+                "https://url",
+                EndpointType.ENDPOINT,
+                all_exist_endpoints={"profile": "https://endpoint/profile"},
+                routing_keys=["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+            )
+        assert attr_json == json.dumps(
+            {
+                "endpoint": {
+                    "profile": "https://endpoint/profile",
+                    "endpoint": "https://url",
+                    "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
                 }
             }
         )

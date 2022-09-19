@@ -1321,7 +1321,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             ]
             assert not invitation.routing_keys
 
-            assert oob_record.state == OobRecord.STATE_DONE
+            assert oob_record.state == "deleted"
+            assert oob_record._previous_state == OobRecord.STATE_DONE
 
     async def test_receive_invitation_services_with_neither_service_blocks_nor_dids(
         self,
