@@ -35,46 +35,6 @@ GENESIS_TRANSACTION_FILE = "indy_genesis_transactions.txt"
 class CentralizedSdkLedger(BaseLedger):
     """Centralized ledger class."""
 
-    async def is_ledger_read_only(self) -> bool:
-        """Accessor for the ledger read-only flag."""
-        pass
-
-    async def fetch_schema_by_seq_no(
-            self,
-            seq_no: int
-    ) -> dict:
-        """
-        Fetch a schema by its sequence number.
-
-        Args:
-            seq_no: schema ledger sequence number
-
-        Returns:
-            Indy schema dict
-
-        """
-        pass
-
-    async def _create_schema_request(
-            self,
-            public_info: DIDInfo,
-            schema_json: str,
-            write_ledger: bool = True,
-            endorser_did: str = None
-    ):
-        """Create the ledger request for publishing a schema."""
-        pass
-
-    async def _create_credential_definition_request(
-            self,
-            public_info: DIDInfo,
-            credential_definition_json: str,
-            write_ledger: bool = True,
-            endorser_did: str = None
-    ):
-        """Create the ledger request for publishing a credential definition."""
-        pass
-
     BACKEND_NAME = "centralized"
 
     def __init__(
@@ -141,6 +101,46 @@ class CentralizedSdkLedger(BaseLedger):
     async def __aexit__(self, exc_type, exc, tb):
         """Context manager exit."""
         await super().__aexit__(exc_type, exc, tb)
+
+    async def is_ledger_read_only(self) -> bool:
+        """Accessor for the ledger read-only flag."""
+        pass
+
+    async def fetch_schema_by_seq_no(
+            self,
+            seq_no: int
+    ) -> dict:
+        """
+        Fetch a schema by its sequence number.
+
+        Args:
+            seq_no: schema ledger sequence number
+
+        Returns:
+            Indy schema dict
+
+        """
+        pass
+
+    async def _create_schema_request(
+            self,
+            public_info: DIDInfo,
+            schema_json: str,
+            write_ledger: bool = True,
+            endorser_did: str = None
+    ):
+        """Create the ledger request for publishing a schema."""
+        pass
+
+    async def _create_credential_definition_request(
+            self,
+            public_info: DIDInfo,
+            credential_definition_json: str,
+            write_ledger: bool = True,
+            endorser_did: str = None
+    ):
+        """Create the ledger request for publishing a credential definition."""
+        pass
 
     async def get_wallet_public_did(self) -> DIDInfo:
         """Fetch the public DID from the wallet."""
@@ -428,9 +428,7 @@ class CentralizedSdkLedger(BaseLedger):
         return full_verkey(did, did_doc["verKey"]) if did_doc else None
 
     async def get_did_doc_for_did(self, did: str) -> dict:
-        """
-        Fetch from the ledger the DIDDoc associated with the given DID.
-        """
+        """Fetch from the ledger the DIDDoc associated with the given DID."""
         nym = self.did_to_nym(did)
         async with ClientSession() as session:
             async with session.get(self.ledger_url + "/api/did/" + nym) as resp:
