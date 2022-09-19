@@ -49,4 +49,5 @@ class UnsupportedLedgerException(Exception):
     def __init__(self, wallet_type, ledger):
         """Create a new NoSuppoertedLedgerException"""
 
-        super().__init__(f"Unsupported ledger \"{ledger}\" for wallet of type \"{wallet_type}\".")
+        super().__init__(f"Unsupported ledger \"{ledger}\" "
+                         f"for wallet of type \"{wallet_type}\".")

@@ -128,6 +128,9 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             did: The ledger DID
             endpoint: The endpoint address
             endpoint_type: The type of the endpoint (default 'endpoint')
+            write_ledger: True if we want to write on the ledger
+            endorser_did: The endorser DID
+            routing_keys: The routing keys
         """
 
     @abstractmethod
@@ -290,7 +293,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             schema_name: The schema name
             schema_version: The schema version
             attribute_names: A list of schema attributes
-
+            write_ledger: True if we want to write on the ledger
+            endorser_did: The endorser DID
         """
 
         public_info = await self.get_wallet_public_did()
@@ -424,7 +428,8 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             signature_type: The signature type to use on the credential definition
             tag: Optional tag to distinguish multiple credential definitions
             support_revocation: Optional flag to enable revocation for this cred def
-
+            write_ledger: True if we want to write on the ledger
+            endorser_did: The endorser DID
         Returns:
             Tuple with cred def id, cred def structure, and whether it's novel
 
