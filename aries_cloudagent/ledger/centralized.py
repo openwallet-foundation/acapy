@@ -36,12 +36,23 @@ class CentralizedSdkLedger(BaseLedger):
     """Centralized ledger class."""
 
     async def is_ledger_read_only(self) -> bool:
+        """Accessor for the ledger read-only flag."""
         pass
 
     async def fetch_schema_by_seq_no(
             self,
             seq_no: int
     ) -> dict:
+        """
+        Fetch a schema by its sequence number.
+
+        Args:
+            seq_no: schema ledger sequence number
+
+        Returns:
+            Indy schema dict
+
+        """
         pass
 
     async def _create_schema_request(
@@ -51,6 +62,7 @@ class CentralizedSdkLedger(BaseLedger):
             write_ledger: bool = True,
             endorser_did: str = None
     ):
+        """Create the ledger request for publishing a schema."""
         pass
 
     async def _create_credential_definition_request(
@@ -60,6 +72,7 @@ class CentralizedSdkLedger(BaseLedger):
             write_ledger: bool = True,
             endorser_did: str = None
     ):
+        """Create the ledger request for publishing a credential definition."""
         pass
 
     BACKEND_NAME = "centralized"
@@ -650,8 +663,6 @@ class CentralizedSdkLedger(BaseLedger):
 
     async def get_latest_txn_author_acceptance(self) -> dict:
         """Look up the latest TAA acceptance."""
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
         storage = await self.get_indy_storage()
         found = await storage.find_all_records(TAA_ACCEPTED_RECORD_TYPE)
         if found:
@@ -666,7 +677,10 @@ class CentralizedSdkLedger(BaseLedger):
         """Get revocation registry definition by ID; augment with ledger timestamp."""
         async with ClientSession() as session:
             async with session.get(
-                    self.ledger_url + "/api/revocationDefinition/" + revoc_reg_id) as resp:
+                    self.ledger_url
+                    + "/api/revocationDefinition/"
+                    + revoc_reg_id
+            ) as resp:
                 if resp.status == 200:
                     resp = await resp.json()
                     return resp
@@ -723,7 +737,8 @@ class CentralizedSdkLedger(BaseLedger):
             ) as resp:
                 if resp.status != 200:
                     raise LedgerTransactionError(
-                        f"Error occurred creating the revocation definition {revoc_reg_def_id}"
+                        f"Error occurred creating "
+                        f"the revocation definition {revoc_reg_def_id}"
                     )
                 return {"result": resp}
 

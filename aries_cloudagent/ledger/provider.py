@@ -6,6 +6,8 @@ from aries_cloudagent.ledger.indy_vdr import IndyVdrLedger
 
 class LedgerProvider:
     """
+    Init a ledger provider class.
+
     Init a ledger provider class which is able to retrieve the correct ledger class
     according to the specified settings.
     """
@@ -44,10 +46,10 @@ class LedgerProvider:
 
 
 class UnsupportedLedgerException(Exception):
-    """Raised when the specifiec ledger is not supported by the specified wallet type"""
+    """Raised when the specifiec ledger is not supported by the specified wallet type."""
 
     def __init__(self, wallet_type, ledger):
-        """Create a new NoSuppoertedLedgerException"""
+        """Create a new NoSuppoertedLedgerException."""
 
         super().__init__(f"Unsupported ledger \"{ledger}\" "
                          f"for wallet of type \"{wallet_type}\".")
