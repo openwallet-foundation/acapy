@@ -202,6 +202,8 @@ class IssuerRevRegRecord(BaseRecord):
         except IndyIssuerError as err:
             raise RevocationError() from err
 
+        if self.revoc_reg_id and revoc_reg_id != self.revoc_reg_id:
+            raise RevocationError("Generated registry ID does not match assigned value")
         self.revoc_reg_id = revoc_reg_id
         self.revoc_reg_def = json.loads(revoc_reg_def_json)
         self.revoc_reg_entry = json.loads(revoc_reg_entry_json)

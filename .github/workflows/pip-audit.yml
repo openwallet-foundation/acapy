@@ -16,8 +16,9 @@ jobs:
         run: |
           python -m venv env/
           source env/bin/activate
+          python -m pip install --upgrade pip
           python -m pip install .
-      - uses: trailofbits/gh-action-pip-audit@v0.0.4
+      - uses: pypa/gh-action-pip-audit@v1.0.0
         with:
           virtual-environment: env/
           local: true

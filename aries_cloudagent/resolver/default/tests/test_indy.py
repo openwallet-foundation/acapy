@@ -3,6 +3,7 @@
 import pytest
 
 from asynctest import mock as async_mock
+from pydid.verification_method import VerificationMethod
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
@@ -116,11 +117,11 @@ class TestIndyResolver:
     ):
         """Test that new attrib structure is supported."""
         example = {
-            "endpoint": {
-                "endpoint": "https://example.com/endpoint",
-                "routingKeys": ["a-routing-key"],
-                "types": ["DIDComm", "did-communication", "endpoint"],
-            }
+            "endpoint": "https://example.com/endpoint",
+            "routingKeys": ["a-routing-key"],
+            "types": ["DIDComm", "did-communication", "endpoint"],
+            "profile": "https://example.com",
+            "linked_domains": "https://example.com",
         }
 
         ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
@@ -129,19 +130,41 @@ class TestIndyResolver:
         assert await resolver.resolve(profile, TEST_DID0)
 
     @pytest.mark.asyncio
-    async def test_supports_updated_did_sov_rules_x_no_endpoint_url(
+    async def test_supports_updated_did_sov_rules_no_endpoint_url(
         self, resolver: IndyDIDResolver, ledger: BaseLedger, profile: Profile
     ):
         """Test that new attrib structure is supported."""
         example = {
-            "endpoint": {
-                "routingKeys": ["a-routing-key"],
-                "types": ["DIDComm", "did-communication", "endpoint"],
-            }
+            "routingKeys": ["a-routing-key"],
+            "types": ["DIDComm", "did-communication", "endpoint"],
         }
 
         ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
             return_value=example
         )
-        with pytest.raises(ValueError):
-            await resolver.resolve(profile, TEST_DID0)
+        result = await resolver.resolve(profile, TEST_DID0)
+        assert "service" not in result
+
+    @pytest.mark.parametrize(
+        "types, result",
+        [
+            (
+                [],
+                ["endpoint", "did-communication"],
+            ),
+            (
+                ["did-communication"],
+                ["did-communication"],
+            ),
+            (
+                ["endpoint", "did-communication", "DIDComm", "other-endpoint-type"],
+                ["endpoint", "did-communication"],
+            ),
+            (
+                ["endpoint", "did-communication", "DIDComm"],
+                ["endpoint", "did-communication", "DIDComm"],
+            ),
+        ],
+    )
+    def test_process_endpoint_types(self, resolver: IndyDIDResolver, types, result):
+        assert resolver.process_endpoint_types(types) == result

@@ -34,11 +34,18 @@ def step_impl(context, agent_name, did_role):
     )
 
     # make the new did the wallet's public did
-    created_did = agent_container_POST(
+    published_did = agent_container_POST(
         agent["agent"],
         "/wallet/did/public",
         params={"did": created_did["result"]["did"]},
     )
+    if "result" in published_did:
+        # published right away!
+        pass
+    elif "txn" in published_did:
+        # we are an author and need to go through the endorser process
+        # assume everything works!
+        async_sleep(3.0)
 
     if not "public_dids" in context:
         context.public_dids = {}
