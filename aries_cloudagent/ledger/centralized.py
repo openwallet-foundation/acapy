@@ -65,6 +65,7 @@ class CentralizedSdkLedger(BaseLedger):
 
         Returns:
             The centralized ledger URL.
+
         """
 
         if not genesis_data:

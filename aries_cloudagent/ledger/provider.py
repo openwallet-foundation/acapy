@@ -1,4 +1,4 @@
-"""Ledger Provider"""
+"""Ledger Provider."""
 
 from aries_cloudagent.ledger.base import BaseLedger
 from aries_cloudagent.ledger.centralized import CentralizedSdkLedger
