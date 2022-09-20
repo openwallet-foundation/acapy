@@ -465,7 +465,6 @@ class CentralizedSdkLedger(BaseLedger):
             endpoint = response_json["endpoint"]
             if endpoint_type in endpoint:
                 return endpoint[endpoint_type]
-        return None
 
     async def update_endpoint_for_did(
             self,
