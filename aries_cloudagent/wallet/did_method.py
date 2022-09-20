@@ -1,4 +1,4 @@
-"""Did method enum."""
+"""Did method classes."""
 
 from typing import Dict, List, Mapping, Optional
 from .error import BaseError
@@ -33,6 +33,14 @@ class DIDMethod:
         return key_type in self.supported_key_types
 
 
+SOV = DIDMethod(name="sov", key_types=[KeyType.ED25519], rotation=True)
+KEY = DIDMethod(
+    name="key",
+    key_types=[KeyType.ED25519, KeyType.BLS12381G2],
+    rotation=False,
+)
+
+
 class DIDMethods:
     """DID Method class specifying DID methods with supported key types."""
 
@@ -49,10 +57,7 @@ class DIDMethods:
 
     def from_method(self, method_name: str) -> Optional[DIDMethod]:
         """Retrieve a did method from method name."""
-        method: DIDMethod = self._registry[method_name]
-        if method:
-            return method
-        raise BaseError(f"Unsupported did method: {method_name}")
+        return self._registry[method_name]
 
     def from_metadata(self, metadata: Mapping) -> Optional[DIDMethod]:
         """Get DID method instance from metadata object.
@@ -62,7 +67,10 @@ class DIDMethods:
         method_name: str = metadata.get("method", "sov")
         return self.from_method(method_name)
 
-    def from_did(self, did: str) -> Optional[DIDMethod]:
+    def from_did(self, did: str) -> DIDMethod:
         """Get DID method instance from the did url."""
-        method_name = did.split(":")[1] if did.startswith("did:") else "sov"
-        return self.from_method(method_name)
+        method_name = did.split(":")[1] if did.startswith("did:") else SOV.method_name
+        method: DIDMethod | None = self.from_method(method_name)
+        if not method:
+            raise BaseError(f"Unsupported did method: {method_name}")
+        return method
