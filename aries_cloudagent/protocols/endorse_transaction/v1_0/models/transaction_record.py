@@ -9,7 +9,13 @@ from .....messaging.models.base_record import (
 )
 from .....messaging.valid import UUIDFour
 
-from ..controller import ENDORSE_TRANSACTION, REFUSE_TRANSACTION, WRITE_TRANSACTION
+from ..controller import (
+    ENDORSE_TRANSACTION,
+    REFUSE_TRANSACTION,
+    WRITE_TRANSACTION,
+    WRITE_DID_TRANSACTION,
+    REGISTER_PUBLIC_DID,
+)
 
 
 class TransactionRecord(BaseExchangeRecord):
@@ -40,6 +46,8 @@ class TransactionRecord(BaseExchangeRecord):
     ENDORSE_TRANSACTION = ENDORSE_TRANSACTION
     REFUSE_TRANSACTION = REFUSE_TRANSACTION
     WRITE_TRANSACTION = WRITE_TRANSACTION
+    WRITE_DID_TRANSACTION = WRITE_DID_TRANSACTION
+    REGISTER_PUBLIC_DID = REGISTER_PUBLIC_DID
 
     FORMAT_VERSION = "dif/endorse-transaction/request@v1.0"
 

@@ -427,7 +427,7 @@ class TestTransactionManager(AsyncTestCase):
             (
                 transaction_record,
                 transaction_acknowledgement_message,
-            ) = await self.manager.complete_transaction(transaction_record)
+            ) = await self.manager.complete_transaction(transaction_record, False)
             save_record.assert_called_once()
 
         assert transaction_record.state == TransactionRecord.STATE_TRANSACTION_ACKED
