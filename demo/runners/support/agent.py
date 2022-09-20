@@ -186,7 +186,9 @@ class DemoAgent:
         self.proc = None
         self.client_session: ClientSession = ClientSession()
 
-        if self.endorser_role and not seed:
+        if self.endorser_role and self.endorser_role == "author":
+            seed = None
+        elif self.endorser_role and not seed:
             seed = "random"
         rand_name = str(random.randint(100_000, 999_999))
         self.seed = (
@@ -485,26 +487,33 @@ class DemoAgent:
                 if self.endorser_role == "endorser":
                     role = "ENDORSER"
                 else:
-                    role = ""
-            data["role"] = role
+                    role = None
+            if role:
+                data["role"] = role
             if did and verkey:
                 data["did"] = did
                 data["verkey"] = verkey
             else:
                 data["seed"] = self.seed
-            async with self.client_session.post(
-                ledger_url + "/register", json=data
-            ) as resp:
+            if role is None or role == "":
+                # if author using endorser register nym and wait for endorser ...
+                resp = await self.admin_POST("/ledger/register-nym", params=data)
+                await asyncio.sleep(3.0)
+                nym_info = data
+            else:
+                resp = await self.client_session.post(
+                    ledger_url + "/register", json=data
+                )
                 if resp.status != 200:
                     raise Exception(
                         f"Error registering DID {data}, response code {resp.status}"
                     )
                 nym_info = await resp.json()
-                self.did = nym_info["did"]
-                self.log(f"nym_info: {nym_info}")
-                if self.multitenant:
-                    if not self.agency_wallet_did:
-                        self.agency_wallet_did = self.did
+            self.did = nym_info["did"]
+            self.log(f"nym_info: {nym_info}")
+            if self.multitenant:
+                if not self.agency_wallet_did:
+                    self.agency_wallet_did = self.did
             self.log(f"Registered DID: {self.did}")
         elif cred_type == CRED_FORMAT_JSON_LD:
             # TODO register a did:key with appropriate signature type
@@ -582,9 +591,14 @@ class DemoAgent:
 
         # if endorser, endorse the wallet ledger operations
         if endorser_agent:
+            self.log("Connect sub-wallet to endorser ...")
             if not await connect_wallet_to_endorser(self, endorser_agent):
                 raise Exception("Endorser setup FAILED :-(")
-
+        # if mediation, mediate the wallet connections
+        if mediator_agent:
+            if not await connect_wallet_to_mediator(self, mediator_agent):
+                log_msg("Mediation setup FAILED :-(")
+                raise Exception("Mediation setup FAILED :-(")
         if taa_accept:
             await self.taa_accept()
 
@@ -614,12 +628,6 @@ class DemoAgent:
             else:
                 # todo ignore for now
                 pass
-
-        # if mediation, mediate the wallet connections
-        if mediator_agent:
-            if not await connect_wallet_to_mediator(self, mediator_agent):
-                log_msg("Mediation setup FAILED :-(")
-                raise Exception("Mediation setup FAILED :-(")
 
         self.log(f"Created NEW wallet {target_wallet_name}")
         return True
@@ -823,6 +831,9 @@ class DemoAgent:
     async def handle_revocation_registry(self, message):
         reg_id = message.get("revoc_reg_id", "(undetermined)")
         self.log(f"Revocation registry: {reg_id} state: {message['state']}")
+
+    async def handle_mediation(self, message):
+        self.log(f"Received mediation message ...\n")
 
     async def taa_accept(self):
         taa_info = await self.admin_GET("/ledger/taa")
@@ -1394,6 +1405,9 @@ class EndorserAgent(DemoAgent):
 
     async def handle_basicmessages(self, message):
         self.log("Received message:", message["content"])
+
+    async def handle_out_of_band(self, message):
+        self.log("Received message:", message)
 
 
 async def start_endorser_agent(
