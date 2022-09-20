@@ -9,6 +9,7 @@ from ....core.error import ProfileError
 from ....ledger.indy import IndySdkLedgerPool
 from ..profile import IndySdkProfile
 from ..wallet_setup import IndyOpenWallet, IndyWalletConfig
+from ....ledger.provider import LedgerProvider
 
 
 @pytest.fixture
@@ -60,6 +61,7 @@ def test_settings_genesis_transactions(open_wallet):
         settings={"ledger.genesis_transactions": async_mock.MagicMock()}
     )
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
+    context.injector.bind_instance(LedgerProvider, LedgerProvider({}))
     profile = IndySdkProfile(open_wallet, context)
 
 

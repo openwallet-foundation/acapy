@@ -29,7 +29,13 @@ class LedgerProvider:
     def __init__(self, settings):
         """Create a new ledger provider."""
 
+        # fallback to indy wallet if none provided
+        if "wallet.type" not in settings:
+            settings["wallet.type"] = "indy"
         self.wallet_type = settings["wallet.type"]
+        # fallback to default ledger if none provided
+        if "wallet.ledger" not in settings:
+            settings["wallet.ledger"] = "default"
         self.wallet_ledger = settings["wallet.ledger"]
 
     def get_ledger(self):

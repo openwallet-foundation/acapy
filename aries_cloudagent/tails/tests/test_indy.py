@@ -2,6 +2,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.injection_context import InjectionContext
 from ...core.in_memory import InMemoryProfile
+from ...ledger.base import BaseLedger
 from ...ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 
 from .. import indy_tails_server as test_module
@@ -24,7 +25,14 @@ class TestIndyTailsServer(AsyncTestCase):
             settings={
                 "ledger.genesis_transactions": "dummy",
                 "tails_server_upload_url": "http://1.2.3.4:8088",
-            }
+            },
+            enforce_typing=False
+        )
+        context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                BACKEND_NAME="dummy"
+            ),
         )
         indy_tails = test_module.IndyTailsServer()
 
@@ -56,6 +64,12 @@ class TestIndyTailsServer(AsyncTestCase):
                         ),
                     )
                 )
+            ),
+        )
+        profile.context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                BACKEND_NAME="dummy"
             ),
         )
         indy_tails = test_module.IndyTailsServer()
@@ -90,6 +104,12 @@ class TestIndyTailsServer(AsyncTestCase):
                 )
             ),
         )
+        profile.context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                BACKEND_NAME="dummy"
+            ),
+        )
         indy_tails = test_module.IndyTailsServer()
 
         with async_mock.patch.object(
@@ -111,7 +131,14 @@ class TestIndyTailsServer(AsyncTestCase):
             settings={
                 "ledger.genesis_transactions": "dummy",
                 "tails_server_upload_url": "http://1.2.3.4:8088",
-            }
+            },
+            enforce_typing=False
+        )
+        context.injector.bind_provider(
+            BaseLedger,
+            async_mock.MagicMock(
+                BACKEND_NAME="dummy"
+            ),
         )
         indy_tails = test_module.IndyTailsServer()
 

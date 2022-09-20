@@ -8,6 +8,7 @@ from ...askar.profile import AskarProfile
 from ...config.injection_context import InjectionContext
 
 from .. import profile as test_module
+from ...ledger.provider import LedgerProvider
 
 
 @pytest.fixture
@@ -27,13 +28,21 @@ async def test_init_success(open_store):
 @pytest.mark.asyncio
 async def test_remove_success(open_store):
     openStore = open_store
-    context = InjectionContext()
+    context = InjectionContext(enforce_typing=False)
     profile_id = "profile_id"
     context.settings = {
         "multitenant.wallet_type": "askar-profile",
         "wallet.askar_profile": profile_id,
         "ledger.genesis_transactions": mock.MagicMock(),
     }
+    context.injector.bind_provider(
+        LedgerProvider,
+        mock.MagicMock(
+            get_ledger=mock.CoroutineMock(
+                return_value="dummy"
+            )
+        ),
+    )
     askar_profile = AskarProfile(openStore, context, profile_id=profile_id)
     remove_profile_stub = asyncio.Future()
     remove_profile_stub.set_result(True)

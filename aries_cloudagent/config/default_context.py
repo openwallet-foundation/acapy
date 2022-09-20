@@ -53,9 +53,6 @@ class DefaultContextBuilder(ContextBuilder):
         # Global did resolver
         context.injector.bind_instance(DIDResolver, DIDResolver([]))
 
-        # Global ledger provider
-        context.injector.bind_instance(LedgerProvider, LedgerProvider(self.settings))
-
         await self.bind_providers(context)
         await self.load_plugins(context)
 
@@ -80,6 +77,14 @@ class DefaultContextBuilder(ContextBuilder):
             )
 
         context.injector.bind_provider(ProfileManager, ProfileManagerProvider())
+
+        # Global ledger provider
+        context.injector.bind_provider(
+            LedgerProvider,
+            ClassProvider(
+                "aries_cloudagent.ledger.provider.LedgerProvider", self.settings
+            )
+        )
 
         context.injector.bind_provider(
             BaseTailsServer,
