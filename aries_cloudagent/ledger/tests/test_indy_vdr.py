@@ -10,7 +10,7 @@ from ...core.in_memory import InMemoryProfile
 from ...indy.issuer import IndyIssuer
 from ...wallet.base import BaseWallet
 from ...wallet.key_type import KeyType
-from ...wallet.did_method import SOV
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.did_info import DIDInfo
 
 from ..endpoint_type import EndpointType
@@ -980,4 +980,5 @@ class TestIndyVdrLedger:
                     ]
                 ),
             ):
+                ledger.profile.context.injector.bind_instance(DIDMethods,DIDMethods())
                 await ledger.rotate_public_did_keypair()

@@ -1,4 +1,4 @@
-"""Did method classes."""
+"""Did method registry classes."""
 
 from typing import Dict, List, Mapping, Optional
 from .error import BaseError
@@ -9,6 +9,7 @@ class DIDMethod:
     """Class to represent a did method."""
 
     def __init__(self, name, key_types, rotation) -> None:
+        """Constructor for did method class."""
         self._method_name: str = name
         self._supported_key_types: List[KeyType] = key_types
         self._supports_rotation: bool = rotation
@@ -45,6 +46,7 @@ class DIDMethods:
     """DID Method class specifying DID methods with supported key types."""
 
     def __init__(self) -> None:
+        """Constructor for did method registry."""
         self._registry: Dict[str, DIDMethod] = {
             SOV.method_name: SOV,
             KEY.method_name: KEY,
@@ -60,7 +62,7 @@ class DIDMethods:
 
     def from_method(self, method_name: str) -> Optional[DIDMethod]:
         """Retrieve a did method from method name."""
-        return self._registry[method_name]
+        return self._registry.get(method_name)
 
     def from_metadata(self, metadata: Mapping) -> Optional[DIDMethod]:
         """Get DID method instance from metadata object.

@@ -67,7 +67,9 @@ class DIDSchema(OpenAPISchema):
     method = fields.Str(
         description="Did method associated with the DID",
         example=SOV.method_name,
-        validate=validate.OneOf([method.method_name for method in DIDMethod]),
+        validate=validate.OneOf(
+            [method.method_name for method in [SOV, KEY]]
+        ),  # TODO: support more methods
     )
     key_type = fields.Str(
         description="Key type associated with the DID",

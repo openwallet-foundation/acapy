@@ -8,7 +8,7 @@ from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
-from ...wallet.did_method import SOV
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.key_type import KeyType
 from ..base import BaseWallet
 from ..did_info import DIDInfo
@@ -38,6 +38,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.test_verkey = "verkey"
         self.test_posted_did = "posted-did"
         self.test_posted_verkey = "posted-verkey"
+        self.context.injector.bind_instance(DIDMethods, DIDMethods())
 
     async def test_missing_wallet(self):
         self.session_inject[BaseWallet] = None
