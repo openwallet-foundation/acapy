@@ -13,7 +13,6 @@ from aries_askar import (
     Key,
     KeyAlg,
     SeedMethod,
-    Session,
 )
 
 from ..askar.didcomm.v1 import pack_message, unpack_message

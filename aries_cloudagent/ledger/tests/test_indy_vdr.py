@@ -980,5 +980,5 @@ class TestIndyVdrLedger:
                     ]
                 ),
             ):
-                ledger.profile.context.injector.bind_instance(DIDMethods,DIDMethods())
+                ledger.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
                 await ledger.rotate_public_did_keypair()
