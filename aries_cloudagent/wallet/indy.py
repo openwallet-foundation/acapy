@@ -48,7 +48,7 @@ class IndySdkWallet(BaseWallet):
 
     def __init__(self, opened: IndyOpenWallet):
         """Create a new IndySdkWallet instance."""
-        self.opened = opened
+        self.opened: IndyOpenWallet = opened
 
     def __did_info_from_indy_info(self, info):
         metadata = json.loads(info["metadata"]) if info["metadata"] else {}
@@ -69,8 +69,8 @@ class IndySdkWallet(BaseWallet):
         metadata = info["metadata"]
         verkey = info["verkey"]
 
-        # this needs to change if other did methods are added
-        method = DIDMethod.from_method(info["metadata"].get("method", "key"))
+        # TODO: inject context to support did method registry
+        method = SOV if metadata.get("method", "key") == SOV.method_name else KEY
         key_type = KeyType.from_key_type(info["key_type"])
 
         if method == KEY:
@@ -270,7 +270,9 @@ class IndySdkWallet(BaseWallet):
 
         """
         # Check if DID can rotate keys
-        did_method = DIDMethod.from_did(did)
+        #TODO: inject context for did method registry support
+        method_name = did.split(":")[1] if did.startswith("did:") else SOV.method_name
+        did_method = SOV if method_name == SOV.method_name else KEY
         if not did_method.supports_rotation:
             raise WalletError(
                 f"DID method '{did_method.method_name}' does not support key rotation."
@@ -548,7 +550,9 @@ class IndySdkWallet(BaseWallet):
             WalletError: If there is a libindy error
 
         """
-        method = DIDMethod.from_did(did)
+        #TODO: inject context for did method registry support
+        method_name = did.split(":")[1] if did.startswith("did:") else SOV.method_name
+        method = SOV if method_name == SOV.method_name else KEY
         key_type = KeyType.ED25519
 
         # If did key, the key type can differ

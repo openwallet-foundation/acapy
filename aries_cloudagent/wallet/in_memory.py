@@ -17,7 +17,7 @@ from .crypto import (
 )
 from .did_info import KeyInfo, DIDInfo
 from .did_posture import DIDPosture
-from .did_method import SOV, KEY, DIDMethod
+from .did_method import SOV, KEY, DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58, random_seed
@@ -132,8 +132,8 @@ class InMemoryWallet(BaseWallet):
         local_did = self.profile.local_dids.get(did)
         if not local_did:
             raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
-
-        did_method = DIDMethod.from_did(did)
+        did_methods: DIDMethods = self.profile.context.inject(DIDMethods)
+        did_method: DIDMethod = did_methods.from_did(did)
         if not did_method.supports_rotation:
             raise WalletError(
                 f"DID method '{did_method.method_name}' does not support key rotation."

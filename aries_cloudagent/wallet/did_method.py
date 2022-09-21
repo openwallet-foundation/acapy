@@ -45,7 +45,10 @@ class DIDMethods:
     """DID Method class specifying DID methods with supported key types."""
 
     def __init__(self) -> None:
-        self._registry: Dict[str, DIDMethod] = {}
+        self._registry: Dict[str, DIDMethod] = {
+            SOV.method_name: SOV,
+            KEY.method_name: KEY
+        }
 
     def registered(self, method: str) -> bool:
         """Check for a supported method."""
