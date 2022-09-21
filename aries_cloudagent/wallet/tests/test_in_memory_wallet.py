@@ -5,7 +5,7 @@ from ...core.in_memory import InMemoryProfile
 from ...messaging.decorators.signature_decorator import SignatureDecorator
 from ...wallet.in_memory import InMemoryWallet
 from ...wallet.key_type import KeyType
-from ...wallet.did_method import DIDMethod
+from ...wallet.did_method import SOV, KEY
 from ...wallet.error import (
     WalletError,
     WalletDuplicateError,
@@ -130,19 +130,19 @@ class TestInMemoryWallet:
 
     @pytest.mark.asyncio
     async def test_create_local_sov_random(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519, None, None)
+        info = await wallet.create_local_did(SOV, KeyType.ED25519, None, None)
         assert info and info.did and info.verkey
 
     @pytest.mark.asyncio
     async def test_create_local_key_random_ed25519(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(DIDMethod.KEY, KeyType.ED25519, None, None)
+        info = await wallet.create_local_did(KEY, KeyType.ED25519, None, None)
         assert info and info.did and info.verkey
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_create_local_key_random_bls12381g2(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.KEY, KeyType.BLS12381G2, None, None
+            KEY, KeyType.BLS12381G2, None, None
         )
         assert info and info.did and info.verkey
 
@@ -151,61 +151,61 @@ class TestInMemoryWallet:
         self, wallet: InMemoryWallet
     ):
         with pytest.raises(WalletError):
-            await wallet.create_local_did(DIDMethod.SOV, KeyType.BLS12381G2, None, None)
+            await wallet.create_local_did(SOV, KeyType.BLS12381G2, None, None)
 
     @pytest.mark.asyncio
     async def test_create_local_sov_seeded(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, self.test_seed, None
+            SOV, KeyType.ED25519, self.test_seed, None
         )
         assert info.did == self.test_sov_did
         assert info.verkey == self.test_ed25519_verkey
 
         # should not raise WalletDuplicateError - same verkey
         await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, self.test_seed, None
+            SOV, KeyType.ED25519, self.test_seed, None
         )
 
         with pytest.raises(WalletError):
             _ = await wallet.create_local_did(
-                DIDMethod.SOV, KeyType.ED25519, "invalid-seed", None
+                SOV, KeyType.ED25519, "invalid-seed", None
             )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_create_local_key_seeded_bls12381g2(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed, None
+            KEY, KeyType.BLS12381G2, self.test_seed, None
         )
         assert info.did == self.test_key_bls12381g2_did
         assert info.verkey == self.test_bls12381g2_verkey
 
         # should not raise WalletDuplicateError - same verkey
         await wallet.create_local_did(
-            DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed, None
+            KEY, KeyType.BLS12381G2, self.test_seed, None
         )
 
         with pytest.raises(WalletError):
             _ = await wallet.create_local_did(
-                DIDMethod.KEY, KeyType.BLS12381G2, "invalid-seed", None
+                KEY, KeyType.BLS12381G2, "invalid-seed", None
             )
 
     @pytest.mark.asyncio
     async def test_create_local_key_seeded_ed25519(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.KEY, KeyType.ED25519, self.test_seed, None
+            KEY, KeyType.ED25519, self.test_seed, None
         )
         assert info.did == self.test_key_ed25519_did
         assert info.verkey == self.test_ed25519_verkey
 
         # should not raise WalletDuplicateError - same verkey
         await wallet.create_local_did(
-            DIDMethod.KEY, KeyType.ED25519, self.test_seed, None
+            KEY, KeyType.ED25519, self.test_seed, None
         )
 
         with pytest.raises(WalletError):
             _ = await wallet.create_local_did(
-                DIDMethod.KEY, KeyType.ED25519, "invalid-seed", None
+                KEY, KeyType.ED25519, "invalid-seed", None
             )
 
     @pytest.mark.asyncio
@@ -217,9 +217,9 @@ class TestInMemoryWallet:
             await wallet.rotate_did_keypair_apply(self.test_sov_did)
 
         info = await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
+            SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
         )
-        key_info = await wallet.create_local_did(DIDMethod.KEY, KeyType.ED25519)
+        key_info = await wallet.create_local_did(KEY, KeyType.ED25519)
 
         with pytest.raises(WalletError):
             await wallet.rotate_did_keypair_apply(self.test_sov_did)
@@ -239,25 +239,25 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_create_local_with_did(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, None, self.test_sov_did
+            SOV, KeyType.ED25519, None, self.test_sov_did
         )
         assert info.did == self.test_sov_did
 
         with pytest.raises(WalletDuplicateError):
             await wallet.create_local_did(
-                DIDMethod.SOV, KeyType.ED25519, None, self.test_sov_did
+                SOV, KeyType.ED25519, None, self.test_sov_did
             )
 
         with pytest.raises(WalletError) as context:
             await wallet.create_local_did(
-                DIDMethod.KEY, KeyType.ED25519, None, "did:sov:random"
+                KEY, KeyType.ED25519, None, "did:sov:random"
             )
         assert "Not allowed to set DID for DID method 'key'" in str(context.value)
 
     @pytest.mark.asyncio
     async def test_local_verkey(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
+            SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
         )
         assert info.did == self.test_sov_did
         assert info.verkey == self.test_ed25519_verkey
@@ -273,7 +273,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_local_verkey_bls12381g2(self, wallet: InMemoryWallet):
-        await wallet.create_local_did(DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed)
+        await wallet.create_local_did(KEY, KeyType.BLS12381G2, self.test_seed)
         bls_info_get = await wallet.get_local_did_for_verkey(
             self.test_bls12381g2_verkey
         )
@@ -288,7 +288,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_local_metadata(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.SOV,
+            SOV,
             KeyType.ED25519,
             self.test_seed,
             self.test_sov_did,
@@ -318,7 +318,7 @@ class TestInMemoryWallet:
     @pytest.mark.ursa_bbs_signatures
     async def test_local_metadata_bbs(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.KEY,
+            KEY,
             KeyType.BLS12381G2,
             self.test_seed,
             None,
@@ -338,7 +338,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_create_public_did(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.SOV,
+            SOV,
             KeyType.ED25519,
             self.test_seed,
             self.test_sov_did,
@@ -350,7 +350,7 @@ class TestInMemoryWallet:
         assert not posted
 
         info_public = await wallet.create_public_did(
-            DIDMethod.SOV,
+            SOV,
             KeyType.ED25519,
         )
         assert info_public.metadata.get("posted")
@@ -359,7 +359,7 @@ class TestInMemoryWallet:
 
         # test replace
         info_replace = await wallet.create_public_did(
-            DIDMethod.SOV,
+            SOV,
             KeyType.ED25519,
         )
         assert info_replace.metadata.get("posted")
@@ -376,7 +376,7 @@ class TestInMemoryWallet:
     async def test_create_public_did_x_not_sov(self, wallet: InMemoryWallet):
         with pytest.raises(WalletError) as context:
             await wallet.create_public_did(
-                DIDMethod.KEY,
+                KEY,
                 KeyType.ED25519,
             )
         assert "Setting public DID is only allowed for did:sov DIDs" in str(
@@ -389,7 +389,7 @@ class TestInMemoryWallet:
     ):
         with pytest.raises(WalletError) as context:
             await wallet.create_public_did(
-                DIDMethod.SOV,
+                SOV,
                 KeyType.BLS12381G2,
             )
         assert "Invalid key type" in str(context.value)
@@ -397,7 +397,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_set_public_did(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.SOV,
+            SOV,
             KeyType.ED25519,
             self.test_seed,
             self.test_sov_did,
@@ -413,7 +413,7 @@ class TestInMemoryWallet:
         assert info_same.did == info.did
         assert info_same.metadata.get("posted")
 
-        info_new = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+        info_new = await wallet.create_local_did(SOV, KeyType.ED25519)
         assert info_new.did != info_same.did
 
         loc = await wallet.get_local_did(self.test_sov_did)
@@ -429,7 +429,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_set_public_did_x_not_sov(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.KEY,
+            KEY,
             KeyType.ED25519,
         )
         with pytest.raises(WalletError) as context:
@@ -441,7 +441,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_sign_verify(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
+            SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
         )
         message_bin = self.test_message.encode("ascii")
         signature = await wallet.sign_message(message_bin, info.verkey)
@@ -493,7 +493,7 @@ class TestInMemoryWallet:
     @pytest.mark.ursa_bbs_signatures
     async def test_sign_verify_bbs(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.KEY, KeyType.BLS12381G2, self.test_seed
+            KEY, KeyType.BLS12381G2, self.test_seed
         )
         message_bin = self.test_message.encode("ascii")
         signature = await wallet.sign_message(message_bin, info.verkey)
@@ -552,7 +552,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_pack_unpack(self, wallet: InMemoryWallet):
         await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
+            SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
         )
 
         packed_anon = await wallet.pack_message(
@@ -568,7 +568,7 @@ class TestInMemoryWallet:
         assert "Message not provided" in str(excinfo.value)
 
         await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, self.test_target_seed, self.test_target_did
+            SOV, KeyType.ED25519, self.test_target_seed, self.test_target_did
         )
         packed_auth = await wallet.pack_message(
             self.test_message, [self.test_target_verkey], self.test_ed25519_verkey
@@ -600,7 +600,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_set_did_endpoint_x_not_sov(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            DIDMethod.KEY,
+            KEY,
             KeyType.ED25519,
         )
         with pytest.raises(WalletError) as context:

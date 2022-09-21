@@ -16,7 +16,7 @@ from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo
-from .....wallet.did_method import DIDMethod
+from .....wallet.did_method import SOV
 from .....wallet.key_type import KeyType
 
 from ..manager import TransactionManager, TransactionManagerError
@@ -124,7 +124,7 @@ class TestTransactionManager(AsyncTestCase):
         async with self.profile.session() as session:
             self.wallet: BaseWallet = session.inject_or(BaseWallet)
             await self.wallet.create_local_did(
-                DIDMethod.SOV,
+                SOV,
                 KeyType.ED25519,
                 did="DJGEjaMunDtFtBVrn1qJMT",
                 metadata={"meta": "data"},

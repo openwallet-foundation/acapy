@@ -65,7 +65,7 @@ from .....protocols.present_proof.v2_0.messages.pres_request import V20PresReque
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo, KeyInfo
-from .....wallet.did_method import DIDMethod
+from .....wallet.did_method import SOV
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import KeyType
 from ....connections.v1_0.messages.connection_invitation import ConnectionInvitation
@@ -378,7 +378,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             invi_rec = await self.manager.create_invitation(
@@ -438,7 +438,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 self.test_did,
                 self.test_verkey,
                 None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             await self.manager.create_invitation(
@@ -513,7 +513,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
@@ -547,7 +547,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
@@ -585,7 +585,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
@@ -623,7 +623,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             mock_retrieve_pxid.return_value = async_mock.MagicMock(
@@ -662,7 +662,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             mock_retrieve_pxid_1.side_effect = StorageNotFoundError()
@@ -750,7 +750,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             with self.assertRaises(OutOfBandManagerError) as context:
@@ -834,7 +834,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             with self.assertRaises(OutOfBandManagerError) as context:

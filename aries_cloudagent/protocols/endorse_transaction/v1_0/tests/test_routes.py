@@ -9,7 +9,7 @@ from .....core.in_memory import InMemoryProfile
 from .....ledger.base import BaseLedger
 from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo
-from .....wallet.did_method import DIDMethod
+from .....wallet.did_method import SOV
 from .....wallet.key_type import KeyType
 
 from ..models.transaction_record import TransactionRecord
@@ -436,7 +436,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -515,7 +515,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -544,7 +544,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -579,7 +579,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -616,7 +616,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -671,7 +671,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -714,7 +714,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -772,7 +772,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -824,7 +824,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -882,7 +882,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -912,7 +912,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -947,7 +947,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -984,7 +984,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )
@@ -1027,7 +1027,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                         "did",
                         "verkey",
                         {"meta": "data"},
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
                 )

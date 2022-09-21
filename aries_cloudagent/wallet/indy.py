@@ -30,7 +30,7 @@ from .crypto import (
     verify_signed_message,
 )
 from .did_info import DIDInfo, KeyInfo
-from .did_method import DIDMethod
+from .did_method import SOV, KEY, DIDMethod
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_pair import KeyPairStorageManager
 from .key_type import KeyType
@@ -55,10 +55,10 @@ class IndySdkWallet(BaseWallet):
         did: str = info["did"]
         verkey = info["verkey"]
 
-        method = DIDMethod.KEY if did.startswith("did:key") else DIDMethod.SOV
+        method = KEY if did.startswith("did:key") else SOV
         key_type = KeyType.ED25519
 
-        if method == DIDMethod.KEY:
+        if method == KEY:
             did = DIDKey.from_public_key_b58(info["verkey"], key_type).did
 
         return DIDInfo(
@@ -73,7 +73,7 @@ class IndySdkWallet(BaseWallet):
         method = DIDMethod.from_method(info["metadata"].get("method", "key"))
         key_type = KeyType.from_key_type(info["key_type"])
 
-        if method == DIDMethod.KEY:
+        if method == KEY:
             did = DIDKey.from_public_key_b58(info["verkey"], key_type).did
 
         return DIDInfo(
@@ -324,7 +324,7 @@ class IndySdkWallet(BaseWallet):
         *,
         did: str = None,
     ) -> DIDInfo:
-        if method not in [DIDMethod.SOV, DIDMethod.KEY]:
+        if method not in [SOV, KEY]:
             raise WalletError(
                 f"Unsupported DID method for indy storage: {method.method_name}"
             )
@@ -340,7 +340,7 @@ class IndySdkWallet(BaseWallet):
             cfg["did"] = did
         # Create fully qualified did. This helps with determining the
         # did method when retrieving
-        if method != DIDMethod.SOV:
+        if method != SOV:
             cfg["method_name"] = method.method_name
         did_json = json.dumps(cfg)
         # crypto_type, cid - optional parameters skipped
@@ -356,7 +356,7 @@ class IndySdkWallet(BaseWallet):
             ) from x_indy
 
         # did key uses different format
-        if method == DIDMethod.KEY:
+        if method == KEY:
             did = DIDKey.from_public_key_b58(verkey, key_type).did
 
         await self.replace_local_did_metadata(did, metadata or {})
@@ -376,7 +376,7 @@ class IndySdkWallet(BaseWallet):
         metadata: dict = None,
         seed: str = None,
     ) -> DIDInfo:
-        if method != DIDMethod.KEY:
+        if method != KEY:
             raise WalletError(
                 f"Unsupported DID method for keypair storage: {method.method_name}"
             )
@@ -444,7 +444,7 @@ class IndySdkWallet(BaseWallet):
                 f" for DID method {method.method_name}"
             )
 
-        if method == DIDMethod.KEY and did:
+        if method == KEY and did:
             raise WalletError("Not allowed to set DID for DID method 'key'")
 
         # All ed25519 keys are handled by indy
@@ -477,7 +477,7 @@ class IndySdkWallet(BaseWallet):
         # this needs to change if more did methods are added
         key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
         key_pairs = await key_pair_mgr.find_key_pairs(
-            tag_query={"method": DIDMethod.KEY.method_name}
+            tag_query={"method": KEY.method_name}
         )
         for key_pair in key_pairs:
             ret.append(self.__did_info_from_key_pair_info(key_pair))
@@ -487,7 +487,7 @@ class IndySdkWallet(BaseWallet):
     async def __get_indy_local_did(
         self, method: DIDMethod, key_type: KeyType, did: str
     ) -> DIDInfo:
-        if method not in [DIDMethod.SOV, DIDMethod.KEY]:
+        if method not in [SOV, KEY]:
             raise WalletError(
                 f"Unsupported DID method for indy storage: {method.method_name}"
             )
@@ -497,7 +497,7 @@ class IndySdkWallet(BaseWallet):
             )
 
         # key type is always ed25519, method not always key
-        if method == DIDMethod.KEY and key_type == KeyType.ED25519:
+        if method == KEY and key_type == KeyType.ED25519:
             did_key = DIDKey.from_did(did)
 
             # Ed25519 did:keys are masked indy dids so transform to indy
@@ -517,7 +517,7 @@ class IndySdkWallet(BaseWallet):
     async def __get_keypair_local_did(
         self, method: DIDMethod, key_type: KeyType, did: str
     ):
-        if method != DIDMethod.KEY:
+        if method != KEY:
             raise WalletError(
                 f"Unsupported DID method for keypair storage: {method.method_name}"
             )
@@ -552,7 +552,7 @@ class IndySdkWallet(BaseWallet):
         key_type = KeyType.ED25519
 
         # If did key, the key type can differ
-        if method == DIDMethod.KEY:
+        if method == KEY:
             did_key = DIDKey.from_did(did)
             key_type = did_key.key_type
 
@@ -679,7 +679,7 @@ class IndySdkWallet(BaseWallet):
         else:
             info = did
 
-        if info.method != DIDMethod.SOV:
+        if info.method != SOV:
             raise WalletError("Setting public DID is only allowed for did:sov DIDs")
 
         public = await self.get_public_did()
@@ -724,7 +724,7 @@ class IndySdkWallet(BaseWallet):
                 'endpoint' affects local wallet
         """
         did_info = await self.get_local_did(did)
-        if did_info.method != DIDMethod.SOV:
+        if did_info.method != SOV:
             raise WalletError("Setting DID endpoint is only allowed for did:sov DIDs")
 
         metadata = {**did_info.metadata}

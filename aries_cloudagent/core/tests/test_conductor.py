@@ -41,7 +41,7 @@ from ...utils.stats import Collector
 from ...version import __version__
 from ...wallet.base import BaseWallet
 from ...wallet.key_type import KeyType
-from ...wallet.did_method import DIDMethod
+from ...wallet.did_method import SOV
 
 from .. import conductor as test_module
 
@@ -131,7 +131,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
+                SOV,
                 KeyType.ED25519,
             )
 
@@ -600,7 +600,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
         await wallet.create_public_did(
-            DIDMethod.SOV,
+            SOV,
             KeyType.ED25519,
         )
 
@@ -644,7 +644,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
         await wallet.create_public_did(
-            DIDMethod.SOV,
+            SOV,
             KeyType.ED25519,
         )
 
@@ -716,7 +716,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
+                SOV,
                 KeyType.ED25519,
             )
 
@@ -886,7 +886,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
+                SOV,
                 KeyType.ED25519,
             )
 
@@ -1389,7 +1389,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
 
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
+                SOV,
                 KeyType.ED25519,
             )
 
@@ -1426,7 +1426,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
 
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
+                SOV,
                 KeyType.ED25519,
             )
 

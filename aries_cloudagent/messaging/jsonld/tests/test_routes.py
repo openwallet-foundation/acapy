@@ -14,7 +14,7 @@ from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....vc.ld_proofs.document_loader import DocumentLoader
 from ....wallet.base import BaseWallet
-from ....wallet.did_method import DIDMethod
+from ....wallet.did_method import SOV
 from ....wallet.error import WalletError
 from ....wallet.key_type import KeyType
 from ..error import (
@@ -275,7 +275,7 @@ class TestJSONLDRoutes(AsyncTestCase):
             DocumentLoader, custom_document_loader
         )
         self.did_info = await (await self.context.session()).wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519
+            SOV, KeyType.ED25519
         )
         self.request_dict = {
             "context": self.context,

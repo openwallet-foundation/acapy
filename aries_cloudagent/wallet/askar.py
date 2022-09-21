@@ -31,7 +31,7 @@ from .crypto import (
     validate_seed,
     verify_signed_message,
 )
-from .did_method import DIDMethod
+from .did_method import SOV, KEY, DIDMethod
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58
@@ -180,12 +180,12 @@ class AskarWallet(BaseWallet):
                 f" for DID method {method.method_name}"
             )
 
-        if method == DIDMethod.KEY and did:
+        if method == KEY and did:
             raise WalletError("Not allowed to set DID for DID method 'key'")
 
         if not metadata:
             metadata = {}
-        if method not in [DIDMethod.SOV, DIDMethod.KEY]:
+        if method not in [SOV, KEY]:
             raise WalletError(
                 f"Unsupported DID method for askar storage: {method.method_name}"
             )
@@ -206,7 +206,7 @@ class AskarWallet(BaseWallet):
                 else:
                     raise WalletError("Error inserting key") from err
 
-            if method == DIDMethod.KEY:
+            if method == KEY:
                 did = DIDKey.from_public_key(verkey_bytes, key_type).did
             elif not did:
                 did = bytes_to_b58(verkey_bytes[:16])
@@ -408,7 +408,7 @@ class AskarWallet(BaseWallet):
             info = did
             item = None
 
-        if info.method != DIDMethod.SOV:
+        if info.method != SOV:
             raise WalletError("Setting public DID is only allowed for did:sov DIDs")
 
         public = await self.get_public_did()
@@ -462,7 +462,7 @@ class AskarWallet(BaseWallet):
                 'endpoint' affects local wallet
         """
         did_info = await self.get_local_did(did)
-        if did_info.method != DIDMethod.SOV:
+        if did_info.method != SOV:
             raise WalletError("Setting DID endpoint is only allowed for did:sov DIDs")
         metadata = {**did_info.metadata}
         if not endpoint_type:

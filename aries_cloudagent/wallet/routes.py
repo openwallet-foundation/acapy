@@ -38,7 +38,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
 from ..storage.error import StorageError, StorageNotFoundError
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import DIDMethod
+from .did_method import SOV, KEY, DIDMethod
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import KeyType
@@ -66,7 +66,7 @@ class DIDSchema(OpenAPISchema):
     )
     method = fields.Str(
         description="Did method associated with the DID",
-        example=DIDMethod.SOV.method_name,
+        example=SOV.method_name,
         validate=validate.OneOf([method.method_name for method in DIDMethod]),
     )
     key_type = fields.Str(
@@ -136,8 +136,8 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     method = fields.Str(
         required=False,
-        example=DIDMethod.KEY.method_name,
-        validate=validate.OneOf([DIDMethod.KEY.method_name, DIDMethod.SOV.method_name]),
+        example=KEY.method_name,
+        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
         description="DID method to query for. e.g. sov to only fetch indy/sov DIDs",
     )
     key_type = fields.Str(
@@ -173,9 +173,9 @@ class DIDCreateSchema(OpenAPISchema):
 
     method = fields.Str(
         required=False,
-        default=DIDMethod.SOV.method_name,
-        example=DIDMethod.SOV.method_name,
-        validate=validate.OneOf([DIDMethod.KEY.method_name, DIDMethod.SOV.method_name]),
+        default=SOV.method_name,
+        example=SOV.method_name,
+        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
     )
 
     options = fields.Nested(
@@ -357,7 +357,7 @@ async def wallet_create_did(request: web.BaseRequest):
         KeyType.from_key_type(body.get("options", {}).get("key_type"))
         or KeyType.ED25519
     )
-    method = DIDMethod.from_method(body.get("method")) or DIDMethod.SOV
+    method = DIDMethod.from_method(body.get("method")) or SOV
 
     if not method.supports_key_type(key_type):
         raise web.HTTPForbidden(

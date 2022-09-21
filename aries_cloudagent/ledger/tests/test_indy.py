@@ -20,7 +20,7 @@ from ...wallet.did_posture import DIDPosture
 from ...wallet.error import WalletNotFoundError
 from ...wallet.indy import IndyOpenWallet, IndySdkWallet
 from ...wallet.key_type import KeyType
-from ...wallet.did_method import DIDMethod
+from ...wallet.did_method import SOV
 
 from ..endpoint_type import EndpointType
 from ..indy import (
@@ -70,7 +70,7 @@ class TestIndySdkLedger(AsyncTestCase):
             did=self.test_did,
             verkey="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
             metadata={"test": "test"},
-            method=DIDMethod.SOV,
+            method=SOV,
             key_type=KeyType.ED25519,
         )
         self.test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -1219,7 +1219,7 @@ class TestIndySdkLedger(AsyncTestCase):
                     did=self.test_did,
                     verkey=self.test_verkey,
                     metadata=None,
-                    method=DIDMethod.SOV,
+                    method=SOV,
                     key_type=KeyType.ED25519,
                 )
                 mock_did = mock_wallet_get_public_did.return_value
@@ -1299,7 +1299,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 None,
-                DIDMethod.SOV,
+                SOV,
                 KeyType.ED25519,
             )
             async with ledger:
@@ -1382,7 +1382,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 did=self.test_did,
                 verkey=self.test_verkey,
                 metadata=None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
 
@@ -1794,7 +1794,7 @@ class TestIndySdkLedger(AsyncTestCase):
                     did=self.test_did,
                     verkey=self.test_verkey,
                     metadata=None,
-                    method=DIDMethod.SOV,
+                    method=SOV,
                     key_type=KeyType.ED25519,
                 )
                 mock_did = mock_wallet_get_public_did.return_value
@@ -1868,7 +1868,7 @@ class TestIndySdkLedger(AsyncTestCase):
                 did=self.test_did,
                 verkey=self.test_verkey,
                 metadata=None,
-                method=DIDMethod.SOV,
+                method=SOV,
                 key_type=KeyType.ED25519,
             )
             async with ledger:
