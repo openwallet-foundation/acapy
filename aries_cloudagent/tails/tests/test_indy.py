@@ -26,13 +26,11 @@ class TestIndyTailsServer(AsyncTestCase):
                 "ledger.genesis_transactions": "dummy",
                 "tails_server_upload_url": "http://1.2.3.4:8088",
             },
-            enforce_typing=False
+            enforce_typing=False,
         )
         context.injector.bind_instance(
             BaseLedger,
-            async_mock.MagicMock(
-                BACKEND_NAME="dummy"
-            ),
+            async_mock.MagicMock(BACKEND_NAME="dummy"),
         )
         indy_tails = test_module.IndyTailsServer()
 
@@ -68,9 +66,7 @@ class TestIndyTailsServer(AsyncTestCase):
         )
         profile.context.injector.bind_instance(
             BaseLedger,
-            async_mock.MagicMock(
-                BACKEND_NAME="dummy"
-            ),
+            async_mock.MagicMock(BACKEND_NAME="dummy"),
         )
         indy_tails = test_module.IndyTailsServer()
 
@@ -106,9 +102,7 @@ class TestIndyTailsServer(AsyncTestCase):
         )
         profile.context.injector.bind_instance(
             BaseLedger,
-            async_mock.MagicMock(
-                BACKEND_NAME="dummy"
-            ),
+            async_mock.MagicMock(BACKEND_NAME="dummy"),
         )
         indy_tails = test_module.IndyTailsServer()
 
@@ -132,13 +126,11 @@ class TestIndyTailsServer(AsyncTestCase):
                 "ledger.genesis_transactions": "dummy",
                 "tails_server_upload_url": "http://1.2.3.4:8088",
             },
-            enforce_typing=False
+            enforce_typing=False,
         )
         context.injector.bind_provider(
             BaseLedger,
-            async_mock.MagicMock(
-                BACKEND_NAME="dummy"
-            ),
+            async_mock.MagicMock(BACKEND_NAME="dummy"),
         )
         indy_tails = test_module.IndyTailsServer()
 

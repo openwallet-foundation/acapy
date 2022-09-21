@@ -67,10 +67,7 @@ class IndyTailsServer(BaseTailsServer):
             await put_file(
                 upload_url,
                 {"tails": tails_file_path},
-                {
-                    "ledger_type": ledger.BACKEND_NAME,
-                    "genesis": genesis_transactions
-                },
+                {"ledger_type": ledger.BACKEND_NAME, "genesis": genesis_transactions},
                 interval=interval,
                 backoff=backoff,
                 max_attempts=max_attempts,

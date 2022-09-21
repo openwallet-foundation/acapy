@@ -15,14 +15,11 @@ class LedgerProvider:
     """
 
     WALLET_SUPPORTED_LEDGERS = {
-        "askar": {
-            "default": IndyVdrLedger,
-            IndyVdrLedger.BACKEND_NAME: IndyVdrLedger
-        },
+        "askar": {"default": IndyVdrLedger, IndyVdrLedger.BACKEND_NAME: IndyVdrLedger},
         "indy": {
             "default": IndySdkLedger,
             IndySdkLedger.BACKEND_NAME: IndySdkLedger,
-            CentralizedSdkLedger.BACKEND_NAME: CentralizedSdkLedger
+            CentralizedSdkLedger.BACKEND_NAME: CentralizedSdkLedger,
         },
     }
 
@@ -59,5 +56,6 @@ class UnsupportedLedgerException(Exception):
     def __init__(self, wallet_type, ledger):
         """Create a new NoSuppoertedLedgerException."""
 
-        super().__init__(f"Unsupported ledger \"{ledger}\" "
-                         f"for wallet of type \"{wallet_type}\".")
+        super().__init__(
+            f'Unsupported ledger "{ledger}" ' f'for wallet of type "{wallet_type}".'
+        )

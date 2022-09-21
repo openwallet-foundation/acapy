@@ -1,13 +1,11 @@
 import asyncio
-import logging
-import pytest
 
+import pytest
 from asynctest import mock
 
+from .. import profile as test_module
 from ...askar.profile import AskarProfile
 from ...config.injection_context import InjectionContext
-
-from .. import profile as test_module
 from ...ledger.provider import LedgerProvider
 
 
@@ -37,11 +35,7 @@ async def test_remove_success(open_store):
     }
     context.injector.bind_provider(
         LedgerProvider,
-        mock.MagicMock(
-            get_ledger=mock.CoroutineMock(
-                return_value="dummy"
-            )
-        ),
+        mock.MagicMock(get_ledger=mock.CoroutineMock(return_value="dummy")),
     )
     askar_profile = AskarProfile(openStore, context, profile_id=profile_id)
     remove_profile_stub = asyncio.Future()

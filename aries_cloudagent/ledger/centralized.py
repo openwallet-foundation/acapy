@@ -15,7 +15,7 @@ from .error import (
     BadLedgerRequestError,
     LedgerConfigError,
     LedgerError,
-    LedgerTransactionError
+    LedgerTransactionError,
 )
 from .util import TAA_ACCEPTED_RECORD_TYPE
 from ..core.profile import Profile
@@ -38,9 +38,9 @@ class CentralizedSdkLedger(BaseLedger):
     BACKEND_NAME = "centralized"
 
     def __init__(
-            self,
-            pool: None,
-            profile: Profile,
+        self,
+        pool: None,
+        profile: Profile,
     ):
         """
         Initialize a CentralizedSdkLedger instance.
@@ -70,16 +70,19 @@ class CentralizedSdkLedger(BaseLedger):
 
         if not genesis_data:
             raise LedgerConfigError(
-                "Cannot connect to the centralized ledger: missing genesis file")
+                "Cannot connect to the centralized ledger: missing genesis file"
+            )
         genesis_data = json.loads(genesis_data)
         if "client_ip" not in genesis_data:
             raise LedgerConfigError(
                 "Bad genesis file for CentralizedSdkLedger: "
-                "missing required field \"client_ip\"")
+                'missing required field "client_ip"'
+            )
         elif "client_port" not in genesis_data:
             raise LedgerConfigError(
                 "Bad genesis file for CentralizedSdkLedger: "
-                "missing required field \"client_data\"")
+                'missing required field "client_data"'
+            )
         else:
             return genesis_data["client_ip"] + ":" + genesis_data["client_port"]
 
@@ -107,10 +110,7 @@ class CentralizedSdkLedger(BaseLedger):
         """Accessor for the ledger read-only flag."""
         pass
 
-    async def fetch_schema_by_seq_no(
-            self,
-            seq_no: int
-    ) -> dict:
+    async def fetch_schema_by_seq_no(self, seq_no: int) -> dict:
         """
         Fetch a schema by its sequence number.
 
@@ -124,21 +124,21 @@ class CentralizedSdkLedger(BaseLedger):
         pass
 
     async def _create_schema_request(
-            self,
-            public_info: DIDInfo,
-            schema_json: str,
-            write_ledger: bool = True,
-            endorser_did: str = None
+        self,
+        public_info: DIDInfo,
+        schema_json: str,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ):
         """Create the ledger request for publishing a schema."""
         pass
 
     async def _create_credential_definition_request(
-            self,
-            public_info: DIDInfo,
-            credential_definition_json: str,
-            write_ledger: bool = True,
-            endorser_did: str = None
+        self,
+        public_info: DIDInfo,
+        credential_definition_json: str,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ):
         """Create the ledger request for publishing a credential definition."""
         pass
@@ -150,32 +150,32 @@ class CentralizedSdkLedger(BaseLedger):
             return await wallet.get_public_did()
 
     async def txn_endorse(
-            self,
-            request_json: str,
-            endorse_did: DIDInfo = None,
+        self,
+        request_json: str,
+        endorse_did: DIDInfo = None,
     ) -> str:
         """Endorse a (signed) ledger transaction."""
         return ""
 
     async def txn_submit(
-            self,
-            request_json: str,
-            sign: bool = None,
-            taa_accept: bool = None,
-            sign_did: DIDInfo = sentinel,
-            write_ledger: bool = True,
+        self,
+        request_json: str,
+        sign: bool = None,
+        taa_accept: bool = None,
+        sign_did: DIDInfo = sentinel,
+        write_ledger: bool = True,
     ) -> str:
         """Submit a signed (and endorsed) transaction to the ledger."""
         return ""
 
     async def create_and_send_schema(
-            self,
-            issuer: IndyIssuer,
-            schema_name: str,
-            schema_version: str,
-            attribute_names: Sequence[str],
-            write_ledger: bool = True,
-            endorser_did: str = None,
+        self,
+        issuer: IndyIssuer,
+        schema_name: str,
+        schema_version: str,
+        attribute_names: Sequence[str],
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> Tuple[str, dict]:
         """
         Send schema to ledger.
@@ -212,19 +212,21 @@ class CentralizedSdkLedger(BaseLedger):
             schema_def = json.loads(schema_json)
 
             async with ClientSession() as session:
-                async with session.post(self.ledger_url + "/api/schema/" + schema_id,
-                                        json=schema_def) as resp:
+                async with session.post(
+                    self.ledger_url + "/api/schema/" + schema_id, json=schema_def
+                ) as resp:
                     if resp.status != 200:
                         raise LedgerTransactionError(
-                            f"Error occurred creating the schema {schema_id}")
+                            f"Error occurred creating the schema {schema_id}"
+                        )
         return schema_id, schema_def
 
     async def check_existing_schema(
-            self,
-            public_did: str,
-            schema_name: str,
-            schema_version: str,
-            attribute_names: Sequence[str],
+        self,
+        public_did: str,
+        schema_name: str,
+        schema_version: str,
+        attribute_names: Sequence[str],
     ) -> Tuple[str, dict]:
         """
         Check if a schema has already been published.
@@ -272,20 +274,22 @@ class CentralizedSdkLedger(BaseLedger):
 
         """
         async with ClientSession() as session:
-            async with session.get(self.ledger_url + "/api/schema/" + schema_id) as resp:
+            async with session.get(
+                self.ledger_url + "/api/schema/" + schema_id
+            ) as resp:
                 if resp.status == 200:
                     resp = await resp.json()
                     return resp
 
     async def create_and_send_credential_definition(
-            self,
-            issuer: IndyIssuer,
-            schema_id: str,
-            signature_type: str = None,
-            tag: str = None,
-            support_revocation: bool = False,
-            write_ledger: bool = True,
-            endorser_did: str = None,
+        self,
+        issuer: IndyIssuer,
+        schema_id: str,
+        signature_type: str = None,
+        tag: str = None,
+        support_revocation: bool = False,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> Tuple[str, dict, bool]:
         """
         Send credential definition to ledger and store relevant key matter in wallet.
@@ -324,14 +328,14 @@ class CentralizedSdkLedger(BaseLedger):
             if ledger_cred_def:
                 LOGGER.warning(
                     "Credential definition %s already exists on centralized ledger",
-                    credential_definition_id
+                    credential_definition_id,
                 )
 
                 try:
                     async with self.profile.session() as session:
                         wallet = session.inject(BaseWallet)
                         if not await issuer.credential_definition_in_wallet(
-                                credential_definition_id
+                            credential_definition_id
                         ):
                             raise LedgerError(
                                 f"Credential definition {credential_definition_id} is on "
@@ -346,7 +350,7 @@ class CentralizedSdkLedger(BaseLedger):
                     async with self.profile.session() as session:
                         wallet = session.inject(BaseWallet)
                         if await issuer.credential_definition_in_wallet(
-                                credential_definition_id
+                            credential_definition_id
                         ):
                             raise LedgerError(
                                 f"Credential definition {credential_definition_id} "
@@ -375,10 +379,10 @@ class CentralizedSdkLedger(BaseLedger):
             async with ClientSession() as session:
                 request_json = json.loads(credential_definition_json)
                 async with session.post(
-                        self.ledger_url
-                        + "/api/credentialDefinition/"
-                        + credential_definition_id,
-                        json=request_json
+                    self.ledger_url
+                    + "/api/credentialDefinition/"
+                    + credential_definition_id,
+                    json=request_json,
                 ) as resp:
                     if resp.status != 200:
                         raise LedgerTransactionError(
@@ -411,9 +415,9 @@ class CentralizedSdkLedger(BaseLedger):
         """
         async with ClientSession() as session:
             async with session.get(
-                    self.ledger_url
-                    + "/api/credentialDefinition/"
-                    + credential_definition_id
+                self.ledger_url
+                + "/api/credentialDefinition/"
+                + credential_definition_id
             ) as resp:
                 if resp.status == 200:
                     resp = await resp.json()
@@ -444,15 +448,15 @@ class CentralizedSdkLedger(BaseLedger):
         """
         did_doc = await self.get_did_doc_for_did(did)
 
-        if did_doc and 'endpoint' in did_doc:
-            endpoints = did_doc['endpoint']
+        if did_doc and "endpoint" in did_doc:
+            endpoints = did_doc["endpoint"]
         else:
             endpoints = None
 
         return endpoints
 
     async def get_endpoint_for_did(
-            self, did: str, endpoint_type: EndpointType = None
+        self, did: str, endpoint_type: EndpointType = None
     ) -> str:
         """Fetch the endpoint for a ledger DID.
 
@@ -467,13 +471,13 @@ class CentralizedSdkLedger(BaseLedger):
                 return endpoint[endpoint_type]
 
     async def update_endpoint_for_did(
-            self,
-            did: str,
-            endpoint: str,
-            endpoint_type: EndpointType = None,
-            write_ledger: bool = True,
-            endorser_did: str = None,
-            routing_keys: List[str] = None,
+        self,
+        did: str,
+        endpoint: str,
+        endpoint_type: EndpointType = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+        routing_keys: List[str] = None,
     ) -> bool:
         """Check and update the endpoint on the ledger.
 
@@ -509,22 +513,24 @@ class CentralizedSdkLedger(BaseLedger):
             else:
                 request_json["endpoint"] = {endpoint_type.indy: endpoint}
             async with ClientSession() as session:
-                async with session.post(self.ledger_url + "/api/did/" + did,
-                                        json=request_json) as resp:
+                async with session.post(
+                    self.ledger_url + "/api/did/" + did, json=request_json
+                ) as resp:
                     if resp.status != 200:
                         raise LedgerTransactionError(
-                            f"Error occurred updating the endpoint for the did {did}")
+                            f"Error occurred updating the endpoint for the did {did}"
+                        )
                     return True
         return False
 
     async def register_nym(
-            self,
-            did: str,
-            verkey: str,
-            alias: str = None,
-            role: str = None,
-            write_ledger: bool = True,
-            endorser_did: str = None,
+        self,
+        did: str,
+        verkey: str,
+        alias: str = None,
+        role: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ) -> Tuple[bool, dict]:
         """
         Register a nym on the ledger.
@@ -540,13 +546,16 @@ class CentralizedSdkLedger(BaseLedger):
             "verKey": verkey,
             "alias": alias,
             "role": role,
-            "endpoint": await self.get_all_endpoints_for_did(did)
+            "endpoint": await self.get_all_endpoints_for_did(did),
         }
         async with ClientSession() as session:
-            async with session.post(self.ledger_url + "/api/did/" + did,
-                                    json=request_json) as resp:
+            async with session.post(
+                self.ledger_url + "/api/did/" + did, json=request_json
+            ) as resp:
                 if resp.status != 200:
-                    raise LedgerTransactionError(f"Error occurred creating the did {did}")
+                    raise LedgerTransactionError(
+                        f"Error occurred creating the did {did}"
+                    )
                 resp = await resp.json()
                 return True, {"signed_txn": resp}
 
@@ -640,7 +649,7 @@ class CentralizedSdkLedger(BaseLedger):
         return int(datetime.combine(date.today(), datetime.min.time()).timestamp())
 
     async def accept_txn_author_agreement(
-            self, taa_record: dict, mechanism: str, accept_time: int = None
+        self, taa_record: dict, mechanism: str, accept_time: int = None
     ):
         """Save a new record recording the acceptance of the TAA."""
         if not accept_time:
@@ -652,10 +661,7 @@ class CentralizedSdkLedger(BaseLedger):
             "mechanism": mechanism,
             "time": accept_time,
         }
-        record = StorageRecord(
-            TAA_ACCEPTED_RECORD_TYPE,
-            json.dumps(acceptance)
-        )
+        record = StorageRecord(TAA_ACCEPTED_RECORD_TYPE, json.dumps(acceptance))
         storage = await self.get_indy_storage()
         await storage.add_record(record)
 
@@ -675,9 +681,7 @@ class CentralizedSdkLedger(BaseLedger):
         """Get revocation registry definition by ID; augment with ledger timestamp."""
         async with ClientSession() as session:
             async with session.get(
-                    self.ledger_url
-                    + "/api/revocationDefinition/"
-                    + revoc_reg_id
+                self.ledger_url + "/api/revocationDefinition/" + revoc_reg_id
             ) as resp:
                 if resp.status == 200:
                     resp = await resp.json()
@@ -687,8 +691,8 @@ class CentralizedSdkLedger(BaseLedger):
         """Get revocation registry entry by revocation registry ID and timestamp."""
         async with ClientSession() as session:
             async with session.get(
-                    url=self.ledger_url + "/api/revocationEntry/" + revoc_reg_id,
-                    params={"timestamp": timestamp} if timestamp else {}
+                url=self.ledger_url + "/api/revocationEntry/" + revoc_reg_id,
+                params={"timestamp": timestamp} if timestamp else {},
             ) as resp:
                 if resp.status == 200:
                     resp = await resp.json()
@@ -696,7 +700,7 @@ class CentralizedSdkLedger(BaseLedger):
         return rev_reg_delta, 0
 
     async def get_revoc_reg_delta(
-            self, revoc_reg_id: str, fro=0, to=None
+        self, revoc_reg_id: str, fro=0, to=None
     ) -> Tuple[dict, int]:
         """
         Look up a revocation registry delta by ID.
@@ -709,8 +713,8 @@ class CentralizedSdkLedger(BaseLedger):
         """
         async with ClientSession() as session:
             async with session.get(
-                    url=self.ledger_url + "/api/revocationDelta/" + revoc_reg_id,
-                    params={"timestamp": to} if to else {}
+                url=self.ledger_url + "/api/revocationDelta/" + revoc_reg_id,
+                params={"timestamp": to} if to else {},
             ) as resp:
                 if resp.status == 200:
                     resp = await resp.json()
@@ -719,19 +723,19 @@ class CentralizedSdkLedger(BaseLedger):
         return rev_reg_delta, timestamp
 
     async def send_revoc_reg_def(
-            self,
-            revoc_reg_def: dict,
-            issuer_did: str = None,
-            write_ledger: bool = True,
-            endorser_did: str = None,
+        self,
+        revoc_reg_def: dict,
+        issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ):
         """Publish a revocation registry definition to the ledger."""
         # NOTE - issuer DID could be extracted from the revoc_reg_def ID
         revoc_reg_def_id = revoc_reg_def["id"]
         async with ClientSession() as session:
             async with session.post(
-                    self.ledger_url + "/api/revocationDefinition/" + revoc_reg_def_id,
-                    json=revoc_reg_def
+                self.ledger_url + "/api/revocationDefinition/" + revoc_reg_def_id,
+                json=revoc_reg_def,
             ) as resp:
                 if resp.status != 200:
                     raise LedgerTransactionError(
@@ -741,26 +745,27 @@ class CentralizedSdkLedger(BaseLedger):
                 return {"result": resp}
 
     async def send_revoc_reg_entry(
-            self,
-            revoc_reg_id: str,
-            revoc_def_type: str,
-            revoc_reg_entry: dict,
-            issuer_did: str = None,
-            write_ledger: bool = True,
-            endorser_did: str = None,
+        self,
+        revoc_reg_id: str,
+        revoc_def_type: str,
+        revoc_reg_entry: dict,
+        issuer_did: str = None,
+        write_ledger: bool = True,
+        endorser_did: str = None,
     ):
         """Publish a revocation registry entry to the ledger."""
         request_data = {
             "revocRegDefId": revoc_reg_id,
             "revocDefType": revoc_def_type,
-            "value": revoc_reg_entry
+            "value": revoc_reg_entry,
         }
         async with ClientSession() as session:
             async with session.post(
-                    self.ledger_url + "/api/revocationEntry/" + revoc_reg_id,
-                    json=request_data
+                self.ledger_url + "/api/revocationEntry/" + revoc_reg_id,
+                json=request_data,
             ) as resp:
                 if resp.status != 200:
                     raise LedgerTransactionError(
-                        f"Error occurred creating the revocation entry {revoc_reg_id}")
+                        f"Error occurred creating the revocation entry {revoc_reg_id}"
+                    )
                 return {"result": resp}

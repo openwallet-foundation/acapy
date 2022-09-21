@@ -83,7 +83,7 @@ class DefaultContextBuilder(ContextBuilder):
             LedgerProvider,
             ClassProvider(
                 "aries_cloudagent.ledger.provider.LedgerProvider", self.settings
-            )
+            ),
         )
 
         context.injector.bind_provider(

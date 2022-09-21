@@ -565,9 +565,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         """Get revocation registry entry by revocation registry ID and timestamp."""
 
     @abstractmethod
-    async def credential_definition_id2schema_id(
-            self, credential_definition_id
-    ):
+    async def credential_definition_id2schema_id(self, credential_definition_id):
         """
         From a credential definition, get the identifier for its schema.
 
