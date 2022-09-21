@@ -270,7 +270,7 @@ class IndySdkWallet(BaseWallet):
 
         """
         # Check if DID can rotate keys
-        #TODO: inject context for did method registry support
+        # TODO: inject context for did method registry support
         method_name = did.split(":")[1] if did.startswith("did:") else SOV.method_name
         did_method = SOV if method_name == SOV.method_name else KEY
         if not did_method.supports_rotation:
@@ -550,7 +550,7 @@ class IndySdkWallet(BaseWallet):
             WalletError: If there is a libindy error
 
         """
-        #TODO: inject context for did method registry support
+        # TODO: inject context for did method registry support
         method_name = did.split(":")[1] if did.startswith("did:") else SOV.method_name
         method = SOV if method_name == SOV.method_name else KEY
         key_type = KeyType.ED25519

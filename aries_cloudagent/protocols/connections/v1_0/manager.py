@@ -467,9 +467,7 @@ class ConnectionManager(BaseConnectionManager):
             if connection.is_multiuse_invitation:
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
-                    my_info = await wallet.create_local_did(
-                        SOV, KeyType.ED25519
-                    )
+                    my_info = await wallet.create_local_did(SOV, KeyType.ED25519)
 
                 new_connection = ConnRecord(
                     invitation_key=connection_key,

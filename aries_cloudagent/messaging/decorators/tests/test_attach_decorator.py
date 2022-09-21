@@ -433,9 +433,7 @@ class TestAttachDecorator(TestCase):
 class TestAttachDecoratorSignature:
     @pytest.mark.asyncio
     async def test_did_raw_key(self, wallet, seed):
-        did_info = await wallet.create_local_did(
-            SOV, KeyType.ED25519, seed[0]
-        )
+        did_info = await wallet.create_local_did(SOV, KeyType.ED25519, seed[0])
         did_key0 = did_key(did_info.verkey)
         raw_key0 = raw_key(did_key0)
         assert raw_key0 != did_key0
@@ -457,8 +455,7 @@ class TestAttachDecoratorSignature:
         )
         deco_indy_master = deepcopy(deco_indy)
         did_info = [
-            await wallet.create_local_did(SOV, KeyType.ED25519, seed[i])
-            for i in [0, 1]
+            await wallet.create_local_did(SOV, KeyType.ED25519, seed[i]) for i in [0, 1]
         ]
         assert deco_indy.data.signatures == 0
         assert deco_indy.data.header_map() is None

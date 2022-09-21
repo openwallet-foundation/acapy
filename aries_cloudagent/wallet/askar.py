@@ -740,6 +740,7 @@ class AskarWallet(BaseWallet):
             key_type=KeyType.from_key_type(did_info.get("verkey_type", "ed25519")),
         )
 
+
 def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
     if key_type == KeyType.ED25519:
@@ -767,6 +768,3 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
                 raise WalletError("Invalid seed for key generation") from None
     else:
         return Key.generate(alg)
-
-
-

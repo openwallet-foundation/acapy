@@ -249,7 +249,9 @@ async def wallet_did_list(request: web.BaseRequest):
     results = []
     async with context.session() as session:
         did_methods: DIDMethods = session.inject(DIDMethods)
-        filter_method: DIDMethod | None = did_methods.from_method(request.query.get("method"))
+        filter_method: DIDMethod | None = did_methods.from_method(
+            request.query.get("method")
+        )
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
@@ -365,7 +367,7 @@ async def wallet_create_did(request: web.BaseRequest):
     info = None
     async with context.session() as session:
         did_methods = session.inject(DIDMethods)
-        method = did_methods.from_method(body.get("method", '')) or SOV
+        method = did_methods.from_method(body.get("method", "")) or SOV
         if not method.supports_key_type(key_type):
             raise web.HTTPForbidden(
                 reason=(

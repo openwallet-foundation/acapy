@@ -47,7 +47,7 @@ class DIDMethods:
     def __init__(self) -> None:
         self._registry: Dict[str, DIDMethod] = {
             SOV.method_name: SOV,
-            KEY.method_name: KEY
+            KEY.method_name: KEY,
         }
 
     def registered(self, method: str) -> bool:

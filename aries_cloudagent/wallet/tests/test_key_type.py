@@ -11,6 +11,7 @@ KEY_DID_METHOD_NAME = "key"
 
 class TestDidMethod(TestCase):
     """TestCases for did method"""
+
     did_methods = DIDMethods()
 
     def test_from_metadata(self):

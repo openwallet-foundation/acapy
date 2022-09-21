@@ -282,9 +282,7 @@ class TestWalletCompat:
         """
         Ensure that python-based pack/unpack is compatible with indy-sdk implementation
         """
-        await in_memory_wallet.create_local_did(
-            SOV, KeyType.ED25519, self.test_seed
-        )
+        await in_memory_wallet.create_local_did(SOV, KeyType.ED25519, self.test_seed)
         py_packed = await in_memory_wallet.pack_message(
             self.test_message, [self.test_verkey], self.test_verkey
         )
