@@ -3,6 +3,7 @@
 from collections import namedtuple
 from enum import Enum
 from re import sub
+from string import Template
 from typing import Sequence, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
@@ -30,6 +31,7 @@ from ..message_types import INVITATION
 
 from .service import Service
 
+BASE_PROTO_VERSION = "1.0"
 HSProtoSpec = namedtuple("HSProtoSpec", "rfc name aka")
 
 
@@ -123,6 +125,7 @@ class InvitationMessage(AgentMessage):
         handshake_protocols: Sequence[Text] = None,
         requests_attach: Sequence[AttachDecorator] = None,
         services: Sequence[Union[Service, Text]] = None,
+        version: str = BASE_PROTO_VERSION,
         **kwargs,
     ):
         """
@@ -140,11 +143,19 @@ class InvitationMessage(AgentMessage):
         )
         self.requests_attach = list(requests_attach) if requests_attach else []
         self.services = services
+        self.assign_version_to_message_type(version=version)
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
         """Convert an aries message to an attachment decorator."""
         return AttachDecorator.data_json(mapping=message, ident="request-0")
+
+    @classmethod
+    def assign_version_to_message_type(cls, version: str):
+        """Assign version to Meta.message_type."""
+        cls.Meta.message_type = Template(cls.Meta.message_type).substitute(
+            version=version
+        )
 
     def to_url(self, base_url: str = None) -> str:
         """

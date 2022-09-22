@@ -3,6 +3,7 @@
 import json
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+from string import Template
 from typing import List
 from unittest.mock import ANY
 
@@ -379,7 +380,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert invi_rec.invitation._type == DIDCommPrefix.qualify_current(
-                INVITATION
+                Template(INVITATION).substitute(version="1.0")
             )
             assert not invi_rec.invitation.requests_attach
             assert (
@@ -414,9 +415,19 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 assert isinstance(invite, InvitationRecord)
                 assert invite.invitation._type == DIDCommPrefix.qualify_current(
-                    INVITATION
+                    Template(INVITATION).substitute(version="1.0")
                 )
                 assert invite.invitation.label == "test123"
+                assert (
+                    DIDKey.from_did(
+                        invite.invitation.services[0].routing_keys[0]
+                    ).public_key_b58
+                    == self.test_mediator_routing_keys[0]
+                )
+                assert (
+                    invite.invitation.services[0].service_endpoint
+                    == self.test_mediator_endpoint
+                )
                 mock_get_default_mediator.assert_not_called()
 
     async def test_create_invitation_multitenant_local(self):
@@ -782,7 +793,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
                 assert invi_rec._invitation.ser[
                     "@type"
-                ] == DIDCommPrefix.qualify_current(INVITATION)
+                ] == DIDCommPrefix.qualify_current(
+                    Template(INVITATION).substitute(version="1.0")
+                )
                 assert not invi_rec._invitation.ser.get("requests~attach")
                 assert invi_rec.invitation.label == "That guy"
                 assert (
@@ -889,7 +902,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert oob_record.state == OobRecord.STATE_AWAIT_RESPONSE
 
             # Assert responder has been called with the reuse message
-            assert reuse_message._type == DIDCommPrefix.qualify_current(MESSAGE_REUSE)
+            assert reuse_message._type == DIDCommPrefix.qualify_current(
+                Template(MESSAGE_REUSE).substitute(version="1.0")
+            )
             assert oob_record.reuse_msg_id == reuse_message._id
 
     async def test_create_handshake_reuse_msg_catch_exception(self):

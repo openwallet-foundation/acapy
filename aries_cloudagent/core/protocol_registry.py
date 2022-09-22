@@ -1,8 +1,8 @@
 """Handle registration and publication of supported protocols."""
 
 import logging
-import re
 
+from string import Template
 from typing import Mapping, Sequence
 
 from ..config.injection_context import InjectionContext
@@ -93,17 +93,22 @@ class ProtocolRegistry:
         major_version = version_definition["major_version"]
         if curr_minor_version >= min_minor_version and curr_minor_version >= 1:
             for version_index in range(min_minor_version, curr_minor_version + 1):
-                to_check = f"/{str(major_version)}.{str(version_index)}/"
+                to_check = f"{str(major_version)}.{str(version_index)}"
                 for typeset in typesets:
                     for msg_type_string, module_path in typeset.items():
-                        if to_check not in msg_type_string:
-                            updated_msg_type_string = re.sub(
-                                r"(\/\d+\.)?(\*|\d+\/)", to_check, msg_type_string
-                            )
-                            if not updated_typeset:
-                                updated_typeset = {}
-                            updated_typeset[updated_msg_type_string] = module_path
-        return updated_typeset
+                        updated_msg_type_string = Template(msg_type_string).substitute(
+                            version=to_check
+                        )
+                        if not updated_typeset:
+                            updated_typeset = {}
+                        updated_typeset[updated_msg_type_string] = module_path
+        return (updated_typeset,)
+
+    def _template_message_type_check(self, typeset) -> bool:
+        for msg_type_string, module_path in typeset.items():
+            if "$version" in msg_type_string:
+                return True
+        return False
 
     def register_message_types(self, *typesets, version_definition=None):
         """
@@ -116,17 +121,24 @@ class ProtocolRegistry:
         """
 
         # Maintain support for versionless protocol modules
+        template_msg_type_version = False
         for typeset in typesets:
-            self._typemap.update(typeset)
+            if not self._template_message_type_check(typeset):
+                self._typemap.update(typeset)
+            else:
+                template_msg_type_version = True
 
         # Track versioned modules for version routing
         if version_definition:
             # create updated typesets for minor versions and register them
-            updated_typeset = self.create_msg_types_for_minor_version(
-                typesets, version_definition
-            )
-            if updated_typeset:
-                self._typemap.update(updated_typeset)
+            if template_msg_type_version:
+                updated_typesets = self.create_msg_types_for_minor_version(
+                    typesets, version_definition
+                )
+                if updated_typesets:
+                    for typeset in updated_typesets:
+                        self._typemap.update(typeset)
+                    typesets = updated_typesets
             for typeset in typesets:
                 for message_type_string, module_path in typeset.items():
                     parsed_type_string = self.parse_type_string(message_type_string)
