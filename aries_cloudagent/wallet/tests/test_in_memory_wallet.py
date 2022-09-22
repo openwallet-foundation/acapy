@@ -198,7 +198,7 @@ class TestInMemoryWallet:
 
     @pytest.mark.asyncio
     async def test_rotate_did_keypair(self, wallet: InMemoryWallet):
-        if wallet.profile:
+        if wallet.profile:  # check incase indysdkwallet is being used
             wallet.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         with pytest.raises(WalletNotFoundError):
             await wallet.rotate_did_keypair_start(self.test_sov_did)
