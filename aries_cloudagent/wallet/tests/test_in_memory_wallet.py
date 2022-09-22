@@ -141,9 +141,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_create_local_key_random_bls12381g2(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(
-            DIDMethod.KEY, BLS12381G2, None, None
-        )
+        info = await wallet.create_local_did(DIDMethod.KEY, BLS12381G2, None, None)
         assert info and info.did and info.verkey
 
     @pytest.mark.asyncio
@@ -179,9 +177,7 @@ class TestInMemoryWallet:
         assert info.verkey == self.test_bls12381g2_verkey
 
         # should not raise WalletDuplicateError - same verkey
-        await wallet.create_local_did(
-            DIDMethod.KEY, BLS12381G2, self.test_seed, None
-        )
+        await wallet.create_local_did(DIDMethod.KEY, BLS12381G2, self.test_seed, None)
 
         with pytest.raises(WalletError):
             _ = await wallet.create_local_did(
@@ -484,9 +480,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_sign_verify_bbs(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(
-            DIDMethod.KEY, BLS12381G2, self.test_seed
-        )
+        info = await wallet.create_local_did(DIDMethod.KEY, BLS12381G2, self.test_seed)
         message_bin = self.test_message.encode("ascii")
         signature = await wallet.sign_message(message_bin, info.verkey)
         assert signature
@@ -524,21 +518,15 @@ class TestInMemoryWallet:
         assert "Verkey not provided" in str(excinfo.value)
 
         with pytest.raises(WalletError) as excinfo:
-            await wallet.verify_message(
-                message_bin, signature, None, BLS12381G2
-            )
+            await wallet.verify_message(message_bin, signature, None, BLS12381G2)
         assert "Verkey not provided" in str(excinfo.value)
 
         with pytest.raises(WalletError) as excinfo:
-            await wallet.verify_message(
-                message_bin, None, info.verkey, BLS12381G2
-            )
+            await wallet.verify_message(message_bin, None, info.verkey, BLS12381G2)
         assert "Signature not provided" in str(excinfo.value)
 
         with pytest.raises(WalletError) as excinfo:
-            await wallet.verify_message(
-                None, message_bin, info.verkey, BLS12381G2
-            )
+            await wallet.verify_message(None, message_bin, info.verkey, BLS12381G2)
         assert "Message not provided" in str(excinfo.value)
 
     @pytest.mark.asyncio

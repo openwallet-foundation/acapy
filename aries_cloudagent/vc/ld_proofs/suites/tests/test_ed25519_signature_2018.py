@@ -40,9 +40,7 @@ class TestEd25519Signature2018(TestCase):
             key_type=ED25519,
             public_key_base58=self.key.verkey,
         )
-        self.verify_key_pair = WalletKeyPair(
-            wallet=self.wallet, key_type=ED25519
-        )
+        self.verify_key_pair = WalletKeyPair(wallet=self.wallet, key_type=ED25519)
 
     async def test_sign_ld_proofs(self):
         signed = await sign(

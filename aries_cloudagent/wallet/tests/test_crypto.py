@@ -32,9 +32,7 @@ class TestCrypto(TestCase):
     def test_seeds_keys(self):
         assert len(test_module.seed_to_did(SEED)) in (22, 23)
 
-        (public_key, secret_key) = test_module.create_keypair(
-            test_module.ED25519
-        )
+        (public_key, secret_key) = test_module.create_keypair(test_module.ED25519)
         assert public_key
         assert secret_key
 
@@ -161,9 +159,7 @@ class TestCrypto(TestCase):
 
     def test_sign_x_unsupported_key_type(self):
         with self.assertRaises(WalletError) as context:
-            test_module.sign_message(
-                [b"message1", b"message2"], b"secret", BLS12381G1
-            )
+            test_module.sign_message([b"message1", b"message2"], b"secret", BLS12381G1)
         assert "Unsupported key type: bls12381g1" in str(context.exception)
 
     def test_verify_ed25519_x_multiple_messages(self):

@@ -33,7 +33,7 @@ from .did_info import DIDInfo, KeyInfo
 from .did_method import DIDMethod
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_pair import KeyPairStorageManager
-from .key_type import BLS12381G2, ED25519, KeyType
+from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
 from .util import b58_to_bytes, bytes_to_b58, bytes_to_b64
 
 
@@ -71,7 +71,9 @@ class IndySdkWallet(BaseWallet):
 
         # this needs to change if other did methods are added
         method = DIDMethod.from_method(info["metadata"].get("method", "key"))
-        key_type = KeyType.from_key_type(info["key_type"])
+        # TODO: inject context to support keytype registry
+        key_types = KeyTypes()
+        key_type = key_types.from_key_type(info["key_type"])
 
         if method == DIDMethod.KEY:
             did = DIDKey.from_public_key_b58(info["verkey"], key_type).did

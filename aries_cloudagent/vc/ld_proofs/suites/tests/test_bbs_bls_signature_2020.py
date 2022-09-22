@@ -41,9 +41,7 @@ class TestBbsBlsSignature2020(TestCase):
             key_type=BLS12381G2,
             public_key_base58=self.key.verkey,
         )
-        self.verify_key_pair = WalletKeyPair(
-            wallet=self.wallet, key_type=BLS12381G2
-        )
+        self.verify_key_pair = WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
 
     async def test_sign_ld_proofs(self):
         signed = await sign(

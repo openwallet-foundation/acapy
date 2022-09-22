@@ -28,10 +28,6 @@ class KeyType:
         return self._prefix
 
 
-class KeyTypeException(BaseException):
-    """Key type exception."""
-
-
 # NOTE: the py_multicodec library is outdated. We use hardcoded prefixes here
 # until this PR gets released: https://github.com/multiformats/py-multicodec/pull/14
 # multicodec is also not used now, but may be used again if py_multicodec is updated

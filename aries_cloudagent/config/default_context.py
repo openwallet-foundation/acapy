@@ -22,6 +22,7 @@ from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
 from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 from ..utils.dependencies import is_indy_sdk_module_installed
+from ..wallet.key_type import KeyTypes
 
 
 class DefaultContextBuilder(ContextBuilder):
@@ -51,6 +52,7 @@ class DefaultContextBuilder(ContextBuilder):
 
         # Global did resolver
         context.injector.bind_instance(DIDResolver, DIDResolver([]))
+        context.injector.bind_instance(KeyTypes, KeyTypes())
 
         await self.bind_providers(context)
         await self.load_plugins(context)

@@ -36,9 +36,7 @@ class TestDIDKey(TestCase):
         assert did_key.did == TEST_BLS12381G1G2_DID
 
     def test_bls12381g1g2_from_public_key_b58(self):
-        did_key = DIDKey.from_public_key_b58(
-            TEST_BLS12381G1G2_BASE58_KEY, BLS12381G1G2
-        )
+        did_key = DIDKey.from_public_key_b58(TEST_BLS12381G1G2_BASE58_KEY, BLS12381G1G2)
 
         assert did_key.did == TEST_BLS12381G1G2_DID
 
