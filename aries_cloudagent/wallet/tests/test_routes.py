@@ -23,7 +23,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.context = AdminRequestContext.test_context(
             self.session_inject, self.profile
         )
-        self.context.injector.bind_instance(KeyTypes,KeyTypes())
+        self.context.injector.bind_instance(KeyTypes, KeyTypes())
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.AsyncMock(),
