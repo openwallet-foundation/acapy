@@ -395,6 +395,10 @@ class AriesAgent(DemoAgent):
             )
             pres_request_indy = message["by_format"].get("pres_request", {}).get("indy")
             pres_request_dif = message["by_format"].get("pres_request", {}).get("dif")
+            request = {}
+
+            if not pres_request_dif and not pres_request_indy:
+                raise Exception("Invalid presentation request received")
 
             if pres_request_indy:
                 # include self-attested attributes (not included in credentials)
@@ -409,6 +413,8 @@ class AriesAgent(DemoAgent):
                         f"/present-proof-2.0/records/{pres_ex_id}/credentials"
                     )
                     if creds:
+                        # select only indy credentials
+                        creds = [x for x in creds if "cred_info" in x]
                         if "timestamp" in creds[0]["cred_info"]["attrs"]:
                             sorted_creds = sorted(
                                 creds,
@@ -444,46 +450,58 @@ class AriesAgent(DemoAgent):
                                 ]
                             }
 
-                    log_status("#25 Generate the proof")
-                    request = {
+                    log_status("#25 Generate the indy proof")
+                    indy_request = {
                         "indy": {
                             "requested_predicates": predicates,
                             "requested_attributes": revealed,
                             "self_attested_attributes": self_attested,
                         }
                     }
+                    request.update(indy_request)
                 except ClientError:
                     pass
 
-            elif pres_request_dif:
+            if pres_request_dif:
                 try:
                     # select credentials to provide for the proof
                     creds = await self.admin_GET(
                         f"/present-proof-2.0/records/{pres_ex_id}/credentials"
                     )
                     if creds and 0 < len(creds):
+                        # select only dif credentials
+                        creds = [x for x in creds if "issuanceDate" in x]
                         creds = sorted(
                             creds,
                             key=lambda c: c["issuanceDate"],
                             reverse=True,
                         )
-                        record_id = creds[0]["record_id"]
+                        records = creds
                     else:
-                        record_id = None
+                        records = []
 
-                    log_status("#25 Generate the proof")
-                    request = {
+                    log_status("#25 Generate the dif proof")
+                    dif_request = {
                         "dif": {},
                     }
                     # specify the record id for each input_descriptor id:
-                    request["dif"]["record_ids"] = {}
+                    dif_request["dif"]["record_ids"] = {}
                     for input_descriptor in pres_request_dif["presentation_definition"][
                         "input_descriptors"
                     ]:
-                        request["dif"]["record_ids"][input_descriptor["id"]] = [
-                            record_id,
-                        ]
-                    log_msg("presenting ld-presentation:", request)
+                        input_descriptor_schema_uri = []
+                        for element in input_descriptor["schema"]:
+                            input_descriptor_schema_uri.append(element["uri"])
+
+                        for record in records:
+                            if self.check_input_descriptor_record_id(input_descriptor_schema_uri, record):
+                                record_id = record["record_id"]
+                                dif_request["dif"]["record_ids"][input_descriptor["id"]] = [
+                                    record_id,
+                                ]
+                                break
+                    log_msg("presenting ld-presentation:", dif_request)
+                    request.update(dif_request)
 
                     # NOTE that the holder/prover can also/or specify constraints by including the whole proof request
                     # and constraining the presented credentials by adding filters, for example:
@@ -507,9 +525,6 @@ class AriesAgent(DemoAgent):
 
                 except ClientError:
                     pass
-
-            else:
-                raise Exception("Invalid presentation request received")
 
             log_status("#26 Send the proof to X: " + json.dumps(request))
             await self.admin_POST(
@@ -610,6 +625,17 @@ class AriesAgent(DemoAgent):
                 revocation_registry_size=TAILS_FILE_COUNT if revocation else None,
             )
             return cred_def_id
+
+    def check_input_descriptor_record_id(self, input_descriptor_schema_uri, record) -> bool:
+        result = False
+        for uri in input_descriptor_schema_uri:
+            for record_type in record["type"]:
+                if record_type in uri:
+                    result = True
+                    break
+                result = False
+        
+        return result
 
 
 class AgentContainer:
