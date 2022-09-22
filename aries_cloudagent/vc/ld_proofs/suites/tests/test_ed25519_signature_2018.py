@@ -1,5 +1,7 @@
 from asynctest import TestCase
 
+from aries_cloudagent.wallet.key_type import ED25519
+
 
 from .....did.did_key import DIDKey
 from .....wallet.key_pair import KeyType

@@ -26,7 +26,7 @@ from .......vc.ld_proofs import (
 )
 from .......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .......vc.tests.document_loader import custom_document_loader
-from .......wallet.key_type import BLS12381G1G2, ED25519
+from .......wallet.key_type import BLS12381G1G2, BLS12381G2, ED25519
 from .......wallet.error import WalletNotFoundError
 from .......wallet.did_method import DIDMethod
 from .......wallet.base import BaseWallet
@@ -230,7 +230,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 verkey="verkey",
                 metadata={},
                 method=DIDMethod.SOV,
-                key_type=BLS12381G1G2,
+                key_type=BLS12381G2,
             )
             mock_did_info.return_value = invalid_did_info
             with self.assertRaises(V20CredFormatError) as context:

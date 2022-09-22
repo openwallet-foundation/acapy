@@ -6,6 +6,8 @@ from uuid import uuid4
 import mock as async_mock
 import pytest
 
+from aries_cloudagent.wallet.key_type import BLS12381G2, ED25519
+
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....resolver.did_resolver import DIDResolver

@@ -1,5 +1,6 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
+
 from ......vc.ld_proofs.error import LinkedDataProofException
 from ......vc.ld_proofs.check import get_properties_without_context
 import logging
@@ -73,10 +74,8 @@ if BbsBlsSignature2020.BBS_SUPPORTED:
     SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
 
 
-PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
-    suite.signature_type: suite
-    for suite, key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items()
-}
+PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {suite.signature_type: suite for suite in SIGNATURE_SUITE_KEY_TYPE_MAPPING}
+
 
 KEY_TYPE_SIGNATURE_SUITE_MAPPING = {
     key_type: suite for suite, key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items()

@@ -41,7 +41,7 @@ from .did_info import DIDInfo
 from .did_method import DIDMethod
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
-from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
+from .key_type import BLS12381G2, ED25519, KeyTypes
 from .util import EVENT_LISTENER_PATTERN
 
 LOGGER = logging.getLogger(__name__)
