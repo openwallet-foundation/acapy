@@ -1,6 +1,8 @@
 import pytest
 import time
 
+from aries_cloudagent.core.in_memory import profile
+
 from ...core.in_memory import InMemoryProfile
 from ...messaging.decorators.signature_decorator import SignatureDecorator
 from ...wallet.in_memory import InMemoryWallet
@@ -198,7 +200,7 @@ class TestInMemoryWallet:
 
     @pytest.mark.asyncio
     async def test_rotate_did_keypair(self, wallet: InMemoryWallet):
-        if wallet.profile:  # check incase indysdkwallet is being used
+        if hasattr(wallet, "profile"):  # check incase indysdkwallet is being used
             wallet.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         with pytest.raises(WalletNotFoundError):
             await wallet.rotate_did_keypair_start(self.test_sov_did)
