@@ -212,8 +212,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         schema = test_module.V20PresSpecByFormatRequestSchema()
         schema.validate_fields({"indy": {"...": "..."}})
         schema.validate_fields({"dif": {"...": "..."}})
-        with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
+        schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):
@@ -1794,6 +1793,67 @@ class TestPresentProofRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "dif": proof_req,
+            }
+        )
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+        }
+        self.profile.context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
+        )
+
+        with async_mock.patch.object(
+            test_module, "ConnRecord", autospec=True
+        ) as mock_conn_rec_cls, async_mock.patch.object(
+            test_module, "V20PresManager", autospec=True
+        ) as mock_pres_mgr_cls, async_mock.patch.object(
+            test_module, "V20PresExRecord", autospec=True
+        ) as mock_px_rec_cls, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_px_rec_inst = async_mock.MagicMock(
+                connection_id="dummy",
+                state=test_module.V20PresExRecord.STATE_REQUEST_RECEIVED,
+                serialize=async_mock.MagicMock(
+                    return_value={"thread_id": "sample-thread-id"}
+                ),
+            )
+            mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_px_rec_inst
+            )
+
+            mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
+            mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_conn_rec_inst
+            )
+
+            mock_pres_mgr_inst = async_mock.MagicMock(
+                create_pres=async_mock.CoroutineMock(
+                    return_value=(mock_px_rec_inst, async_mock.MagicMock())
+                )
+            )
+            mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
+
+            await test_module.present_proof_send_presentation(self.request)
+            mock_response.assert_called_once_with(
+                mock_px_rec_inst.serialize.return_value
+            )
+
+    async def test_present_proof_send_presentation_indy_and_dif(self):
+        proof_req = deepcopy(DIF_PROOF_REQ)
+        proof_req["issuer_id"] = "test123"
+        self.request.json = async_mock.CoroutineMock(
+            return_value={
+                "dif": proof_req,
+                "indy": {
+                    "comment": "dummy",
+                    "self_attested_attributes": {},
+                    "requested_attributes": {},
+                    "requested_predicates": {},
+                }
             }
         )
         self.request.match_info = {
