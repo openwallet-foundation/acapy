@@ -2,10 +2,10 @@ from unittest import TestCase
 
 from ...core.error import BaseError
 from ..did_method import DIDMethod
-from ..key_type import KeyType
+from ..key_type import BLS12381G2, ED25519, KeyType
 
 SOV_DID_METHOD_NAME = "sov"
-SOV_SUPPORTED_KEY_TYPES = [KeyType.ED25519]
+SOV_SUPPORTED_KEY_TYPES = [ED25519]
 KEY_DID_METHOD_NAME = "key"
 
 
@@ -37,5 +37,5 @@ class TestDidMethod(TestCase):
         assert method.supported_key_types == SOV_SUPPORTED_KEY_TYPES
         assert method.supports_rotation == True
 
-        assert method.supports_key_type(KeyType.ED25519) == True
-        assert method.supports_key_type(KeyType.BLS12381G2) == False
+        assert method.supports_key_type(ED25519) == True
+        assert method.supports_key_type(BLS12381G2) == False

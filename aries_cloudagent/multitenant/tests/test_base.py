@@ -245,7 +245,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             verkey="test_verkey",
             metadata={"meta": "data"},
             method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
         )
 
         mock_route_manager = async_mock.MagicMock()

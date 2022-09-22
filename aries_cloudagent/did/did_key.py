@@ -1,7 +1,7 @@
 """DID Key class and resolver methods."""
 
 from ..wallet.crypto import ed25519_pk_to_curve25519
-from ..wallet.key_type import KeyType
+from ..wallet.key_type import BLS12381G1G2, ED25519, KeyType, BLS12381G1, X25519, BLS12381G2
 from ..wallet.util import b58_to_bytes, bytes_to_b58
 
 from ..vc.ld_proofs.constants import DID_V1_CONTEXT_URL
@@ -169,8 +169,8 @@ def construct_did_key_bls12381g1g2(did_key: "DIDKey") -> dict:
     g1_public_key = did_key.public_key[:48]
     g2_public_key = did_key.public_key[48:]
 
-    bls12381g1_key = DIDKey.from_public_key(g1_public_key, KeyType.BLS12381G1)
-    bls12381g2_key = DIDKey.from_public_key(g2_public_key, KeyType.BLS12381G2)
+    bls12381g1_key = DIDKey.from_public_key(g1_public_key, BLS12381G1)
+    bls12381g2_key = DIDKey.from_public_key(g2_public_key, BLS12381G2)
 
     bls12381g1_key_id = f"{did_key.did}#{bls12381g1_key.fingerprint}"
     bls12381g2_key_id = f"{did_key.did}#{bls12381g2_key.fingerprint}"
@@ -241,7 +241,7 @@ def construct_did_key_ed25519(did_key: "DIDKey") -> dict:
 
     """
     curve25519 = ed25519_pk_to_curve25519(did_key.public_key)
-    x25519 = DIDKey.from_public_key(curve25519, KeyType.X25519)
+    x25519 = DIDKey.from_public_key(curve25519, X25519)
 
     did_doc = construct_did_signature_key_base(
         id=did_key.did,
@@ -289,9 +289,9 @@ def construct_did_signature_key_base(
 
 
 DID_KEY_RESOLVERS = {
-    KeyType.ED25519: construct_did_key_ed25519,
-    KeyType.X25519: construct_did_key_x25519,
-    KeyType.BLS12381G2: construct_did_key_bls12381g2,
-    KeyType.BLS12381G1: construct_did_key_bls12381g1,
-    KeyType.BLS12381G1G2: construct_did_key_bls12381g1g2,
+    ED25519: construct_did_key_ed25519,
+    X25519: construct_did_key_x25519,
+    BLS12381G2: construct_did_key_bls12381g2,
+    BLS12381G1: construct_did_key_bls12381g1,
+    BLS12381G1G2: construct_did_key_bls12381g1g2,
 }

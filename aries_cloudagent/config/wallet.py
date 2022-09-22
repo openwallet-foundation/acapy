@@ -12,7 +12,7 @@ from ..wallet.base import BaseWallet
 from ..wallet.crypto import seed_to_did
 from ..wallet.did_info import DIDInfo
 from ..wallet.did_method import DIDMethod
-from ..wallet.key_type import KeyType
+from ..wallet.key_type import ED25519
 from .base import ConfigError
 from .injection_context import InjectionContext
 
@@ -79,7 +79,7 @@ async def wallet_config(
         if wallet_seed and seed_to_did(wallet_seed) != public_did:
             if context.settings.get("wallet.replace_public_did"):
                 replace_did_info = await wallet.create_local_did(
-                    method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=wallet_seed
+                    method=DIDMethod.SOV, key_type=ED25519, seed=wallet_seed
                 )
                 public_did = replace_did_info.did
                 await wallet.set_public_did(public_did)
@@ -100,7 +100,7 @@ async def wallet_config(
 
             local_did_info = await wallet.create_local_did(
                 method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                key_type=ED25519,
                 seed=wallet_seed,
                 metadata=metadata,
             )
@@ -110,7 +110,7 @@ async def wallet_config(
                 print(f"Verkey: {local_did_info.verkey}")
         else:
             public_did_info = await wallet.create_public_did(
-                method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=wallet_seed
+                method=DIDMethod.SOV, key_type=ED25519, seed=wallet_seed
             )
             public_did = public_did_info.did
             if provision:
@@ -129,7 +129,7 @@ async def wallet_config(
     if test_seed:
         await wallet.create_local_did(
             method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
             seed=test_seed,
             metadata={"endpoint": "1.2.3.4:8021"},
         )

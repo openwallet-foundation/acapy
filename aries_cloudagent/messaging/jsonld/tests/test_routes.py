@@ -275,7 +275,7 @@ class TestJSONLDRoutes(AsyncTestCase):
             DocumentLoader, custom_document_loader
         )
         self.did_info = await (await self.context.session()).wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519
+            DIDMethod.SOV, ED25519
         )
         self.request_dict = {
             "context": self.context,

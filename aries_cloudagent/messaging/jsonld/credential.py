@@ -18,7 +18,7 @@ def did_key(verkey: str) -> str:
     if verkey.startswith("did:key:"):
         return verkey
 
-    return DIDKey.from_public_key_b58(verkey, KeyType.ED25519).did
+    return DIDKey.from_public_key_b58(verkey, ED25519).did
 
 
 def b64encode(str):
@@ -76,7 +76,7 @@ async def jws_verify(session, verify_data, signature, public_key):
 
     wallet = session.inject(BaseWallet)
     verified = await wallet.verify_message(
-        jws_to_verify, decoded_signature, public_key, KeyType.ED25519
+        jws_to_verify, decoded_signature, public_key, ED25519
     )
 
     return verified

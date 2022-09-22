@@ -33,7 +33,7 @@ from .crypto import (
 )
 from .did_method import DIDMethod
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
-from .key_type import KeyType
+from .key_type import ED25519, KeyType
 from .util import b58_to_bytes, bytes_to_b58
 
 CATEGORY_DID = "did"
@@ -119,7 +119,7 @@ class AskarWallet(BaseWallet):
             raise WalletNotFoundError("Unknown key: {}".format(verkey))
         metadata = json.loads(key.metadata or "{}")
         # FIXME implement key types
-        return KeyInfo(verkey=verkey, metadata=metadata, key_type=KeyType.ED25519)
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=ED25519)
 
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
         """
@@ -514,7 +514,7 @@ class AskarWallet(BaseWallet):
             )
 
         # create a new key to be rotated to (only did:sov/ED25519 supported for now)
-        keypair = _create_keypair(KeyType.ED25519, next_seed)
+        keypair = _create_keypair(ED25519, next_seed)
         verkey = bytes_to_b58(keypair.get_public_bytes())
         try:
             await self._session.handle.insert_key(
@@ -607,7 +607,7 @@ class AskarWallet(BaseWallet):
                 return sign_message(
                     message=message,
                     secret=key.get_secret_bytes(),
-                    key_type=KeyType.BLS12381G2,
+                    key_type=BLS12381G2,
                 )
 
             else:
@@ -650,7 +650,7 @@ class AskarWallet(BaseWallet):
 
         verkey = b58_to_bytes(from_verkey)
 
-        if key_type == KeyType.ED25519:
+        if key_type == ED25519:
             try:
                 pk = Key.from_public_bytes(KeyAlg.ED25519, verkey)
                 return pk.verify_signature(message, signature)
@@ -730,21 +730,21 @@ class AskarWallet(BaseWallet):
 
 def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
-    if key_type == KeyType.ED25519:
+    if key_type == ED25519:
         alg = KeyAlg.ED25519
         method = None
-    # elif key_type == KeyType.BLS12381G1:
+    # elif key_type == BLS12381G1:
     #     alg = KeyAlg.BLS12_381_G1
-    elif key_type == KeyType.BLS12381G2:
+    elif key_type == BLS12381G2:
         alg = KeyAlg.BLS12_381_G2
         method = SeedMethod.BlsKeyGen
-    # elif key_type == KeyType.BLS12381G1G2:
+    # elif key_type == BLS12381G1G2:
     #     alg = KeyAlg.BLS12_381_G1G2
     else:
         raise WalletError(f"Unsupported key algorithm: {key_type}")
     if seed:
         try:
-            if key_type == KeyType.ED25519:
+            if key_type == ED25519:
                 # not a seed - it is the secret key
                 seed = validate_seed(seed)
                 return Key.from_secret_bytes(alg, seed)

@@ -140,7 +140,7 @@ class TestPackWireFormat(AsyncTestCase):
 
     async def test_encode_decode(self):
         local_did = await self.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=self.test_seed
+            method=DIDMethod.SOV, key_type=ED25519, seed=self.test_seed
         )
         serializer = PackWireFormat()
         recipient_keys = (local_did.verkey,)
@@ -174,10 +174,10 @@ class TestPackWireFormat(AsyncTestCase):
 
     async def test_forward(self):
         local_did = await self.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=self.test_seed
+            method=DIDMethod.SOV, key_type=ED25519, seed=self.test_seed
         )
         router_did = await self.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=self.test_routing_seed
+            method=DIDMethod.SOV, key_type=ED25519, seed=self.test_routing_seed
         )
         serializer = PackWireFormat()
         recipient_keys = (local_did.verkey,)

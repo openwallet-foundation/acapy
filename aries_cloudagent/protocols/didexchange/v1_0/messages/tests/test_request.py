@@ -60,7 +60,7 @@ class TestDIDXRequest(AsyncTestCase, TestConfig):
         self.wallet = InMemoryProfile.test_session().wallet
         self.did_info = await self.wallet.create_local_did(
             method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
         )
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
@@ -117,7 +117,7 @@ class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
         self.wallet = InMemoryProfile.test_session().wallet
         self.did_info = await self.wallet.create_local_did(
             method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
         )
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())

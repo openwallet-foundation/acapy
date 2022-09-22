@@ -30,19 +30,19 @@ class TestBbsBlsSignature2020(TestCase):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
         self.key = await self.wallet.create_signing_key(
-            key_type=KeyType.BLS12381G2, seed=self.test_seed
+            key_type=BLS12381G2, seed=self.test_seed
         )
         self.verification_method = DIDKey.from_public_key_b58(
-            self.key.verkey, KeyType.BLS12381G2
+            self.key.verkey, BLS12381G2
         ).key_id
 
         self.sign_key_pair = WalletKeyPair(
             wallet=self.wallet,
-            key_type=KeyType.BLS12381G2,
+            key_type=BLS12381G2,
             public_key_base58=self.key.verkey,
         )
         self.verify_key_pair = WalletKeyPair(
-            wallet=self.wallet, key_type=KeyType.BLS12381G2
+            wallet=self.wallet, key_type=BLS12381G2
         )
 
     async def test_sign_ld_proofs(self):

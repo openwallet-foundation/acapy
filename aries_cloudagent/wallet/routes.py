@@ -41,7 +41,7 @@ from .did_info import DIDInfo
 from .did_method import DIDMethod
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
-from .key_type import KeyType
+from .key_type import BLS12381G2, ED25519, KeyType
 from .util import EVENT_LISTENER_PATTERN
 
 LOGGER = logging.getLogger(__name__)
@@ -71,9 +71,9 @@ class DIDSchema(OpenAPISchema):
     )
     key_type = fields.Str(
         description="Key type associated with the DID",
-        example=KeyType.ED25519.key_type,
+        example=ED25519.key_type,
         validate=validate.OneOf(
-            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
+            [ED25519.key_type, BLS12381G2.key_type]
         ),
     )
 
@@ -142,9 +142,9 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     key_type = fields.Str(
         required=False,
-        example=KeyType.ED25519.key_type,
+        example=ED25519.key_type,
         validate=validate.OneOf(
-            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
+            [ED25519.key_type, BLS12381G2.key_type]
         ),
         description="Key type to query for.",
     )
@@ -161,9 +161,9 @@ class DIDCreateOptionsSchema(OpenAPISchema):
 
     key_type = fields.Str(
         required=True,
-        example=KeyType.ED25519.key_type,
+        example=ED25519.key_type,
         validate=validate.OneOf(
-            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
+            [ED25519.key_type, BLS12381G2.key_type]
         ),
     )
 
@@ -353,10 +353,7 @@ async def wallet_create_did(request: web.BaseRequest):
         body = {}
 
     # set default method and key type for backwards compat
-    key_type = (
-        KeyType.from_key_type(body.get("options", {}).get("key_type"))
-        or KeyType.ED25519
-    )
+    key_type = KeyType.from_key_type(body.get("options", {}).get("key_type")) or ED25519
     method = DIDMethod.from_method(body.get("method")) or DIDMethod.SOV
 
     if not method.supports_key_type(key_type):

@@ -3,7 +3,7 @@
 from typing import List, Mapping, NamedTuple, Optional
 from enum import Enum
 
-from .key_type import KeyType
+from .key_type import BLS12381G2, ED25519, KeyType
 from .error import BaseError
 
 DIDMethodSpec = NamedTuple(
@@ -20,11 +20,11 @@ class DIDMethod(Enum):
     """DID Method class specifying DID methods with supported key types."""
 
     SOV = DIDMethodSpec(
-        method_name="sov", supported_key_types=[KeyType.ED25519], supports_rotation=True
+        method_name="sov", supported_key_types=[ED25519], supports_rotation=True
     )
     KEY = DIDMethodSpec(
         method_name="key",
-        supported_key_types=[KeyType.ED25519, KeyType.BLS12381G2],
+        supported_key_types=[ED25519, BLS12381G2],
         supports_rotation=False,
     )
 

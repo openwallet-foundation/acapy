@@ -112,7 +112,7 @@ class MediationManager:
         storage = session.inject(BaseStorage)
         info = await wallet.create_local_did(
             method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
             metadata={"type": "routing_did"},
         )
         record = StorageRecord(

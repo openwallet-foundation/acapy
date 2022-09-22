@@ -36,12 +36,10 @@ class TestIntroductionService(AsyncTestCase):
                     _type="did-communication",
                     did=TEST_DID,
                     recipient_keys=[
-                        DIDKey.from_public_key_b58(TEST_VERKEY, KeyType.ED25519).did
+                        DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did
                     ],
                     routing_keys=[
-                        DIDKey.from_public_key_b58(
-                            TEST_ROUTE_VERKEY, KeyType.ED25519
-                        ).did
+                        DIDKey.from_public_key_b58(TEST_ROUTE_VERKEY, ED25519).did
                     ],
                     service_endpoint=TEST_ENDPOINT,
                 )

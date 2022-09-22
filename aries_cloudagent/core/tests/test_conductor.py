@@ -40,7 +40,7 @@ from ...transport.pack_format import PackWireFormat
 from ...utils.stats import Collector
 from ...version import __version__
 from ...wallet.base import BaseWallet
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import ED25519
 from ...wallet.did_method import DIDMethod
 
 from .. import conductor as test_module
@@ -132,7 +132,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
                 DIDMethod.SOV,
-                KeyType.ED25519,
+                ED25519,
             )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
@@ -601,7 +601,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         wallet = session.inject(BaseWallet)
         await wallet.create_public_did(
             DIDMethod.SOV,
-            KeyType.ED25519,
+            ED25519,
         )
 
         with async_mock.patch.object(
@@ -645,7 +645,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         wallet = session.inject(BaseWallet)
         await wallet.create_public_did(
             DIDMethod.SOV,
-            KeyType.ED25519,
+            ED25519,
         )
 
         with async_mock.patch.object(
@@ -717,7 +717,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
                 DIDMethod.SOV,
-                KeyType.ED25519,
+                ED25519,
             )
 
             mock_mgr.return_value.create_static_connection = async_mock.AsyncMock()
@@ -887,7 +887,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
                 DIDMethod.SOV,
-                KeyType.ED25519,
+                ED25519,
             )
 
             await conductor.start()
@@ -1390,7 +1390,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
                 DIDMethod.SOV,
-                KeyType.ED25519,
+                ED25519,
             )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
@@ -1427,7 +1427,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
                 DIDMethod.SOV,
-                KeyType.ED25519,
+                ED25519,
             )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()

@@ -125,7 +125,7 @@ class TestTransactionManager(AsyncTestCase):
             self.wallet: BaseWallet = session.inject_or(BaseWallet)
             await self.wallet.create_local_did(
                 DIDMethod.SOV,
-                KeyType.ED25519,
+                ED25519,
                 did="DJGEjaMunDtFtBVrn1qJMT",
                 metadata={"meta": "data"},
             )

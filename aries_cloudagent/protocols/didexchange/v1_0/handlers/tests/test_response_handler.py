@@ -66,7 +66,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
         wallet = (await self.ctx.session()).wallet
         self.did_info = await wallet.create_local_did(
             method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
         )
 
         self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())

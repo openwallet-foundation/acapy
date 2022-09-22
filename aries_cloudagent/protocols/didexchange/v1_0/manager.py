@@ -285,7 +285,7 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
                     method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    key_type=ED25519,
                 )
             conn_rec.my_did = my_info.did
 
@@ -418,7 +418,7 @@ class DIDXManager(BaseConnectionManager):
                     wallet = session.inject(BaseWallet)
                     my_info = await wallet.create_local_did(
                         method=DIDMethod.SOV,
-                        key_type=KeyType.ED25519,
+                        key_type=ED25519,
                     )
 
                 new_conn_rec = ConnRecord(
@@ -487,7 +487,7 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
                     method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    key_type=ED25519,
                 )
 
             auto_accept = bool(
@@ -581,7 +581,7 @@ class DIDXManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
                     method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    key_type=ED25519,
                 )
             conn_rec.my_did = my_info.did
 

@@ -29,19 +29,19 @@ class TestEd25519Signature2018(TestCase):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
         self.key = await self.wallet.create_signing_key(
-            key_type=KeyType.ED25519, seed=self.test_seed
+            key_type=ED25519, seed=self.test_seed
         )
         self.verification_method = DIDKey.from_public_key_b58(
-            self.key.verkey, KeyType.ED25519
+            self.key.verkey, ED25519
         ).key_id
 
         self.sign_key_pair = WalletKeyPair(
             wallet=self.wallet,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
             public_key_base58=self.key.verkey,
         )
         self.verify_key_pair = WalletKeyPair(
-            wallet=self.wallet, key_type=KeyType.ED25519
+            wallet=self.wallet, key_type=ED25519
         )
 
     async def test_sign_ld_proofs(self):

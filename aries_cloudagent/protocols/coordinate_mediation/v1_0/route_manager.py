@@ -40,7 +40,7 @@ class RouteManager(ABC):
             async with profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 # Create new DID for connection
-                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+                my_info = await wallet.create_local_did(DIDMethod.SOV, ED25519)
                 conn_record.my_did = my_info.did
                 await conn_record.save(session, reason="Connection my did created")
         else:
