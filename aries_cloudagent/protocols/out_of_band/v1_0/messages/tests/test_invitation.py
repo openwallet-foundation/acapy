@@ -1,5 +1,6 @@
 import pytest
 
+from string import Template
 from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
@@ -51,7 +52,9 @@ class TestInvitationMessage(TestCase):
             services=[TEST_DID],
         )
         assert invi.services == [TEST_DID]
-        assert invi._type == DIDCommPrefix.qualify_current(INVITATION)
+        assert invi._type == DIDCommPrefix.qualify_current(
+            Template(INVITATION).substitute(version="1.0")
+        )
 
         service = Service(_id="#inline", _type=DID_COMM, did=TEST_DID)
         invi_msg = InvitationMessage(
@@ -61,7 +64,9 @@ class TestInvitationMessage(TestCase):
             services=[service],
         )
         assert invi_msg.services == [service]
-        assert invi_msg._type == DIDCommPrefix.qualify_current(INVITATION)
+        assert invi_msg._type == DIDCommPrefix.qualify_current(
+            Template(INVITATION).substitute(version="1.0")
+        )
 
     def test_wrap_serde(self):
         """Test conversion of aries message to attachment decorator."""

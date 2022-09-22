@@ -75,6 +75,15 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         ),
         required=False,
     )
+    # accept = fields.List(
+    #     fields.Str(),
+    #     description=(
+    #         "List of mime type in order of preference that should be"
+    #         " use in responding to the message"
+    #     ),
+    #     example="['didcomm/aip1', 'didcomm/aip2;env=rfc19']",
+    #     required=False,
+    # )
     use_public_did = fields.Boolean(
         default=False,
         description="Whether to use public DID in invitation",
