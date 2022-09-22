@@ -9,7 +9,7 @@ from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...wallet.did_method import DIDMethod
-from ...wallet.key_type import ED25519
+from ...wallet.key_type import ED25519, KeyTypes
 from ..base import BaseWallet
 from ..did_info import DIDInfo
 from ..did_posture import DIDPosture
@@ -23,6 +23,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.context = AdminRequestContext.test_context(
             self.session_inject, self.profile
         )
+        self.context.injector.bind_instance(KeyTypes,KeyTypes())
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.AsyncMock(),
