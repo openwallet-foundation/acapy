@@ -29,7 +29,7 @@ from .....wallet.did_info import DIDInfo
 from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.did_method import DIDMethod
-from .....wallet.key_type import KeyType
+from .....wallet.key_type import ED25519
 from .....did.did_key import DIDKey
 
 from .....connections.base_manager import BaseConnectionManagerError

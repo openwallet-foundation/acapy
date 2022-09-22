@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from ...core.error import BaseError
 from ..did_method import DIDMethod
-from ..key_type import BLS12381G2, ED25519, KeyType
+from ..key_type import BLS12381G2, ED25519
 
 SOV_DID_METHOD_NAME = "sov"
 SOV_SUPPORTED_KEY_TYPES = [ED25519]

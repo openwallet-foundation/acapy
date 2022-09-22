@@ -35,7 +35,7 @@ from ......vc.ld_proofs import (
 from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from ......wallet.base import BaseWallet, DIDInfo
 from ......wallet.error import WalletNotFoundError
-from ......wallet.key_type import KeyType
+from ......wallet.key_type import BLS12381G2, ED25519
 
 from ...message_types import (
     ATTACHMENT_FORMAT,

@@ -21,7 +21,7 @@ from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import DIDMethod
 from ....wallet.error import WalletNotFoundError
-from ....wallet.key_type import ED25519, KeyType
+from ....wallet.key_type import ED25519
 from ....wallet.util import bytes_to_b58
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...discovery.v2_0.manager import V20DiscoveryMgr

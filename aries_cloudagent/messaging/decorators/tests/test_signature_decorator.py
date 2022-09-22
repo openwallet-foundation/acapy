@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ....wallet.key_type import ED25519, KeyType
+from ....wallet.key_type import ED25519
 from ....core.in_memory import InMemoryProfile
 from ....protocols.trustping.v1_0.messages.ping import Ping
 from ....wallet.in_memory import InMemoryWallet

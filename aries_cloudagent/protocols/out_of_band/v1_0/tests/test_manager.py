@@ -67,7 +67,7 @@ from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo, KeyInfo
 from .....wallet.did_method import DIDMethod
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.key_type import ED25519, KeyType
+from .....wallet.key_type import ED25519
 from ....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ....didcomm_prefix import DIDCommPrefix
 from ....issue_credential.v1_0.message_types import CREDENTIAL_OFFER

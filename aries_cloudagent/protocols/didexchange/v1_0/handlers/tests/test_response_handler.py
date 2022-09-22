@@ -13,7 +13,7 @@ from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
-from ......wallet.key_type import KeyType
+from ......wallet.key_type import ED25519
 from ......wallet.did_method import DIDMethod
 
 from .....problem_report.v1_0.message import ProblemReport

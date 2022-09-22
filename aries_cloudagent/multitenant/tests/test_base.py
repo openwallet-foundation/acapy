@@ -20,7 +20,7 @@ from ...storage.in_memory import InMemoryStorage
 from ...wallet.did_info import DIDInfo
 from ...wallet.did_method import DIDMethod
 from ...wallet.in_memory import InMemoryWallet
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import ED25519
 from ...wallet.models.wallet_record import WalletRecord
 from ..base import BaseMultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError

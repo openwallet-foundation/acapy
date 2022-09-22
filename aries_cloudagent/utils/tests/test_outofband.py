@@ -1,7 +1,7 @@
 from asynctest import TestCase
 
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import ED25519
 from ...wallet.did_method import DIDMethod
 from ...wallet.did_info import DIDInfo
 

@@ -1,6 +1,6 @@
 """Normalization methods used while transitioning to DID:Key method."""
 from ....did.did_key import DIDKey
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 
 
 def normalize_from_did_key(key: str):

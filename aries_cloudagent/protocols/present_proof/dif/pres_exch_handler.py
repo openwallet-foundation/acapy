@@ -40,7 +40,7 @@ from ....vc.ld_proofs.constants import (
 from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
 from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.error import WalletError, WalletNotFoundError
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import BLS12381G2, ED25519
 
 from .pres_exch import (
     PresentationDefinition,

@@ -14,7 +14,7 @@ from marshmallow import ValidationError
 from ..utils.jwe import JweRecipient, b64url, JweEnvelope, from_b64url
 from .error import WalletError
 from .util import bytes_to_b58, b64_to_bytes, b58_to_bytes, random_seed
-from .key_type import KeyType
+from .key_type import ED25519, BLS12381G2, KeyType
 from .bbs import (
     create_bls12381g2_keypair,
     verify_signed_messages_bls12381g2,

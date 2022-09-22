@@ -13,7 +13,7 @@ from ....core.in_memory import InMemoryProfile
 from ....vc.ld_proofs import DocumentLoader
 from ....wallet.base import BaseWallet
 from ....wallet.in_memory import InMemoryWallet
-from ....wallet.key_type import ED25519, KeyType
+from ....wallet.key_type import ED25519
 
 from .. import credential as test_module
 from ..create_verify_data import DroppedAttributeError

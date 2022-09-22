@@ -3,7 +3,7 @@ import json
 
 from unittest import mock, TestCase
 
-from ..key_type import ED25519
+from ..key_type import BLS12381G1, ED25519
 from ..error import WalletError
 from ...utils.jwe import JweRecipient
 from ..util import str_to_b64

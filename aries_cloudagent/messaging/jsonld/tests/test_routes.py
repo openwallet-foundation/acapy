@@ -16,7 +16,7 @@ from ....vc.ld_proofs.document_loader import DocumentLoader
 from ....wallet.base import BaseWallet
 from ....wallet.did_method import DIDMethod
 from ....wallet.error import WalletError
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 from ..error import (
     BadJWSHeaderError,
     DroppedAttributeError,

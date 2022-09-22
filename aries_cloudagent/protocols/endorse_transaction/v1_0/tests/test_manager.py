@@ -17,7 +17,7 @@ from .....storage.error import StorageNotFoundError
 from .....wallet.base import BaseWallet
 from .....wallet.did_info import DIDInfo
 from .....wallet.did_method import DIDMethod
-from .....wallet.key_type import KeyType
+from .....wallet.key_type import ED25519
 
 from ..manager import TransactionManager, TransactionManagerError
 from ..messages.messages_attach import MessagesAttach

@@ -33,7 +33,7 @@ from .crypto import (
 )
 from .did_method import DIDMethod
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
-from .key_type import ED25519, KeyType
+from .key_type import BLS12381G2, ED25519, KeyType
 from .util import b58_to_bytes, bytes_to_b58
 
 CATEGORY_DID = "did"

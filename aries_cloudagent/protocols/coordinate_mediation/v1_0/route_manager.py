@@ -15,7 +15,7 @@ from ....storage.error import StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import DIDMethod
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 from ...routing.v1_0.models.route_record import RouteRecord
 from .manager import MediationManager
 from .messages.keylist_update import KeylistUpdate

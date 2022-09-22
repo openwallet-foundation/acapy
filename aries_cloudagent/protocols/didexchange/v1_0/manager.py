@@ -26,7 +26,7 @@ from ....wallet.base import BaseWallet
 from ....wallet.did_method import DIDMethod
 from ....wallet.did_posture import DIDPosture
 from ....wallet.error import WalletError
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...discovery.v2_0.manager import V20DiscoveryMgr
 from ...out_of_band.v1_0.messages.invitation import (

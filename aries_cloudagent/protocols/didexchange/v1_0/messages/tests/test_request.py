@@ -9,7 +9,7 @@ from ......connections.models.diddoc import (
     Service,
 )
 from ......wallet.did_method import DIDMethod
-from ......wallet.key_type import KeyType
+from ......wallet.key_type import ED25519
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
 

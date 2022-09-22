@@ -21,7 +21,7 @@ from ......vc.ld_proofs import (
 )
 from ......vc.vc_ld.verify import verify_presentation
 from ......wallet.base import BaseWallet
-from ......wallet.key_type import KeyType
+from ......wallet.key_type import ED25519, BLS12381G2
 
 from .....problem_report.v1_0.message import ProblemReport
 

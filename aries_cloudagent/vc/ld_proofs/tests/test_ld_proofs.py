@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from asynctest import TestCase
 
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import BLS12381G2, ED25519
 from ....did.did_key import DIDKey
 from ....wallet.in_memory import InMemoryWallet
 from ....core.in_memory import InMemoryProfile

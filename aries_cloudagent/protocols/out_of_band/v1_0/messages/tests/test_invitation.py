@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
 from ......did.did_key import DIDKey
-from ......wallet.key_type import KeyType
+from ......wallet.key_type import ED25519
 
 from .....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from .....didcomm_prefix import DIDCommPrefix

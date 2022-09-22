@@ -26,7 +26,7 @@ from .....wallet.base import DIDInfo
 from .....wallet.did_method import DIDMethod
 from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.key_type import KeyType
+from .....wallet.key_type import ED25519
 from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....coordinate_mediation.v1_0.route_manager import RouteManager
 from ....coordinate_mediation.v1_0.messages.mediate_request import MediationRequest

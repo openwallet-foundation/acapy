@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 
-from ..key_type import KeyType
+from ..key_type import BLS12381G1, BLS12381G1G2, BLS12381G2, ED25519, X25519, KeyType
 
 ED25519_PREFIX_BYTES = b"\xed\x01"
 BLS12381G1_PREFIX_BYTES = b"\xea\x01"
