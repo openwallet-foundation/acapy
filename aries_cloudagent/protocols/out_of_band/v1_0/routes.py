@@ -75,6 +75,15 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         ),
         required=False,
     )
+    accept = fields.List(
+        fields.Str(),
+        description=(
+            "List of mime type in order of preference that should be"
+            " use in responding to the message"
+        ),
+        example=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+        required=False,
+    )
     use_public_did = fields.Boolean(
         default=False,
         description="Whether to use public DID in invitation",
@@ -151,6 +160,7 @@ async def invitation_create(request: web.BaseRequest):
     body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
     handshake_protocols = body.get("handshake_protocols", [])
+    accept = body.get("accept")
     use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
     my_label = body.get("my_label")
@@ -175,6 +185,7 @@ async def invitation_create(request: web.BaseRequest):
             metadata=metadata,
             alias=alias,
             mediation_id=mediation_id,
+            accept=accept,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=e.roll_up)

@@ -2,7 +2,7 @@
 
 import urllib.parse
 
-from typing import Pattern
+from typing import Optional, Pattern, Sequence, Text
 
 import aiohttp
 
@@ -57,7 +57,9 @@ class WebDIDResolver(BaseDIDResolver):
 
         return "https://" + url + "/did.json"
 
-    async def _resolve(self, profile: Profile, did: str) -> dict:
+    async def _resolve(
+        self, profile: Profile, did: str, accept: Optional[Sequence[Text]] = None
+    ) -> dict:
         """Resolve did:web DIDs."""
 
         url = self.__transform_to_url(did)

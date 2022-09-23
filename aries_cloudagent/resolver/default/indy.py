@@ -4,7 +4,7 @@ Resolution is performed using the IndyLedger class.
 """
 
 import logging
-from typing import Optional, Pattern
+from typing import Optional, Pattern, Sequence, Text
 
 from pydid import DID, DIDDocumentBuilder
 from pydid.verification_method import Ed25519VerificationKey2018, VerificationMethod
@@ -69,6 +69,7 @@ class IndyDIDResolver(BaseDIDResolver):
         builder: DIDDocumentBuilder,
         endpoints: Optional[dict],
         recipient_key: VerificationMethod = None,
+        accept: Optional[Sequence[Text]] = None,
     ):
         """Add services."""
         if not endpoints:
@@ -102,7 +103,7 @@ class IndyDIDResolver(BaseDIDResolver):
                     priority=1,
                     routing_keys=routing_keys,
                     recipient_keys=[recipient_key.id],
-                    accept=["didcomm/aip2;env=rfc19"],
+                    accept=(accept if accept else ["didcomm/aip2;env=rfc19"]),
                 )
 
             if self.SERVICE_TYPE_DIDCOMM in types:
@@ -112,6 +113,7 @@ class IndyDIDResolver(BaseDIDResolver):
                     service_endpoint=endpoint,
                     recipient_keys=[recipient_key.id],
                     routing_keys=routing_keys,
+                    # accept=(accept if accept else ["didcomm/v2"]),
                     accept=["didcomm/v2"],
                 )
                 builder.context.append(self.CONTEXT_DIDCOMM_V2)
@@ -128,7 +130,9 @@ class IndyDIDResolver(BaseDIDResolver):
                     service_endpoint=endpoint,
                 )
 
-    async def _resolve(self, profile: Profile, did: str) -> dict:
+    async def _resolve(
+        self, profile: Profile, did: str, accept: Optional[Sequence[Text]] = None
+    ) -> dict:
         """Resolve an indy DID."""
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
@@ -158,7 +162,7 @@ class IndyDIDResolver(BaseDIDResolver):
         )
         builder.authentication.reference(vmethod.id)
         builder.assertion_method.reference(vmethod.id)
-        self.add_services(builder, endpoints, vmethod)
+        self.add_services(builder, endpoints, vmethod, accept)
 
         result = builder.build()
         return result.serialize()

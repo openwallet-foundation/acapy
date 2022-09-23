@@ -1505,6 +1505,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 alias="alias",
                 auto_accept=True,
                 mediation_id="mediation_id",
+                accept=None,
             )
 
             assert mock_oob.state == OobRecord.STATE_DONE

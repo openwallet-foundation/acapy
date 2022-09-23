@@ -3,7 +3,7 @@
 from collections import namedtuple
 from enum import Enum
 from re import sub
-from typing import Sequence, Text, Union
+from typing import Optional, Sequence, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import (
@@ -123,6 +123,7 @@ class InvitationMessage(AgentMessage):
         handshake_protocols: Sequence[Text] = None,
         requests_attach: Sequence[AttachDecorator] = None,
         services: Sequence[Union[Service, Text]] = None,
+        accept: Optional[Sequence[Text]] = None,
         **kwargs,
     ):
         """
@@ -140,6 +141,7 @@ class InvitationMessage(AgentMessage):
         )
         self.requests_attach = list(requests_attach) if requests_attach else []
         self.services = services
+        self.accept = accept
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
@@ -206,6 +208,12 @@ class InvitationMessageSchema(AgentMessageSchema):
                 DIDCommPrefix.unqualify(hsp) in [p.name for p in HSProto]
             ),
         ),
+        required=False,
+    )
+    accept = fields.List(
+        fields.Str(),
+        example=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+        description=("List of mime type in order of preference"),
         required=False,
     )
     requests_attach = fields.Nested(
