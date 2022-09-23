@@ -1,7 +1,7 @@
 import json
 
 from async_case import IsolatedAsyncioTestCase
-from asynctest import mock as async_mock
+import mock as async_mock
 import pytest
 
 from marshmallow import EXCLUDE
@@ -112,14 +112,14 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as conn_mgr_mock, async_mock.patch.object(
             test_module,
             "get_version_from_message_type",
-            async_mock.CoroutineMock(return_value="1.1"),
+            async_mock.AsyncMock(return_value="1.1"),
         ), async_mock.patch.object(
             test_module,
             "validate_get_response_version",
-            async_mock.CoroutineMock(return_value=("1.1", None)),
+            async_mock.AsyncMock(return_value=("1.1", None)),
         ):
             conn_mgr_mock.return_value = async_mock.MagicMock(
-                find_inbound_connection=async_mock.CoroutineMock(
+                find_inbound_connection=async_mock.AsyncMock(
                     return_value=async_mock.MagicMock(connection_id="dummy")
                 )
             )
@@ -161,11 +161,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as handler_mock, async_mock.patch.object(
             test_module,
             "get_version_from_message_type",
-            async_mock.CoroutineMock(return_value="1.1"),
+            async_mock.AsyncMock(return_value="1.1"),
         ), async_mock.patch.object(
             test_module,
             "validate_get_response_version",
-            async_mock.CoroutineMock(return_value=("1.1", None)),
+            async_mock.AsyncMock(return_value=("1.1", None)),
         ):
             await dispatcher.queue_message(
                 dispatcher.profile, make_inbound(message), rcv.send
@@ -282,11 +282,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as handler_mock, async_mock.patch.object(
             test_module,
             "get_version_from_message_type",
-            async_mock.CoroutineMock(return_value="1.1"),
+            async_mock.AsyncMock(return_value="1.1"),
         ), async_mock.patch.object(
             test_module,
             "validate_get_response_version",
-            async_mock.CoroutineMock(return_value=("1.1", None)),
+            async_mock.AsyncMock(return_value=("1.1", None)),
         ):
             await dispatcher.queue_message(
                 dispatcher.profile, make_inbound(message), rcv.send
@@ -340,9 +340,9 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         rcv = Receiver()
         bad_messages = ["not even a dict", {"bad": "message"}]
         with async_mock.patch.object(
-            test_module, "get_version_from_message_type", async_mock.CoroutineMock()
+            test_module, "get_version_from_message_type", async_mock.AsyncMock()
         ), async_mock.patch.object(
-            test_module, "validate_get_response_version", async_mock.CoroutineMock()
+            test_module, "validate_get_response_version", async_mock.AsyncMock()
         ):
             for bad in bad_messages:
                 await dispatcher.queue_message(
@@ -413,7 +413,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         outbound_message = await responder.create_outbound(message)
-        with async_mock.patch.object(responder, "_send", async_mock.CoroutineMock()):
+        with async_mock.patch.object(responder, "_send", async_mock.AsyncMock()):
             await responder.send_outbound(outbound_message)
 
     async def test_create_send_webhook(self):
@@ -430,7 +430,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         message = b"abc123xyz7890000"
         responder = test_module.DispatcherResponder(context, message, None)
         with async_mock.patch.object(
-            responder, "send_outbound", async_mock.CoroutineMock()
+            responder, "send_outbound", async_mock.AsyncMock()
         ) as mock_send_outbound:
             await responder.send(message)
             assert mock_send_outbound.called_once()
@@ -471,11 +471,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
     #     with async_mock.patch.object(
     #         test_module,
     #         "get_version_from_message_type",
-    #         async_mock.CoroutineMock(return_value="1.1"),
+    #         async_mock.AsyncMock(return_value="1.1"),
     #     ), async_mock.patch.object(
     #         test_module,
     #         "validate_get_response_version",
-    #         async_mock.CoroutineMock(return_value=("1.1", "fields-ignored-due-to-version-mismatch")),
+    #         async_mock.AsyncMock(return_value=("1.1", "fields-ignored-due-to-version-mismatch")),
     #     ):
     #         await dispatcher.queue_message(
     #             dispatcher.profile, make_inbound(message), rcv.send
@@ -500,11 +500,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
     #     with async_mock.patch.object(
     #         test_module,
     #         "get_version_from_message_type",
-    #         async_mock.CoroutineMock(return_value="1.1"),
+    #         async_mock.AsyncMock(return_value="1.1"),
     #     ), async_mock.patch.object(
     #         test_module,
     #         "validate_get_response_version",
-    #         async_mock.CoroutineMock(return_value=("1.1", "version-with-degraded-features")),
+    #         async_mock.AsyncMock(return_value=("1.1", "version-with-degraded-features")),
     #     ):
     #         await dispatcher.queue_message(
     #             dispatcher.profile, make_inbound(message), rcv.send
@@ -529,11 +529,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
     #     with async_mock.patch.object(
     #         test_module,
     #         "get_version_from_message_type",
-    #         async_mock.CoroutineMock(return_value="1.1"),
+    #         async_mock.AsyncMock(return_value="1.1"),
     #     ), async_mock.patch.object(
     #         test_module,
     #         "validate_get_response_version",
-    #         async_mock.CoroutineMock(return_value=("1.1", "version-not-supported")),
+    #         async_mock.AsyncMock(return_value=("1.1", "version-not-supported")),
     #     ):
     #         with self.assertRaises(test_module.MessageParseError):
     #             await dispatcher.queue_message(
