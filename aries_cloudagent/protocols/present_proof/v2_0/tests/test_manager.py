@@ -2188,53 +2188,6 @@ class TestV20PresManager(AsyncTestCase):
 
             assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
 
-    async def test_verify_pres_indy_and_dif_false(self):    
-        pres_request = V20PresRequest(
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.INDY.api
-                    ],
-                ),
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
-                        V20PresFormat.Format.DIF.api
-                    ],
-                )
-            ],
-            will_confirm=True,
-            request_presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy"),
-                AttachDecorator.data_json(DIF_PRES_REQ_ALT, ident="dif")
-            ],
-        )
-        pres = V20Pres(
-            formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
-                ),
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
-                )
-            ],
-            presentations_attach=[
-                AttachDecorator.data_base64(INDY_PROOF, ident="indy"),
-                AttachDecorator.data_json(DIF_PRES, ident="dif")
-            ],
-        )
-        px_rec_in = V20PresExRecord(
-            pres_request=pres_request,
-            pres=pres,
-        )
-        self.profile.context.injector.bind_instance(DocumentLoader, custom_document_loader)
-        self.profile.context.injector.bind_instance(
-            BaseMultitenantManager,
-            async_mock.MagicMock(MultitenantManager, autospec=True),
-        )
         with async_mock.patch.object(
             IndyLedgerRequestsExecutor,
             "get_ledger_for_identifier",
@@ -2255,7 +2208,6 @@ class TestV20PresManager(AsyncTestCase):
         ) as save_ex:
             px_rec_out = await self.manager.verify_pres(px_rec_in)
             save_ex.assert_called_once()
-
             assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
             assert px_rec_out.verified == 'false'
 
