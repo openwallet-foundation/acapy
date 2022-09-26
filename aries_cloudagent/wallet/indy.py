@@ -192,10 +192,12 @@ class IndySdkWallet(BaseWallet):
         try:
             key_pair_mgr = KeyPairStorageManager(IndySdkStorage(self.opened))
             key_pair = await key_pair_mgr.get_key_pair(verkey)
+            # TODO: inject context to support more keytypes
+            key_types = KeyTypes()
             return KeyInfo(
                 verkey=verkey,
                 metadata=key_pair["metadata"],
-                key_type=KeyType.from_key_type(key_pair["key_type"]),
+                key_type=key_types.from_key_type(key_pair["key_type"]) or BLS12381G2,
             )
         except (StorageNotFoundError):
             raise WalletNotFoundError(f"Unknown key: {verkey}")
