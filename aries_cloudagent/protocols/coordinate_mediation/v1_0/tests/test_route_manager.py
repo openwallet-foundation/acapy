@@ -487,7 +487,7 @@ async def test_connection_from_recipient_key_invite(
 ):
     with mock.patch.object(
         ConnRecord,
-        "retrieve_by_invitation_key",
+        "retrieve_by_tag_filter",
         mock.CoroutineMock(return_value=conn_record),
     ):
         result = await route_manager.connection_from_recipient_key(profile, TEST_VERKEY)

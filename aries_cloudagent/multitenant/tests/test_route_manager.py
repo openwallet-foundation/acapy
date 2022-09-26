@@ -58,8 +58,8 @@ def route_manager(root_profile: Profile, sub_profile: Profile, wallet_id: str):
 
 
 @pytest.fixture
-def base_route_manager(root_profile: Profile, sub_profile: Profile, wallet_id: str):
-    yield BaseWalletRouteManager(root_profile)
+def base_route_manager():
+    yield BaseWalletRouteManager()
 
 
 @pytest.mark.asyncio
@@ -371,17 +371,15 @@ async def test_routing_info_with_base_mediator_and_sub_mediator(
 
 @pytest.mark.asyncio
 async def test_connection_from_recipient_key(
-    sub_profile: Profile, base_route_manager: MultitenantRouteManager
+    sub_profile: Profile, base_route_manager: BaseWalletRouteManager
 ):
     manager = mock.MagicMock()
     manager.get_profile_for_key = mock.CoroutineMock(return_value=sub_profile)
-    route_manager.root_profile.context.injector.bind_instance(
-        BaseMultitenantManager, manager
-    )
+    sub_profile.context.injector.bind_instance(BaseMultitenantManager, manager)
     with mock.patch.object(
         RouteManager, "connection_from_recipient_key", mock.CoroutineMock()
     ) as mock_conn_for_recip:
-        result = await route_manager.connection_from_recipient_key(
-            route_manager.root_profile, TEST_VERKEY
+        result = await base_route_manager.connection_from_recipient_key(
+            sub_profile, TEST_VERKEY
         )
         assert result == mock_conn_for_recip.return_value
