@@ -735,7 +735,7 @@ class AskarWallet(BaseWallet):
             did=did_info["did"],
             verkey=did_info["verkey"],
             metadata=did_info.get("metadata"),
-            method=did_methods.from_method(did_info.get("method", "sov")),
+            method=did_methods.from_method(did_info.get("method", "sov")) or SOV,
             key_type=KeyType.from_key_type(did_info.get("verkey_type", "ed25519")),
         )
 
