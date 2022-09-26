@@ -33,7 +33,7 @@ from .crypto import (
 )
 from .did_method import DIDMethod
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
-from .key_type import BLS12381G2, ED25519, KeyType
+from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
 from .util import b58_to_bytes, bytes_to_b58
 
 CATEGORY_DID = "did"
@@ -257,7 +257,7 @@ class AskarWallet(BaseWallet):
 
         ret = []
         for item in await self._session.handle.fetch_all(CATEGORY_DID):
-            ret.append(_load_did_entry(item))
+            ret.append(self._load_did_entry(item))
         return ret
 
     async def get_local_did(self, did: str) -> DIDInfo:
@@ -284,7 +284,7 @@ class AskarWallet(BaseWallet):
             raise WalletError("Error when fetching local DID") from err
         if not did:
             raise WalletNotFoundError("Unknown DID: {}".format(did))
-        return _load_did_entry(did)
+        return self._load_did_entry(did)
 
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
         """
@@ -308,7 +308,7 @@ class AskarWallet(BaseWallet):
         except AskarError as err:
             raise WalletError("Error when fetching local DID for verkey") from err
         if dids:
-            return _load_did_entry(dids[0])
+            return self._load_did_entry(dids[0])
         raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
@@ -403,7 +403,7 @@ class AskarWallet(BaseWallet):
                 raise WalletError("Error when fetching local DID") from err
             if not item:
                 raise WalletNotFoundError("Unknown DID: {}".format(did))
-            info = _load_did_entry(item)
+            info = self._load_did_entry(item)
         else:
             info = did
             item = None
@@ -727,6 +727,19 @@ class AskarWallet(BaseWallet):
             raise WalletError("Exception when unpacking message") from err
         return unpacked_json.decode("utf-8"), sender, recipient
 
+    def _load_did_entry(self, entry: Entry) -> DIDInfo:
+        """Convert a DID record into the expected DIDInfo format."""
+        did_info = entry.value_json
+        key_types: KeyTypes = self._session.inject(KeyTypes)
+        return DIDInfo(
+            did=did_info["did"],
+            verkey=did_info["verkey"],
+            metadata=did_info.get("metadata"),
+            method=DIDMethod.from_method(did_info.get("method", "sov")),
+            key_type=key_types.from_key_type(did_info.get("verkey_type", "ed25519"))
+            or ED25519,
+        )
+
 
 def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
@@ -755,15 +768,3 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
                 raise WalletError("Invalid seed for key generation") from None
     else:
         return Key.generate(alg)
-
-
-def _load_did_entry(entry: Entry) -> DIDInfo:
-    """Convert a DID record into the expected DIDInfo format."""
-    did_info = entry.value_json
-    return DIDInfo(
-        did=did_info["did"],
-        verkey=did_info["verkey"],
-        metadata=did_info.get("metadata"),
-        method=DIDMethod.from_method(did_info.get("method", "sov")),
-        key_type=KeyType.from_key_type(did_info.get("verkey_type", "ed25519")),
-    )
