@@ -11,7 +11,7 @@ from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
 from ..utils.classloader import ClassLoader
 
-from .error import ProtocolMinorVersionNotSupported
+from .error import ProtocolMinorVersionNotSupported, ProtocolDefinitionValidationError
 
 CORE_EVENT_PREFIX = "acapy::core::"
 STARTUP_EVENT_TOPIC = CORE_EVENT_PREFIX + "startup"
@@ -76,7 +76,7 @@ async def validate_get_response_version(
                 + f" Received {rec_minor_version}."
             )
     else:
-        raise Exception(
+        raise ProtocolMinorVersionNotSupported(
             f"Supported major version {proto_major_version}"
             " is not same as received major version"
             f" {rec_major_version}."
@@ -135,7 +135,7 @@ async def get_version_def_from_msg_class(
             version_definition = protocol_version
             break
     if not version_definition:
-        raise Exception(
+        raise ProtocolDefinitionValidationError(
             f"Unable to load protocol version_definition for {str(msg_class)}"
         )
     if cache:
