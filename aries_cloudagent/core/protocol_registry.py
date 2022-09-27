@@ -128,6 +128,20 @@ class ProtocolRegistry:
         else:
             return None
 
+    def _update_version_map(self, message_type_string, module_path, version_definition):
+        parsed_type_string = self.parse_type_string(message_type_string)
+
+        if version_definition["major_version"] not in self._versionmap:
+            self._versionmap[version_definition["major_version"]] = []
+
+        self._versionmap[version_definition["major_version"]].append(
+            {
+                "parsed_type_string": parsed_type_string,
+                "version_definition": version_definition,
+                "message_module": module_path,
+            }
+        )
+
     def register_message_types(self, *typesets, version_definition=None):
         """
         Add new supported message types.
@@ -140,6 +154,7 @@ class ProtocolRegistry:
 
         # Maintain support for versionless protocol modules
         template_msg_type_version = True
+        updated_typesets = None
         for typeset in typesets:
             if not self._template_message_type_check(typeset):
                 self._typemap.update(typeset)
@@ -152,21 +167,12 @@ class ProtocolRegistry:
                 updated_typesets = self._create_and_register_updated_typesets(
                     typesets, version_definition
                 )
-                if updated_typesets:
-                    typesets = updated_typesets
+            if updated_typesets:
+                typesets = updated_typesets
             for typeset in typesets:
                 for message_type_string, module_path in typeset.items():
-                    parsed_type_string = self.parse_type_string(message_type_string)
-
-                    if version_definition["major_version"] not in self._versionmap:
-                        self._versionmap[version_definition["major_version"]] = []
-
-                    self._versionmap[version_definition["major_version"]].append(
-                        {
-                            "parsed_type_string": parsed_type_string,
-                            "version_definition": version_definition,
-                            "message_module": module_path,
-                        }
+                    self._update_version_map(
+                        message_type_string, module_path, version_definition
                     )
 
     def register_controllers(self, *controller_sets, version_definition=None):
