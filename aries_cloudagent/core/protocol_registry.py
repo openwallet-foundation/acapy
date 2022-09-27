@@ -87,28 +87,46 @@ class ProtocolRegistry:
             Typesets mapping
 
         """
-        updated_typeset = None
+        updated_typeset = {}
         curr_minor_version = version_definition["current_minor_version"]
         min_minor_version = version_definition["minimum_minor_version"]
         major_version = version_definition["major_version"]
         if curr_minor_version >= min_minor_version and curr_minor_version >= 1:
             for version_index in range(min_minor_version, curr_minor_version + 1):
                 to_check = f"{str(major_version)}.{str(version_index)}"
-                for typeset in typesets:
-                    for msg_type_string, module_path in typeset.items():
-                        updated_msg_type_string = Template(msg_type_string).substitute(
-                            version=to_check
-                        )
-                        if not updated_typeset:
-                            updated_typeset = {}
-                        updated_typeset[updated_msg_type_string] = module_path
+                updated_typeset.update(
+                    self._get_updated_tyoeset_dict(typesets, to_check, updated_typeset)
+                )
         return (updated_typeset,)
 
-    def _template_message_type_check(self, typeset) -> bool:
-        for msg_type_string, module_path in typeset.items():
+    def _get_updated_tyoeset_dict(self, typesets, to_check, updated_typeset) -> dict:
+        for typeset in typesets:
+            for msg_type_string, module_path in typeset.items():
+                updated_msg_type_string = Template(msg_type_string).substitute(
+                    version=to_check
+                )
+                updated_typeset[updated_msg_type_string] = module_path
+        return updated_typeset
+
+    def _template_message_type_check(self, typeset, idx: int = 0) -> bool:
+        for msg_type_string, _ in typeset.items():
             if "$version" in msg_type_string:
                 return True
         return False
+
+    def _create_and_register_updated_typesets(self, typesets, version_definition):
+        updated_typesets = self.create_msg_types_for_minor_version(
+            typesets, version_definition
+        )
+        update_flag = False
+        for typeset in updated_typesets:
+            if typeset:
+                self._typemap.update(typeset)
+                update_flag = True
+        if update_flag:
+            return updated_typesets
+        else:
+            return None
 
     def register_message_types(self, *typesets, version_definition=None):
         """
@@ -121,23 +139,20 @@ class ProtocolRegistry:
         """
 
         # Maintain support for versionless protocol modules
-        template_msg_type_version = False
+        template_msg_type_version = True
         for typeset in typesets:
             if not self._template_message_type_check(typeset):
                 self._typemap.update(typeset)
-            else:
-                template_msg_type_version = True
+                template_msg_type_version = False
 
         # Track versioned modules for version routing
         if version_definition:
             # create updated typesets for minor versions and register them
             if template_msg_type_version:
-                updated_typesets = self.create_msg_types_for_minor_version(
+                updated_typesets = self._create_and_register_updated_typesets(
                     typesets, version_definition
                 )
                 if updated_typesets:
-                    for typeset in updated_typesets:
-                        self._typemap.update(typeset)
                     typesets = updated_typesets
             for typeset in typesets:
                 for message_type_string, module_path in typeset.items():
