@@ -97,7 +97,7 @@ def get_version_from_message(msg: AgentMessage) -> str:
 
 async def get_proto_default_version(
     profile: Profile, msg_class: type, major_version: int = 1
-):
+) -> str:
     """Return default protocol version from version_definition."""
     version_definition = await get_version_def_from_msg_class(
         profile, msg_class, major_version
