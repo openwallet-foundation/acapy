@@ -108,7 +108,7 @@ class ProtocolRegistry:
                 updated_typeset[updated_msg_type_string] = module_path
         return updated_typeset
 
-    def _template_message_type_check(self, typeset, idx: int = 0) -> bool:
+    def _template_message_type_check(self, typeset) -> bool:
         for msg_type_string, _ in typeset.items():
             if "$version" in msg_type_string:
                 return True
