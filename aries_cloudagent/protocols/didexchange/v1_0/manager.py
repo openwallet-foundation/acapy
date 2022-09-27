@@ -499,7 +499,10 @@ class DIDXManager(BaseConnectionManager):
             conn_rec.their_did = request.did
             conn_rec.state = ConnRecord.State.REQUEST.rfc23
             conn_rec.request_id = request._id
-
+            async with self.profile.session() as session:
+                await conn_rec.save(
+                    session, reason="Received connection request from invitation"
+                )
         else:
             # request is against implicit invitation on public DID
             async with self.profile.session() as session:
