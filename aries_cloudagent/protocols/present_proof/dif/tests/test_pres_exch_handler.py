@@ -108,7 +108,9 @@ class TestPresExchHandler:
             if isinstance(tmp_vp, Sequence):
                 cred_count_list = []
                 for tmp_vp_single in tmp_vp:
-                    cred_count_list.append(len(tmp_vp_single.get("verifiableCredential")))
+                    cred_count_list.append(
+                        len(tmp_vp_single.get("verifiableCredential"))
+                    )
 
                 assert min(cred_count_list) == tmp_pd[1]
             else:
@@ -133,7 +135,9 @@ class TestPresExchHandler:
             if isinstance(tmp_vp, Sequence):
                 cred_count_list = []
                 for tmp_vp_single in tmp_vp:
-                    cred_count_list.append(len(tmp_vp_single.get("verifiableCredential")))
+                    cred_count_list.append(
+                        len(tmp_vp_single.get("verifiableCredential"))
+                    )
 
                 assert min(cred_count_list) == tmp_pd[1]
             else:
@@ -2397,7 +2401,7 @@ class TestPresExchHandler:
                 pd=pd_list[0][0],
                 challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
             )
-            #2 sub_reqs, vp is a sequence
+            # 2 sub_reqs, vp is a sequence
             for vp_single in vp:
                 assert vp_single["test"] == "1"
                 assert SECURITY_CONTEXT_BBS_URL in vp_single["@context"]

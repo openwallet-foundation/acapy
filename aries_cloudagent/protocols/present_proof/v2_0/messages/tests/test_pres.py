@@ -1828,7 +1828,7 @@ class TestV20Pres(TestCase):
         assert len(PRES.formats) == len(PRES.presentations_attach)
         assert PRES.attachment(V20PresFormat.Format.INDY) == INDY_PROOF
         assert PRES._type == DIDCommPrefix.qualify_current(PRES_20)
-        
+
         assert PRES_DIF.presentations_attach[0].content == DIF_PROOF
         assert len(PRES_DIF.formats) == len(PRES.presentations_attach)
         assert PRES_DIF.attachment(V20PresFormat.Format.DIF) == DIF_PROOF
@@ -1891,4 +1891,3 @@ class TestV20Pres(TestCase):
         pres_dict = PRES_DIF.serialize()
         pres_obj = V20Pres.deserialize(pres_dict)
         assert type(pres_obj) == V20Pres
-

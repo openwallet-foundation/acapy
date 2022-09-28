@@ -1248,13 +1248,15 @@ class DIFPresExchHandler:
         if req.nested_req:
             for nested_req in req.nested_req:
                 res = await self.apply_requirements(
-                    req=nested_req, credentials=credentials, records_filter=records_filter
+                    req=nested_req,
+                    credentials=credentials,
+                    records_filter=records_filter
                 )
                 result.append(res)
         else:
             res = await self.apply_requirements(
-                    req=req, credentials=credentials, records_filter=records_filter
-                )
+                req=req, credentials=credentials, records_filter=records_filter
+            )
             result.append(res)
 
         result_vp = []
@@ -1286,7 +1288,9 @@ class DIFPresExchHandler:
                     applicable_creds=applicable_creds
                 )
                 if not issuer_id and len(filtered_creds_list) == 0:
-                    vp = await create_presentation(credentials=applicable_creds_list)
+                    vp = await create_presentation(
+                        credentials=applicable_creds_list
+                    )
                     vp["presentation_submission"] = submission_property.serialize()
                     if self.proof_type is BbsBlsSignature2020.signature_type:
                         vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
@@ -1396,19 +1400,21 @@ class DIFPresExchHandler:
         input_descriptors = pd.input_descriptors
         if isinstance(pres, Sequence):
             for pr in pres:
-                descriptor_map_list = pr["presentation_submission"].get("descriptor_map")
+                descriptor_map_list = pr["presentation_submission"].get(
+                    "descriptor_map"
+                )
                 await self.__verify_desc_map_list(
-                    descriptor_map_list,
-                    pr,
-                    input_descriptors)
+                    descriptor_map_list, pr, input_descriptors
+                )
         else:
             descriptor_map_list = pres["presentation_submission"].get("descriptor_map")
             await self.__verify_desc_map_list(
-                descriptor_map_list,
-                pres,
-                input_descriptors)
+                descriptor_map_list, pres, input_descriptors
+            )
 
-    async def __verify_desc_map_list(self, descriptor_map_list, pres, input_descriptors):
+    async def __verify_desc_map_list(
+        self, descriptor_map_list, pres, input_descriptors
+    ):
         inp_desc_id_contraint_map = {}
         inp_desc_id_schema_one_of_filter = set()
         inp_desc_id_schemas_map = {}

@@ -393,7 +393,7 @@ class V20PresManager:
                 ).verify_pres(
                     pres_ex_record,
                 )
-                if pres_ex_record.verified == 'false':
+                if pres_ex_record.verified == "false":
                     break
 
         pres_ex_record.state = V20PresExRecord.STATE_DONE

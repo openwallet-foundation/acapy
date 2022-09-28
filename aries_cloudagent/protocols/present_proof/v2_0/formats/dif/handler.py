@@ -474,7 +474,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 challenge = pres_request["options"].get("challenge", str(uuid4()))
             if not challenge:
                 challenge = str(uuid4())
-            if(isinstance(dif_proof, Sequence)):
+            if isinstance(dif_proof, Sequence):
                 for proof in dif_proof:
                     pres_ver_result = await verify_presentation(
                         presentation=proof,

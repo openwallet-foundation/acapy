@@ -118,7 +118,7 @@ class V20PresSchema(AgentMessageSchema):
             atch = get_attach_by_id(fmt.attach_id)
             pres_format = V20PresFormat.Format.get(fmt.format)
             if pres_format:
-                if(isinstance(atch.content, Sequence)):
+                if isinstance(atch.content, Sequence):
                     for el in atch.content:
                         pres_format.validate_fields(PRES_20, el)
                 else:

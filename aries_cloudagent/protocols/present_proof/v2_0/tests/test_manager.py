@@ -825,11 +825,11 @@ class TestV20PresManager(AsyncTestCase):
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
                         V20PresFormat.Format.DIF.api
                     ],
-                )
+                ),
             ],
             request_presentations_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy"),
-                AttachDecorator.data_json(DIF_PRES_REQ, ident="dif")
+                AttachDecorator.data_json(DIF_PRES_REQ, ident="dif"),
             ],
 
         )
@@ -854,7 +854,10 @@ class TestV20PresManager(AsyncTestCase):
                 return_value=mock_attach_decorator_indy
             )
 
-            mock_create_pres.return_value = (PRES_20, AttachDecorator.data_json(DIF_PRES, ident="dif"))
+            mock_create_pres.return_value = (
+                PRES_20, 
+                AttachDecorator.data_json(DIF_PRES, ident="dif")
+            )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
@@ -2144,12 +2147,12 @@ class TestV20PresManager(AsyncTestCase):
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
                         V20PresFormat.Format.DIF.api
                     ],
-                )
+                ),
             ],
             will_confirm=True,
             request_presentations_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy"),
-                AttachDecorator.data_json(DIF_PRES_REQ, ident="dif")
+                AttachDecorator.data_json(DIF_PRES_REQ, ident="dif"),
             ],
         )
         pres = V20Pres(
@@ -2161,11 +2164,11 @@ class TestV20PresManager(AsyncTestCase):
                 V20PresFormat(
                     attach_id="dif",
                     format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
-                )
+                ),
             ],
             presentations_attach=[
                 AttachDecorator.data_base64(INDY_PROOF, ident="indy"),
-                AttachDecorator.data_json(DIF_PRES, ident="dif")
+                AttachDecorator.data_json(DIF_PRES, ident="dif"),
             ],
         )
         px_rec_in = V20PresExRecord(
@@ -2173,7 +2176,9 @@ class TestV20PresManager(AsyncTestCase):
             pres=pres,
         )
         
-        self.profile.context.injector.bind_instance(DocumentLoader, custom_document_loader)
+        self.profile.context.injector.bind_instance(
+            DocumentLoader, custom_document_loader
+        )
         self.profile.context.injector.bind_instance(
             BaseMultitenantManager,
             async_mock.MagicMock(MultitenantManager, autospec=True),
@@ -2209,7 +2214,7 @@ class TestV20PresManager(AsyncTestCase):
             px_rec_out = await self.manager.verify_pres(px_rec_in)
             save_ex.assert_called_once()
             assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
-            assert px_rec_out.verified == 'false'
+            assert px_rec_out.verified == "false"
 
     async def test_send_pres_ack(self):
         px_rec = V20PresExRecord()

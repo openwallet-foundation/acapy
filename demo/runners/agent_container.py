@@ -494,9 +494,13 @@ class AriesAgent(DemoAgent):
                             input_descriptor_schema_uri.append(element["uri"])
 
                         for record in records:
-                            if self.check_input_descriptor_record_id(input_descriptor_schema_uri, record):
+                            if self.check_input_descriptor_record_id(
+                                input_descriptor_schema_uri, record
+                            ):
                                 record_id = record["record_id"]
-                                dif_request["dif"]["record_ids"][input_descriptor["id"]] = [
+                                dif_request["dif"]["record_ids"][
+                                    input_descriptor["id"]
+                                ] = [
                                     record_id,
                                 ]
                                 break
@@ -626,7 +630,9 @@ class AriesAgent(DemoAgent):
             )
             return cred_def_id
 
-    def check_input_descriptor_record_id(self, input_descriptor_schema_uri, record) -> bool:
+    def check_input_descriptor_record_id(
+        self, input_descriptor_schema_uri, record
+    ) -> bool:
         result = False
         for uri in input_descriptor_schema_uri:
             for record_type in record["type"]:
@@ -634,7 +640,7 @@ class AriesAgent(DemoAgent):
                     result = True
                     break
                 result = False
-        
+
         return result
 
 
