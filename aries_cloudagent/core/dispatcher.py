@@ -10,7 +10,7 @@ import logging
 import os
 import warnings
 
-from typing import Callable, Coroutine, Union
+from typing import Callable, Coroutine, Optional, Union, Tuple
 import weakref
 
 from aiohttp.web import HTTPException
@@ -36,6 +36,13 @@ from ..utils.tracing import get_timer, trace_event
 
 from .error import ProtocolMinorVersionNotSupported
 from .protocol_registry import ProtocolRegistry
+from .util import (
+    get_version_from_message_type,
+    validate_get_response_version,
+    # WARNING_DEGRADED_FEATURES,
+    # WARNING_VERSION_MISMATCH,
+    # WARNING_VERSION_NOT_SUPPORTED,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -133,6 +140,9 @@ class Dispatcher:
             inbound_message: The inbound message instance
             send_outbound: Async function to send outbound messages
 
+        # Raises:
+        #     MessageParseError: If the message type version is not supported
+
         Returns:
             The response from the handler
 
@@ -140,9 +150,12 @@ class Dispatcher:
         r_time = get_timer()
 
         error_result = None
+        version_warning = None
         message = None
         try:
-            message = await self.make_message(inbound_message.payload)
+            (message, warning) = await self.make_message(
+                profile, inbound_message.payload
+            )
         except ProblemReportParseError:
             pass  # avoid problem report recursion
         except MessageParseError as e:
@@ -155,6 +168,47 @@ class Dispatcher:
             )
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
+        # if warning:
+        #     warning_message_type = inbound_message.payload.get("@type")
+        #     if warning == WARNING_DEGRADED_FEATURES:
+        #         LOGGER.error(
+        #             f"Sending {WARNING_DEGRADED_FEATURES} problem report, "
+        #             "message type received with a minor version at or higher"
+        #             " than protocol minimum supported and current minor version "
+        #             f"for message_type {warning_message_type}"
+        #         )
+        #         version_warning = ProblemReport(
+        #             description={
+        #                 "en": (
+        #                     "message type received with a minor version at or "
+        #                     "higher than protocol minimum supported and current"
+        #                     f" minor version for message_type {warning_message_type}"
+        #                 ),
+        #                 "code": WARNING_DEGRADED_FEATURES,
+        #             }
+        #         )
+        #     elif warning == WARNING_VERSION_MISMATCH:
+        #         LOGGER.error(
+        #             f"Sending {WARNING_VERSION_MISMATCH} problem report, message "
+        #             "type received with a minor version higher than current minor "
+        #             f"version for message_type {warning_message_type}"
+        #         )
+        #         version_warning = ProblemReport(
+        #             description={
+        #                 "en": (
+        #                     "message type received with a minor version higher"
+        #                     " than current minor version for message_type"
+        #                     f" {warning_message_type}"
+        #                 ),
+        #                 "code": WARNING_VERSION_MISMATCH,
+        #             }
+        #         )
+        #     elif warning == WARNING_VERSION_NOT_SUPPORTED:
+        #         raise MessageParseError(
+        #             f"Message type version not supported for {warning_message_type}"
+        #         )
+        #     if version_warning and inbound_message.receipt.thread_id:
+        #         version_warning.assign_thread_id(inbound_message.receipt.thread_id)
 
         trace_event(
             self.profile.settings,
@@ -199,6 +253,8 @@ class Dispatcher:
 
         if error_result:
             await responder.send_reply(error_result)
+        elif version_warning:
+            await responder.send_reply(version_warning)
         elif context.message:
             context.injector.bind_instance(BaseResponder, responder)
 
@@ -215,7 +271,9 @@ class Dispatcher:
             perf_counter=r_time,
         )
 
-    async def make_message(self, parsed_msg: dict) -> BaseMessage:
+    async def make_message(
+        self, profile: Profile, parsed_msg: dict
+    ) -> Tuple[BaseMessage, Optional[str]]:
         """
         Deserialize a message dict into the appropriate message instance.
 
@@ -224,6 +282,7 @@ class Dispatcher:
 
         Args:
             parsed_msg: The parsed message
+            profile: Profile
 
         Returns:
             An instance of the corresponding message class for this message
@@ -237,6 +296,7 @@ class Dispatcher:
         if not isinstance(parsed_msg, dict):
             raise MessageParseError("Expected a JSON object")
         message_type = parsed_msg.get("@type")
+        message_type_rec_version = get_version_from_message_type(message_type)
 
         if not message_type:
             raise MessageParseError("Message does not contain '@type' parameter")
@@ -256,8 +316,10 @@ class Dispatcher:
             if "/problem-report" in message_type:
                 raise ProblemReportParseError("Error parsing problem report message")
             raise MessageParseError(f"Error deserializing message: {e}") from e
-
-        return instance
+        _, warning = await validate_get_response_version(
+            profile, message_type_rec_version, message_cls
+        )
+        return (instance, warning)
 
     async def complete(self, timeout: float = 0.1):
         """Wait for pending tasks to complete."""

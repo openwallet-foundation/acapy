@@ -44,6 +44,60 @@ class TestProtocolRegistry(AsyncTestCase):
             matches = self.registry.protocols_matching_query(q)
             assert matches == ()
 
+    def test_create_msg_types_for_minor_version(self):
+        test_typesets = (
+            {
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/$version/fake-forward-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.forward_invitation.ForwardInvitation",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/$version/fake-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation.Invitation",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/$version/fake-invitation-request": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation_request.InvitationRequest",
+                "https://didcom.org/introduction-service/$version/fake-forward-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.forward_invitation.ForwardInvitation",
+                "https://didcom.org/introduction-service/$version/fake-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation.Invitation",
+                "https://didcom.org/introduction-service/$version/fake-invitation-request": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation_request.InvitationRequest",
+            },
+        )
+        test_version_def = {
+            "current_minor_version": 1,
+            "major_version": 1,
+            "minimum_minor_version": 0,
+            "path": "v0_1",
+        }
+        updated_typesets = self.registry.create_msg_types_for_minor_version(
+            test_typesets, test_version_def
+        )
+        updated_typeset = updated_typesets[0]
+        assert (
+            "https://didcom.org/introduction-service/1.0/fake-forward-invitation"
+            in updated_typeset
+        )
+        assert (
+            "https://didcom.org/introduction-service/1.0/fake-invitation"
+            in updated_typeset
+        )
+        assert (
+            "https://didcom.org/introduction-service/1.0/fake-invitation-request"
+            in updated_typeset
+        )
+        assert (
+            "https://didcom.org/introduction-service/1.1/fake-forward-invitation"
+            in updated_typeset
+        )
+        assert (
+            "https://didcom.org/introduction-service/1.1/fake-invitation"
+            in updated_typeset
+        )
+        assert (
+            "https://didcom.org/introduction-service/1.1/fake-invitation-request"
+            in updated_typeset
+        )
+        assert (
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-forward-invitation"
+            in updated_typeset
+        )
+        assert (
+            "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.1/fake-invitation-request"
+            in updated_typeset
+        )
+
     async def test_disclosed(self):
         self.registry.register_message_types(
             {self.test_message_type: self.test_message_handler}
