@@ -2,6 +2,7 @@
 
 import logging
 
+from string import Template
 from typing import Mapping, Sequence
 
 from ..config.injection_context import InjectionContext
@@ -74,6 +75,73 @@ class ProtocolRegistry:
             "minor_version": int(version_string_tokens[1]),
         }
 
+    def create_msg_types_for_minor_version(self, typesets, version_definition):
+        """
+        Return mapping of message type to module path for minor versions.
+
+        Args:
+            typesets: Mappings of message types to register
+            version_definition: Optional version definition dict
+
+        Returns:
+            Typesets mapping
+
+        """
+        updated_typeset = {}
+        curr_minor_version = version_definition["current_minor_version"]
+        min_minor_version = version_definition["minimum_minor_version"]
+        major_version = version_definition["major_version"]
+        if curr_minor_version >= min_minor_version and curr_minor_version >= 1:
+            for version_index in range(min_minor_version, curr_minor_version + 1):
+                to_check = f"{str(major_version)}.{str(version_index)}"
+                updated_typeset.update(
+                    self._get_updated_tyoeset_dict(typesets, to_check, updated_typeset)
+                )
+        return (updated_typeset,)
+
+    def _get_updated_tyoeset_dict(self, typesets, to_check, updated_typeset) -> dict:
+        for typeset in typesets:
+            for msg_type_string, module_path in typeset.items():
+                updated_msg_type_string = Template(msg_type_string).substitute(
+                    version=to_check
+                )
+                updated_typeset[updated_msg_type_string] = module_path
+        return updated_typeset
+
+    def _template_message_type_check(self, typeset) -> bool:
+        for msg_type_string, _ in typeset.items():
+            if "$version" in msg_type_string:
+                return True
+        return False
+
+    def _create_and_register_updated_typesets(self, typesets, version_definition):
+        updated_typesets = self.create_msg_types_for_minor_version(
+            typesets, version_definition
+        )
+        update_flag = False
+        for typeset in updated_typesets:
+            if typeset:
+                self._typemap.update(typeset)
+                update_flag = True
+        if update_flag:
+            return updated_typesets
+        else:
+            return None
+
+    def _update_version_map(self, message_type_string, module_path, version_definition):
+        parsed_type_string = self.parse_type_string(message_type_string)
+
+        if version_definition["major_version"] not in self._versionmap:
+            self._versionmap[version_definition["major_version"]] = []
+
+        self._versionmap[version_definition["major_version"]].append(
+            {
+                "parsed_type_string": parsed_type_string,
+                "version_definition": version_definition,
+                "message_module": module_path,
+            }
+        )
+
     def register_message_types(self, *typesets, version_definition=None):
         """
         Add new supported message types.
@@ -85,24 +153,26 @@ class ProtocolRegistry:
         """
 
         # Maintain support for versionless protocol modules
+        template_msg_type_version = True
+        updated_typesets = None
         for typeset in typesets:
-            self._typemap.update(typeset)
+            if not self._template_message_type_check(typeset):
+                self._typemap.update(typeset)
+                template_msg_type_version = False
 
         # Track versioned modules for version routing
         if version_definition:
+            # create updated typesets for minor versions and register them
+            if template_msg_type_version:
+                updated_typesets = self._create_and_register_updated_typesets(
+                    typesets, version_definition
+                )
+            if updated_typesets:
+                typesets = updated_typesets
             for typeset in typesets:
                 for message_type_string, module_path in typeset.items():
-                    parsed_type_string = self.parse_type_string(message_type_string)
-
-                    if version_definition["major_version"] not in self._versionmap:
-                        self._versionmap[version_definition["major_version"]] = []
-
-                    self._versionmap[version_definition["major_version"]].append(
-                        {
-                            "parsed_type_string": parsed_type_string,
-                            "version_definition": version_definition,
-                            "message_module": module_path,
-                        }
+                    self._update_version_map(
+                        message_type_string, module_path, version_definition
                     )
 
     def register_controllers(self, *controller_sets, version_definition=None):
