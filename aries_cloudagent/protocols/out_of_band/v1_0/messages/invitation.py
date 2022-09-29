@@ -146,6 +146,7 @@ class InvitationMessage(AgentMessage):
         self.services = services
         self.accept = accept
         self.assign_version_to_message_type(version=version)
+        self.accept = accept
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
