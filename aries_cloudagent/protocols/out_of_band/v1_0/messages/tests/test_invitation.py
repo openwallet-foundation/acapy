@@ -53,7 +53,7 @@ class TestInvitationMessage(TestCase):
         )
         assert invi.services == [TEST_DID]
         assert invi._type == DIDCommPrefix.qualify_current(
-            Template(INVITATION).substitute(version="1.0")
+            Template(INVITATION).substitute(version="1.1")
         )
 
         service = Service(_id="#inline", _type=DID_COMM, did=TEST_DID)
@@ -62,6 +62,7 @@ class TestInvitationMessage(TestCase):
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
             services=[service],
+            version="1.0",
         )
         assert invi_msg.services == [service]
         assert invi_msg._type == DIDCommPrefix.qualify_current(

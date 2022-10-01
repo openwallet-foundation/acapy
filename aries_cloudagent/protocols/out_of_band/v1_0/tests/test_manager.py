@@ -14,6 +14,7 @@ from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.event_bus import EventBus
 from .....core.in_memory import InMemoryProfile
+from .....core.util import get_version_from_message
 from .....core.oob_processor import OobMessageProcessor
 from .....did.did_key import DIDKey
 from .....messaging.decorators.attach_decorator import AttachDecorator
@@ -389,7 +390,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert invi_rec.invitation._type == DIDCommPrefix.qualify_current(
-                Template(INVITATION).substitute(version="1.0")
+                Template(INVITATION).substitute(version="1.1")
             )
             assert not invi_rec.invitation.requests_attach
             assert (
@@ -476,7 +477,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 assert isinstance(invite, InvitationRecord)
                 assert invite.invitation._type == DIDCommPrefix.qualify_current(
-                    Template(INVITATION).substitute(version="1.0")
+                    Template(INVITATION).substitute(version="1.1")
                 )
                 assert invite.invitation.label == "test123"
                 assert (
@@ -790,12 +791,13 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     public=False,
                     hs_protos=[test_module.HSProto.RFC23],
                     multi_use=False,
+                    accept=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
                 )
 
                 assert invi_rec._invitation.ser[
                     "@type"
                 ] == DIDCommPrefix.qualify_current(
-                    Template(INVITATION).substitute(version="1.0")
+                    Template(INVITATION).substitute(version="1.1")
                 )
                 assert not invi_rec._invitation.ser.get("requests~attach")
                 assert invi_rec.invitation.label == "That guy"
@@ -894,7 +896,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             oob_record = await self.manager._create_handshake_reuse_message(
-                oob_record, self.test_conn_rec
+                oob_record, self.test_conn_rec, get_version_from_message(invitation)
             )
 
             _, kwargs = self.responder.send.call_args
@@ -904,7 +906,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             # Assert responder has been called with the reuse message
             assert reuse_message._type == DIDCommPrefix.qualify_current(
-                Template(MESSAGE_REUSE).substitute(version="1.0")
+                Template(MESSAGE_REUSE).substitute(version="1.1")
             )
             assert oob_record.reuse_msg_id == reuse_message._id
 
@@ -918,7 +920,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             oob_mgr_fetch_conn.side_effect = StorageNotFoundError()
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager._create_handshake_reuse_message(
-                    async_mock.MagicMock(), self.test_conn_rec
+                    async_mock.MagicMock(), self.test_conn_rec, "1.0"
                 )
             assert "Error on creating and sending a handshake reuse message" in str(
                 context.exception
@@ -989,7 +991,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             recipient_did_public=False,
         )
 
-        reuse_msg = HandshakeReuse()
+        reuse_msg = HandshakeReuse(version="1.0")
         reuse_msg.assign_thread_id(thid="the-thread-id", pthid="the-pthid")
 
         self.test_conn_rec.invitation_msg_id = "test_123"
@@ -1445,7 +1447,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             perform_handshake.assert_not_called()
-            handle_handshake_reuse.assert_called_once_with(ANY, test_exist_conn)
+            handle_handshake_reuse.assert_called_once_with(
+                ANY, test_exist_conn, get_version_from_message(oob_invitation)
+            )
 
             assert result.state == OobRecord.STATE_ACCEPTED
 
@@ -1504,12 +1508,15 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 mediation_id="mediation_id",
             )
 
-            handle_handshake_reuse.assert_called_once_with(ANY, test_exist_conn)
+            handle_handshake_reuse.assert_called_once_with(
+                ANY, test_exist_conn, get_version_from_message(oob_invitation)
+            )
             perform_handshake.assert_called_once_with(
                 oob_record=ANY,
                 alias="alias",
                 auto_accept=True,
                 mediation_id="mediation_id",
+                accept=None,
             )
 
             assert mock_oob.state == OobRecord.STATE_DONE
