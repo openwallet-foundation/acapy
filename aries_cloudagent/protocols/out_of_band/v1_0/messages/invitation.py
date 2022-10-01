@@ -3,8 +3,7 @@
 from collections import namedtuple
 from enum import Enum
 from re import sub
-from string import Template
-from typing import Sequence, Text, Union
+from typing import Optional, Sequence, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import (
@@ -27,11 +26,10 @@ from ....didcomm_prefix import DIDCommPrefix
 from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 
-from ..message_types import INVITATION
+from ..message_types import INVITATION, DEFAULT_VERSION
 
 from .service import Service
 
-BASE_PROTO_VERSION = "1.0"
 HSProtoSpec = namedtuple("HSProtoSpec", "rfc name aka")
 
 
@@ -125,7 +123,8 @@ class InvitationMessage(AgentMessage):
         handshake_protocols: Sequence[Text] = None,
         requests_attach: Sequence[AttachDecorator] = None,
         services: Sequence[Union[Service, Text]] = None,
-        version: str = BASE_PROTO_VERSION,
+        accept: Optional[Sequence[Text]] = None,
+        version: str = DEFAULT_VERSION,
         **kwargs,
     ):
         """
@@ -143,19 +142,13 @@ class InvitationMessage(AgentMessage):
         )
         self.requests_attach = list(requests_attach) if requests_attach else []
         self.services = services
-        self.assign_version_to_message_type(version=version)
+        self.assign_version_to_message_type(version)
+        self.accept = accept
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
         """Convert an aries message to an attachment decorator."""
         return AttachDecorator.data_json(mapping=message, ident="request-0")
-
-    @classmethod
-    def assign_version_to_message_type(cls, version: str):
-        """Assign version to Meta.message_type."""
-        cls.Meta.message_type = Template(cls.Meta.message_type).substitute(
-            version=version
-        )
 
     def to_url(self, base_url: str = None) -> str:
         """
@@ -208,6 +201,12 @@ class InvitationMessageSchema(AgentMessageSchema):
         model_class = InvitationMessage
         unknown = EXCLUDE
 
+    _type = fields.Str(
+        data_key="@type",
+        required=False,
+        description="Message type",
+        example="https://didcomm.org/my-family/1.0/my-message-type",
+    )
     label = fields.Str(required=False, description="Optional label", example="Bob")
     handshake_protocols = fields.List(
         fields.Str(
@@ -217,6 +216,12 @@ class InvitationMessageSchema(AgentMessageSchema):
                 DIDCommPrefix.unqualify(hsp) in [p.name for p in HSProto]
             ),
         ),
+        required=False,
+    )
+    accept = fields.List(
+        fields.Str(),
+        example=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+        description=("List of mime type in order of preference"),
         required=False,
     )
     requests_attach = fields.Nested(

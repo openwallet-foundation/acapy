@@ -3,10 +3,10 @@
 Resolution is performed using the IndyLedger class.
 """
 
-from typing import Pattern
+from typing import Optional, Pattern, Sequence, Text
 
 from pydid import DID, DIDDocumentBuilder
-from pydid.verification_method import Ed25519VerificationKey2018
+from pydid.verification_method import Ed25519VerificationKey2018, VerificationMethod
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
@@ -29,6 +29,9 @@ class NoIndyLedger(ResolverError):
 class IndyDIDResolver(BaseDIDResolver):
     """Indy DID Resolver."""
 
+    SERVICE_TYPE_DID_COMMUNICATION = "did-communication"
+    SERVICE_TYPE_DIDCOMM = "DIDComm"
+    SERVICE_TYPE_ENDPOINT = "endpoint"
     AGENT_SERVICE_TYPE = "did-communication"
 
     def __init__(self):
@@ -43,7 +46,90 @@ class IndyDIDResolver(BaseDIDResolver):
         """Return supported_did_regex of Indy DID Resolver."""
         return IndyDID.PATTERN
 
-    async def _resolve(self, profile: Profile, did: str) -> dict:
+    def process_endpoint_types(self, types):
+        """Process endpoint types.
+
+        Returns expected types, subset of expected types,
+        or default types.
+        """
+        expected_types = ["endpoint", "did-communication", "DIDComm"]
+        default_types = ["endpoint", "did-communication"]
+        if len(types) <= 0:
+            return default_types
+        for type in types:
+            if type not in expected_types:
+                return default_types
+        return types
+
+    def add_services(
+        self,
+        builder: DIDDocumentBuilder,
+        endpoints: Optional[dict],
+        recipient_key: VerificationMethod = None,
+        accept: Optional[Sequence[Text]] = None,
+    ):
+        """Add services."""
+        if not endpoints:
+            return
+
+        endpoint = endpoints.get("endpoint")
+        routing_keys = endpoints.get("routingKeys", [])
+        types = endpoints.get("types", [self.SERVICE_TYPE_DID_COMMUNICATION])
+
+        other_endpoints = {
+            key: endpoints[key]
+            for key in ("profile", "linked_domains")
+            if key in endpoints
+        }
+
+        if endpoint:
+            processed_types = self.process_endpoint_types(types)
+
+            if self.SERVICE_TYPE_ENDPOINT in processed_types:
+                builder.service.add(
+                    ident="endpoint",
+                    service_endpoint=endpoint,
+                    type_=self.SERVICE_TYPE_ENDPOINT,
+                )
+
+            if self.SERVICE_TYPE_DID_COMMUNICATION in processed_types:
+                builder.service.add(
+                    ident="did-communication",
+                    type_=self.SERVICE_TYPE_DID_COMMUNICATION,
+                    service_endpoint=endpoint,
+                    priority=1,
+                    routing_keys=routing_keys,
+                    recipient_keys=[recipient_key.id],
+                    accept=(accept if accept else ["didcomm/aip2;env=rfc19"]),
+                )
+
+            if self.SERVICE_TYPE_DIDCOMM in types:
+                builder.service.add(
+                    ident="#didcomm-1",
+                    type_=self.SERVICE_TYPE_DIDCOMM,
+                    service_endpoint=endpoint,
+                    recipient_keys=[recipient_key.id],
+                    routing_keys=routing_keys,
+                    # CHECKME accept=(accept if accept else ["didcomm/v2"]),
+                    accept=["didcomm/v2"],
+                )
+                builder.context.append(self.CONTEXT_DIDCOMM_V2)
+        else:
+            LOGGER.warning(
+                "No endpoint for DID although endpoint attrib was resolvable"
+            )
+
+        if other_endpoints:
+            for type_, endpoint in other_endpoints.items():
+                builder.service.add(
+                    ident=type_,
+                    type_=EndpointType.get(type_).w3c,
+                    service_endpoint=endpoint,
+                )
+
+    async def _resolve(
+        self, profile: Profile, did: str, accept: Optional[Sequence[Text]] = None
+    ) -> dict:
         """Resolve an indy DID."""
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
@@ -73,24 +159,7 @@ class IndyDIDResolver(BaseDIDResolver):
         )
         builder.authentication.reference(vmethod.id)
         builder.assertion_method.reference(vmethod.id)
-        if endpoints:
-            for type_, endpoint in endpoints.items():
-                if type_ == EndpointType.ENDPOINT.indy:
-                    builder.service.add_didcomm(
-                        ident=self.AGENT_SERVICE_TYPE,
-                        type_=self.AGENT_SERVICE_TYPE,
-                        service_endpoint=endpoint,
-                        priority=1,
-                        recipient_keys=[vmethod],
-                        routing_keys=[],
-                    )
-                else:
-                    # Accept all service types for now
-                    builder.service.add(
-                        ident=type_,
-                        type_=type_,
-                        service_endpoint=endpoint,
-                    )
+        self.add_services(builder, endpoints, vmethod, accept)
 
         result = builder.build()
         return result.serialize()

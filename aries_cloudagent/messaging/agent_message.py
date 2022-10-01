@@ -1,8 +1,11 @@
 """Agent message base class and schema."""
 
+import re
+import uuid
+
 from collections import OrderedDict
 from typing import Mapping, Union
-import uuid
+from string import Template
 
 from marshmallow import (
     EXCLUDE,
@@ -97,6 +100,18 @@ class AgentMessage(BaseModel, BaseMessage):
 
         """
         return resolve_class(cls.Meta.handler_class, cls)
+
+    @classmethod
+    def assign_version_to_message_type(cls, version: str):
+        """Assign version to Meta.message_type."""
+        if "$version" in cls.Meta.message_type:
+            cls.Meta.message_type = Template(cls.Meta.message_type).substitute(
+                version=version
+            )
+        else:
+            cls.Meta.message_type = re.sub(
+                r"(\d+\.)?(\*|\d+)", version, cls.Meta.message_type
+            )
 
     @property
     def Handler(self) -> type:

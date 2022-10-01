@@ -95,16 +95,20 @@ def get_version_from_message(msg: AgentMessage) -> str:
     return get_version_from_message_type(msg_type)
 
 
-async def get_proto_default_version(
+async def get_proto_default_version_from_msg_class(
     profile: Profile, msg_class: type, major_version: int = 1
 ) -> str:
     """Return default protocol version from version_definition."""
     version_definition = await get_version_def_from_msg_class(
         profile, msg_class, major_version
     )
-    default_major_version = version_definition["major_version"]
-    default_minor_version = version_definition["current_minor_version"]
-    return f"{default_major_version}.{default_minor_version}"
+    return _get_default_version_from_version_def(version_definition)
+
+
+def get_proto_default_version(def_path: str, major_version: int = 1) -> str:
+    """Return default protocol version from version_definition."""
+    version_definition = _get_version_def_from_path(def_path, major_version)
+    return _get_default_version_from_version_def(version_definition)
 
 
 def _get_path_from_msg_class(msg_class: type) -> str:
@@ -116,10 +120,26 @@ def _get_path_from_msg_class(msg_class: type) -> str:
     return (path.replace("/", ".")) + "definition"
 
 
+def _get_version_def_from_path(definition_path: str, major_version: int = 1):
+    version_definition = None
+    definition = ClassLoader.load_module(definition_path)
+    for protocol_version in definition.versions:
+        if major_version == protocol_version["major_version"]:
+            version_definition = protocol_version
+            break
+    return version_definition
+
+
+def _get_default_version_from_version_def(version_definition) -> str:
+    default_major_version = version_definition["major_version"]
+    default_minor_version = version_definition["current_minor_version"]
+    return f"{default_major_version}.{default_minor_version}"
+
+
 async def get_version_def_from_msg_class(
     profile: Profile, msg_class: type, major_version: int = 1
 ):
-    """Return version_definition of a protocol."""
+    """Return version_definition of a protocol from msg_class."""
     cache = profile.inject_or(BaseCache)
     version_definition = None
     if cache:
@@ -129,11 +149,7 @@ async def get_version_def_from_msg_class(
         if version_definition:
             return version_definition
     definition_path = _get_path_from_msg_class(msg_class)
-    definition = ClassLoader.load_module(definition_path)
-    for protocol_version in definition.versions:
-        if major_version == protocol_version["major_version"]:
-            version_definition = protocol_version
-            break
+    version_definition = _get_version_def_from_path(definition_path, major_version)
     if not version_definition:
         raise ProtocolDefinitionValidationError(
             f"Unable to load protocol version_definition for {str(msg_class)}"

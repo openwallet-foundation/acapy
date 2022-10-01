@@ -5,7 +5,7 @@ For Connection, DIDExchange and OutOfBand Manager.
 """
 
 import logging
-from typing import List, Sequence, Tuple
+from typing import Optional, List, Sequence, Tuple, Text
 
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
@@ -223,7 +223,9 @@ class BaseConnectionManager:
             storage: BaseStorage = session.inject(BaseStorage)
             await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
-    async def resolve_invitation(self, did: str):
+    async def resolve_invitation(
+        self, did: str, accept: Optional[Sequence[Text]] = None
+    ):
         """
         Resolve invitation with the DID Resolver.
 
@@ -237,7 +239,7 @@ class BaseConnectionManager:
 
         resolver = self._profile.inject(DIDResolver)
         try:
-            doc_dict: dict = await resolver.resolve(self._profile, did)
+            doc_dict: dict = await resolver.resolve(self._profile, did, accept)
             doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
         except ResolverError as error:
             raise BaseConnectionManagerError(

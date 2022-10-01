@@ -1,5 +1,7 @@
 """Message and inner object type identifiers for Out of Band messages."""
 
+from ....core.util import get_proto_default_version
+
 from ...didcomm_prefix import DIDCommPrefix
 
 SPEC_URI = (
@@ -12,6 +14,11 @@ INVITATION = "out-of-band/$version/invitation"
 MESSAGE_REUSE = "out-of-band/$version/handshake-reuse"
 MESSAGE_REUSE_ACCEPT = "out-of-band/$version/handshake-reuse-accepted"
 PROBLEM_REPORT = "out-of-band/$version/problem_report"
+
+# Default Version
+DEFAULT_VERSION = get_proto_default_version(
+    "aries_cloudagent.protocols.out_of_band.definition", 1
+)
 
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.out_of_band.v1_0"
 
