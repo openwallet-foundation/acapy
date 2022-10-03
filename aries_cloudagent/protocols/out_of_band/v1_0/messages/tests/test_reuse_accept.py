@@ -6,6 +6,8 @@ from unittest import mock, TestCase
 
 from ......messaging.models.base import BaseModelError
 
+from .....didcomm_prefix import DIDCommPrefix
+
 from ..reuse_accept import HandshakeReuseAccept, HandshakeReuseAcceptSchema
 
 
@@ -31,7 +33,25 @@ class TestReuseAcceptMessage(TestCase):
         model_instance = HandshakeReuseAccept.deserialize(data)
         assert isinstance(model_instance, HandshakeReuseAccept)
 
+    def test_make_model_backward_comp(self):
+        """Make reuse-accept model."""
+        self.reuse_accept_msg.assign_thread_id(thid="test_thid", pthid="test_pthid")
+        data = self.reuse_accept_msg.serialize()
+        data["@type"] = DIDCommPrefix.qualify_current(
+            "out-of-band/1.0/handshake-reuse-accepted"
+        )
+        model_instance = HandshakeReuseAccept.deserialize(data)
+        assert isinstance(model_instance, HandshakeReuseAccept)
+
     def test_pre_dump_x(self):
         """Exercise pre-dump serialization requirements."""
         with pytest.raises(BaseModelError):
             data = self.reuse_accept_msg.serialize()
+
+    def test_assign_msg_type_version_to_model_inst(self):
+        test_msg = HandshakeReuseAccept()
+        assert "1.1" in test_msg._type
+        assert "1.1" in HandshakeReuseAccept.Meta.message_type
+        test_msg = HandshakeReuseAccept(version="1.2")
+        assert "1.2" in test_msg._type
+        assert "1.1" in HandshakeReuseAccept.Meta.message_type

@@ -1,6 +1,7 @@
 """Represents a Handshake Reuse message under RFC 0434."""
 
 from marshmallow import EXCLUDE, fields, pre_dump, ValidationError
+from typing import Optional, Text
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
@@ -24,11 +25,15 @@ class HandshakeReuse(AgentMessage):
     def __init__(
         self,
         version: str = DEFAULT_VERSION,
+        msg_type: Optional[Text] = None,
         **kwargs,
     ):
         """Initialize Handshake Reuse message object."""
         super().__init__(**kwargs)
-        self.assign_version_to_message_type(version=version)
+        if msg_type:
+            self._type = msg_type
+        else:
+            self._type = self.get_updated_msg_type(version)
 
 
 class HandshakeReuseSchema(AgentMessageSchema):

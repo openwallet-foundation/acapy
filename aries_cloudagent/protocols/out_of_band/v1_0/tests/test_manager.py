@@ -3,7 +3,6 @@
 import json
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
-from string import Template
 from typing import List
 from unittest.mock import ANY
 
@@ -390,7 +389,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert invi_rec.invitation._type == DIDCommPrefix.qualify_current(
-                Template(INVITATION).substitute(version="1.1")
+                "out-of-band/1.1/invitation"
             )
             assert not invi_rec.invitation.requests_attach
             assert (
@@ -477,7 +476,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 assert isinstance(invite, InvitationRecord)
                 assert invite.invitation._type == DIDCommPrefix.qualify_current(
-                    Template(INVITATION).substitute(version="1.1")
+                    "out-of-band/1.1/invitation"
                 )
                 assert invite.invitation.label == "test123"
                 assert (
@@ -796,9 +795,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
                 assert invi_rec._invitation.ser[
                     "@type"
-                ] == DIDCommPrefix.qualify_current(
-                    Template(INVITATION).substitute(version="1.1")
-                )
+                ] == DIDCommPrefix.qualify_current("out-of-band/1.1/invitation")
                 assert not invi_rec._invitation.ser.get("requests~attach")
                 assert invi_rec.invitation.label == "That guy"
                 assert (
@@ -906,7 +903,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
             # Assert responder has been called with the reuse message
             assert reuse_message._type == DIDCommPrefix.qualify_current(
-                Template(MESSAGE_REUSE).substitute(version="1.1")
+                "out-of-band/1.1/handshake-reuse"
             )
             assert oob_record.reuse_msg_id == reuse_message._id
 

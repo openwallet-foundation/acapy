@@ -4,8 +4,8 @@ import re
 import uuid
 
 from collections import OrderedDict
+from re import sub
 from typing import Mapping, Union
-from string import Template
 
 from marshmallow import (
     EXCLUDE,
@@ -84,6 +84,7 @@ class AgentMessage(BaseModel, BaseMessage):
                     self.__class__.__name__
                 )
             )
+        self._message_type = self.Meta.message_type
         # Not required for now
         # if not self.Meta.handler_class:
         #    raise TypeError(
@@ -100,18 +101,6 @@ class AgentMessage(BaseModel, BaseMessage):
 
         """
         return resolve_class(cls.Meta.handler_class, cls)
-
-    @classmethod
-    def assign_version_to_message_type(cls, version: str):
-        """Assign version to Meta.message_type."""
-        if "$version" in cls.Meta.message_type:
-            cls.Meta.message_type = Template(cls.Meta.message_type).substitute(
-                version=version
-            )
-        else:
-            cls.Meta.message_type = re.sub(
-                r"(\d+\.)?(\*|\d+)", version, cls.Meta.message_type
-            )
 
     @property
     def Handler(self) -> type:
@@ -133,7 +122,12 @@ class AgentMessage(BaseModel, BaseMessage):
             Current DIDComm prefix, slash, message type defined on `Meta.message_type`
 
         """
-        return DIDCommPrefix.qualify_current(self.Meta.message_type)
+        return DIDCommPrefix.qualify_current(self._message_type)
+
+    @_type.setter
+    def _type(self, msg_type: str):
+        """Set the message type identifier."""
+        self._message_type = msg_type
 
     @property
     def _id(self) -> str:
@@ -160,6 +154,10 @@ class AgentMessage(BaseModel, BaseMessage):
     def _decorators(self, value: BaseDecoratorSet):
         """Fetch the message's decorator set."""
         self._message_decorators = value
+
+    def get_updated_msg_type(self, version: str) -> str:
+        """Update version to Meta.message_type."""
+        return sub(r"(\d+\.)?(\*|\d+)", version, self.Meta.message_type)
 
     def get_signature(self, field_name: str) -> SignatureDecorator:
         """

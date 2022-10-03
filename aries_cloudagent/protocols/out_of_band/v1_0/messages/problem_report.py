@@ -3,6 +3,7 @@
 import logging
 
 from enum import Enum
+from typing import Optional, Text
 
 from marshmallow import (
     EXCLUDE,
@@ -41,10 +42,19 @@ class OOBProblemReport(ProblemReport):
         message_type = PROBLEM_REPORT
         schema_class = "OOBProblemReportSchema"
 
-    def __init__(self, version: str = DEFAULT_VERSION, *args, **kwargs):
+    def __init__(
+        self,
+        version: str = DEFAULT_VERSION,
+        msg_type: Optional[Text] = None,
+        *args,
+        **kwargs,
+    ):
         """Initialize a ProblemReport message instance."""
         super().__init__(*args, **kwargs)
-        self.assign_version_to_message_type(version=version)
+        if msg_type:
+            self._type = msg_type
+        else:
+            self._type = self.get_updated_msg_type(version)
 
 
 class OOBProblemReportSchema(ProblemReportSchema):
