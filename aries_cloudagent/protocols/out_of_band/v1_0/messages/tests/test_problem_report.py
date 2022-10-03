@@ -73,3 +73,11 @@ class TestOOBProblemReportMessage(TestCase):
         self._caplog.set_level(logging.WARNING)
         OOBProblemReportSchema().validate_fields(data)
         assert "Unexpected error code received" in self._caplog.text
+
+    def test_assign_msg_type_version_to_model_inst(self):
+        test_msg = OOBProblemReport()
+        assert "1.1" in test_msg._type
+        assert "1.1" in OOBProblemReport.Meta.message_type
+        test_msg = OOBProblemReport(version="1.2")
+        assert "1.2" in test_msg._type
+        assert "1.1" in OOBProblemReport.Meta.message_type

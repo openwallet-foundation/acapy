@@ -2,7 +2,7 @@
 
 import logging
 
-from string import Template
+from re import sub
 from typing import Mapping, Sequence
 
 from ..config.injection_context import InjectionContext
@@ -102,8 +102,8 @@ class ProtocolRegistry:
     def _get_updated_tyoeset_dict(self, typesets, to_check, updated_typeset) -> dict:
         for typeset in typesets:
             for msg_type_string, module_path in typeset.items():
-                updated_msg_type_string = Template(msg_type_string).substitute(
-                    version=to_check
+                updated_msg_type_string = sub(
+                    r"(\d+\.)?(\*|\d+)", to_check, msg_type_string
                 )
                 updated_typeset[updated_msg_type_string] = module_path
         return updated_typeset

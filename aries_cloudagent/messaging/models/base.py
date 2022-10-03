@@ -323,15 +323,10 @@ class BaseModelSchema(Schema):
         try:
             cls_inst = self.Model(**data)
         except TypeError as err:
-            msg_type_version = None
             if "_type" in str(err) and "_type" in data:
-                match = re.search(r"(\d+\.)?(\*|\d+)", data["_type"])
-                if match:
-                    msg_type_version = match.group()
+                data["msg_type"] = data["_type"]
                 del data["_type"]
             cls_inst = self.Model(**data)
-            if msg_type_version:
-                cls_inst.assign_version_to_message_type(msg_type_version)
         return cls_inst
 
     @post_dump

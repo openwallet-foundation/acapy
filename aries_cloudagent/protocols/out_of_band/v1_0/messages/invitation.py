@@ -125,6 +125,7 @@ class InvitationMessage(AgentMessage):
         services: Sequence[Union[Service, Text]] = None,
         accept: Optional[Sequence[Text]] = None,
         version: str = DEFAULT_VERSION,
+        msg_type: Optional[Text] = None,
         **kwargs,
     ):
         """
@@ -142,7 +143,10 @@ class InvitationMessage(AgentMessage):
         )
         self.requests_attach = list(requests_attach) if requests_attach else []
         self.services = services
-        self.assign_version_to_message_type(version)
+        if msg_type:
+            self._type = msg_type
+        else:
+            self._type = self.get_updated_msg_type(version)
         self.accept = accept
 
     @classmethod
