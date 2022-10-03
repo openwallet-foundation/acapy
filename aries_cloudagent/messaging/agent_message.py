@@ -1,6 +1,5 @@
 """Agent message base class and schema."""
 
-import re
 import uuid
 
 from collections import OrderedDict
