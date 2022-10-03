@@ -1,6 +1,5 @@
 """Base classes for Models and Schemas."""
 
-import re
 import logging
 import json
 
