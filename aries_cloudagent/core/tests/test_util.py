@@ -64,10 +64,19 @@ class TestUtils(IsolatedAsyncioTestCase):
         )
 
     def test_get_version_from_message(self):
-        assert test_module.get_version_from_message(HandshakeReuse()) == "1.0"
+        assert test_module.get_version_from_message(HandshakeReuse()) == "1.1"
 
-    async def test_get_proto_default_version(self):
+    async def test_get_proto_default_version_from_msg_class(self):
         profile = make_profile()
         assert (
-            await test_module.get_proto_default_version(profile, HandshakeReuse)
+            await test_module.get_proto_default_version_from_msg_class(
+                profile, HandshakeReuse
+            )
+        ) == "1.1"
+
+    def test_get_proto_default_version(self):
+        assert (
+            test_module.get_proto_default_version(
+                "aries_cloudagent.protocols.out_of_band.definition"
+            )
         ) == "1.1"

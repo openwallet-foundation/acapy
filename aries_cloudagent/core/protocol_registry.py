@@ -1,14 +1,14 @@
 """Handle registration and publication of supported protocols."""
 
 import logging
+import re
 
-from string import Template
 from typing import Mapping, Sequence
 
 from ..config.injection_context import InjectionContext
 from ..utils.classloader import ClassLoader
 
-from .error import ProtocolMinorVersionNotSupported
+from .error import ProtocolMinorVersionNotSupported, ProtocolDefinitionValidationError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -91,28 +91,34 @@ class ProtocolRegistry:
         curr_minor_version = version_definition["current_minor_version"]
         min_minor_version = version_definition["minimum_minor_version"]
         major_version = version_definition["major_version"]
-        if curr_minor_version >= min_minor_version and curr_minor_version >= 1:
+        if curr_minor_version >= min_minor_version:
             for version_index in range(min_minor_version, curr_minor_version + 1):
                 to_check = f"{str(major_version)}.{str(version_index)}"
                 updated_typeset.update(
-                    self._get_updated_tyoeset_dict(typesets, to_check, updated_typeset)
+                    self._get_updated_typeset_dict(typesets, to_check, updated_typeset)
                 )
+        else:
+            raise ProtocolDefinitionValidationError(
+                "min_minor_version is greater than curr_minor_version for the"
+                f" following typeset: {str(typesets)}"
+            )
         return (updated_typeset,)
 
-    def _get_updated_tyoeset_dict(self, typesets, to_check, updated_typeset) -> dict:
+    def _get_updated_typeset_dict(self, typesets, to_check, updated_typeset) -> dict:
         for typeset in typesets:
             for msg_type_string, module_path in typeset.items():
-                updated_msg_type_string = Template(msg_type_string).substitute(
-                    version=to_check
+                updated_msg_type_string = re.sub(
+                    r"(\d+\.)?(\*|\d+)", to_check, msg_type_string
                 )
                 updated_typeset[updated_msg_type_string] = module_path
         return updated_typeset
 
-    def _template_message_type_check(self, typeset) -> bool:
-        for msg_type_string, _ in typeset.items():
-            if "$version" in msg_type_string:
-                return True
-        return False
+    def _message_type_check_for_minor_verssion(self, version_definition) -> bool:
+        if not version_definition:
+            return False
+        curr_minor_version = version_definition["current_minor_version"]
+        min_minor_version = version_definition["minimum_minor_version"]
+        return bool(curr_minor_version >= 1 and curr_minor_version >= min_minor_version)
 
     def _create_and_register_updated_typesets(self, typesets, version_definition):
         updated_typesets = self.create_msg_types_for_minor_version(
@@ -153,17 +159,18 @@ class ProtocolRegistry:
         """
 
         # Maintain support for versionless protocol modules
-        template_msg_type_version = True
         updated_typesets = None
-        for typeset in typesets:
-            if not self._template_message_type_check(typeset):
+        minor_versions_supported = self._message_type_check_for_minor_verssion(
+            version_definition
+        )
+        if not minor_versions_supported:
+            for typeset in typesets:
                 self._typemap.update(typeset)
-                template_msg_type_version = False
 
         # Track versioned modules for version routing
         if version_definition:
             # create updated typesets for minor versions and register them
-            if template_msg_type_version:
+            if minor_versions_supported:
                 updated_typesets = self._create_and_register_updated_typesets(
                     typesets, version_definition
                 )
