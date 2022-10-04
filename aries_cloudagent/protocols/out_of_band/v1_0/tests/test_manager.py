@@ -103,6 +103,7 @@ class TestConfig:
         service_endpoint=test_endpoint,
     )
     NOW_8601 = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
+    TEST_INVI_MESSAGE_TYPE = "out-of-band/1.1/invitation"
     NOW_EPOCH = str_to_epoch(NOW_8601)
     CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
     INDY_PROOF_REQ = json.loads(
@@ -389,7 +390,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert invi_rec.invitation._type == DIDCommPrefix.qualify_current(
-                "out-of-band/1.1/invitation"
+                self.TEST_INVI_MESSAGE_TYPE
             )
             assert not invi_rec.invitation.requests_attach
             assert (
@@ -476,7 +477,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 assert isinstance(invite, InvitationRecord)
                 assert invite.invitation._type == DIDCommPrefix.qualify_current(
-                    "out-of-band/1.1/invitation"
+                    self.TEST_INVI_MESSAGE_TYPE
                 )
                 assert invite.invitation.label == "test123"
                 assert (
@@ -795,7 +796,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
 
                 assert invi_rec._invitation.ser[
                     "@type"
-                ] == DIDCommPrefix.qualify_current("out-of-band/1.1/invitation")
+                ] == DIDCommPrefix.qualify_current(self.TEST_INVI_MESSAGE_TYPE)
                 assert not invi_rec._invitation.ser.get("requests~attach")
                 assert invi_rec.invitation.label == "That guy"
                 assert (

@@ -45,14 +45,15 @@ class TestProtocolRegistry(AsyncTestCase):
             assert matches == ()
 
     def test_create_msg_types_for_minor_version(self):
+        MSG_PATH = "aries_cloudagent.protocols.introduction.v0_1.messages"
         test_typesets = (
             {
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-forward-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.forward_invitation.ForwardInvitation",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation.Invitation",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-invitation-request": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation_request.InvitationRequest",
-                "https://didcom.org/introduction-service/1.0/fake-forward-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.forward_invitation.ForwardInvitation",
-                "https://didcom.org/introduction-service/1.0/fake-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation.Invitation",
-                "https://didcom.org/introduction-service/1.0/fake-invitation-request": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation_request.InvitationRequest",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-forward-invitation": f"{MSG_PATH}.forward_invitation.ForwardInvitation",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-invitation": f"{MSG_PATH}.invitation.Invitation",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/1.0/fake-invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
+                "https://didcom.org/introduction-service/1.0/fake-forward-invitation": f"{MSG_PATH}.forward_invitation.ForwardInvitation",
+                "https://didcom.org/introduction-service/1.0/fake-invitation": f"{MSG_PATH}.invitation.Invitation",
+                "https://didcom.org/introduction-service/1.0/fake-invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
             },
         )
         test_version_def = {
@@ -83,14 +84,15 @@ class TestProtocolRegistry(AsyncTestCase):
         )
 
     def test_introduction_create_msg_types_for_minor_version(self):
+        MSG_PATH = "aries_cloudagent.protocols.introduction.v0_1.messages"
         test_typesets = (
             {
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/invitation-request": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation_request.InvitationRequest",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation.Invitation",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/forward-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation_messages.forward_invitation.ForwardInvitation",
-                "https://didcom.org/introduction-service/0.1/invitation-request": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation_request.InvitationRequest",
-                "https://didcom.org/introduction-service/0.1/invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.invitation.Invitation",
-                "https://didcom.org/introduction-service/0.1/forward-invitation": "aries_cloudagent.protocols.introduction.v0_1.messages.forward_invitation.ForwardInvitation",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/invitation": f"{MSG_PATH}.invitation.Invitation",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/introduction-service/0.1/forward-invitation": f"{MSG_PATH}.invitation_messages.forward_invitation.ForwardInvitation",
+                "https://didcom.org/introduction-service/0.1/invitation-request": f"{MSG_PATH}.invitation_request.InvitationRequest",
+                "https://didcom.org/introduction-service/0.1/invitation": f"{MSG_PATH}.invitation.Invitation",
+                "https://didcom.org/introduction-service/0.1/forward-invitation": f"{MSG_PATH}.forward_invitation.ForwardInvitation",
             },
         )
         test_version_def = {
@@ -128,16 +130,17 @@ class TestProtocolRegistry(AsyncTestCase):
         )
 
     def test_oob_create_msg_types_for_minor_version(self):
+        MSG_PATH = "aries_cloudagent.protocols.out_of_band.v1_0.messages"
         test_typesets = (
             {
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/invitation": "aries_cloudagent.protocols.out_of_band.v1_0.messages.invitation.Invitation",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse": "aries_cloudagent.protocols.out_of_band.v1_0.messages.reuse.HandshakeReuse",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse-accepted": "aries_cloudagent.protocols.out_of_band.v1_0.messages.reuse_accept.HandshakeReuseAccept",
-                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/problem_report": "aries_cloudagent.protocols.out_of_band.v1_0.messages.problem_report.OOBProblemReport",
-                "https://didcom.org/out-of-band/1.1/invitation": "aries_cloudagent.protocols.out_of_band.v1_0.messages.invitation.Invitation",
-                "https://didcom.org/out-of-band/1.1/handshake-reuse": "aries_cloudagent.protocols.out_of_band.v1_0.messages.reuse.HandshakeReuse",
-                "https://didcom.org/out-of-band/1.1/handshake-reuse-accepted": "aries_cloudagent.protocols.out_of_band.v1_0.messages.reuse_accept.HandshakeReuseAccept",
-                "https://didcom.org/out-of-band/1.1/problem_report": "aries_cloudagent.protocols.out_of_band.v1_0.messages.problem_report.OOBProblemReport",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/invitation": f"{MSG_PATH}.invitation.Invitation",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse": f"{MSG_PATH}.reuse.HandshakeReuse",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/handshake-reuse-accepted": f"{MSG_PATH}.reuse_accept.HandshakeReuseAccept",
+                "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/out-of-band/1.1/problem_report": f"{MSG_PATH}.problem_report.OOBProblemReport",
+                "https://didcom.org/out-of-band/1.1/invitation": f"{MSG_PATH}.invitation.Invitation",
+                "https://didcom.org/out-of-band/1.1/handshake-reuse": f"{MSG_PATH}.reuse.HandshakeReuse",
+                "https://didcom.org/out-of-band/1.1/handshake-reuse-accepted": f"{MSG_PATH}.reuse_accept.HandshakeReuseAccept",
+                "https://didcom.org/out-of-band/1.1/problem_report": f"{MSG_PATH}.problem_report.OOBProblemReport",
             },
         )
         test_version_def = {
