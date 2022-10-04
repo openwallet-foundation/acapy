@@ -69,7 +69,7 @@ class IndyDIDResolver(BaseDIDResolver):
         builder: DIDDocumentBuilder,
         endpoints: Optional[dict],
         recipient_key: VerificationMethod = None,
-        accept: Optional[Sequence[Text]] = None,
+        service_accept: Optional[Sequence[Text]] = None,
     ):
         """Add services."""
         if not endpoints:
@@ -103,7 +103,9 @@ class IndyDIDResolver(BaseDIDResolver):
                     priority=1,
                     routing_keys=routing_keys,
                     recipient_keys=[recipient_key.id],
-                    accept=(accept if accept else ["didcomm/aip2;env=rfc19"]),
+                    accept=(
+                        service_accept if service_accept else ["didcomm/aip2;env=rfc19"]
+                    ),
                 )
 
             if self.SERVICE_TYPE_DIDCOMM in types:
@@ -113,7 +115,7 @@ class IndyDIDResolver(BaseDIDResolver):
                     service_endpoint=endpoint,
                     recipient_keys=[recipient_key.id],
                     routing_keys=routing_keys,
-                    # CHECKME accept=(accept if accept else ["didcomm/v2"]),
+                    # CHECKME accept=(service_accept if service_accept else ["didcomm/v2"]),
                     accept=["didcomm/v2"],
                 )
                 builder.context.append(self.CONTEXT_DIDCOMM_V2)
@@ -131,7 +133,10 @@ class IndyDIDResolver(BaseDIDResolver):
                 )
 
     async def _resolve(
-        self, profile: Profile, did: str, accept: Optional[Sequence[Text]] = None
+        self,
+        profile: Profile,
+        did: str,
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve an indy DID."""
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
@@ -162,7 +167,7 @@ class IndyDIDResolver(BaseDIDResolver):
         )
         builder.authentication.reference(vmethod.id)
         builder.assertion_method.reference(vmethod.id)
-        self.add_services(builder, endpoints, vmethod, accept)
+        self.add_services(builder, endpoints, vmethod, service_accept)
 
         result = builder.build()
         return result.serialize()

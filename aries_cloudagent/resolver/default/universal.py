@@ -84,7 +84,10 @@ class UniversalResolver(BaseDIDResolver):
         return self._supported_did_regex
 
     async def _resolve(
-        self, _profile: Profile, did: str, accept: Optional[Sequence[Text]] = None
+        self,
+        _profile: Profile,
+        did: str,
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve DID through remote universal resolver."""
 

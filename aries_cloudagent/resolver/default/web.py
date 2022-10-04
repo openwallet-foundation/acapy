@@ -58,7 +58,10 @@ class WebDIDResolver(BaseDIDResolver):
         return "https://" + url + "/did.json"
 
     async def _resolve(
-        self, profile: Profile, did: str, accept: Optional[Sequence[Text]] = None
+        self,
+        profile: Profile,
+        did: str,
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve did:web DIDs."""
 
