@@ -29,11 +29,7 @@ class HandshakeReuse(AgentMessage):
         **kwargs,
     ):
         """Initialize Handshake Reuse message object."""
-        super().__init__(**kwargs)
-        if msg_type:
-            self._type = msg_type
-        else:
-            self._type = self.get_updated_msg_type(version)
+        super().__init__(_type=msg_type, _version=version, **kwargs)
 
 
 class HandshakeReuseSchema(AgentMessageSchema):

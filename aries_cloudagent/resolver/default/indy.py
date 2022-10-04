@@ -112,7 +112,8 @@ class IndyDIDResolver(BaseDIDResolver):
                     service_endpoint=endpoint,
                     recipient_keys=[recipient_key.id],
                     routing_keys=routing_keys,
-                    # CHECKME accept=(service_accept if service_accept else ["didcomm/v2"]),
+                    # CHECKME
+                    # accept=(service_accept if service_accept else ["didcomm/v2"]),
                     accept=["didcomm/v2"],
                 )
                 builder.context.append(self.CONTEXT_DIDCOMM_V2)
