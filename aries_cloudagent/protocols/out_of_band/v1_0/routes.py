@@ -101,6 +101,11 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         required=False,
         example="Invitation to Barry",
     )
+    protocol_version = fields.Str(
+        description="OOB protocol version",
+        required=False,
+        example="1.1",
+    )
     alias = fields.Str(
         description="Alias for connection",
         required=False,
@@ -166,6 +171,7 @@ async def invitation_create(request: web.BaseRequest):
     my_label = body.get("my_label")
     alias = body.get("alias")
     mediation_id = body.get("mediation_id")
+    protocol_version = body.get("protocol_version")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
@@ -186,6 +192,7 @@ async def invitation_create(request: web.BaseRequest):
             alias=alias,
             mediation_id=mediation_id,
             accept=accept,
+            protocol_version=protocol_version,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=e.roll_up)
