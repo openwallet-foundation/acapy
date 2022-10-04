@@ -165,7 +165,7 @@ async def invitation_create(request: web.BaseRequest):
     body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
     handshake_protocols = body.get("handshake_protocols", [])
-    accept = body.get("accept")
+    service_accept = body.get("accept")
     use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
     my_label = body.get("my_label")
@@ -191,7 +191,7 @@ async def invitation_create(request: web.BaseRequest):
             metadata=metadata,
             alias=alias,
             mediation_id=mediation_id,
-            accept=accept,
+            service_accept=service_accept,
             protocol_version=protocol_version,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:

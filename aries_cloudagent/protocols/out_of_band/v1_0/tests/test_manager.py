@@ -790,7 +790,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     public=False,
                     hs_protos=[test_module.HSProto.RFC23],
                     multi_use=False,
-                    accept=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+                    service_accept=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
                 )
 
                 assert invi_rec._invitation.ser[
@@ -1511,7 +1511,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 alias="alias",
                 auto_accept=True,
                 mediation_id="mediation_id",
-                accept=None,
+                service_accept=None,
             )
 
             assert mock_oob.state == OobRecord.STATE_DONE

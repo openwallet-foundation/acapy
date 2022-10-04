@@ -95,7 +95,7 @@ class ProtocolRegistry:
             for version_index in range(min_minor_version, curr_minor_version + 1):
                 to_check = f"{str(major_version)}.{str(version_index)}"
                 updated_typeset.update(
-                    self._get_updated_tyoeset_dict(typesets, to_check, updated_typeset)
+                    self._get_updated_typeset_dict(typesets, to_check, updated_typeset)
                 )
         else:
             raise ProtocolDefinitionValidationError(
@@ -104,7 +104,7 @@ class ProtocolRegistry:
             )
         return (updated_typeset,)
 
-    def _get_updated_tyoeset_dict(self, typesets, to_check, updated_typeset) -> dict:
+    def _get_updated_typeset_dict(self, typesets, to_check, updated_typeset) -> dict:
         for typeset in typesets:
             for msg_type_string, module_path in typeset.items():
                 updated_msg_type_string = re.sub(

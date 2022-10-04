@@ -91,7 +91,7 @@ class OutOfBandManager(BaseConnectionManager):
         attachments: Sequence[Mapping] = None,
         metadata: dict = None,
         mediation_id: str = None,
-        accept: Optional[Sequence[Text]] = None,
+        service_accept: Optional[Sequence[Text]] = None,
         protocol_version: Optional[Text] = None,
     ) -> InvitationRecord:
         """
@@ -111,7 +111,7 @@ class OutOfBandManager(BaseConnectionManager):
             multi_use: set to True to create an invitation for multiple-use connection
             alias: optional alias to apply to connection for later use
             attachments: list of dicts in form of {"id": ..., "type": ...}
-            accept: Optional list of mime types in the order of preference of the sender
+            service_accept: Optional list of mime types in the order of preference of the sender
             that the receiver can use in responding to the message
             protocol_version: OOB protocol version [1.0, 1.1]
 
@@ -242,7 +242,7 @@ class OutOfBandManager(BaseConnectionManager):
                 handshake_protocols=handshake_protocols,
                 requests_attach=message_attachments,
                 services=[f"did:sov:{public_did.did}"],
-                accept=accept if protocol_version != "1.0" else None,
+                service_accept=service_accept if protocol_version != "1.0" else None,
                 version=protocol_version or DEFAULT_VERSION,
             )
             keylist_updates = await mediation_mgr.add_key(
@@ -382,7 +382,9 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg.label = my_label or self.profile.settings.get("default_label")
             invi_msg.handshake_protocols = handshake_protocols
             invi_msg.requests_attach = message_attachments
-            invi_msg.accept = accept if protocol_version != "1.0" else None
+            invi_msg.service_accept = (
+                service_accept if protocol_version != "1.0" else None
+            )
             invi_msg.services = [
                 ServiceMessage(
                     _id="#inline",
@@ -469,8 +471,8 @@ class OutOfBandManager(BaseConnectionManager):
         # Get the single service item
         oob_service_item = invitation.services[0]
 
-        # accept
-        accept = invitation.accept
+        # service_accept
+        service_accept = invitation.service_accept
 
         # Get the DID public did, if any
         public_did = None
@@ -526,7 +528,7 @@ class OutOfBandManager(BaseConnectionManager):
                 alias=alias,
                 auto_accept=auto_accept,
                 mediation_id=mediation_id,
-                accept=accept,
+                service_accept=service_accept,
             )
             LOGGER.debug(
                 f"Performed handshake with connection {oob_record.connection_id}"
@@ -781,7 +783,7 @@ class OutOfBandManager(BaseConnectionManager):
         alias: Optional[str] = None,
         auto_accept: Optional[bool] = None,
         mediation_id: Optional[str] = None,
-        accept: Optional[Sequence[Text]] = None,
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> OobRecord:
         invitation = oob_record.invitation
 
@@ -810,7 +812,7 @@ class OutOfBandManager(BaseConnectionManager):
             # ED25519 keys
             endpoint, recipient_keys, routing_keys = await self.resolve_invitation(
                 service,
-                accept=accept,
+                service_accept=service_accept,
             )
             service = ServiceMessage.deserialize(
                 {

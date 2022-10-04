@@ -136,7 +136,7 @@ class BaseDIDResolver(ABC):
         self,
         profile: Profile,
         did: Union[str, DID],
-        accept: Optional[Sequence[Text]] = None,
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve a DID using this resolver."""
         if isinstance(did, DID):
@@ -148,10 +148,13 @@ class BaseDIDResolver(ABC):
                 f"{self.__class__.__name__} does not support DID method for: {did}"
             )
 
-        return await self._resolve(profile, did, accept)
+        return await self._resolve(profile, did, service_accept)
 
     @abstractmethod
     async def _resolve(
-        self, profile: Profile, did: str, accept: Optional[Sequence[Text]] = None
+        self,
+        profile: Profile,
+        did: str,
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve a DID using this resolver."""

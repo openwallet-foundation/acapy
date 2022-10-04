@@ -41,7 +41,7 @@ class DIDResolver:
         self,
         profile: Profile,
         did: Union[str, DID],
-        accept: Optional[Sequence[Text]] = None,
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> Tuple[BaseDIDResolver, dict]:
         """Retrieve doc and return with resolver."""
         # TODO Cache results
@@ -55,7 +55,7 @@ class DIDResolver:
                 document = await resolver.resolve(
                     profile,
                     did,
-                    accept,
+                    service_accept,
                 )
                 return resolver, document
             except DIDNotFound:
@@ -67,10 +67,10 @@ class DIDResolver:
         self,
         profile: Profile,
         did: Union[str, DID],
-        accept: Optional[Sequence[Text]] = None,
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> dict:
         """Resolve a DID."""
-        _, doc = await self._resolve(profile, did, accept)
+        _, doc = await self._resolve(profile, did, service_accept)
         return doc
 
     async def resolve_with_metadata(

@@ -123,7 +123,7 @@ class InvitationMessage(AgentMessage):
         handshake_protocols: Sequence[Text] = None,
         requests_attach: Sequence[AttachDecorator] = None,
         services: Sequence[Union[Service, Text]] = None,
-        accept: Optional[Sequence[Text]] = None,
+        service_accept: Optional[Sequence[Text]] = None,
         version: str = DEFAULT_VERSION,
         msg_type: Optional[Text] = None,
         **kwargs,
@@ -147,7 +147,7 @@ class InvitationMessage(AgentMessage):
             self._type = msg_type
         else:
             self._type = self.get_updated_msg_type(version)
-        self.accept = accept
+        self.service_accept = service_accept
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
@@ -222,7 +222,7 @@ class InvitationMessageSchema(AgentMessageSchema):
         ),
         required=False,
     )
-    accept = fields.List(
+    service_accept = fields.List(
         fields.Str(),
         example=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
         description=("List of mime type in order of preference"),
