@@ -58,6 +58,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
                 alias=None,
                 mediation_id=None,
                 accept=None,
+                protocol_version=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
 
@@ -86,7 +87,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
                 )
             )
 
-            result = await test_module.invitation_create(self.request)
+            await test_module.invitation_create(self.request)
             mock_oob_mgr.return_value.create_invitation.assert_called_once_with(
                 my_label=None,
                 auto_accept=True,
@@ -98,6 +99,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
                 alias=None,
                 mediation_id=None,
                 accept=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+                protocol_version=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
 
