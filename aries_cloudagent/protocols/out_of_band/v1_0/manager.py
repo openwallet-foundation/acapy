@@ -37,6 +37,7 @@ from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
 from .models.oob_record import OobRecord
 from .messages.service import Service
+from .message_types import DEFAULT_VERSION
 
 LOGGER = logging.getLogger(__name__)
 REUSE_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse"
@@ -88,6 +89,7 @@ class OutOfBandManager(BaseConnectionManager):
         metadata: dict = None,
         mediation_id: str = None,
         accept: Optional[Sequence[Text]] = None,
+        protocol_version: Optional[Text] = None,
     ) -> InvitationRecord:
         """
         Generate new connection invitation.
@@ -108,6 +110,7 @@ class OutOfBandManager(BaseConnectionManager):
             attachments: list of dicts in form of {"id": ..., "type": ...}
             accept: Optional list of mime types in the order of preference of the sender
             that the receiver can use in responding to the message
+            protocol_version: OOB protocol version [1.0, 1.1]
 
         Returns:
             Invitation record
@@ -230,7 +233,8 @@ class OutOfBandManager(BaseConnectionManager):
                 handshake_protocols=handshake_protocols,
                 requests_attach=message_attachments,
                 services=[f"did:sov:{public_did.did}"],
-                accept=accept,
+                accept=accept if protocol_version != "1.0" else None,
+                version=protocol_version or DEFAULT_VERSION,
             )
 
             our_recipient_key = public_did.verkey
@@ -276,7 +280,9 @@ class OutOfBandManager(BaseConnectionManager):
 
             # Initializing  InvitationMessage here to include
             # invitation_msg_id in webhook poyload
-            invi_msg = InvitationMessage(_id=invitation_message_id)
+            invi_msg = InvitationMessage(
+                _id=invitation_message_id, version=protocol_version or DEFAULT_VERSION
+            )
 
             if handshake_protocols:
                 invitation_mode = (
@@ -326,7 +332,7 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg.label = my_label or self.profile.settings.get("default_label")
             invi_msg.handshake_protocols = handshake_protocols
             invi_msg.requests_attach = message_attachments
-            invi_msg.accept = accept
+            invi_msg.accept = accept if protocol_version != "1.0" else None
             invi_msg.services = [
                 ServiceMessage(
                     _id="#inline",
