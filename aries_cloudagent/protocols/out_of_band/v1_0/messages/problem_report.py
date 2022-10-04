@@ -50,11 +50,7 @@ class OOBProblemReport(ProblemReport):
         **kwargs,
     ):
         """Initialize a ProblemReport message instance."""
-        super().__init__(*args, **kwargs)
-        if msg_type:
-            self._type = msg_type
-        else:
-            self._type = self.get_updated_msg_type(version)
+        super().__init__(_type=msg_type, _version=version, *args, **kwargs)
 
 
 class OOBProblemReportSchema(ProblemReportSchema):

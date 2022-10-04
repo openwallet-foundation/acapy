@@ -4,7 +4,7 @@ import uuid
 
 from collections import OrderedDict
 from re import sub
-from typing import Mapping, Union
+from typing import Mapping, Optional, Union, Text
 
 from marshmallow import (
     EXCLUDE,
@@ -55,7 +55,13 @@ class AgentMessage(BaseModel, BaseMessage):
         schema_class = None
         message_type = None
 
-    def __init__(self, _id: str = None, _decorators: BaseDecoratorSet = None):
+    def __init__(
+        self,
+        _id: str = None,
+        _type: Optional[Text] = None,
+        _version: Optional[Text] = None,
+        _decorators: BaseDecoratorSet = None,
+    ):
         """
         Initialize base agent message object.
 
@@ -83,7 +89,12 @@ class AgentMessage(BaseModel, BaseMessage):
                     self.__class__.__name__
                 )
             )
-        self._message_type = self.Meta.message_type
+        if _type:
+            self._message_type = _type
+        elif _version:
+            self._message_type = self.get_updated_msg_type(_version)
+        else:
+            self._message_type = self.Meta.message_type
         # Not required for now
         # if not self.Meta.handler_class:
         #    raise TypeError(

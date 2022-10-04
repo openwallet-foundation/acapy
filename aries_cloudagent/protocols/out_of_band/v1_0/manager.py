@@ -108,8 +108,8 @@ class OutOfBandManager(BaseConnectionManager):
             multi_use: set to True to create an invitation for multiple-use connection
             alias: optional alias to apply to connection for later use
             attachments: list of dicts in form of {"id": ..., "type": ...}
-            service_accept: Optional list of mime types in the order of preference of the sender
-            that the receiver can use in responding to the message
+            service_accept: Optional list of mime types in the order of preference of
+            the sender that the receiver can use in responding to the message
             protocol_version: OOB protocol version [1.0, 1.1]
 
         Returns:
@@ -233,7 +233,7 @@ class OutOfBandManager(BaseConnectionManager):
                 handshake_protocols=handshake_protocols,
                 requests_attach=message_attachments,
                 services=[f"did:sov:{public_did.did}"],
-                service_accept=service_accept if protocol_version != "1.0" else None,
+                accept=service_accept if protocol_version != "1.0" else None,
                 version=protocol_version or DEFAULT_VERSION,
             )
 
@@ -332,9 +332,7 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg.label = my_label or self.profile.settings.get("default_label")
             invi_msg.handshake_protocols = handshake_protocols
             invi_msg.requests_attach = message_attachments
-            invi_msg.service_accept = (
-                service_accept if protocol_version != "1.0" else None
-            )
+            invi_msg.accept = service_accept if protocol_version != "1.0" else None
             invi_msg.services = [
                 ServiceMessage(
                     _id="#inline",
@@ -429,7 +427,7 @@ class OutOfBandManager(BaseConnectionManager):
         oob_service_item = invitation.services[0]
 
         # service_accept
-        service_accept = invitation.service_accept
+        service_accept = invitation.accept
 
         # Get the DID public did, if any
         public_did = None
