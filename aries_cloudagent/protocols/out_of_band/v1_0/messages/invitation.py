@@ -120,6 +120,7 @@ class InvitationMessage(AgentMessage):
         *,
         comment: str = None,
         label: str = None,
+        image_url: str = None,
         handshake_protocols: Sequence[Text] = None,
         requests_attach: Sequence[AttachDecorator] = None,
         services: Sequence[Union[Service, Text]] = None,
@@ -138,6 +139,7 @@ class InvitationMessage(AgentMessage):
         # super().__init__(_id=_id, **kwargs)
         super().__init__(_type=msg_type, _version=version, **kwargs)
         self.label = label
+        self.image_url = image_url
         self.handshake_protocols = (
             list(handshake_protocols) if handshake_protocols else []
         )
@@ -208,6 +210,13 @@ class InvitationMessageSchema(AgentMessageSchema):
         example="https://didcomm.org/my-family/1.0/my-message-type",
     )
     label = fields.Str(required=False, description="Optional label", example="Bob")
+    image_url = fields.URL(
+        data_key="imageUrl",
+        required=False,
+        allow_none=True,
+        description="Optional image URL for out-of-band invitation",
+        example="http://192.168.56.101/img/logo.jpg",
+    )
     handshake_protocols = fields.List(
         fields.Str(
             description="Handshake protocol",
