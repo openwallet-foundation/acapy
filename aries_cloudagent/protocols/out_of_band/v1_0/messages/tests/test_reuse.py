@@ -35,3 +35,11 @@ class TestReuseMessage(TestCase):
         """Exercise pre-dump serialization requirements."""
         with pytest.raises(BaseModelError):
             data = self.reuse_msg.serialize()
+
+    def test_assign_msg_type_version_to_model_inst(self):
+        test_msg = HandshakeReuse()
+        assert "1.1" in test_msg._type
+        assert "1.1" in HandshakeReuse.Meta.message_type
+        test_msg = HandshakeReuse(version="1.2")
+        assert "1.2" in test_msg._type
+        assert "1.1" in HandshakeReuse.Meta.message_type
