@@ -8,7 +8,7 @@ retrieving did's from different sources provided by the method type.
 from datetime import datetime
 from itertools import chain
 import logging
-from typing import Optional, List, Sequence, Tuple, Text, Type, TypeVar, Union
+from typing import Optional, Sequence, Tuple, Text, Type, TypeVar, Union
 
 from pydid import DID, DIDError, DIDUrl, Resource, NonconformantDocument
 from pydid.doc.doc import IDNotFoundError

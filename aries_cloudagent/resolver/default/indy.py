@@ -3,6 +3,7 @@
 Resolution is performed using the IndyLedger class.
 """
 
+import logging
 from typing import Optional, Pattern, Sequence, Text
 
 from pydid import DID, DIDDocumentBuilder
@@ -20,6 +21,8 @@ from ...messaging.valid import IndyDID
 from ...multitenant.base import BaseMultitenantManager
 
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
+
+LOGGER = logging.getLogger(__name__)
 
 
 class NoIndyLedger(ResolverError):
