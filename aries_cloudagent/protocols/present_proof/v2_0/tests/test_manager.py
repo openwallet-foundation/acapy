@@ -854,7 +854,7 @@ class TestV20PresManager(AsyncTestCase):
             )
 
             mock_create_pres.return_value = (
-                PRES_20, 
+                PRES_20,
                 AttachDecorator.data_json(DIF_PRES, ident="dif"),
             )
 
