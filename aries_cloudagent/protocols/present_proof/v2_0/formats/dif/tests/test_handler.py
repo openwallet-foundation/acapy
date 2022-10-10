@@ -289,7 +289,7 @@ DIF_PRES_SEQUENCE = [
         "@context": ["https://www.w3.org/2018/credentials/v1"],
         "type": ["VerifiablePresentation"],
         "verifiableCredential": [
-             {
+            {
                 "@context": [
                     "https://www.w3.org/2018/credentials/v1",
                     "https://w3id.org/citizenship/v1",

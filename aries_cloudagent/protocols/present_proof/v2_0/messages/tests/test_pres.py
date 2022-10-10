@@ -1818,7 +1818,6 @@ PRES_DIF = V20Pres(
 )
 
 
-
 class TestV20Pres(TestCase):
     """Presentation tests."""
 

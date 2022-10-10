@@ -1250,7 +1250,7 @@ class DIFPresExchHandler:
                 res = await self.apply_requirements(
                     req=nested_req,
                     credentials=credentials,
-                    records_filter=records_filter
+                    records_filter=records_filter,
                 )
                 result.append(res)
         else:
@@ -1288,9 +1288,7 @@ class DIFPresExchHandler:
                     applicable_creds=applicable_creds
                 )
                 if not issuer_id and len(filtered_creds_list) == 0:
-                    vp = await create_presentation(
-                        credentials=applicable_creds_list
-                    )
+                    vp = await create_presentation(credentials=applicable_creds_list)
                     vp["presentation_submission"] = submission_property.serialize()
                     if self.proof_type is BbsBlsSignature2020.signature_type:
                         vp["@context"].append(SECURITY_CONTEXT_BBS_URL)

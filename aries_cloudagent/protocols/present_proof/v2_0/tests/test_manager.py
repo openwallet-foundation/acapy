@@ -831,7 +831,6 @@ class TestV20PresManager(AsyncTestCase):
                 AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy"),
                 AttachDecorator.data_json(DIF_PRES_REQ, ident="dif"),
             ],
-
         )
         px_rec_in = V20PresExRecord(pres_request=pres_request.serialize())
         more_magic_rr = async_mock.MagicMock(
@@ -856,7 +855,7 @@ class TestV20PresManager(AsyncTestCase):
 
             mock_create_pres.return_value = (
                 PRES_20, 
-                AttachDecorator.data_json(DIF_PRES, ident="dif")
+                AttachDecorator.data_json(DIF_PRES, ident="dif"),
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
@@ -2175,7 +2174,7 @@ class TestV20PresManager(AsyncTestCase):
             pres_request=pres_request,
             pres=pres,
         )
-        
+
         self.profile.context.injector.bind_instance(
             DocumentLoader, custom_document_loader
         )
