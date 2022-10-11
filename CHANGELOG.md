@@ -1,3 +1,21 @@
+# 0.7.5-rc0
+
+## October 11, 2022
+
+0.7.5 is a patch release to deal primarily to add [PR #1881 DID Exchange in
+ACA-Py 0.7.4 with explicit invitations and without auto-accept
+broken](https://github.com/hyperledger/aries-cloudagent-python/pull/1881). A
+couple of other PRs were added to the release, as listed below, and in
+[Milestone 0.7.5](https://github.com/hyperledger/aries-cloudagent-python/milestone/6).
+
+### List of Pull Requests
+
+- fix: didx request cannot be accepted [\#1881](https://github.com/hyperledger/aries-cloudagent-python/pull/1881) ([rmnre](https://github.com/rmnre))
+- Fix: OOB - Handling of minor versions [\#1940](https://github.com/hyperledger/aries-cloudagent-python/pull/1940) ([shaangill025](https://github.com/shaangill025))
+- fix: Safely shutdown when root_profile uninitialized [\#1960](https://github.com/hyperledger/aries-cloudagent-python/pull/1960) ([frostyfrog](https://github.com/frostyfrog))
+- feat: 00B v1.1 support [\#1962](https://github.com/hyperledger/aries-cloudagent-python/pull/1962) ([shaangill025](https://github.com/shaangill025))
+- 0.7.5 Cherry Picks [\#1967](https://github.com/hyperledger/aries-cloudagent-python/pull/1967) ([frostyfrog](https://github.com/frostyfrog))
+
 # 0.7.4
 
 ## June 30, 2022
