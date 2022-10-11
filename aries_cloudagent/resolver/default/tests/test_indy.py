@@ -33,8 +33,11 @@ def resolver():
 def ledger():
     """Ledger fixture."""
     ledger = async_mock.MagicMock(spec=BaseLedger)
-    ledger.get_endpoint_for_did = async_mock.CoroutineMock(
-        return_value="https://github.com/"
+    ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
+        return_value={
+            "endpoint": "https://github.com/",
+            "profile": "https://example.com/profile",
+        }
     )
     ledger.get_key_for_did = async_mock.CoroutineMock(return_value="key")
     yield ledger
@@ -66,6 +69,15 @@ class TestIndyResolver:
     async def test_resolve(self, profile: Profile, resolver: IndyDIDResolver):
         """Test resolve method."""
         assert await resolver.resolve(profile, TEST_DID0)
+
+    @pytest.mark.asyncio
+    async def test_resolve_with_accept(
+        self, profile: Profile, resolver: IndyDIDResolver
+    ):
+        """Test resolve method."""
+        assert await resolver.resolve(
+            profile, TEST_DID0, ["didcomm/aip1", "didcomm/aip2;env=rfc19"]
+        )
 
     @pytest.mark.asyncio
     async def test_resolve_multitenant(

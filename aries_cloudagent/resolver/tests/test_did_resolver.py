@@ -80,7 +80,7 @@ class MockResolver(BaseDIDResolver):
     async def setup(self, context):
         pass
 
-    async def _resolve(self, profile, did):
+    async def _resolve(self, profile, did, accept):
         if isinstance(self.resolved, Exception):
             raise self.resolved
         return self.resolved.serialize()
