@@ -3,7 +3,7 @@
 from collections import namedtuple
 from enum import Enum
 from re import sub
-from typing import Sequence, Text, Union
+from typing import Optional, Sequence, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import (
@@ -26,7 +26,7 @@ from ....didcomm_prefix import DIDCommPrefix
 from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 
-from ..message_types import INVITATION
+from ..message_types import INVITATION, DEFAULT_VERSION
 
 from .service import Service
 
@@ -123,6 +123,9 @@ class InvitationMessage(AgentMessage):
         handshake_protocols: Sequence[Text] = None,
         requests_attach: Sequence[AttachDecorator] = None,
         services: Sequence[Union[Service, Text]] = None,
+        accept: Optional[Sequence[Text]] = None,
+        version: str = DEFAULT_VERSION,
+        msg_type: Optional[Text] = None,
         **kwargs,
     ):
         """
@@ -133,13 +136,14 @@ class InvitationMessage(AgentMessage):
 
         """
         # super().__init__(_id=_id, **kwargs)
-        super().__init__(**kwargs)
+        super().__init__(_type=msg_type, _version=version, **kwargs)
         self.label = label
         self.handshake_protocols = (
             list(handshake_protocols) if handshake_protocols else []
         )
         self.requests_attach = list(requests_attach) if requests_attach else []
         self.services = services
+        self.accept = accept
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
@@ -197,6 +201,12 @@ class InvitationMessageSchema(AgentMessageSchema):
         model_class = InvitationMessage
         unknown = EXCLUDE
 
+    _type = fields.Str(
+        data_key="@type",
+        required=False,
+        description="Message type",
+        example="https://didcomm.org/my-family/1.0/my-message-type",
+    )
     label = fields.Str(required=False, description="Optional label", example="Bob")
     handshake_protocols = fields.List(
         fields.Str(
@@ -206,6 +216,12 @@ class InvitationMessageSchema(AgentMessageSchema):
                 DIDCommPrefix.unqualify(hsp) in [p.name for p in HSProto]
             ),
         ),
+        required=False,
+    )
+    accept = fields.List(
+        fields.Str(),
+        example=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+        description=("List of mime type in order of preference"),
         required=False,
     )
     requests_attach = fields.Nested(

@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import Iterable, Optional, Pattern, Union
+from typing import Iterable, Optional, Pattern, Sequence, Union, Text
 
 import aiohttp
 
@@ -83,7 +83,12 @@ class UniversalResolver(BaseDIDResolver):
 
         return self._supported_did_regex
 
-    async def _resolve(self, _profile: Profile, did: str) -> dict:
+    async def _resolve(
+        self,
+        _profile: Profile,
+        did: str,
+        service_accept: Optional[Sequence[Text]] = None,
+    ) -> dict:
         """Resolve DID through remote universal resolver."""
 
         async with aiohttp.ClientSession() as session:
