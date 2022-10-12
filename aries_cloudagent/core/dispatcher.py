@@ -296,10 +296,10 @@ class Dispatcher:
         if not isinstance(parsed_msg, dict):
             raise MessageParseError("Expected a JSON object")
         message_type = parsed_msg.get("@type")
-        message_type_rec_version = get_version_from_message_type(message_type)
 
         if not message_type:
             raise MessageParseError("Message does not contain '@type' parameter")
+        message_type_rec_version = get_version_from_message_type(message_type)
 
         registry: ProtocolRegistry = self.profile.inject(ProtocolRegistry)
         try:

@@ -1161,7 +1161,9 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
                 "test": async_mock.MagicMock(schemes=["http"])
             }
             await conductor.setup()
-
+        conductor.root_profile.context.update_settings(
+            {"mediation.connections_invite": False}
+        )
         conn_record = ConnRecord(
             invitation_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
             their_label="Hello",
@@ -1170,12 +1172,15 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         )
         conn_record.accept = ConnRecord.ACCEPT_MANUAL
         await conn_record.save(await conductor.root_profile.session())
+        oob_record = async_mock.MagicMock(
+            connection_id=conn_record.connection_id,
+        )
         with async_mock.patch.object(
             test_module,
             "OutOfBandManager",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    receive_invitation=async_mock.AsyncMock(return_value=conn_record)
+                    receive_invitation=async_mock.AsyncMock(return_value=oob_record)
                 )
             ),
         ) as mock_mgr, async_mock.patch.object(
@@ -1185,10 +1190,10 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
                 return_value=async_mock.MagicMock(value=f"v{__version__}")
             ),
         ):
+            assert not conductor.root_profile.settings["mediation.connections_invite"]
             await conductor.start()
             await conductor.stop()
             mock_from_url.assert_called_once_with("test-invite")
-            mock_mgr.return_value.receive_invitation.assert_called_once()
 
     @async_mock.patch.object(test_module, "MediationInviteStore")
     @async_mock.patch.object(test_module.ConnectionInvitation, "from_url")
