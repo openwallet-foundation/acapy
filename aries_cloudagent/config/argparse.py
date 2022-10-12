@@ -1014,7 +1014,17 @@ class ProtocolGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_PUBLIC_INVITES",
             help=(
-                "Send invitations out, and receive connection requests, "
+                "Send invitations out using the public DID for the agent, "
+                "and receive connection requests solicited by invitations "
+                "which use the public DID. Default: false."
+            ),
+        )
+        parser.add_argument(
+            "--requests-through-public-did",
+            action="store_true",
+            env_var="ACAPY_REQUESTS_THROUGH_PUBLIC_DID",
+            help=(
+                "Allow agent to receive unsolicited connection requests, "
                 "using the public DID for the agent. Default: false."
             ),
         )
@@ -1109,6 +1119,11 @@ class ProtocolGroup(ArgumentGroup):
             settings["monitor_forward"] = args.monitor_forward
         if args.public_invites:
             settings["public_invites"] = True
+        if args.requests_through_public_did:
+            if not args.public_invites:
+                raise ArgsParseError("--public-invites is required to use "
+                                     "--requests-through-public-did")
+            settings["requests_through_public_did"] = True
         if args.timing:
             settings["timing.enabled"] = True
         if args.timing_log:
