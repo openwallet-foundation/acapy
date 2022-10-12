@@ -1,8 +1,9 @@
 """did method.py contains registry for did methods."""
 
 from typing import Dict, List, Mapping, Optional
+
 from .error import BaseError
-from .key_type import KeyType
+from .key_type import BLS12381G2, ED25519, KeyType
 
 
 class DIDMethod:
@@ -34,10 +35,10 @@ class DIDMethod:
         return key_type in self.supported_key_types
 
 
-SOV = DIDMethod(name="sov", key_types=[KeyType.ED25519], rotation=True)
+SOV = DIDMethod(name="sov", key_types=[ED25519], rotation=True)
 KEY = DIDMethod(
     name="key",
-    key_types=[KeyType.ED25519, KeyType.BLS12381G2],
+    key_types=[ED25519, BLS12381G2],
     rotation=False,
 )
 

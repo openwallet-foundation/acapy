@@ -4,7 +4,7 @@ import json
 
 from ...storage.error import StorageNotFoundError
 from ..util import bytes_to_b58
-from ..key_type import KeyType
+from ..key_type import ED25519
 from ...core.in_memory import InMemoryProfile
 from ...storage.in_memory import InMemoryStorage
 from ..key_pair import KeyPairStorageManager, KEY_PAIR_STORAGE_TYPE
@@ -23,7 +23,7 @@ class TestKeyPairStorageManager(AsyncTestCase):
         await self.key_pair_mgr.store_key_pair(
             public_key=self.test_public_key,
             secret_key=self.test_secret,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
         )
 
         verkey = bytes_to_b58(self.test_public_key)
@@ -34,17 +34,17 @@ class TestKeyPairStorageManager(AsyncTestCase):
 
         value = json.loads(record.value)
 
-        assert record.tags == {"verkey": verkey, "key_type": KeyType.ED25519.key_type}
+        assert record.tags == {"verkey": verkey, "key_type": ED25519.key_type}
         assert value["verkey"] == verkey
         assert value["secret_key"] == bytes_to_b58(self.test_secret)
         assert value["metadata"] == {}
-        assert value["key_type"] == KeyType.ED25519.key_type
+        assert value["key_type"] == ED25519.key_type
 
     async def test_get_key_pair(self):
         await self.key_pair_mgr.store_key_pair(
             public_key=self.test_public_key,
             secret_key=self.test_secret,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
         )
 
         verkey = bytes_to_b58(self.test_public_key)
@@ -54,7 +54,7 @@ class TestKeyPairStorageManager(AsyncTestCase):
         assert key_pair["verkey"] == verkey
         assert key_pair["secret_key"] == bytes_to_b58(self.test_secret)
         assert key_pair["metadata"] == {}
-        assert key_pair["key_type"] == KeyType.ED25519.key_type
+        assert key_pair["key_type"] == ED25519.key_type
 
     async def test_get_key_pair_x_not_found(self):
         with self.assertRaises(StorageNotFoundError):
@@ -64,7 +64,7 @@ class TestKeyPairStorageManager(AsyncTestCase):
         await self.key_pair_mgr.store_key_pair(
             public_key=self.test_public_key,
             secret_key=self.test_secret,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
         )
 
         verkey = bytes_to_b58(self.test_public_key)
@@ -86,7 +86,7 @@ class TestKeyPairStorageManager(AsyncTestCase):
         await self.key_pair_mgr.store_key_pair(
             public_key=self.test_public_key,
             secret_key=self.test_secret,
-            key_type=KeyType.ED25519,
+            key_type=ED25519,
             metadata={"some": "data"},
         )
 

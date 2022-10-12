@@ -7,25 +7,23 @@ import indy.crypto
 import indy.did
 import indy.wallet
 import pytest
-
 from asynctest import mock as async_mock
 
-from ...core.in_memory import InMemoryProfile
 from ...config.injection_context import InjectionContext
-from ...core.error import ProfileError, ProfileDuplicateError, ProfileNotFoundError
+from ...core.error import (ProfileDuplicateError, ProfileError,
+                           ProfileNotFoundError)
+from ...core.in_memory import InMemoryProfile
 from ...indy.sdk import wallet_setup as test_setup_module
 from ...indy.sdk.profile import IndySdkProfile, IndySdkProfileManager
 from ...indy.sdk.wallet_setup import IndyWalletConfig
 from ...ledger.endpoint_type import EndpointType
-from ...wallet.key_type import KeyType
-from ...wallet.did_method import SOV
 from ...ledger.indy import IndySdkLedgerPool
-
+from ...wallet.did_method import SOV
+from ...wallet.key_type import ED25519
 from .. import indy as test_module
 from ..base import BaseWallet
 from ..in_memory import InMemoryWallet
 from ..indy import IndySdkWallet
-
 from . import test_in_memory_wallet
 
 
@@ -67,7 +65,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_rotate_did_keypair_x(self, wallet: IndySdkWallet):
         info = await wallet.create_local_did(
-            SOV, KeyType.ED25519, self.test_seed, self.test_sov_did
+            SOV, ED25519, self.test_seed, self.test_sov_did
         )
 
         with async_mock.patch.object(
@@ -99,7 +97,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
             )
             with pytest.raises(test_module.WalletError) as excinfo:
-                await wallet.create_signing_key(KeyType.ED25519)
+                await wallet.create_signing_key(ED25519)
             assert "outlier" in str(excinfo.value)
 
     @pytest.mark.asyncio
@@ -111,7 +109,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
             )
             with pytest.raises(test_module.WalletError) as excinfo:
-                await wallet.create_local_did(SOV, KeyType.ED25519)
+                await wallet.create_local_did(SOV, ED25519)
             assert "outlier" in str(excinfo.value)
 
     @pytest.mark.asyncio
@@ -121,7 +119,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
         )
         info_pub = await wallet.create_public_did(
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
         await wallet.set_did_endpoint(info_pub.did, "https://example.com", mock_ledger)
         mock_ledger.update_endpoint_for_did.assert_called_once_with(
@@ -147,7 +145,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
         mock_ledger = async_mock.MagicMock(
             read_only=False, update_endpoint_for_did=async_mock.CoroutineMock()
         )
-        info_pub = await wallet.create_public_did(SOV, KeyType.ED25519)
+        info_pub = await wallet.create_public_did(SOV, ED25519)
         await wallet.set_did_endpoint(
             info_pub.did, "https://example.com", mock_ledger, routing_keys=routing_keys
         )
@@ -168,7 +166,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
         )
         info_pub = await wallet.create_public_did(
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
         await wallet.set_did_endpoint(info_pub.did, "https://example.com", mock_ledger)
         mock_ledger.update_endpoint_for_did.assert_not_called()
@@ -207,7 +205,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     async def test_replace_local_did_metadata_x(self, wallet: IndySdkWallet):
         info = await wallet.create_local_did(
             SOV,
-            KeyType.ED25519,
+            ED25519,
             self.test_seed,
             self.test_sov_did,
             self.test_metadata,
@@ -239,7 +237,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
                     b"hello world",
                     b"signature",
                     self.test_ed25519_verkey,
-                    KeyType.ED25519,
+                    ED25519,
                 )
             assert "outlier" in str(excinfo.value)
 
@@ -247,7 +245,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
                 test_module.ErrorCode.CommonInvalidStructure
             )
             assert not await wallet.verify_message(
-                b"hello world", b"signature", self.test_ed25519_verkey, KeyType.ED25519
+                b"hello world", b"signature", self.test_ed25519_verkey, ED25519
             )
 
     @pytest.mark.asyncio
@@ -282,12 +280,12 @@ class TestWalletCompat:
         """
         Ensure that python-based pack/unpack is compatible with indy-sdk implementation
         """
-        await in_memory_wallet.create_local_did(SOV, KeyType.ED25519, self.test_seed)
+        await in_memory_wallet.create_local_did(SOV, ED25519, self.test_seed)
         py_packed = await in_memory_wallet.pack_message(
             self.test_message, [self.test_verkey], self.test_verkey
         )
 
-        await wallet.create_local_did(SOV, KeyType.ED25519, self.test_seed)
+        await wallet.create_local_did(SOV, ED25519, self.test_seed)
         packed = await wallet.pack_message(
             self.test_message, [self.test_verkey], self.test_verkey
         )
@@ -818,7 +816,7 @@ class TestWalletCompat:
         opened = await postgres_wallet.create_wallet()
         wallet = IndySdkWallet(opened)
 
-        await wallet.create_local_did(SOV, KeyType.ED25519, self.test_seed)
+        await wallet.create_local_did(SOV, ED25519, self.test_seed)
         py_packed = await wallet.pack_message(
             self.test_message, [self.test_verkey], self.test_verkey
         )
@@ -860,7 +858,7 @@ class TestWalletCompat:
         assert "Wallet was not removed" in str(excinfo.value)
 
         wallet = IndySdkWallet(opened)
-        await wallet.create_local_did(SOV, KeyType.ED25519, self.test_seed)
+        await wallet.create_local_did(SOV, ED25519, self.test_seed)
         py_packed = await wallet.pack_message(
             self.test_message, [self.test_verkey], self.test_verkey
         )
@@ -897,7 +895,7 @@ class TestWalletCompat:
         opened = await postgres_wallet.create_wallet()
         wallet = IndySdkWallet(opened)
 
-        await wallet.create_local_did(SOV, KeyType.ED25519, self.test_seed)
+        await wallet.create_local_did(SOV, ED25519, self.test_seed)
         py_packed = await wallet.pack_message(
             self.test_message, [self.test_verkey], self.test_verkey
         )

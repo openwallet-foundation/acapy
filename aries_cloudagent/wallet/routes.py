@@ -41,7 +41,7 @@ from .did_info import DIDInfo
 from .did_method import SOV, KEY, DIDMethod, DIDMethods
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
-from .key_type import KeyType
+from .key_type import BLS12381G2, ED25519, KeyTypes
 from .util import EVENT_LISTENER_PATTERN
 
 LOGGER = logging.getLogger(__name__)
@@ -73,10 +73,8 @@ class DIDSchema(OpenAPISchema):
     )
     key_type = fields.Str(
         description="Key type associated with the DID",
-        example=KeyType.ED25519.key_type,
-        validate=validate.OneOf(
-            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
-        ),
+        example=ED25519.key_type,
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
     )
 
 
@@ -144,10 +142,8 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     key_type = fields.Str(
         required=False,
-        example=KeyType.ED25519.key_type,
-        validate=validate.OneOf(
-            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
-        ),
+        example=ED25519.key_type,
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
         description="Key type to query for.",
     )
 
@@ -163,10 +159,8 @@ class DIDCreateOptionsSchema(OpenAPISchema):
 
     key_type = fields.Str(
         required=True,
-        example=KeyType.ED25519.key_type,
-        validate=validate.OneOf(
-            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
-        ),
+        example=ED25519.key_type,
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
     )
 
 
@@ -247,14 +241,15 @@ async def wallet_did_list(request: web.BaseRequest):
     filter_did = request.query.get("did")
     filter_verkey = request.query.get("verkey")
     filter_posture = DIDPosture.get(request.query.get("posture"))
-    filter_key_type = KeyType.from_key_type(request.query.get("key_type"))
     results = []
     async with context.session() as session:
         did_methods: DIDMethods = session.inject(DIDMethods)
         filter_method: DIDMethod | None = did_methods.from_method(
             request.query.get("method")
         )
-        wallet = session.inject_or(BaseWallet)
+        key_types = session.inject(KeyTypes)
+        filter_key_type = key_types.from_key_type(request.query.get("key_type", ""))
+        wallet: BaseWallet | None = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
         if filter_posture is DIDPosture.PUBLIC:
@@ -358,10 +353,7 @@ async def wallet_create_did(request: web.BaseRequest):
         body = {}
 
     # set default method and key type for backwards compat
-    key_type = (
-        KeyType.from_key_type(body.get("options", {}).get("key_type"))
-        or KeyType.ED25519
-    )
+
 
     seed = body.get("seed") or None
     if seed and not context.settings.get("wallet.allow_insecure_seed"):
@@ -370,6 +362,12 @@ async def wallet_create_did(request: web.BaseRequest):
     async with context.session() as session:
         did_methods = session.inject(DIDMethods)
         method = did_methods.from_method(body.get("method", "")) or SOV
+        key_types = session.inject(KeyTypes)
+        # set default method and key type for backwards compat
+        key_type = (
+            key_types.from_key_type(body.get("options", {}).get("key_type", ""))
+            or ED25519
+        )
         if not method.supports_key_type(key_type):
             raise web.HTTPForbidden(
                 reason=(

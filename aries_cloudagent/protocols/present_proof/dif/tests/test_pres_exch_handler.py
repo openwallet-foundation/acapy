@@ -6,6 +6,8 @@ from uuid import uuid4
 import mock as async_mock
 import pytest
 
+from aries_cloudagent.wallet.key_type import BLS12381G2, ED25519
+
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
 from .....resolver.did_resolver import DIDResolver
@@ -79,11 +81,11 @@ async def setup_tuple(profile):
     async with profile.session() as session:
         wallet = session.inject_or(BaseWallet)
         await wallet.create_local_did(
-            method=SOV, key_type=KeyType.ED25519, did="WgWxqztrNooG92RXvxSTWv"
+            method=SOV, key_type=ED25519, did="WgWxqztrNooG92RXvxSTWv"
         )
         await wallet.create_local_did(
             method=KEY,
-            key_type=KeyType.BLS12381G2,
+            key_type=BLS12381G2,
         )
         creds, pds = get_test_data()
         return creds, pds
@@ -2032,7 +2034,7 @@ class TestPresExchHandler:
                 verkey="verkey",
                 metadata={},
                 method=SOV,
-                key_type=KeyType.ED25519,
+                key_type=ED25519,
             )
             mock_did_info.return_value = did_info
             (
@@ -2097,7 +2099,7 @@ class TestPresExchHandler:
                 verkey="verkey",
                 metadata={},
                 method=SOV,
-                key_type=KeyType.ED25519,
+                key_type=ED25519,
             )
             mock_did_info.return_value = did_info
             with pytest.raises(DIFPresExchError):
@@ -2165,7 +2167,7 @@ class TestPresExchHandler:
                 verkey="verkey",
                 metadata={},
                 method=KEY,
-                key_type=KeyType.BLS12381G2,
+                key_type=BLS12381G2,
             )
             mock_did_info.return_value = did_info
             (
@@ -2256,7 +2258,7 @@ class TestPresExchHandler:
                 verkey="verkey",
                 metadata={},
                 method=KEY,
-                key_type=KeyType.BLS12381G2,
+                key_type=BLS12381G2,
             )
             mock_did_info.return_value = did_info
             vp = await dif_pres_exch_handler.create_vp(
@@ -2316,7 +2318,7 @@ class TestPresExchHandler:
                 verkey="verkey",
                 metadata={},
                 method=KEY,
-                key_type=KeyType.BLS12381G2,
+                key_type=BLS12381G2,
             )
             mock_did_info.return_value = did_info
             vp = await dif_pres_exch_handler.create_vp(
@@ -2370,7 +2372,7 @@ class TestPresExchHandler:
                 verkey="verkey",
                 metadata={},
                 method=KEY,
-                key_type=KeyType.BLS12381G2,
+                key_type=BLS12381G2,
             )
             mock_did_info.return_value = did_info
             vp = await dif_pres_exch_handler.create_vp(

@@ -2,30 +2,21 @@ import asyncio
 import json
 import uuid
 
-from aiohttp import web
-from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
-from .....core.in_memory import InMemoryProfile
-from .....core.profile import Profile
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....wallet.base import BaseWallet
-from .....wallet.did_info import DIDInfo
 from .....wallet.did_method import SOV
-from .....wallet.key_type import KeyType
-
+from .....wallet.key_type import ED25519
 from ..manager import TransactionManager, TransactionManagerError
-from ..messages.messages_attach import MessagesAttach
-from ..messages.transaction_acknowledgement import TransactionAcknowledgement
-from ..messages.transaction_request import TransactionRequest
 from ..models.transaction_record import TransactionRecord
 from ..transaction_jobs import TransactionJob
-
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"
@@ -125,7 +116,7 @@ class TestTransactionManager(AsyncTestCase):
             self.wallet: BaseWallet = session.inject_or(BaseWallet)
             await self.wallet.create_local_did(
                 SOV,
-                KeyType.ED25519,
+                ED25519,
                 did="DJGEjaMunDtFtBVrn1qJMT",
                 metadata={"meta": "data"},
             )

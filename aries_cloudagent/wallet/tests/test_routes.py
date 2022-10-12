@@ -1,15 +1,14 @@
 import mock as async_mock
+from aiohttp.web import HTTPForbidden
 from async_case import IsolatedAsyncioTestCase
 
-from aiohttp.web import HTTPForbidden
-
-from .. import routes as test_module
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...wallet.did_method import SOV, DIDMethods
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import ED25519, KeyTypes
+from .. import routes as test_module
 from ..base import BaseWallet
 from ..did_info import DIDInfo
 from ..did_posture import DIDPosture
@@ -23,6 +22,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.context = AdminRequestContext.test_context(
             self.session_inject, self.profile
         )
+        self.context.injector.bind_instance(KeyTypes, KeyTypes())
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.AsyncMock(),
@@ -73,7 +73,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             self.test_verkey,
             DIDPosture.WALLET_ONLY.metadata,
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
         result = test_module.format_did_info(did_info)
         assert (
@@ -87,7 +87,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             self.test_verkey,
             {"posted": True, "public": True},
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
         result = test_module.format_did_info(did_info)
         assert result["posture"] == DIDPosture.PUBLIC.moniker
@@ -97,7 +97,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             self.test_verkey,
             {"posted": True, "public": False},
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
         result = test_module.format_did_info(did_info)
         assert result["posture"] == DIDPosture.POSTED.moniker
@@ -111,7 +111,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.WALLET_ONLY.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             result = await test_module.wallet_create_did(self.request)
             json_response.assert_called_once_with(
@@ -120,7 +120,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.WALLET_ONLY.moniker,
-                        "key_type": KeyType.ED25519.key_type,
+                        "key_type": ED25519.key_type,
                         "method": SOV.method_name,
                     }
                 }
@@ -149,14 +149,14 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                     self.test_verkey,
                     DIDPosture.WALLET_ONLY.metadata,
                     SOV,
-                    KeyType.ED25519,
+                    ED25519,
                 ),
                 DIDInfo(
                     self.test_posted_did,
                     self.test_posted_verkey,
                     DIDPosture.POSTED.metadata,
                     SOV,
-                    KeyType.ED25519,
+                    ED25519,
                 ),
             ]
             result = await test_module.wallet_did_list(self.request)
@@ -167,14 +167,14 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "did": self.test_posted_did,
                             "verkey": self.test_posted_verkey,
                             "posture": DIDPosture.POSTED.moniker,
-                            "key_type": KeyType.ED25519.key_type,
+                            "key_type": ED25519.key_type,
                             "method": SOV.method_name,
                         },
                         {
                             "did": self.test_did,
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.WALLET_ONLY.moniker,
-                            "key_type": KeyType.ED25519.key_type,
+                            "key_type": ED25519.key_type,
                             "method": SOV.method_name,
                         },
                     ]
@@ -193,7 +193,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.PUBLIC.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             self.wallet.get_posted_dids.return_value = [
                 DIDInfo(
@@ -201,7 +201,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                     self.test_posted_verkey,
                     DIDPosture.POSTED.metadata,
                     SOV,
-                    KeyType.ED25519,
+                    ED25519,
                 )
             ]
             result = await test_module.wallet_did_list(self.request)
@@ -212,7 +212,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "did": self.test_did,
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.PUBLIC.moniker,
-                            "key_type": KeyType.ED25519.key_type,
+                            "key_type": ED25519.key_type,
                             "method": SOV.method_name,
                         }
                     ]
@@ -231,7 +231,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.PUBLIC.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             self.wallet.get_posted_dids.return_value = [
                 DIDInfo(
@@ -242,7 +242,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "public": False,
                     },
                     SOV,
-                    KeyType.ED25519,
+                    ED25519,
                 )
             ]
             result = await test_module.wallet_did_list(self.request)
@@ -253,7 +253,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "did": self.test_posted_did,
                             "verkey": self.test_posted_verkey,
                             "posture": DIDPosture.POSTED.moniker,
-                            "key_type": KeyType.ED25519.key_type,
+                            "key_type": ED25519.key_type,
                             "method": SOV.method_name,
                         }
                     ]
@@ -272,7 +272,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.WALLET_ONLY.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with(
@@ -282,7 +282,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "did": self.test_did,
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.WALLET_ONLY.moniker,
-                            "key_type": KeyType.ED25519.key_type,
+                            "key_type": ED25519.key_type,
                             "method": SOV.method_name,
                         }
                     ]
@@ -312,7 +312,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.WALLET_ONLY.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             result = await test_module.wallet_did_list(self.request)
             json_response.assert_called_once_with(
@@ -322,7 +322,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                             "did": self.test_did,
                             "verkey": self.test_verkey,
                             "posture": DIDPosture.WALLET_ONLY.moniker,
-                            "key_type": KeyType.ED25519.key_type,
+                            "key_type": ED25519.key_type,
                             "method": SOV.method_name,
                         }
                     ]
@@ -351,7 +351,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.PUBLIC.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             result = await test_module.wallet_get_public_did(self.request)
             json_response.assert_called_once_with(
@@ -360,7 +360,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
-                        "key_type": KeyType.ED25519.key_type,
+                        "key_type": ED25519.key_type,
                         "method": SOV.method_name,
                     }
                 }
@@ -398,7 +398,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.PUBLIC.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             result = await test_module.wallet_set_public_did(self.request)
             self.wallet.set_public_did.assert_awaited_once()
@@ -408,7 +408,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
-                        "key_type": KeyType.ED25519.key_type,
+                        "key_type": ED25519.key_type,
                         "method": SOV.method_name,
                     }
                 }
@@ -496,7 +496,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.PUBLIC.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             self.wallet.set_public_did.side_effect = test_module.WalletError()
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -527,7 +527,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.PUBLIC.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             self.wallet.set_public_did.side_effect = test_module.WalletNotFoundError()
             with self.assertRaises(test_module.web.HTTPNotFound):
@@ -559,7 +559,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 {**DIDPosture.PUBLIC.metadata, "endpoint": "https://endpoint.com"},
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             result = await test_module.wallet_set_public_did(self.request)
             self.wallet.set_public_did.assert_awaited_once()
@@ -569,7 +569,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
-                        "key_type": KeyType.ED25519.key_type,
+                        "key_type": ED25519.key_type,
                         "method": SOV.method_name,
                     }
                 }
@@ -607,7 +607,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 self.test_verkey,
                 DIDPosture.PUBLIC.metadata,
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
             self.wallet.get_local_did.return_value = did_info
             self.wallet.set_public_did.return_value = did_info
@@ -627,7 +627,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                         "did": self.test_did,
                         "verkey": self.test_verkey,
                         "posture": DIDPosture.PUBLIC.moniker,
-                        "key_type": KeyType.ED25519.key_type,
+                        "key_type": ED25519.key_type,
                         "method": SOV.method_name,
                     }
                 }
@@ -653,14 +653,14 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             self.test_verkey,
             {"public": False, "endpoint": "http://old-endpoint.ca"},
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
         self.wallet.get_public_did.return_value = DIDInfo(
             self.test_did,
             self.test_verkey,
             DIDPosture.PUBLIC.metadata,
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
 
         with async_mock.patch.object(
@@ -682,14 +682,14 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             self.test_verkey,
             {"public": False, "endpoint": "http://old-endpoint.ca"},
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
         self.wallet.get_public_did.return_value = DIDInfo(
             self.test_did,
             self.test_verkey,
             DIDPosture.PUBLIC.metadata,
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
         self.wallet.set_did_endpoint.side_effect = test_module.LedgerConfigError()
 
@@ -742,7 +742,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             self.test_verkey,
             {"public": False, "endpoint": "http://old-endpoint.ca"},
             SOV,
-            KeyType.ED25519,
+            ED25519,
         )
 
         with async_mock.patch.object(
@@ -790,7 +790,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                     "verkey",
                     {"public": False},
                     SOV,
-                    KeyType.ED25519,
+                    ED25519,
                 )
             )
             self.wallet.rotate_did_keypair_start = async_mock.AsyncMock()
@@ -825,7 +825,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 "verkey",
                 {"posted": True, "public": True},
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -840,7 +840,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 "verkey",
                 {"public": False},
                 SOV,
-                KeyType.ED25519,
+                ED25519,
             )
         )
         self.wallet.rotate_did_keypair_start = async_mock.AsyncMock(
