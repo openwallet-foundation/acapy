@@ -14,7 +14,7 @@ from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
 from ......wallet.key_type import KeyType
-from ......wallet.did_method import DIDMethod
+from ......wallet.did_method import SOV
 
 from .....problem_report.v1_0.message import ProblemReport
 from .....trustping.v1_0.messages.ping import Ping
@@ -65,7 +65,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
 
         wallet = (await self.ctx.session()).wallet
         self.did_info = await wallet.create_local_did(
-            method=DIDMethod.SOV,
+            method=SOV,
             key_type=KeyType.ED25519,
         )
 

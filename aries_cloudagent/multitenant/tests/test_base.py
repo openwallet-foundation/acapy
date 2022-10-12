@@ -18,7 +18,7 @@ from ...protocols.routing.v1_0.models.route_record import RouteRecord
 from ...storage.error import StorageNotFoundError
 from ...storage.in_memory import InMemoryStorage
 from ...wallet.did_info import DIDInfo
-from ...wallet.did_method import DIDMethod
+from ...wallet.did_method import SOV
 from ...wallet.in_memory import InMemoryWallet
 from ...wallet.key_type import KeyType
 from ...wallet.models.wallet_record import WalletRecord
@@ -244,7 +244,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             did="public-did",
             verkey="test_verkey",
             metadata={"meta": "data"},
-            method=DIDMethod.SOV,
+            method=SOV,
             key_type=KeyType.ED25519,
         )
 

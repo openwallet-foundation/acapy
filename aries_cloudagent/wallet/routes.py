@@ -38,7 +38,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
 from ..storage.error import StorageError, StorageNotFoundError
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import DIDMethod
+from .did_method import SOV, KEY, DIDMethod, DIDMethods
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import KeyType
@@ -66,8 +66,10 @@ class DIDSchema(OpenAPISchema):
     )
     method = fields.Str(
         description="Did method associated with the DID",
-        example=DIDMethod.SOV.method_name,
-        validate=validate.OneOf([method.method_name for method in DIDMethod]),
+        example=SOV.method_name,
+        validate=validate.OneOf(
+            [method.method_name for method in [SOV, KEY]]
+        ),  # TODO: support more methods
     )
     key_type = fields.Str(
         description="Key type associated with the DID",
@@ -136,8 +138,8 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     method = fields.Str(
         required=False,
-        example=DIDMethod.KEY.method_name,
-        validate=validate.OneOf([DIDMethod.KEY.method_name, DIDMethod.SOV.method_name]),
+        example=KEY.method_name,
+        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
         description="DID method to query for. e.g. sov to only fetch indy/sov DIDs",
     )
     key_type = fields.Str(
@@ -173,9 +175,9 @@ class DIDCreateSchema(OpenAPISchema):
 
     method = fields.Str(
         required=False,
-        default=DIDMethod.SOV.method_name,
-        example=DIDMethod.SOV.method_name,
-        validate=validate.OneOf([DIDMethod.KEY.method_name, DIDMethod.SOV.method_name]),
+        default=SOV.method_name,
+        example=SOV.method_name,
+        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
     )
 
     options = fields.Nested(
@@ -244,11 +246,14 @@ async def wallet_did_list(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     filter_did = request.query.get("did")
     filter_verkey = request.query.get("verkey")
-    filter_method = DIDMethod.from_method(request.query.get("method"))
     filter_posture = DIDPosture.get(request.query.get("posture"))
     filter_key_type = KeyType.from_key_type(request.query.get("key_type"))
     results = []
     async with context.session() as session:
+        did_methods: DIDMethods = session.inject(DIDMethods)
+        filter_method: DIDMethod | None = did_methods.from_method(
+            request.query.get("method")
+        )
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
@@ -357,20 +362,21 @@ async def wallet_create_did(request: web.BaseRequest):
         KeyType.from_key_type(body.get("options", {}).get("key_type"))
         or KeyType.ED25519
     )
-    method = DIDMethod.from_method(body.get("method")) or DIDMethod.SOV
 
-    if not method.supports_key_type(key_type):
-        raise web.HTTPForbidden(
-            reason=(
-                f"method {method.method_name} does not"
-                f" support key type {key_type.key_type}"
-            )
-        )
     seed = body.get("seed") or None
     if seed and not context.settings.get("wallet.allow_insecure_seed"):
         raise web.HTTPBadRequest(reason="Seed support is not enabled")
     info = None
     async with context.session() as session:
+        did_methods = session.inject(DIDMethods)
+        method = did_methods.from_method(body.get("method", "")) or SOV
+        if not method.supports_key_type(key_type):
+            raise web.HTTPForbidden(
+                reason=(
+                    f"method {method.method_name} does not"
+                    f" support key type {key_type.key_type}"
+                )
+            )
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")

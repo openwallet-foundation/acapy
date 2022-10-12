@@ -8,7 +8,7 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ......wallet.did_method import DIDMethod
+from ......wallet.did_method import SOV
 from ......wallet.key_type import KeyType
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
@@ -58,7 +58,7 @@ class TestDIDXResponse(AsyncTestCase, TestConfig):
     async def setUp(self):
         self.wallet = InMemoryProfile.test_session().wallet
         self.did_info = await self.wallet.create_local_did(
-            method=DIDMethod.SOV,
+            method=SOV,
             key_type=KeyType.ED25519,
         )
 
@@ -112,7 +112,7 @@ class TestDIDXResponseSchema(AsyncTestCase, TestConfig):
     async def setUp(self):
         self.wallet = InMemoryProfile.test_session().wallet
         self.did_info = await self.wallet.create_local_did(
-            method=DIDMethod.SOV,
+            method=SOV,
             key_type=KeyType.ED25519,
         )
 

@@ -23,7 +23,7 @@ from ....resolver.did_resolver import DIDResolver
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_method import DIDMethod
+from ....wallet.did_method import SOV
 from ....wallet.did_posture import DIDPosture
 from ....wallet.error import WalletError
 from ....wallet.key_type import KeyType
@@ -284,7 +284,7 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
-                    method=DIDMethod.SOV,
+                    method=SOV,
                     key_type=KeyType.ED25519,
                 )
             conn_rec.my_did = my_info.did
@@ -417,7 +417,7 @@ class DIDXManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
                     my_info = await wallet.create_local_did(
-                        method=DIDMethod.SOV,
+                        method=SOV,
                         key_type=KeyType.ED25519,
                     )
 
@@ -486,7 +486,7 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
-                    method=DIDMethod.SOV,
+                    method=SOV,
                     key_type=KeyType.ED25519,
                 )
 
@@ -580,7 +580,7 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
-                    method=DIDMethod.SOV,
+                    method=SOV,
                     key_type=KeyType.ED25519,
                 )
             conn_rec.my_did = my_info.did

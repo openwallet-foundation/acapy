@@ -13,7 +13,6 @@ from aries_askar import (
     Key,
     KeyAlg,
     SeedMethod,
-    Session,
 )
 
 from ..askar.didcomm.v1 import pack_message, unpack_message
@@ -31,7 +30,7 @@ from .crypto import (
     validate_seed,
     verify_signed_message,
 )
-from .did_method import DIDMethod
+from .did_method import SOV, KEY, DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58
@@ -56,7 +55,7 @@ class AskarWallet(BaseWallet):
         self._session = session
 
     @property
-    def session(self) -> Session:
+    def session(self) -> AskarProfileSession:
         """Accessor for Askar profile session instance."""
         return self._session
 
@@ -180,12 +179,12 @@ class AskarWallet(BaseWallet):
                 f" for DID method {method.method_name}"
             )
 
-        if method == DIDMethod.KEY and did:
+        if method == KEY and did:
             raise WalletError("Not allowed to set DID for DID method 'key'")
 
         if not metadata:
             metadata = {}
-        if method not in [DIDMethod.SOV, DIDMethod.KEY]:
+        if method not in [SOV, KEY]:
             raise WalletError(
                 f"Unsupported DID method for askar storage: {method.method_name}"
             )
@@ -206,7 +205,7 @@ class AskarWallet(BaseWallet):
                 else:
                     raise WalletError("Error inserting key") from err
 
-            if method == DIDMethod.KEY:
+            if method == KEY:
                 did = DIDKey.from_public_key(verkey_bytes, key_type).did
             elif not did:
                 did = bytes_to_b58(verkey_bytes[:16])
@@ -257,7 +256,7 @@ class AskarWallet(BaseWallet):
 
         ret = []
         for item in await self._session.handle.fetch_all(CATEGORY_DID):
-            ret.append(_load_did_entry(item))
+            ret.append(self._load_did_entry(item))
         return ret
 
     async def get_local_did(self, did: str) -> DIDInfo:
@@ -284,7 +283,7 @@ class AskarWallet(BaseWallet):
             raise WalletError("Error when fetching local DID") from err
         if not did:
             raise WalletNotFoundError("Unknown DID: {}".format(did))
-        return _load_did_entry(did)
+        return self._load_did_entry(did)
 
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
         """
@@ -308,7 +307,7 @@ class AskarWallet(BaseWallet):
         except AskarError as err:
             raise WalletError("Error when fetching local DID for verkey") from err
         if dids:
-            return _load_did_entry(dids[0])
+            return self._load_did_entry(dids[0])
         raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
 
     async def replace_local_did_metadata(self, did: str, metadata: dict):
@@ -403,12 +402,12 @@ class AskarWallet(BaseWallet):
                 raise WalletError("Error when fetching local DID") from err
             if not item:
                 raise WalletNotFoundError("Unknown DID: {}".format(did))
-            info = _load_did_entry(item)
+            info = self._load_did_entry(item)
         else:
             info = did
             item = None
 
-        if info.method != DIDMethod.SOV:
+        if info.method != SOV:
             raise WalletError("Setting public DID is only allowed for did:sov DIDs")
 
         public = await self.get_public_did()
@@ -462,7 +461,7 @@ class AskarWallet(BaseWallet):
                 'endpoint' affects local wallet
         """
         did_info = await self.get_local_did(did)
-        if did_info.method != DIDMethod.SOV:
+        if did_info.method != SOV:
             raise WalletError("Setting DID endpoint is only allowed for did:sov DIDs")
         metadata = {**did_info.metadata}
         if not endpoint_type:
@@ -507,7 +506,8 @@ class AskarWallet(BaseWallet):
 
         """
         # Check if DID can rotate keys
-        did_method = DIDMethod.from_did(did)
+        did_methods = self._session.inject(DIDMethods)
+        did_method: DIDMethod = did_methods.from_did(did)
         if not did_method.supports_rotation:
             raise WalletError(
                 f"DID method '{did_method.method_name}' does not support key rotation."
@@ -727,6 +727,18 @@ class AskarWallet(BaseWallet):
             raise WalletError("Exception when unpacking message") from err
         return unpacked_json.decode("utf-8"), sender, recipient
 
+    def _load_did_entry(self, entry: Entry) -> DIDInfo:
+        """Convert a DID record into the expected DIDInfo format."""
+        did_info = entry.value_json
+        did_methods: DIDMethods = self._session.inject(DIDMethods)
+        return DIDInfo(
+            did=did_info["did"],
+            verkey=did_info["verkey"],
+            metadata=did_info.get("metadata"),
+            method=did_methods.from_method(did_info.get("method", "sov")) or SOV,
+            key_type=KeyType.from_key_type(did_info.get("verkey_type", "ed25519")),
+        )
+
 
 def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
     """Instantiate a new keypair with an optional seed value."""
@@ -755,15 +767,3 @@ def _create_keypair(key_type: KeyType, seed: Union[str, bytes] = None) -> Key:
                 raise WalletError("Invalid seed for key generation") from None
     else:
         return Key.generate(alg)
-
-
-def _load_did_entry(entry: Entry) -> DIDInfo:
-    """Convert a DID record into the expected DIDInfo format."""
-    did_info = entry.value_json
-    return DIDInfo(
-        did=did_info["did"],
-        verkey=did_info["verkey"],
-        metadata=did_info.get("metadata"),
-        method=DIDMethod.from_method(did_info.get("method", "sov")),
-        key_type=KeyType.from_key_type(did_info.get("verkey_type", "ed25519")),
-    )
