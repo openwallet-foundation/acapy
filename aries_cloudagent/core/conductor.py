@@ -26,6 +26,7 @@ from ..config.ledger import (
 from ..config.logging import LoggingConfigurator
 from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
+from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
@@ -450,14 +451,23 @@ class Conductor:
                         if mediation_connections_invite
                         else OutOfBandManager(self.root_profile)
                     )
-
-                    conn_record = await mgr.receive_invitation(
-                        invitation=invitation_handler.from_url(
-                            mediation_invite_record.invite
-                        ),
-                        auto_accept=True,
-                    )
                     async with self.root_profile.session() as session:
+                        invitation = invitation_handler.from_url(
+                            mediation_invite_record.invite
+                        )
+                        if isinstance(mgr, OutOfBandManager):
+                            oob_record = await mgr.receive_invitation(
+                                invitation=invitation,
+                                auto_accept=True,
+                            )
+                            conn_record = await ConnRecord.retrieve_by_id(
+                                session, oob_record.connection_id
+                            )
+                        else:
+                            conn_record = await mgr.receive_invitation(
+                                invitation=invitation,
+                                auto_accept=True,
+                            )
                         await (
                             MediationInviteStore(
                                 session.context.inject(BaseStorage)

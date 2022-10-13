@@ -764,11 +764,15 @@ async def on_startup_event(profile: Profile, event: Event):
         invite = InvitationMessage.from_url(endorser_invitation)
         if invite:
             oob_mgr = OutOfBandManager(profile)
-            conn_record = await oob_mgr.receive_invitation(
+            oob_record = await oob_mgr.receive_invitation(
                 invitation=invite,
                 auto_accept=True,
                 alias=endorser_alias,
             )
+            async with profile.session() as session:
+                conn_record = await ConnRecord.retrieve_by_id(
+                    session, oob_record.connection_id
+                )
         else:
             invite = ConnectionInvitation.from_url(endorser_invitation)
             if invite:
