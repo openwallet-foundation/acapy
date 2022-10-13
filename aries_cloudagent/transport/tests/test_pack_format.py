@@ -12,8 +12,7 @@ from ...wallet.did_method import SOV
 from ...wallet.error import WalletError
 from ...wallet.key_type import ED25519
 from .. import pack_format as test_module
-from ..error import (RecipientKeysError, WireFormatEncodeError,
-                     WireFormatParseError)
+from ..error import RecipientKeysError, WireFormatEncodeError, WireFormatParseError
 from ..pack_format import PackWireFormat
 
 

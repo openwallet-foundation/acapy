@@ -10,8 +10,7 @@ import pytest
 from asynctest import mock as async_mock
 
 from ...config.injection_context import InjectionContext
-from ...core.error import (ProfileDuplicateError, ProfileError,
-                           ProfileNotFoundError)
+from ...core.error import ProfileDuplicateError, ProfileError, ProfileNotFoundError
 from ...core.in_memory import InMemoryProfile
 from ...indy.sdk import wallet_setup as test_setup_module
 from ...indy.sdk.profile import IndySdkProfile, IndySdkProfileManager

@@ -354,7 +354,6 @@ async def wallet_create_did(request: web.BaseRequest):
 
     # set default method and key type for backwards compat
 
-
     seed = body.get("seed") or None
     if seed and not context.settings.get("wallet.allow_insecure_seed"):
         raise web.HTTPBadRequest(reason="Seed support is not enabled")

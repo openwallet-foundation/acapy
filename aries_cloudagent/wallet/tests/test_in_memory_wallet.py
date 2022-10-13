@@ -5,11 +5,9 @@ import pytest
 from ...core.in_memory import InMemoryProfile
 from ...messaging.decorators.signature_decorator import SignatureDecorator
 from ...wallet.did_method import KEY, SOV, DIDMethods
-from ...wallet.error import (WalletDuplicateError, WalletError,
-                             WalletNotFoundError)
+from ...wallet.error import WalletDuplicateError, WalletError, WalletNotFoundError
 from ...wallet.in_memory import InMemoryWallet
-from ...wallet.key_type import (BLS12381G1, BLS12381G1G2, BLS12381G2, ED25519,
-                                X25519)
+from ...wallet.key_type import BLS12381G1, BLS12381G1G2, BLS12381G2, ED25519, X25519
 
 
 @pytest.fixture()
@@ -160,16 +158,12 @@ class TestInMemoryWallet:
         await wallet.create_local_did(SOV, ED25519, self.test_seed, None)
 
         with pytest.raises(WalletError):
-            _ = await wallet.create_local_did(
-                SOV, ED25519, "invalid-seed", None
-            )
+            _ = await wallet.create_local_did(SOV, ED25519, "invalid-seed", None)
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_create_local_key_seeded_bls12381g2(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(
-            KEY, BLS12381G2, self.test_seed, None
-        )
+        info = await wallet.create_local_did(KEY, BLS12381G2, self.test_seed, None)
         assert info.did == self.test_key_bls12381g2_did
         assert info.verkey == self.test_bls12381g2_verkey
 
@@ -177,9 +171,7 @@ class TestInMemoryWallet:
         await wallet.create_local_did(KEY, BLS12381G2, self.test_seed, None)
 
         with pytest.raises(WalletError):
-            _ = await wallet.create_local_did(
-                KEY, BLS12381G2, "invalid-seed", None
-            )
+            _ = await wallet.create_local_did(KEY, BLS12381G2, "invalid-seed", None)
 
     @pytest.mark.asyncio
     async def test_create_local_key_seeded_ed25519(self, wallet: InMemoryWallet):
@@ -191,9 +183,7 @@ class TestInMemoryWallet:
         await wallet.create_local_did(KEY, ED25519, self.test_seed, None)
 
         with pytest.raises(WalletError):
-            _ = await wallet.create_local_did(
-                KEY, ED25519, "invalid-seed", None
-            )
+            _ = await wallet.create_local_did(KEY, ED25519, "invalid-seed", None)
 
     @pytest.mark.asyncio
     async def test_rotate_did_keypair(self, wallet: InMemoryWallet):
@@ -227,9 +217,7 @@ class TestInMemoryWallet:
 
     @pytest.mark.asyncio
     async def test_create_local_with_did(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(
-            SOV, ED25519, None, self.test_sov_did
-        )
+        info = await wallet.create_local_did(SOV, ED25519, None, self.test_sov_did)
         assert info.did == self.test_sov_did
 
         with pytest.raises(WalletDuplicateError):
@@ -524,9 +512,7 @@ class TestInMemoryWallet:
 
     @pytest.mark.asyncio
     async def test_pack_unpack(self, wallet: InMemoryWallet):
-        await wallet.create_local_did(
-            SOV, ED25519, self.test_seed, self.test_sov_did
-        )
+        await wallet.create_local_did(SOV, ED25519, self.test_seed, self.test_sov_did)
 
         packed_anon = await wallet.pack_message(
             self.test_message, [self.test_ed25519_verkey]

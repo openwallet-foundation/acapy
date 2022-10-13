@@ -828,9 +828,7 @@ class ConnectionManager(BaseConnectionManager):
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             # seed and DID optional
-            my_info = await wallet.create_local_did(
-                SOV, ED25519, my_seed, my_did
-            )
+            my_info = await wallet.create_local_did(SOV, ED25519, my_seed, my_did)
 
         # must provide their DID and verkey if the seed is not known
         if (not their_did or not their_verkey) and not their_seed:
@@ -842,9 +840,7 @@ class ConnectionManager(BaseConnectionManager):
         if not their_verkey:
             their_verkey_bin, _ = create_keypair(ED25519, their_seed.encode())
             their_verkey = bytes_to_b58(their_verkey_bin)
-        their_info = DIDInfo(
-            their_did, their_verkey, {}, method=SOV, key_type=ED25519
-        )
+        their_info = DIDInfo(their_did, their_verkey, {}, method=SOV, key_type=ED25519)
 
         # Create connection record
         connection = ConnRecord(

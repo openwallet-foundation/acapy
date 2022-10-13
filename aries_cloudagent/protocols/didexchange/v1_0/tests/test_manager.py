@@ -9,8 +9,7 @@ from .....cache.in_memory import InMemoryCache
 from .....connections.base_manager import BaseConnectionManagerError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
-from .....connections.models.diddoc import (DIDDoc, PublicKey, PublicKeyType,
-                                            Service)
+from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.in_memory import InMemoryProfile
 from .....core.oob_processor import OobMessageProcessor
 from .....did.did_key import DIDKey
@@ -30,8 +29,7 @@ from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
 from ....coordinate_mediation.v1_0.manager import MediationManager
-from ....coordinate_mediation.v1_0.models.mediation_record import \
-    MediationRecord
+from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ....coordinate_mediation.v1_0.route_manager import RouteManager
 from ....didcomm_prefix import DIDCommPrefix
 from ....discovery.v2_0.manager import V20DiscoveryMgr

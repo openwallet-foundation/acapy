@@ -12,10 +12,15 @@ from ....wallet.did_method import SOV
 from ....wallet.indy import IndySdkWallet
 from ....wallet.key_type import ED25519
 from ....wallet.util import b64_to_bytes, bytes_to_b64
-from ..attach_decorator import (AttachDecorator, AttachDecoratorData,
-                                AttachDecoratorData1JWS,
-                                AttachDecoratorDataJWS,
-                                AttachDecoratorDataJWSHeader, did_key, raw_key)
+from ..attach_decorator import (
+    AttachDecorator,
+    AttachDecoratorData,
+    AttachDecoratorData1JWS,
+    AttachDecoratorDataJWS,
+    AttachDecoratorDataJWSHeader,
+    did_key,
+    raw_key,
+)
 
 KID = "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"
 INDY_CRED = {

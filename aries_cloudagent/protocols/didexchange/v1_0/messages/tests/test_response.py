@@ -2,8 +2,7 @@ from unittest import mock
 
 from asynctest import TestCase as AsyncTestCase
 
-from ......connections.models.diddoc import (DIDDoc, PublicKey, PublicKeyType,
-                                             Service)
+from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......wallet.did_method import SOV
