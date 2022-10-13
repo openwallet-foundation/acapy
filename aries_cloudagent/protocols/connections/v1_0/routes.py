@@ -10,7 +10,7 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
+from typing import cast
 from marshmallow import fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
@@ -115,7 +115,7 @@ class CreateInvitationRequestSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **MEDIATION_ID_SCHEMA,
     )
 
 
@@ -247,7 +247,7 @@ class ReceiveInvitationQueryStringSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **MEDIATION_ID_SCHEMA,
     )
 
 
@@ -261,7 +261,7 @@ class AcceptInvitationQueryStringSchema(OpenAPISchema):
     mediation_id = fields.Str(
         required=False,
         description="Identifier for active mediation record to be used",
-        **MEDIATION_ID_SCHEMA
+        **MEDIATION_ID_SCHEMA,
     )
 
 
@@ -536,11 +536,16 @@ async def connections_create_invitation(request: web.BaseRequest):
             metadata=metadata,
             mediation_id=mediation_id,
         )
-
+        invitation_url = invitation.to_url(base_url)
+        base_endpoint = service_endpoint or cast(
+            str, profile.settings.get("default_endpoint")
+        )
         result = {
             "connection_id": connection and connection.connection_id,
             "invitation": invitation.serialize(),
-            "invitation_url": invitation.to_url(base_url),
+            "invitation_url": f"{base_endpoint}{invitation_url}"
+            if invitation_url.startswith("?")
+            else invitation_url,
         }
     except (ConnectionManagerError, StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
