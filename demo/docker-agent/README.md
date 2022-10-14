@@ -39,6 +39,8 @@ This will leave the agent's wallet data, so if you restart the agent it will mai
 docker volume rm docker-agent_wallet-db-data
 ```
 
+Note that the Author agent is not (yet) configured with revocations enabled or a tails server, so revocation is not supported.
+
 ## Connecting to an Endorser Service
 
 For this example, we will connect to [this endorser service](https://github.com/bcgov/aries-endorser-service), which you can connect to locally at `http://localhost:5050/endorser/docs`.
@@ -72,4 +74,14 @@ Endorser Service:  Use the same endpoints as above (`GET /v1/endorse/transaction
 ### Endorsing Author Requests
 
 Author requests to create schema, create credential definition and create revocation registries will all now generate endorse requests to the endorser.
+
+Author Agent:  To create a schema use the `POST /schemas` endpoint.  This will create an endorse request.
+
+Endorser Service:  Use the same endpoints as above (`GET /v1/endorse/transactions` and then `POST /v1/endorse/transactions/{transaction_id}/endorse`) to view the endorse request and approve it.
+
+Author Agent:  To create a cred def use the `POST /credential-definitions` endpoint.  This will create an endorse request.
+
+Endorser Service:  Use the same endpoints as above (`GET /v1/endorse/transactions` and then `POST /v1/endorse/transactions/{transaction_id}/endorse`) to view the endorse request and approve it.
+
+
 
