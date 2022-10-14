@@ -8,3 +8,7 @@ COPY ngrok-wait.sh ngrok-wait.sh
 RUN chmod +x ./ngrok-wait.sh
 
 USER $user
+
+# temporary until this PR gets merged/released
+RUN pip uninstall -y aries-cloudagent
+RUN pip install aries-cloudagent[indy,bbs,askar]@git+https://github.com/ianco/aries-cloudagent-python@endorser-write-did

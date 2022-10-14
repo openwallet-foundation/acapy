@@ -27,12 +27,12 @@ exec aca-py start \
     --auto-provision \
     --inbound-transport http '0.0.0.0' 8001 \
     --outbound-transport http \
-    --genesis-url "https://raw.githubusercontent.com/ICCS-ISAC/dtrust-reconu/main/CANdy/dev/pool_transactions_genesis" \
+    --genesis-url "http://test.bcovrin.vonx.io/genesis" \
     --endpoint "${ACAPY_ENDPOINT}" \
     --auto-ping-connection \
     --monitor-ping \
     --public-invites \
-    --wallet-type "askar" \
+    --wallet-type "indy" \
     --wallet-name "test_author" \
     --wallet-key "secret_key" \
     --wallet-storage-type "postgres_storage" \
@@ -47,3 +47,5 @@ exec aca-py start \
     --auto-write-transactions \
     --auto-create-revocation-transactions \
     --log-level "error" 
+
+#    --genesis-url "https://raw.githubusercontent.com/ICCS-ISAC/dtrust-reconu/main/CANdy/dev/pool_transactions_genesis" \
