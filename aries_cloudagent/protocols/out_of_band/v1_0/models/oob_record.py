@@ -1,9 +1,12 @@
 """Record for out of band invitations."""
 
+import json
 from typing import Any, Mapping, Optional, Union
 
 from marshmallow import fields
 
+from .....connections.models.conn_record import ConnRecord
+from .....core.profile import ProfileSession
 from .....messaging.decorators.service_decorator import (
     ServiceDecorator,
     ServiceDecoratorSchema,
@@ -13,6 +16,10 @@ from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSc
 from .....messaging.valid import UUIDFour
 
 from ..messages.invitation import InvitationMessage, InvitationMessageSchema
+
+from .....storage.base import BaseStorage
+from .....storage.record import StorageRecord
+from .....storage.error import StorageNotFoundError
 
 
 class OobRecord(BaseExchangeRecord):
@@ -24,6 +31,7 @@ class OobRecord(BaseExchangeRecord):
         schema_class = "OobRecordSchema"
 
     RECORD_TYPE = "oob_record"
+    RECORD_TYPE_METADATA = ConnRecord.RECORD_TYPE_METADATA
     RECORD_ID_NAME = "oob_id"
     RECORD_TOPIC = "out_of_band"
     TAG_NAMES = {
@@ -113,6 +121,110 @@ class OobRecord(BaseExchangeRecord):
                 if getattr(self, prop) is not None
             },
         }
+
+    async def delete_record(self, session: ProfileSession):
+        """Perform connection record deletion actions.
+
+        Args:
+            session (ProfileSession): session
+
+        """
+        await super().delete_record(session)
+
+        # Delete metadata
+        if self.connection_id:
+            storage = session.inject(BaseStorage)
+            await storage.delete_all_records(
+                self.RECORD_TYPE_METADATA,
+                {"connection_id": self.connection_id},
+            )
+
+    async def metadata_get(
+        self, session: ProfileSession, key: str, default: Any = None
+    ) -> Any:
+        """Retrieve arbitrary metadata associated with this connection.
+
+        Args:
+            session (ProfileSession): session used for storage
+            key (str): key identifying metadata
+            default (Any): default value to get; type should be a JSON
+                compatible value.
+
+        Returns:
+            Any: metadata stored by key
+
+        """
+        assert self.connection_id
+        storage: BaseStorage = session.inject(BaseStorage)
+        try:
+            record = await storage.find_record(
+                self.RECORD_TYPE_METADATA,
+                {"key": key, "connection_id": self.connection_id},
+            )
+            return json.loads(record.value)
+        except StorageNotFoundError:
+            return default
+
+    async def metadata_set(self, session: ProfileSession, key: str, value: Any):
+        """Set arbitrary metadata associated with this connection.
+
+        Args:
+            session (ProfileSession): session used for storage
+            key (str): key identifying metadata
+            value (Any): value to set
+        """
+        assert self.connection_id
+        value = json.dumps(value)
+        storage: BaseStorage = session.inject(BaseStorage)
+        try:
+            record = await storage.find_record(
+                self.RECORD_TYPE_METADATA,
+                {"key": key, "connection_id": self.connection_id},
+            )
+            await storage.update_record(record, value, record.tags)
+        except StorageNotFoundError:
+            record = StorageRecord(
+                self.RECORD_TYPE_METADATA,
+                value,
+                {"key": key, "connection_id": self.connection_id},
+            )
+            await storage.add_record(record)
+
+    async def metadata_delete(self, session: ProfileSession, key: str):
+        """Delete custom metadata associated with this connection.
+
+        Args:
+            session (ProfileSession): session used for storage
+            key (str): key of metadata to delete
+        """
+        assert self.connection_id
+        storage: BaseStorage = session.inject(BaseStorage)
+        try:
+            record = await storage.find_record(
+                self.RECORD_TYPE_METADATA,
+                {"key": key, "connection_id": self.connection_id},
+            )
+            await storage.delete_record(record)
+        except StorageNotFoundError as err:
+            raise KeyError(f"{key} not found in connection metadata") from err
+
+    async def metadata_get_all(self, session: ProfileSession) -> dict:
+        """Return all custom metadata associated with this connection.
+
+        Args:
+            session (ProfileSession): session used for storage
+
+        Returns:
+            dict: dictionary representation of all metadata values
+
+        """
+        assert self.connection_id
+        storage: BaseStorage = session.inject(BaseStorage)
+        records = await storage.find_all_records(
+            self.RECORD_TYPE_METADATA,
+            {"connection_id": self.connection_id},
+        )
+        return {record.tags["key"]: json.loads(record.value) for record in records}
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
