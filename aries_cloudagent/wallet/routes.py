@@ -549,13 +549,13 @@ async def promote_wallet_public_did(
             raise LookupError(f"DID {did} is not posted to the ledger")
 
     # check if we need to endorse
-    if is_author_role(context.profile):
+    if is_author_role(profile):
         # authors cannot write to the ledger
         write_ledger = False
 
         # author has not provided a connection id, so determine which to use
         if not connection_id:
-            connection_id = await get_endorser_connection_id(context.profile)
+            connection_id = await get_endorser_connection_id(profile)
         if not connection_id:
             raise web.HTTPBadRequest(reason="No endorser connection found")
     if not write_ledger:
