@@ -13,12 +13,12 @@ import yaml
 
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
-from ..utils.tracing import trace_event
+from aries_cloudagent.utils.tracing import trace_event
 
-from .error import ArgsParseError
-from .util import BoundedInt, ByteSize
+from aries_cloudagent.config.error import ArgsParseError
+from aries_cloudagent.config.util import BoundedInt, ByteSize
 
-from .plugin_settings import PLUGIN_CONFIG_KEY
+from aries_cloudagent.config.plugin_settings import PLUGIN_CONFIG_KEY
 
 CAT_PROVISION = "general"
 CAT_START = "start"
@@ -1837,7 +1837,7 @@ class EndorsementGroup(ArgumentGroup):
         parser.add_argument(
             "--auto-promote-author-did",
             action="store_true",
-            env_var="ACAPY_PROMOTE_AUTHOR_DID",
+            env_var="ACAPY_AUTO_PROMOTE_AUTHOR_DID",
             help="For Authors, specify whether to automatically promote"
             " a DID to the wallet public DID after writing to the ledger.",
         )
