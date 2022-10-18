@@ -26,7 +26,6 @@ from ..config.ledger import (
 from ..config.logging import LoggingConfigurator
 from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
-from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
@@ -451,33 +450,23 @@ class Conductor:
                         if mediation_connections_invite
                         else OutOfBandManager(self.root_profile)
                     )
-                    async with self.root_profile.session() as session:
-                        invitation = invitation_handler.from_url(
+                    record = await mgr.receive_invitation(
+                        invitation=invitation_handler.from_url(
                             mediation_invite_record.invite
-                        )
-                        if isinstance(mgr, OutOfBandManager):
-                            oob_record = await mgr.receive_invitation(
-                                invitation=invitation,
-                                auto_accept=True,
-                            )
-                            conn_record = await ConnRecord.retrieve_by_id(
-                                session, oob_record.connection_id
-                            )
-                        else:
-                            conn_record = await mgr.receive_invitation(
-                                invitation=invitation,
-                                auto_accept=True,
-                            )
+                        ),
+                        auto_accept=True,
+                    )
+                    async with self.root_profile.session() as session:
                         await (
                             MediationInviteStore(
                                 session.context.inject(BaseStorage)
                             ).mark_default_invite_as_used()
                         )
 
-                        await conn_record.metadata_set(
+                        await record.metadata_set(
                             session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
                         )
-                        await conn_record.metadata_set(
+                        await record.metadata_set(
                             session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
                         )
 

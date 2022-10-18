@@ -45,7 +45,7 @@ class EndorsedTransactionResponseHandler(BaseHandler):
                 (
                     transaction,
                     transaction_acknowledgement_message,
-                ) = await mgr.complete_transaction(transaction=transaction)
+                ) = await mgr.complete_transaction(transaction, False)
 
                 await responder.send_reply(
                     transaction_acknowledgement_message,
