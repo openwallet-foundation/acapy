@@ -21,7 +21,7 @@ jobs:
       #- name: run-indy-tails-server
       #  uses: ./acapy/actions/run-indy-tails-server
       - name: run-integration-tests
-        uses: ./acapy/actions/run-integration-tests
+        uses: ./acapy/.github/actions/run-integration-tests
         # to run with a specific set of tests include the following parameter:
         # with:
         #   TEST_SCOPE: "-t @T001-RFC0037"

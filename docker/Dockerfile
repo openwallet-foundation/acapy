@@ -13,7 +13,7 @@ FROM python:${python_version}-slim-buster AS main
 ARG uid=1001
 ARG user=aries
 ARG acapy_version
-ARG acapy_reqs
+ARG acapy_reqs=[askar,bbs]
 
 ENV HOME="/home/$user" \
     APP_ROOT="$HOME" \
