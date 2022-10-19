@@ -1,10 +1,11 @@
 """Represents a Handshake Reuse message under RFC 0434."""
 
-from marshmallow import EXCLUDE, pre_dump, ValidationError
+from marshmallow import EXCLUDE, fields, pre_dump, ValidationError
+from typing import Optional, Text
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 
-from ..message_types import MESSAGE_REUSE, PROTOCOL_PACKAGE
+from ..message_types import MESSAGE_REUSE, PROTOCOL_PACKAGE, DEFAULT_VERSION
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers.reuse_handler.HandshakeReuseMessageHandler"
@@ -23,10 +24,12 @@ class HandshakeReuse(AgentMessage):
 
     def __init__(
         self,
+        version: str = DEFAULT_VERSION,
+        msg_type: Optional[Text] = None,
         **kwargs,
     ):
         """Initialize Handshake Reuse message object."""
-        super().__init__(**kwargs)
+        super().__init__(_type=msg_type, _version=version, **kwargs)
 
 
 class HandshakeReuseSchema(AgentMessageSchema):
@@ -37,6 +40,13 @@ class HandshakeReuseSchema(AgentMessageSchema):
 
         model_class = HandshakeReuse
         unknown = EXCLUDE
+
+    _type = fields.Str(
+        data_key="@type",
+        required=False,
+        description="Message type",
+        example="https://didcomm.org/my-family/1.0/my-message-type",
+    )
 
     @pre_dump
     def check_thread_deco(self, obj, **kwargs):

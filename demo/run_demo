@@ -21,8 +21,10 @@ if [ -z "$DOCKER_NET" ]; then
 fi
 DOCKER_VOL=""
 
+j=1
 for i in "$@"
 do
+  ((j++))
   if [ ! -z "$SKIP" ]; then
     SKIP=""
     continue
@@ -65,12 +67,12 @@ do
       continue
     ;;
     --debug-pycharm-controller-port)
-      PYDEVD_PYCHARM_CONTROLLER_PORT=$2
+      PYDEVD_PYCHARM_CONTROLLER_PORT=${!j}
       SKIP=1
       continue
     ;;
     --debug-pycharm-agent-port)
-      PYDEVD_PYCHARM_AGENT_PORT=$2
+      PYDEVD_PYCHARM_AGENT_PORT=${!j}
       SKIP=1
       continue
     ;;
@@ -154,7 +156,7 @@ if [ ! -z "$DOCKERHOST" ]; then
   export RUNMODE="docker"
 elif [ -z "${PWD_HOST_FQDN}" ]; then
   # getDockerHost; for details refer to https://github.com/bcgov/DITP-DevOps/tree/main/code/snippets#getdockerhost
-  . /dev/stdin <<<"$(cat <(curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost))" 
+  . /dev/stdin <<<"$(cat <(curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost))"
   export DOCKERHOST=$(getDockerHost)
   export RUNMODE="docker"
 else

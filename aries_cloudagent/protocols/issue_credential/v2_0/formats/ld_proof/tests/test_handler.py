@@ -770,13 +770,14 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
     async def test_receive_credential_x_credential_status_ne_both_set(self):
         detail = deepcopy(LD_PROOF_VC_DETAIL)
+        status_entry = {"type": "SomeRandomType"}
 
-        # Set credential status so it's only set on the detail
-        # not the issued credential
+        # Set credential status in both request and reference credential
         detail["options"]["credentialStatus"] = {"type": "CredentialStatusType"}
+        detail["credential"]["credentialStatus"] = deepcopy(status_entry)
 
         vc = deepcopy(LD_PROOF_VC)
-        vc["credentialStatus"] = {"type": "SomeRandomType"}
+        vc["credentialStatus"] = deepcopy(status_entry)
 
         cred_issue = V20CredIssue(
             formats=[
