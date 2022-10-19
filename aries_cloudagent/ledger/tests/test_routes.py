@@ -359,6 +359,50 @@ class TestLedgerRoutes(IsolatedAsyncioTestCase):
                 {"success": True, "txn": {"signed_txn": {"...": "..."}}}
             )
 
+    async def test_register_nym_create_transaction_for_endorser_no_public_did(self):
+        self.request.query = {
+            "did": "a_test_did",
+            "verkey": "a_test_verkey",
+            "alias": "did_alias",
+            "role": "reset",
+            "create_transaction_for_endorser": "true",
+            "conn_id": "dummy",
+        }
+        self.profile.context.settings["endorser.author"] = True
+
+        with async_mock.patch.object(
+            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+        ) as mock_conn_rec_retrieve, async_mock.patch.object(
+            test_module, "TransactionManager", async_mock.MagicMock()
+        ) as mock_txn_mgr, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.MagicMock()
+        ) as mock_response:
+            mock_txn_mgr.return_value = async_mock.MagicMock(
+                create_record=async_mock.AsyncMock(
+                    return_value=async_mock.MagicMock(
+                        serialize=async_mock.MagicMock(return_value={"...": "..."})
+                    )
+                )
+            )
+            mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
+                metadata_get=async_mock.AsyncMock(
+                    return_value={
+                        "endorser_did": ("did"),
+                        "endorser_name": ("name"),
+                    }
+                )
+            )
+            self.ledger.register_nym.return_value: Tuple[bool, dict] = (
+                True,
+                {"signed_txn": {"...": "..."}},
+            )
+
+            result = await test_module.register_ledger_nym(self.request)
+            assert result == mock_response.return_value
+            mock_response.assert_called_once_with(
+                {"success": True, "txn": {"signed_txn": {"...": "..."}}}
+            )
+
     async def test_register_nym_create_transaction_for_endorser_storage_x(self):
         self.request.query = {
             "did": "a_test_did",

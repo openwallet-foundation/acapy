@@ -9,6 +9,7 @@ from ......wallet.key_type import KeyType
 from .....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from .....didcomm_prefix import DIDCommPrefix
 from .....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
+from .....didexchange.v1_0.messages.request import DIDXRequest
 
 from ...message_types import INVITATION
 
@@ -44,14 +45,14 @@ class TestHSProto(TestCase):
 class TestInvitationMessage(TestCase):
     def test_init(self):
         """Test initialization message."""
-        invi = InvitationMessage(
+        invi_msg = InvitationMessage(
             comment="Hello",
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
             services=[TEST_DID],
         )
-        assert invi.services == [TEST_DID]
-        assert invi._type == DIDCommPrefix.qualify_current(INVITATION)
+        assert invi_msg.services == [TEST_DID]
+        assert "out-of-band/1.1/invitation" in invi_msg._type
 
         service = Service(_id="#inline", _type=DID_COMM, did=TEST_DID)
         invi_msg = InvitationMessage(
@@ -59,9 +60,10 @@ class TestInvitationMessage(TestCase):
             label="A label",
             handshake_protocols=[DIDCommPrefix.qualify_current(DIDX_PROTO)],
             services=[service],
+            version="1.0",
         )
         assert invi_msg.services == [service]
-        assert invi_msg._type == DIDCommPrefix.qualify_current(INVITATION)
+        assert "out-of-band/1.0/invitation" in invi_msg._type
 
     def test_wrap_serde(self):
         """Test conversion of aries message to attachment decorator."""
@@ -144,3 +146,15 @@ class TestInvitationMessage(TestCase):
         invi_schema = InvitationMessageSchema()
         with pytest.raises(test_module.ValidationError):
             invi_schema.validate_fields(obj_x)
+
+    def test_assign_msg_type_version_to_model_inst(self):
+        test_msg = InvitationMessage()
+        assert "1.1" in test_msg._type
+        assert "1.1" in InvitationMessage.Meta.message_type
+        test_msg = InvitationMessage(version="1.2")
+        assert "1.2" in test_msg._type
+        assert "1.1" in InvitationMessage.Meta.message_type
+        test_req = DIDXRequest()
+        assert "1.0" in test_req._type
+        assert "1.2" in test_msg._type
+        assert "1.1" in InvitationMessage.Meta.message_type
