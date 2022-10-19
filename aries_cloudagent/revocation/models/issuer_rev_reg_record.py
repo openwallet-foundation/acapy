@@ -5,8 +5,9 @@ import logging
 import uuid
 from functools import total_ordering
 from os.path import join
+from pathlib import Path
 from shutil import move
-from typing import Any, Mapping, Sequence, Union
+from typing import Any, Mapping, Sequence, Union, Tuple
 from urllib.parse import urlparse
 
 from marshmallow import fields, validate
@@ -21,6 +22,7 @@ from ...indy.models.revocation import (
 )
 from ...indy.util import indy_client_dir
 from ...ledger.base import BaseLedger
+from ...ledger.error import LedgerError, LedgerTransactionError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
     BASE58_SHA256_HASH,
@@ -29,7 +31,12 @@ from ...messaging.valid import (
     INDY_REV_REG_ID,
     UUIDFour,
 )
+from ...tails.base import BaseTailsServer
+
 from ..error import RevocationError
+from ..recover import generate_ledger_rrrecovery_txn
+
+from .issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation_registry import RevocationRegistry
 
 DEFAULT_REGISTRY_SIZE = 1000
@@ -62,7 +69,7 @@ class IssuerRevRegRecord(BaseRecord):
 
     STATE_INIT = "init"
     STATE_GENERATED = "generated"
-    STATE_POSTED = "posted"  # definition published: ephemeral, should last milliseconds
+    STATE_POSTED = "posted"  # definition published
     STATE_ACTIVE = "active"  # initial entry published, possibly subsequent entries
     STATE_FULL = "full"  # includes corrupt
 
@@ -195,6 +202,8 @@ class IssuerRevRegRecord(BaseRecord):
         except IndyIssuerError as err:
             raise RevocationError() from err
 
+        if self.revoc_reg_id and revoc_reg_id != self.revoc_reg_id:
+            raise RevocationError("Generated registry ID does not match assigned value")
         self.revoc_reg_id = revoc_reg_id
         self.revoc_reg_def = json.loads(revoc_reg_def_json)
         self.revoc_reg_entry = json.loads(revoc_reg_entry_json)
@@ -227,7 +236,7 @@ class IssuerRevRegRecord(BaseRecord):
         profile: Profile,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Send the revocation registry definition to the ledger."""
         if not (self.revoc_reg_def and self.issuer_did):
             raise RevocationError(f"Revocation registry {self.revoc_reg_id} undefined")
@@ -261,7 +270,7 @@ class IssuerRevRegRecord(BaseRecord):
         profile: Profile,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ):
+    ) -> dict:
         """Send a registry entry to the ledger."""
         if not (
             self.revoc_reg_id
@@ -286,14 +295,44 @@ class IssuerRevRegRecord(BaseRecord):
 
         ledger = profile.inject(BaseLedger)
         async with ledger:
-            rev_entry_res = await ledger.send_revoc_reg_entry(
-                self.revoc_reg_id,
-                self.revoc_def_type,
-                self._revoc_reg_entry.ser,
-                self.issuer_did,
-                write_ledger=write_ledger,
-                endorser_did=endorser_did,
-            )
+            try:
+                rev_entry_res = await ledger.send_revoc_reg_entry(
+                    self.revoc_reg_id,
+                    self.revoc_def_type,
+                    self._revoc_reg_entry.ser,
+                    self.issuer_did,
+                    write_ledger=write_ledger,
+                    endorser_did=endorser_did,
+                )
+            except LedgerTransactionError as err:
+                if "InvalidClientRequest" in err.roll_up:
+                    # ... if the ledger write fails (with "InvalidClientRequest")
+                    # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
+                    #   Ledger rejected transaction request: client request invalid:
+                    #   InvalidClientRequest(...)
+                    # In this scenario we try to post a correction
+                    LOGGER.warn("Retry ledger update/fix due to error")
+                    LOGGER.warn(err)
+                    (_, _, res) = await self.fix_ledger_entry(
+                        profile,
+                        True,
+                        ledger.pool.genesis_txns,
+                    )
+                    rev_entry_res = {"result": res}
+                    LOGGER.warn("Ledger update/fix applied")
+                elif "InvalidClientTaaAcceptanceError" in err.roll_up:
+                    # if no write access (with "InvalidClientTaaAcceptanceError")
+                    # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
+                    #   Ledger rejected transaction request: client request invalid:
+                    #   InvalidClientTaaAcceptanceError(...)
+                    LOGGER.error("Ledger update failed due to TAA issue")
+                    LOGGER.error(err)
+                    raise err
+                else:
+                    # not sure what happened, raise an error
+                    LOGGER.error("Ledger update failed due to unknown issue")
+                    LOGGER.error(err)
+                    raise err
         if self.state == IssuerRevRegRecord.STATE_POSTED:
             self.state = IssuerRevRegRecord.STATE_ACTIVE  # initial entry activates
             async with profile.session() as session:
@@ -302,6 +341,107 @@ class IssuerRevRegRecord(BaseRecord):
                 )
 
         return rev_entry_res
+
+    async def fix_ledger_entry(
+        self,
+        profile: Profile,
+        apply_ledger_update: bool,
+        genesis_transactions: str,
+    ) -> Tuple[dict, dict, dict]:
+        """Fix the ledger entry to match wallet-recorded credentials."""
+        # get rev reg delta (revocations published to ledger)
+        ledger = profile.inject(BaseLedger)
+        async with ledger:
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(self.revoc_reg_id)
+
+        # get rev reg records from wallet (revocations and status)
+        recs = []
+        rec_count = 0
+        accum_count = 0
+        recovery_txn = {}
+        applied_txn = {}
+        async with profile.session() as session:
+            recs = await IssuerCredRevRecord.query_by_ids(
+                session, rev_reg_id=self.revoc_reg_id
+            )
+
+            revoked_ids = []
+            for rec in recs:
+                if rec.state == IssuerCredRevRecord.STATE_REVOKED:
+                    revoked_ids.append(int(rec.cred_rev_id))
+                    if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
+                        # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
+                        rec_count += 1
+
+            LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
+            LOGGER.debug(
+                ">>> rev_reg_record.revoc_reg_entry.value: %s",
+                self.revoc_reg_entry.value,
+            )
+            LOGGER.debug(
+                '>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value")
+            )
+
+            # if we had any revocation discrepencies, check the accumulator value
+            if rec_count > 0:
+                if (self.revoc_reg_entry.value and rev_reg_delta.get("value")) and not (
+                    self.revoc_reg_entry.value.accum == rev_reg_delta["value"]["accum"]
+                ):
+                    # self.revoc_reg_entry = rev_reg_delta["value"]
+                    # await self.save(session)
+                    accum_count += 1
+
+                calculated_txn = await generate_ledger_rrrecovery_txn(
+                    genesis_transactions,
+                    self.revoc_reg_id,
+                    revoked_ids,
+                )
+                recovery_txn = json.loads(calculated_txn.to_json())
+
+                LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
+                if apply_ledger_update:
+                    ledger = session.inject_or(BaseLedger)
+                    if not ledger:
+                        reason = "No ledger available"
+                        if not session.context.settings.get_value("wallet.type"):
+                            reason += ": missing wallet-type?"
+                        raise LedgerError(reason=reason)
+
+                    async with ledger:
+                        ledger_response = await ledger.send_revoc_reg_entry(
+                            self.revoc_reg_id, "CL_ACCUM", recovery_txn
+                        )
+
+                    applied_txn = ledger_response["result"]
+
+        return (rev_reg_delta, recovery_txn, applied_txn)
+
+    @property
+    def has_local_tails_file(self) -> bool:
+        """Check if a local copy of the tails file is available."""
+        return bool(self.tails_local_path) and Path(self.tails_local_path).is_file()
+
+    async def upload_tails_file(self, profile: Profile):
+        """Upload the local tails file to the tails server."""
+        tails_server = profile.inject_or(BaseTailsServer)
+        if not tails_server:
+            raise RevocationError("Tails server not configured")
+        if not self.has_local_tails_file:
+            raise RevocationError("Local tails file not found")
+
+        (upload_success, result) = await tails_server.upload_tails_file(
+            profile.context,
+            self.revoc_reg_id,
+            self.tails_local_path,
+            interval=0.8,
+            backoff=-0.5,
+            max_attempts=5,  # heuristic: respect HTTP timeout
+        )
+        if not upload_success:
+            raise RevocationError(
+                f"Tails file for rev reg {self.revoc_reg_id} failed to upload: {result}"
+            )
+        await self.set_tails_file_public_uri(profile, result)
 
     async def mark_pending(self, session: ProfileSession, cred_rev_id: str) -> None:
         """Mark a credential revocation id as revoked pending publication to ledger.
@@ -334,7 +474,7 @@ class IssuerRevRegRecord(BaseRecord):
                 self.pending_pub.clear()
             await self.save(session, reason="Cleared pending revocations")
 
-    async def get_registry(self) -> RevocationRegistry:
+    def get_registry(self) -> RevocationRegistry:
         """Create a `RevocationRegistry` instance from this record."""
         return RevocationRegistry(
             self.revoc_reg_id,
@@ -359,10 +499,12 @@ class IssuerRevRegRecord(BaseRecord):
             cred_def_id: The credential definition ID to filter by
             state: A state value to filter by
         """
-        tag_filter = {
-            **{"cred_def_id": cred_def_id for _ in [""] if cred_def_id},
-            **{"state": state for _ in [""] if state},
-        }
+        tag_filter = dict(
+            filter(
+                lambda f: f[1] is not None,
+                (("cred_def_id", cred_def_id), ("state", state)),
+            )
+        )
         return await cls.query(session, tag_filter)
 
     @classmethod
@@ -383,16 +525,19 @@ class IssuerRevRegRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_revoc_reg_id(
-        cls, session: ProfileSession, revoc_reg_id: str
+        cls, session: ProfileSession, revoc_reg_id: str, for_update: bool = False
     ) -> "IssuerRevRegRecord":
         """Retrieve a revocation registry record by revocation registry ID.
 
         Args:
             session: The profile session to use
             revoc_reg_id: The revocation registry ID
+            for_update: Retrieve for update
         """
         tag_filter = {"revoc_reg_id": revoc_reg_id}
-        return await cls.retrieve_by_tag_filter(session, tag_filter)
+        return await cls.retrieve_by_tag_filter(
+            session, tag_filter, for_update=for_update
+        )
 
     async def set_state(self, session: ProfileSession, state: str = None):
         """Change the registry state (default full)."""

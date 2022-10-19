@@ -1,6 +1,7 @@
 """Indy implementation of BaseWallet interface."""
 
 import json
+import logging
 
 from typing import List, Sequence, Tuple, Union
 
@@ -35,6 +36,8 @@ from .key_pair import KeyPairStorageManager
 from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58, bytes_to_b64
 
+
+LOGGER = logging.getLogger(__name__)
 
 RECORD_TYPE_CONFIG = "config"
 RECORD_NAME_PUBLIC_DID = "default_public_did"
@@ -707,6 +710,7 @@ class IndySdkWallet(BaseWallet):
         endpoint_type: EndpointType = None,
         write_ledger: bool = True,
         endorser_did: str = None,
+        routing_keys: List[str] = None,
     ):
         """
         Update the endpoint for a DID in the wallet, send to ledger if public or posted.
@@ -746,6 +750,7 @@ class IndySdkWallet(BaseWallet):
                         endpoint_type,
                         write_ledger=write_ledger,
                         endorser_did=endorser_did,
+                        routing_keys=routing_keys,
                     )
                     if not write_ledger:
                         return attrib_def

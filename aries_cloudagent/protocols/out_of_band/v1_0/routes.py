@@ -9,7 +9,6 @@ from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
 from ....admin.request_context import AdminRequestContext
-from ....connections.models.conn_record import ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4
@@ -22,6 +21,7 @@ from .manager import OutOfBandManager, OutOfBandManagerError
 from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from .message_types import SPEC_URI
 from .models.invitation import InvitationRecordSchema
+from .models.oob_record import OobRecordSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,6 +75,15 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         ),
         required=False,
     )
+    accept = fields.List(
+        fields.Str(),
+        description=(
+            "List of mime type in order of preference that should be"
+            " use in responding to the message"
+        ),
+        example=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+        required=False,
+    )
     use_public_did = fields.Boolean(
         default=False,
         description="Whether to use public DID in invitation",
@@ -91,6 +100,11 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         description="Label for connection invitation",
         required=False,
         example="Invitation to Barry",
+    )
+    protocol_version = fields.Str(
+        description="OOB protocol version",
+        required=False,
+        example="1.1",
     )
     alias = fields.Str(
         description="Alias for connection",
@@ -151,11 +165,13 @@ async def invitation_create(request: web.BaseRequest):
     body = await request.json() if request.body_exists else {}
     attachments = body.get("attachments")
     handshake_protocols = body.get("handshake_protocols", [])
+    service_accept = body.get("accept")
     use_public_did = body.get("use_public_did", False)
     metadata = body.get("metadata")
     my_label = body.get("my_label")
     alias = body.get("alias")
     mediation_id = body.get("mediation_id")
+    protocol_version = body.get("protocol_version")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
@@ -175,6 +191,8 @@ async def invitation_create(request: web.BaseRequest):
             metadata=metadata,
             alias=alias,
             mediation_id=mediation_id,
+            service_accept=service_accept,
+            protocol_version=protocol_version,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=e.roll_up)
@@ -188,7 +206,7 @@ async def invitation_create(request: web.BaseRequest):
 )
 @querystring_schema(InvitationReceiveQueryStringSchema())
 @request_schema(InvitationMessageSchema())
-@response_schema(ConnRecordSchema(), 200, description="")
+@response_schema(OobRecordSchema(), 200, description="")
 async def invitation_receive(request: web.BaseRequest):
     """
     Request handler for receiving a new connection invitation.

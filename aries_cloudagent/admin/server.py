@@ -4,7 +4,7 @@ import asyncio
 from hmac import compare_digest
 import logging
 import re
-from typing import Callable, Coroutine
+from typing import Callable, Coroutine, Optional, Pattern, Sequence, cast
 import uuid
 import warnings
 import weakref
@@ -261,8 +261,31 @@ class AdminServer(BaseAdminServer):
         self.websocket_queues = {}
         self.site = None
         self.multitenant_manager = context.inject_or(BaseMultitenantManager)
+        self._additional_route_pattern: Optional[Pattern] = None
 
         self.server_paths = []
+
+    @property
+    def additional_routes_pattern(self) -> Optional[Pattern]:
+        """Pattern for configured addtional routes to permit base wallet to access."""
+        if self._additional_route_pattern:
+            return self._additional_route_pattern
+
+        base_wallet_routes = self.context.settings.get("multitenant.base_wallet_routes")
+        base_wallet_routes = cast(Sequence[str], base_wallet_routes)
+        if base_wallet_routes:
+            self._additional_route_pattern = re.compile(
+                "^(?:" + "|".join(base_wallet_routes) + ")"
+            )
+        return None
+
+    def _matches_additional_routes(self, path: str) -> bool:
+        """Path matches additional_routes_pattern."""
+        pattern = self.additional_routes_pattern
+        if pattern:
+            return bool(pattern.match(path))
+
+        return False
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -336,6 +359,7 @@ class AdminServer(BaseAdminServer):
                         path,
                     )
                     or path.startswith("/mediation/default-mediator")
+                    or self._matches_additional_routes(path)
                 )
 
                 # base wallet is not allowed to perform ssi related actions.

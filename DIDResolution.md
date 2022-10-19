@@ -29,7 +29,7 @@ In practice, DIDs and DID Documents are used for a variety of purposes but espec
 
 ## `DIDResolver`
 
-In ACA-Py, the `DIDResolver` provides the interface to resolve DIDs using registered method resolvers. Method resolver registration happens on startup through the `DIDResolverRegistry`. This registry enables additional resolvers to be loaded via plugin.
+In ACA-Py, the `DIDResolver` provides the interface to resolve DIDs using registered method resolvers. Method resolver registration happens on startup in a `did_resolvers` list. This registry enables additional resolvers to be loaded via plugin.
 
 #### Example usage:
 ```python=
@@ -73,17 +73,17 @@ The following is an example method resolver implementation. In this example, we 
 
 ```python=
 from aries_cloudagent.config.injection_context import InjectionContext
-from aries_cloudagent.resolver.did_resolver_registry import DIDResolverRegistry
+from ..resolver.did_resolver import DIDResolver
 
 from .example_resolver import ExampleResolver
 
 
 async def setup(context: InjectionContext):
     """Setup the plugin."""
-    registry = context.inject(DIDResolverRegistry)
+    registry = context.inject(DIDResolver)
     resolver = ExampleResolver()
     await resolver.setup(context)
-    registry.register(resolver)
+    registry.append(resolver)
 ```
 
 #### `example_resolver.py`

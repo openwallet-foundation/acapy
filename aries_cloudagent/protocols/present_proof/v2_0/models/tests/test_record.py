@@ -110,6 +110,7 @@ class TestRecord(AsyncTestCase):
             "state": "state",
             "pres_proposal": pres_proposal.serialize(),
             "verified": "false",
+            "verified_msgs": None,
             "auto_present": True,
             "auto_verify": False,
             "error_msg": "error",

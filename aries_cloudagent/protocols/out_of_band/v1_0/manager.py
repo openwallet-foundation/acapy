@@ -3,28 +3,26 @@
 import asyncio
 import logging
 import re
-from typing import Mapping, Optional, Sequence, Union
+from typing import Mapping, Optional, Sequence, Union, Text
 import uuid
 
 
 from ....messaging.decorators.service_decorator import ServiceDecorator
 from ....core.event_bus import EventBus
+from ....core.util import get_version_from_message
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
-from ....connections.util import mediation_record_if_id
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....messaging.responder import BaseResponder
-from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.key_type import KeyType
 from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
-from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManager
 from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
@@ -39,6 +37,7 @@ from .messages.service import Service as ServiceMessage
 from .models.invitation import InvitationRecord
 from .models.oob_record import OobRecord
 from .messages.service import Service
+from .message_types import DEFAULT_VERSION
 
 LOGGER = logging.getLogger(__name__)
 REUSE_WEBHOOK_TOPIC = "acapy::webhook::connection_reuse"
@@ -89,6 +88,8 @@ class OutOfBandManager(BaseConnectionManager):
         attachments: Sequence[Mapping] = None,
         metadata: dict = None,
         mediation_id: str = None,
+        service_accept: Optional[Sequence[Text]] = None,
+        protocol_version: Optional[Text] = None,
     ) -> InvitationRecord:
         """
         Generate new connection invitation.
@@ -107,18 +108,20 @@ class OutOfBandManager(BaseConnectionManager):
             multi_use: set to True to create an invitation for multiple-use connection
             alias: optional alias to apply to connection for later use
             attachments: list of dicts in form of {"id": ..., "type": ...}
+            service_accept: Optional list of mime types in the order of preference of
+            the sender that the receiver can use in responding to the message
+            protocol_version: OOB protocol version [1.0, 1.1]
 
         Returns:
             Invitation record
 
         """
-        mediation_mgr = MediationManager(self.profile)
-        mediation_record = await mediation_record_if_id(
+        mediation_record = await self._route_manager.mediation_record_if_id(
             self.profile,
             mediation_id,
             or_default=True,
         )
-        keylist_updates = None
+        image_url = self.profile.context.settings.get("image_url")
 
         if not (hs_protos or attachments):
             raise OutOfBandManagerError(
@@ -126,11 +129,7 @@ class OutOfBandManager(BaseConnectionManager):
                 "request attachments, or both"
             )
 
-        # Multitenancy setup
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        wallet_id = self.profile.settings.get("wallet.id")
-
-        accept = bool(
+        auto_accept = bool(
             auto_accept
             or (
                 auto_accept is None
@@ -235,20 +234,15 @@ class OutOfBandManager(BaseConnectionManager):
                 handshake_protocols=handshake_protocols,
                 requests_attach=message_attachments,
                 services=[f"did:sov:{public_did.did}"],
-            )
-            keylist_updates = await mediation_mgr.add_key(
-                public_did.verkey, keylist_updates
+                accept=service_accept if protocol_version != "1.0" else None,
+                version=protocol_version or DEFAULT_VERSION,
+                image_url=image_url,
             )
 
             our_recipient_key = public_did.verkey
 
             endpoint, *_ = await self.resolve_invitation(public_did.did)
             invi_url = invi_msg.to_url(endpoint)
-
-            if multitenant_mgr and wallet_id:  # add mapping for multitenant relay
-                await multitenant_mgr.add_key(
-                    wallet_id, public_did.verkey, skip_if_exists=True
-                )
 
             # Only create connection record if hanshake_protocols is defined
             if handshake_protocols:
@@ -258,7 +252,7 @@ class OutOfBandManager(BaseConnectionManager):
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                     state=ConnRecord.State.INVITATION.rfc23,
                     accept=ConnRecord.ACCEPT_AUTO
-                    if accept
+                    if auto_accept
                     else ConnRecord.ACCEPT_MANUAL,
                     alias=alias,
                     connection_protocol=connection_protocol,
@@ -273,7 +267,9 @@ class OutOfBandManager(BaseConnectionManager):
                     endpoint=endpoint,
                     routing_keys=[],
                 ).serialize()
+
         else:
+
             if not my_endpoint:
                 my_endpoint = self.profile.settings.get("default_endpoint")
 
@@ -281,17 +277,14 @@ class OutOfBandManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 connection_key = await wallet.create_signing_key(KeyType.ED25519)
-            keylist_updates = await mediation_mgr.add_key(
-                connection_key.verkey, keylist_updates
-            )
 
             our_recipient_key = connection_key.verkey
-            # Add mapping for multitenant relay
-            if multitenant_mgr and wallet_id:
-                await multitenant_mgr.add_key(wallet_id, connection_key.verkey)
+
             # Initializing  InvitationMessage here to include
             # invitation_msg_id in webhook poyload
-            invi_msg = InvitationMessage(_id=invitation_message_id)
+            invi_msg = InvitationMessage(
+                _id=invitation_message_id, version=protocol_version or DEFAULT_VERSION
+            )
 
             if handshake_protocols:
                 invitation_mode = (
@@ -305,7 +298,7 @@ class OutOfBandManager(BaseConnectionManager):
                     their_role=ConnRecord.Role.REQUESTER.rfc23,
                     state=ConnRecord.State.INVITATION.rfc23,
                     accept=ConnRecord.ACCEPT_AUTO
-                    if accept
+                    if auto_accept
                     else ConnRecord.ACCEPT_MANUAL,
                     invitation_mode=invitation_mode,
                     alias=alias,
@@ -316,54 +309,24 @@ class OutOfBandManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Created new connection")
 
-            routing_keys = []
-            # The base wallet can act as a mediator for all tenants
-            if multitenant_mgr and wallet_id:
-                base_mediation_record = await multitenant_mgr.get_default_mediator()
+            routing_keys, my_endpoint = await self._route_manager.routing_info(
+                self.profile, my_endpoint, mediation_record
+            )
 
-                if base_mediation_record:
-                    routing_keys = base_mediation_record.routing_keys
-                    my_endpoint = base_mediation_record.endpoint
-
-                    # If we use a mediator for the base wallet we don't
-                    # need to register the key at the subwallet mediator
-                    # because it only needs to know the key of the base mediator
-                    # sub wallet mediator -> base wallet mediator -> agent
-                    keylist_updates = None
-            if mediation_record:
-                routing_keys = [*routing_keys, *mediation_record.routing_keys]
-                my_endpoint = mediation_record.endpoint
-
-                # Save that this invitation was created with mediation
-                if conn_rec:
-                    async with self.profile.session() as session:
-                        await conn_rec.metadata_set(
-                            session,
-                            MediationManager.METADATA_KEY,
-                            {
-                                MediationManager.METADATA_ID: (
-                                    mediation_record.mediation_id
-                                )
-                            },
-                        )
-
-                if keylist_updates:
-                    responder = self.profile.inject_or(BaseResponder)
-                    await responder.send(
-                        keylist_updates, connection_id=mediation_record.connection_id
-                    )
             if not conn_rec:
                 our_service = ServiceDecorator(
                     recipient_keys=[our_recipient_key],
                     endpoint=my_endpoint,
                     routing_keys=routing_keys,
                 ).serialize()
+
             routing_keys = [
                 key
                 if len(key.split(":")) == 3
                 else DIDKey.from_public_key_b58(key, KeyType.ED25519).did
                 for key in routing_keys
             ]
+
             # Create connection invitation message
             # Note: Need to split this into two stages to support inbound routing
             # of invitations
@@ -371,6 +334,8 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg.label = my_label or self.profile.settings.get("default_label")
             invi_msg.handshake_protocols = handshake_protocols
             invi_msg.requests_attach = message_attachments
+            invi_msg.accept = service_accept if protocol_version != "1.0" else None
+            invi_msg.image_url = image_url
             invi_msg.services = [
                 ServiceMessage(
                     _id="#inline",
@@ -409,6 +374,11 @@ class OutOfBandManager(BaseConnectionManager):
         async with self.profile.session() as session:
             await oob_record.save(session, reason="Created new oob invitation")
 
+        if conn_rec:
+            await self._route_manager.route_invitation(
+                self.profile, conn_rec, mediation_record
+            )
+
         return InvitationRecord(  # for return via admin API, not storage
             oob_id=oob_record.oob_id,
             state=InvitationRecord.STATE_INITIAL,
@@ -441,7 +411,9 @@ class OutOfBandManager(BaseConnectionManager):
         """
         if mediation_id:
             try:
-                await mediation_record_if_id(self.profile, mediation_id)
+                await self._route_manager.mediation_record_if_id(
+                    self.profile, mediation_id
+                )
             except StorageNotFoundError:
                 mediation_id = None
 
@@ -456,6 +428,9 @@ class OutOfBandManager(BaseConnectionManager):
 
         # Get the single service item
         oob_service_item = invitation.services[0]
+
+        # service_accept
+        service_accept = invitation.accept
 
         # Get the DID public did, if any
         public_did = None
@@ -488,7 +463,9 @@ class OutOfBandManager(BaseConnectionManager):
 
         # Try to reuse the connection. If not accepted sets the conn_rec to None
         if conn_rec and not invitation.requests_attach:
-            oob_record = await self._handle_hanshake_reuse(oob_record, conn_rec)
+            oob_record = await self._handle_hanshake_reuse(
+                oob_record, conn_rec, get_version_from_message(invitation)
+            )
 
             LOGGER.warning(
                 f"Connection reuse request finished with state {oob_record.state}"
@@ -509,6 +486,7 @@ class OutOfBandManager(BaseConnectionManager):
                 alias=alias,
                 auto_accept=auto_accept,
                 mediation_id=mediation_id,
+                service_accept=service_accept,
             )
             LOGGER.debug(
                 f"Performed handshake with connection {oob_record.connection_id}"
@@ -716,10 +694,12 @@ class OutOfBandManager(BaseConnectionManager):
             return None
 
     async def _handle_hanshake_reuse(
-        self, oob_record: OobRecord, conn_record: ConnRecord
+        self, oob_record: OobRecord, conn_record: ConnRecord, version: str
     ) -> OobRecord:
         # Send handshake reuse
-        oob_record = await self._create_handshake_reuse_message(oob_record, conn_record)
+        oob_record = await self._create_handshake_reuse_message(
+            oob_record, conn_record, version
+        )
 
         # Wait for the reuse accepted message
         oob_record = await self._wait_for_reuse_response(oob_record.oob_id)
@@ -761,6 +741,7 @@ class OutOfBandManager(BaseConnectionManager):
         alias: Optional[str] = None,
         auto_accept: Optional[bool] = None,
         mediation_id: Optional[str] = None,
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> OobRecord:
         invitation = oob_record.invitation
 
@@ -788,7 +769,8 @@ class OutOfBandManager(BaseConnectionManager):
             # or something else that includes the key type. We now assume
             # ED25519 keys
             endpoint, recipient_keys, routing_keys = await self.resolve_invitation(
-                service
+                service,
+                service_accept=service_accept,
             )
             service = ServiceMessage.deserialize(
                 {
@@ -866,6 +848,7 @@ class OutOfBandManager(BaseConnectionManager):
         self,
         oob_record: OobRecord,
         conn_record: ConnRecord,
+        version: str,
     ) -> OobRecord:
         """
         Create and Send a Handshake Reuse message under RFC 0434.
@@ -882,7 +865,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         """
         try:
-            reuse_msg = HandshakeReuse()
+            reuse_msg = HandshakeReuse(version=version)
             reuse_msg.assign_thread_id(thid=reuse_msg._id, pthid=oob_record.invi_msg_id)
 
             connection_targets = await self.fetch_connection_targets(
@@ -949,7 +932,9 @@ class OutOfBandManager(BaseConnectionManager):
         invi_msg_id = reuse_msg._thread.pthid
         reuse_msg_id = reuse_msg._thread_id
 
-        reuse_accept_msg = HandshakeReuseAccept()
+        reuse_accept_msg = HandshakeReuseAccept(
+            version=get_version_from_message(reuse_msg)
+        )
         reuse_accept_msg.assign_thread_id(thid=reuse_msg_id, pthid=invi_msg_id)
         connection_targets = await self.fetch_connection_targets(connection=conn_rec)
 

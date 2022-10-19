@@ -90,3 +90,159 @@ Feature: TAA Transaction Author Agreement related tests
       Examples:
          | issuer | Acme_capabilities                        | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
          | Faber  | --taa-accept --revocation --public-did   |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+   @T004-TAA @taa_required
+   Scenario Outline: Fail to publish revoked credential using a ledger with TAA required, and fix the ledger authomatically with the next revoked credential
+      Given we have "2" agents
+         | name  | role     | capabilities        |
+         | Faber | verifier | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "Faber" connects to a ledger that requires acceptance of the TAA
+      And "Faber" accepts the TAA
+      And "Faber" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+      When "Faber" rejects the TAA
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" accepts the TAA
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+
+      Examples:
+         | issuer | Acme_capabilities                        | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
+         | Faber  | --taa-accept --revocation --public-did   |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+   @T004.0-TAA @taa_required
+   Scenario Outline: Fail to publish revoked credential using a ledger with TAA required, and fix the ledger manually before revoking more credentials
+      Given we have "2" agents
+         | name  | role     | capabilities        |
+         | Faber | verifier | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "Faber" connects to a ledger that requires acceptance of the TAA
+      And "Faber" accepts the TAA
+      And "Faber" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+      When "Faber" rejects the TAA
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" accepts the TAA
+      Then "Faber" posts a revocation correction to the ledger
+      And "Faber" successfully revoked the credential
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+
+      Examples:
+         | issuer | Acme_capabilities                        | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
+         | Faber  | --taa-accept --revocation --public-did   |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+   @T004.1-TAA @taa_required
+   Scenario Outline: Fail to publish revoked credential using a ledger with TAA required, and fix the ledger by manually applying a correction
+      Given we have "2" agents
+         | name  | role     | capabilities        |
+         | Faber | verifier | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "Faber" connects to a ledger that requires acceptance of the TAA
+      And "Faber" accepts the TAA
+      And "Faber" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+      When "Faber" rejects the TAA
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" accepts the TAA
+      Then "Faber" posts a revocation correction to the ledger
+      And "Faber" successfully revoked the credential
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+
+      Examples:
+         | issuer | Acme_capabilities                        | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
+         | Faber  | --taa-accept --revocation --public-did   |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+   @T004.2-TAA @taa_required
+   Scenario Outline: Fail to publish revoked credential using a ledger with TAA required, and fix the ledger automatically with the next revocation
+      Given we have "2" agents
+         | name  | role     | capabilities        |
+         | Faber | verifier | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "Faber" connects to a ledger that requires acceptance of the TAA
+      And "Faber" accepts the TAA
+      And "Faber" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+      When "Faber" rejects the TAA
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" accepts the TAA
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+
+      Examples:
+         | issuer | Acme_capabilities                        | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
+         | Faber  | --taa-accept --revocation --public-did   |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
+
+   @T004.5-TAA @taa_required
+   Scenario Outline: Fail to publish revoked credential using a ledger with TAA required, and fix the ledger authomatically by revoking the last credential
+      Given we have "2" agents
+         | name  | role     | capabilities        |
+         | Faber | verifier | <Acme_capabilities> |
+         | Bob   | prover   | <Bob_capabilities>  |
+      And "Faber" connects to a ledger that requires acceptance of the TAA
+      And "Faber" accepts the TAA
+      And "Faber" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+      When "Faber" rejects the TAA
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Faber" accepts the TAA
+      And "Faber" attempts to revoke the credential
+      And "Faber" fails to publish the credential revocation
+      And "Bob" has an issued <Schema_name> credential <Credential_data> from "<issuer>"
+      And "Faber" revokes the credential
+      And "Faber" successfully revoked the credential
+
+      Examples:
+         | issuer | Acme_capabilities                        | Bob_capabilities | Schema_name       | Credential_data   | Proof_request     |
+         | Faber  | --taa-accept --revocation --public-did   |                  | driverslicense_v2 | Data_DL_MaxValues | DL_age_over_19_v2 |
