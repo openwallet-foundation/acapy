@@ -17,7 +17,7 @@ from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 
 from ...base import DIDNotFound, ResolverError
-from ..indy import IndyDIDResolver
+from ..indy import IndyDIDResolver, _routing_keys_as_did_key_urls
 
 # pylint: disable=W0621
 TEST_DID0 = "did:sov:WgWxqztrNooG92RXvxSTWv"
@@ -127,7 +127,7 @@ class TestIndyResolver:
         """Test that new attrib structure is supported."""
         example = {
             "endpoint": "https://example.com/endpoint",
-            "routingKeys": ["a-routing-key"],
+            "routingKeys": ["HQhjaj4mcaS3Xci27a9QhnBrNpS91VNFUU4TDrtMxa9j"],
             "types": ["DIDComm", "did-communication", "endpoint"],
             "profile": "https://example.com",
             "linked_domains": "https://example.com",
@@ -177,3 +177,18 @@ class TestIndyResolver:
     )
     def test_process_endpoint_types(self, resolver: IndyDIDResolver, types, result):
         assert resolver.process_endpoint_types(types) == result
+
+    @pytest.mark.parametrize(
+        "keys",
+        [
+            ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+            ["did:key:z6MkgzZFYHiH9RhyMmkoyvNvVwnvgLxkVrJbureLx9HXsuKA"],
+            [
+                "did:key:z6MkgzZFYHiH9RhyMmkoyvNvVwnvgLxkVrJbureLx9HXsuKA#z6MkgzZFYHiH9RhyMmkoyvNvVwnvgLxkVrJbureLx9HXsuKA"
+            ],
+        ],
+    )
+    def test_routing_keys_as_did_key_urls(self, keys):
+        for key in _routing_keys_as_did_key_urls(keys):
+            assert key.startswith("did:key:")
+            assert "#" in key
