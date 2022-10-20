@@ -406,7 +406,14 @@ class BaseModelSchema(Schema):
             A model instance
 
         """
-        return self.Model(**data)
+        try:
+            cls_inst = self.Model(**data)
+        except TypeError as err:
+            if "_type" in str(err) and "_type" in data:
+                data["msg_type"] = data["_type"]
+                del data["_type"]
+            cls_inst = self.Model(**data)
+        return cls_inst
 
     @post_dump
     def remove_skipped_values(self, data, **kwargs):

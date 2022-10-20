@@ -450,8 +450,7 @@ class Conductor:
                         if mediation_connections_invite
                         else OutOfBandManager(self.root_profile)
                     )
-
-                    conn_record = await mgr.receive_invitation(
+                    record = await mgr.receive_invitation(
                         invitation=invitation_handler.from_url(
                             mediation_invite_record.invite
                         ),
@@ -464,10 +463,10 @@ class Conductor:
                             ).mark_default_invite_as_used()
                         )
 
-                        await conn_record.metadata_set(
+                        await record.metadata_set(
                             session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
                         )
-                        await conn_record.metadata_set(
+                        await record.metadata_set(
                             session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
                         )
 
@@ -482,7 +481,8 @@ class Conductor:
     async def stop(self, timeout=1.0):
         """Stop the agent."""
         # notify protcols that we are shutting down
-        await self.root_profile.notify(SHUTDOWN_EVENT_TOPIC, {})
+        if self.root_profile:
+            await self.root_profile.notify(SHUTDOWN_EVENT_TOPIC, {})
 
         shutdown = TaskQueue()
         if self.dispatcher:
@@ -494,13 +494,13 @@ class Conductor:
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
 
-        # close multitenant profiles
-        multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            for profile in multitenant_mgr.open_profiles:
-                shutdown.run(profile.close())
-
         if self.root_profile:
+            # close multitenant profiles
+            multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                for profile in multitenant_mgr.open_profiles:
+                    shutdown.run(profile.close())
+
             shutdown.run(self.root_profile.close())
 
         await shutdown.complete(timeout)
