@@ -20,6 +20,7 @@ from runners.support.agent import (  # noqa:E402
     start_mediator_agent,
     connect_wallet_to_mediator,
     start_endorser_agent,
+    connect_wallet_to_endorser,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
     DID_METHOD_KEY,
@@ -656,6 +657,7 @@ class AgentContainer:
         self.seed = seed
         self.aip = aip
         self.arg_file = arg_file
+        self.endorser_agent = None
         self.endorser_role = endorser_role
         if endorser_role:
             # endorsers and authors need public DIDs (assume cred_type is Indy)
@@ -709,9 +711,11 @@ class AgentContainer:
 
         await self.agent.listen_webhooks(self.start_port + 2)
 
-        if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
-            await self.agent.register_did(cred_type=CRED_FORMAT_INDY)
-            log_msg("Created public DID")
+        # create public DID ... UNLESS we are an author ...
+        if (not self.endorser_role) or (self.endorser_role == "endorser"):
+            if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
+                await self.agent.register_did(cred_type=CRED_FORMAT_INDY)
+                log_msg("Created public DID")
 
         # if we are endorsing, create the endorser agent first, then we can use the
         # multi-use invitation to auto-connect the agent on startup
@@ -753,19 +757,46 @@ class AgentContainer:
             rand_name = str(random.randint(100_000, 999_999))
             await self.agent.register_or_switch_wallet(
                 self.ident + ".initial." + rand_name,
-                public_did=self.public_did,
+                public_did=self.public_did
+                and ((not self.endorser_role) or (not self.endorser_role == "author")),
                 webhook_port=None,
                 mediator_agent=self.mediator_agent,
                 endorser_agent=self.endorser_agent,
                 taa_accept=self.taa_accept,
             )
-        elif self.mediation:
-            # we need to pre-connect the agent to its mediator
-            if not await connect_wallet_to_mediator(self.agent, self.mediator_agent):
-                raise Exception("Mediation setup FAILED :-(")
         else:
-            if self.taa_accept:
-                await self.agent.taa_accept()
+            if self.mediation:
+                # we need to pre-connect the agent to its mediator
+                self.agent.log("Connect wallet to mediator ...")
+                if not await connect_wallet_to_mediator(
+                    self.agent, self.mediator_agent
+                ):
+                    raise Exception("Mediation setup FAILED :-(")
+            if self.endorser_agent:
+                self.agent.log("Connect wallet to endorser ...")
+                if not await connect_wallet_to_endorser(
+                    self.agent, self.endorser_agent
+                ):
+                    raise Exception("Endorser setup FAILED :-(")
+        if self.taa_accept:
+            await self.agent.taa_accept()
+
+        # if we are an author, create our public DID here ...
+        if (
+            self.endorser_role
+            and self.endorser_role == "author"
+            and self.endorser_agent
+        ):
+            if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
+                new_did = await self.agent.admin_POST("/wallet/did/create")
+                self.agent.did = new_did["result"]["did"]
+                await self.agent.register_did(
+                    did=new_did["result"]["did"],
+                    verkey=new_did["result"]["verkey"],
+                )
+                await self.agent.admin_POST("/wallet/did/public?did=" + self.agent.did)
+                await asyncio.sleep(3.0)
+                log_msg("Created public DID")
 
         if self.public_did and self.cred_type == CRED_FORMAT_JSON_LD:
             # create did of appropriate type
