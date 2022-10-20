@@ -1837,7 +1837,7 @@ class EndorsementGroup(ArgumentGroup):
         parser.add_argument(
             "--auto-promote-author-did",
             action="store_true",
-            env_var="ACAPY_PROMOTE-AUTHOR-DID",
+            env_var="ACAPY_AUTO_PROMOTE_AUTHOR_DID",
             help="For Authors, specify whether to automatically promote"
             " a DID to the wallet public DID after writing to the ledger.",
         )
