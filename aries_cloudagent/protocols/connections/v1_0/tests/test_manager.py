@@ -2069,7 +2069,7 @@ class TestConnectionManager(AsyncTestCase):
             )
             self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
             self.resolver.dereference = async_mock.CoroutineMock(
-                return_value = did_doc.verification_method[0]
+                return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
 
@@ -2141,7 +2141,7 @@ class TestConnectionManager(AsyncTestCase):
             )
             self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
             self.resolver.dereference = async_mock.CoroutineMock(
-                return_value = did_doc.verification_method[0]
+                return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
             local_did = await session.wallet.create_local_did(
@@ -2295,7 +2295,7 @@ class TestConnectionManager(AsyncTestCase):
             )
             self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
             self.resolver.dereference = async_mock.CoroutineMock(
-                return_value = did_doc.verification_method[0]
+                return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
             local_did = await session.wallet.create_local_did(
@@ -2367,7 +2367,7 @@ class TestConnectionManager(AsyncTestCase):
             self.resolver = async_mock.MagicMock()
             self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
             self.resolver.dereference = async_mock.CoroutineMock(
-                return_value = did_doc.verification_method[0]
+                return_value=did_doc.verification_method[0]
             )
             self.context.injector.bind_instance(DIDResolver, self.resolver)
 
