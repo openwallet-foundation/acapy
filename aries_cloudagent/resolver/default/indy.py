@@ -31,13 +31,25 @@ class NoIndyLedger(ResolverError):
 
 
 def _routing_keys_as_did_key_urls(routing_keys: Sequence[str]) -> Sequence[str]:
-    """Convert raw base58 keys to did:key values."""
-    return [
-        DIDKey.from_public_key_b58(routing_key, KeyType.ED25519).key_id
-        if not routing_key.startswith("did:key:")
-        else routing_key
-        for routing_key in routing_keys
-    ]
+    """Convert raw base58 keys to did:key values.
+
+    If a did:key is passed in, convert to a did:key URL.
+    """
+
+    did_key_urls = []
+    for routing_key in routing_keys:
+        if not routing_key.startswith("did:key:"):
+            did_key_urls.append(
+                DIDKey.from_public_key_b58(routing_key, KeyType.ED25519).key_id
+            )
+        else:
+            if "#" not in routing_key:
+                did_key_urls.append(
+                    f"{routing_key}#{DIDKey.from_did(routing_key).fingerprint}"
+                )
+            else:
+                return routing_keys
+    return did_key_urls
 
 
 class IndyDIDResolver(BaseDIDResolver):
