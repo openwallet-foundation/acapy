@@ -24,6 +24,7 @@ from ...protocols.coordinate_mediation.mediation_invite_store import (
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ...protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ...resolver.did_resolver import DIDResolver
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
@@ -1172,8 +1173,13 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         )
         conn_record.accept = ConnRecord.ACCEPT_MANUAL
         await conn_record.save(await conductor.root_profile.session())
-        oob_record = async_mock.MagicMock(
+        invitation = test_module.InvitationMessage()
+        oob_record = OobRecord(
+            invitation=invitation,
+            invi_msg_id=invitation._id,
+            role=OobRecord.ROLE_RECEIVER,
             connection_id=conn_record.connection_id,
+            state=OobRecord.STATE_INITIAL,
         )
         with async_mock.patch.object(
             test_module,
@@ -1194,6 +1200,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             await conductor.start()
             await conductor.stop()
             mock_from_url.assert_called_once_with("test-invite")
+            mock_mgr.return_value.receive_invitation.assert_called_once()
 
     @async_mock.patch.object(test_module, "MediationInviteStore")
     @async_mock.patch.object(test_module.ConnectionInvitation, "from_url")
