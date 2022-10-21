@@ -352,6 +352,9 @@ class TestLedgerRoutes(AsyncTestCase):
                 True,
                 {"signed_txn": {"...": "..."}},
             )
+            self.ledger.get_wallet_public_did = async_mock.CoroutineMock(
+                return_value=self.request.query["did"]
+            )
 
             result = await test_module.register_ledger_nym(self.request)
             assert result == mock_response.return_value
@@ -371,21 +374,21 @@ class TestLedgerRoutes(AsyncTestCase):
         self.profile.context.settings["endorser.author"] = True
 
         with async_mock.patch.object(
-            ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+            ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             test_module, "TransactionManager", async_mock.MagicMock()
         ) as mock_txn_mgr, async_mock.patch.object(
             test_module.web, "json_response", async_mock.MagicMock()
         ) as mock_response:
             mock_txn_mgr.return_value = async_mock.MagicMock(
-                create_record=async_mock.AsyncMock(
+                create_record=async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(
                         serialize=async_mock.MagicMock(return_value={"...": "..."})
                     )
                 )
             )
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
-                metadata_get=async_mock.AsyncMock(
+                metadata_get=async_mock.CoroutineMock(
                     return_value={
                         "endorser_did": ("did"),
                         "endorser_name": ("name"),
@@ -395,6 +398,9 @@ class TestLedgerRoutes(AsyncTestCase):
             self.ledger.register_nym.return_value: Tuple[bool, dict] = (
                 True,
                 {"signed_txn": {"...": "..."}},
+            )
+            self.ledger.get_wallet_public_did = async_mock.CoroutineMock(
+                return_value=self.test_did
             )
 
             result = await test_module.register_ledger_nym(self.request)
@@ -435,6 +441,9 @@ class TestLedgerRoutes(AsyncTestCase):
             self.ledger.register_nym.return_value: Tuple[bool, dict] = (
                 True,
                 {"signed_txn": {"...": "..."}},
+            )
+            self.ledger.get_wallet_public_did = async_mock.CoroutineMock(
+                return_value=self.request.query["did"]
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
