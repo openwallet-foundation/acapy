@@ -115,6 +115,7 @@ class TestTransactionManager(AsyncTestCase):
         self.ledger.txn_endorse = async_mock.CoroutineMock(
             return_value=self.test_endorsed_message
         )
+        self.ledger.register_nym = async_mock.CoroutineMock(return_value=(True, {}))
 
         self.context = AdminRequestContext.test_context()
         self.profile = self.context.profile
@@ -235,6 +236,48 @@ class TestTransactionManager(AsyncTestCase):
             transaction_request.messages_attach == transaction_record.messages_attach[0]
         )
 
+    async def test_create_request_author_did(self):
+        transaction_record = await self.manager.create_record(
+            messages_attach=self.test_messages_attach,
+            connection_id=self.test_connection_id,
+        )
+
+        with async_mock.patch.object(
+            TransactionRecord, "save", autospec=True
+        ) as save_record:
+            (
+                transaction_record,
+                transaction_request,
+            ) = await self.manager.create_request(
+                transaction_record,
+                expires_time=self.test_expires_time,
+                author_goal_code=TransactionRecord.REGISTER_PUBLIC_DID,
+                signer_goal_code=TransactionRecord.WRITE_DID_TRANSACTION,
+            )
+            save_record.assert_called_once()
+
+        assert transaction_record._type == TransactionRecord.SIGNATURE_REQUEST
+        assert transaction_record.signature_request[0] == {
+            "context": TransactionRecord.SIGNATURE_CONTEXT,
+            "method": TransactionRecord.ADD_SIGNATURE,
+            "signature_type": TransactionRecord.SIGNATURE_TYPE,
+            "signer_goal_code": TransactionRecord.WRITE_DID_TRANSACTION,
+            "author_goal_code": TransactionRecord.REGISTER_PUBLIC_DID,
+        }
+        assert transaction_record.state == TransactionRecord.STATE_REQUEST_SENT
+        assert transaction_record.connection_id == self.test_connection_id
+        assert transaction_record.timing["expires_time"] == self.test_expires_time
+
+        assert transaction_request.transaction_id == transaction_record._id
+        assert (
+            transaction_request.signature_request
+            == transaction_record.signature_request[0]
+        )
+        assert transaction_request.timing == transaction_record.timing
+        assert (
+            transaction_request.messages_attach == transaction_record.messages_attach[0]
+        )
+
     async def test_recieve_request(self):
         mock_request = async_mock.MagicMock()
         mock_request.transaction_id = self.test_author_transaction_id
@@ -340,6 +383,55 @@ class TestTransactionManager(AsyncTestCase):
         )
         assert endorsed_transaction_response.endorser_did == self.test_endorser_did
 
+    async def test_create_endorse_response_author_did(self):
+        transaction_record = await self.manager.create_record(
+            messages_attach=self.test_messages_attach,
+            connection_id=self.test_connection_id,
+        )
+
+        with async_mock.patch.object(
+            TransactionRecord, "save", autospec=True
+        ) as save_record:
+            (
+                transaction_record,
+                transaction_request,
+            ) = await self.manager.create_request(
+                transaction_record,
+                expires_time=self.test_expires_time,
+                author_goal_code=TransactionRecord.REGISTER_PUBLIC_DID,
+                signer_goal_code=TransactionRecord.WRITE_DID_TRANSACTION,
+            )
+            save_record.assert_called_once()
+
+        transaction_record.state = TransactionRecord.STATE_REQUEST_RECEIVED
+        transaction_record.thread_id = self.test_author_transaction_id
+        transaction_record.messages_attach[0]["data"]["json"] = json.dumps(
+            {
+                "did": "test",
+                "verkey": "test",
+                "alias": "test",
+                "role": "",
+            }
+        )
+
+        with async_mock.patch.object(
+            TransactionRecord, "save", autospec=True
+        ) as save_record:
+            (
+                transaction_record,
+                endorsed_transaction_response,
+            ) = await self.manager.create_endorse_response(
+                transaction_record,
+                state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
+            )
+            save_record.assert_called_once()
+
+        assert transaction_record._type == TransactionRecord.SIGNATURE_RESPONSE
+        assert (
+            transaction_record.messages_attach[0]["data"]["json"]
+            == '{"result": {"txn": {"type": "1", "data": {"dest": "test"}}}, "meta_data": {"did": "test", "verkey": "test", "alias": "test", "role": ""}}'
+        )
+
     async def test_receive_endorse_response(self):
         transaction_record = await self.manager.create_record(
             messages_attach=self.test_messages_attach,
@@ -427,7 +519,7 @@ class TestTransactionManager(AsyncTestCase):
             (
                 transaction_record,
                 transaction_acknowledgement_message,
-            ) = await self.manager.complete_transaction(transaction_record)
+            ) = await self.manager.complete_transaction(transaction_record, False)
             save_record.assert_called_once()
 
         assert transaction_record.state == TransactionRecord.STATE_TRANSACTION_ACKED

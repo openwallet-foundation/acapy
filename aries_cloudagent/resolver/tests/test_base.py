@@ -22,7 +22,7 @@ class ExampleDIDResolver(BaseDIDResolver):
     def supported_did_regex(self):
         return re.compile("^did:example:[a-zA-Z0-9_.-]+$")
 
-    async def _resolve(self, profile, did) -> DIDDocument:
+    async def _resolve(self, profile, did, accept) -> DIDDocument:
         return DIDDocument("did:example:123")
 
 
@@ -74,7 +74,7 @@ async def test_supported_methods():
         def supported_methods(self):
             return ["example"]
 
-        async def _resolve(self, profile, did) -> DIDDocument:
+        async def _resolve(self, profile, did, accept) -> DIDDocument:
             return DIDDocument("did:example:123")
 
     with pytest.deprecated_call():

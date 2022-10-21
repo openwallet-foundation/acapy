@@ -3,9 +3,11 @@
 import logging
 
 from enum import Enum
+from typing import Optional, Text
 
 from marshmallow import (
     EXCLUDE,
+    fields,
     pre_dump,
     validates_schema,
     ValidationError,
@@ -13,7 +15,7 @@ from marshmallow import (
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 
-from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE
+from ..message_types import PROBLEM_REPORT, PROTOCOL_PACKAGE, DEFAULT_VERSION
 
 HANDLER_CLASS = (
     f"{PROTOCOL_PACKAGE}.handlers"
@@ -40,9 +42,15 @@ class OOBProblemReport(ProblemReport):
         message_type = PROBLEM_REPORT
         schema_class = "OOBProblemReportSchema"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        version: str = DEFAULT_VERSION,
+        msg_type: Optional[Text] = None,
+        *args,
+        **kwargs,
+    ):
         """Initialize a ProblemReport message instance."""
-        super().__init__(*args, **kwargs)
+        super().__init__(_type=msg_type, _version=version, *args, **kwargs)
 
 
 class OOBProblemReportSchema(ProblemReportSchema):
@@ -53,6 +61,13 @@ class OOBProblemReportSchema(ProblemReportSchema):
 
         model_class = OOBProblemReport
         unknown = EXCLUDE
+
+    _type = fields.Str(
+        data_key="@type",
+        required=False,
+        description="Message type",
+        example="https://didcomm.org/my-family/1.0/my-message-type",
+    )
 
     @pre_dump
     def check_thread_deco(self, obj, **kwargs):
