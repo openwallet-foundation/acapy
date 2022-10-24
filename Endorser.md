@@ -56,7 +56,7 @@ Endorsement:
                         For Authors, specify whether to automatically create transactions for a cred def's revocation registry. (If not specified, the controller must invoke the endpoints required to create
                         the revocation registry and assign to the cred def.) [env var: ACAPY_CREATE_REVOCATION_TRANSACTIONS]
   --auto-promote-author-did
-                        For Authors, specify whether to automatically promote a DID to the wallet public DID after writing to the ledger.
+                        For Authors, specify whether to automatically promote a DID to the wallet public DID after writing to the ledger. [env var: ACAPY_AUTO_PROMOTE_AUTHOR_DID]
 ```
 
 ## How Aca-py Handles Endorsements
