@@ -10,6 +10,7 @@ couple of other PRs were added to the release, as listed below, and in
 
 ### List of Pull Requests
 
+- Changelog and version updates for version 0.7.5-rc1 [\#1985](https://github.com/hyperledger/aries-cloudagent-python/pull/1985) ([swcurran](https://github.com/swcurran))
 - Endorser doc updates and some bug fixes [\#1926](https://github.com/hyperledger/aries-cloudagent-python/pull/1926) ([ianco](https://github.com/ianco))
 - Fix: web.py dependency - integration tests & demos [\#1973](https://github.com/hyperledger/aries-cloudagent-python/pull/1973) ([shaangill025](https://github.com/shaangill025))
 - Endorser write DID transaction [\#1938](https://github.com/hyperledger/aries-cloudagent-python/pull/1938) ([ianco](https://github.com/ianco))
