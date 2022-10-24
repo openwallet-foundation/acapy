@@ -710,7 +710,7 @@ async def transaction_write(request: web.BaseRequest):
         (
             tx_completed,
             transaction_acknowledgement_message,
-        ) = await transaction_mgr.complete_transaction(transaction=transaction)
+        ) = await transaction_mgr.complete_transaction(transaction, False)
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
