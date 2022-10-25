@@ -9,8 +9,8 @@ from ......connections.models.diddoc import (
     Service,
 )
 from ......core.in_memory import InMemoryProfile
-from ......wallet.key_type import KeyType
-from ......wallet.did_method import DIDMethod
+from ......wallet.did_method import SOV
+from ......wallet.key_type import ED25519
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -87,9 +87,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
         await self.conn_rec.save(self.session)
 
         wallet = self.session.wallet
-        self.did_info = await wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519
-        )
+        self.did_info = await wallet.create_local_did(method=SOV, key_type=ED25519)
 
         self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)

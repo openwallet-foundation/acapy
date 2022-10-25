@@ -4,7 +4,7 @@ from marshmallow import EXCLUDE, fields
 
 from ...core.in_memory import InMemoryProfile
 from ...protocols.didcomm_prefix import DIDCommPrefix
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import ED25519
 
 from ..agent_message import AgentMessage, AgentMessageSchema
 from ..decorators.signature_decorator import SignatureDecorator
@@ -72,7 +72,7 @@ class TestAgentMessage(AsyncTestCase):
     async def test_field_signature(self):
         session = InMemoryProfile.test_session()
         wallet = session.wallet
-        key_info = await wallet.create_signing_key(KeyType.ED25519)
+        key_info = await wallet.create_signing_key(ED25519)
 
         msg = SignedAgentMessage()
         msg.value = None

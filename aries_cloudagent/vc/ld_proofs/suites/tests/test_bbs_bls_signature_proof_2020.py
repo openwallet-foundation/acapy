@@ -1,6 +1,8 @@
 from asynctest import TestCase, mock as async_mock
 import pytest
 
+from aries_cloudagent.wallet.key_type import BLS12381G2
+
 from .....did.did_key import DIDKey
 from .....wallet.key_pair import KeyType
 from .....wallet.in_memory import InMemoryWallet
@@ -39,13 +41,13 @@ class TestBbsBlsSignatureProof2020(TestCase):
         self.profile = InMemoryProfile.test_profile()
         self.wallet = InMemoryWallet(self.profile)
         self.key = await self.wallet.create_signing_key(
-            key_type=KeyType.BLS12381G2, seed=self.test_seed
+            key_type=BLS12381G2, seed=self.test_seed
         )
         self.verification_method = DIDKey.from_public_key_b58(
-            self.key.verkey, KeyType.BLS12381G2
+            self.key.verkey, BLS12381G2
         ).key_id
 
-        self.key_pair = WalletKeyPair(wallet=self.wallet, key_type=KeyType.BLS12381G2)
+        self.key_pair = WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
 
     async def test_derive_ld_proofs(self):
         derived = await derive(

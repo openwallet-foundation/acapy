@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import BLS12381G2, ED25519
 from ....did.did_key import DIDKey
 from ....wallet.in_memory import InMemoryWallet
 from ....core.in_memory import InMemoryProfile
@@ -37,18 +37,18 @@ class TestLinkedDataVerifiableCredential(TestCase):
         self.wallet = InMemoryWallet(self.profile)
 
         self.ed25519_key_info = await self.wallet.create_signing_key(
-            key_type=KeyType.ED25519, seed=self.test_seed
+            key_type=ED25519, seed=self.test_seed
         )
         self.ed25519_verification_method = DIDKey.from_public_key_b58(
-            self.ed25519_key_info.verkey, KeyType.ED25519
+            self.ed25519_key_info.verkey, ED25519
         ).key_id
 
         self.bls12381g2_key_info = await self.wallet.create_signing_key(
-            key_type=KeyType.BLS12381G2, seed=self.test_seed
+            key_type=BLS12381G2, seed=self.test_seed
         )
 
         self.bls12381g2_verification_method = DIDKey.from_public_key_b58(
-            self.bls12381g2_key_info.verkey, KeyType.BLS12381G2
+            self.bls12381g2_key_info.verkey, BLS12381G2
         ).key_id
 
         self.presentation_challenge = "2b1bbff6-e608-4368-bf84-67471b27e41c"
@@ -61,7 +61,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
             verification_method=self.ed25519_verification_method,
             key_pair=WalletKeyPair(
                 wallet=self.wallet,
-                key_type=KeyType.ED25519,
+                key_type=ED25519,
                 public_key_base58=self.ed25519_key_info.verkey,
             ),
             date=datetime.strptime("2019-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
@@ -103,7 +103,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
     async def test_verify_Ed25519Signature2018(self):
         # Verification requires lot less input parameters
         suite = Ed25519Signature2018(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.ED25519),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
         )
         verified = await verify_credential(
             credential=CREDENTIAL_ISSUED,
@@ -135,7 +135,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
             verification_method=self.bls12381g2_verification_method,
             key_pair=WalletKeyPair(
                 wallet=self.wallet,
-                key_type=KeyType.BLS12381G2,
+                key_type=BLS12381G2,
                 public_key_base58=self.bls12381g2_key_info.verkey,
             ),
             date=datetime.strptime("2019-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
@@ -158,7 +158,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
     async def test_verify_BbsBlsSignature2020(self):
         # Verification requires lot less input parameters
         suite = BbsBlsSignature2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.BLS12381G2),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2),
         )
         result = await verify_credential(
             credential=CREDENTIAL_ISSUED_BBS,
@@ -185,7 +185,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
             verification_method=self.ed25519_verification_method,
             key_pair=WalletKeyPair(
                 wallet=self.wallet,
-                key_type=KeyType.ED25519,
+                key_type=ED25519,
                 public_key_base58=self.ed25519_key_info.verkey,
             ),
             date=datetime.strptime("2020-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
@@ -218,7 +218,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
             verification_method=self.bls12381g2_verification_method,
             key_pair=WalletKeyPair(
                 wallet=self.wallet,
-                key_type=KeyType.BLS12381G2,
+                key_type=BLS12381G2,
                 public_key_base58=self.bls12381g2_key_info.verkey,
             ),
             date=datetime.strptime("2020-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
@@ -235,7 +235,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
 
     async def test_verify_presentation(self):
         suite = Ed25519Signature2018(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.ED25519),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
         )
         verification_result = await verify_presentation(
             presentation=PRESENTATION_SIGNED,
