@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import BLS12381G1
 from ...wallet.util import b58_to_bytes
 from ..did_key import DIDKey, DID_KEY_RESOLVERS
 from .test_dids import (
@@ -24,14 +24,12 @@ TEST_BLS12381G1_PREFIX_BYTES = b"".join(
 class TestDIDKey(TestCase):
     def test_bls12381g1_from_public_key(self):
         key_bytes = b58_to_bytes(TEST_BLS12381G1_BASE58_KEY)
-        did_key = DIDKey.from_public_key(key_bytes, KeyType.BLS12381G1)
+        did_key = DIDKey.from_public_key(key_bytes, BLS12381G1)
 
         assert did_key.did == TEST_BLS12381G1_DID
 
     def test_bls12381g1_from_public_key_b58(self):
-        did_key = DIDKey.from_public_key_b58(
-            TEST_BLS12381G1_BASE58_KEY, KeyType.BLS12381G1
-        )
+        did_key = DIDKey.from_public_key_b58(TEST_BLS12381G1_BASE58_KEY, BLS12381G1)
 
         assert did_key.did == TEST_BLS12381G1_DID
 
@@ -53,20 +51,20 @@ class TestDIDKey(TestCase):
         assert did_key.did == TEST_BLS12381G1_DID
         assert did_key.public_key_b58 == TEST_BLS12381G1_BASE58_KEY
         assert did_key.public_key == b58_to_bytes(TEST_BLS12381G1_BASE58_KEY)
-        assert did_key.key_type == KeyType.BLS12381G1
+        assert did_key.key_type == BLS12381G1
         assert did_key.key_id == TEST_BLS12381G1_KEY_ID
         assert did_key.prefixed_public_key == TEST_BLS12381G1_PREFIX_BYTES
 
     def test_bls12381g1_diddoc(self):
         did_key = DIDKey.from_did(TEST_BLS12381G1_DID)
 
-        resolver = DID_KEY_RESOLVERS[KeyType.BLS12381G1]
+        resolver = DID_KEY_RESOLVERS[BLS12381G1]
 
         assert resolver(did_key) == did_key.did_doc
 
     def test_bls12381g1_resolver(self):
         did_key = DIDKey.from_did(TEST_BLS12381G1_DID)
-        resolver = DID_KEY_RESOLVERS[KeyType.BLS12381G1]
+        resolver = DID_KEY_RESOLVERS[BLS12381G1]
         did_doc = resolver(did_key)
 
         assert (
