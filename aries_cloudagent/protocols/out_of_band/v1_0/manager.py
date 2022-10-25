@@ -121,6 +121,7 @@ class OutOfBandManager(BaseConnectionManager):
             mediation_id,
             or_default=True,
         )
+        image_url = self.profile.context.settings.get("image_url")
 
         if not (hs_protos or attachments):
             raise OutOfBandManagerError(
@@ -235,6 +236,7 @@ class OutOfBandManager(BaseConnectionManager):
                 services=[f"did:sov:{public_did.did}"],
                 accept=service_accept if protocol_version != "1.0" else None,
                 version=protocol_version or DEFAULT_VERSION,
+                image_url=image_url,
             )
 
             our_recipient_key = public_did.verkey
@@ -333,6 +335,7 @@ class OutOfBandManager(BaseConnectionManager):
             invi_msg.handshake_protocols = handshake_protocols
             invi_msg.requests_attach = message_attachments
             invi_msg.accept = service_accept if protocol_version != "1.0" else None
+            invi_msg.image_url = image_url
             invi_msg.services = [
                 ServiceMessage(
                     _id="#inline",

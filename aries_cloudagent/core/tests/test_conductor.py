@@ -21,6 +21,7 @@ from ...protocols.coordinate_mediation.mediation_invite_store import (
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ...protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ...resolver.did_resolver import DIDResolver
 from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
@@ -1155,7 +1156,9 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
                 "test": async_mock.MagicMock(schemes=["http"])
             }
             await conductor.setup()
-
+        conductor.root_profile.context.update_settings(
+            {"mediation.connections_invite": False}
+        )
         conn_record = ConnRecord(
             invitation_key="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
             their_label="Hello",
@@ -1164,12 +1167,20 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
         )
         conn_record.accept = ConnRecord.ACCEPT_MANUAL
         await conn_record.save(await conductor.root_profile.session())
+        invitation = test_module.InvitationMessage()
+        oob_record = OobRecord(
+            invitation=invitation,
+            invi_msg_id=invitation._id,
+            role=OobRecord.ROLE_RECEIVER,
+            connection_id=conn_record.connection_id,
+            state=OobRecord.STATE_INITIAL,
+        )
         with async_mock.patch.object(
             test_module,
             "OutOfBandManager",
             async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
-                    receive_invitation=async_mock.AsyncMock(return_value=conn_record)
+                    receive_invitation=async_mock.AsyncMock(return_value=oob_record)
                 )
             ),
         ) as mock_mgr, async_mock.patch.object(
@@ -1179,6 +1190,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
                 return_value=async_mock.MagicMock(value=f"v{__version__}")
             ),
         ):
+            assert not conductor.root_profile.settings["mediation.connections_invite"]
             await conductor.start()
             await conductor.stop()
             mock_from_url.assert_called_once_with("test-invite")

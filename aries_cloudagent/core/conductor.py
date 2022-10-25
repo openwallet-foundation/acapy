@@ -450,8 +450,7 @@ class Conductor:
                         if mediation_connections_invite
                         else OutOfBandManager(self.root_profile)
                     )
-
-                    conn_record = await mgr.receive_invitation(
+                    record = await mgr.receive_invitation(
                         invitation=invitation_handler.from_url(
                             mediation_invite_record.invite
                         ),
@@ -464,10 +463,10 @@ class Conductor:
                             ).mark_default_invite_as_used()
                         )
 
-                        await conn_record.metadata_set(
+                        await record.metadata_set(
                             session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
                         )
-                        await conn_record.metadata_set(
+                        await record.metadata_set(
                             session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
                         )
 

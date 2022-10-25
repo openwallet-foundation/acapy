@@ -118,6 +118,8 @@ class TransactionManager:
         signed_request: dict = None,
         expires_time: str = None,
         endorser_write_txn: bool = None,
+        author_goal_code: str = None,
+        signer_goal_code: str = None,
     ):
         """
         Create a new Transaction Request.
@@ -142,8 +144,12 @@ class TransactionManager:
             "context": TransactionRecord.SIGNATURE_CONTEXT,
             "method": TransactionRecord.ADD_SIGNATURE,
             "signature_type": TransactionRecord.SIGNATURE_TYPE,
-            "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
-            "author_goal_code": TransactionRecord.WRITE_TRANSACTION,
+            "signer_goal_code": signer_goal_code
+            if signer_goal_code
+            else TransactionRecord.ENDORSE_TRANSACTION,
+            "author_goal_code": author_goal_code
+            if author_goal_code
+            else TransactionRecord.WRITE_TRANSACTION,
         }
         transaction.signature_request.clear()
         transaction.signature_request.append(signature_request)
@@ -233,6 +239,7 @@ class TransactionManager:
 
         transaction._type = TransactionRecord.SIGNATURE_RESPONSE
         transaction_json = transaction.messages_attach[0]["data"]["json"]
+        ledger_response = {}
 
         async with self._profile.session() as session:
             wallet: BaseWallet = session.inject_or(BaseWallet)
@@ -266,9 +273,40 @@ class TransactionManager:
             raise LedgerError(reason=reason)
 
         async with ledger:
-            endorsed_msg = await shield(
-                ledger.txn_endorse(transaction_json, endorse_did=endorser_did_info)
+            # check our goal code!
+            txn_goal_code = (
+                transaction.signature_request[0]["signer_goal_code"]
+                if transaction.signature_request
+                and "signer_goal_code" in transaction.signature_request[0]
+                else TransactionRecord.ENDORSE_TRANSACTION
             )
+            if txn_goal_code == TransactionRecord.ENDORSE_TRANSACTION:
+                endorsed_msg = await shield(
+                    ledger.txn_endorse(transaction_json, endorse_did=endorser_did_info)
+                )
+            elif txn_goal_code == TransactionRecord.WRITE_DID_TRANSACTION:
+                # get DID info from transaction.meta_data
+                meta_data = json.loads(transaction_json)
+                (success, txn) = await shield(
+                    ledger.register_nym(
+                        meta_data["did"],
+                        meta_data["verkey"],
+                        meta_data["alias"],
+                        meta_data["role"],
+                    )
+                )
+                # we don't have an endorsed transaction so just return did meta-data
+                ledger_response = {
+                    "result": {
+                        "txn": {"type": "1", "data": {"dest": meta_data["did"]}}
+                    },
+                    "meta_data": meta_data,
+                }
+                endorsed_msg = json.dumps(ledger_response)
+            else:
+                raise TransactionManagerError(
+                    f"Invalid goal code for transaction record:" f" {txn_goal_code}"
+                )
 
         # need to return the endorsed msg or else the ledger will reject the
         # eventual transaction write
@@ -278,7 +316,7 @@ class TransactionManager:
             "message_id": transaction.messages_attach[0]["@id"],
             "context": TransactionRecord.SIGNATURE_CONTEXT,
             "method": TransactionRecord.ADD_SIGNATURE,
-            "signer_goal_code": TransactionRecord.ENDORSE_TRANSACTION,
+            "signer_goal_code": txn_goal_code,
             "signature_type": TransactionRecord.SIGNATURE_TYPE,
             "signature": {endorser_did: endorsed_msg or endorser_verkey},
         }
@@ -291,8 +329,12 @@ class TransactionManager:
         async with self._profile.session() as session:
             await transaction.save(session, reason="Created an endorsed response")
 
-        if transaction.endorser_write_txn:
-            ledger_response = await self.complete_transaction(transaction)
+        if (
+            transaction.endorser_write_txn
+            and txn_goal_code == TransactionRecord.ENDORSE_TRANSACTION
+        ):
+            # running as the endorser, we've been asked to write the transaction
+            ledger_response = await self.complete_transaction(transaction, True)
             endorsed_transaction_response = EndorsedTransactionResponse(
                 transaction_id=transaction.thread_id,
                 thread_id=transaction._id,
@@ -310,6 +352,7 @@ class TransactionManager:
             signature_response=signature_response,
             state=state,
             endorser_did=endorser_did,
+            ledger_response=ledger_response,
         )
 
         return transaction, endorsed_transaction_response
@@ -357,7 +400,9 @@ class TransactionManager:
 
         return transaction
 
-    async def complete_transaction(self, transaction: TransactionRecord):
+    async def complete_transaction(
+        self, transaction: TransactionRecord, endorser: bool = False
+    ):
         """
         Complete a transaction.
 
@@ -371,24 +416,34 @@ class TransactionManager:
             The updated transaction
 
         """
+
         ledger_transaction = transaction.messages_attach[0]["data"]["json"]
 
-        ledger = self._profile.inject(BaseLedger)
-        if not ledger:
-            reason = "No ledger available"
-            if not self._profile.context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise TransactionManagerError(reason)
+        # check if we (author) have requested the endorser to write the transaction
+        if (endorser and transaction.endorser_write_txn) or (
+            (not endorser) and (not transaction.endorser_write_txn)
+        ):
+            ledger = self._profile.inject(BaseLedger)
+            if not ledger:
+                reason = "No ledger available"
+                if not self._profile.context.settings.get_value("wallet.type"):
+                    reason += ": missing wallet-type?"
+                raise TransactionManagerError(reason)
 
-        async with ledger:
-            try:
-                ledger_response_json = await shield(
-                    ledger.txn_submit(ledger_transaction, sign=False, taa_accept=False)
-                )
-            except (IndyIssuerError, LedgerError) as err:
-                raise TransactionManagerError(err.roll_up) from err
+            async with ledger:
+                try:
+                    ledger_response_json = await shield(
+                        ledger.txn_submit(
+                            ledger_transaction, sign=False, taa_accept=False
+                        )
+                    )
+                except (IndyIssuerError, LedgerError) as err:
+                    raise TransactionManagerError(err.roll_up) from err
 
-        ledger_response = json.loads(ledger_response_json)
+            ledger_response = json.loads(ledger_response_json)
+
+        else:
+            ledger_response = ledger_transaction
 
         transaction.state = TransactionRecord.STATE_TRANSACTION_ACKED
 
@@ -397,7 +452,7 @@ class TransactionManager:
 
         # this scenario is where the endorser is writing the transaction
         # (called from self.create_endorse_response())
-        if transaction.endorser_write_txn:
+        if endorser and transaction.endorser_write_txn:
             return ledger_response
 
         connection_id = transaction.connection_id
@@ -732,6 +787,9 @@ class TransactionManager:
             transaction: The transaction from which the schema/cred_def
                          would be stored in wallet.
         """
+
+        if isinstance(ledger_response, str):
+            ledger_response = json.loads(ledger_response)
 
         ledger = self._profile.inject(BaseLedger)
         if not ledger:
