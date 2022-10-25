@@ -6,7 +6,7 @@ from typing import Optional
 class KeyType:
     """Key Type class."""
 
-    def __init__(self, key_type, multicodec_name, multicodec_prefix: bytes) -> None:
+    def __init__(self, key_type: str, multicodec_name: str, multicodec_prefix: bytes):
         """Construct key type."""
         self._type: str = key_type
         self._name: str = multicodec_name

@@ -9,7 +9,7 @@ from .key_type import BLS12381G2, ED25519, KeyType
 class DIDMethod:
     """Class to represent a did method."""
 
-    def __init__(self, name, key_types, rotation) -> None:
+    def __init__(self, name: str, key_types: List[KeyType], rotation: bool = False):
         """Construct did method class."""
         self._method_name: str = name
         self._supported_key_types: List[KeyType] = key_types
