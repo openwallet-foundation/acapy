@@ -1,0 +1,9 @@
+# Multi-Credentials
+
+It is a known fact that multiple AnonCreds can be combined to present a presentation proof with an "and" logical operator: For instance, a verifier can ask for the "name" claim from an eID and the "address" claim from a bank statement to have a single proof that is either valid or invalid. With the Present Proof Protocol v2, it is possible to have "and" and "or" logical operators for AnonCreds and/or W3C Verifiable Credentials.
+
+With the Present Proof Protocol v2, verifiers can ask for a combination of credentials as proof. For instance, a Verifier can ask a claim from an AnonCreds **and** a verifiable presentation from a W3C Verifiable Credential, which would open the possibilities of Aries Cloud Agent Python being used for rather complex presentation proof requests that wouldn't be possible without the support of AnonCreds or W3C Verifiable Credentials.
+
+Moreover, it is possible to make similar presentation proof requests using the or logical operator. For instance, a verifier can ask for either an eID in AnonCreds format or an eID in W3C Verifiable Credential format. This has the potential to solve the interoperability problem of different credential formats and ecosystems from a user point of view by shifting the requirement of holding/accepting different credential formats from identity holders to verifiers. Here again, using Aries Cloud Agent Python as the underlying verifier agent can tackle such complex presentation proof requests since the agent is capable of verifying both type of credential formats and proof types.
+
+In the future, it would be even possible to put mDoc as an attachment with an and or or logical operation, along with AnonCreds and/or W3C Verifiable Credentials. For this to happen, Aca-Py either needs the capabilities to validate mDocs internally or to connect third-party endpoints to validate and get a response.
