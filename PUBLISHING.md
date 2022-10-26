@@ -4,6 +4,11 @@ The code to be published should be in the `main` branch. Make sure that all the 
 merged, and decide on the release tag. Should it be a release candidate or the final tag, and should it be
 a major, minor or patch release, per [semver](https://semver.org/) rules.
 
+When the release is a patch to a previous release, a branch in the primary repository called
+`hotfix/<release_id>` (where `<release_id>` is a semver, such as `0.7.5`) must be
+created from the tag (e.g., tag `0.7.4`) to which the patch contents (cherry-picked commits) are to be applied.
+That branch (rather than `main`) will be the target of the release pull request.
+
 Once ready to do a release, create a local branch that includes the following updates:
 
 1. Create a PR branch from an updated `main` branch.

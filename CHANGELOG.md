@@ -1,6 +1,6 @@
-# 0.7.5-rc1
+# 0.7.5
 
-## October 24, 2022
+## October 26, 2022
 
 0.7.5 is a patch release to deal primarily to add [PR #1881 DID Exchange in
 ACA-Py 0.7.4 with explicit invitations and without auto-accept
@@ -20,6 +20,7 @@ couple of other PRs were added to the release, as listed below, and in
 - feat: 00B v1.1 support [\#1962](https://github.com/hyperledger/aries-cloudagent-python/pull/1962) ([shaangill025](https://github.com/shaangill025))
 - 0.7.5 Cherry Picks [\#1967](https://github.com/hyperledger/aries-cloudagent-python/pull/1967) ([frostyfrog](https://github.com/frostyfrog))
 - Changelog and version updates for version 0.7.5-rc0 [\#1969](https://github.com/hyperledger/aries-cloudagent-python/pull/1969) ([swcurran](https://github.com/swcurran))
+- Final 0.7.5 changes [\#1991](https://github.com/hyperledger/aries-cloudagent-python/pull/1991) ([swcurran](https://github.com/swcurran))
 
 # 0.7.4
 
