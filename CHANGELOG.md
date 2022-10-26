@@ -1,6 +1,6 @@
-# 0.7.5-rc1
+# 0.7.5
 
-## October 24, 2022
+## October 26, 2022
 
 0.7.5 is a patch release to deal primarily to add [PR #1881 DID Exchange in
 ACA-Py 0.7.4 with explicit invitations and without auto-accept
