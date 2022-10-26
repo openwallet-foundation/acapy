@@ -61,9 +61,7 @@ from uuid import uuid4
 
 ``` python
 TAILS_FILE_COUNT = int(os.getenv("TAILS_FILE_COUNT", 100))
-CRED_PREVIEW_TYPE = (
-    "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/issue-credential/2.0/credential-preview"
-)
+CRED_PREVIEW_TYPE = "https://didcomm.org/issue-credential/2.0/credential-preview"
 ```
 
 Next locate the code that is triggered by option ```2```:
@@ -142,10 +140,16 @@ then replace the ```# TODO``` comment and the ```pass``` statement:
             if is_proof_of_education:
                 log_status("#28.1 Received proof of education, check claims")
                 for (referent, attr_spec) in pres_req["requested_attributes"].items():
-                    self.log(
-                        f"{attr_spec['name']}: "
-                        f"{pres['requested_proof']['revealed_attrs'][referent]['raw']}"
-                    )
+                    if referent in pres['requested_proof']['revealed_attrs']:
+                        self.log(
+                            f"{attr_spec['name']}: "
+                            f"{pres['requested_proof']['revealed_attrs'][referent]['raw']}"
+                        )
+                    else:
+                        self.log(
+                            f"{attr_spec['name']}: "
+                            "(attribute not revealed)"
+                        )
                 for id_spec in pres["identifiers"]:
                     # just print out the schema/cred def id's of presented claims
                     self.log(f"schema_id: {id_spec['schema_id']}")
@@ -153,7 +157,7 @@ then replace the ```# TODO``` comment and the ```pass``` statement:
                 # TODO placeholder for the next step
             else:
                 # in case there are any other kinds of proofs received
-                self.log("#28.1 Received ", message["presentation_request"]["name"])
+                self.log("#28.1 Received ", pres_req["name"])
 ```
 
 Right now this just verifies the proof received and prints out the attributes it reveals, but in "real life" your application could do something useful with this information.
