@@ -1,33 +1,26 @@
 import json
-import pytest
 import uuid
-
 from copy import deepcopy
 from datetime import datetime, timezone
 from unittest import TestCase
 
+import pytest
+
 from ....indy.sdk.wallet_setup import IndyWalletConfig
 from ....messaging.models.base import BaseModelError
+from ....wallet.did_method import SOV
 from ....wallet.indy import IndySdkWallet
+from ....wallet.key_type import ED25519
 from ....wallet.util import b64_to_bytes, bytes_to_b64
-from ....wallet.key_type import KeyType
-from ....wallet.did_method import DIDMethod
-
 from ..attach_decorator import (
     AttachDecorator,
-    AttachDecoratorSchema,
     AttachDecoratorData,
-    AttachDecoratorDataSchema,
     AttachDecoratorData1JWS,
-    AttachDecoratorData1JWSSchema,
     AttachDecoratorDataJWS,
-    AttachDecoratorDataJWSSchema,
     AttachDecoratorDataJWSHeader,
-    AttachDecoratorDataJWSHeaderSchema,
     did_key,
     raw_key,
 )
-
 
 KID = "did:sov:LjgpST2rjsoxYegQDRm7EL#keys-4"
 INDY_CRED = {
@@ -433,9 +426,7 @@ class TestAttachDecorator(TestCase):
 class TestAttachDecoratorSignature:
     @pytest.mark.asyncio
     async def test_did_raw_key(self, wallet, seed):
-        did_info = await wallet.create_local_did(
-            DIDMethod.SOV, KeyType.ED25519, seed[0]
-        )
+        did_info = await wallet.create_local_did(SOV, ED25519, seed[0])
         did_key0 = did_key(did_info.verkey)
         raw_key0 = raw_key(did_key0)
         assert raw_key0 != did_key0
@@ -457,8 +448,7 @@ class TestAttachDecoratorSignature:
         )
         deco_indy_master = deepcopy(deco_indy)
         did_info = [
-            await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519, seed[i])
-            for i in [0, 1]
+            await wallet.create_local_did(SOV, ED25519, seed[i]) for i in [0, 1]
         ]
         assert deco_indy.data.signatures == 0
         assert deco_indy.data.header_map() is None

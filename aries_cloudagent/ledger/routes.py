@@ -26,6 +26,7 @@ from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManagerError,
 )
 from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
+    TransactionRecord,
     TransactionRecordSchema,
 )
 from ..protocols.endorse_transaction.v1_0.util import (
@@ -295,18 +296,29 @@ async def register_ledger_nym(request: web.BaseRequest):
             )
         endorser_did = endorser_info["endorser_did"]
 
+    meta_data = {"did": did, "verkey": verkey, "alias": alias, "role": role}
     success = False
     txn = None
     async with ledger:
         try:
-            (success, txn) = await ledger.register_nym(
-                did,
-                verkey,
-                alias,
-                role,
-                write_ledger=write_ledger,
-                endorser_did=endorser_did,
-            )
+            # if we are an author check if we have a public DID or not
+            write_ledger_nym_transaction = True
+            # special case - if we are an author with no public DID
+            if create_transaction_for_endorser:
+                public_info = await ledger.get_wallet_public_did()
+                if not public_info:
+                    write_ledger_nym_transaction = False
+                    success = False
+                    txn = {"signed_txn": json.dumps(meta_data)}
+            if write_ledger_nym_transaction:
+                (success, txn) = await ledger.register_nym(
+                    did,
+                    verkey,
+                    alias,
+                    role,
+                    write_ledger=write_ledger,
+                    endorser_did=endorser_did,
+                )
         except LedgerTransactionError as err:
             raise web.HTTPForbidden(reason=err.roll_up)
         except LedgerError as err:
@@ -321,7 +333,6 @@ async def register_ledger_nym(request: web.BaseRequest):
                 )
             )
 
-    meta_data = {"did": did, "verkey": verkey, "alias": alias, "role": role}
     if not create_transaction_for_endorser:
         # Notify event
         await notify_register_did_event(context.profile, did, meta_data)
@@ -340,12 +351,21 @@ async def register_ledger_nym(request: web.BaseRequest):
         # if auto-request, send the request to the endorser
         if context.settings.get_value("endorser.auto_request"):
             try:
+                endorser_write_txn = not write_ledger_nym_transaction
                 transaction, transaction_request = await transaction_mgr.create_request(
                     transaction=transaction,
+                    author_goal_code=TransactionRecord.REGISTER_PUBLIC_DID
+                    if endorser_write_txn
+                    else None,
+                    signer_goal_code=TransactionRecord.WRITE_DID_TRANSACTION
+                    if endorser_write_txn
+                    else None,
+                    endorser_write_txn=endorser_write_txn,
                     # TODO see if we need to parameterize these params
                     # expires_time=expires_time,
                     # endorser_write_txn=endorser_write_txn,
                 )
+                txn = transaction.serialize()
             except (StorageError, TransactionManagerError) as err:
                 raise web.HTTPBadRequest(reason=err.roll_up) from err
 
