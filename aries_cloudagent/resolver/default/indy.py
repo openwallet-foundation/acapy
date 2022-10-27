@@ -20,7 +20,7 @@ from ...ledger.multiple_ledger.ledger_requests_executor import (
 )
 from ...messaging.valid import IndyDID
 from ...multitenant.base import BaseMultitenantManager
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import ED25519
 from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
 LOGGER = logging.getLogger(__name__)
@@ -39,9 +39,7 @@ def _routing_keys_as_did_key_urls(routing_keys: Sequence[str]) -> Sequence[str]:
     did_key_urls = []
     for routing_key in routing_keys:
         if not routing_key.startswith("did:key:"):
-            did_key_urls.append(
-                DIDKey.from_public_key_b58(routing_key, KeyType.ED25519).key_id
-            )
+            did_key_urls.append(DIDKey.from_public_key_b58(routing_key, ED25519).key_id)
         else:
             if "#" not in routing_key:
                 did_key_urls.append(
