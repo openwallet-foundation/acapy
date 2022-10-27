@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from ......messaging.models.base import BaseModelError
 from ......did.did_key import DIDKey
-from ......wallet.key_type import KeyType
+from ......wallet.key_type import ED25519
 
 from .....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 from .....didcomm_prefix import DIDCommPrefix
@@ -82,9 +82,7 @@ class TestInvitationMessage(TestCase):
         service = Service(
             _id="#inline",
             _type=DID_COMM,
-            recipient_keys=[
-                DIDKey.from_public_key_b58(TEST_VERKEY, KeyType.ED25519).did
-            ],
+            recipient_keys=[DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did],
             service_endpoint="http://1.2.3.4:8080/service",
         )
         data_deser = {
@@ -112,9 +110,7 @@ class TestInvitationMessage(TestCase):
         service = Service(
             _id="#inline",
             _type=DID_COMM,
-            recipient_keys=[
-                DIDKey.from_public_key_b58(TEST_VERKEY, KeyType.ED25519).did
-            ],
+            recipient_keys=[DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did],
             service_endpoint="http://1.2.3.4:8080/service",
         )
         invi_msg = InvitationMessage(

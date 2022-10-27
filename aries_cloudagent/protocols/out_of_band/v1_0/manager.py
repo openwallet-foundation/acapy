@@ -20,7 +20,7 @@ from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 from ...connections.v1_0.manager import ConnectionManager
 from ...connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ...didcomm_prefix import DIDCommPrefix
@@ -276,7 +276,7 @@ class OutOfBandManager(BaseConnectionManager):
             # Create and store new key for exchange
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                connection_key = await wallet.create_signing_key(KeyType.ED25519)
+                connection_key = await wallet.create_signing_key(ED25519)
 
             our_recipient_key = connection_key.verkey
 
@@ -323,7 +323,7 @@ class OutOfBandManager(BaseConnectionManager):
             routing_keys = [
                 key
                 if len(key.split(":")) == 3
-                else DIDKey.from_public_key_b58(key, KeyType.ED25519).did
+                else DIDKey.from_public_key_b58(key, ED25519).did
                 for key in routing_keys
             ]
 
@@ -341,9 +341,7 @@ class OutOfBandManager(BaseConnectionManager):
                     _id="#inline",
                     _type="did-communication",
                     recipient_keys=[
-                        DIDKey.from_public_key_b58(
-                            connection_key.verkey, KeyType.ED25519
-                        ).did
+                        DIDKey.from_public_key_b58(connection_key.verkey, ED25519).did
                     ],
                     service_endpoint=my_endpoint,
                     routing_keys=routing_keys,
@@ -535,7 +533,7 @@ class OutOfBandManager(BaseConnectionManager):
                 # Create and store new key for connectionless exchange
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
-                    connection_key = await wallet.create_signing_key(KeyType.ED25519)
+                    connection_key = await wallet.create_signing_key(ED25519)
                     oob_record.our_recipient_key = connection_key.verkey
                     oob_record.our_service = ServiceDecorator(
                         recipient_keys=[connection_key.verkey],
@@ -777,11 +775,11 @@ class OutOfBandManager(BaseConnectionManager):
                     "id": "#inline",
                     "type": "did-communication",
                     "recipientKeys": [
-                        DIDKey.from_public_key_b58(key, KeyType.ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).did
                         for key in recipient_keys
                     ],
                     "routingKeys": [
-                        DIDKey.from_public_key_b58(key, KeyType.ED25519).did
+                        DIDKey.from_public_key_b58(key, ED25519).did
                         for key in routing_keys
                     ],
                     "serviceEndpoint": endpoint,

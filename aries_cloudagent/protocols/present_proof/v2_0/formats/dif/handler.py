@@ -21,7 +21,7 @@ from ......vc.ld_proofs import (
 )
 from ......vc.vc_ld.verify import verify_presentation
 from ......wallet.base import BaseWallet
-from ......wallet.key_type import KeyType
+from ......wallet.key_type import ED25519, BLS12381G2
 
 from .....problem_report.v1_0.message import ProblemReport
 
@@ -56,14 +56,12 @@ class DIFPresFormatHandler(V20PresFormatHandler):
     format = V20PresFormat.Format.DIF
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        Ed25519Signature2018: KeyType.ED25519,
+        Ed25519Signature2018: ED25519,
     }
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
-        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = KeyType.BLS12381G2
-        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[
-            BbsBlsSignatureProof2020
-        ] = KeyType.BLS12381G2
+        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
+        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignatureProof2020] = BLS12381G2
 
     async def _get_all_suites(self, wallet: BaseWallet):
         """Get all supported suites for verifying presentation."""
