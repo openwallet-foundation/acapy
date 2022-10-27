@@ -3,6 +3,7 @@ import pytest
 
 from .....connections.models.conn_record import ConnRecord
 from .....core.in_memory import InMemoryProfile
+from .....wallet.base import BaseWallet
 from .....core.profile import Profile
 from .....messaging.responder import BaseResponder, MockResponder
 from .....storage.error import StorageNotFoundError
@@ -478,6 +479,38 @@ async def test_save_mediator_for_connection_no_mediator(
         await route_manager.save_mediator_for_connection(profile, conn_record)
         mock_retrieve_by_id.assert_not_called()
         conn_record.metadata_set.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_connection_from_recipient_key_invite(
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
+):
+    with mock.patch.object(
+        ConnRecord,
+        "retrieve_by_tag_filter",
+        mock.CoroutineMock(return_value=conn_record),
+    ):
+        result = await route_manager.connection_from_recipient_key(profile, TEST_VERKEY)
+        assert conn_record == result
+
+
+@pytest.mark.asyncio
+async def test_connection_from_recipient_key_local_did(
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
+):
+    mock_provider = mock.MagicMock()
+    mock_wallet = mock.MagicMock()
+    mock_wallet.get_local_did_for_verkey = mock.CoroutineMock()
+    mock_provider.provide = mock.MagicMock(return_value=mock_wallet)
+    session = await profile.session()
+    session.context.injector.bind_provider(BaseWallet, mock_provider)
+    with mock.patch.object(
+        profile, "session", mock.MagicMock(return_value=session)
+    ), mock.patch.object(
+        ConnRecord, "retrieve_by_did", mock.CoroutineMock(return_value=conn_record)
+    ):
+        result = await route_manager.connection_from_recipient_key(profile, TEST_VERKEY)
+        assert conn_record == result
 
 
 @pytest.mark.asyncio
