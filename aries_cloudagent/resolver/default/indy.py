@@ -40,9 +40,6 @@ def _routing_keys_as_did_key_urls(routing_keys: Sequence[str]) -> Sequence[str]:
     for routing_key in routing_keys:
         if not routing_key.startswith("did:key:"):
             did_key_urls.append(DIDKey.from_public_key_b58(routing_key, ED25519).key_id)
-            # NOTE: using hardcoded prefix ED25519 because py_multicodec library
-            # is outdated. Update after this PR gets released:
-            # https://github.com/multiformats/py-multicodec/pull/14
         else:
             if "#" not in routing_key:
                 did_key_urls.append(
