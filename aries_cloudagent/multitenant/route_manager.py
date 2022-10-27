@@ -4,16 +4,22 @@
 import logging
 from typing import List, Optional, Tuple
 
+from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.responder import BaseResponder
 from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
-from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ..protocols.coordinate_mediation.v1_0.normalization import normalize_from_did_key
+from ..protocols.coordinate_mediation.v1_0.route_manager import (
+    CoordinateMediationV1RouteManager,
+    RouteManager,
+)
 from ..protocols.routing.v1_0.manager import RoutingManager
 from ..protocols.routing.v1_0.models.route_record import RouteRecord
 from ..storage.error import StorageNotFoundError
+from .base import BaseMultitenantManager
 
 
 LOGGER = logging.getLogger(__name__)
@@ -103,3 +109,31 @@ class MultitenantRouteManager(RouteManager):
             my_endpoint = mediation_record.endpoint
 
         return routing_keys, my_endpoint
+
+
+class BaseWalletRouteManager(CoordinateMediationV1RouteManager):
+    """Route manager for operations specific to the base wallet."""
+
+    async def connection_from_recipient_key(
+        self, profile: Profile, recipient_key: str
+    ) -> ConnRecord:
+        """Retrieve a connection by recipient key.
+
+        The recipient key is expected to be a local key owned by this agent.
+
+        Since the multi-tenant base wallet can receive and send keylist updates
+        for sub wallets, we check the sub wallet's connections before the base
+        wallet.
+        """
+        LOGGER.debug("Retrieving connection for recipient key for multitenant wallet")
+        manager = profile.inject(BaseMultitenantManager)
+        profile_to_search = (
+            await manager.get_profile_for_key(
+                profile.context, normalize_from_did_key(recipient_key)
+            )
+            or profile
+        )
+
+        return await super().connection_from_recipient_key(
+            profile_to_search, recipient_key
+        )
