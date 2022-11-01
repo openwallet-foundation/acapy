@@ -3,7 +3,6 @@ import json
 import logging
 from typing import Optional, Sequence, Tuple
 
-
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
 from ....storage.base import BaseStorage
@@ -539,6 +538,8 @@ class MediationManager:
             session: An active profile session
 
         """
+        # TODO The stored recipient keys are did:key!
+
         to_save: Sequence[RouteRecord] = []
         to_remove: Sequence[RouteRecord] = []
 
@@ -599,19 +600,6 @@ class MediationManager:
                 )
             for record_for_removal in to_remove:
                 await record_for_removal.delete_record(session)
-
-    async def notify_keylist_updated(
-        self, connection_id: str, response: KeylistUpdateResponse
-    ):
-        """Notify of keylist update response received."""
-        await self._profile.notify(
-            self.KEYLIST_UPDATED_EVENT,
-            {
-                "connection_id": connection_id,
-                "thread_id": response._thread_id,
-                "updated": [update.serialize() for update in response.updated],
-            },
-        )
 
     async def get_my_keylist(
         self, connection_id: Optional[str] = None
