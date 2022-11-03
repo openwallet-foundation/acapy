@@ -23,10 +23,10 @@ from ....resolver.did_resolver import DIDResolver
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_method import DIDMethod
+from ....wallet.did_method import SOV
 from ....wallet.did_posture import DIDPosture
 from ....wallet.error import WalletError
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...discovery.v2_0.manager import V20DiscoveryMgr
 from ...out_of_band.v1_0.messages.invitation import (
@@ -284,8 +284,8 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    method=SOV,
+                    key_type=ED25519,
                 )
             conn_rec.my_did = my_info.did
 
@@ -417,8 +417,8 @@ class DIDXManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
                     my_info = await wallet.create_local_did(
-                        method=DIDMethod.SOV,
-                        key_type=KeyType.ED25519,
+                        method=SOV,
+                        key_type=ED25519,
                     )
 
                 new_conn_rec = ConnRecord(
@@ -484,13 +484,14 @@ class DIDXManager(BaseConnectionManager):
         else:
             # request is against implicit invitation on public DID
             if not self.profile.settings.get("requests_through_public_did"):
-                raise DIDXManagerError("Unsolicited connection requests to "
-                                       "public DID is not enabled")
+                raise DIDXManagerError(
+                    "Unsolicited connection requests to " "public DID is not enabled"
+                )
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    method=SOV,
+                    key_type=ED25519,
                 )
 
             auto_accept = bool(
@@ -583,8 +584,8 @@ class DIDXManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    method=SOV,
+                    key_type=ED25519,
                 )
             conn_rec.my_did = my_info.did
 

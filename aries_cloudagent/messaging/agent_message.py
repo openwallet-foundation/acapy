@@ -1,8 +1,10 @@
 """Agent message base class and schema."""
 
-from collections import OrderedDict
-from typing import Mapping, Union
 import uuid
+
+from collections import OrderedDict
+from re import sub
+from typing import Mapping, Optional, Union, Text
 
 from marshmallow import (
     EXCLUDE,
@@ -53,7 +55,13 @@ class AgentMessage(BaseModel, BaseMessage):
         schema_class = None
         message_type = None
 
-    def __init__(self, _id: str = None, _decorators: BaseDecoratorSet = None):
+    def __init__(
+        self,
+        _id: str = None,
+        _type: Optional[Text] = None,
+        _version: Optional[Text] = None,
+        _decorators: BaseDecoratorSet = None,
+    ):
         """
         Initialize base agent message object.
 
@@ -81,6 +89,12 @@ class AgentMessage(BaseModel, BaseMessage):
                     self.__class__.__name__
                 )
             )
+        if _type:
+            self._message_type = _type
+        elif _version:
+            self._message_type = self.get_updated_msg_type(_version)
+        else:
+            self._message_type = self.Meta.message_type
         # Not required for now
         # if not self.Meta.handler_class:
         #    raise TypeError(
@@ -118,7 +132,12 @@ class AgentMessage(BaseModel, BaseMessage):
             Current DIDComm prefix, slash, message type defined on `Meta.message_type`
 
         """
-        return DIDCommPrefix.qualify_current(self.Meta.message_type)
+        return DIDCommPrefix.qualify_current(self._message_type)
+
+    @_type.setter
+    def _type(self, msg_type: str):
+        """Set the message type identifier."""
+        self._message_type = msg_type
 
     @property
     def _id(self) -> str:
@@ -145,6 +164,10 @@ class AgentMessage(BaseModel, BaseMessage):
     def _decorators(self, value: BaseDecoratorSet):
         """Fetch the message's decorator set."""
         self._message_decorators = value
+
+    def get_updated_msg_type(self, version: str) -> str:
+        """Update version to Meta.message_type."""
+        return sub(r"(\d+\.)?(\*|\d+)", version, self.Meta.message_type)
 
     def get_signature(self, field_name: str) -> SignatureDecorator:
         """

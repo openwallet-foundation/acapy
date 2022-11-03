@@ -1,7 +1,8 @@
 """Test MediationManager."""
 import logging
-from typing import AsyncIterable, Iterable
+from typing import AsyncGenerator, AsyncIterable, Iterable
 
+from functools import partial
 from asynctest import mock as async_mock
 import pytest
 
@@ -9,6 +10,7 @@ from .. import manager as test_module
 from .....core.event_bus import EventBus, MockEventBus
 from .....core.in_memory import InMemoryProfile
 from .....core.profile import Profile, ProfileSession
+from .....did.did_key import DIDKey
 from .....storage.error import StorageNotFoundError
 from ....routing.v1_0.models.route_record import RouteRecord
 from ..manager import (
@@ -28,8 +30,10 @@ from ..models.mediation_record import MediationRecord
 TEST_CONN_ID = "conn-id"
 TEST_THREAD_ID = "thread-id"
 TEST_ENDPOINT = "https://example.com"
-TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
-TEST_ROUTE_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
+TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+TEST_ROUTE_RECORD_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
+TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
 
 pytestmark = pytest.mark.asyncio
 
@@ -113,9 +117,11 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert record.connection_id == TEST_CONN_ID
         record, grant = await manager.grant_request(record.mediation_id)
         assert grant.endpoint == session.settings.get("default_endpoint")
-        assert grant.routing_keys == [
-            (await manager._retrieve_routing_did(session)).verkey
-        ]
+        routing_key = await manager._retrieve_routing_did(session)
+        routing_key = DIDKey.from_public_key_b58(
+            routing_key.verkey, routing_key.key_type
+        ).did
+        assert grant.routing_keys == [routing_key]
 
     async def test_deny_request(self, manager):
         """test_deny_request."""
@@ -128,9 +134,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_update_keylist_delete(self, session, manager, record):
         """test_update_keylist_delete."""
-        await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_VERKEY).save(
-            session
-        )
+        await RouteRecord(
+            connection_id=TEST_CONN_ID, recipient_key=TEST_RECORD_VERKEY
+        ).save(session)
         response = await manager.update_keylist(
             record=record,
             updates=[
@@ -163,9 +169,9 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
 
     async def test_update_keylist_create_existing(self, session, manager, record):
         """test_update_keylist_create_existing."""
-        await RouteRecord(connection_id=TEST_CONN_ID, recipient_key=TEST_VERKEY).save(
-            session
-        )
+        await RouteRecord(
+            connection_id=TEST_CONN_ID, recipient_key=TEST_RECORD_VERKEY
+        ).save(session)
         response = await manager.update_keylist(
             record=record,
             updates=[
@@ -289,7 +295,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         await manager.request_granted(record, grant)
         assert record.state == MediationRecord.STATE_GRANTED
         assert record.endpoint == TEST_ENDPOINT
-        assert record.routing_keys == [TEST_ROUTE_VERKEY]
+        assert record.routing_keys == [TEST_ROUTE_RECORD_VERKEY]
 
     async def test_request_denied(self, manager):
         """test_request_denied."""
@@ -472,34 +478,6 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert "client_error" in caplog.text
         assert "server_error" in caplog.text
         print(caplog.text)
-
-    async def test_notify_keylist_updated(
-        self, manager: MediationManager, mock_event_bus: MockEventBus
-    ):
-        """test notify_keylist_updated."""
-        response = KeylistUpdateResponse(
-            updated=[
-                KeylistUpdated(
-                    recipient_key=TEST_ROUTE_VERKEY,
-                    action=KeylistUpdateRule.RULE_ADD,
-                    result=KeylistUpdated.RESULT_SUCCESS,
-                ),
-                KeylistUpdated(
-                    recipient_key=TEST_VERKEY,
-                    action=KeylistUpdateRule.RULE_REMOVE,
-                    result=KeylistUpdated.RESULT_SUCCESS,
-                ),
-            ],
-        )
-        response.assign_thread_id(TEST_THREAD_ID)
-        await manager.notify_keylist_updated(TEST_CONN_ID, response)
-        assert mock_event_bus.events
-        assert mock_event_bus.events[0][1].topic == manager.KEYLIST_UPDATED_EVENT
-        assert mock_event_bus.events[0][1].payload == {
-            "connection_id": TEST_CONN_ID,
-            "thread_id": TEST_THREAD_ID,
-            "updated": [result.serialize() for result in response.updated],
-        }
 
     async def test_get_my_keylist(self, session, manager):
         """test_get_my_keylist."""

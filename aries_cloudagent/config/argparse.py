@@ -1121,8 +1121,10 @@ class ProtocolGroup(ArgumentGroup):
             settings["public_invites"] = True
         if args.requests_through_public_did:
             if not args.public_invites:
-                raise ArgsParseError("--public-invites is required to use "
-                                     "--requests-through-public-did")
+                raise ArgsParseError(
+                    "--public-invites is required to use "
+                    "--requests-through-public-did"
+                )
             settings["requests_through_public_did"] = True
         if args.timing:
             settings["timing.enabled"] = True
@@ -1852,7 +1854,7 @@ class EndorsementGroup(ArgumentGroup):
         parser.add_argument(
             "--auto-promote-author-did",
             action="store_true",
-            env_var="ACAPY_PROMOTE-AUTHOR-DID",
+            env_var="ACAPY_AUTO_PROMOTE_AUTHOR_DID",
             help="For Authors, specify whether to automatically promote"
             " a DID to the wallet public DID after writing to the ledger.",
         )

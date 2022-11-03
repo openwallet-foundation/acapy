@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import List
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -16,6 +17,7 @@ from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
+from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
     DID_POSTURE,
     ENDPOINT,
@@ -36,10 +38,10 @@ from ..protocols.endorse_transaction.v1_0.util import (
 from ..storage.error import StorageError, StorageNotFoundError
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import DIDMethod
+from .did_method import SOV, KEY, DIDMethod, DIDMethods
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
-from .key_type import KeyType
+from .key_type import BLS12381G2, ED25519, KeyTypes
 from .util import EVENT_LISTENER_PATTERN
 
 LOGGER = logging.getLogger(__name__)
@@ -64,15 +66,15 @@ class DIDSchema(OpenAPISchema):
     )
     method = fields.Str(
         description="Did method associated with the DID",
-        example=DIDMethod.SOV.method_name,
-        validate=validate.OneOf([method.method_name for method in DIDMethod]),
+        example=SOV.method_name,
+        validate=validate.OneOf(
+            [method.method_name for method in [SOV, KEY]]
+        ),  # TODO: support more methods
     )
     key_type = fields.Str(
         description="Key type associated with the DID",
-        example=KeyType.ED25519.key_type,
-        validate=validate.OneOf(
-            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
-        ),
+        example=ED25519.key_type,
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
     )
 
 
@@ -134,16 +136,14 @@ class DIDListQueryStringSchema(OpenAPISchema):
     )
     method = fields.Str(
         required=False,
-        example=DIDMethod.KEY.method_name,
-        validate=validate.OneOf([DIDMethod.KEY.method_name, DIDMethod.SOV.method_name]),
+        example=KEY.method_name,
+        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
         description="DID method to query for. e.g. sov to only fetch indy/sov DIDs",
     )
     key_type = fields.Str(
         required=False,
-        example=KeyType.ED25519.key_type,
-        validate=validate.OneOf(
-            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
-        ),
+        example=ED25519.key_type,
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
         description="Key type to query for.",
     )
 
@@ -159,10 +159,8 @@ class DIDCreateOptionsSchema(OpenAPISchema):
 
     key_type = fields.Str(
         required=True,
-        example=KeyType.ED25519.key_type,
-        validate=validate.OneOf(
-            [KeyType.ED25519.key_type, KeyType.BLS12381G2.key_type]
-        ),
+        example=ED25519.key_type,
+        validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
     )
 
 
@@ -171,15 +169,24 @@ class DIDCreateSchema(OpenAPISchema):
 
     method = fields.Str(
         required=False,
-        default=DIDMethod.SOV.method_name,
-        example=DIDMethod.SOV.method_name,
-        validate=validate.OneOf([DIDMethod.KEY.method_name, DIDMethod.SOV.method_name]),
+        default=SOV.method_name,
+        example=SOV.method_name,
+        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
     )
 
     options = fields.Nested(
         DIDCreateOptionsSchema,
         required=False,
         description="To define a key type for a did:key",
+    )
+
+    seed = fields.Str(
+        required=False,
+        description=(
+            "Optional seed to use for DID, Must be"
+            "enabled in configuration before use."
+        ),
+        example="000000000000000000000000Trustee1",
     )
 
 
@@ -196,6 +203,12 @@ class AttribConnIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking connection id."""
 
     conn_id = fields.Str(description="Connection identifier", required=False)
+
+
+class MediationIDSchema(OpenAPISchema):
+    """Class for user to optionally input a mediation_id."""
+
+    mediation_id = fields.Str(description="Mediation identifier", required=False)
 
 
 def format_did_info(info: DIDInfo):
@@ -227,12 +240,16 @@ async def wallet_did_list(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     filter_did = request.query.get("did")
     filter_verkey = request.query.get("verkey")
-    filter_method = DIDMethod.from_method(request.query.get("method"))
     filter_posture = DIDPosture.get(request.query.get("posture"))
-    filter_key_type = KeyType.from_key_type(request.query.get("key_type"))
     results = []
     async with context.session() as session:
-        wallet = session.inject_or(BaseWallet)
+        did_methods: DIDMethods = session.inject(DIDMethods)
+        filter_method: DIDMethod | None = did_methods.from_method(
+            request.query.get("method")
+        )
+        key_types = session.inject(KeyTypes)
+        filter_key_type = key_types.from_key_type(request.query.get("key_type", ""))
+        wallet: BaseWallet | None = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
         if filter_posture is DIDPosture.PUBLIC:
@@ -336,24 +353,27 @@ async def wallet_create_did(request: web.BaseRequest):
         body = {}
 
     # set default method and key type for backwards compat
-    key_type = (
-        KeyType.from_key_type(body.get("options", {}).get("key_type"))
-        or KeyType.ED25519
-    )
-    method = DIDMethod.from_method(body.get("method")) or DIDMethod.SOV
 
-    if not method.supports_key_type(key_type):
-        raise web.HTTPForbidden(
-            reason=(
-                f"method {method.method_name} does not"
-                f" support key type {key_type.key_type}"
-            )
-        )
-    seed = None
-    if context.settings.get("wallet.allow_insecure_seed"):
-        seed = body.get("seed") or None
+    seed = body.get("seed") or None
+    if seed and not context.settings.get("wallet.allow_insecure_seed"):
+        raise web.HTTPBadRequest(reason="Seed support is not enabled")
     info = None
     async with context.session() as session:
+        did_methods = session.inject(DIDMethods)
+        method = did_methods.from_method(body.get("method", "")) or SOV
+        key_types = session.inject(KeyTypes)
+        # set default method and key type for backwards compat
+        key_type = (
+            key_types.from_key_type(body.get("options", {}).get("key_type", ""))
+            or ED25519
+        )
+        if not method.supports_key_type(key_type):
+            raise web.HTTPForbidden(
+                reason=(
+                    f"method {method.method_name} does not"
+                    f" support key type {key_type.key_type}"
+                )
+            )
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
@@ -401,6 +421,7 @@ async def wallet_get_public_did(request: web.BaseRequest):
 @querystring_schema(DIDQueryStringSchema())
 @querystring_schema(CreateAttribTxnForEndorserOptionSchema())
 @querystring_schema(AttribConnIdMatchInfoSchema())
+@querystring_schema(MediationIDSchema())
 @response_schema(DIDResultSchema, 200, description="")
 async def wallet_set_public_did(request: web.BaseRequest):
     """
@@ -425,6 +446,17 @@ async def wallet_set_public_did(request: web.BaseRequest):
     connection_id = request.query.get("conn_id")
     attrib_def = None
 
+    # check if we need to endorse
+    if is_author_role(context.profile):
+        # authors cannot write to the ledger
+        write_ledger = False
+        create_transaction_for_endorser = True
+        if not connection_id:
+            # author has not provided a connection id, so determine which to use
+            connection_id = await get_endorser_connection_id(context.profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
+
     wallet = session.inject_or(BaseWallet)
     if not wallet:
         raise web.HTTPForbidden(reason="No wallet available")
@@ -433,6 +465,19 @@ async def wallet_set_public_did(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Request query must include DID")
 
     info: DIDInfo = None
+
+    mediation_id = request.query.get("mediation_id")
+    profile = context.profile
+    route_manager = profile.inject(RouteManager)
+    mediation_record = await route_manager.mediation_record_if_id(
+        profile=profile, mediation_id=mediation_id, or_default=True
+    )
+    routing_keys = None
+    mediator_endpoint = None
+    if mediation_record:
+        routing_keys = mediation_record.routing_keys
+        mediator_endpoint = mediation_record.endpoint
+
     try:
         info, attrib_def = await promote_wallet_public_did(
             context.profile,
@@ -441,6 +486,8 @@ async def wallet_set_public_did(request: web.BaseRequest):
             did,
             write_ledger=write_ledger,
             connection_id=connection_id,
+            routing_keys=routing_keys,
+            mediator_endpoint=mediator_endpoint,
         )
     except LookupError as err:
         raise web.HTTPNotFound(reason=str(err)) from err
@@ -487,6 +534,8 @@ async def promote_wallet_public_did(
     did: str,
     write_ledger: bool = False,
     connection_id: str = None,
+    routing_keys: List[str] = None,
+    mediator_endpoint: str = None,
 ) -> DIDInfo:
     """Promote supplied DID to the wallet public DID."""
     info: DIDInfo = None
@@ -503,16 +552,15 @@ async def promote_wallet_public_did(
             raise LookupError(f"DID {did} is not posted to the ledger")
 
     # check if we need to endorse
-    if is_author_role(context.profile):
+    if is_author_role(profile):
         # authors cannot write to the ledger
         write_ledger = False
 
         # author has not provided a connection id, so determine which to use
         if not connection_id:
-            connection_id = await get_endorser_connection_id(context.profile)
+            connection_id = await get_endorser_connection_id(profile)
         if not connection_id:
             raise web.HTTPBadRequest(reason="No endorser connection found")
-
     if not write_ledger:
         try:
             async with profile.session() as session:
@@ -554,19 +602,15 @@ async def promote_wallet_public_did(
         if not endpoint:
             async with session_fn() as session:
                 wallet = session.inject_or(BaseWallet)
-                endpoint = context.settings.get("default_endpoint")
+                endpoint = mediator_endpoint or context.settings.get("default_endpoint")
                 attrib_def = await wallet.set_did_endpoint(
                     info.did,
                     endpoint,
                     ledger,
                     write_ledger=write_ledger,
                     endorser_did=endorser_did,
+                    routing_keys=routing_keys,
                 )
-
-        # Commented the below lines as the function set_did_endpoint
-        # was calling update_endpoint_for_did of ledger
-        # async with ledger:
-        #     await ledger.update_endpoint_for_did(info.did, endpoint)
 
         # Route the public DID
         route_manager = profile.inject(RouteManager)
@@ -783,14 +827,60 @@ async def on_register_nym_event(profile: Profile, event: Event):
         did = event.payload["did"]
         connection_id = event.payload.get("connection_id")
         try:
-            await promote_wallet_public_did(
+            info, attrib_def = await promote_wallet_public_did(
                 profile, profile.context, profile.session, did, connection_id
             )
-        except Exception:
+        except Exception as err:
+            # log the error, but continue
+            LOGGER.exception(
+                "Error promoting to public DID: %s",
+                err,
+            )
+            return
+
+        transaction_mgr = TransactionManager(profile)
+        try:
+            transaction = await transaction_mgr.create_record(
+                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
+            )
+        except StorageError as err:
             # log the error, but continue
             LOGGER.exception(
                 "Error accepting endorser invitation/configuring endorser connection: %s",
+                err,
             )
+            return
+
+        # if auto-request, send the request to the endorser
+        if profile.settings.get_value("endorser.auto_request"):
+            try:
+                transaction, transaction_request = await transaction_mgr.create_request(
+                    transaction=transaction,
+                    # TODO see if we need to parameterize these params
+                    # expires_time=expires_time,
+                    # endorser_write_txn=endorser_write_txn,
+                )
+            except (StorageError, TransactionManagerError) as err:
+                # log the error, but continue
+                LOGGER.exception(
+                    "Error creating endorser transaction request: %s",
+                    err,
+                )
+
+            # TODO not sure how to get outbound_handler in an event ...
+            # await outbound_handler(transaction_request, connection_id=connection_id)
+            responder = profile.inject_or(BaseResponder)
+            if responder:
+                await responder.send(
+                    transaction_request,
+                    connection_id=connection_id,
+                )
+            else:
+                LOGGER.warning(
+                    "Configuration has no BaseResponder: cannot update "
+                    "ATTRIB record on DID: %s",
+                    did,
+                )
 
 
 async def register(app: web.Application):

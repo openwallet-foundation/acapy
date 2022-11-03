@@ -8,10 +8,17 @@ from ...messaging.responder import BaseResponder, MockResponder
 from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ...protocols.routing.v1_0.manager import RoutingManager
 from ...protocols.routing.v1_0.models.route_record import RouteRecord
 from ...storage.error import StorageNotFoundError
-from ..route_manager import MultitenantRouteManager
+from ..base import BaseMultitenantManager
+from ..route_manager import BaseWalletRouteManager, MultitenantRouteManager
+
+TEST_RECORD_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
+TEST_VERKEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+TEST_ROUTE_RECORD_VERKEY = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
+TEST_ROUTE_VERKEY = "did:key:z6MknxTj6Zj1VrDWc1ofaZtmCVv2zNXpD58Xup4ijDGoQhya"
 
 
 @pytest.fixture
@@ -50,6 +57,11 @@ def route_manager(root_profile: Profile, sub_profile: Profile, wallet_id: str):
     yield MultitenantRouteManager(root_profile)
 
 
+@pytest.fixture
+def base_route_manager():
+    yield BaseWalletRouteManager()
+
+
 @pytest.mark.asyncio
 async def test_route_for_key_sub_mediator_no_base_mediator(
     route_manager: MultitenantRouteManager,
@@ -68,18 +80,18 @@ async def test_route_for_key_sub_mediator_no_base_mediator(
     ) as mock_create_route_record:
         keylist_update = await route_manager._route_for_key(
             sub_profile,
-            "test-recipient-key",
+            TEST_VERKEY,
             mediation_record,
             skip_if_exists=False,
             replace_key=None,
         )
 
     mock_create_route_record.assert_called_once_with(
-        recipient_key="test-recipient-key", internal_wallet_id=wallet_id
+        recipient_key=TEST_VERKEY, internal_wallet_id=wallet_id
     )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
-        {"action": "add", "recipient_key": "test-recipient-key"}
+        {"action": "add", "recipient_key": TEST_VERKEY}
     ]
     assert mock_responder.messages
     assert (
@@ -112,18 +124,18 @@ async def test_route_for_key_sub_mediator_and_base_mediator(
     ) as mock_create_route_record:
         keylist_update = await route_manager._route_for_key(
             sub_profile,
-            "test-recipient-key",
+            TEST_VERKEY,
             mediation_record,
             skip_if_exists=False,
             replace_key=None,
         )
 
     mock_create_route_record.assert_called_once_with(
-        recipient_key="test-recipient-key", internal_wallet_id=wallet_id
+        recipient_key=TEST_VERKEY, internal_wallet_id=wallet_id
     )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
-        {"action": "add", "recipient_key": "test-recipient-key"}
+        {"action": "add", "recipient_key": TEST_VERKEY}
     ]
     assert mock_responder.messages
     assert (
@@ -153,18 +165,18 @@ async def test_route_for_key_base_mediator_no_sub_mediator(
     ) as mock_create_route_record:
         keylist_update = await route_manager._route_for_key(
             sub_profile,
-            "test-recipient-key",
+            TEST_VERKEY,
             None,
             skip_if_exists=False,
             replace_key=None,
         )
 
     mock_create_route_record.assert_called_once_with(
-        recipient_key="test-recipient-key", internal_wallet_id=wallet_id
+        recipient_key=TEST_VERKEY, internal_wallet_id=wallet_id
     )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
-        {"action": "add", "recipient_key": "test-recipient-key"}
+        {"action": "add", "recipient_key": TEST_VERKEY}
     ]
     assert mock_responder.messages
     assert (
@@ -187,7 +199,7 @@ async def test_route_for_key_skip_if_exists_and_exists(
     ):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
-            "test-recipient-key",
+            TEST_VERKEY,
             mediation_record,
             skip_if_exists=True,
             replace_key=None,
@@ -212,14 +224,14 @@ async def test_route_for_key_skip_if_exists_and_absent(
     ):
         keylist_update = await route_manager._route_for_key(
             sub_profile,
-            "test-recipient-key",
+            TEST_VERKEY,
             mediation_record,
             skip_if_exists=True,
             replace_key=None,
         )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
-        {"action": "add", "recipient_key": "test-recipient-key"}
+        {"action": "add", "recipient_key": TEST_VERKEY}
     ]
     assert mock_responder.messages
     assert (
@@ -239,15 +251,15 @@ async def test_route_for_key_replace_key(
     )
     keylist_update = await route_manager._route_for_key(
         sub_profile,
-        "test-recipient-key",
+        TEST_VERKEY,
         mediation_record,
         skip_if_exists=False,
-        replace_key="test-replace-key",
+        replace_key=TEST_ROUTE_VERKEY,
     )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
-        {"action": "add", "recipient_key": "test-recipient-key"},
-        {"action": "remove", "recipient_key": "test-replace-key"},
+        {"action": "add", "recipient_key": TEST_VERKEY},
+        {"action": "remove", "recipient_key": TEST_ROUTE_VERKEY},
     ]
     assert mock_responder.messages
     assert (
@@ -264,10 +276,10 @@ async def test_route_for_key_no_mediator(
     assert (
         await route_manager._route_for_key(
             sub_profile,
-            "test-recipient-key",
+            TEST_VERKEY,
             None,
             skip_if_exists=True,
-            replace_key="test-replace-key",
+            replace_key=TEST_ROUTE_VERKEY,
         )
         is None
     )
@@ -355,3 +367,19 @@ async def test_routing_info_with_base_mediator_and_sub_mediator(
         )
     assert keys == [*base_mediation_record.routing_keys, *mediation_record.routing_keys]
     assert endpoint == mediation_record.endpoint
+
+
+@pytest.mark.asyncio
+async def test_connection_from_recipient_key(
+    sub_profile: Profile, base_route_manager: BaseWalletRouteManager
+):
+    manager = mock.MagicMock()
+    manager.get_profile_for_key = mock.CoroutineMock(return_value=sub_profile)
+    sub_profile.context.injector.bind_instance(BaseMultitenantManager, manager)
+    with mock.patch.object(
+        RouteManager, "connection_from_recipient_key", mock.CoroutineMock()
+    ) as mock_conn_for_recip:
+        result = await base_route_manager.connection_from_recipient_key(
+            sub_profile, TEST_VERKEY
+        )
+        assert result == mock_conn_for_recip.return_value

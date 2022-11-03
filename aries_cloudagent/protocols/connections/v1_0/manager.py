@@ -19,9 +19,9 @@ from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.did_info import DIDInfo
-from ....wallet.did_method import DIDMethod
+from ....wallet.did_method import SOV
 from ....wallet.error import WalletNotFoundError
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 from ....wallet.util import bytes_to_b58
 from ...coordinate_mediation.v1_0.manager import MediationManager
 from ...discovery.v2_0.manager import V20DiscoveryMgr
@@ -158,7 +158,7 @@ class ConnectionManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 invitation_signing_key = await wallet.create_signing_key(
-                    key_type=KeyType.ED25519
+                    key_type=ED25519
                 )
             invitation_key = invitation_signing_key.verkey
             recipient_keys = [invitation_key]
@@ -367,7 +367,7 @@ class ConnectionManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 # Create new DID for connection
-                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+                my_info = await wallet.create_local_did(SOV, ED25519)
             connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -474,9 +474,7 @@ class ConnectionManager(BaseConnectionManager):
             if connection.is_multiuse_invitation:
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
-                    my_info = await wallet.create_local_did(
-                        DIDMethod.SOV, KeyType.ED25519
-                    )
+                    my_info = await wallet.create_local_did(SOV, ED25519)
 
                 new_connection = ConnRecord(
                     invitation_key=connection_key,
@@ -529,7 +527,7 @@ class ConnectionManager(BaseConnectionManager):
         else:  # request from public did
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+                my_info = await wallet.create_local_did(SOV, ED25519)
 
             async with self.profile.session() as session:
                 connection = await ConnRecord.retrieve_by_invitation_msg_id(
@@ -539,8 +537,10 @@ class ConnectionManager(BaseConnectionManager):
                 )
             if not connection:
                 if not self.profile.settings.get("requests_through_public_did"):
-                    raise ConnectionManagerError("Unsolicited connection requests to "
-                                                 "public DID is not enabled")
+                    raise ConnectionManagerError(
+                        "Unsolicited connection requests to "
+                        "public DID is not enabled"
+                    )
                 connection = ConnRecord()
             connection.invitation_key = connection_key
             connection.my_did = my_info.did
@@ -623,7 +623,7 @@ class ConnectionManager(BaseConnectionManager):
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+                my_info = await wallet.create_local_did(SOV, ED25519)
             connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -840,9 +840,7 @@ class ConnectionManager(BaseConnectionManager):
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             # seed and DID optional
-            my_info = await wallet.create_local_did(
-                DIDMethod.SOV, KeyType.ED25519, my_seed, my_did
-            )
+            my_info = await wallet.create_local_did(SOV, ED25519, my_seed, my_did)
 
         # must provide their DID and verkey if the seed is not known
         if (not their_did or not their_verkey) and not their_seed:
@@ -852,11 +850,9 @@ class ConnectionManager(BaseConnectionManager):
         if not their_did:
             their_did = seed_to_did(their_seed)
         if not their_verkey:
-            their_verkey_bin, _ = create_keypair(KeyType.ED25519, their_seed.encode())
+            their_verkey_bin, _ = create_keypair(ED25519, their_seed.encode())
             their_verkey = bytes_to_b58(their_verkey_bin)
-        their_info = DIDInfo(
-            their_did, their_verkey, {}, method=DIDMethod.SOV, key_type=KeyType.ED25519
-        )
+        their_info = DIDInfo(their_did, their_verkey, {}, method=SOV, key_type=ED25519)
 
         # Create connection record
         connection = ConnRecord(
@@ -1116,7 +1112,7 @@ class ConnectionManager(BaseConnectionManager):
                 my_info = await wallet.get_local_did(connection.my_did)
             else:
                 # Create new DID for connection
-                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+                my_info = await wallet.create_local_did(SOV, ED25519)
                 connection.my_did = my_info.did
 
         try:

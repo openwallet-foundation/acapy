@@ -20,14 +20,13 @@ from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.routing.v1_0.manager import RoutingManager
 from .....resolver.did_resolver import DIDResolver
-from .....resolver.did_resolver_registry import DIDResolverRegistry
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo
-from .....wallet.did_method import DIDMethod
+from .....wallet.did_method import SOV
 from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.key_type import KeyType
+from .....wallet.key_type import ED25519
 from ....coordinate_mediation.v1_0.manager import MediationManager
 from ....coordinate_mediation.v1_0.route_manager import RouteManager
 from ....coordinate_mediation.v1_0.messages.mediate_request import MediationRequest
@@ -153,14 +152,14 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             connect_record, connect_invite = await self.manager.create_invitation(
                 public=True, my_endpoint="testendpoint"
             )
 
-            assert connect_record 
+            assert connect_record
             assert connect_invite.did.endswith(self.test_did)
             self.route_manager.route_public_did.assert_called_once_with(
                 self.profile, self.test_verkey
@@ -218,8 +217,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_create_invitation_recipient_routing_endpoint(self):
         async with self.profile.session() as session:
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -405,8 +404,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_create_request_my_did(self):
         async with self.profile.session() as session:
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=self.test_did,
             )
@@ -450,8 +449,8 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             await self.manager.create_request(
                 ConnRecord(
@@ -503,8 +502,8 @@ class TestConnectionManager(AsyncTestCase):
                 did=self.test_did,
                 verkey=self.test_verkey,
                 metadata={},
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             create_local_did.return_value = did_info
             await self.manager.create_request(
@@ -512,7 +511,7 @@ class TestConnectionManager(AsyncTestCase):
                 mediation_id=mediation_record.mediation_id,
                 my_endpoint=self.test_endpoint,
             )
-            create_local_did.assert_called_once_with(DIDMethod.SOV, KeyType.ED25519)
+            create_local_did.assert_called_once_with(SOV, ED25519)
             create_did_document.assert_called_once_with(
                 self.manager,
                 did_info,
@@ -555,15 +554,15 @@ class TestConnectionManager(AsyncTestCase):
                     did=self.test_did,
                     verkey=self.test_verkey,
                     metadata={},
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    method=SOV,
+                    key_type=ED25519,
                 )
                 create_local_did.return_value = did_info
                 await self.manager.create_request(
                     record,
                     my_endpoint=self.test_endpoint,
                 )
-                create_local_did.assert_called_once_with(DIDMethod.SOV, KeyType.ED25519)
+                create_local_did.assert_called_once_with(SOV, ED25519)
                 create_did_document.assert_called_once_with(
                     self.manager,
                     did_info,
@@ -584,8 +583,8 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_did=self.test_did, recipient_did_public=True
             )
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=self.test_did,
             )
@@ -624,16 +623,14 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_did=self.test_did, recipient_did_public=True
             )
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=self.test_did,
             )
 
             self.context.update_settings({"public_invites": True})
-            with self.assertRaises(
-                ConnectionManagerError
-            ), async_mock.patch.object(
+            with self.assertRaises(ConnectionManagerError), async_mock.patch.object(
                 ConnRecord, "connection_id", autospec=True
             ), async_mock.patch.object(
                 ConnRecord, "save", autospec=True
@@ -671,7 +668,6 @@ class TestConnectionManager(AsyncTestCase):
             mock_connection_record.save = async_mock.CoroutineMock()
             mock_connection_record.attach_request = async_mock.CoroutineMock()
 
-
             self.context.update_settings({"public_invites": True})
             with async_mock.patch.object(
                 ConnRecord, "connection_id", autospec=True
@@ -684,7 +680,9 @@ class TestConnectionManager(AsyncTestCase):
             ) as mock_conn_retrieve_by_id, async_mock.patch.object(
                 ConnRecord, "retrieve_request", autospec=True
             ), async_mock.patch.object(
-                ConnRecord, "retrieve_by_invitation_msg_id", async_mock.CoroutineMock(return_value=mock_connection_record)
+                ConnRecord,
+                "retrieve_by_invitation_msg_id",
+                async_mock.CoroutineMock(return_value=mock_connection_record),
             ) as mock_conn_retrieve_by_invitation_msg_id:
                 conn_rec = await self.manager.receive_request(mock_request, receipt)
                 assert conn_rec
@@ -737,8 +735,8 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_did=self.test_did, recipient_did_public=True
             )
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=self.test_did,
             )
@@ -768,8 +766,8 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_did=self.test_did, recipient_did_public=True
             )
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=self.test_did,
             )
@@ -797,8 +795,8 @@ class TestConnectionManager(AsyncTestCase):
         receipt = MessageReceipt(recipient_did=self.test_did, recipient_did_public=True)
         async with self.profile.session() as session:
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=self.test_did,
             )
@@ -828,8 +826,8 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_did=self.test_did, recipient_did_public=True
             )
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=self.test_did,
             )
@@ -915,8 +913,8 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             await self.manager.create_response(
                 ConnRecord(
@@ -989,8 +987,8 @@ class TestConnectionManager(AsyncTestCase):
                 did=self.test_did,
                 verkey=self.test_verkey,
                 metadata={},
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             create_local_did.return_value = did_info
             await self.manager.create_response(
@@ -998,7 +996,7 @@ class TestConnectionManager(AsyncTestCase):
                 mediation_id=mediation_record.mediation_id,
                 my_endpoint=self.test_endpoint,
             )
-            create_local_did.assert_called_once_with(DIDMethod.SOV, KeyType.ED25519)
+            create_local_did.assert_called_once_with(SOV, ED25519)
             create_did_document.assert_called_once_with(
                 self.manager,
                 did_info,
@@ -1314,8 +1312,8 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
 
             await self.manager.create_static_connection(
@@ -1347,8 +1345,8 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             await self.manager.create_static_connection(
                 my_did=self.test_did,
@@ -1379,8 +1377,8 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
 
             # With default mediator
@@ -1407,8 +1405,8 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_target_did,
                 self.test_target_verkey,
                 {},
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             create_did_document.assert_has_calls(
                 [
@@ -1585,8 +1583,8 @@ class TestConnectionManager(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 {"posted": True},
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             mock_mgr_find_conn.return_value = mock_conn
 
@@ -1637,8 +1635,8 @@ class TestConnectionManager(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             None,
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1670,8 +1668,8 @@ class TestConnectionManager(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             None,
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1698,8 +1696,8 @@ class TestConnectionManager(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             None,
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1733,8 +1731,8 @@ class TestConnectionManager(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             None,
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1771,8 +1769,8 @@ class TestConnectionManager(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             None,
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
 
         mock_conn = async_mock.MagicMock(
@@ -1817,8 +1815,8 @@ class TestConnectionManager(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             None,
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -1843,8 +1841,8 @@ class TestConnectionManager(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             None,
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
         mediation_record1 = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -1876,8 +1874,8 @@ class TestConnectionManager(AsyncTestCase):
             self.test_did,
             self.test_verkey,
             None,
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
         mediation_record = MediationRecord(
             role=MediationRecord.ROLE_CLIENT,
@@ -1911,8 +1909,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_get_connection_targets_conn_invitation_no_did(self):
         async with self.profile.session() as session:
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -1970,8 +1968,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_get_connection_targets_retrieve_connection(self):
         async with self.profile.session() as session:
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2023,8 +2021,8 @@ class TestConnectionManager(AsyncTestCase):
         async with self.profile.session() as session:
             self.context.injector.clear_binding(BaseCache)
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2071,12 +2069,10 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_conn_invitation_did_no_resolver(self):
         async with self.profile.session() as session:
-            self.context.injector.bind_instance(
-                DIDResolver, DIDResolver(DIDResolverRegistry())
-            )
+            self.context.injector.bind_instance(DIDResolver, DIDResolver([]))
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2121,8 +2117,8 @@ class TestConnectionManager(AsyncTestCase):
             self.context.injector.bind_instance(DIDResolver, self.resolver)
 
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2189,8 +2185,8 @@ class TestConnectionManager(AsyncTestCase):
             self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
             self.context.injector.bind_instance(DIDResolver, self.resolver)
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=did_doc.id,
                 metadata=None,
@@ -2254,8 +2250,8 @@ class TestConnectionManager(AsyncTestCase):
             self.context.injector.bind_instance(DIDResolver, self.resolver)
 
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=did_doc.id,
                 metadata=None,
@@ -2294,8 +2290,8 @@ class TestConnectionManager(AsyncTestCase):
             self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
             self.context.injector.bind_instance(DIDResolver, self.resolver)
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=did_doc.id,
                 metadata=None,
@@ -2340,8 +2336,8 @@ class TestConnectionManager(AsyncTestCase):
             self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
             self.context.injector.bind_instance(DIDResolver, self.resolver)
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=did_doc.id,
                 metadata=None,
@@ -2367,12 +2363,10 @@ class TestConnectionManager(AsyncTestCase):
 
     async def test_fetch_connection_targets_oob_invitation_svc_did_no_resolver(self):
         async with self.profile.session() as session:
-            self.context.injector.bind_instance(
-                DIDResolver, DIDResolver(DIDResolverRegistry())
-            )
+            self.context.injector.bind_instance(DIDResolver, DIDResolver([]))
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2412,8 +2406,8 @@ class TestConnectionManager(AsyncTestCase):
             self.context.injector.bind_instance(DIDResolver, self.resolver)
 
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2457,8 +2451,8 @@ class TestConnectionManager(AsyncTestCase):
             self.context.injector.bind_instance(DIDResolver, self.resolver)
 
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2472,7 +2466,7 @@ class TestConnectionManager(AsyncTestCase):
                         service_endpoint=self.test_endpoint,
                         recipient_keys=[
                             DIDKey.from_public_key_b58(
-                                self.test_target_verkey, KeyType.ED25519
+                                self.test_target_verkey, ED25519
                             ).did
                         ],
                         routing_keys=[],
@@ -2503,8 +2497,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_fetch_connection_targets_conn_initiator_completed_no_their_did(self):
         async with self.profile.session() as session:
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2520,8 +2514,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_fetch_connection_targets_conn_completed_their_did(self):
         async with self.profile.session() as session:
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2551,8 +2545,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_fetch_connection_targets_conn_no_invi_with_their_did(self):
         async with self.profile.session() as session:
             local_did = await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2606,8 +2600,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_establish_inbound(self):
         async with self.profile.session() as session:
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2636,8 +2630,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_establish_inbound_conn_rec_no_my_did(self):
         async with self.profile.session() as session:
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2665,8 +2659,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_establish_inbound_no_conn_record(self):
         async with self.profile.session() as session:
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,
@@ -2694,8 +2688,8 @@ class TestConnectionManager(AsyncTestCase):
     async def test_establish_inbound_router_not_ready(self):
         async with self.profile.session() as session:
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=self.test_seed,
                 did=self.test_did,
                 metadata=None,

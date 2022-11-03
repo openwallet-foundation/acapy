@@ -3,7 +3,6 @@ import json
 import logging
 from typing import Optional, Sequence, Tuple
 
-
 from ....core.error import BaseError
 from ....core.profile import Profile, ProfileSession
 from ....storage.base import BaseStorage
@@ -11,8 +10,8 @@ from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
-from ....wallet.did_method import DIDMethod
-from ....wallet.key_type import KeyType
+from ....wallet.did_method import SOV
+from ....wallet.key_type import ED25519
 from ...routing.v1_0.manager import RoutingManager
 from ...routing.v1_0.models.route_record import RouteRecord
 from ...routing.v1_0.models.route_update import RouteUpdate
@@ -29,6 +28,7 @@ from .messages.mediate_deny import MediationDeny
 from .messages.mediate_grant import MediationGrant
 from .messages.mediate_request import MediationRequest
 from .models.mediation_record import MediationRecord
+from .normalization import normalize_from_did_key
 
 LOGGER = logging.getLogger(__name__)
 
@@ -110,8 +110,8 @@ class MediationManager:
         wallet = session.inject(BaseWallet)
         storage = session.inject(BaseStorage)
         info = await wallet.create_local_did(
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
             metadata={"type": "routing_did"},
         )
         record = StorageRecord(
@@ -249,8 +249,9 @@ class MediationManager:
         }
 
         def rule_to_update(rule: KeylistUpdateRule):
+            recipient_key = normalize_from_did_key(rule.recipient_key)
             return RouteUpdate(
-                recipient_key=rule.recipient_key, action=action_map[rule.action]
+                recipient_key=recipient_key, action=action_map[rule.action]
             )
 
         def updated_to_keylist_updated(updated: RouteUpdated):
@@ -445,7 +446,11 @@ class MediationManager:
         """
         record.state = MediationRecord.STATE_GRANTED
         record.endpoint = grant.endpoint
-        record.routing_keys = grant.routing_keys
+        # record.routing_keys = grant.routing_keys
+        routing_keys = []
+        for key in grant.routing_keys:
+            routing_keys.append(normalize_from_did_key(key))
+        record.routing_keys = routing_keys
         async with self._profile.session() as session:
             await record.save(session, reason="Mediation request granted.")
 
@@ -533,6 +538,8 @@ class MediationManager:
             session: An active profile session
 
         """
+        # TODO The stored recipient keys are did:key!
+
         to_save: Sequence[RouteRecord] = []
         to_remove: Sequence[RouteRecord] = []
 
@@ -593,19 +600,6 @@ class MediationManager:
                 )
             for record_for_removal in to_remove:
                 await record_for_removal.delete_record(session)
-
-    async def notify_keylist_updated(
-        self, connection_id: str, response: KeylistUpdateResponse
-    ):
-        """Notify of keylist update response received."""
-        await self._profile.notify(
-            self.KEYLIST_UPDATED_EVENT,
-            {
-                "connection_id": connection_id,
-                "thread_id": response._thread_id,
-                "updated": [update.serialize() for update in response.updated],
-            },
-        )
 
     async def get_my_keylist(
         self, connection_id: Optional[str] = None

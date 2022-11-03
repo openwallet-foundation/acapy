@@ -1,6 +1,89 @@
+# 1.0.0-rc0
+
+## August 18, 2022
+
+1.0.0 is a breaking update to ACA-Py whose version is intended to indicate the
+maturity of the implementation. The final 1.0.0 release will be Aries Interop
+Profile 2.0-complete, and based on Python 3.7 or higher. The initial (rc0)
+release candidate is for early adopters to provide feedback.
+
+### Breaking Changes
+
+As of rc0, there are no breaking updates in the release from the previous v0.7.4.
+However, we know that there are some pending updates that will be breaking, hence
+the bumps to the major/minor version elements.
+
+### Categorized List of Pull Requests
+
+In rc0, there are not a lot of new features, as the focus is on cleanup and
+optimization. The biggest is the inclusion with ACA-Py of a universal resolver
+interface, allowing an instance to have both local resolvers for some DID
+Methods and a call out to an external universal resolver for other DID Methods.
+While some work has been done on moving the default Python version beyond 3.6,
+more work is still to be done on that before the final v1.0.0 release.
+
+### Categorized List of Pull Requests
+
+- Verifiable credential and revocation handling updates
+  - Refactor ledger correction code and insert into revocation error handling [\#1892](https://github.com/hyperledger/aries-cloudagent-python/pull/1892) ([ianco](https://github.com/ianco))
+  - Indy ledger fixes and cleanups [\#1870](https://github.com/hyperledger/aries-cloudagent-python/pull/1870) ([andrewwhitehead](https://github.com/andrewwhitehead))
+  - Refactoring of revocation registry creation [\#1813](https://github.com/hyperledger/aries-cloudagent-python/pull/1813) ([andrewwhitehead](https://github.com/andrewwhitehead))
+
+- DID Registration and Resolution related updates
+  - feat: add universal resolver [\#1866](https://github.com/hyperledger/aries-cloudagent-python/pull/1866) ([dbluhm](https://github.com/dbluhm))
+  - fix: resolve dids following new endpoint rules [\#1863](https://github.com/hyperledger/aries-cloudagent-python/pull/1863) ([dbluhm](https://github.com/dbluhm))
+  - fix: didx request cannot be accepted [\#1881](https://github.com/hyperledger/aries-cloudagent-python/pull/1881) ([rmnre](https://github.com/rmnre))
+
+- Internal Aries framework data handling updates
+  - fix: update RouteManager methods use to pass profile as parameter [\#1902](https://github.com/hyperledger/aries-cloudagent-python/pull/1902) ([chumbert](https://github.com/chumbert))
+  - Allow fully qualified class names for profile managers [\#1880](https://github.com/hyperledger/aries-cloudagent-python/pull/1880) ([chumbert](https://github.com/chumbert))
+  - fix: unable to use askar with in memory db [\#1878](https://github.com/hyperledger/aries-cloudagent-python/pull/1878) ([dbluhm](https://github.com/dbluhm))
+  - Enable manually triggering keylist updates during connection [\#1851](https://github.com/hyperledger/aries-cloudagent-python/pull/1851) ([dbluhm](https://github.com/dbluhm))
+  - feat: make base wallet route access configurable [\#1836](https://github.com/hyperledger/aries-cloudagent-python/pull/1836) ([dbluhm](https://github.com/dbluhm))
+  - feat: event and webhook on keylist update stored [\#1769](https://github.com/hyperledger/aries-cloudagent-python/pull/1769) ([dbluhm](https://github.com/dbluhm))
+
+- Unit, Integration and Aries Agent Test Harness Test updates 
+  - Fixes a few AATH failures [\#1897](https://github.com/hyperledger/aries-cloudagent-python/pull/1897) ([ianco](https://github.com/ianco))
+  - fix: warnings in tests from IndySdkProfile [\#1865](https://github.com/hyperledger/aries-cloudagent-python/pull/1865) ([dbluhm](https://github.com/dbluhm))
+  - Unit test fixes for python 3.9 [\#1858](https://github.com/hyperledger/aries-cloudagent-python/pull/1858) ([andrewwhitehead](https://github.com/andrewwhitehead))
+
+- Release management pull requests
+  - Release 1.0.0-rc0 [\#1904](https://github.com/hyperledger/aries-cloudagent-python/pull/1904) ([swcurran](https://github.com/swcurran))
+
+# 0.7.5
+
+## October 26, 2022
+
+0.7.5 is a patch release to deal primarily to add [PR #1881 DID Exchange in
+ACA-Py 0.7.4 with explicit invitations and without auto-accept
+broken](https://github.com/hyperledger/aries-cloudagent-python/pull/1881). A
+couple of other PRs were added to the release, as listed below, and in
+[Milestone 0.7.5](https://github.com/hyperledger/aries-cloudagent-python/milestone/6).
+
+### List of Pull Requests
+
+- Changelog and version updates for version 0.7.5-rc1 [\#1985](https://github.com/hyperledger/aries-cloudagent-python/pull/1985) ([swcurran](https://github.com/swcurran))
+- Endorser doc updates and some bug fixes [\#1926](https://github.com/hyperledger/aries-cloudagent-python/pull/1926) ([ianco](https://github.com/ianco))
+- Fix: web.py dependency - integration tests & demos [\#1973](https://github.com/hyperledger/aries-cloudagent-python/pull/1973) ([shaangill025](https://github.com/shaangill025))
+- Endorser write DID transaction [\#1938](https://github.com/hyperledger/aries-cloudagent-python/pull/1938) ([ianco](https://github.com/ianco))
+- fix: didx request cannot be accepted [\#1881](https://github.com/hyperledger/aries-cloudagent-python/pull/1881) ([rmnre](https://github.com/rmnre))
+- Fix: OOB - Handling of minor versions [\#1940](https://github.com/hyperledger/aries-cloudagent-python/pull/1940) ([shaangill025](https://github.com/shaangill025))
+- fix: Safely shutdown when root_profile uninitialized [\#1960](https://github.com/hyperledger/aries-cloudagent-python/pull/1960) ([frostyfrog](https://github.com/frostyfrog))
+- feat: 00B v1.1 support [\#1962](https://github.com/hyperledger/aries-cloudagent-python/pull/1962) ([shaangill025](https://github.com/shaangill025))
+- 0.7.5 Cherry Picks [\#1967](https://github.com/hyperledger/aries-cloudagent-python/pull/1967) ([frostyfrog](https://github.com/frostyfrog))
+- Changelog and version updates for version 0.7.5-rc0 [\#1969](https://github.com/hyperledger/aries-cloudagent-python/pull/1969) ([swcurran](https://github.com/swcurran))
+- Final 0.7.5 changes [\#1991](https://github.com/hyperledger/aries-cloudagent-python/pull/1991) ([swcurran](https://github.com/swcurran))
+
 # 0.7.4
 
 ## June 30, 2022
+
+> :warning: **Existing multitenant JWTs invalidated when a new JWT is
+generated**: If you have a pre-existing implementation with existing Admin API
+authorization JWTs, invoking the endpoint to get a JWT now invalidates the
+existing JWT. Previously an identical JWT would be created. Please see this
+[comment on PR \#1725](https://github.com/hyperledger/aries-cloudagent-python/pull/1725#issuecomment-1096172144)
+for more details.
 
 0.7.4 is a significant release focused on stability and production deployments.
 As the "patch" release number indicates, there were no breaking changes in the
