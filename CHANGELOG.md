@@ -102,6 +102,7 @@ v1.0.0 release.
 - Release management pull requests
   - Release 1.0.0-rc0 [\#1904](https://github.com/hyperledger/aries-cloudagent-python/pull/1904) ([swcurran](https://github.com/swcurran))
   - Add 0.7.5 patch Changelog entry to main branch Changelog [\#1996](https://github.com/hyperledger/aries-cloudagent-python/pull/1996) ([swcurran](https://github.com/swcurran))
+  - Release 1.0.0-rc1 [\#2005](https://github.com/hyperledger/aries-cloudagent-python/pull/2005) ([swcurran](https://github.com/swcurran))
 
 
 # 0.7.5
