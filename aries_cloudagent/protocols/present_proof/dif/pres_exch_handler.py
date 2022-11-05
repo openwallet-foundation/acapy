@@ -40,7 +40,7 @@ from ....vc.ld_proofs.constants import (
 from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
 from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.error import WalletError, WalletNotFoundError
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import BLS12381G2, ED25519
 
 from .pres_exch import (
     PresentationDefinition,
@@ -73,14 +73,14 @@ class DIFPresExchHandler:
     """Base Presentation Exchange Handler."""
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        Ed25519Signature2018: KeyType.ED25519,
+        Ed25519Signature2018: ED25519,
     }
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
-        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = KeyType.BLS12381G2
+        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
 
     DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        BbsBlsSignatureProof2020: KeyType.BLS12381G2,
+        BbsBlsSignatureProof2020: BLS12381G2,
     }
     PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
         suite.signature_type: suite
@@ -196,9 +196,9 @@ class DIFPresExchHandler:
         issuer_id = None
         filtered_creds_list = []
         if self.proof_type == BbsBlsSignature2020.signature_type:
-            reqd_key_type = KeyType.BLS12381G2
+            reqd_key_type = BLS12381G2
         else:
-            reqd_key_type = KeyType.ED25519
+            reqd_key_type = ED25519
         for cred in applicable_creds:
             if cred.subject_ids and len(cred.subject_ids) > 0:
                 if not issuer_id:

@@ -1,7 +1,7 @@
 from asynctest import TestCase
 import pytest
 
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import BLS12381G2
 from ...wallet.util import b58_to_bytes
 from ...wallet.in_memory import InMemoryWallet
 from ...core.in_memory import InMemoryProfile
@@ -45,23 +45,23 @@ class TestBbsMattrInterop(TestCase):
             "secret": b58_to_bytes(private_key_base58),
             "verkey": public_key_base58,
             "metadata": {},
-            "key_type": KeyType.BLS12381G2,
+            "key_type": BLS12381G2,
         }
 
         self.signature_issuer_suite = BbsBlsSignature2020(
             verification_method="did:example:489398593#test",
             key_pair=WalletKeyPair(
                 wallet=self.wallet,
-                key_type=KeyType.BLS12381G2,
+                key_type=BLS12381G2,
                 public_key_base58=public_key_base58,
             ),
         )
 
         self.signature_suite = BbsBlsSignature2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.BLS12381G2),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2),
         )
         self.proof_suite = BbsBlsSignatureProof2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=KeyType.BLS12381G2)
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
         )
 
     async def test_sign_bbs_vc_mattr(self):

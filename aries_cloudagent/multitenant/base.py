@@ -381,6 +381,19 @@ class BaseMultitenantManager(ABC):
         except (RouteNotFoundError):
             pass
 
+    async def get_profile_for_key(
+        self, context: InjectionContext, recipient_key: str
+    ) -> Optional[Profile]:
+        """Retrieve a wallet profile by recipient key."""
+        wallet = await self._get_wallet_by_key(recipient_key)
+        if not wallet:
+            return None
+
+        if wallet.requires_external_key:
+            raise WalletKeyMissingError()
+
+        return await self.get_wallet_profile(context, wallet)
+
     async def get_wallets_by_message(
         self, message_body, wire_format: BaseWireFormat = None
     ) -> List[WalletRecord]:

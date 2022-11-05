@@ -5,7 +5,7 @@ from .....core.in_memory import InMemoryProfile
 from .....messaging.request_context import RequestContext
 from .....messaging.responder import MockResponder
 from .....did.did_key import DIDKey
-from .....wallet.key_type import KeyType
+from .....wallet.key_type import ED25519
 
 from ....didcomm_prefix import DIDCommPrefix
 from ....out_of_band.v1_0.message_types import INVITATION as OOB_INVITATION
@@ -36,12 +36,10 @@ class TestIntroductionService(AsyncTestCase):
                     _type="did-communication",
                     did=TEST_DID,
                     recipient_keys=[
-                        DIDKey.from_public_key_b58(TEST_VERKEY, KeyType.ED25519).did
+                        DIDKey.from_public_key_b58(TEST_VERKEY, ED25519).did
                     ],
                     routing_keys=[
-                        DIDKey.from_public_key_b58(
-                            TEST_ROUTE_VERKEY, KeyType.ED25519
-                        ).did
+                        DIDKey.from_public_key_b58(TEST_ROUTE_VERKEY, ED25519).did
                     ],
                     service_endpoint=TEST_ENDPOINT,
                 )
