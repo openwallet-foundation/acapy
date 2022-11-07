@@ -81,7 +81,7 @@ class RoutingManager:
                     raise RouteNotFoundError(
                         f"No route found with recipient key: {recip_verkey}"
                     )
-                await asyncio.wait(500)
+                await asyncio.sleep(0.5)
                 pause = False
 
     async def get_routes(
