@@ -20,6 +20,9 @@ from .models.route_updated import RouteUpdated
 
 LOGGER = logging.getLogger(__name__)
 
+RECIP_ROUTE_PAUSE = 0.1
+RECIP_ROUTE_RETRY = 5
+
 
 class RoutingManagerError(BaseError):
     """Generic routing error."""
@@ -59,30 +62,30 @@ class RoutingManager:
         if not recip_verkey:
             raise RoutingManagerError("Must pass non-empty recip_verkey")
 
-        pause = True
+        i = 0
         record = None
         while not record:
             try:
-                LOGGER.error(">>> fetching routing record for verkey: " + recip_verkey)
+                LOGGER.info(">>> fetching routing record for verkey: " + recip_verkey)
                 async with self._profile.session() as session:
                     record = await RouteRecord.retrieve_by_recipient_key(
                         session, recip_verkey
                     )
-                LOGGER.error(">>> FOUND routing record for verkey: " + recip_verkey)
+                LOGGER.info(">>> FOUND routing record for verkey: " + recip_verkey)
                 return record
             except StorageDuplicateError:
-                LOGGER.error(">>> DUPLICATE routing record for verkey: " + recip_verkey)
+                LOGGER.info(">>> DUPLICATE routing record for verkey: " + recip_verkey)
                 raise RouteNotFoundError(
                     f"More than one route record found with recipient key: {recip_verkey}"
                 )
             except StorageNotFoundError:
-                LOGGER.error(">>> NOT FOUND routing record for verkey: " + recip_verkey)
-                if not pause:
+                LOGGER.info(">>> NOT FOUND routing record for verkey: " + recip_verkey)
+                i += 1
+                if i > RECIP_ROUTE_RETRY:
                     raise RouteNotFoundError(
                         f"No route found with recipient key: {recip_verkey}"
                     )
-                await asyncio.sleep(0.5)
-                pause = False
+                await asyncio.sleep(RECIP_ROUTE_PAUSE)
 
     async def get_routes(
         self, client_connection_id: str = None, tag_filter: dict = None
@@ -150,7 +153,7 @@ class RoutingManager:
             )
         if not recipient_key:
             raise RoutingManagerError("Missing recipient_key")
-        LOGGER.error(">>> creating routing record for verkey: " + recipient_key)
+        LOGGER.info(">>> creating routing record for verkey: " + recipient_key)
         route = RouteRecord(
             connection_id=client_connection_id,
             wallet_id=internal_wallet_id,
@@ -158,7 +161,7 @@ class RoutingManager:
         )
         async with self._profile.session() as session:
             await route.save(session, reason="Created new route")
-        LOGGER.error(">>> CREATED routing record for verkey: " + recipient_key)
+        LOGGER.info(">>> CREATED routing record for verkey: " + recipient_key)
         return route
 
     async def update_routes(
