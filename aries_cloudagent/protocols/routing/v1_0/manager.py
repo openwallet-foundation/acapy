@@ -21,7 +21,7 @@ from .models.route_updated import RouteUpdated
 LOGGER = logging.getLogger(__name__)
 
 RECIP_ROUTE_PAUSE = 0.1
-RECIP_ROUTE_RETRY = 5
+RECIP_ROUTE_RETRY = 10
 
 
 class RoutingManagerError(BaseError):
