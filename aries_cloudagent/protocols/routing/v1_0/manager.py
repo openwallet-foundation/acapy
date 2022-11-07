@@ -1,5 +1,6 @@
 """Routing manager classes for tracking and inspecting routing records."""
 
+import logging
 from typing import Coroutine, Sequence
 
 from ....core.error import BaseError
@@ -14,6 +15,9 @@ from .messages.route_update_request import RouteUpdateRequest
 from .models.route_record import RouteRecord
 from .models.route_update import RouteUpdate
 from .models.route_updated import RouteUpdated
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class RoutingManagerError(BaseError):
@@ -55,15 +59,19 @@ class RoutingManager:
             raise RoutingManagerError("Must pass non-empty recip_verkey")
 
         try:
+            LOGGER.error(">>> fetching routing record for verkey: " + recip_verkey)
             async with self._profile.session() as session:
                 record = await RouteRecord.retrieve_by_recipient_key(
                     session, recip_verkey
                 )
+            LOGGER.error(">>> FOUND routing record for verkey: " + recip_verkey)
         except StorageDuplicateError:
+            LOGGER.error(">>> DUPLICATE routing record for verkey: " + recip_verkey)
             raise RouteNotFoundError(
                 f"More than one route record found with recipient key: {recip_verkey}"
             )
         except StorageNotFoundError:
+            LOGGER.error(">>> NOT FOUND routing record for verkey: " + recip_verkey)
             raise RouteNotFoundError(
                 f"No route found with recipient key: {recip_verkey}"
             )
@@ -136,6 +144,7 @@ class RoutingManager:
             )
         if not recipient_key:
             raise RoutingManagerError("Missing recipient_key")
+        LOGGER.error(">>> creating routing record for verkey: " + recipient_key)
         route = RouteRecord(
             connection_id=client_connection_id,
             wallet_id=internal_wallet_id,
@@ -143,6 +152,7 @@ class RoutingManager:
         )
         async with self._profile.session() as session:
             await route.save(session, reason="Created new route")
+        LOGGER.error(">>> CREATED routing record for verkey: " + recipient_key)
         return route
 
     async def update_routes(
