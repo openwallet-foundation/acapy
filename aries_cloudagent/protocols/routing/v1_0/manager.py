@@ -1,5 +1,6 @@
 """Routing manager classes for tracking and inspecting routing records."""
 
+import asyncio
 import logging
 from typing import Coroutine, Sequence
 
@@ -58,25 +59,30 @@ class RoutingManager:
         if not recip_verkey:
             raise RoutingManagerError("Must pass non-empty recip_verkey")
 
-        try:
-            LOGGER.error(">>> fetching routing record for verkey: " + recip_verkey)
-            async with self._profile.session() as session:
-                record = await RouteRecord.retrieve_by_recipient_key(
-                    session, recip_verkey
+        pause = True
+        record = None
+        while not record:
+            try:
+                LOGGER.error(">>> fetching routing record for verkey: " + recip_verkey)
+                async with self._profile.session() as session:
+                    record = await RouteRecord.retrieve_by_recipient_key(
+                        session, recip_verkey
+                    )
+                LOGGER.error(">>> FOUND routing record for verkey: " + recip_verkey)
+                return record
+            except StorageDuplicateError:
+                LOGGER.error(">>> DUPLICATE routing record for verkey: " + recip_verkey)
+                raise RouteNotFoundError(
+                    f"More than one route record found with recipient key: {recip_verkey}"
                 )
-            LOGGER.error(">>> FOUND routing record for verkey: " + recip_verkey)
-        except StorageDuplicateError:
-            LOGGER.error(">>> DUPLICATE routing record for verkey: " + recip_verkey)
-            raise RouteNotFoundError(
-                f"More than one route record found with recipient key: {recip_verkey}"
-            )
-        except StorageNotFoundError:
-            LOGGER.error(">>> NOT FOUND routing record for verkey: " + recip_verkey)
-            raise RouteNotFoundError(
-                f"No route found with recipient key: {recip_verkey}"
-            )
-
-        return record
+            except StorageNotFoundError:
+                LOGGER.error(">>> NOT FOUND routing record for verkey: " + recip_verkey)
+                if not pause:
+                    raise RouteNotFoundError(
+                        f"No route found with recipient key: {recip_verkey}"
+                    )
+                await asyncio.wait(500)
+                pause = False
 
     async def get_routes(
         self, client_connection_id: str = None, tag_filter: dict = None
