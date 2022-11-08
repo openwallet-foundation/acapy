@@ -62,6 +62,7 @@ class TestHttpTransport(AioHTTPTestCase):
         message: InboundMessage,
         can_respond: bool = False,
     ):
+        message.wait_processing_complete = async_mock.CoroutineMock()
         self.message_results.append((message.payload, message.receipt, can_respond))
         if self.result_event:
             self.result_event.set()
