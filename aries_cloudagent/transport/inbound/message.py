@@ -1,5 +1,6 @@
 """Classes representing inbound messages."""
 
+import asyncio
 from typing import Union
 
 from .receipt import MessageReceipt
@@ -23,3 +24,12 @@ class InboundMessage:
         self.receipt = receipt
         self.session_id = session_id
         self.transport_type = transport_type
+        self.processing_complete_event = asyncio.Event()
+
+    def dispatch_processing_complete(self):
+        """Dispatch processing complete."""
+        self.processing_complete_event.set()
+
+    async def wait_processing_complete(self):
+        """Wait for processing to complete."""
+        await self.processing_complete_event.wait()
