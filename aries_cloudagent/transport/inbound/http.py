@@ -96,7 +96,12 @@ class HttpTransport(BaseInboundTransport):
                 raise web.HTTPBadRequest()
 
             if inbound.receipt.direct_response_requested:
-                response = await session.wait_response()
+                # Wait for the message to be processed. Only send a response if a response
+                # buffer is present.
+                await inbound.wait_processing_complete()
+                response = (
+                    await session.wait_response() if session.response_buffer else None
+                )
 
                 # no more responses
                 session.can_respond = False
