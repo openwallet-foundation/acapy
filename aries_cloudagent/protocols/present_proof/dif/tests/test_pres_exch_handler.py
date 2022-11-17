@@ -13,7 +13,6 @@ from .....did.did_key import DIDKey
 from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
 from .....wallet.base import BaseWallet, DIDInfo
-from .....wallet.crypto import KeyType
 from .....wallet.did_method import SOV, KEY
 from .....wallet.error import WalletNotFoundError
 from .....vc.ld_proofs import (

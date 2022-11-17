@@ -19,7 +19,9 @@ from ....revocation.models.revocation_registry import RevocationRegistry
 
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
+from ..v3_0.messages.pres_format import V30PresFormat
 from ..v2_0.models.pres_exchange import V20PresExRecord
+from ..v3_0.models.pres_exchange import V30PresExRecord
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,6 +57,14 @@ class IndyPresExchHandler:
             proof_request = pres_ex_record.pres_request.attachment(
                 V20PresFormat.Format.INDY
             )
+        elif isinstance(pres_ex_record, V30PresExRecord):
+            proof_request = pres_ex_record.pres_request.attachments
+            for att in proof_request:
+                if (
+                    V30PresFormat.Format.get(att.format.format).api
+                    == V30PresFormat.Format.INDY.api
+                ):
+                    proof_request = att.content
         elif isinstance(pres_ex_record, V10PresentationExchange):
             proof_request = pres_ex_record._presentation_request.ser
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)

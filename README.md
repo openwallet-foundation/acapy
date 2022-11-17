@@ -1,4 +1,4 @@
-# Hyperledger Aries Cloud Agent - Python  <!-- omit in toc -->
+# Hyperledger Aries Cloud Agent - Python  <!-- omit in toc --> 
 
 [![pypi releases](https://img.shields.io/pypi/v/aries_cloudagent)](https://pypi.org/project/aries-cloudagent/)
 [![CircleCI](https://circleci.com/gh/hyperledger/aries-cloudagent-python.svg?style=shield)](https://circleci.com/gh/hyperledger/aries-cloudagent-python)

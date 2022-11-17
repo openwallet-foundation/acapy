@@ -610,3 +610,166 @@ class AgentMessageSchema(BaseModelSchema):
             del data[field_name]
             data["{}~sig".format(field_name)] = sig
         return data
+
+
+class AgentMessageSchemaV2(BaseModelSchema):
+    """AgentMessage schema."""
+
+    class Meta:
+        """AgentMessageSchema metadata."""
+
+        model_class = None
+        signed_fields = None
+        unknown = EXCLUDE
+
+    # Avoid clobbering keywords
+    _type = fields.Str(
+        data_key="type",
+        dump_only=True,
+        required=True,
+        description="Message type",
+        example="https://didcomm.org/my-family/2.0/my-message-type",
+    )
+    _id = fields.Str(
+        data_key="id",
+        required=True,
+        description="Message identifier",
+        example=UUIDFour.EXAMPLE,
+    )
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize an instance of AgentMessageSchema.
+
+        Raises:
+            TypeError: If Meta.model_class has not been set
+
+        """
+        super().__init__(*args, **kwargs)
+        self._decorators = DecoratorSet()
+        self._decorators_dict = None
+        self._signatures = {}
+
+    @pre_load
+    def extract_decorators(self, data: Mapping, **kwargs):
+        """
+        Pre-load hook to extract the decorators and check the signed fields.
+
+        Args:
+            data: Incoming data to parse
+
+        Returns:
+            Parsed and modified data
+
+        Raises:
+            ValidationError: If a field signature does not correlate
+            to a field in the message
+            ValidationError: If the message defines both a field signature
+            and a value for the same field
+            ValidationError: If there is a missing field signature
+
+        """
+        processed = self._decorators.extract_decorators(data, self.__class__)
+
+        expect_fields = resolve_meta_property(self, "signed_fields") or ()
+        found_signatures = {}
+        for field_name, field in self._decorators.fields.items():
+            if "sig" in field:
+                if field_name not in expect_fields:
+                    raise ValidationError(
+                        f"Encountered unexpected field signature: {field_name}"
+                    )
+                if field_name in processed:
+                    raise ValidationError(
+                        f"Message defines both field signature and value: {field_name}"
+                    )
+                found_signatures[field_name] = field["sig"]
+                processed[field_name], _ = field["sig"].decode()  # _ = timestamp
+        for field_name in expect_fields:
+            if field_name not in found_signatures:
+                raise ValidationError(f"Expected field signature: {field_name}")
+        return processed
+
+    @post_load
+    def populate_decorators(self, obj, **kwargs):
+        """
+        Post-load hook to populate decorators on the message.
+
+        Args:
+            obj: The AgentMessage object
+
+        Returns:
+            The AgentMessage object with populated decorators
+
+        """
+        obj._decorators = self._decorators
+        return obj
+
+    @pre_dump
+    def check_dump_decorators(self, obj, **kwargs):
+        """
+        Pre-dump hook to validate and load the message decorators.
+
+        Args:
+            obj: The AgentMessage object
+
+        Raises:
+            BaseModelError: If a decorator does not validate
+
+        """
+        decorators = obj._decorators.copy()
+        signatures = OrderedDict()
+        for name, field in decorators.fields.items():
+            if "sig" in field:
+                signatures[name] = field["sig"].serialize()
+                del field["sig"]
+        self._decorators_dict = decorators.to_dict()
+        self._signatures = signatures
+
+        # check existence of signatures
+        expect_fields = resolve_meta_property(self, "signed_fields") or ()
+        for field_name in expect_fields:
+            if field_name not in self._signatures:
+                raise BaseModelError(
+                    "Missing signature for field: {}".format(field_name)
+                )
+
+        return obj
+
+    @post_dump
+    def dump_decorators(self, data, **kwargs):
+        """
+        Post-dump hook to write the decorators to the serialized output.
+
+        Args:
+            obj: The serialized data
+
+        Returns:
+            The modified data
+
+        """
+        result = OrderedDict()
+        # TODO: change this to type, id
+        for key in ("@type", "@id"):
+            if key in data:
+                result[key] = data.pop(key)
+        result.update(self._decorators_dict)
+        result.update(data)
+        return result
+
+    @post_dump
+    def replace_signatures(self, data, **kwargs):
+        """
+        Post-dump hook to write the signatures to the serialized output.
+
+        Args:
+            obj: The serialized data
+
+        Returns:
+            The modified data
+
+        """
+        for field_name, sig in self._signatures.items():
+            del data[field_name]
+            data["{}~sig".format(field_name)] = sig
+        return data
