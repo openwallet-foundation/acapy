@@ -1,0 +1,18 @@
+{
+    "presentation_proposal": {
+        "name": "Health Consent Proof",
+        "requested_attributes": {
+            "consent_attrs": {
+                "name": "expiry",
+                "restrictions": [
+                    {
+                        "schema_name": "Schema_Health_Consent_Revoc",
+                        "schema_version": "1.2.0"
+                    }
+                ]
+            }
+        },
+        "requested_predicates": {},
+        "version": "0.1.0"
+    }
+}

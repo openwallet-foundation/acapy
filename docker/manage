@@ -1,0 +1,101 @@
+#!/bin/bash
+export MSYS_NO_PATHCONV=1
+# getDockerHost; for details refer to https://github.com/bcgov/DITP-DevOps/tree/main/code/snippets#getdockerhost
+. /dev/stdin <<<"$(cat <(curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost))" 
+export DOCKERHOST=$(getDockerHost)
+set -e
+
+SCRIPT_HOME="$(cd "$(dirname "$0")" && pwd)"
+
+# =================================================================================================================
+# Usage:
+# -----------------------------------------------------------------------------------------------------------------
+usage() {
+  cat <<-EOF
+
+      Usage: $0 [command] [options]
+
+      Commands:
+
+      demo  - Build the demo docker image and run an integration test or demo.
+
+      provision - Provision an agent
+
+      start - Run an agent.
+
+      test  - Run unit tests.
+
+      test-indy  - Run unit tests, including Indy-specific tests.
+
+EOF
+  exit 1
+}
+
+toLower() {
+  echo $(echo ${@} | tr '[:upper:]' '[:lower:]')
+}
+
+exportEnvironment() {
+  for arg in "$@"; do
+    case "$arg" in
+      *=*)
+        export "${arg}"
+        ;;
+    esac
+  done
+}
+
+getStartupParams() {
+  PARAMS=""
+
+  for arg in "$@"; do
+    case "$arg" in
+    *=*)
+      # Skip it
+      ;;
+    *)
+      PARAMS+=" $arg"
+      ;;
+    esac
+  done
+
+  echo ${PARAMS}
+}
+
+# =================================================================================================================
+
+pushd ${SCRIPT_HOME} >/dev/null
+COMMAND=$(toLower ${1})
+shift || COMMAND=usage
+
+case "${COMMAND}" in
+start|up)
+  exportEnvironment "$@"
+  ../scripts/run_docker start $(getStartupParams "$@")
+  ;;
+provision)
+  exportEnvironment "$@"
+  ../scripts/run_docker provision $(getStartupParams "$@")
+  ;;
+upgrade)
+  exportEnvironment "$@"
+  ../scripts/run_docker upgrade $(getStartupParams "$@")
+  ;;
+demo)
+  exportEnvironment "$@"
+  ../demo/run_demo $(getStartupParams "$@")
+  ;;
+test)
+  exportEnvironment "$@"
+  ../scripts/run_tests $(getStartupParams "$@")
+  ;;
+test-indy)
+  exportEnvironment "$@"
+  ../scripts/run_tests_indy $(getStartupParams "$@")
+  ;;
+*)
+  usage
+  ;;
+esac
+
+popd >/dev/null

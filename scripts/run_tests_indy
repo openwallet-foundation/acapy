@@ -1,0 +1,32 @@
+#!/bin/bash
+
+cd "$(dirname "$0")" || exit
+CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
+
+$CONTAINER_RUNTIME build -t aries-cloudagent-test -f ../docker/Dockerfile.test-indy .. || exit 1
+
+if [ ! -d ../test-reports ]; then mkdir ../test-reports; fi
+
+# on Windows, docker run needs to be prefixed by winpty
+if [ "$OSTYPE" == "msys" ]; then
+  CONTAINER_RUNTIME="winpty docker"
+fi
+if [ -z "$DOCKER_NET" ]; then
+    DOCKER_NET="bridge"
+fi
+
+if [ -z "$POSTGRES_URL" ]; then
+  if [ -n "$($CONTAINER_RUNTIME ps --filter name=indy-demo-postgres --quiet)" ]; then
+    DOCKER_ARGS="$DOCKER_ARGS --link indy-demo-postgres"
+    POSTGRES_URL="indy-demo-postgres"
+  fi
+fi
+if [ -n "$POSTGRES_URL" ]; then
+  DOCKER_ARGS="$DOCKER_ARGS -e POSTGRES_URL=$POSTGRES_URL"
+fi
+
+$CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
+  --network=${DOCKER_NET} \
+  -v "$(pwd)/../test-reports:/home/indy/src/app/test-reports" \
+  $DOCKER_ARGS \
+  aries-cloudagent-test "$@"

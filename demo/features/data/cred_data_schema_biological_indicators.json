@@ -1,0 +1,56 @@
+{
+   "Data_BI_NormalizedValues":{
+      "cred_name":"Data_BiologicalIndicators_NormalizedValues",
+      "schema_name":"Schema_Biological_Indicators",
+      "schema_version":"0.2.0",
+      "attributes":[
+         {
+            "name":"name",
+            "value":"Bio Indicator A"
+         },
+         {
+            "name":"range",
+            "value":"99"
+         },
+         {
+            "name":"concentration",
+            "value":"10"
+         },
+         {
+            "name":"unit",
+            "value":"x"
+         },
+         {
+            "name":"collected_on",
+            "value":"04/02/2020"
+         }
+      ]
+   },
+   "Data_BI_HealthValues":{
+      "cred_name":"Data_BiologicalIndicators_HealthValues",
+      "schema_name":"Schema_Biological_Indicators",
+      "schema_version":"0.2.0",
+      "attributes":[
+         {
+            "name":"name",
+            "value":"Bio Indicator A"
+         },
+         {
+            "name":"range",
+            "value":"99"
+         },
+         {
+            "name":"concentration",
+            "value":"10"
+         },
+         {
+            "name":"unit",
+            "value":"x"
+         },
+         {
+            "name":"collected_on",
+            "value":"04/02/2020"
+         }
+      ]
+   }
+}

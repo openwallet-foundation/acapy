@@ -1,0 +1,14 @@
+{
+   "schema":{
+      "schema_name":"Schema_DriversLicense",
+      "schema_version":"1.0.1",
+      "attributes":[
+         "id",
+         "address",
+         "DL_number",
+         "expiry",
+         "age"
+      ]
+   },
+   "cred_def_support_revocation":false
+}

@@ -1,0 +1,64 @@
+{
+   "Data_DL_MaxValues":{
+      "cred_name":"Data_HealthID_NormalizedValues",
+      "schema_name":"Schema_Health_ID",
+      "schema_version":"1.0.0",
+      "attributes":[
+         {
+            "name":"name",
+            "value":"Great Name"
+         },
+         {
+            "name":"health_id_num",
+            "value":"9999-999-999-RT"
+         },
+         {
+            "name":"expiry",
+            "value":"2234-05-24"
+         },
+         {
+            "name":"dob",
+            "value":"1970-05-24"
+         },
+         {
+            "name":"issued",
+            "value":"2222-08-19"
+         },
+         {
+            "name":"province",
+            "value":"Ontario"
+         }
+      ]
+   },
+   "Data_HealthID_NormalizedValues":{
+      "cred_name":"Data_HealthID_NormalizedValues",
+      "schema_name":"Schema_Health_ID",
+      "schema_version":"1.0.0",
+      "attributes":[
+         {
+            "name":"name",
+            "value":"Not So Great Name"
+         },
+         {
+            "name":"health_id_num",
+            "value":"1500-150-015-PQ"
+         },
+         {
+            "name":"expiry",
+            "value":"2024-05-24"
+         },
+         {
+            "name":"dob",
+            "value":"1970-05-24"
+         },
+         {
+            "name":"issued",
+            "value":"2018-08-19"
+         },
+         {
+            "name":"province",
+            "value":"British Columbia"
+         }
+      ]
+   }
+}

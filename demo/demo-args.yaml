@@ -1,0 +1,14 @@
+# see: https://pypi.org/project/ConfigArgParse/ for file format overview
+# this runs aca-py with a minumum set of parameters
+# the following are quivalent to:
+#    ./bin/aca-py start -it http 0.0.0.0 8020 -ot http --endpoint http://localhost:8020 --admin-insecure-mode --admin 0.0.0.0 8021 --no-ledger
+# run as:
+#    ./bin/aca-py start --arg-file ./demo/demo-args.yaml
+inbound-transport:
+  - [http, 0.0.0.0, 8030]
+  - [ws, 0.0.0.0, 8040]
+outbound-transport: http
+endpoint: http://192.168.0.48:8030
+admin-insecure-mode: true
+admin: [0.0.0.0, 8031]
+no-ledger: true

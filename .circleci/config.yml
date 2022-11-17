@@ -1,0 +1,48 @@
+version: 2
+jobs:
+  agent-build:
+    docker:
+      - image: bcgovimages/von-image:py36-1.15-1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v5-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}-{{ checksum "requirements.bbs.txt" }}
+            - v5-pip-dependencies-{{ .Branch }}-
+      - run:
+          name: Install Python Dependencies
+          command: |
+            pip install \
+              --user \
+              -r requirements.txt \
+              -r requirements.askar.txt \
+              -r requirements.bbs.txt \
+              -r requirements.dev.txt
+
+      - save_cache:
+          paths:
+            - /home/indy/.local/lib/python3.6/site-packages
+          key: v5-pip-dependencies-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements.dev.txt" }}-{{ checksum "requirements.bbs.txt" }}-{{ checksum "requirements.askar.txt" }}
+
+      - run:
+          name: Run Agent Tests
+          command: |
+            [ ! -d test-reports ] && mkdir test-reports
+            python -m pytest
+
+      - run:
+          name: Push to Codecov.io
+          command: |
+              bash <(curl -s https://codecov.io/bash) -f test-reports/coverage.xml
+
+      - store_test_results:
+          path: test-reports
+
+      - store_artifacts:
+          path: test-reports
+
+workflows:
+ version: 2
+ aries_cloudagent:
+   jobs:
+     - agent-build

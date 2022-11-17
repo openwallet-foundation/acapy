@@ -1,0 +1,33 @@
+name: "Run Aca-Py Integration Tests"
+description: "Run integration tests for Aca-Py"
+author: "iancostanzo@gmail.com"
+inputs:
+  TEST_SCOPE:
+    description: "Set of flags that defines the test scope"
+    required: false
+    default: "-t @GHA"
+  IN_LEDGER_URL:
+    description: "URL to the von network ledger browser"
+    required: false
+    default: "http://test.bcovrin.vonx.io"
+  IN_PUBLIC_TAILS_URL:
+    description: "URL to the tails server"
+    required: false
+    default: "https://tails-test.vonx.io"
+runs:
+  using: "composite"
+  steps:
+    - name: run-integration-tests-acapy
+      # to run with external ledger and tails server run as follows (and remove the ledger and tails actions from the workflow):
+      # run: LEDGER_URL=http://test.bcovrin.vonx.io PUBLIC_TAILS_URL=https://tails.vonx.io ./run_bdd ${{ inputs.TEST_SCOPE }}
+      run: ./run_bdd ${{ inputs.TEST_SCOPE }}
+      shell: bash
+      env:
+        LEDGER_URL: ${{ inputs.IN_LEDGER_URL }}
+        PUBLIC_TAILS_URL: ${{ inputs.IN_PUBLIC_TAILS_URL }}
+        LOG_LEVEL: warning
+        NO_TTY: "1"
+      working-directory: acapy/demo
+branding:
+  icon: "mic"
+  color: "purple"

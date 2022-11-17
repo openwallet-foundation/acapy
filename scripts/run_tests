@@ -1,0 +1,45 @@
+#!/bin/bash
+
+CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
+
+# Skip the image build and use a host mounted volume to get up to date code
+FAST=${FAST:-0}
+
+cd "$(dirname "$0")" || exit
+
+if [[ $FAST -eq 0 ]]; then
+  $CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-test -f ../docker/Dockerfile.test .. || exit 1
+fi
+
+DOCKER_ARGS=""
+PTVSD_PORT="5678"
+
+for arg in "$@"; do
+  if [ "$arg" = "--debug" ]; then
+    ENABLE_PTVSD=1 # set ptvsd env
+    #shift # remove debug flag from pytest args.
+  fi
+done
+if [ -n "${ENABLE_PTVSD}" ]; then
+  DOCKER_ARGS="${DOCKER_ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
+fi
+
+if [[ $FAST -eq 1 ]]; then
+  DOCKER_ARGS="${DOCKER_ARGS} -v $(pwd)/../aries_cloudagent:/usr/src/app/aries_cloudagent:z"
+fi
+
+if [ ! -d ../test-reports ]; then mkdir ../test-reports; fi
+
+# on Windows, docker run needs to be prefixed by winpty
+if [ "$OSTYPE" == "msys" ]; then
+  CONTAINER_RUNTIME="winpty docker"
+fi
+
+if [ ! -z "$TEST_REDIS_CONFIG" ]; then
+  DOCKER_ARGS="$DOCKER_ARGS -e TEST_REDIS_CONFIG=$TEST_REDIS_CONFIG"
+fi
+
+$CONTAINER_RUNTIME run --rm -ti --name aries-cloudagent-runner \
+  --platform linux/amd64 \
+	-v "$(pwd)/../test-reports:/usr/src/app/test-reports:z" \
+	$DOCKER_ARGS aries-cloudagent-test "$@"

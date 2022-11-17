@@ -1,0 +1,35 @@
+version: '3'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.2
+    environment:
+      discovery.type: single-node
+    ports:
+      - 9200:9200
+      - 9300:9300
+    networks:
+      - efk_net
+
+  fluentd:
+    build: ./fluentd
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+      - ./logs:/logs
+    ports:
+      - 8088:8088
+    networks:
+      - efk_net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.4.2
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    volumes:
+      - ./kibana/conf:/usr/share/kibana/config
+    ports:
+      - 5601:5601
+    networks:
+      - efk_net
+
+networks:
+  efk_net:

@@ -1,0 +1,22 @@
+asynctest==0.13.0
+async-case~=10.1
+pytest~=5.4.0
+pytest-asyncio==0.14.0
+pytest-cov==2.10.1
+pytest-flake8==1.0.6
+mock~=4.0
+
+flake8==3.9.0
+# flake8-rst-docstrings==0.0.8
+flake8-docstrings==1.5.0
+flake8-rst==0.7.2
+pydocstyle==3.0.0
+pre-commit
+
+sphinx==1.8.4
+sphinx-rtd-theme>=0.4.3
+
+ptvsd==4.3.2
+pydevd==1.5.1
+
+pydevd-pycharm~=193.6015.39

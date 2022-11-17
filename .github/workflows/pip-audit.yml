@@ -1,0 +1,24 @@
+name: pip-audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'pull_request' && github.repository == 'hyperledger/aries-cloudagent-python') || (github.event_name != 'pull_request')
+    steps:
+      - uses: actions/checkout@v3
+      - name: install
+        run: |
+          python -m venv env/
+          source env/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install .
+      - uses: pypa/gh-action-pip-audit@v1.0.0
+        with:
+          virtual-environment: env/
+          local: true

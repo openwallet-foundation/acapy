@@ -1,0 +1,37 @@
+# see: https://pypi.org/project/ConfigArgParse/ for file format overview
+# before running aca-py, run the following (the commands are embedded below, next to the related parameters):
+#    - run a local postgres database
+#    - run a local instance of von-network
+#    - register your did (seed) on the network
+# run aca-py as:
+#    ACAPY_WALLET_SEED=my_seed_000000000000000000000000 ACAPY_WALLET_KEY=key ./bin/aca-py start --arg-file ./demo/local-indy-args.yaml
+admin-insecure-mode: true
+admin: [0.0.0.0, 8031]
+label: My Indy Agent
+# the following is the callback url for your controller
+webhook-url: http://localhost:7000/agentcb
+# assumes you are running a local von-network, like:
+#    cd von-network
+#    ./manage start <my local ip>
+genesis-url: http://localhost:9000/genesis
+inbound-transport:
+   - [http, 0.0.0.0, 8030]
+   - [ws, 0.0.0.0, 8040]
+outbound-transport: http
+# the following is the public endpoint advertised by the agent
+endpoint: http://192.168.0.48:8030
+auto-ping-connection: true
+# register your did using (this example is for von-network):
+#    curl -d '{"seed":"my_seed_000000000000000000000000", "role":"TRUST_ANCHOR", "alias":"My Agent"}' -X POST http://localhost:9000/register
+# note that the env var name is configured in argparse.py
+# seed = comes from ACAPY_WALLET_SEED
+wallet-type: askar
+wallet-name: testwallet
+# wallet-key = comes from ACAPY_WALLET_KEY
+# run a local postgres (docker) like:
+#    docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres:10
+wallet-storage-type: postgres_storage
+# could be sent using env var ACAPY_WALLET_STORAGE_CONFIG
+wallet-storage-config: '{"url":"localhost:5432","max_connections":5}'
+# could be sent using env var ACAPY_WALLET_STORAGE_CREDS
+wallet-storage-creds: '{"account":"postgres","password":"mysecretpassword","admin_account":"postgres","admin_password":"mysecretpassword"}'

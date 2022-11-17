@@ -1,0 +1,15 @@
+{
+   "schema":{
+      "schema_name":"Schema_Health_ID",
+      "schema_version":"1.0.0",
+      "attributes":[
+         "name",
+         "health_id_num",
+         "expiry",
+         "dob",
+         "issued",
+         "province"
+      ]
+   },
+   "cred_def_support_revocation":false
+}

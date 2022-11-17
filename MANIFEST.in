@@ -1,0 +1,5 @@
+include aries_cloudagent/config/default_logging_config.ini
+include requirements.txt
+include requirements.dev.txt
+include requirements.indy.txt
+include README.md

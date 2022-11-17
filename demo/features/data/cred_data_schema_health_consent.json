@@ -1,0 +1,29 @@
+{
+   "Data_BI_HealthValues":{
+      "cred_name":"Data_HealthConsent_NormalizedValues",
+      "schema_name":"Schema_Health_Consent",
+      "schema_version":"0.2.0",
+      "attributes":[
+         {
+            "name":"name",
+            "value":"Big Data Consent Firm"
+         },
+         {
+            "name":"jti_id",
+            "value":"97375899098359893987267983990020"
+         },
+         {
+            "name":"expiry",
+            "value":"04/02/2021"
+         },
+         {
+            "name":"phone",
+            "value":"x"
+         },
+         {
+            "name":"consented_on",
+            "value":"04/02/2020"
+         }
+      ]
+   }
+}

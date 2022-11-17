@@ -1,0 +1,56 @@
+{
+   "Data_BI_HealthValues":{
+      "cred_name":"Data_HealthConsent_NormalizedValues",
+      "schema_name":"Schema_Health_Consent_Revoc",
+      "schema_version":"1.2.0",
+      "attributes":[
+         {
+            "name":"name",
+            "value":"Big Data Consent Firm"
+         },
+         {
+            "name":"jti_id",
+            "value":"97375899098359893987267983990020"
+         },
+         {
+            "name":"expiry",
+            "value":"04/02/2021"
+         },
+         {
+            "name":"phone",
+            "value":"x"
+         },
+         {
+            "name":"consented_on",
+            "value":"04/02/2020"
+         }
+      ]
+   },
+   "Data_BI_HealthValues_Reissue":{
+      "cred_name":"Data_HealthConsent_NormalizedValues",
+      "schema_name":"Schema_Health_Consent_Revoc",
+      "schema_version":"1.2.0",
+      "attributes":[
+         {
+            "name":"name",
+            "value":"Bob Givesconsent"
+         },
+         {
+            "name":"jti_id",
+            "value":"998273597238957298375982"
+         },
+         {
+            "name":"expiry",
+            "value":"04/02/2022"
+         },
+         {
+            "name":"phone",
+            "value":"5555555555"
+         },
+         {
+            "name":"consented_on",
+            "value":"11/11/2020"
+         }
+      ]
+   }
+}
