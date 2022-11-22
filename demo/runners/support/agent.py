@@ -213,6 +213,7 @@ class DemoAgent:
             self.agency_wallet_did = self.did
             self.agency_wallet_key = self.wallet_key
 
+        self.multi_write_ledger_url = None
         if self.genesis_txn_list:
             updated_config_list = []
             with open(self.genesis_txn_list, "r") as stream:
@@ -225,6 +226,8 @@ class DemoAgent:
                         "$LEDGER_HOST", str(self.external_host)
                     )
                 updated_config_list.append(config)
+                if "is_write" in config and config["is_write"]:
+                    self.multi_write_ledger_url = config["genesis_url"].replace("/genesis", "")
             with open(self.genesis_txn_list, "w") as file:
                 documents = yaml.dump(updated_config_list, file)
 
@@ -479,7 +482,10 @@ class DemoAgent:
             # if registering a did for issuing indy credentials, publish the did on the ledger
             self.log(f"Registering {self.ident} ...")
             if not ledger_url:
-                ledger_url = LEDGER_URL
+                if self.multi_write_ledger_url:
+                    ledger_url = self.multi_write_ledger_url
+                else:
+                    ledger_url = LEDGER_URL
             if not ledger_url:
                 ledger_url = f"http://{self.external_host}:9000"
             data = {"alias": alias or self.ident}
@@ -501,6 +507,7 @@ class DemoAgent:
                 await asyncio.sleep(3.0)
                 nym_info = data
             else:
+                log_msg("using ledger: " + ledger_url + "/register")
                 resp = await self.client_session.post(
                     ledger_url + "/register", json=data
                 )
