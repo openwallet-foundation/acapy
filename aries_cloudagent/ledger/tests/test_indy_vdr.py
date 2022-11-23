@@ -9,8 +9,8 @@ import indy_vdr
 from ...core.in_memory import InMemoryProfile
 from ...indy.issuer import IndyIssuer
 from ...wallet.base import BaseWallet
-from ...wallet.key_type import KeyType
-from ...wallet.did_method import DIDMethod
+from ...wallet.key_type import KeyType, ED25519
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.did_info import DIDInfo
 
 from ..endpoint_type import EndpointType
@@ -67,7 +67,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        test_did = await wallet.create_public_did(SOV, ED25519)
         test_msg = indy_vdr.ledger.build_get_txn_request(test_did.did, 1, 1)
 
         async with ledger:
@@ -120,7 +120,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        test_did = await wallet.create_public_did(SOV, ED25519)
 
         async with ledger:
             test_msg = indy_vdr.ledger.build_get_txn_request(test_did.did, 1, 1)
@@ -188,7 +188,7 @@ class TestIndyVdrLedger:
             with pytest.raises(BadLedgerRequestError):
                 await ledger.txn_endorse(request_json=test_msg.body)
 
-            test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+            test_did = await wallet.create_public_did(SOV, ED25519)
             test_msg.set_endorser(test_did.did)
 
             endorsed_json = await ledger.txn_endorse(request_json=test_msg.body)
@@ -201,7 +201,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        test_did = await wallet.create_public_did(SOV, ED25519)
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
@@ -262,7 +262,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        test_did = await wallet.create_public_did(SOV, ED25519)
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
@@ -292,7 +292,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        test_did = await wallet.create_public_did(SOV, ED25519)
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
@@ -321,7 +321,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        test_did = await wallet.create_public_did(SOV, ED25519)
         issuer = async_mock.MagicMock(IndyIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
@@ -383,7 +383,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        test_did = await wallet.create_public_did(SOV, ED25519)
         schema_id = "55GkHamhTU1ZbTbV2ab9DE:2:schema_name:9.1"
         cred_def_id = "55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag"
         cred_def = {
@@ -598,7 +598,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        test_did = await wallet.create_public_did(SOV, ED25519)
         async with ledger:
             ledger.pool_handle.submit_request.side_effect = (
                 {"data": None},
@@ -675,7 +675,7 @@ class TestIndyVdrLedger:
     async def test_update_endpoint_for_did_calls_attr_json(self, ledger: IndyVdrLedger):
         routing_keys = ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"]
         wallet = (await ledger.profile.session()).wallet
-        test_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        test_did = await wallet.create_public_did(SOV, ED25519)
 
         async with ledger:
             with async_mock.patch.object(
@@ -742,8 +742,8 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet: BaseWallet = (await ledger.profile.session()).wallet
-        public_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
-        post_did = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+        public_did = await wallet.create_public_did(SOV, ED25519)
+        post_did = await wallet.create_local_did(SOV, ED25519)
         async with ledger:
             await ledger.register_nym(post_did.did, post_did.verkey)
         did = await wallet.get_local_did(post_did.did)
@@ -755,7 +755,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet: BaseWallet = (await ledger.profile.session()).wallet
-        public_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        public_did = await wallet.create_public_did(SOV, ED25519)
         async with ledger:
             await ledger.register_nym("55GkHamhTU1ZbTbV2ab9DE", "verkey")
 
@@ -898,7 +898,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet: BaseWallet = (await ledger.profile.session()).wallet
-        public_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        public_did = await wallet.create_public_did(SOV, ED25519)
         async with ledger:
             reg_id = (
                 "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
@@ -927,7 +927,7 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         wallet: BaseWallet = (await ledger.profile.session()).wallet
-        public_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        public_did = await wallet.create_public_did(SOV, ED25519)
         async with ledger:
             reg_id = (
                 "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
@@ -966,7 +966,7 @@ class TestIndyVdrLedger:
     @pytest.mark.asyncio
     async def test_rotate_did_keypair(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
-        public_did = await wallet.create_public_did(DIDMethod.SOV, KeyType.ED25519)
+        public_did = await wallet.create_public_did(SOV, ED25519)
 
         async with ledger:
             with async_mock.patch.object(
@@ -980,4 +980,5 @@ class TestIndyVdrLedger:
                     ]
                 ),
             ):
+                ledger.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
                 await ledger.rotate_public_did_keypair()

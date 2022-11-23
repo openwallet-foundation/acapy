@@ -1,5 +1,7 @@
 """Routing manager classes for tracking and inspecting routing records."""
 
+import asyncio
+import logging
 from typing import Coroutine, Sequence
 
 from ....core.error import BaseError
@@ -14,6 +16,12 @@ from .messages.route_update_request import RouteUpdateRequest
 from .models.route_record import RouteRecord
 from .models.route_update import RouteUpdate
 from .models.route_updated import RouteUpdated
+
+
+LOGGER = logging.getLogger(__name__)
+
+RECIP_ROUTE_PAUSE = 0.1
+RECIP_ROUTE_RETRY = 10
 
 
 class RoutingManagerError(BaseError):
@@ -54,21 +62,30 @@ class RoutingManager:
         if not recip_verkey:
             raise RoutingManagerError("Must pass non-empty recip_verkey")
 
-        try:
-            async with self._profile.session() as session:
-                record = await RouteRecord.retrieve_by_recipient_key(
-                    session, recip_verkey
+        i = 0
+        record = None
+        while not record:
+            try:
+                LOGGER.info(">>> fetching routing record for verkey: " + recip_verkey)
+                async with self._profile.session() as session:
+                    record = await RouteRecord.retrieve_by_recipient_key(
+                        session, recip_verkey
+                    )
+                LOGGER.info(">>> FOUND routing record for verkey: " + recip_verkey)
+                return record
+            except StorageDuplicateError:
+                LOGGER.info(">>> DUPLICATE routing record for verkey: " + recip_verkey)
+                raise RouteNotFoundError(
+                    f"More than one route record found with recipient key: {recip_verkey}"
                 )
-        except StorageDuplicateError:
-            raise RouteNotFoundError(
-                f"More than one route record found with recipient key: {recip_verkey}"
-            )
-        except StorageNotFoundError:
-            raise RouteNotFoundError(
-                f"No route found with recipient key: {recip_verkey}"
-            )
-
-        return record
+            except StorageNotFoundError:
+                LOGGER.info(">>> NOT FOUND routing record for verkey: " + recip_verkey)
+                i += 1
+                if i > RECIP_ROUTE_RETRY:
+                    raise RouteNotFoundError(
+                        f"No route found with recipient key: {recip_verkey}"
+                    )
+                await asyncio.sleep(RECIP_ROUTE_PAUSE)
 
     async def get_routes(
         self, client_connection_id: str = None, tag_filter: dict = None
@@ -136,6 +153,7 @@ class RoutingManager:
             )
         if not recipient_key:
             raise RoutingManagerError("Missing recipient_key")
+        LOGGER.info(">>> creating routing record for verkey: " + recipient_key)
         route = RouteRecord(
             connection_id=client_connection_id,
             wallet_id=internal_wallet_id,
@@ -143,6 +161,7 @@ class RoutingManager:
         )
         async with self._profile.session() as session:
             await route.save(session, reason="Created new route")
+        LOGGER.info(">>> CREATED routing record for verkey: " + recipient_key)
         return route
 
     async def update_routes(

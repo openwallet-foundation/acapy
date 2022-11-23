@@ -9,7 +9,7 @@ from .error import WalletError
 
 from .did_info import DIDInfo, KeyInfo
 from .key_type import KeyType
-from .did_method import DIDMethod
+from .did_method import SOV, DIDMethod
 
 
 class BaseWallet(ABC):
@@ -241,7 +241,7 @@ class BaseWallet(ABC):
         """
         did_info = await self.get_local_did(did)
 
-        if did_info.method != DIDMethod.SOV:
+        if did_info.method != SOV:
             raise WalletError("Setting DID endpoint is only allowed for did:sov DIDs")
         metadata = {**did_info.metadata}
         if not endpoint_type:

@@ -33,14 +33,6 @@ aries\_cloudagent.resolver.did\_resolver module
    :undoc-members:
    :show-inheritance:
 
-aries\_cloudagent.resolver.did\_resolver\_registry module
----------------------------------------------------------
-
-.. automodule:: aries_cloudagent.resolver.did_resolver_registry
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 aries\_cloudagent.resolver.routes module
 ----------------------------------------
 

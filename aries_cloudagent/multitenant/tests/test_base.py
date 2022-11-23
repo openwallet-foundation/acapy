@@ -18,9 +18,9 @@ from ...protocols.routing.v1_0.models.route_record import RouteRecord
 from ...storage.error import StorageNotFoundError
 from ...storage.in_memory import InMemoryStorage
 from ...wallet.did_info import DIDInfo
-from ...wallet.did_method import DIDMethod
+from ...wallet.did_method import SOV
 from ...wallet.in_memory import InMemoryWallet
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import ED25519
 from ...wallet.models.wallet_record import WalletRecord
 from ..base import BaseMultitenantManager, MultitenantManagerError
 from ..error import WalletKeyMissingError
@@ -244,8 +244,8 @@ class TestBaseMultitenantManager(AsyncTestCase):
             did="public-did",
             verkey="test_verkey",
             metadata={"meta": "data"},
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
 
         mock_route_manager = async_mock.MagicMock()
@@ -620,3 +620,18 @@ class TestBaseMultitenantManager(AsyncTestCase):
             assert wallets[0] == return_wallets[0]
             assert wallets[1] == return_wallets[3]
             assert get_wallet_by_key.call_count == 4
+
+    async def test_get_profile_for_key(self):
+        mock_wallet = async_mock.MagicMock()
+        mock_wallet.requires_external_key = False
+        with async_mock.patch.object(
+            self.manager,
+            "_get_wallet_by_key",
+            async_mock.CoroutineMock(return_value=mock_wallet),
+        ), async_mock.patch.object(
+            self.manager, "get_wallet_profile", async_mock.CoroutineMock()
+        ) as mock_get_wallet_profile:
+            profile = await self.manager.get_profile_for_key(
+                self.context, "test-verkey"
+            )
+            assert profile == mock_get_wallet_profile.return_value

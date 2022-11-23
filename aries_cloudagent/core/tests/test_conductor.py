@@ -8,16 +8,13 @@ from ...config.base_context import ContextBuilder
 from ...config.injection_context import InjectionContext
 from ...connections.models.conn_record import ConnRecord
 from ...connections.models.connection_target import ConnectionTarget
-from ...connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from ...connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ...core.event_bus import EventBus, MockEventBus
 from ...core.in_memory import InMemoryProfileManager
 from ...core.profile import ProfileManager
 from ...core.protocol_registry import ProtocolRegistry
+from ...multitenant.base import BaseMultitenantManager
+from ...multitenant.manager import MultitenantManager
 from ...protocols.coordinate_mediation.mediation_invite_store import (
     MediationInviteRecord,
 )
@@ -26,8 +23,6 @@ from ...protocols.coordinate_mediation.v1_0.models.mediation_record import (
 )
 from ...protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ...resolver.did_resolver import DIDResolver
-from ...multitenant.base import BaseMultitenantManager
-from ...multitenant.manager import MultitenantManager
 from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
 from ...transport.inbound.message import InboundMessage
@@ -36,14 +31,13 @@ from ...transport.outbound.base import OutboundDeliveryError
 from ...transport.outbound.manager import QueuedOutboundMessage
 from ...transport.outbound.message import OutboundMessage
 from ...transport.outbound.status import OutboundSendStatus
-from ...transport.wire_format import BaseWireFormat
 from ...transport.pack_format import PackWireFormat
+from ...transport.wire_format import BaseWireFormat
 from ...utils.stats import Collector
 from ...version import __version__
 from ...wallet.base import BaseWallet
-from ...wallet.key_type import KeyType
-from ...wallet.did_method import DIDMethod
-
+from ...wallet.did_method import SOV
+from ...wallet.key_type import ED25519
 from .. import conductor as test_module
 
 
@@ -132,8 +126,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
-                KeyType.ED25519,
+                SOV,
+                ED25519,
             )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
@@ -601,8 +595,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
         await wallet.create_public_did(
-            DIDMethod.SOV,
-            KeyType.ED25519,
+            SOV,
+            ED25519,
         )
 
         with async_mock.patch.object(
@@ -645,8 +639,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
         await wallet.create_public_did(
-            DIDMethod.SOV,
-            KeyType.ED25519,
+            SOV,
+            ED25519,
         )
 
         with async_mock.patch.object(
@@ -717,8 +711,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
-                KeyType.ED25519,
+                SOV,
+                ED25519,
             )
 
             mock_mgr.return_value.create_static_connection = async_mock.AsyncMock()
@@ -887,8 +881,8 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
-                KeyType.ED25519,
+                SOV,
+                ED25519,
             )
 
             await conductor.start()
@@ -1401,8 +1395,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
 
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
-                KeyType.ED25519,
+                SOV,
+                ED25519,
             )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
@@ -1438,8 +1432,8 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
 
             wallet = session.inject(BaseWallet)
             await wallet.create_public_did(
-                DIDMethod.SOV,
-                KeyType.ED25519,
+                SOV,
+                ED25519,
             )
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
