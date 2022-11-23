@@ -4,5 +4,6 @@ FROM faber-alice-demo
 RUN pip3 install --no-cache-dir -r demo/requirements.behave.txt
 
 WORKDIR ./demo
+ADD demo ./demo
 RUN chmod a+w .
 ENTRYPOINT ["behave"]

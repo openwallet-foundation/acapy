@@ -1,5 +1,9 @@
+#- id: local
+#  is_production: true
+#  genesis_url: 'http://$LEDGER_HOST:9000/genesis'
 - id: bcorvinTest
   is_production: true
+  is_write: true
   genesis_url: 'http://test.bcovrin.vonx.io/genesis'
 - id: greenlightTest
   is_production: true
