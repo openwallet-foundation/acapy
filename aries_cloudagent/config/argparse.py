@@ -891,13 +891,21 @@ class LedgerGroup(ArgumentGroup):
                         ledger_config_list.append(txn_config)
                         if "is_write" in txn_config and txn_config["is_write"]:
                             if "genesis_url" in txn_config:
-                                settings["ledger.genesis_url"] = txn_config["genesis_url"]
+                                settings["ledger.genesis_url"] = txn_config[
+                                    "genesis_url"
+                                ]
                             elif "genesis_file" in txn_config:
-                                settings["ledger.genesis_file"] = txn_config["genesis_file"]
+                                settings["ledger.genesis_file"] = txn_config[
+                                    "genesis_file"
+                                ]
                             elif "genesis_transactions" in txn_config:
-                                settings["ledger.genesis_transactions"] = txn_config["genesis_transactions"]
+                                settings["ledger.genesis_transactions"] = txn_config[
+                                    "genesis_transactions"
+                                ]
                             else:
-                                raise ArgsParseError("No genesis information provided for write ledger")
+                                raise ArgsParseError(
+                                    "No genesis information provided for write ledger"
+                                )
                     settings["ledger.ledger_config_list"] = ledger_config_list
                     multi_configured = True
             if not (single_configured or multi_configured):
@@ -908,9 +916,7 @@ class LedgerGroup(ArgumentGroup):
                     " run with no ledger)."
                 )
             if single_configured and multi_configured:
-                raise ArgsParseError(
-                    "Cannot configure both single- and multi-ledger."
-                )
+                raise ArgsParseError("Cannot configure both single- and multi-ledger.")
             if args.ledger_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
             if args.ledger_keepalive:

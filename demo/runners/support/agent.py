@@ -227,7 +227,9 @@ class DemoAgent:
                     )
                 updated_config_list.append(config)
                 if "is_write" in config and config["is_write"]:
-                    self.multi_write_ledger_url = config["genesis_url"].replace("/genesis", "")
+                    self.multi_write_ledger_url = config["genesis_url"].replace(
+                        "/genesis", ""
+                    )
             with open(self.genesis_txn_list, "w") as file:
                 documents = yaml.dump(updated_config_list, file)
 
