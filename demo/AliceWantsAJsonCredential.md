@@ -82,7 +82,7 @@ Congradulations, you are now ready to start issuing JSON-LD credentials!
 - You have created a (non-public) DID for Faber to use to sign/issue the credentials - you will need to copy the DID that you created above into the examples below (as `issuer`).
 - You have created a (non-public) DID for Alice to use as her `credentialSubject.id` - this is required for Alice to sign the proof (the `credentialSubject.id` is not required, but then the provided presentation can't be verified).
 
-To issue a credential, use the `/issue-credential-2.0/send` (or `/issue-credential-2.0/create-offer`) endpoint.  As mentioned above, if you are using the `/send` endpoint, you need to make sure to include `--no-auto` when starting both of the agents.
+To issue a credential, use the `/issue-credential-2.0/create-offer` endpoint.  (You can also use the `/issue-credential-2.0/send`) endpoint, if, as mentioned above, you have included the `--no-auto` when starting both of the agents.)
 
 You can test with this example payload (just replace the "connection_id", "issuer" key, "credentialSubject.id" and "proofType" with appropriate values:
 
