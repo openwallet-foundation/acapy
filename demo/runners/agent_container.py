@@ -1274,9 +1274,11 @@ async def create_agent_with_args(args, ident: str = None):
         )
 
     multi_ledger_config_path = None
+    genesis = None
     if "multi_ledger" in args and args.multi_ledger:
         multi_ledger_config_path = "./demo/multi_ledger_config.yml"
-    genesis = await default_genesis_txns()
+    else:
+        genesis = await default_genesis_txns()
     if not genesis and not multi_ledger_config_path:
         print("Error retrieving ledger genesis transactions")
         sys.exit(1)
