@@ -53,7 +53,11 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
 
     async def get_write_ledger(self) -> Optional[Tuple[str, IndySdkLedger]]:
         """Return the write IndySdkLedger instance."""
-        return self.write_ledger_info
+        # return self.write_ledger_info
+        if self.write_ledger_info:
+            return (self.write_ledger_info[0], self.profile.inject_or(BaseLedger))
+        else:
+            return None
 
     async def get_prod_ledgers(self) -> Mapping:
         """Return production ledgers mapping."""
@@ -83,7 +87,9 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         """
         try:
             indy_sdk_ledger = None
-            if ledger_id in self.production_ledgers:
+            if self.write_ledger_info and ledger_id == self.write_ledger_info[0]:
+                indy_sdk_ledger = self.get_write_ledger()
+            elif ledger_id in self.production_ledgers:
                 indy_sdk_ledger = self.production_ledgers.get(ledger_id)
             else:
                 indy_sdk_ledger = self.non_production_ledgers.get(ledger_id)
