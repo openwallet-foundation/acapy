@@ -28,7 +28,6 @@ from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
-# from ..ledger.base import BaseLedger
 
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
@@ -145,7 +144,6 @@ class Conductor:
                     self.root_profile.BACKEND_NAME == "askar"
                     and ledger.BACKEND_NAME == "indy-vdr"
                 ):
-                    # context.injector.bind_instance(BaseLedger, ledger)
                     context.injector.bind_provider(
                         IndyVerifier,
                         ClassProvider(
@@ -157,7 +155,6 @@ class Conductor:
                     self.root_profile.BACKEND_NAME == "indy"
                     and ledger.BACKEND_NAME == "indy"
                 ):
-                    # context.injector.bind_instance(BaseLedger, ledger)
                     context.injector.bind_provider(
                         IndyVerifier,
                         ClassProvider(

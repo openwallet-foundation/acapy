@@ -140,7 +140,9 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         cache_key = f"did_ledger_id_resolver::{did}"
         if bool(cache_did and self.cache and await self.cache.get(cache_key)):
             cached_ledger_id = await self.cache.get(cache_key)
-            if cached_ledger_id in self.production_ledgers:
+            if self.write_ledger_info and cached_ledger_id == self.write_ledger_info[0]:
+                return self.get_write_ledger()
+            elif cached_ledger_id in self.production_ledgers:
                 return (cached_ledger_id, self.production_ledgers.get(cached_ledger_id))
             elif cached_ledger_id in self.non_production_ledgers:
                 return (

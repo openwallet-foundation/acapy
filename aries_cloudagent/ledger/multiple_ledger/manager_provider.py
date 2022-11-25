@@ -102,7 +102,9 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             if ledger_is_production:
                                 indy_sdk_production_ledgers[ledger_id] = ledger_instance
                             else:
-                                indy_sdk_non_production_ledgers[ledger_id] = ledger_instance
+                                indy_sdk_non_production_ledgers[
+                                    ledger_id
+                                ] = ledger_instance
                     if settings.get_value("ledger.genesis_transactions"):
                         ledger_instance = self.root_profile.inject_or(BaseLedger)
                         ledger_id = "startup::" + ledger_instance.pool.name
