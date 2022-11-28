@@ -9,6 +9,7 @@ from typing import Optional, Tuple, Mapping
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
+from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.crypto import did_is_self_certified
 
