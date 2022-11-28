@@ -258,6 +258,12 @@ class OutOfBandManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     await conn_rec.save(session, reason="Created new invitation")
                     await conn_rec.attach_invitation(session, invi_msg)
+
+                    await conn_rec.attach_invitation(session, invi_msg)
+
+                    if metadata:
+                        for key, value in metadata.items():
+                            await conn_rec.metadata_set(session, key, value)
             else:
                 our_service = ServiceDecorator(
                     recipient_keys=[our_recipient_key],
