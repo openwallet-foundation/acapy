@@ -89,7 +89,9 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         try:
             indy_sdk_ledger = None
             if self.write_ledger_info and ledger_id == self.write_ledger_info[0]:
-                indy_sdk_ledger = self.get_write_ledger()
+                indy_sdk_ledger = await self.get_write_ledger()
+                if indy_sdk_ledger:
+                    indy_sdk_ledger = indy_sdk_ledger[1]
             elif ledger_id in self.production_ledgers:
                 indy_sdk_ledger = self.production_ledgers.get(ledger_id)
             else:
