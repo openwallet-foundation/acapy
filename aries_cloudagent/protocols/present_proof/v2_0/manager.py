@@ -195,6 +195,32 @@ class V20PresManager:
 
         return pres_ex_record
 
+    async def create_request_as_response(
+        self,
+        pres_ex_record: V20PresExRecord,
+        pres_request_message: V20PresRequest,
+    ):
+        """
+        Create a presentation exchange record for input presentation request.
+
+        Args:
+            pres_ex_record: Presentation exchange record for which to add presentation request
+            pres_request_message: Presentation request to use in exchange record
+
+        Returns:
+            Presentation exchange record, updated
+
+        """
+        pres_ex_record.state = V20PresExRecord.STATE_REQUEST_SENT
+        pres_ex_record.presentation_request = pres_request_message.indy_proof_request()
+        pres_ex_record.presentation_request_dict = pres_request_message
+        async with self._profile.session() as session:
+            await pres_ex_record.save(
+                session, reason="create v2.0 presentation request in response to a proposal"
+            )
+
+        return pres_ex_record
+
     async def receive_pres_request(self, pres_ex_record: V20PresExRecord):
         """
         Receive a presentation request.

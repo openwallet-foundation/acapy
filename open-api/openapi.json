@@ -3079,7 +3079,7 @@
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/AdminAPIMessageTracing"
+            "$ref" : "#/definitions/V20PresSendRequestAsResponseRequest"
           }
         }, {
           "name" : "pres_ex_id",
@@ -3395,14 +3395,14 @@
     "/present-proof/records/{pres_ex_id}/send-request" : {
       "post" : {
         "tags" : [ "present-proof v1.0" ],
-        "summary" : "Sends a presentation request in reference to a proposal",
+        "summary" : "Sends a presentation request in response to a proposal",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
           "name" : "body",
           "required" : false,
           "schema" : {
-            "$ref" : "#/definitions/AdminAPIMessageTracing"
+            "$ref" : "#/definitions/V10PresentationSendRequestAsResponseRequest"
           }
         }, {
           "name" : "pres_ex_id",
@@ -9680,6 +9680,23 @@
         }
       }
     },
+    "V10PresentationSendRequestAsResponseRequest" : {
+      "type" : "object",
+      "properties" : {
+        "comment" : {
+          "type" : "string",
+          "x-nullable" : true
+        },
+        "proof_request" : {
+          "$ref" : "#/definitions/IndyProofRequest"
+        },
+        "trace" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Whether to trace event (default false)"
+        }
+      }
+    },
     "V20CredAttrSpec" : {
       "type" : "object",
       "required" : [ "name", "value" ],
@@ -10721,6 +10738,23 @@
           "format" : "uuid",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           "description" : "Connection identifier"
+        },
+        "presentation_request" : {
+          "$ref" : "#/definitions/V20PresRequestByFormat"
+        },
+        "trace" : {
+          "type" : "boolean",
+          "example" : false,
+          "description" : "Whether to trace event (default false)"
+        }
+      }
+    },
+    "V20PresSendRequestAsResponseRequest" : {
+      "type" : "object",
+      "properties" : {
+        "comment" : {
+          "type" : "string",
+          "x-nullable" : true
         },
         "presentation_request" : {
           "$ref" : "#/definitions/V20PresRequestByFormat"

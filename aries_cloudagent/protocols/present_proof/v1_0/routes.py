@@ -152,19 +152,10 @@ class V10PresentationSendRequestRequestSchema(
     )
 
 
-class V10PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
+class V10PresentationSendRequestToProposalSchema(
+    V10PresentationCreateRequestRequestSchema
+):
     """Request schema for sending a proof request bound to a proposal."""
-
-    auto_verify = fields.Bool(
-        description="Verifier choice to auto-verify proof presentation",
-        required=False,
-        example=False,
-    )
-    trace = fields.Bool(
-        description="Whether to trace event (default false)",
-        required=False,
-        example=False,
-    )
 
 
 class CredentialsFetchQueryStringSchema(OpenAPISchema):
@@ -672,25 +663,62 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
     pres_ex_record.auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
-    try:
-        presentation_manager = PresentationManager(profile)
-        (
-            pres_ex_record,
-            presentation_request_message,
-        ) = await presentation_manager.create_bound_request(pres_ex_record)
-        result = pres_ex_record.serialize()
-    except (BaseModelError, LedgerError, StorageError) as err:
-        if pres_ex_record:
-            async with profile.session() as session:
-                await pres_ex_record.save_error_state(session, reason=err.roll_up)
-        # other party cares that we cannot continue protocol
-        await report_problem(
-            err,
-            ProblemReportReason.ABANDONED.value,
-            web.HTTPBadRequest,
-            pres_ex_record,
-            outbound_handler,
+
+    if not body.get("proof_request"):
+        try:
+            presentation_manager = PresentationManager(profile)
+            (
+                pres_ex_record,
+                presentation_request_message,
+            ) = await presentation_manager.create_bound_request(pres_ex_record)
+            result = pres_ex_record.serialize()
+        except (BaseModelError, LedgerError, StorageError) as err:
+            if pres_ex_record:
+                async with profile.session() as session:
+                    await pres_ex_record.save_error_state(session, reason=err.roll_up)
+            # other party cares that we cannot continue protocol
+            await report_problem(
+                err,
+                ProblemReportReason.ABANDONED.value,
+                web.HTTPBadRequest,
+                pres_ex_record,
+                outbound_handler,
+            )
+    else:
+        comment = body.get("comment")
+        indy_proof_request = body.get("proof_request")
+        if not indy_proof_request.get("nonce"):
+            indy_proof_request["nonce"] = await generate_pr_nonce()
+
+        presentation_request_message = PresentationRequest(
+            comment=comment,
+            request_presentations_attach=[
+                AttachDecorator.data_base64(
+                    mapping=indy_proof_request,
+                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                )
+            ],
         )
+        
+        try:
+            presentation_manager = PresentationManager(profile)
+            pres_ex_record = await presentation_manager.create_request_as_response(
+                presentation_request_message=presentation_request_message,
+                presentation_exchange_record=pres_ex_record,
+            )
+            result = pres_ex_record.serialize()
+        except (BaseModelError, StorageError) as err:
+            if pres_ex_record:
+                async with profile.session() as session:
+                    await pres_ex_record.save_error_state(session, reason=err.roll_up)
+            # other party cares that we cannot continue protocol
+            await report_problem(
+                err,
+                ProblemReportReason.ABANDONED.value,
+                web.HTTPBadRequest,
+                pres_ex_record,
+                outbound_handler,
+            )
 
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(

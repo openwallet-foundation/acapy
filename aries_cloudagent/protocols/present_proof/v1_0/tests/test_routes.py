@@ -766,6 +766,83 @@ class TestProofRoutes(AsyncTestCase):
                     mock_presentation_exchange.serialize.return_value
                 )
 
+    async def test_presentation_exchange_send_updated_bound_request(self):
+        self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
+        self.request.match_info = {
+            "pres_ex_id": "dummy",
+            "proof_request": {},
+        }
+
+        self.profile.context.injector.bind_instance(
+            BaseLedger,
+            async_mock.MagicMock(
+                __aenter__=async_mock.CoroutineMock(),
+                __aexit__=async_mock.CoroutineMock(),
+            ),
+        )
+        self.profile.context.injector.bind_instance(
+            IndyVerifier,
+            async_mock.MagicMock(
+                verify_presentation=async_mock.CoroutineMock(),
+            ),
+        )
+
+        with async_mock.patch(
+            "aries_cloudagent.connections.models.conn_record.ConnRecord",
+            autospec=True,
+        ) as mock_connection_record, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0.manager.PresentationManager",
+            autospec=True,
+        ) as mock_presentation_manager, async_mock.patch(
+            "aries_cloudagent.indy.util.generate_pr_nonce",
+            autospec=True,
+        ) as mock_generate_nonce, async_mock.patch.object(
+            test_module, "IndyPresPreview", autospec=True
+        ) as mock_presentation_proposal, async_mock.patch.object(
+            test_module, "PresentationRequest", autospec=True
+        ) as mock_presentation_request, async_mock.patch(
+            "aries_cloudagent.messaging.decorators.attach_decorator.AttachDecorator",
+            autospec=True,
+        ) as mock_attach_decorator, async_mock.patch(
+            "aries_cloudagent.protocols.present_proof.v1_0."
+            "models.presentation_exchange.V10PresentationExchange",
+            autospec=True,
+        ) as mock_presentation_exchange:
+
+            # Since we are mocking import
+            importlib.reload(test_module)
+
+            mock_presentation_exchange.connection_id = "dummy"
+            mock_presentation_exchange.state = (
+                test_module.V10PresentationExchange.STATE_PROPOSAL_RECEIVED
+            )
+            mock_presentation_exchange.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_presentation_exchange
+            )
+            mock_presentation_exchange.serialize = async_mock.MagicMock()
+            mock_presentation_exchange.serialize.return_value = {
+                "thread_id": "sample-thread-id"
+            }
+            mock_connection_record.is_ready = True
+            mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_connection_record
+            )
+
+            mock_mgr = async_mock.MagicMock(
+                create_bound_request=async_mock.CoroutineMock(
+                    return_value=(mock_presentation_exchange, mock_presentation_request)
+                )
+            )
+            mock_presentation_manager.return_value = mock_mgr
+
+            with async_mock.patch.object(
+                test_module.web, "json_response"
+            ) as mock_response:
+                await test_module.presentation_exchange_send_bound_request(self.request)
+                mock_response.assert_called_once_with(
+                    mock_presentation_exchange.serialize.return_value
+                )
+
     async def test_presentation_exchange_send_bound_request_not_found(self):
         self.request.json = async_mock.CoroutineMock(return_value={"trace": False})
         self.request.match_info = {"pres_ex_id": "dummy"}
