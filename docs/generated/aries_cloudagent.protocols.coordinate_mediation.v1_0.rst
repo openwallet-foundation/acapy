@@ -43,6 +43,14 @@ aries\_cloudagent.protocols.coordinate\_mediation.v1\_0.message\_types module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.protocols.coordinate\_mediation.v1\_0.normalization module
+----------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.coordinate_mediation.v1_0.normalization
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.protocols.coordinate\_mediation.v1\_0.route\_manager module
 -----------------------------------------------------------------------------
 
