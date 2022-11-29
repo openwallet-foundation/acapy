@@ -212,6 +212,33 @@ class PresentationManager:
 
         return presentation_exchange_record
 
+    async def create_request_as_response(
+        self,
+        presentation_exchange_record: V10PresentationExchange,
+        presentation_request_message: PresentationRequest,
+    ):
+        """
+        Create a presentation exchange record for input presentation request.
+
+        Args:
+            presentation_exchange_record: Presentation exchange record for which
+                to add presentation request
+            presentation_request_message: Presentation request to use in exchange record
+
+        Returns:
+            Presentation exchange record, updated
+
+        """
+        presentation_exchange_record.state = V10PresentationExchange.STATE_REQUEST_SENT
+        presentation_exchange_record.presentation_request = presentation_request_message.indy_proof_request()
+        presentation_exchange_record.presentation_request_dict = presentation_request_message
+        async with self._profile.session() as session:
+            await presentation_exchange_record.save(
+                session, reason="create presentation request in response to a proposal"
+            )
+
+        return presentation_exchange_record
+
     async def receive_request(
         self, presentation_exchange_record: V10PresentationExchange
     ):

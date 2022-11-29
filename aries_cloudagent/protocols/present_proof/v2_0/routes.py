@@ -1098,24 +1098,55 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
     )
     pres_ex_record.auto_remove = body.get("auto_remove")
     pres_manager = V20PresManager(profile)
-    try:
-        (
-            pres_ex_record,
-            pres_request_message,
-        ) = await pres_manager.create_bound_request(pres_ex_record)
-        result = pres_ex_record.serialize()
-    except (BaseModelError, LedgerError, StorageError) as err:
-        if pres_ex_record:
-            async with profile.session() as session:
-                await pres_ex_record.save_error_state(session, reason=err.roll_up)
-        # other party cares that we cannot continue protocol
-        await report_problem(
-            err,
-            ProblemReportReason.ABANDONED.value,
-            web.HTTPBadRequest,
-            pres_ex_record,
-            outbound_handler,
+
+    if not body.get("proof_request"):
+        try:
+            (
+                pres_ex_record,
+                pres_request_message,
+            ) = await pres_manager.create_bound_request(pres_ex_record)
+            result = pres_ex_record.serialize()
+        except (BaseModelError, LedgerError, StorageError) as err:
+            if pres_ex_record:
+                async with profile.session() as session:
+                    await pres_ex_record.save_error_state(session, reason=err.roll_up)
+            # other party cares that we cannot continue protocol
+            await report_problem(
+                err,
+                ProblemReportReason.ABANDONED.value,
+                web.HTTPBadRequest,
+                pres_ex_record,
+                outbound_handler,
+            )
+    else:
+        comment = body.get("comment")
+        pres_request_spec = body.get("presentation_request")
+        if pres_request_spec and V20PresFormat.Format.INDY.api in pres_request_spec:
+            await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
+        pres_request_message = V20PresRequest(
+            comment=comment,
+            will_confirm=True,
+            **_formats_attach(pres_request_spec, PRES_20_REQUEST, "request_presentations"),
         )
+
+        try:
+            pres_ex_record = await pres_manager.create_request_as_response(
+                pres_request_message=pres_request_message,
+                pres_ex_record=pres_ex_record,
+            )
+            result = pres_ex_record.serialize()
+        except (BaseModelError, StorageError) as err:
+            if pres_ex_record:
+                async with profile.session() as session:
+                    await pres_ex_record.save_error_state(session, reason=err.roll_up)
+            # other party cares that we cannot continue protocol
+            await report_problem(
+                err,
+                ProblemReportReason.ABANDONED.value,
+                web.HTTPBadRequest,
+                pres_ex_record,
+                outbound_handler,
+            )
 
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
