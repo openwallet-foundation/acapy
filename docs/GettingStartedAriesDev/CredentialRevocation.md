@@ -151,3 +151,33 @@ further customize notification handling.
 If the argument `--monitor-revocation-notification` is used on startup, a
 webhook with the topic `revocation-notification` and a payload containing the
 thread ID and comment is emitted to registered webhook urls.
+
+## Manually Creating Revocation Registries
+
+The process for creating revocation registries is completely automated - when you create a Credential Definition with revocation enabled, a revocation registry is automatically created (in fact 2 registries are created), and when a registry fills up, a new one is automatically created.
+
+However the Aca-Py admin api supports endpoints to explicitely create a new revocation registry, if you desire.
+
+There are several endpoints that must be called, and they must be called in this order:
+
+1. Create revoc registry `POST /revocation/create-registry`
+
+   - you need to provide the credential definition id and the size of the registry
+
+2. Fix the tails file URI `PATCH /revocation/registry/{rev_reg_id}`
+
+   - here you need to provide the full URI that will be written to the ledger, for example:
+
+```
+{
+  "tails_public_uri": "http://host.docker.internal:6543/VDKEEMMSRTEqK4m7iiq5ZL:4:VDKEEMMSRTEqK4m7iiq5ZL:3:CL:8:faber.agent.degree_schema:CL_ACCUM:3cb5c439-928c-483c-a9a8-629c307e6b2d"
+}
+```
+
+3. Post the revoc def to the ledger `POST /revocation/registry/{rev_reg_id}/definition`
+
+   - if you are an author (i.e. have a DID with restricted ledger write access) then this transaction may need to go through an endorser
+
+4. Write the tails file `PUT /revocation/registry/{rev_reg_id}/tails-file`
+
+   - the tails server will check that the registry definition is already written to the ledger
