@@ -212,8 +212,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         schema = test_module.V20PresSpecByFormatRequestSchema()
         schema.validate_fields({"indy": {"...": "..."}})
         schema.validate_fields({"dif": {"...": "..."}})
-        with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
+        schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):

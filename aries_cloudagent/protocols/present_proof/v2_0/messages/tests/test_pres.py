@@ -1662,6 +1662,129 @@ INDY_PROOF = json.loads(  # indy returns proof json-encoded: json-decode before 
     }"""
 )
 
+DIF_PROOF = json.loads(
+    """[
+        {
+            "@context":[
+                "https://www.w3.org/2018/credentials/v1"
+            ],
+            "type":[
+                "VerifiablePresentation"
+            ],
+            "verifiableCredential":[
+                {
+                    "@context":[
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                        "https://w3id.org/security/bbs/v1"
+                    ],
+                    "id":"https://issuer.oidp.uscis.gov/credentials/83627465",
+                    "type":[
+                        "PermanentResidentCard",
+                        "VerifiableCredential"
+                    ],
+                    "credentialSubject":{
+                        "id":"did:example:b34ca6cd37bbf23",
+                        "type":[
+                            "Person",
+                            "PermanentResident"
+                        ],
+                        "givenName":"JOHN"
+                    },
+                    "issuanceDate":"2010-01-01T19:53:24Z",
+                    "issuer":"did:key:zUC74bgefTdc43KS1psXgXf4jLaHyaj2qCQqQTXrtmSYGf1PxiJhrH6LGpaBMyj6tqAKmjGyMaS4RfNo2an77vT1HfzJUNPk4H7TCuJvSp4vet4Cu67kn2JSegoQNFSA1tbwU8v",
+                    "proof":{
+                        "type":"BbsBlsSignatureProof2020",
+                        "nonce":"3AuruhJQrXtEgiagiJ+FwVf2S0SnzUDJvnO61YecQsJ7ImR1mPcoVjJJ0HOhfkFpoYI=",
+                        "proofValue":"ABkBuAaPlP5A7JWY78Xf69oBnsMLcD1RXbIFYhcLoXPXW12CG9glnnqnPLsGri5xsA3LcP0kg74X+sAjKXGRGy3uvp412Dm0FuohYNboQcLne5KOAa5AxU4bjmwQsxdfduVqhriro1N+YTkuB4SMmO/5ooL0N3OHsYdExg7nSzWqmZoqgp+3CwIxF0a/oyKTcxJORuIqAAAAdInlL9teSIX49NJGEZfBO7IrdjT2iggH/G0AlPWoEvrWIbuCRQ69K83n5o7oJVjqhAAAAAIaVmlAD6+FEKA4eg0OaWOKPrd5Kq8rv0vIwjJ71egxll0Fqq4zDWQ/+yl3Pteh0Wyuyvpm19/sj6tiCWj4PkA+rpxtR2bXpnrCTKUffFFNBjVvVziXDS0KWkGUB7XU9mjUa4USC7Iub3bZZCnFjQA5AAAADzkGwGD837r33e7OTrGEti8eAkvFDcyCgA4ck/X+5HJjAJclHWbl4SNQR8CiNZyzJpvxW+jbNBcwmEvocYArddk3F78Ki0Qnp6aU9eDgfOOx1iW2BXLUjrhq5I2hP5/WQF3CEDYRjczGjzM9T8/coeC36YAp0zJunIXUKb8SPDSOISafibYRYFB4xhlWKXWloDelafyujOBST8KZNM8FmF4DSbXrO8vmZbjuR/8ntUcUK7X2rNbuZ3M5eWZDF8pL+SA9gQitKfPHEocoYAdhgEAM7ZNAJ+TgOcx9gtZIhDWKDNnFxIeoOAylbD1xZd9xbWtq3Bk3R79xqsKxFRJRNxk/9b6fJruP292+qM5lxcZ1jUz/dJUYFI93hH4Mso75CjGRN78MAY9SNifl6H8qcxTpBn4332LlFhRznLbtnc4YSWA/fvVqaN9h2zCH/6AdbLKXGffV34EF7DadwJsi9jsc+YlSMn6qaIUIDTdGLwh4KKpSH5bVbg/mVCcXPTJplFgYwRsOdiQbZY/740dJyo1lPjQ0Lvdio8W2M8c73ujeJU70CNLkgjJAMUPGrCFtGxBH2eeLBQ0P95qRZAIcJ7U0MibZLaRjoUOuTla5BIt2038PJ6XhcY6BEJaLyJOPEQ==",
+                        "verificationMethod":"did:key:zUC74bgefTdc43KS1psXgXf4jLaHyaj2qCQqQTXrtmSYGf1PxiJhrH6LGpaBMyj6tqAKmjGyMaS4RfNo2an77vT1HfzJUNPk4H7TCuJvSp4vet4Cu67kn2JSegoQNFSA1tbwU8v#zUC74bgefTdc43KS1psXgXf4jLaHyaj2qCQqQTXrtmSYGf1PxiJhrH6LGpaBMyj6tqAKmjGyMaS4RfNo2an77vT1HfzJUNPk4H7TCuJvSp4vet4Cu67kn2JSegoQNFSA1tbwU8v",
+                        "proofPurpose":"assertionMethod",
+                        "created":"2021-05-05T15:22:30.523465"
+                    }
+                }
+            ],
+            "presentation_submission":{
+                "id":"a5fcfe44-2c30-497d-af02-98e539da9a0f",
+                "definition_id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+                "descriptor_map":[
+                    {
+                        "id":"citizenship_input_1",
+                        "format":"ldp_vp",
+                        "path":"$.verifiableCredential[0]"
+                    }
+                ]
+            },
+            "proof":{
+                "type":"Ed25519Signature2018",
+                "verificationMethod":"did:sov:4QxzWk3ajdnEA37NdNU5Kt#key-1",
+                "created":"2021-05-05T15:23:03.023971",
+                "proofPurpose":"authentication",
+                "challenge":"40429d49-5e8f-4ffc-baf8-e332412f1247",
+                "jws":"eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..2uBYmg7muE9ZPVeAGo_ibVfLkCjf2hGshr2o5i8pAwFyNBM-kDHXofuq1MzJgb19wzb01VIu91hY_ajjt9KFAA"
+            }
+        },
+        {
+            "@context":[
+                "https://www.w3.org/2018/credentials/v1"
+            ],
+            "type":[
+                "VerifiablePresentation"
+            ],
+            "verifiableCredential":[
+                {
+                    "@context":[
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/citizenship/v1",
+                        "https://w3id.org/security/bbs/v1"
+                    ],
+                    "id":"https://issuer.oidp.uscis.gov/credentials/83627465",
+                    "type":[
+                        "PermanentResidentCard",
+                        "VerifiableCredential"
+                    ],
+                    "credentialSubject":{
+                        "id":"did:example:b34ca6cd37bbf23",
+                        "type":[
+                            "Person",
+                            "PermanentResident"
+                        ],
+                        "givenName":"JOHN"
+                    },
+                    "issuanceDate":"2010-01-01T19:53:24Z",
+                    "issuer":"did:key:zUC74bgefTdc43KS1psXgXf4jLaHyaj2qCQqQTXrtmSYGf1PxiJhrH6LGpaBMyj6tqAKmjGyMaS4RfNo2an77vT1HfzJUNPk4H7TCuJvSp4vet4Cu67kn2JSegoQNFSA1tbwU8v",
+                    "proof":{
+                        "type":"BbsBlsSignatureProof2020",
+                        "nonce":"3AuruhJQrXtEgiagiJ+FwVf2S0SnzUDJvnO61YecQsJ7ImR1mPcoVjJJ0HOhfkFpoYI=",
+                        "proofValue":"ABkBuAaPlP5A7JWY78Xf69oBnsMLcD1RXbIFYhcLoXPXW12CG9glnnqnPLsGri5xsA3LcP0kg74X+sAjKXGRGy3uvp412Dm0FuohYNboQcLne5KOAa5AxU4bjmwQsxdfduVqhriro1N+YTkuB4SMmO/5ooL0N3OHsYdExg7nSzWqmZoqgp+3CwIxF0a/oyKTcxJORuIqAAAAdInlL9teSIX49NJGEZfBO7IrdjT2iggH/G0AlPWoEvrWIbuCRQ69K83n5o7oJVjqhAAAAAIaVmlAD6+FEKA4eg0OaWOKPrd5Kq8rv0vIwjJ71egxll0Fqq4zDWQ/+yl3Pteh0Wyuyvpm19/sj6tiCWj4PkA+rpxtR2bXpnrCTKUffFFNBjVvVziXDS0KWkGUB7XU9mjUa4USC7Iub3bZZCnFjQA5AAAADzkGwGD837r33e7OTrGEti8eAkvFDcyCgA4ck/X+5HJjAJclHWbl4SNQR8CiNZyzJpvxW+jbNBcwmEvocYArddk3F78Ki0Qnp6aU9eDgfOOx1iW2BXLUjrhq5I2hP5/WQF3CEDYRjczGjzM9T8/coeC36YAp0zJunIXUKb8SPDSOISafibYRYFB4xhlWKXWloDelafyujOBST8KZNM8FmF4DSbXrO8vmZbjuR/8ntUcUK7X2rNbuZ3M5eWZDF8pL+SA9gQitKfPHEocoYAdhgEAM7ZNAJ+TgOcx9gtZIhDWKDNnFxIeoOAylbD1xZd9xbWtq3Bk3R79xqsKxFRJRNxk/9b6fJruP292+qM5lxcZ1jUz/dJUYFI93hH4Mso75CjGRN78MAY9SNifl6H8qcxTpBn4332LlFhRznLbtnc4YSWA/fvVqaN9h2zCH/6AdbLKXGffV34EF7DadwJsi9jsc+YlSMn6qaIUIDTdGLwh4KKpSH5bVbg/mVCcXPTJplFgYwRsOdiQbZY/740dJyo1lPjQ0Lvdio8W2M8c73ujeJU70CNLkgjJAMUPGrCFtGxBH2eeLBQ0P95qRZAIcJ7U0MibZLaRjoUOuTla5BIt2038PJ6XhcY6BEJaLyJOPEQ==",
+                        "verificationMethod":"did:key:zUC74bgefTdc43KS1psXgXf4jLaHyaj2qCQqQTXrtmSYGf1PxiJhrH6LGpaBMyj6tqAKmjGyMaS4RfNo2an77vT1HfzJUNPk4H7TCuJvSp4vet4Cu67kn2JSegoQNFSA1tbwU8v#zUC74bgefTdc43KS1psXgXf4jLaHyaj2qCQqQTXrtmSYGf1PxiJhrH6LGpaBMyj6tqAKmjGyMaS4RfNo2an77vT1HfzJUNPk4H7TCuJvSp4vet4Cu67kn2JSegoQNFSA1tbwU8v",
+                        "proofPurpose":"assertionMethod",
+                        "created":"2021-05-05T15:22:30.523465"
+                    }
+                }
+            ],
+            "presentation_submission":{
+                "id":"a5fcfe44-2c30-497d-af02-98e539da9a0f",
+                "definition_id":"32f54163-7166-48f1-93d8-ff217bdb0653",
+                "descriptor_map":[
+                    {
+                        "id":"citizenship_input_2",
+                        "format":"ldp_vp",
+                        "path":"$.verifiableCredential[0]"
+                    }
+                ]
+            },
+            "proof":{
+                "type":"Ed25519Signature2018",
+                "verificationMethod":"did:sov:4QxzWk3ajdnEA37NdNU5Kt#key-1",
+                "created":"2021-05-05T15:23:03.023971",
+                "proofPurpose":"authentication",
+                "challenge":"40429d49-5e8f-4ffc-baf8-e332412f1247",
+                "jws":"eyJhbGciOiAiRWREU0EiLCAiYjY0IjogZmFsc2UsICJjcml0IjogWyJiNjQiXX0..2uBYmg7muE9ZPVeAGo_ibVfLkCjf2hGshr2o5i8pAwFyNBM-kDHXofuq1MzJgb19wzb01VIu91hY_ajjt9KFAA"
+            }
+        }
+    ]"""
+)
+
 PRES = V20Pres(
     comment="Test",
     formats=[
@@ -1678,6 +1801,22 @@ PRES = V20Pres(
     ],
 )
 
+PRES_DIF = V20Pres(
+    comment="Test",
+    formats=[
+        V20PresFormat(
+            attach_id="dif",
+            format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+        )
+    ],
+    presentations_attach=[
+        AttachDecorator.data_json(
+            mapping=DIF_PROOF,
+            ident="dif",
+        )
+    ],
+)
+
 
 class TestV20Pres(TestCase):
     """Presentation tests."""
@@ -1688,6 +1827,11 @@ class TestV20Pres(TestCase):
         assert len(PRES.formats) == len(PRES.presentations_attach)
         assert PRES.attachment(V20PresFormat.Format.INDY) == INDY_PROOF
         assert PRES._type == DIDCommPrefix.qualify_current(PRES_20)
+
+        assert PRES_DIF.presentations_attach[0].content == DIF_PROOF
+        assert len(PRES_DIF.formats) == len(PRES.presentations_attach)
+        assert PRES_DIF.attachment(V20PresFormat.Format.DIF) == DIF_PROOF
+        assert PRES_DIF._type == DIDCommPrefix.qualify_current(PRES_20)
 
     def test_attachment_no_target_format(self):
         """Test attachment behaviour for only unknown formats."""
@@ -1740,3 +1884,9 @@ class TestV20Pres(TestCase):
             }
         )
         V20Pres.deserialize(pres_dict)
+
+    def test_serde_dif(self):
+        """Test deserialization dif."""
+        pres_dict = PRES_DIF.serialize()
+        pres_obj = V20Pres.deserialize(pres_dict)
+        assert type(pres_obj) == V20Pres
