@@ -21,7 +21,7 @@ from ......vc.ld_proofs import (
 )
 from ......vc.vc_ld.verify import verify_presentation
 from ......wallet.base import BaseWallet
-from ......wallet.key_type import KeyType
+from ......wallet.key_type import ED25519, BLS12381G2
 
 from .....problem_report.v1_0.message import ProblemReport
 
@@ -56,14 +56,12 @@ class DIFPresFormatHandler(V20PresFormatHandler):
     format = V20PresFormat.Format.DIF
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        Ed25519Signature2018: KeyType.ED25519,
+        Ed25519Signature2018: ED25519,
     }
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
-        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = KeyType.BLS12381G2
-        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[
-            BbsBlsSignatureProof2020
-        ] = KeyType.BLS12381G2
+        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
+        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignatureProof2020] = BLS12381G2
 
     async def _get_all_suites(self, wallet: BaseWallet):
         """Get all supported suites for verifying presentation."""
@@ -474,11 +472,22 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 challenge = pres_request["options"].get("challenge", str(uuid4()))
             if not challenge:
                 challenge = str(uuid4())
-            pres_ver_result = await verify_presentation(
-                presentation=dif_proof,
-                suites=await self._get_all_suites(wallet=wallet),
-                document_loader=self._profile.inject(DocumentLoader),
-                challenge=challenge,
-            )
+            if isinstance(dif_proof, Sequence):
+                for proof in dif_proof:
+                    pres_ver_result = await verify_presentation(
+                        presentation=proof,
+                        suites=await self._get_all_suites(wallet=wallet),
+                        document_loader=self._profile.inject(DocumentLoader),
+                        challenge=challenge,
+                    )
+                    if not pres_ver_result.verified:
+                        break
+            else:
+                pres_ver_result = await verify_presentation(
+                    presentation=dif_proof,
+                    suites=await self._get_all_suites(wallet=wallet),
+                    document_loader=self._profile.inject(DocumentLoader),
+                    challenge=challenge,
+                )
             pres_ex_record.verified = json.dumps(pres_ver_result.verified)
             return pres_ex_record

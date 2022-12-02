@@ -1,5 +1,6 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
+
 from ......vc.ld_proofs.error import LinkedDataProofException
 from ......vc.ld_proofs.check import get_properties_without_context
 import logging
@@ -35,7 +36,7 @@ from ......vc.ld_proofs import (
 from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from ......wallet.base import BaseWallet, DIDInfo
 from ......wallet.error import WalletNotFoundError
-from ......wallet.key_type import KeyType
+from ......wallet.key_type import BLS12381G2, ED25519
 
 from ...message_types import (
     ATTACHMENT_FORMAT,
@@ -64,19 +65,19 @@ SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     AuthenticationProofPurpose.term,
 }
 SUPPORTED_ISSUANCE_SUITES = {Ed25519Signature2018}
-SIGNATURE_SUITE_KEY_TYPE_MAPPING = {Ed25519Signature2018: KeyType.ED25519}
+SIGNATURE_SUITE_KEY_TYPE_MAPPING = {Ed25519Signature2018: ED25519}
 
 
 # We only want to add bbs suites to supported if the module is installed
 if BbsBlsSignature2020.BBS_SUPPORTED:
     SUPPORTED_ISSUANCE_SUITES.add(BbsBlsSignature2020)
-    SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = KeyType.BLS12381G2
+    SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
 
 
 PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
-    suite.signature_type: suite
-    for suite, key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items()
+    suite.signature_type: suite for suite in SIGNATURE_SUITE_KEY_TYPE_MAPPING
 }
+
 
 KEY_TYPE_SIGNATURE_SUITE_MAPPING = {
     key_type: suite for suite, key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items()
@@ -503,7 +504,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         # Remove values from cred that are not part of detail
         cred_dict.pop("proof")
-        credential_status = cred_dict.pop("credentialStatus", None)
+        credential_status = cred_dict.get("credentialStatus", None)
         detail_status = detail.options.credential_status
 
         if cred_dict != detail_dict["credential"]:

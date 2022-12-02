@@ -20,6 +20,7 @@ from runners.support.agent import (  # noqa:E402
     start_mediator_agent,
     connect_wallet_to_mediator,
     start_endorser_agent,
+    connect_wallet_to_endorser,
     CRED_FORMAT_INDY,
     CRED_FORMAT_JSON_LD,
     DID_METHOD_KEY,
@@ -395,6 +396,10 @@ class AriesAgent(DemoAgent):
             )
             pres_request_indy = message["by_format"].get("pres_request", {}).get("indy")
             pres_request_dif = message["by_format"].get("pres_request", {}).get("dif")
+            request = {}
+
+            if not pres_request_dif and not pres_request_indy:
+                raise Exception("Invalid presentation request received")
 
             if pres_request_indy:
                 # include self-attested attributes (not included in credentials)
@@ -409,6 +414,8 @@ class AriesAgent(DemoAgent):
                         f"/present-proof-2.0/records/{pres_ex_id}/credentials"
                     )
                     if creds:
+                        # select only indy credentials
+                        creds = [x for x in creds if "cred_info" in x]
                         if "timestamp" in creds[0]["cred_info"]["attrs"]:
                             sorted_creds = sorted(
                                 creds,
@@ -444,46 +451,62 @@ class AriesAgent(DemoAgent):
                                 ]
                             }
 
-                    log_status("#25 Generate the proof")
-                    request = {
+                    log_status("#25 Generate the indy proof")
+                    indy_request = {
                         "indy": {
                             "requested_predicates": predicates,
                             "requested_attributes": revealed,
                             "self_attested_attributes": self_attested,
                         }
                     }
+                    request.update(indy_request)
                 except ClientError:
                     pass
 
-            elif pres_request_dif:
+            if pres_request_dif:
                 try:
                     # select credentials to provide for the proof
                     creds = await self.admin_GET(
                         f"/present-proof-2.0/records/{pres_ex_id}/credentials"
                     )
                     if creds and 0 < len(creds):
+                        # select only dif credentials
+                        creds = [x for x in creds if "issuanceDate" in x]
                         creds = sorted(
                             creds,
                             key=lambda c: c["issuanceDate"],
                             reverse=True,
                         )
-                        record_id = creds[0]["record_id"]
+                        records = creds
                     else:
-                        record_id = None
+                        records = []
 
-                    log_status("#25 Generate the proof")
-                    request = {
+                    log_status("#25 Generate the dif proof")
+                    dif_request = {
                         "dif": {},
                     }
                     # specify the record id for each input_descriptor id:
-                    request["dif"]["record_ids"] = {}
+                    dif_request["dif"]["record_ids"] = {}
                     for input_descriptor in pres_request_dif["presentation_definition"][
                         "input_descriptors"
                     ]:
-                        request["dif"]["record_ids"][input_descriptor["id"]] = [
-                            record_id,
-                        ]
-                    log_msg("presenting ld-presentation:", request)
+                        input_descriptor_schema_uri = []
+                        for element in input_descriptor["schema"]:
+                            input_descriptor_schema_uri.append(element["uri"])
+
+                        for record in records:
+                            if self.check_input_descriptor_record_id(
+                                input_descriptor_schema_uri, record
+                            ):
+                                record_id = record["record_id"]
+                                dif_request["dif"]["record_ids"][
+                                    input_descriptor["id"]
+                                ] = [
+                                    record_id,
+                                ]
+                                break
+                    log_msg("presenting ld-presentation:", dif_request)
+                    request.update(dif_request)
 
                     # NOTE that the holder/prover can also/or specify constraints by including the whole proof request
                     # and constraining the presented credentials by adding filters, for example:
@@ -507,9 +530,6 @@ class AriesAgent(DemoAgent):
 
                 except ClientError:
                     pass
-
-            else:
-                raise Exception("Invalid presentation request received")
 
             log_status("#26 Send the proof to X: " + json.dumps(request))
             await self.admin_POST(
@@ -611,6 +631,19 @@ class AriesAgent(DemoAgent):
             )
             return cred_def_id
 
+    def check_input_descriptor_record_id(
+        self, input_descriptor_schema_uri, record
+    ) -> bool:
+        result = False
+        for uri in input_descriptor_schema_uri:
+            for record_type in record["type"]:
+                if record_type in uri:
+                    result = True
+                    break
+                result = False
+
+        return result
+
 
 class AgentContainer:
     def __init__(
@@ -656,6 +689,7 @@ class AgentContainer:
         self.seed = seed
         self.aip = aip
         self.arg_file = arg_file
+        self.endorser_agent = None
         self.endorser_role = endorser_role
         if endorser_role:
             # endorsers and authors need public DIDs (assume cred_type is Indy)
@@ -709,9 +743,11 @@ class AgentContainer:
 
         await self.agent.listen_webhooks(self.start_port + 2)
 
-        if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
-            await self.agent.register_did(cred_type=CRED_FORMAT_INDY)
-            log_msg("Created public DID")
+        # create public DID ... UNLESS we are an author ...
+        if (not self.endorser_role) or (self.endorser_role == "endorser"):
+            if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
+                await self.agent.register_did(cred_type=CRED_FORMAT_INDY)
+                log_msg("Created public DID")
 
         # if we are endorsing, create the endorser agent first, then we can use the
         # multi-use invitation to auto-connect the agent on startup
@@ -753,19 +789,46 @@ class AgentContainer:
             rand_name = str(random.randint(100_000, 999_999))
             await self.agent.register_or_switch_wallet(
                 self.ident + ".initial." + rand_name,
-                public_did=self.public_did,
+                public_did=self.public_did
+                and ((not self.endorser_role) or (not self.endorser_role == "author")),
                 webhook_port=None,
                 mediator_agent=self.mediator_agent,
                 endorser_agent=self.endorser_agent,
                 taa_accept=self.taa_accept,
             )
-        elif self.mediation:
-            # we need to pre-connect the agent to its mediator
-            if not await connect_wallet_to_mediator(self.agent, self.mediator_agent):
-                raise Exception("Mediation setup FAILED :-(")
         else:
-            if self.taa_accept:
-                await self.agent.taa_accept()
+            if self.mediation:
+                # we need to pre-connect the agent to its mediator
+                self.agent.log("Connect wallet to mediator ...")
+                if not await connect_wallet_to_mediator(
+                    self.agent, self.mediator_agent
+                ):
+                    raise Exception("Mediation setup FAILED :-(")
+            if self.endorser_agent:
+                self.agent.log("Connect wallet to endorser ...")
+                if not await connect_wallet_to_endorser(
+                    self.agent, self.endorser_agent
+                ):
+                    raise Exception("Endorser setup FAILED :-(")
+        if self.taa_accept:
+            await self.agent.taa_accept()
+
+        # if we are an author, create our public DID here ...
+        if (
+            self.endorser_role
+            and self.endorser_role == "author"
+            and self.endorser_agent
+        ):
+            if self.public_did and self.cred_type != CRED_FORMAT_JSON_LD:
+                new_did = await self.agent.admin_POST("/wallet/did/create")
+                self.agent.did = new_did["result"]["did"]
+                await self.agent.register_did(
+                    did=new_did["result"]["did"],
+                    verkey=new_did["result"]["verkey"],
+                )
+                await self.agent.admin_POST("/wallet/did/public?did=" + self.agent.did)
+                await asyncio.sleep(3.0)
+                log_msg("Created public DID")
 
         if self.public_did and self.cred_type == CRED_FORMAT_JSON_LD:
             # create did of appropriate type
@@ -1243,9 +1306,11 @@ async def create_agent_with_args(args, ident: str = None):
         )
 
     multi_ledger_config_path = None
+    genesis = None
     if "multi_ledger" in args and args.multi_ledger:
         multi_ledger_config_path = "./demo/multi_ledger_config.yml"
-    genesis = await default_genesis_txns()
+    else:
+        genesis = await default_genesis_txns()
     if not genesis and not multi_ledger_config_path:
         print("Error retrieving ledger genesis transactions")
         sys.exit(1)

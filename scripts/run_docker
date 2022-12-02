@@ -33,6 +33,7 @@ for arg in "$@"; do
     done
   fi
 done
+ACAPY_NETWORK_NAME="${NETWORK_NAME}"
 if [ -n "${ENABLE_PTVSD}" ]; then
   ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
@@ -48,5 +49,12 @@ if [ "$OSTYPE" == "msys" ]; then
 fi
 
 RAND_NAME=$(env LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1)
-$CONTAINER_RUNTIME run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" \
+if [ -z "$NETWORK_NAME" ]; then
+  echo "No Docker network specified."
+  $CONTAINER_RUNTIME run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" \
     $ARGS aries-cloudagent-run "$@"
+else
+  echo "${ACAPY_NETWORK_NAME} Docker network specified."
+  $CONTAINER_RUNTIME run --rm -ti --network $ACAPY_NETWORK_NAME --name "aries-cloudagent-runner_${RAND_NAME}" \
+    $ARGS aries-cloudagent-run "$@"
+fi

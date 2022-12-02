@@ -44,7 +44,7 @@ class IndyCredRequestSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     prover_did = fields.Str(
-        requred=True,
+        required=True,
         description="Prover DID",
         **INDY_DID,
     )

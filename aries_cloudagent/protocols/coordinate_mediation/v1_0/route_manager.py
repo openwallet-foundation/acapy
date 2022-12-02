@@ -14,12 +14,13 @@ from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
 from ....wallet.base import BaseWallet
 from ....wallet.did_info import DIDInfo
-from ....wallet.did_method import DIDMethod
-from ....wallet.key_type import KeyType
+from ....wallet.did_method import SOV
+from ....wallet.key_type import ED25519
 from ...routing.v1_0.models.route_record import RouteRecord
 from .manager import MediationManager
 from .messages.keylist_update import KeylistUpdate
 from .models.mediation_record import MediationRecord
+from .normalization import normalize_from_did_key
 
 
 LOGGER = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class RouteManager(ABC):
             async with profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 # Create new DID for connection
-                my_info = await wallet.create_local_did(DIDMethod.SOV, KeyType.ED25519)
+                my_info = await wallet.create_local_did(SOV, ED25519)
                 conn_record.my_did = my_info.did
                 await conn_record.save(session, reason="Connection my did created")
         else:
@@ -241,6 +242,27 @@ class RouteManager(ABC):
         mediation_record: Optional[MediationRecord] = None,
     ) -> Tuple[List[str], str]:
         """Retrieve routing keys."""
+
+    async def connection_from_recipient_key(
+        self, profile: Profile, recipient_key: str
+    ) -> ConnRecord:
+        """Retrieve connection for a recipient_key.
+
+        The recipient key is expected to be a local key owned by this agent.
+        """
+        async with profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            try:
+                conn = await ConnRecord.retrieve_by_tag_filter(
+                    session, {"invitation_key": normalize_from_did_key(recipient_key)}
+                )
+            except StorageNotFoundError:
+                did_info = await wallet.get_local_did_for_verkey(
+                    normalize_from_did_key(recipient_key)
+                )
+                conn = await ConnRecord.retrieve_by_did(session, my_did=did_info.did)
+
+            return conn
 
 
 class CoordinateMediationV1RouteManager(RouteManager):

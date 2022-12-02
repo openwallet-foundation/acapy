@@ -25,6 +25,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --mediation               | --mediation               | driverslicense |
          | --multitenant             | --multitenant             | driverslicense |
          | --mediation --multitenant | --mediation --multitenant | driverslicense |
+         | --multitenant --multi-ledger | --multitenant --multi-ledger | driverslicense |
 
 
    @T001.1-RFC0586 @GHA

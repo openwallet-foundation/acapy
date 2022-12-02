@@ -40,7 +40,7 @@ from ....vc.ld_proofs.constants import (
 from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
 from ....wallet.base import BaseWallet, DIDInfo
 from ....wallet.error import WalletError, WalletNotFoundError
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import BLS12381G2, ED25519
 
 from .pres_exch import (
     PresentationDefinition,
@@ -73,14 +73,14 @@ class DIFPresExchHandler:
     """Base Presentation Exchange Handler."""
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        Ed25519Signature2018: KeyType.ED25519,
+        Ed25519Signature2018: ED25519,
     }
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
-        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = KeyType.BLS12381G2
+        ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
 
     DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        BbsBlsSignatureProof2020: KeyType.BLS12381G2,
+        BbsBlsSignatureProof2020: BLS12381G2,
     }
     PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
         suite.signature_type: suite
@@ -196,9 +196,9 @@ class DIFPresExchHandler:
         issuer_id = None
         filtered_creds_list = []
         if self.proof_type == BbsBlsSignature2020.signature_type:
-            reqd_key_type = KeyType.BLS12381G2
+            reqd_key_type = BLS12381G2
         else:
-            reqd_key_type = KeyType.ED25519
+            reqd_key_type = ED25519
         for cred in applicable_creds:
             if cred.subject_ids and len(cred.subject_ids) > 0:
                 if not issuer_id:
@@ -1230,7 +1230,7 @@ class DIFPresExchHandler:
         challenge: str = None,
         domain: str = None,
         records_filter: dict = None,
-    ) -> dict:
+    ) -> Union[Sequence[dict], dict]:
         """
         Create VerifiablePresentation.
 
@@ -1244,78 +1244,99 @@ class DIFPresExchHandler:
         req = await self.make_requirement(
             srs=pd.submission_requirements, descriptors=pd.input_descriptors
         )
-        result = await self.apply_requirements(
-            req=req, credentials=credentials, records_filter=records_filter
-        )
-        applicable_creds, descriptor_maps = await self.merge(result)
-        applicable_creds_list = []
-        for credential in applicable_creds:
-            applicable_creds_list.append(credential.cred_value)
-        if (
-            not self.profile.settings.get("debug.auto_respond_presentation_request")
-            and not records_filter
-            and len(applicable_creds_list) > 1
-        ):
-            raise DIFPresExchError(
-                "Multiple credentials are applicable for presentation_definition "
-                f"{pd.id} and --auto-respond-presentation-request setting is not "
-                "enabled. Please specify which credentials should be applied to "
-                "which input_descriptors using record_ids filter."
-            )
-        # submission_property
-        submission_property = PresentationSubmission(
-            id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
-        )
-        if self.is_holder:
-            (
-                issuer_id,
-                filtered_creds_list,
-            ) = await self.get_sign_key_credential_subject_id(
-                applicable_creds=applicable_creds
-            )
-            if not issuer_id and len(filtered_creds_list) == 0:
-                vp = await create_presentation(credentials=applicable_creds_list)
-                vp["presentation_submission"] = submission_property.serialize()
-                if self.proof_type is BbsBlsSignature2020.signature_type:
-                    vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-                return vp
-            else:
-                vp = await create_presentation(credentials=filtered_creds_list)
+        result = []
+        if req.nested_req:
+            for nested_req in req.nested_req:
+                res = await self.apply_requirements(
+                    req=nested_req,
+                    credentials=credentials,
+                    records_filter=records_filter,
+                )
+                result.append(res)
         else:
-            if not self.pres_signing_did:
+            res = await self.apply_requirements(
+                req=req, credentials=credentials, records_filter=records_filter
+            )
+            result.append(res)
+
+        result_vp = []
+        for res in result:
+            applicable_creds, descriptor_maps = await self.merge(res)
+            applicable_creds_list = []
+            for credential in applicable_creds:
+                applicable_creds_list.append(credential.cred_value)
+            if (
+                not self.profile.settings.get("debug.auto_respond_presentation_request")
+                and not records_filter
+                and len(applicable_creds_list) > 1
+            ):
+                raise DIFPresExchError(
+                    "Multiple credentials are applicable for presentation_definition "
+                    f"{pd.id} and --auto-respond-presentation-request setting is not "
+                    "enabled. Please specify which credentials should be applied to "
+                    "which input_descriptors using record_ids filter."
+                )
+            # submission_property
+            submission_property = PresentationSubmission(
+                id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
+            )
+            if self.is_holder:
                 (
                     issuer_id,
                     filtered_creds_list,
                 ) = await self.get_sign_key_credential_subject_id(
                     applicable_creds=applicable_creds
                 )
-                if not issuer_id:
+                if not issuer_id and len(filtered_creds_list) == 0:
                     vp = await create_presentation(credentials=applicable_creds_list)
                     vp["presentation_submission"] = submission_property.serialize()
                     if self.proof_type is BbsBlsSignature2020.signature_type:
                         vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-                    return vp
+                    result_vp.append(vp)
+                    continue
                 else:
                     vp = await create_presentation(credentials=filtered_creds_list)
             else:
-                issuer_id = self.pres_signing_did
-                vp = await create_presentation(credentials=applicable_creds_list)
-        vp["presentation_submission"] = submission_property.serialize()
-        if self.proof_type is BbsBlsSignature2020.signature_type:
-            vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
-        async with self.profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            issue_suite = await self._get_issue_suite(
-                wallet=wallet,
-                issuer_id=issuer_id,
-            )
-            signed_vp = await sign_presentation(
-                presentation=vp,
-                suite=issue_suite,
-                challenge=challenge,
-                document_loader=document_loader,
-            )
-            return signed_vp
+                if not self.pres_signing_did:
+                    (
+                        issuer_id,
+                        filtered_creds_list,
+                    ) = await self.get_sign_key_credential_subject_id(
+                        applicable_creds=applicable_creds
+                    )
+                    if not issuer_id:
+                        vp = await create_presentation(
+                            credentials=applicable_creds_list
+                        )
+                        vp["presentation_submission"] = submission_property.serialize()
+                        if self.proof_type is BbsBlsSignature2020.signature_type:
+                            vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+                        result_vp.append(vp)
+                        continue
+                    else:
+                        vp = await create_presentation(credentials=filtered_creds_list)
+                else:
+                    issuer_id = self.pres_signing_did
+                    vp = await create_presentation(credentials=applicable_creds_list)
+            vp["presentation_submission"] = submission_property.serialize()
+            if self.proof_type is BbsBlsSignature2020.signature_type:
+                vp["@context"].append(SECURITY_CONTEXT_BBS_URL)
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                issue_suite = await self._get_issue_suite(
+                    wallet=wallet,
+                    issuer_id=issuer_id,
+                )
+                signed_vp = await sign_presentation(
+                    presentation=vp,
+                    suite=issue_suite,
+                    challenge=challenge,
+                    document_loader=document_loader,
+                )
+            result_vp.append(signed_vp)
+        if len(result_vp) == 1:
+            return result_vp[0]
+        return result_vp
 
     def check_if_cred_id_derived(self, id: str) -> bool:
         """Check if credential or credentialSubjet id is derived."""
@@ -1367,7 +1388,7 @@ class DIFPresExchHandler:
     async def verify_received_pres(
         self,
         pd: PresentationDefinition,
-        pres: dict,
+        pres: Union[Sequence[dict], dict],
     ):
         """
         Verify credentials received in presentation.
@@ -1376,8 +1397,24 @@ class DIFPresExchHandler:
             pres: received VerifiablePresentation
             pd: PresentationDefinition
         """
-        descriptor_map_list = pres["presentation_submission"].get("descriptor_map")
         input_descriptors = pd.input_descriptors
+        if isinstance(pres, Sequence):
+            for pr in pres:
+                descriptor_map_list = pr["presentation_submission"].get(
+                    "descriptor_map"
+                )
+                await self.__verify_desc_map_list(
+                    descriptor_map_list, pr, input_descriptors
+                )
+        else:
+            descriptor_map_list = pres["presentation_submission"].get("descriptor_map")
+            await self.__verify_desc_map_list(
+                descriptor_map_list, pres, input_descriptors
+            )
+
+    async def __verify_desc_map_list(
+        self, descriptor_map_list, pres, input_descriptors
+    ):
         inp_desc_id_contraint_map = {}
         inp_desc_id_schema_one_of_filter = set()
         inp_desc_id_schemas_map = {}

@@ -5,7 +5,7 @@ import warnings
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import NamedTuple, Pattern, Sequence, Union
+from typing import Optional, NamedTuple, Pattern, Sequence, Union, Text
 
 from pydid import DID
 
@@ -132,7 +132,12 @@ class BaseDIDResolver(ABC):
 
         return bool(supported_did_regex.match(did))
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> dict:
+    async def resolve(
+        self,
+        profile: Profile,
+        did: Union[str, DID],
+        service_accept: Optional[Sequence[Text]] = None,
+    ) -> dict:
         """Resolve a DID using this resolver."""
         if isinstance(did, DID):
             did = str(did)
@@ -143,8 +148,13 @@ class BaseDIDResolver(ABC):
                 f"{self.__class__.__name__} does not support DID method for: {did}"
             )
 
-        return await self._resolve(profile, did)
+        return await self._resolve(profile, did, service_accept)
 
     @abstractmethod
-    async def _resolve(self, profile: Profile, did: str) -> dict:
+    async def _resolve(
+        self,
+        profile: Profile,
+        did: str,
+        service_accept: Optional[Sequence[Text]] = None,
+    ) -> dict:
         """Resolve a DID using this resolver."""
