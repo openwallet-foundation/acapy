@@ -9,6 +9,7 @@ jobs:
     uses: ./.github/workflows/tests.yml
     with:
       python-version: "3.6"
+      os: "ubuntu-20.04"
 
   tests-indy:
     name: Tests (Indy)
@@ -16,3 +17,4 @@ jobs:
     with:
       python-version: "3.6"
       indy-version: "1.16.0"
+      os: "ubuntu-20.04"
