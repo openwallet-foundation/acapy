@@ -14,7 +14,7 @@ from marshmallow import ValidationError
 from ..utils.jwe import JweRecipient, b64url, JweEnvelope, from_b64url
 from .error import WalletError
 from .util import bytes_to_b58, b64_to_bytes, b58_to_bytes, random_seed
-from .key_type import KeyType
+from .key_type import ED25519, BLS12381G2, KeyType
 from .bbs import (
     create_bls12381g2_keypair,
     verify_signed_messages_bls12381g2,
@@ -38,9 +38,9 @@ def create_keypair(key_type: KeyType, seed: bytes = None) -> Tuple[bytes, bytes]
         A tuple of (public key, secret key)
 
     """
-    if key_type == KeyType.ED25519:
+    if key_type == ED25519:
         return create_ed25519_keypair(seed)
-    elif key_type == KeyType.BLS12381G2:
+    elif key_type == BLS12381G2:
         # This ensures python won't crash if bbs is not installed and not used
 
         return create_bls12381g2_keypair(seed)
@@ -149,7 +149,7 @@ def sign_message(
     # Make messages list if not already for easier checking going forward
     messages = message if isinstance(message, list) else [message]
 
-    if key_type == KeyType.ED25519:
+    if key_type == ED25519:
         if len(messages) > 1:
             raise WalletError("ed25519 can only sign a single message")
 
@@ -157,7 +157,7 @@ def sign_message(
             message=messages[0],
             secret=secret,
         )
-    elif key_type == KeyType.BLS12381G2:
+    elif key_type == BLS12381G2:
         return sign_messages_bls12381g2(messages=messages, secret=secret)
     else:
         raise WalletError(f"Unsupported key type: {key_type.key_type}")
@@ -201,14 +201,14 @@ def verify_signed_message(
     # Make messages list if not already for easier checking going forward
     messages = message if isinstance(message, list) else [message]
 
-    if key_type == KeyType.ED25519:
+    if key_type == ED25519:
         if len(messages) > 1:
             raise WalletError("ed25519 can only verify a single message")
 
         return verify_signed_message_ed25519(
             message=messages[0], signature=signature, verkey=verkey
         )
-    elif key_type == KeyType.BLS12381G2:
+    elif key_type == BLS12381G2:
         try:
             return verify_signed_messages_bls12381g2(
                 messages=messages, signature=signature, public_key=verkey

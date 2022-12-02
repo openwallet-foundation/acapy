@@ -181,6 +181,8 @@ class InboundTransportManager:
         if session and session.accept_undelivered and not session.response_buffered:
             self.process_undelivered(session)
 
+        message.dispatch_processing_complete()
+
     def closed_session(self, session: InboundSession):
         """
         Clean up a closed session.

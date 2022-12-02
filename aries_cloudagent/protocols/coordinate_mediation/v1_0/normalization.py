@@ -1,6 +1,6 @@
 """Normalization methods used while transitioning to DID:Key method."""
 from ....did.did_key import DIDKey
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 
 
 def normalize_from_did_key(key: str):
@@ -16,4 +16,4 @@ def normalize_from_public_key(key: str):
     if key.startswith("did:key:"):
         return key
 
-    return DIDKey.from_public_key_b58(key, KeyType.ED25519).did
+    return DIDKey.from_public_key_b58(key, ED25519).did
