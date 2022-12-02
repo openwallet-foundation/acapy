@@ -63,7 +63,7 @@ jobs:
           images: |
             ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-python
           tags: |
-            type=raw,value=${{ inputs.tag }}
+            type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag }}
 
       - name: Setup Image Metadata (release)
         if: github.event_name == 'release'
