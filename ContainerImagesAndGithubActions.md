@@ -57,7 +57,7 @@ py3.8-indy-A.B.C-X.Y.Z  | Indy     | py3.8-indy-1.16.0-0.7.4  | Standard image v
 py3.9-indy-A.B.C-X.Y.Z  | Indy     | py3.9-indy-1.16.0-0.7.4  | Standard image variant built on Python 3.9 for ACA-Py version X.Y.Z and Indy SDK Version A.B.C  |
 py3.10-indy-A.B.C-X.Y.Z | Indy     | py3.10-indy-1.16.0-0.7.4 | Standard image variant built on Python 3.10 for ACA-Py version X.Y.Z and Indy SDK Version A.B.C |
 
-### Key Image Differences
+### Image Comparison
 
 There are several key differences that should be noted between the two image
 variants and between the BC Gov ACA-Py images.
@@ -67,18 +67,15 @@ variants and between the BC Gov ACA-Py images.
     - Does **NOT** include `libindy`
     - Default user is `aries`
     - Uses container's system python environment rather than `pyenv`
-    - Askar and Indy Shared libraries are installed through pip from
-      pre-compiled binaries included in the python wrappers.
+    - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
     - Built from repo contents
 - Indy Image
     - Based on slim variant of Debian
-    - Based on `indy-python`
+    - Built from multi-stage build step (`indy-base` in the Dockerfile) which includes Indy dependencies; this could be replaced with an explicit `indy-python` image from the Indy SDK repo
     - Includes `libindy` but does **NOT** include the Indy CLI
     - Default user is `indy`
-    - Based on `indy-python`
     - Uses container's system python environment rather than `pyenv`
-    - Askar and Indy Shared libraries are installed through pip from
-      pre-compiled binaries included in the python wrappers
+    - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
     - Built from repo contents
     - Includes Indy postgres storage plugin
 - `bcgovimages/aries-cloudagent`
