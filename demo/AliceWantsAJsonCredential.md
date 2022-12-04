@@ -29,9 +29,13 @@ Open up a second shell (so you have 2 shells open in the `demo` directory) and i
 
 Note that you start the `faber` agent with AIP2.0 options.  (When you specify `--cred-type json-ld` faber will set aip to `20` automatically, so the `--aip` option is not strictly required.)
 
+Also note that the above will only work with the `/issue-credential-2.0/create-offer` endpoint.  If you want to use the `/issue-credential-2.0/send` endpoint - which automates each step of the credential exchange - you will need to include the `--no-auto` option when starting each of the alice and faber agents (since the alice and faber controllers *also* automatically respond to each step in the credential exchange).
+
 (Alternately you can run run Alice and Faber agents locally, see the `./faber-local.sh` and `./alice-local.sh` scripts in the `demo` directory.)
 
 Copy the "invitation" json text from the Faber shell and paste into the Alice shell to establish a connection between the two agents.
+
+(If you are running with `--no-auto` you will also need to call the `/connections/accept-invitation` endpoint in alice's admin api swagger page.)
 
 Now open up two browser windows to the [Faber](http://localhost:8021/api/doc) and [Alice](http://localhost:8031/api/doc) admin api swagger pages.
 
@@ -78,7 +82,9 @@ Congradulations, you are now ready to start issuing JSON-LD credentials!
 - You have created a (non-public) DID for Faber to use to sign/issue the credentials - you will need to copy the DID that you created above into the examples below (as `issuer`).
 - You have created a (non-public) DID for Alice to use as her `credentialSubject.id` - this is required for Alice to sign the proof (the `credentialSubject.id` is not required, but then the provided presentation can't be verified).
 
-To issue a credential, use the `/issue-credential-2.0/send` (or `/issue-credential-2.0/create-offer`) endpoint, you can test with this example payload (just replace the "connection_id", "issuer" key, "credentialSubject.id" and "proofType" with appropriate values:
+To issue a credential, use the `/issue-credential-2.0/create-offer` endpoint.  (You can also use the `/issue-credential-2.0/send`) endpoint, if, as mentioned above, you have included the `--no-auto` when starting both of the agents.)
+
+You can test with this example payload (just replace the "connection_id", "issuer" key, "credentialSubject.id" and "proofType" with appropriate values:
 
 ```
 {
@@ -173,6 +179,8 @@ To see the issued credential, call the `/credentials/w3c` endpoint on Alice's ad
   ]
 }
 ```
+
+If you *don't* see the credential in your wallet, look up the credential exchange record (in alice's admin api - `/issue-credential-2.0/records`) and check the state.  If the state is `credential-received`, then the credential has been received but not stored, in this case just call the `/store` endpoint for this credential exchange.
 
 
 ## Building More Realistic JSON-LD Credentials
