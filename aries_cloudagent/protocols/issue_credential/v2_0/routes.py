@@ -521,7 +521,8 @@ async def credential_exchange_retrieve(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential v2.0"],
-    summary="Create credential from attribute values",
+    summary=("Create a credential record without "
+             "sending (generally for use with Out-Of-Band)"),
 )
 @request_schema(V20IssueCredSchemaCore())
 @response_schema(V20CredExRecordSchema(), 200, description="")

@@ -62,6 +62,7 @@ class TestHttpTransport(AioHTTPTestCase):
         message: InboundMessage,
         can_respond: bool = False,
     ):
+        message.wait_processing_complete = async_mock.CoroutineMock()
         self.message_results.append((message.payload, message.receipt, can_respond))
         if self.result_event:
             self.result_event.set()
@@ -119,13 +120,15 @@ class TestHttpTransport(AioHTTPTestCase):
             mock_session.return_value = async_mock.MagicMock(
                 receive=async_mock.CoroutineMock(
                     return_value=async_mock.MagicMock(
-                        receipt=async_mock.MagicMock(direct_response_requested=True)
+                        receipt=async_mock.MagicMock(direct_response_requested=True),
+                        wait_processing_complete=async_mock.CoroutineMock(),
                     )
                 ),
                 can_respond=True,
                 profile=InMemoryProfile.test_profile(),
                 clear_response=async_mock.MagicMock(),
                 wait_response=async_mock.CoroutineMock(return_value=b"Hello world"),
+                response_buffer="something",
             )
             async with self.client.post("/", data=test_message) as resp:
                 result = await resp.text()
