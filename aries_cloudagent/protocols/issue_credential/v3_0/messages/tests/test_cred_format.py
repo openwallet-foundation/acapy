@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-#from ......messaging.decorators.attach_decorator import AttachDecorator
+# from ......messaging.decorators.attach_decorator import AttachDecorator
 
 from ..cred_format import V30CredFormat
 from ..inner.cred_preview import V30CredAttrSpec, V30CredPreview, V30CredPreviewBody
@@ -8,10 +8,10 @@ from ..inner.cred_preview import V30CredAttrSpec, V30CredPreview, V30CredPreview
 
 TEST_PREVIEW = V30CredPreview(
     _body=V30CredPreviewBody(
-    attributes=(
-        V30CredAttrSpec.list_plain({"test": "123", "hello": "world"})
-        + [V30CredAttrSpec(name="icon", value="cG90YXRv", mime_type="image/png")]
-    )
+        attributes=(
+            V30CredAttrSpec.list_plain({"test": "123", "hello": "world"})
+            + [V30CredAttrSpec(name="icon", value="cG90YXRv", mime_type="image/png")]
+        )
     )
 )
 

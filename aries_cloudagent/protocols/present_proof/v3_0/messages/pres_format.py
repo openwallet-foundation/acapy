@@ -72,12 +72,7 @@ class V30PresFormat(BaseModel):
             """Raise ValidationError for invalid attachment formats."""
             self.handler.validate_fields(message_type, attachment_data)
 
-    def __init__(
-        self,
-        *,
-        format_: str = None,
-        **kwargs
-    ):
+    def __init__(self, *, format_: str = None, **kwargs):
         """Initialize present-proof protocol message attachment format."""
         self.format_ = format_
 

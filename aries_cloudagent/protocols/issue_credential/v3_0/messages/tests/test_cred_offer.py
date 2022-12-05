@@ -1,6 +1,8 @@
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from aries_cloudagent.protocols.issue_credential.v3_0.messages.cred_body import V30CredBody
+from aries_cloudagent.protocols.issue_credential.v3_0.messages.cred_body import (
+    V30CredBody,
+)
 
 from ......messaging.decorators.attach_decorator_didcomm_v2_cred import AttachDecorator
 from ......messaging.models.base import BaseModelError
@@ -43,21 +45,24 @@ class TestV30CredOffer(AsyncTestCase):
     }
 
     preview = V30CredPreview(
-        _body = V30CredPreviewBody(attributes=V30CredAttrSpec.list_plain(
-            {"member": "James Bond", "favourite": "martini"}
-        ))
+        _body=V30CredPreviewBody(
+            attributes=V30CredAttrSpec.list_plain(
+                {"member": "James Bond", "favourite": "martini"}
+            )
+        )
     )
 
     CRED_OFFER = V30CredOffer(
-        _body = V30CredBody(comment="shaken, not stirred",
-        credential_preview=preview),
+        _body=V30CredBody(comment="shaken, not stirred", credential_preview=preview),
         attachments=[
             AttachDecorator.data_base64(
                 mapping=indy_offer,
                 ident="indy",
-                format = V30CredFormat(
-                format_=ATTACHMENT_FORMAT[CRED_30_OFFER][V30CredFormat.Format.INDY.api],
-            )
+                format=V30CredFormat(
+                    format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
+                        V30CredFormat.Format.INDY.api
+                    ],
+                ),
             )
         ],
     )
@@ -65,13 +70,14 @@ class TestV30CredOffer(AsyncTestCase):
     async def test_init_type(self):
         """Test initializer and type."""
         assert (
-            TestV30CredOffer.CRED_OFFER._body.credential_preview == TestV30CredOffer.preview
+            TestV30CredOffer.CRED_OFFER._body.credential_preview
+            == TestV30CredOffer.preview
         )
         assert (
             TestV30CredOffer.CRED_OFFER.attachments[0].content
             == TestV30CredOffer.indy_offer
         )
-        #assert TestV30CredOffer.CRED_OFFER.attachment() == TestV30CredOffer.indy_offer
+        # assert TestV30CredOffer.CRED_OFFER.attachment() == TestV30CredOffer.indy_offer
         assert TestV30CredOffer.CRED_OFFER._type == DIDCommPrefix.qualify_current(
             CRED_30_OFFER
         )
@@ -80,11 +86,12 @@ class TestV30CredOffer(AsyncTestCase):
         """Test attachment behaviour for only unknown formats."""
 
         x_cred_offer = V30CredOffer(
-            _body = V30CredBody
-            (comment="Test"),
+            _body=V30CredBody(comment="Test"),
             attachments=[
                 AttachDecorator.data_base64(
-                    ident="not_indy", mapping=TestV30CredOffer.CRED_OFFER.serialize(), format = V30CredFormat(format_="not_indy")
+                    ident="not_indy",
+                    mapping=TestV30CredOffer.CRED_OFFER.serialize(),
+                    format=V30CredFormat(format_="not_indy"),
                 )
             ],
         )
@@ -110,7 +117,7 @@ class TestV30CredOffer(AsyncTestCase):
                 "id": "not_indy",
                 "media-type": "application/json",
                 "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
-                "format" :""
+                "format": "",
             }
         )
         with self.assertRaises(BaseModelError):
@@ -122,7 +129,7 @@ class TestV30CredOffer(AsyncTestCase):
                 "id": "not_indy",
                 "media-type": "application/json",
                 "data": {"base64": "eyJub3QiOiAiaW5keSJ9"},
-                "format" :"<V30CredFormat(format_='not_indy')>"
+                "format": "<V30CredFormat(format_='not_indy')>",
             }
         )
         V30CredOffer.deserialize(obj)
@@ -134,18 +141,19 @@ class TestV30CredOfferSchema(AsyncTestCase):
     async def test_make_model(self):
         """Test making model."""
         cred_offer = V30CredOffer(
-            _body = V30CredBody(
-            comment="shaken, not stirred",
-            credential_preview=TestV30CredOffer.preview),
+            _body=V30CredBody(
+                comment="shaken, not stirred",
+                credential_preview=TestV30CredOffer.preview,
+            ),
             attachments=[
                 AttachDecorator.data_base64(
                     mapping=TestV30CredOffer.indy_offer,
                     ident="indy",
-                    format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
-                        V30CredFormat.Format.INDY.api
-                    ],
-                )
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
+                            V30CredFormat.Format.INDY.api
+                        ],
+                    ),
                 )
             ],
         )

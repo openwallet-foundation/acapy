@@ -94,8 +94,10 @@ class TestV30FormatFormat(TestCase):
 
     def test_init_type(self):
         """Test initializer, type."""
-        my_test_body = V30PresBody(comment= "My Comment", goal_code="x", will_confirm=True)
-        assert my_test_body.comment =="My Comment"
+        my_test_body = V30PresBody(
+            comment="My Comment", goal_code="x", will_confirm=True
+        )
+        assert my_test_body.comment == "My Comment"
         assert my_test_body.goal_code == "x"
         assert my_test_body.will_confirm
 

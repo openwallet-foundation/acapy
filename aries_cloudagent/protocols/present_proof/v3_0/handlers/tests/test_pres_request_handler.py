@@ -200,10 +200,13 @@ class TestPresRequestHandler(AsyncTestCase):
 
         pres_proposal = V30PresProposal(
             attachments=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.INDY.aries,
-                ))
+                AttachDecorator.data_base64(
+                    INDY_PROOF_REQ,
+                    ident="indy",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.INDY.aries,
+                    ),
+                )
             ],
         )
         px_rec_instance = test_module.V30PresExRecord(
@@ -256,12 +259,13 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         pres_proposal = V30PresProposal(
-
             attachments=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.INDY.aries,
-                )
+                AttachDecorator.data_base64(
+                    INDY_PROOF_REQ,
+                    ident="indy",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.INDY.aries,
+                    ),
                 )
             ],
         )
@@ -309,12 +313,14 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
 
         pres_proposal = V30PresProposal(
-
             attachments=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.INDY.aries,
-                ))
+                AttachDecorator.data_base64(
+                    INDY_PROOF_REQ,
+                    ident="indy",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.INDY.aries,
+                    ),
+                )
             ],
         )
         mock_px_rec = async_mock.MagicMock(
@@ -384,12 +390,13 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         pres_proposal = V30PresProposal(
-
             attachments=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.INDY.aries,
-                )
+                AttachDecorator.data_base64(
+                    INDY_PROOF_REQ,
+                    ident="indy",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.INDY.aries,
+                    ),
                 )
             ],
         )
@@ -449,17 +456,19 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V30PresRequest(
-            #formats=[
+            # formats=[
             #    V30PresFormat(
             #        attach_id="dif",
             #        format_=V30PresFormat.Format.DIF.aries,
             #    )
-            #]
+            # ]
             attachments=[
-                AttachDecorator.data_base64(DIF_PROOF_REQ, ident="dif",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.DIF.aries,
-                )
+                AttachDecorator.data_base64(
+                    DIF_PROOF_REQ,
+                    ident="dif",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.DIF.aries,
+                    ),
                 )
             ],
         )
@@ -483,10 +492,13 @@ class TestPresRequestHandler(AsyncTestCase):
             #     )
             # ],
             attachments=[
-                AttachDecorator.data_json(DIF_PROP_REQ, ident="dif",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.DIF.aries,
-                ))
+                AttachDecorator.data_json(
+                    DIF_PROP_REQ,
+                    ident="dif",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.DIF.aries,
+                    ),
+                )
             ],
         )
 
@@ -535,13 +547,14 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V30PresRequest(
             attachments=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.INDY.aries,
-                )
+                AttachDecorator.data_base64(
+                    INDY_PROOF_REQ,
+                    ident="indy",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.INDY.aries,
+                    ),
                 )
             ],
-            
         )
         request_context.message.attachment = async_mock.MagicMock(
             return_value=INDY_PROOF_REQ
@@ -612,12 +625,13 @@ class TestPresRequestHandler(AsyncTestCase):
         )
         request_context.message_receipt = MessageReceipt()
         pres_proposal = V30PresProposal(
-
             attachments=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.INDY.aries,
-                )
+                AttachDecorator.data_base64(
+                    INDY_PROOF_REQ,
+                    ident="indy",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.INDY.aries,
+                    ),
                 )
             ],
         )
@@ -677,14 +691,16 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record = async_mock.MagicMock()
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V30PresRequest(
-                attachments=[
-                    AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy",
-                    format = V30PresFormat(
+            attachments=[
+                AttachDecorator.data_base64(
+                    INDY_PROOF_REQ,
+                    ident="indy",
+                    format=V30PresFormat(
                         format_=V30PresFormat.Format.INDY.aries,
-                )
+                    ),
                 )
             ],
-                )
+        )
         request_context.message.attachments = async_mock.MagicMock(
             return_value=INDY_PROOF_REQ_PRED
         )
@@ -753,8 +769,8 @@ class TestPresRequestHandler(AsyncTestCase):
             #         format_=V30PresFormat.Format.INDY.aries,
             #     )
             # ]
-                )
-        
+        )
+
         request_context.message.attachments = async_mock.MagicMock(
             return_value=INDY_PROOF_REQ_PRED
         )
@@ -821,23 +837,27 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V30PresRequest(
             attachments=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.INDY.aries,
-                )
+                AttachDecorator.data_base64(
+                    INDY_PROOF_REQ,
+                    ident="indy",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.INDY.aries,
+                    ),
                 )
             ],
-                )
+        )
         request_context.message.attachments = async_mock.MagicMock(
             return_value=INDY_PROOF_REQ
         )
         request_context.message_receipt = MessageReceipt()
         pres_proposal = V30PresProposal(
             attachments=[
-                AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy",
-                format = V30PresFormat(
-                    format_=V30PresFormat.Format.INDY.aries,
-                )
+                AttachDecorator.data_base64(
+                    INDY_PROOF_REQ,
+                    ident="indy",
+                    format=V30PresFormat(
+                        format_=V30PresFormat.Format.INDY.aries,
+                    ),
                 )
             ],
         )

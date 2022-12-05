@@ -128,13 +128,17 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
         self.handler = LDProofCredFormatHandler(self.profile)
 
         self.cred_proposal = V30CredProposal(
-            attachments=[AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0",
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC_DETAIL,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
 
         assert self.handler.profile
@@ -376,7 +380,6 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
             cred_ex_record, deepcopy(LD_PROOF_VC_DETAIL)
         )
 
-
         # assert content of attachment is proposal data
         assert attachment.content == LD_PROOF_VC_DETAIL
 
@@ -417,7 +420,6 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
                 LD_PROOF_VC_DETAIL["options"]["proofType"],
             )
 
-
         # assert content of attachment is proposal data
         assert attachment.content == LD_PROOF_VC_DETAIL
 
@@ -427,12 +429,14 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
     async def test_create_offer_adds_bbs_context(self):
         cred_proposal = V30CredProposal(
             attachments=[
-                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL_BBS, ident="0",
-                format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
-                )
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC_DETAIL_BBS,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
             ],
         )
@@ -484,13 +488,17 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
 
     async def test_create_bound_request(self):
         cred_offer = V30CredOffer(
-            attachments=[AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0",
-            format =  V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC_DETAIL,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
         cred_ex_record = V30CredExRecord(
             cred_ex_id="dummy-id",
@@ -499,7 +507,6 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
         )
 
         (cred_format, attachment) = await self.handler.create_request(cred_ex_record)
-
 
         # assert content of attachment is proposal data
         assert attachment.content == LD_PROOF_VC_DETAIL
@@ -515,7 +522,6 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
         )
 
         (cred_format, attachment) = await self.handler.create_request(cred_ex_record)
-
 
         # assert content of attachment is proposal data
         assert attachment.content == LD_PROOF_VC_DETAIL
@@ -543,12 +549,14 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
     async def test_issue_credential(self):
         cred_request = V30CredRequest(
             attachments=[
-                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0",
-                format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
-                )
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC_DETAIL,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
             ],
         )
@@ -582,7 +590,6 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
                 purpose=mock_get_proof_purpose.return_value,
             )
 
-
             # assert content of attachment is credential data
             assert attachment.content == LD_PROOF_VC
 
@@ -592,12 +599,14 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
     async def test_issue_credential_adds_bbs_context(self):
         cred_request = V30CredRequest(
             attachments=[
-                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL_BBS, ident="0",
-                format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
-                )
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC_DETAIL_BBS,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
             ],
         )
@@ -642,22 +651,28 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
 
     async def test_receive_credential(self):
         cred_issue = V30CredIssue(
-            attachments=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0", 
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
         cred_request = V30CredRequest(
             attachments=[
-                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="0", 
-                format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
-                )
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC_DETAIL,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
             ],
         )
@@ -675,22 +690,30 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
         detail["credential"]["issuanceDate"] = "2020-01-01"
 
         cred_issue = V30CredIssue(
-            attachments=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0",
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
         cred_request = V30CredRequest(
-            attachments=[AttachDecorator.data_base64(detail, ident="0",
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    detail,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
         cred_ex_record = V30CredExRecord(
             cred_ex_id="cred-ex-id",
@@ -709,22 +732,30 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
         detail["options"]["credentialStatus"] = {"type": "CredentialStatusType"}
 
         cred_issue = V30CredIssue(
-            attachments=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0",
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
         cred_request = V30CredRequest(
-            attachments=[AttachDecorator.data_base64(detail, ident="0",
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    detail,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
         cred_ex_record = V30CredExRecord(
             cred_ex_id="cred-ex-id",
@@ -749,22 +780,30 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
         vc["credentialStatus"] = deepcopy(status_entry)
 
         cred_issue = V30CredIssue(
-            attachments=[AttachDecorator.data_base64(vc, ident="0",
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    vc,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
         cred_request = V30CredRequest(
-            attachments=[AttachDecorator.data_base64(detail, ident="0",
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    detail,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
         cred_ex_record = V30CredExRecord(
             cred_ex_id="cred-ex-id",
@@ -792,23 +831,29 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
 
             cred_issue = V30CredIssue(
                 attachments=[
-                    AttachDecorator.data_base64(LD_PROOF_VC, ident="0",
-                    format = V30CredFormat(
-                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                            V30CredFormat.Format.LD_PROOF.api
-                        ],
-                    )
+                    AttachDecorator.data_base64(
+                        LD_PROOF_VC,
+                        ident="0",
+                        format=V30CredFormat(
+                            format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                                V30CredFormat.Format.LD_PROOF.api
+                            ],
+                        ),
                     )
                 ],
             )
             cred_request = V30CredRequest(
-                attachments=[AttachDecorator.data_base64(detail, ident="0",
-                format = V30CredFormat(
-                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                            V30CredFormat.Format.LD_PROOF.api
-                        ],
+                attachments=[
+                    AttachDecorator.data_base64(
+                        detail,
+                        ident="0",
+                        format=V30CredFormat(
+                            format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                                V30CredFormat.Format.LD_PROOF.api
+                            ],
+                        ),
                     )
-                )],
+                ],
             )
             cred_ex_record = V30CredExRecord(
                 cred_ex_id="cred-ex-id",
@@ -823,13 +868,17 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
 
     async def test_store_credential(self):
         cred_issue = V30CredIssue(
-            attachments=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0",
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
 
         cred_ex_record = V30CredExRecord(
@@ -884,13 +933,17 @@ class TestV30LDProofCredFormatHandler(AsyncTestCase):
 
     async def test_store_credential_x_not_verified(self):
         cred_issue = V30CredIssue(
-            attachments=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0", 
-            format = V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+            attachments=[
+                AttachDecorator.data_base64(
+                    LD_PROOF_VC,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
+                    ),
                 )
-            )],
+            ],
         )
 
         cred_ex_record = V30CredExRecord(

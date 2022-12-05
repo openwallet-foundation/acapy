@@ -311,9 +311,7 @@ class TestV30CredRoutes(AsyncTestCase):
             return_value={
                 "connection_id": connection_id,
                 "credential_preview": {
-                    "body":{
-                    "attributes": [{"name": "hello", "value": "world"}]
-                    }
+                    "body": {"attributes": [{"name": "hello", "value": "world"}]}
                 },
             }
         )
@@ -360,7 +358,7 @@ class TestV30CredRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "connection_id": connection_id,
-                "credential_preview": {"body":preview_spec}
+                "credential_preview": {"body": preview_spec},
             }
         )
 
@@ -390,9 +388,7 @@ class TestV30CredRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "connection_id": connection_id,
-                "credential_preview": {
-                    "body":preview_spec
-                    },
+                "credential_preview": {"body": preview_spec},
                 "filter": {"indy": {"schema_version": "1.0"}},
             }
         )
@@ -454,9 +450,7 @@ class TestV30CredRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "connection_id": connection_id,
-                "credential_preview": {
-                    "body":preview_spec
-                },
+                "credential_preview": {"body": preview_spec},
                 "filter": {"indy": {"schema_version": "1.0"}},
             }
         )
@@ -519,7 +513,7 @@ class TestV30CredRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(
             return_value={
                 "connection_id": connection_id,
-                "credential_preview": {"body":preview_spec},
+                "credential_preview": {"body": preview_spec},
                 "filter": {"indy": {"schema_version": "1.0"}},
             }
         )
@@ -567,9 +561,7 @@ class TestV30CredRoutes(AsyncTestCase):
             return_value={
                 "auto_issue": False,
                 "credential_preview": {
-                    "body":{
-                        "attributes": [{"name": "hello", "value": "world"}]
-                    }
+                    "body": {"attributes": [{"name": "hello", "value": "world"}]}
                 },
                 "filter": {"indy": {"schema_version": "1.0"}},
             }
@@ -599,9 +591,7 @@ class TestV30CredRoutes(AsyncTestCase):
             return_value={
                 "auto_issue": False,
                 "credential_preview": {
-                    "body":{
-                        "attributes": [{"name": "hello", "value": "world"}]
-                        },
+                    "body": {"attributes": [{"name": "hello", "value": "world"}]},
                 },
             }
         )
@@ -615,9 +605,7 @@ class TestV30CredRoutes(AsyncTestCase):
             return_value={
                 "auto_issue": False,
                 "credential_preview": {
-                    "body":{
-                    "attributes": [{"name": "hello", "value": "world"}]
-                    }
+                    "body": {"attributes": [{"name": "hello", "value": "world"}]}
                 },
                 "filter": {"indy": {"schema_version": "1.0"}},
             }
@@ -650,9 +638,7 @@ class TestV30CredRoutes(AsyncTestCase):
             return_value={
                 "auto_issue": False,
                 "credential_preview": {
-                    "body":{
-                        "attributes": [{"name": "hello", "value": "world"}]
-                    }
+                    "body": {"attributes": [{"name": "hello", "value": "world"}]}
                 },
                 "filter": {"indy": {"schema_version": "1.0"}},
             }
@@ -680,9 +666,7 @@ class TestV30CredRoutes(AsyncTestCase):
             return_value={
                 "comment": "comment",
                 "credential_preview": {
-                    "body":{
-                    "attributes": [{"name": "hello", "value": "world"}]
-                    }
+                    "body": {"attributes": [{"name": "hello", "value": "world"}]}
                 },
             }
         )
@@ -696,9 +680,7 @@ class TestV30CredRoutes(AsyncTestCase):
             return_value={
                 "auto_issue": False,
                 "credential_preview": {
-                    "body":{
-                    "attributes": [{"name": "hello", "value": "world"}]
-                    }
+                    "body": {"attributes": [{"name": "hello", "value": "world"}]}
                 },
                 "filter": {"indy": {"schema_version": "1.0"}},
             }
@@ -729,9 +711,7 @@ class TestV30CredRoutes(AsyncTestCase):
             return_value={
                 "auto_issue": True,
                 "credential_preview": {
-                    "body":{
-                    "attributes": [{"name": "hello", "value": "world"}]
-                    }
+                    "body": {"attributes": [{"name": "hello", "value": "world"}]}
                 },
                 "filter": {"indy": {"schema_version": "1.0"}},
             }
@@ -761,9 +741,7 @@ class TestV30CredRoutes(AsyncTestCase):
             return_value={
                 "auto_issue": False,
                 "credential_preview": {
-                    "body":{
-                    "attributes": [{"name": "hello", "value": "world"}]
-                    }
+                    "body": {"attributes": [{"name": "hello", "value": "world"}]}
                 },
                 "filter": {"indy": {"schema_version": "1.0"}},
             }

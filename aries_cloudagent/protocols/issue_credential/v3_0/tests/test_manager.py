@@ -113,12 +113,12 @@ class TestV30CredManager(AsyncTestCase):
         connection_id = "test_conn_id"
         cred_preview = V30CredPreview(
             _body=V30CredPreviewBody(
-            attributes=(
-                V30CredAttrSpec(name="legalName", value="value"),
-                V30CredAttrSpec(name="jurisdictionId", value="value"),
-                V30CredAttrSpec(name="incorporationDate", value="value"),
+                attributes=(
+                    V30CredAttrSpec(name="legalName", value="value"),
+                    V30CredAttrSpec(name="jurisdictionId", value="value"),
+                    V30CredAttrSpec(name="incorporationDate", value="value"),
+                )
             )
-        )
         )
         cred_proposal = V30CredProposal(
             _body=V30CredBody(credential_preview=cred_preview),
@@ -127,9 +127,9 @@ class TestV30CredManager(AsyncTestCase):
                     {"cred_def_id": CRED_DEF_ID, "schema_id": SCHEMA_ID},
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -154,12 +154,12 @@ class TestV30CredManager(AsyncTestCase):
         comment = "Test"
         cred_preview = V30CredPreview(
             _body=V30CredPreviewBody(
-            attributes=(
-                V30CredAttrSpec(name="legalName", value="value"),
-                V30CredAttrSpec(name="jurisdictionId", value="value"),
-                V30CredAttrSpec(name="incorporationDate", value="value"),
+                attributes=(
+                    V30CredAttrSpec(name="legalName", value="value"),
+                    V30CredAttrSpec(name="jurisdictionId", value="value"),
+                    V30CredAttrSpec(name="incorporationDate", value="value"),
+                )
             )
-        )
         )
 
         with async_mock.patch.object(
@@ -263,12 +263,12 @@ class TestV30CredManager(AsyncTestCase):
 
         cred_preview = V30CredPreview(
             _body=V30CredPreviewBody(
-            attributes=(
-                V30CredAttrSpec(name="legalName", value="value"),
-                V30CredAttrSpec(name="jurisdictionId", value="value"),
-                V30CredAttrSpec(name="incorporationDate", value="value"),
+                attributes=(
+                    V30CredAttrSpec(name="legalName", value="value"),
+                    V30CredAttrSpec(name="jurisdictionId", value="value"),
+                    V30CredAttrSpec(name="incorporationDate", value="value"),
+                )
             )
-        )
         )
 
         with async_mock.patch.object(
@@ -286,9 +286,9 @@ class TestV30CredManager(AsyncTestCase):
                         {"cred_def_id": CRED_DEF_ID},
                         ident="0",
                         format=V30CredFormat(
-                        format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
-                            V30CredFormat.Format.INDY.api
-                        ],
+                            format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
+                                V30CredFormat.Format.INDY.api
+                            ],
                         ),
                     )
                 ],
@@ -319,12 +319,12 @@ class TestV30CredManager(AsyncTestCase):
 
         cred_preview = V30CredPreview(
             _body=V30CredPreviewBody(
-            attributes=(
-                V30CredAttrSpec(name="legalName", value="value"),
-                V30CredAttrSpec(name="jurisdictionId", value="value"),
-                V30CredAttrSpec(name="incorporationDate", value="value"),
+                attributes=(
+                    V30CredAttrSpec(name="legalName", value="value"),
+                    V30CredAttrSpec(name="jurisdictionId", value="value"),
+                    V30CredAttrSpec(name="incorporationDate", value="value"),
+                )
             )
-        )
         )
         cred_proposal = V30CredProposal(
             _body=V30CredBody(credential_preview=cred_preview),
@@ -333,9 +333,9 @@ class TestV30CredManager(AsyncTestCase):
                     {"cred_def_id": CRED_DEF_ID},
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -404,12 +404,12 @@ class TestV30CredManager(AsyncTestCase):
 
         cred_preview = V30CredPreview(
             _body=V30CredPreviewBody(
-            attributes=(
-                V30CredAttrSpec(name="legalName", value="value"),
-                V30CredAttrSpec(name="jurisdictionId", value="value"),
-                V30CredAttrSpec(name="incorporationDate", value="value"),
+                attributes=(
+                    V30CredAttrSpec(name="legalName", value="value"),
+                    V30CredAttrSpec(name="jurisdictionId", value="value"),
+                    V30CredAttrSpec(name="incorporationDate", value="value"),
+                )
             )
-        )
         )
         cred_proposal = V30CredProposal(
             _body=V30CredBody(credential_preview=cred_preview),
@@ -418,9 +418,9 @@ class TestV30CredManager(AsyncTestCase):
                     {"cred_def_id": CRED_DEF_ID},
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -505,12 +505,12 @@ class TestV30CredManager(AsyncTestCase):
 
         cred_preview = V30CredPreview(
             _body=V30CredPreviewBody(
-            attributes=(
-                V30CredAttrSpec(name="legalName", value="value"),
-                V30CredAttrSpec(name="jurisdictionId", value="value"),
-                V30CredAttrSpec(name="incorporationDate", value="value"),
+                attributes=(
+                    V30CredAttrSpec(name="legalName", value="value"),
+                    V30CredAttrSpec(name="jurisdictionId", value="value"),
+                    V30CredAttrSpec(name="incorporationDate", value="value"),
+                )
             )
-        )
         )
         cred_proposal = V30CredProposal(
             _body=V30CredBody(credential_preview=cred_preview),
@@ -519,9 +519,9 @@ class TestV30CredManager(AsyncTestCase):
                     {},
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -533,9 +533,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_OFFER,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -584,12 +584,12 @@ class TestV30CredManager(AsyncTestCase):
 
         cred_preview = V30CredPreview(
             _body=V30CredPreviewBody(
-            attributes=(
-                V30CredAttrSpec(name="legalName", value="value"),
-                V30CredAttrSpec(name="jurisdictionId", value="value"),
-                V30CredAttrSpec(name="incorporationDate", value="value"),
+                attributes=(
+                    V30CredAttrSpec(name="legalName", value="value"),
+                    V30CredAttrSpec(name="jurisdictionId", value="value"),
+                    V30CredAttrSpec(name="incorporationDate", value="value"),
+                )
             )
-        )
         )
         cred_offer = V30CredOffer(
             _body=V30CredBody(credential_preview=cred_preview),
@@ -598,9 +598,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_OFFER,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -645,9 +645,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_OFFER,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -738,9 +738,9 @@ class TestV30CredManager(AsyncTestCase):
                     LD_PROOF_VC_DETAIL,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
-                        V30CredFormat.Format.LD_PROOF.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_PROPOSAL][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ],
                     ),
                 )
             ],
@@ -834,9 +834,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_CRED_REQ,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -882,9 +882,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_CRED_REQ,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -935,9 +935,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_CRED_REQ,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -976,10 +976,10 @@ class TestV30CredManager(AsyncTestCase):
         }
         cred_preview = V30CredPreview(
             _body=V30CredPreviewBody(
-            attributes=[
-                V30CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
-            ]
-        )
+                attributes=[
+                    V30CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
+                ]
+            )
         )
         cred_proposal = V30CredProposal(
             _body=V30CredBody(credential_preview=cred_preview),
@@ -1004,9 +1004,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_OFFER,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_OFFER][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -1018,9 +1018,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_CRED_REQ,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -1132,9 +1132,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_CRED_REQ,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_REQUEST][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -1154,9 +1154,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_CRED,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],
@@ -1213,15 +1213,24 @@ class TestV30CredManager(AsyncTestCase):
         cred_issue = V30CredIssue(
             attachments=[
                 AttachDecorator.data_base64(
-                    LD_PROOF_VC, ident="0", format=V30CredFormat(format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                        V30CredFormat.Format.INDY.api
-                    ])),
+                    LD_PROOF_VC,
+                    ident="0",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.INDY.api
+                        ]
+                    ),
+                ),
                 AttachDecorator.data_base64(
-                    LD_PROOF_VC, ident="1", format=V30CredFormat(format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                       V30CredFormat.Format.LD_PROOF.api
-                    ]))
+                    LD_PROOF_VC,
+                    ident="1",
+                    format=V30CredFormat(
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.LD_PROOF.api
+                        ]
+                    ),
+                ),
             ]
-
         )
 
         with async_mock.patch.object(
@@ -1247,13 +1256,10 @@ class TestV30CredManager(AsyncTestCase):
         cred_request = V30CredRequest(
             attachments=[
                 AttachDecorator.data_base64(
-                    INDY_CRED_REQ,
-                    ident="0",
-                    format=V30CredFormat(format_="random")
-        )],
+                    INDY_CRED_REQ, ident="0", format=V30CredFormat(format_="random")
                 )
- 
-
+            ],
+        )
 
         stored_cx_rec = V30CredExRecord(
             cred_ex_id="dummy-cxid",
@@ -1294,9 +1300,9 @@ class TestV30CredManager(AsyncTestCase):
                     INDY_CRED,
                     ident="0",
                     format=V30CredFormat(
-                    format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
-                        V30CredFormat.Format.INDY.api
-                    ],
+                        format_=ATTACHMENT_FORMAT[CRED_30_ISSUE][
+                            V30CredFormat.Format.INDY.api
+                        ],
                     ),
                 )
             ],

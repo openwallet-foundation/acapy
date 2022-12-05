@@ -1,7 +1,9 @@
 import pytest
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
-from aries_cloudagent.messaging.decorators.attach_decorator_didcomm_v2_pres import AttachDecorator
+from aries_cloudagent.messaging.decorators.attach_decorator_didcomm_v2_pres import (
+    AttachDecorator,
+)
 
 from aries_cloudagent.protocols.present_proof.v3_0.messages.pres_body import V30PresBody
 
@@ -44,7 +46,9 @@ class TestV30PresProposalHandler(AsyncTestCase):
         request_context = RequestContext.test_context()
         request_context.message = async_mock.MagicMock()
         request_context.connection_record = async_mock.MagicMock()
-        request_context.message = V30PresProposal( body = V30PresBody( comment = "hello world"))
+        request_context.message = V30PresProposal(
+            body=V30PresBody(comment="hello world")
+        )
         request_context.message_receipt = MessageReceipt()
         request_context.settings["debug.auto_respond_presentation_proposal"] = True
 

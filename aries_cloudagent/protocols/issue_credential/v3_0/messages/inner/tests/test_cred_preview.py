@@ -11,11 +11,11 @@ from ..cred_preview import (
 )
 
 TEST_PREVIEW = V30CredPreview(
-    _body = V30CredPreviewBody(
-    attributes=(
-        V30CredAttrSpec.list_plain({"test": "123", "hello": "world"})
-        + [V30CredAttrSpec(name="icon", value="cG90YXRv", mime_type="image/PNG")]
-    )
+    _body=V30CredPreviewBody(
+        attributes=(
+            V30CredAttrSpec.list_plain({"test": "123", "hello": "world"})
+            + [V30CredAttrSpec(name="icon", value="cG90YXRv", mime_type="image/PNG")]
+        )
     )
 )
 
@@ -80,12 +80,12 @@ class TestV30CredPreview(TestCase):
         """Test deserialize."""
         obj = {
             "type": CRED_30_PREVIEW,
-            "body":{
-            "attributes": [
-                {"name": "name", "value": "Alexander Delarge"},
-                {"name": "pic", "mime-type": "image/png", "value": "Abcd0123..."},
-            ],
-            }
+            "body": {
+                "attributes": [
+                    {"name": "name", "value": "Alexander Delarge"},
+                    {"name": "pic", "mime-type": "image/png", "value": "Abcd0123..."},
+                ],
+            },
         }
 
         cred20_preview = V30CredPreview.deserialize(obj)
@@ -97,12 +97,13 @@ class TestV30CredPreview(TestCase):
         cred30_preview_dict = TEST_PREVIEW.serialize()
         assert cred30_preview_dict == {
             "type": "issue-credential/3.0/credential-preview",
-            "body":{"attributes": [
-                {"name": "test", "value": "123"},
-                {"name": "hello", "value": "world"},
-                {"name": "icon", "media-type": "image/png", "value": "cG90YXRv"},
-            ],
-            }
+            "body": {
+                "attributes": [
+                    {"name": "test", "value": "123"},
+                    {"name": "hello", "value": "world"},
+                    {"name": "icon", "media-type": "image/png", "value": "cG90YXRv"},
+                ],
+            },
         }
 
 
