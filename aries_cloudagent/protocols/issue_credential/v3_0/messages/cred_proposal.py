@@ -99,7 +99,6 @@ class V30CredProposalSchema(AgentMessageSchemaV2):
         formats = []
         for atch in attachments:
             formats.append(atch.format)
-        print(f"formats {formats}")
 
         if len(formats) != len(attachments):
             raise ValidationError("Formats/attachments length mismatch")

@@ -35,6 +35,7 @@ from ..models.base import BaseModel, BaseModelError, BaseModelSchema
 from ..valid import (
     BASE64,
     BASE64URL_NO_PAD,
+    DictOrDictListField,
     INDY_ISO8601_DATETIME,
     JWS_HEADER_KID,
     SHA256,
@@ -233,7 +234,7 @@ class AttachDecoratorData(BaseModel):
         sha256_: str = None,
         links_: Union[Sequence[str], str] = None,
         base64_: str = None,
-        json_: dict = None,
+        json_: Union[Sequence[dict], dict] = None,
     ):
         """
         Initialize decorator data.
@@ -493,7 +494,7 @@ class AttachDecoratorDataSchema(BaseModelSchema):
         required=False,
         data_key="jws",
     )
-    json_ = fields.Dict(
+    json_ = DictOrDictListField(
         description="JSON-serialized data",
         required=False,
         example='{"sample": "content"}',
@@ -624,7 +625,7 @@ class AttachDecorator(BaseModel):
     @classmethod
     def data_json(
         cls,
-        mapping: dict,
+        mapping: Union[Sequence[dict], dict],
         *,
         ident: str = None,
         description: str = None,

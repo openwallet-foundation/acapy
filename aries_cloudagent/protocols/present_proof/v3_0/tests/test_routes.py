@@ -213,8 +213,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         schema = test_module.V30PresSpecByFormatRequestSchema()
         schema.validate_fields({"indy": {"...": "..."}})
         schema.validate_fields({"dif": {"...": "..."}})
-        with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
+        schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):
@@ -2412,7 +2411,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.present_proof_send_presentation(self.request)
 
-    async def test_v20presentationsendreqschema(self):
+    async def test_v30presentationsendreqschema(self):
         test_input = {
             "comment": "string",
             "connection_id": "631522e9-ca17-4c88-9a4c-d1cad35e463a",

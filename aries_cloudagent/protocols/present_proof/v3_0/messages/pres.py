@@ -98,19 +98,19 @@ class V30PresSchema(AgentMessageSchemaV2):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate presentation attachment per format."""
-        print(f"data {data}")
         attachments = data.get("attachments") or []
-        print(f"attach{attachments}")
         formats = []
         for atch in attachments:
             formats.append(atch.format)
-        print(f"formats {formats}")
 
         if len(formats) != len(attachments):
             raise ValidationError("Formats/attachments length mismatch")
 
         for atch in attachments:
-            # atch = get_attach_by_id(fmt.attach_id)
             pres_format = V30PresFormat.Format.get(atch.format.format)
             if pres_format:
-                pres_format.validate_fields(PRES_30, atch.content)
+                if isinstance(atch.content, Sequence):
+                    for el in atch.content:
+                        pres_format.validate_fields(PRES_30, el)
+                else:
+                    pres_format.validate_fields(PRES_30, atch.content)

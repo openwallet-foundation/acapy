@@ -274,9 +274,15 @@ class V30PresManager:
             pres_exch_format = V30PresFormat.Format.get(format.format)
 
             if pres_exch_format:
+                if not request_data:
+                    request_data_pres_exch = {}
+                else:
+                    request_data_pres_exch = {
+                        pres_exch_format.api: request_data.get(pres_exch_format.api)
+                    }
                 pres_tuple = await pres_exch_format.handler(self._profile).create_pres(
                     pres_ex_record,
-                    request_data,
+                    request_data_pres_exch,
                 )
                 if pres_tuple:
                     pres_formats.append(pres_tuple)
@@ -405,6 +411,8 @@ class V30PresManager:
                 ).verify_pres(
                     pres_ex_record,
                 )
+                if pres_ex_record.verified == "false":
+                    break
 
         pres_ex_record.state = V30PresExRecord.STATE_DONE
 
