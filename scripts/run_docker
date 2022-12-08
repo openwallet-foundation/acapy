@@ -61,11 +61,13 @@ echo "Container name: ${ACAPY_CONTAINER_NAME}"
 
 ACAPY_NETWORK_NAME="${NETWORK_NAME}"
 # Create new Docker network if it does not exist.
-if [ -n "${NETWORK_NAME}" ] && [ -z "$(docker network ls --filter name=^"${NETWORK_NAME}"$ --format="{{ .Name }}")" ]; then
-  docker network create "${NETWORK_NAME}"
-fi
 if [ -n "${NETWORK_NAME}" ]; then
-  echo "Docker network specified: ${ACAPY_NETWORK_NAME}"
+  if [ -z "$("$CONTAINER_RUNTIME" network ls --filter name=^"${NETWORK_NAME}"$ --format="{{ .Name }}")" ]; then
+    echo "Creating new Docker network: ${ACAPY_NETWORK_NAME}"
+    "$CONTAINER_RUNTIME" network create "${NETWORK_NAME}"
+  else
+    echo "Attaching to existing Docker network: ${ACAPY_NETWORK_NAME}"
+  fi
   ARGS="${ARGS} --network ${NETWORK_NAME}"
 else
   echo "No Docker network specified."
