@@ -48,25 +48,23 @@ if [ "$OSTYPE" == "msys" ]; then
   CONTAINER_RUNTIME="winpty docker"
 fi
 
-ACAPY_CONTAINER_NAME="${CONTAINER_NAME}"
 if [ -n "${CONTAINER_NAME}" ]; then
   ARGS="${ARGS} --name ${CONTAINER_NAME}"
 else
   RAND_NAME=$(env LC_ALL=C tr -dc 'a-zA-Z0-9' </dev/urandom | fold -w 16 | head -n 1)
-  ACAPY_CONTAINER_NAME="aries-cloudagent-runner_${RAND_NAME}"
-  ARGS="${ARGS} --name ${ACAPY_CONTAINER_NAME}"
+  CONTAINER_NAME="aries-cloudagent-runner_${RAND_NAME}"
+  ARGS="${ARGS} --name ${CONTAINER_NAME}"
 fi
 echo ""
-echo "Container name: ${ACAPY_CONTAINER_NAME}"
+echo "Container name: ${CONTAINER_NAME}"
 
-ACAPY_NETWORK_NAME="${NETWORK_NAME}"
+# Create new Docker network if it does not exist.
 if [ -n "${NETWORK_NAME}" ]; then
-  # Create new Docker network if it does not exist.
   if [ -z "$("$CONTAINER_RUNTIME" network ls --filter name=^"${NETWORK_NAME}"$ --format="{{ .Name }}")" ]; then
-    echo "Creating new Docker network: ${ACAPY_NETWORK_NAME}"
+    echo "Creating new Docker network: ${NETWORK_NAME}"
     "$CONTAINER_RUNTIME" network create "${NETWORK_NAME}"
   else
-    echo "Attaching to existing Docker network: ${ACAPY_NETWORK_NAME}"
+    echo "Attaching to existing Docker network: ${NETWORK_NAME}"
   fi
   ARGS="${ARGS} --network ${NETWORK_NAME}"
 else
