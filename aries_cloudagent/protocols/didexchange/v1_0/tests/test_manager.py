@@ -988,8 +988,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             await mediation_record.save(session)
 
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=TestConfig.test_did,
             )
@@ -1051,8 +1051,8 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
             await mediation_record.save(session)
 
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=TestConfig.test_did,
             )

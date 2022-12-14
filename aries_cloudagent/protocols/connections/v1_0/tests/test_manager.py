@@ -658,8 +658,8 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_did=self.test_did, recipient_did_public=True
             )
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=self.test_did,
             )
@@ -699,8 +699,8 @@ class TestConnectionManager(AsyncTestCase):
                 recipient_did=self.test_did, recipient_did_public=True
             )
             await session.wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=None,
                 did=self.test_did,
             )
