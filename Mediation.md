@@ -15,6 +15,7 @@
 
 * `--open-mediation` - Instructs mediators to automatically grant all incoming mediation requests.
 * `--mediator-invitation` - Receive invitation, send mediation request and set as default mediator.
+* `--mediator-connections-invite` - Connect to mediator through a connection invitation. If not specified, connect using an OOB invitation.
 * `--default-mediator-id` - Set pre-existing mediator as default mediator.
 * `--clear-default-mediator` - Clear the stored default mediator.
 
