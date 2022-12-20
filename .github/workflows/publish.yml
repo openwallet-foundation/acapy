@@ -51,7 +51,7 @@ jobs:
       - name: Setup Image Metadata (manual)
         if: github.event_name == 'workflow_dispatch'
         id: dispatch-meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4.1.1
         with:
           images: |
             ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-python
@@ -61,7 +61,7 @@ jobs:
       - name: Setup Image Metadata (release)
         if: github.event_name == 'release'
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4.1.1
         with:
           images: |
             ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-python
