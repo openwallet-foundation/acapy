@@ -928,7 +928,7 @@ class AgentContainer:
 
         return matched
 
-    async def request_proof(self, proof_request):
+    async def request_proof(self, proof_request, explicit_revoc_required: bool=False):
         log_status("#20 Request proof of degree from alice")
 
         if self.cred_type == CRED_FORMAT_INDY:
@@ -963,7 +963,7 @@ class AgentContainer:
                         ] = non_revoked
                         non_revoked_supplied = True
 
-                if not non_revoked_supplied:
+                if not non_revoked_supplied and not explicit_revoc_required:
                     # else just make it global
                     indy_proof_request["non_revoked"] = non_revoked
 
@@ -1009,6 +1009,8 @@ class AgentContainer:
             # no proof received
             print("No proof received")
             return None
+
+        # log_status(f">>> last proof received: {self.agent.last_proof_received}")
 
         if self.cred_type == CRED_FORMAT_INDY:
             # return verified status
