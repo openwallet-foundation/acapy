@@ -25,6 +25,7 @@ from ..messaging.valid import (
     INDY_DID,
     INDY_OR_KEY_DID,
     INDY_RAW_PUBLIC_KEY,
+    GENERIC_DID,
 )
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ..protocols.endorse_transaction.v1_0.manager import (
@@ -38,7 +39,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
 from ..storage.error import StorageError, StorageNotFoundError
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import SOV, KEY, DIDMethod, DIDMethods
+from .did_method import SOV, KEY, DIDMethod, DIDMethods, HolderDefinedDid
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyTypes
@@ -119,7 +120,7 @@ class DIDEndpointSchema(OpenAPISchema):
 class DIDListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for DID list request query string."""
 
-    did = fields.Str(description="DID of interest", required=False, **INDY_OR_KEY_DID)
+    did = fields.Str(description="DID of interest", required=False, **GENERIC_DID)
     verkey = fields.Str(
         description="Verification key of interest",
         required=False,
@@ -163,6 +164,8 @@ class DIDCreateOptionsSchema(OpenAPISchema):
         validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
     )
 
+    did = fields.Str(required=False, **GENERIC_DID)
+
 
 class DIDCreateSchema(OpenAPISchema):
     """Parameters and validators for create DID endpoint."""
@@ -171,7 +174,6 @@ class DIDCreateSchema(OpenAPISchema):
         required=False,
         default=SOV.method_name,
         example=SOV.method_name,
-        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
     )
 
     options = fields.Nested(
@@ -374,14 +376,26 @@ async def wallet_create_did(request: web.BaseRequest):
                     f" support key type {key_type.key_type}"
                 )
             )
+
+        did = body.get("did")
+        if method.holder_defined_did() == HolderDefinedDid.NO and did:
+            raise web.HTTPForbidden(
+                reason=(
+                    f"method {method.method_name} does not"
+                    f" support user-defined DIDs"
+                )
+            )
+        elif method.holder_defined_did() == HolderDefinedDid.REQUIRED and not did:
+            raise web.HTTPBadRequest(
+                reason=f"method {method.method_name} requires a user-defined DIDs"
+            )
+
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
         try:
             info = await wallet.create_local_did(
-                method=method,
-                key_type=key_type,
-                seed=seed,
+                method=method, key_type=key_type, seed=seed, did=did
             )
 
         except WalletError as err:
