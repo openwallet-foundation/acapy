@@ -130,10 +130,12 @@ def aries_container_receive_credential(
 def aries_container_request_proof(
     the_container: AgentContainer,
     proof_request: dict,
+    explicit_revoc_required: bool = False,
 ):
     return run_coroutine(
         the_container.request_proof,
         proof_request,
+        explicit_revoc_required=explicit_revoc_required,
     )
 
 
