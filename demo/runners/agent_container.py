@@ -928,7 +928,7 @@ class AgentContainer:
 
         return matched
 
-    async def request_proof(self, proof_request, explicit_revoc_required: bool=False):
+    async def request_proof(self, proof_request, explicit_revoc_required: bool = False):
         log_status("#20 Request proof of degree from alice")
 
         if self.cred_type == CRED_FORMAT_INDY:

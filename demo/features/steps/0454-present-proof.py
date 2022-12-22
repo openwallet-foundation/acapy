@@ -51,7 +51,9 @@ def step_impl(context, verifier, request_for_proof, prover):
 
     proof_request_info = read_proof_req_data(request_for_proof)
 
-    proof_exchange = aries_container_request_proof(agent["agent"], proof_request_info, explicit_revoc_required=True)
+    proof_exchange = aries_container_request_proof(
+        agent["agent"], proof_request_info, explicit_revoc_required=True
+    )
 
     context.proof_request = proof_request_info
     context.proof_exchange = proof_exchange
