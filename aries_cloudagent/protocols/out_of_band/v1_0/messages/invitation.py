@@ -96,13 +96,17 @@ class ServiceOrDIDField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, dict):
             return Service.deserialize(value)
+        elif isinstance(value, Service):
+            return value
         elif isinstance(value, str):
-            if bool(DIDValidation.PATTERN.match(value)):
-                return value
-            else:
+            if not DIDValidation.PATTERN.match(value):
                 raise ValidationError(
                     "Service item must be a valid decentralized identifier (DID)"
                 )
+            return value
+        raise ValidationError(
+            "Service item must be a valid decentralized identifier (DID) or object"
+        )
 
 
 class InvitationMessage(AgentMessage):
@@ -272,7 +276,7 @@ class InvitationMessageSchema(AgentMessageSchema):
             ValidationError: If any of the fields do not validate
         """
         handshake_protocols = data.get("handshake_protocols")
-        requests_attach = data.get("requests~attach")
+        requests_attach = data.get("requests_attach")
         if not handshake_protocols and not requests_attach:
             raise ValidationError(
                 "Model must include non-empty "
