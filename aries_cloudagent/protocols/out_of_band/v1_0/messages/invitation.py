@@ -221,9 +221,6 @@ class InvitationMessageSchema(AgentMessageSchema):
         fields.Str(
             description="Handshake protocol",
             example=DIDCommPrefix.qualify_current(HSProto.RFC23.name),
-            validate=lambda hsp: (
-                DIDCommPrefix.unqualify(hsp) in [p.name for p in HSProto]
-            ),
         ),
         required=False,
     )
@@ -275,14 +272,11 @@ class InvitationMessageSchema(AgentMessageSchema):
             ValidationError: If any of the fields do not validate
         """
         handshake_protocols = data.get("handshake_protocols")
-        requests_attach = data.get("requests_attach")
-        if not (
-            (handshake_protocols and len(handshake_protocols) > 0)
-            or (requests_attach and len(requests_attach) > 0)
-        ):
+        requests_attach = data.get("requests~attach")
+        if not handshake_protocols and not requests_attach:
             raise ValidationError(
                 "Model must include non-empty "
-                "handshake_protocols or requests_attach or both"
+                "handshake_protocols or requests~attach or both"
             )
 
         # services = data.get("services")
