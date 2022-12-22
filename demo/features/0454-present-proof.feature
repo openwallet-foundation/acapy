@@ -117,6 +117,26 @@ Feature: RFC 0454 Aries agent present proof
          | issuer1 | Acme1_capabilities        | issuer2 | Acme2_capabilities | Bob_cap | Schema_name_1     | Credential_data_1 | Schema_name_2 | Credential_data_2 | Proof_request                    |
          | Acme1   | --revocation --public-did | Acme2   | --public-did       |         | driverslicense_v2 | Data_DL_MaxValues | health_id     | Data_DL_MaxValues | DL_age_over_19_v2_with_health_id |
 
+   @T003-RFC0454.1f
+   Scenario Outline: Present Proof for multiple credentials where the one is revocable and one isn't, neither credential is revoked, fails due to requesting request-level revocation
+      Given we have "4" agents
+         | name  | role     | capabilities         |
+         | Acme1 | issuer1  | <Acme1_capabilities> |
+         | Acme2 | issuer2  | <Acme2_capabilities> |
+         | Faber | verifier | <Acme1_capabilities> |
+         | Bob   | prover   | <Bob_cap>   |
+      And "<issuer1>" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name_1> credential <Credential_data_1> from "<issuer1>"
+      And "<issuer2>" and "Bob" have an existing connection
+      And "Bob" has an issued <Schema_name_2> credential <Credential_data_2> from "<issuer2>"
+      And "Faber" and "Bob" have an existing connection
+      When "Faber" sends a request for proof presentation <Proof_request> to "Bob"
+      Then "Faber" has the proof verification fail
+
+      Examples:
+         | issuer1 | Acme1_capabilities        | issuer2 | Acme2_capabilities | Bob_cap | Schema_name_1     | Credential_data_1 | Schema_name_2 | Credential_data_2 | Proof_request                    |
+         | Acme1   | --revocation --public-did | Acme2   | --public-did       |         | driverslicense_v2 | Data_DL_MaxValues | health_id     | Data_DL_MaxValues | DL_age_over_19_v2_with_health_id_r2 |
+
    @T003-RFC0454.2 @GHA
    Scenario Outline: Present Proof for multiple credentials where the one is revocable and one isn't, and the revocable credential is revoked, and the proof checks for revocation and fails
       Given we have "4" agents
