@@ -35,7 +35,7 @@ Also note that the above will only work with the `/issue-credential-2.0/create-o
 
 Copy the "invitation" json text from the Faber shell and paste into the Alice shell to establish a connection between the two agents.
 
-(If you are running with `--no-auto` you will also need to call the `/connections/accept-invitation` endpoint in alice's admin api swagger page.)
+(If you are running with `--no-auto` you will also need to call the `/connections/{conn_id}/accept-invitation` endpoint in alice's admin api swagger page.)
 
 Now open up two browser windows to the [Faber](http://localhost:8021/api/doc) and [Alice](http://localhost:8031/api/doc) admin api swagger pages.
 
@@ -82,7 +82,7 @@ Congradulations, you are now ready to start issuing JSON-LD credentials!
 - You have created a (non-public) DID for Faber to use to sign/issue the credentials - you will need to copy the DID that you created above into the examples below (as `issuer`).
 - You have created a (non-public) DID for Alice to use as her `credentialSubject.id` - this is required for Alice to sign the proof (the `credentialSubject.id` is not required, but then the provided presentation can't be verified).
 
-To issue a credential, use the `/issue-credential-2.0/create-offer` endpoint.  (You can also use the `/issue-credential-2.0/send`) endpoint, if, as mentioned above, you have included the `--no-auto` when starting both of the agents.)
+To issue a credential, use the `/issue-credential-2.0/send-offer` endpoint. (You can also use the `/issue-credential-2.0/send`) endpoint, if, as mentioned above, you have included the `--no-auto` when starting both of the agents.)
 
 You can test with this example payload (just replace the "connection_id", "issuer" key, "credentialSubject.id" and "proofType" with appropriate values:
 
@@ -336,7 +336,7 @@ In Alice's swagger page, submit the `/credentials/records/w3c` endpoint to see t
 
 ### Request Presentation Example
 
-To request a proof, submit the following (with appropriate `connection_id`) to Faber's `/request-presentation-2.0/request-proof` endpoint:
+To request a proof, submit the following (with appropriate `connection_id`) to Faber's `/present-proof-2.0/send-request` endpoint:
 
 ```
 {
@@ -408,7 +408,7 @@ To request a proof, submit the following (with appropriate `connection_id`) to F
 
 Note that the `is_holder` property can be used by Faber to verify that the holder of credential is the same as the subject of the attribute (`familyName`). Later on, the received presentation will be signed and verifiable only if `is_holder` with ` "directive": "required"` is included in the presentation request.
 
-There are several ways that Alice can respond with a presentation.  The simplest will just tell aca-py to put the presentation together and send it to Faber - submit the following to Alice's `/request-presentation-2.0/{pres_ex_id}/send-presentation`:
+There are several ways that Alice can respond with a presentation.  The simplest will just tell aca-py to put the presentation together and send it to Faber - submit the following to Alice's `/present-proof-2.0/records/{pres_ex_id}/send-presentation`:
 
 ```
 {
