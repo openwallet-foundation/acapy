@@ -9,6 +9,7 @@ from typing import Optional, Tuple, Mapping
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
+from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.crypto import did_is_self_certified
 
@@ -53,7 +54,11 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
 
     async def get_write_ledger(self) -> Optional[Tuple[str, IndySdkLedger]]:
         """Return the write IndySdkLedger instance."""
-        return self.write_ledger_info
+        # return self.write_ledger_info
+        if self.write_ledger_info:
+            return (self.write_ledger_info[0], self.profile.inject_or(BaseLedger))
+        else:
+            return None
 
     async def get_prod_ledgers(self) -> Mapping:
         """Return production ledgers mapping."""
@@ -83,7 +88,11 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         """
         try:
             indy_sdk_ledger = None
-            if ledger_id in self.production_ledgers:
+            if self.write_ledger_info and ledger_id == self.write_ledger_info[0]:
+                indy_sdk_ledger = await self.get_write_ledger()
+                if indy_sdk_ledger:
+                    indy_sdk_ledger = indy_sdk_ledger[1]
+            elif ledger_id in self.production_ledgers:
                 indy_sdk_ledger = self.production_ledgers.get(ledger_id)
             else:
                 indy_sdk_ledger = self.non_production_ledgers.get(ledger_id)
@@ -134,7 +143,9 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         cache_key = f"did_ledger_id_resolver::{did}"
         if bool(cache_did and self.cache and await self.cache.get(cache_key)):
             cached_ledger_id = await self.cache.get(cache_key)
-            if cached_ledger_id in self.production_ledgers:
+            if self.write_ledger_info and cached_ledger_id == self.write_ledger_info[0]:
+                return self.get_write_ledger()
+            elif cached_ledger_id in self.production_ledgers:
                 return (cached_ledger_id, self.production_ledgers.get(cached_ledger_id))
             elif cached_ledger_id in self.non_production_ledgers:
                 return (
