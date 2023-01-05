@@ -84,24 +84,27 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                         pool_name = config.get("pool_name")
                         ledger_is_production = config.get("is_production")
                         ledger_is_write = config.get("is_write")
-                        ledger_pool = pool_class(
-                            pool_name,
-                            keepalive=keepalive,
-                            cache=cache,
-                            genesis_transactions=genesis_transactions,
-                            read_only=read_only,
-                            socks_proxy=socks_proxy,
-                        )
-                        ledger_instance = ledger_class(
-                            pool=ledger_pool,
-                            profile=self.root_profile,
-                        )
                         if ledger_is_write:
-                            write_ledger_info = (ledger_id, ledger_instance)
-                        if ledger_is_production:
-                            indy_sdk_production_ledgers[ledger_id] = ledger_instance
+                            write_ledger_info = (ledger_id, None)
                         else:
-                            indy_sdk_non_production_ledgers[ledger_id] = ledger_instance
+                            ledger_pool = pool_class(
+                                pool_name,
+                                keepalive=keepalive,
+                                cache=cache,
+                                genesis_transactions=genesis_transactions,
+                                read_only=read_only,
+                                socks_proxy=socks_proxy,
+                            )
+                            ledger_instance = ledger_class(
+                                pool=ledger_pool,
+                                profile=self.root_profile,
+                            )
+                            if ledger_is_production:
+                                indy_sdk_production_ledgers[ledger_id] = ledger_instance
+                            else:
+                                indy_sdk_non_production_ledgers[
+                                    ledger_id
+                                ] = ledger_instance
                     if settings.get_value("ledger.genesis_transactions"):
                         ledger_instance = self.root_profile.inject_or(BaseLedger)
                         ledger_id = "startup::" + ledger_instance.pool.name

@@ -370,6 +370,7 @@ class AdminServer(BaseAdminServer):
                     and not is_server_path
                     and not is_unprotected_path(path)
                     and not base_limited_access_path
+                    and not (request.method == "OPTIONS")  # CORS fix
                 ):
                     raise web.HTTPUnauthorized()
 

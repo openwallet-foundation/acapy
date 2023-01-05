@@ -25,6 +25,8 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --mediation               | --mediation               | driverslicense |
          | --multitenant             | --multitenant             | driverslicense |
          | --mediation --multitenant | --mediation --multitenant | driverslicense |
+         | --multitenant --multi-ledger | --multitenant --multi-ledger | driverslicense |
+         | --multitenant --multi-ledger --revocation | --multitenant --multi-ledger --revocation | driverslicense |
 
 
    @T001.1-RFC0586 @GHA
@@ -93,6 +95,7 @@ Feature: RFC 0586 Aries sign (endorse) transactions functions
          | --revocation --public-did --mediation               | --revocation --mediation                  | driverslicense | Data_DL_NormalizedValues |
          | --revocation --public-did --multitenant             | --revocation --multitenant                | driverslicense | Data_DL_NormalizedValues |
          | --revocation --public-did --mediation --multitenant | --revocation --mediation --multitenant    | driverslicense | Data_DL_NormalizedValues |
+         | --multitenant --multi-ledger --revocation --public-did | --multitenant --multi-ledger --revocation | driverslicense | Data_DL_NormalizedValues |
 
    @T002.1-RFC0586 @GHA
    Scenario Outline: endorse a schema and cred def transaction, write to the ledger, issue and revoke a credential, manually invoking each endorsement endpoint
