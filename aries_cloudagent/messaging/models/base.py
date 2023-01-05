@@ -5,7 +5,8 @@ import json
 
 from abc import ABC
 from collections import namedtuple
-from typing import Mapping, Union
+from typing import Mapping, Optional, Type, TypeVar, Union, cast, overload
+from typing_extensions import Literal
 
 from marshmallow import Schema, post_dump, pre_load, post_load, ValidationError, EXCLUDE
 
@@ -17,7 +18,7 @@ LOGGER = logging.getLogger(__name__)
 SerDe = namedtuple("SerDe", "ser de")
 
 
-def resolve_class(the_cls, relative_cls: type = None):
+def resolve_class(the_cls, relative_cls: Optional[type] = None) -> type:
     """
     Resolve a class.
 
@@ -38,6 +39,10 @@ def resolve_class(the_cls, relative_cls: type = None):
     elif isinstance(the_cls, str):
         default_module = relative_cls and relative_cls.__module__
         resolved = ClassLoader.load_class(the_cls, default_module)
+    else:
+        raise TypeError(
+            f"Could not resolve class from {the_cls}; incorrect type {type(the_cls)}"
+        )
     return resolved
 
 
@@ -53,7 +58,10 @@ def resolve_meta_property(obj, prop_name: str, defval=None):
         The meta property
 
     """
-    cls = obj.__class__
+    if isinstance(obj, type):
+        cls = obj
+    else:
+        cls = obj.__class__
     found = defval
     while cls:
         Meta = getattr(cls, "Meta", None)
@@ -68,6 +76,9 @@ def resolve_meta_property(obj, prop_name: str, defval=None):
 
 class BaseModelError(BaseError):
     """Base exception class for base model errors."""
+
+
+ModelType = TypeVar("ModelType", bound="BaseModel")
 
 
 class BaseModel(ABC):
@@ -94,7 +105,7 @@ class BaseModel(ABC):
             )
 
     @classmethod
-    def _get_schema_class(cls):
+    def _get_schema_class(cls) -> Type["BaseModelSchema"]:
         """
         Get the schema class.
 
@@ -102,10 +113,16 @@ class BaseModel(ABC):
             The resolved schema class
 
         """
-        return resolve_class(cls.Meta.schema_class, cls)
+        resolved = resolve_class(cls.Meta.schema_class, cls)
+        if issubclass(resolved, BaseModelSchema):
+            return resolved
+
+        raise TypeError(
+            f"Resolved class is not a subclass of BaseModelSchema: {resolved}"
+        )
 
     @property
-    def Schema(self) -> type:
+    def Schema(self) -> Type["BaseModelSchema"]:
         """
         Accessor for the model's schema class.
 
@@ -115,8 +132,49 @@ class BaseModel(ABC):
         """
         return self._get_schema_class()
 
+    @overload
     @classmethod
-    def deserialize(cls, obj, unknown: str = None, none2none: str = False):
+    def deserialize(
+        cls: Type[ModelType],
+        obj,
+        *,
+        unknown: Optional[str] = None,
+    ) -> ModelType:
+        """Convert from JSON representation to a model instance."""
+        ...
+
+    @overload
+    @classmethod
+    def deserialize(
+        cls: Type[ModelType],
+        obj,
+        *,
+        none2none: Literal[False],
+        unknown: Optional[str] = None,
+    ) -> ModelType:
+        """Convert from JSON representation to a model instance."""
+        ...
+
+    @overload
+    @classmethod
+    def deserialize(
+        cls: Type[ModelType],
+        obj,
+        *,
+        none2none: Literal[True],
+        unknown: Optional[str] = None,
+    ) -> Optional[ModelType]:
+        """Convert from JSON representation to a model instance."""
+        ...
+
+    @classmethod
+    def deserialize(
+        cls: Type[ModelType],
+        obj,
+        *,
+        unknown: Optional[str] = None,
+        none2none: bool = False,
+    ) -> Optional[ModelType]:
         """
         Convert from JSON representation to a model instance.
 
@@ -132,18 +190,45 @@ class BaseModel(ABC):
         if obj is None and none2none:
             return None
 
-        schema = cls._get_schema_class()(unknown=unknown or EXCLUDE)
+        schema_cls = cls._get_schema_class()
+        schema = schema_cls(
+            unknown=unknown or resolve_meta_property(schema_cls, "unknown", EXCLUDE)
+        )
+
         try:
-            return schema.loads(obj) if isinstance(obj, str) else schema.load(obj)
+            return cast(
+                ModelType,
+                schema.loads(obj) if isinstance(obj, str) else schema.load(obj),
+            )
         except (AttributeError, ValidationError) as err:
             LOGGER.exception(f"{cls.__name__} message validation error:")
             raise BaseModelError(f"{cls.__name__} schema validation failed") from err
 
+    @overload
     def serialize(
         self,
-        as_string=False,
-        unknown: str = None,
+        *,
+        as_string: Literal[True],
+        unknown: Optional[str] = None,
+    ) -> str:
+        """Create a JSON-compatible dict representation of the model instance."""
+        ...
+
+    @overload
+    def serialize(
+        self,
+        *,
+        unknown: Optional[str] = None,
     ) -> dict:
+        """Create a JSON-compatible dict representation of the model instance."""
+        ...
+
+    def serialize(
+        self,
+        *,
+        as_string: bool = False,
+        unknown: Optional[str] = None,
+    ) -> Union[str, dict]:
         """
         Create a JSON-compatible dict representation of the model instance.
 
@@ -154,7 +239,10 @@ class BaseModel(ABC):
             A dict representation of this model, or a JSON string if as_string is True
 
         """
-        schema = self.Schema(unknown=unknown or EXCLUDE)
+        schema_cls = self._get_schema_class()
+        schema = schema_cls(
+            unknown=unknown or resolve_meta_property(schema_cls, "unknown", EXCLUDE)
+        )
         try:
             return (
                 schema.dumps(self, separators=(",", ":"))
@@ -168,18 +256,17 @@ class BaseModel(ABC):
             ) from err
 
     @classmethod
-    def serde(cls, obj: Union["BaseModel", Mapping]) -> SerDe:
+    def serde(cls, obj: Union["BaseModel", Mapping]) -> Optional[SerDe]:
         """Return serialized, deserialized representations of input object."""
+        if obj is None:
+            return None
 
-        return (
-            SerDe(obj.serialize(), obj)
-            if isinstance(obj, BaseModel)
-            else None
-            if obj is None
-            else SerDe(obj, cls.deserialize(obj))
-        )
+        if isinstance(obj, BaseModel):
+            return SerDe(obj.serialize(), obj)
 
-    def validate(self, unknown: str = None):
+        return SerDe(obj, cls.deserialize(obj))
+
+    def validate(self, unknown: Optional[str] = None):
         """Validate a constructed model."""
         schema = self.Schema(unknown=unknown)
         errors = schema.validate(self.serialize())
@@ -191,7 +278,7 @@ class BaseModel(ABC):
     def from_json(
         cls,
         json_repr: Union[str, bytes],
-        unknown: str = None,
+        unknown: Optional[str] = None,
     ):
         """
         Parse a JSON string into a model instance.
@@ -218,7 +305,7 @@ class BaseModel(ABC):
             A JSON representation of this message
 
         """
-        return json.dumps(self.serialize(unknown=unknown or EXCLUDE))
+        return json.dumps(self.serialize(unknown=unknown))
 
     def __repr__(self) -> str:
         """
@@ -319,7 +406,14 @@ class BaseModelSchema(Schema):
             A model instance
 
         """
-        return self.Model(**data)
+        try:
+            cls_inst = self.Model(**data)
+        except TypeError as err:
+            if "_type" in str(err) and "_type" in data:
+                data["msg_type"] = data["_type"]
+                del data["_type"]
+            cls_inst = self.Model(**data)
+        return cls_inst
 
     @post_dump
     def remove_skipped_values(self, data, **kwargs):

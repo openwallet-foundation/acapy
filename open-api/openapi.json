@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.0.0-rc0",
+    "version" : "v1.0.0-rc1",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -7328,6 +7328,14 @@
             "description" : "Handshake protocol to specify in invitation"
           }
         },
+        "accept" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "didcomm/aip1",
+            "description" : "Mime type list in order of preference to be used in response"
+          }
+        },
         "mediation_id" : {
           "type" : "string",
           "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -7371,6 +7379,14 @@
             "type" : "string",
             "example" : "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/didexchange/1.0",
             "description" : "Handshake protocol"
+          }
+        },
+        "accept" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string",
+            "example" : "didcomm/aip1",
+            "description" : "Mime type list in order of preference to be used in response"
           }
         },
         "label" : {

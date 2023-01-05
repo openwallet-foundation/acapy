@@ -1,6 +1,6 @@
 from asynctest import TestCase as AsyncTestCase
 
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 from ....core.in_memory import InMemoryProfile
 from ....protocols.trustping.v1_0.messages.ping import Ping
 from ....wallet.in_memory import InMemoryWallet
@@ -43,7 +43,7 @@ class TestSignatureDecorator(AsyncTestCase):
 
         profile = InMemoryProfile.test_profile()
         wallet = InMemoryWallet(profile)
-        key_info = await wallet.create_signing_key(KeyType.ED25519)
+        key_info = await wallet.create_signing_key(ED25519)
 
         deco = await SignatureDecorator.create(
             Ping(), key_info.verkey, wallet, timestamp=None

@@ -13,7 +13,7 @@ from ....core.in_memory import InMemoryProfile
 from ....vc.ld_proofs import DocumentLoader
 from ....wallet.base import BaseWallet
 from ....wallet.in_memory import InMemoryWallet
-from ....wallet.key_type import KeyType
+from ....wallet.key_type import ED25519
 
 from .. import credential as test_module
 from ..create_verify_data import DroppedAttributeError
@@ -60,7 +60,7 @@ class TestCredential(AsyncTestCase):
 class TestOps(AsyncTestCase):
     async def setUp(self):
         self.wallet = InMemoryWallet(InMemoryProfile.test_profile())
-        await self.wallet.create_signing_key(KeyType.ED25519, TEST_SEED)
+        await self.wallet.create_signing_key(ED25519, TEST_SEED)
 
         self.session = InMemoryProfile.test_session(bind={BaseWallet: self.wallet})
         self.profile = self.session.profile

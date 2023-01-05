@@ -7,7 +7,7 @@ import sys
 from importlib import import_module
 from importlib.util import find_spec, resolve_name
 from types import ModuleType
-from typing import Sequence, Type
+from typing import Optional, Sequence, Type
 
 from ..core.error import BaseError
 
@@ -75,7 +75,10 @@ class ClassLoader:
 
     @classmethod
     def load_class(
-        cls, class_name: str, default_module: str = None, package: str = None
+        cls,
+        class_name: str,
+        default_module: Optional[str] = None,
+        package: Optional[str] = None,
     ):
         """
         Resolve a complete class path (ie. typing.Dict) to the class itself.
