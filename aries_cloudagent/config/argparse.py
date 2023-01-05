@@ -74,7 +74,8 @@ def create_argument_parser(*, prog: str = None):
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
-    """Log a set of argument groups into a parser.
+    """
+    Log a set of argument groups into a parser.
 
     Returns:
         A callable to convert loaded arguments into a settings dictionary
@@ -872,32 +873,56 @@ class LedgerGroup(ArgumentGroup):
         if args.no_ledger:
             settings["ledger.disabled"] = True
         else:
-            configured = False
+            single_configured = False
+            multi_configured = False
+            update_pool_name = False
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
-                configured = True
+                single_configured = True
             elif args.genesis_file:
                 settings["ledger.genesis_file"] = args.genesis_file
-                configured = True
+                single_configured = True
             elif args.genesis_transactions:
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
-                configured = True
+                single_configured = True
             if args.genesis_transactions_list:
                 with open(args.genesis_transactions_list, "r") as stream:
                     txn_config_list = yaml.safe_load(stream)
                     ledger_config_list = []
                     for txn_config in txn_config_list:
                         ledger_config_list.append(txn_config)
+                        if "is_write" in txn_config and txn_config["is_write"]:
+                            if "genesis_url" in txn_config:
+                                settings["ledger.genesis_url"] = txn_config[
+                                    "genesis_url"
+                                ]
+                            elif "genesis_file" in txn_config:
+                                settings["ledger.genesis_file"] = txn_config[
+                                    "genesis_file"
+                                ]
+                            elif "genesis_transactions" in txn_config:
+                                settings["ledger.genesis_transactions"] = txn_config[
+                                    "genesis_transactions"
+                                ]
+                            else:
+                                raise ArgsParseError(
+                                    "No genesis information provided for write ledger"
+                                )
+                            if "id" in txn_config:
+                                settings["ledger.pool_name"] = txn_config["id"]
+                                update_pool_name = True
                     settings["ledger.ledger_config_list"] = ledger_config_list
-                    configured = True
-            if not configured:
+                    multi_configured = True
+            if not (single_configured or multi_configured):
                 raise ArgsParseError(
                     "One of --genesis-url --genesis-file, --genesis-transactions "
                     "or --genesis-transactions-list must be specified (unless "
                     "--no-ledger is specified to explicitly configure aca-py to"
                     " run with no ledger)."
                 )
-            if args.ledger_pool_name:
+            if single_configured and multi_configured:
+                raise ArgsParseError("Cannot configure both single- and multi-ledger.")
+            if args.ledger_pool_name and not update_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
             if args.ledger_keepalive:
                 settings["ledger.keepalive"] = args.ledger_keepalive
@@ -1837,7 +1862,7 @@ class EndorsementGroup(ArgumentGroup):
         parser.add_argument(
             "--auto-promote-author-did",
             action="store_true",
-            env_var="ACAPY_PROMOTE-AUTHOR-DID",
+            env_var="ACAPY_AUTO_PROMOTE_AUTHOR_DID",
             help="For Authors, specify whether to automatically promote"
             " a DID to the wallet public DID after writing to the ledger.",
         )

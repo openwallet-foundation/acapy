@@ -1,0 +1,31 @@
+@startuml
+interface AdminUser
+
+interface OtherAgent
+
+object TransactionRoutes
+
+object TransactionHandlers
+
+AdminUser --> TransactionRoutes: invoke_endpoint()
+
+OtherAgent --> TransactionHandlers: send_message()
+
+object TransactionManager
+
+object Wallet
+
+TransactionManager --> Wallet: manage_records()
+
+TransactionRoutes --> TransactionManager: invoke_api()
+TransactionHandlers --> TransactionManager: handle_msg()
+
+object EventBus
+
+TransactionManager --> EventBus: notify()
+
+interface OtherProtocolRoutes
+
+OtherProtocolRoutes --> EventBus: subscribe()
+EventBus --> OtherProtocolRoutes: notify()
+@enduml

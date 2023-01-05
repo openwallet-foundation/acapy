@@ -282,7 +282,6 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_rev_regs_created(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
-        STATE = "active"
         self.request.query = {
             "cred_def_id": CRED_DEF_ID,
             "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,

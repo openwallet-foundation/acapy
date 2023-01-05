@@ -34,26 +34,6 @@ class TestTransactionJobToSendHandler(AsyncTestCase):
         )
         assert not responder.messages
 
-    async def test_called_not_ready(self):
-        request_context = RequestContext.test_context()
-        request_context.message_receipt = MessageReceipt()
-        request_context.connection_record = async_mock.MagicMock()
-
-        with async_mock.patch.object(
-            test_module, "TransactionManager", autospec=True
-        ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.set_transaction_their_job = (
-                async_mock.CoroutineMock()
-            )
-            request_context.message = TransactionJobToSend()
-            request_context.connection_ready = False
-            handler = test_module.TransactionJobToSendHandler()
-            responder = MockResponder()
-            with self.assertRaises(test_module.HandlerException):
-                await handler.handle(request_context, responder)
-
-            assert not responder.messages
-
     async def test_called_x(self):
         request_context = RequestContext.test_context()
         request_context.message_receipt = MessageReceipt()

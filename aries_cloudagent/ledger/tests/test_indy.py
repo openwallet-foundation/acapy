@@ -8,19 +8,17 @@ from os import path
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.injection_context import InjectionContext
-from ...core.in_memory import InMemoryProfile
 from ...cache.in_memory import InMemoryCache
 from ...indy.issuer import IndyIssuer, IndyIssuerError
 from ...indy.sdk.profile import IndySdkProfile
-from ...indy.sdk.wallet_setup import IndyWalletConfig
 from ...storage.record import StorageRecord
 from ...wallet.base import BaseWallet
 from ...wallet.did_info import DIDInfo
 from ...wallet.did_posture import DIDPosture
 from ...wallet.error import WalletNotFoundError
-from ...wallet.indy import IndyOpenWallet, IndySdkWallet
-from ...wallet.key_type import KeyType
-from ...wallet.did_method import DIDMethod
+from ...wallet.indy import IndySdkWallet
+from ...wallet.key_type import ED25519
+from ...wallet.did_method import SOV
 
 from ..endpoint_type import EndpointType
 from ..indy import (
@@ -70,8 +68,8 @@ class TestIndySdkLedger(AsyncTestCase):
             did=self.test_did,
             verkey="3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
             metadata={"test": "test"},
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
         self.test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
         context = InjectionContext()
@@ -1219,8 +1217,8 @@ class TestIndySdkLedger(AsyncTestCase):
                     did=self.test_did,
                     verkey=self.test_verkey,
                     metadata=None,
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    method=SOV,
+                    key_type=ED25519,
                 )
                 mock_did = mock_wallet_get_public_did.return_value
                 (
@@ -1299,8 +1297,8 @@ class TestIndySdkLedger(AsyncTestCase):
                 self.test_did,
                 self.test_verkey,
                 None,
-                DIDMethod.SOV,
-                KeyType.ED25519,
+                SOV,
+                ED25519,
             )
             async with ledger:
                 (
@@ -1382,8 +1380,8 @@ class TestIndySdkLedger(AsyncTestCase):
                 did=self.test_did,
                 verkey=self.test_verkey,
                 metadata=None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
 
             async with ledger:
@@ -1794,8 +1792,8 @@ class TestIndySdkLedger(AsyncTestCase):
                     did=self.test_did,
                     verkey=self.test_verkey,
                     metadata=None,
-                    method=DIDMethod.SOV,
-                    key_type=KeyType.ED25519,
+                    method=SOV,
+                    key_type=ED25519,
                 )
                 mock_did = mock_wallet_get_public_did.return_value
 
@@ -1868,8 +1866,8 @@ class TestIndySdkLedger(AsyncTestCase):
                 did=self.test_did,
                 verkey=self.test_verkey,
                 metadata=None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             async with ledger:
                 with self.assertRaises(LedgerError):
@@ -2308,17 +2306,37 @@ class TestIndySdkLedger(AsyncTestCase):
             attr_json = await ledger._construct_attr_json(
                 "https://url",
                 EndpointType.ENDPOINT,
-                all_exist_endpoints={"Endpoint": "https://endpoint"},
                 routing_keys=["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
             )
         assert attr_json == json.dumps(
             {
                 "endpoint": {
-                    "Endpoint": "https://endpoint",
-                    "endpoint": {
-                        "endpoint": "https://url",
-                        "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
-                    },
+                    "endpoint": "https://url",
+                    "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+                }
+            }
+        )
+
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_open")
+    @async_mock.patch("aries_cloudagent.ledger.indy.IndySdkLedgerPool.context_close")
+    @pytest.mark.asyncio
+    async def test_construct_attr_json_with_routing_keys_all_exist_endpoints(
+        self, mock_close, mock_open
+    ):
+        ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
+        async with ledger:
+            attr_json = await ledger._construct_attr_json(
+                "https://url",
+                EndpointType.ENDPOINT,
+                all_exist_endpoints={"profile": "https://endpoint/profile"},
+                routing_keys=["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+            )
+        assert attr_json == json.dumps(
+            {
+                "endpoint": {
+                    "profile": "https://endpoint/profile",
+                    "endpoint": "https://url",
+                    "routingKeys": ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
                 }
             }
         )
