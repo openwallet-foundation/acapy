@@ -81,6 +81,7 @@ class BaseRecord(BaseModel):
     EVENT_NAMESPACE: str = "acapy::record"
     LOG_STATE_FLAG = None
     TAG_NAMES = {"state"}
+    STATE_DELETED = "deleted"
 
     def __init__(
         self,
@@ -420,7 +421,7 @@ class BaseRecord(BaseModel):
             storage = session.inject(BaseStorage)
             if self.state:
                 self._previous_state = self.state
-                self.state = "deleted"
+                self.state = BaseRecord.STATE_DELETED
                 await self.emit_event(session, self.serialize())
             await storage.delete_record(self.storage_record)
 
