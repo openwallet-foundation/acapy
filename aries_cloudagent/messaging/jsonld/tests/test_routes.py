@@ -234,22 +234,22 @@ async def test_verify_bad_ver_meth_deref_req_error(
     assert "error" in mock_response.call_args[0][0]
 
 
-@pytest.mark.asyncio
-async def test_verify_bad_ver_meth_not_ver_meth(
-    mock_resolver, mock_verify_request, mock_response, request_body
-):
-    request_body["doc"]["proof"][
-        "verificationMethod"
-    ] = "did:example:1234abcd#did-communication"
-    await test_module.verify(mock_verify_request(request_body))
-    assert "error" in mock_response.call_args[0][0]
-
-
+@pytest.mark.parametrize(
+    "vmethod",
+    [
+        "did:example:1234abcd#key-2",
+        "did:example:1234abcd#did-communication",
+    ],
+)
 @pytest.mark.asyncio
 async def test_verify_bad_vmethod_unsupported(
-    mock_resolver, mock_verify_request, mock_response, request_body
+    mock_resolver,
+    mock_verify_request,
+    mock_response,
+    request_body,
+    vmethod,
 ):
-    request_body["doc"]["proof"]["verificationMethod"] = "did:example:1234abcd#key-2"
+    request_body["doc"]["proof"]["verificationMethod"] = vmethod
     with pytest.raises(web.HTTPBadRequest):
         await test_module.verify(mock_verify_request(request_body))
 
