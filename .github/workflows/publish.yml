@@ -1,15 +1,13 @@
-name: Publish ACA-Py
+name: Publish ACA-Py Image
+run-name: Publish ACA-Py ${{ inputs.tag || github.event.release.tag_name }} Image
 on:
   release:
     types: [released]
+
   workflow_dispatch:
     inputs:
       tag:
         description: 'Image tag'
-        required: true
-        type: string
-      version:
-        description: "Version label in image"
         required: true
         type: string
 
@@ -18,9 +16,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.6', '3.9']
 
-    name: Publish
+    name: Publish ACA-Py Image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -28,7 +26,7 @@ jobs:
       - name: Gather image info
         id: info
         run: |
-          echo "::set-output name=repo-owner::${GITHUB_REPOSITORY_OWNER,,}"
+          echo "repo-owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
 
       - name: Cache Docker layers
         uses: actions/cache@v3
@@ -39,34 +37,23 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
 
       - name: Log in to the GitHub Container Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Image Metadata (manual)
-        if: github.event_name == 'workflow_dispatch'
-        id: dispatch-meta
-        uses: docker/metadata-action@v4.1.1
-        with:
-          images: |
-            ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-python
-          tags: |
-            type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag }}
-
-      - name: Setup Image Metadata (release)
-        if: github.event_name == 'release'
+      - name: Setup Image Metadata
         id: meta
-        uses: docker/metadata-action@v4.1.1
+        uses: docker/metadata-action@v4
         with:
           images: |
             ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-python
           tags: |
-            type=semver,pattern=py${{ matrix.python-version }}-{{version}}
+            type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
 
       - name: Build and Push Image to ghcr.io
         uses: docker/build-push-action@v3
@@ -74,11 +61,12 @@ jobs:
           push: true
           context: .
           file: docker/Dockerfile
-          tags: ${{ steps.dispatch-meta.outputs.tags || steps.meta.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          target: main
           build-args: |
             python_version=${{ matrix.python-version }}
-            acapy_version=${{ inputs.version || github.event.release.tag_name }}
+            acapy_version=${{ inputs.tag || github.event.release.tag_name }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
 
