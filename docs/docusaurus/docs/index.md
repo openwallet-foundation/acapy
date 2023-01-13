@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+title: Documentation
 ---
 
 # Aries Cloud Agent Python (ACA-Py) Documentation
