@@ -167,8 +167,10 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.request.json = async_mock.AsyncMock(
             return_value={
                 "method": "custom",
-                "did": "did:custom:aCustomUserDefinedDID",
-                "options": {"key_type": ED25519.key_type},
+                "options": {
+                    "key_type": ED25519.key_type,
+                    "did": "did:custom:aCustomUserDefinedDID",
+                },
             }
         )
 

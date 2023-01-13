@@ -377,7 +377,7 @@ async def wallet_create_did(request: web.BaseRequest):
                 )
             )
 
-        did = body.get("did")
+        did = body.get("options", {}).get("did")
         if method.holder_defined_did() == HolderDefinedDid.NO and did:
             raise web.HTTPForbidden(
                 reason=(
