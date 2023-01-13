@@ -34,6 +34,7 @@ from ....coordinate_mediation.v1_0.models.mediation_record import MediationRecor
 from ....discovery.v2_0.manager import V20DiscoveryMgr
 
 from ..manager import ConnectionManager, ConnectionManagerError
+from .. import manager as test_module
 from ..messages.connection_invitation import ConnectionInvitation
 from ..messages.connection_request import ConnectionRequest
 from ..messages.connection_response import ConnectionResponse
@@ -111,21 +112,6 @@ class TestConnectionManager(AsyncTestCase):
         self.manager = ConnectionManager(self.profile)
         assert self.manager.profile
 
-    async def test_create_invitation_public_and_multi_use_fails(self):
-        self.context.update_settings({"public_invites": True})
-        with async_mock.patch.object(
-            InMemoryWallet, "get_public_did", autospec=True
-        ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = DIDInfo(
-                self.test_did,
-                self.test_verkey,
-                None,
-                method=SOV,
-                key_type=ED25519,
-            )
-            with self.assertRaises(ConnectionManagerError):
-                await self.manager.create_invitation(public=True, multi_use=True)
-
     async def test_create_invitation_non_multi_use_invitation_fails_on_reuse(self):
         connect_record, connect_invite = await self.manager.create_invitation()
 
@@ -173,7 +159,7 @@ class TestConnectionManager(AsyncTestCase):
                 public=True, my_endpoint="testendpoint"
             )
 
-            assert connect_record is None
+            assert connect_record
             assert connect_invite.did.endswith(self.test_did)
             self.route_manager.route_public_did.assert_called_once_with(
                 self.profile, self.test_verkey
@@ -264,23 +250,6 @@ class TestConnectionManager(AsyncTestCase):
             )
 
             assert await record.metadata_get_all(session) == {"hello": "world"}
-
-    async def test_create_invitation_public_and_metadata_fails(self):
-        self.context.update_settings({"public_invites": True})
-        with async_mock.patch.object(
-            InMemoryWallet, "get_public_did", autospec=True
-        ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = DIDInfo(
-                self.test_did,
-                self.test_verkey,
-                None,
-                method=SOV,
-                key_type=ED25519,
-            )
-            with self.assertRaises(ConnectionManagerError):
-                await self.manager.create_invitation(
-                    public=True, metadata={"hello": "world"}
-                )
 
     async def test_create_invitation_multi_use_metadata_transfers_to_connection(self):
         async with self.profile.session() as session:
@@ -642,7 +611,7 @@ class TestConnectionManager(AsyncTestCase):
                     self.profile, mock_request
                 )
 
-    async def test_receive_request_public_did_conn_invite(self):
+    async def test_receive_request_public_did_unsolicited_fails(self):
         async with self.profile.session() as session:
             mock_request = async_mock.MagicMock()
             mock_request.connection = async_mock.MagicMock()
@@ -661,6 +630,83 @@ class TestConnectionManager(AsyncTestCase):
             )
 
             self.context.update_settings({"public_invites": True})
+            with self.assertRaises(ConnectionManagerError), async_mock.patch.object(
+                ConnRecord, "connection_id", autospec=True
+            ), async_mock.patch.object(
+                ConnRecord, "save", autospec=True
+            ) as mock_conn_rec_save, async_mock.patch.object(
+                ConnRecord, "attach_request", autospec=True
+            ) as mock_conn_attach_request, async_mock.patch.object(
+                ConnRecord, "retrieve_by_id", autospec=True
+            ) as mock_conn_retrieve_by_id, async_mock.patch.object(
+                ConnRecord, "retrieve_request", autospec=True
+            ), async_mock.patch.object(
+                ConnRecord, "retrieve_by_invitation_msg_id", async_mock.CoroutineMock()
+            ) as mock_conn_retrieve_by_invitation_msg_id:
+                mock_conn_retrieve_by_invitation_msg_id.return_value = None
+                conn_rec = await self.manager.receive_request(mock_request, receipt)
+
+    async def test_receive_request_public_did_conn_invite(self):
+        async with self.profile.session() as session:
+            mock_request = async_mock.MagicMock()
+            mock_request.connection = async_mock.MagicMock()
+            mock_request.connection.did = self.test_did
+            mock_request.connection.did_doc = async_mock.MagicMock()
+            mock_request.connection.did_doc.did = self.test_did
+
+            receipt = MessageReceipt(
+                recipient_did=self.test_did, recipient_did_public=True
+            )
+            await session.wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+                seed=None,
+                did=self.test_did,
+            )
+
+            mock_connection_record = async_mock.MagicMock()
+            mock_connection_record.save = async_mock.CoroutineMock()
+            mock_connection_record.attach_request = async_mock.CoroutineMock()
+
+            self.context.update_settings({"public_invites": True})
+            with async_mock.patch.object(
+                ConnRecord, "connection_id", autospec=True
+            ), async_mock.patch.object(
+                ConnRecord, "save", autospec=True
+            ) as mock_conn_rec_save, async_mock.patch.object(
+                ConnRecord, "attach_request", autospec=True
+            ) as mock_conn_attach_request, async_mock.patch.object(
+                ConnRecord, "retrieve_by_id", autospec=True
+            ) as mock_conn_retrieve_by_id, async_mock.patch.object(
+                ConnRecord, "retrieve_request", autospec=True
+            ), async_mock.patch.object(
+                ConnRecord,
+                "retrieve_by_invitation_msg_id",
+                async_mock.CoroutineMock(return_value=mock_connection_record),
+            ) as mock_conn_retrieve_by_invitation_msg_id:
+                conn_rec = await self.manager.receive_request(mock_request, receipt)
+                assert conn_rec
+
+    async def test_receive_request_public_did_unsolicited(self):
+        async with self.profile.session() as session:
+            mock_request = async_mock.MagicMock()
+            mock_request.connection = async_mock.MagicMock()
+            mock_request.connection.did = self.test_did
+            mock_request.connection.did_doc = async_mock.MagicMock()
+            mock_request.connection.did_doc.did = self.test_did
+
+            receipt = MessageReceipt(
+                recipient_did=self.test_did, recipient_did_public=True
+            )
+            await session.wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+                seed=None,
+                did=self.test_did,
+            )
+
+            self.context.update_settings({"public_invites": True})
+            self.context.update_settings({"requests_through_public_did": True})
             with async_mock.patch.object(
                 ConnRecord, "connection_id", autospec=True
             ), async_mock.patch.object(
