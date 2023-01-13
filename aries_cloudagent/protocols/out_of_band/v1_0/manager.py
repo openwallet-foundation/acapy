@@ -214,6 +214,7 @@ class OutOfBandManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 public_did = await wallet.get_public_did()
+
             if not public_did:
                 raise OutOfBandManagerError(
                     "Cannot create public invitation with no public DID"
