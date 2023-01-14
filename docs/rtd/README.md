@@ -24,6 +24,7 @@ To test generate and view the RTD documentation locally, you must install [Sphin
 ``` bash
 pip install -U sphinx
 pip install -U sphinx-rtd-theme
+pip install -u sphinx-markdown-builder
 ```
 
 ### Generate Module Files
@@ -32,7 +33,7 @@ To rebuild the project and settings from scratch (you'll need to move the genera
 
 ``` bash
 rm -rf generated
-sphinx-apidoc -f -M -o  ./generated ../aries_cloudagent/ $(find ../aries_cloudagent/ -name '*tests*')
+sphinx-apidoc -f -M -o  ./generated ../../aries_cloudagent/ $(find ../../aries_cloudagent/ -name '*tests*')
 ```
 
 Note that the `find` command that is used to exclude any of the `test` python files from the RTD documentation.
@@ -44,7 +45,7 @@ Check the  `git status` in your repo to see if the generator updates, adds or re
 To auto-generate the module documentation locally run:
 
 ``` bash
-sphinx-build -b html -a -E -c ./ ./ ./_build
+sphinx-build -b markdown -a -E -c ./ ./ ./_build
 ```
 
 Once generated, go into the `_build` folder and open `index.html` in a browser. Note that the `_build` is

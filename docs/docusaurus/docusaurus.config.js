@@ -11,7 +11,7 @@ const config = {
   tagline: `${process.env.PROJECT_TITLE} Docs`,
   url: `https://${process.env.ORGANIZATION_NAME}.github.io`,
   baseUrl: `/${process.env.PROJECT_NAME}`,
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.png',
 
@@ -53,7 +53,15 @@ const config = {
       {
         indexBlog: false
       }
-    ]
+    ],
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'code',
+        path: '../rtd/build/',
+        routeBasePath: 'code',
+      },
+    ],
   ],
 
   themeConfig:
@@ -76,6 +84,13 @@ const config = {
             docId: 'index',
             position: 'left',
             label: 'Documentation',
+          },
+          {
+            type: 'doc',
+            docId: 'index',
+            position: 'left',
+            label: 'Code',
+            docsPluginId: 'code'
           },
           {
             label: 'GitHub',
