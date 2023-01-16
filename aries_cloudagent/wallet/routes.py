@@ -161,10 +161,17 @@ class DIDCreateOptionsSchema(OpenAPISchema):
     key_type = fields.Str(
         required=True,
         example=ED25519.key_type,
+        description="Key type to use for the DID keypair. "
+        + "Validated with the chosen DID method's supported key types.",
         validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
     )
 
-    did = fields.Str(required=False, **GENERIC_DID)
+    did = fields.Str(
+        required=False,
+        description="Specify final value of the did (including did:<method>: prefix)"
+        + "if the method supports or requires so.",
+        **GENERIC_DID,
+    )
 
 
 class DIDCreateSchema(OpenAPISchema):
@@ -174,12 +181,14 @@ class DIDCreateSchema(OpenAPISchema):
         required=False,
         default=SOV.method_name,
         example=SOV.method_name,
+        description="Method for the requested DID."
+        + "Supported methods are 'key', 'sov', and any other registered method.",
     )
 
     options = fields.Nested(
         DIDCreateOptionsSchema,
         required=False,
-        description="To define a key type for a did:key",
+        description="To define a key type and/or a did depending on chosen DID method.",
     )
 
     seed = fields.Str(
