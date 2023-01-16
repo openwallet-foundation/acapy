@@ -27,6 +27,8 @@ pip install -U sphinx-rtd-theme
 pip install -u sphinx-markdown-builder
 ```
 
+_Note: You only need to install `sphinx-markdown-builder` if you plan to build the docs to `.md` instead of `.html`._
+
 ### Generate Module Files
 
 To rebuild the project and settings from scratch (you'll need to move the generated index file up a level):
@@ -45,8 +47,10 @@ Check the  `git status` in your repo to see if the generator updates, adds or re
 To auto-generate the module documentation locally run:
 
 ``` bash
-sphinx-build -b markdown -a -E -c ./ ./ ./_build
+sphinx-build -b html -a -E -c ./ ./ ./_build
 ```
+
+_Note: Replace `html` with `markdown` if you want to build to `.md` instead of `.html`_
 
 Once generated, go into the `_build` folder and open `index.html` in a browser. Note that the `_build` is
 `.gitignore`'d and so will not be part of a git push.
