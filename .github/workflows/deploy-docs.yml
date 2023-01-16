@@ -1,0 +1,41 @@
+name: Deploy docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade sphinx sphinx-markdown-builder
+      - name: Build ACA-Py markdown
+        run: sphinx-build -b markdown -a -E -c ./ ./ ./build
+        working-directory: docs/rtd/
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Install Node.js dependencies
+        run: yarn install --frozen-lockfile
+        working-directory: docs/docusaurus/
+      - name: Build doc site
+        run: yarn build
+        working-directory: docs/docusaurus/
+      # Popular action to deploy to GitHub Pages:
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/docusaurus/build
