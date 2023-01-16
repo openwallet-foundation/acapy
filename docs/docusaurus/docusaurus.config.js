@@ -13,7 +13,7 @@ const config = {
   baseUrl: `/${process.env.PROJECT_NAME}`,
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.png',
+  favicon: 'img/favicon.ico',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -76,7 +76,7 @@ const config = {
         title: 'Aries Cloud Agent Python',
         logo: {
           alt: 'ACA-Py',
-          src: 'img/logo.png',
+          src: 'img/aries-logo.png',
         },
         items: [
           {
