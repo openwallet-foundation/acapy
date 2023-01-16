@@ -3,7 +3,7 @@ name: Deploy docs to GitHub Pages
 on:
   push:
     branches:
-      - main
+      - documentation
 permissions:
   contents: write
 jobs:
