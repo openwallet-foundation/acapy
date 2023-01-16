@@ -3,7 +3,7 @@ name: Test build
 on:
   pull_request:
     branches:
-      - documentation
+      - main
 defaults:
   run:
     working-directory: docs/docusaurus
