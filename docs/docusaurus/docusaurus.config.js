@@ -54,14 +54,14 @@ const config = {
         indexBlog: false
       }
     ],
-    [
-      '@docusaurus/plugin-content-docs',
-      {
-        id: 'code',
-        path: '../rtd/build/',
-        routeBasePath: 'code',
-      },
-    ],
+    // [
+    //   '@docusaurus/plugin-content-docs',
+    //   {
+    //     id: 'code',
+    //     path: '../rtd/build/',
+    //     routeBasePath: 'code',
+    //   },
+    // ],
   ],
 
   themeConfig:
@@ -85,12 +85,17 @@ const config = {
             position: 'left',
             label: 'Documentation',
           },
+          // {
+          //   type: 'doc',
+          //   docId: 'index',
+          //   position: 'left',
+          //   label: 'Code',
+          //   docsPluginId: 'code'
+          // },
           {
-            type: 'doc',
-            docId: 'index',
             position: 'left',
             label: 'Code',
-            docsPluginId: 'code'
+            href: 'https://aries-cloud-agent-python.readthedocs.io/en/latest/'
           },
           {
             label: 'GitHub',
