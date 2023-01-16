@@ -6,11 +6,13 @@ from .....core.in_memory import InMemoryProfile
 from .....storage.error import StorageError, StorageNotFoundError
 from ..models.mediation_record import MediationRecord
 from ..route_manager import RouteManager
+from .....wallet.did_method import DIDMethods
 
 
 class TestCoordinateMediationRoutes(AsyncTestCase):
     def setUp(self):
         self.profile = InMemoryProfile.test_profile()
+        self.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.context = AdminRequestContext.test_context(profile=self.profile)
         self.outbound_message_router = async_mock.CoroutineMock()
         self.request_dict = {

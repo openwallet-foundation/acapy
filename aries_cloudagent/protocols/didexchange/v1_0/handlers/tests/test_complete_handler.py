@@ -10,11 +10,13 @@ from ...messages.complete import DIDXComplete
 from ...messages.problem_report_reason import ProblemReportReason
 
 from .. import complete_handler as test_module
+from ......wallet.did_method import DIDMethods
 
 
 @pytest.fixture()
 def request_context() -> RequestContext:
     ctx = RequestContext.test_context()
+    ctx.injector.bind_instance(DIDMethods, DIDMethods())
     ctx.message_receipt = MessageReceipt()
     yield ctx
 

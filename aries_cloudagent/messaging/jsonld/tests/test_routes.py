@@ -14,7 +14,7 @@ from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....vc.ld_proofs.document_loader import DocumentLoader
 from ....wallet.base import BaseWallet
-from ....wallet.did_method import SOV
+from ....wallet.did_method import SOV, DIDMethods
 from ....wallet.error import WalletError
 from ....wallet.key_type import ED25519
 from ..error import (
@@ -274,6 +274,7 @@ class TestJSONLDRoutes(AsyncTestCase):
         self.context.profile.context.injector.bind_instance(
             DocumentLoader, custom_document_loader
         )
+        self.context.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.did_info = await (await self.context.session()).wallet.create_local_did(
             SOV, ED25519
         )

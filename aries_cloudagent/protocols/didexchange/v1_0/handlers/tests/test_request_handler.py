@@ -9,7 +9,7 @@ from ......connections.models.diddoc import (
     Service,
 )
 from ......core.in_memory import InMemoryProfile
-from ......wallet.did_method import SOV
+from ......wallet.did_method import SOV, DIDMethods
 from ......wallet.key_type import ED25519
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
@@ -76,6 +76,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
                 "debug.auto_accept_requests_public": True,
             }
         )
+        self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
 
         self.conn_rec = conn_record.ConnRecord(
             my_did="55GkHamhTU1ZbTbV2ab9DE",

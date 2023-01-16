@@ -15,7 +15,7 @@ from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
 from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.crypto import KeyType
-from .....wallet.did_method import SOV, KEY
+from .....wallet.did_method import SOV, KEY, DIDMethods
 from .....wallet.error import WalletNotFoundError
 from .....vc.ld_proofs import (
     BbsBlsSignature2020,
@@ -69,7 +69,7 @@ def event_loop(request):
 
 @pytest.fixture(scope="class")
 def profile():
-    profile = InMemoryProfile.test_profile()
+    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
     context = profile.context
     context.injector.bind_instance(DIDResolver, DIDResolver([]))
     context.injector.bind_instance(DocumentLoader, custom_document_loader)

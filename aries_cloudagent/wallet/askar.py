@@ -15,9 +15,9 @@ from aries_askar import (
     SeedMethod,
 )
 
+from .did_parameters_validation import DIDParametersValidation
 from ..askar.didcomm.v1 import pack_message, unpack_message
 from ..askar.profile import AskarProfileSession
-from ..did.did_key import DIDKey
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
@@ -30,7 +30,7 @@ from .crypto import (
     validate_seed,
     verify_signed_message,
 )
-from .did_method import SOV, KEY, DIDMethod, DIDMethods
+from .did_method import SOV, DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
 from .util import b58_to_bytes, bytes_to_b58
@@ -171,28 +171,22 @@ class AskarWallet(BaseWallet):
             WalletError: If there is another backend error
 
         """
-
-        # validate key_type
-        if not method.supports_key_type(key_type):
-            raise WalletError(
-                f"Invalid key type {key_type.key_type}"
-                f" for DID method {method.method_name}"
-            )
-
-        if method == KEY and did:
-            raise WalletError("Not allowed to set DID for DID method 'key'")
+        did_validation = DIDParametersValidation(
+            self._session.context.inject(DIDMethods)
+        )
+        did_validation.validate_key_type(method, key_type)
 
         if not metadata:
             metadata = {}
-        if method not in [SOV, KEY]:
-            raise WalletError(
-                f"Unsupported DID method for askar storage: {method.method_name}"
-            )
 
         try:
             keypair = _create_keypair(key_type, seed)
             verkey_bytes = keypair.get_public_bytes()
             verkey = bytes_to_b58(verkey_bytes)
+
+            did = did_validation.validate_or_derive_did(
+                method, key_type, verkey_bytes, did
+            )
 
             try:
                 await self._session.handle.insert_key(
@@ -204,11 +198,6 @@ class AskarWallet(BaseWallet):
                     pass
                 else:
                     raise WalletError("Error inserting key") from err
-
-            if method == KEY:
-                did = DIDKey.from_public_key(verkey_bytes, key_type).did
-            elif not did:
-                did = bytes_to_b58(verkey_bytes[:16])
 
             item = await self._session.handle.fetch(CATEGORY_DID, did, for_update=True)
             if item:

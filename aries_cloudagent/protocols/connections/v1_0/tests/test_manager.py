@@ -23,7 +23,7 @@ from .....resolver.did_resolver import DIDResolver
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.base import DIDInfo
-from .....wallet.did_method import SOV
+from .....wallet.did_method import SOV, DIDMethods
 from .....wallet.error import WalletNotFoundError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
@@ -94,6 +94,7 @@ class TestConnectionManager(AsyncTestCase):
                 BaseCache: InMemoryCache(),
                 OobMessageProcessor: self.oob_mock,
                 RouteManager: self.route_manager,
+                DIDMethods: DIDMethods(),
             },
         )
         self.context = self.profile.context
