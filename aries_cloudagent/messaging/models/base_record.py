@@ -81,6 +81,7 @@ class BaseRecord(BaseModel):
     EVENT_NAMESPACE: str = "acapy::record"
     LOG_STATE_FLAG = None
     TAG_NAMES = {"state"}
+    STATE_DELETED = "deleted"
 
     def __init__(
         self,
@@ -420,7 +421,7 @@ class BaseRecord(BaseModel):
             storage = session.inject(BaseStorage)
             if self.state:
                 self._previous_state = self.state
-                self.state = "deleted"
+                self.state = BaseRecord.STATE_DELETED
                 await self.emit_event(session, self.serialize())
             await storage.delete_record(self.storage_record)
 
@@ -496,6 +497,24 @@ class BaseRecord(BaseModel):
         if type(other) is type(self):
             return self.value == other.value and self.tags == other.tags
         return False
+
+    @classmethod
+    def get_attributes_by_prefix(cls, prefix: str, walk_mro: bool = True):
+        """
+        List all values for attributes with common prefix.
+
+        Args:
+            prefix: Common prefix to look for
+            walk_mro: Walk MRO to find attributes inherited from superclasses
+        """
+
+        bases = cls.__mro__ if walk_mro else [cls]
+        return [
+            vars(base)[name]
+            for base in bases
+            for name in vars(base)
+            if name.startswith(prefix)
+        ]
 
 
 class BaseExchangeRecord(BaseRecord):

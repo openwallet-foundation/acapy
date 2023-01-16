@@ -127,46 +127,27 @@ class ConnectionManager(BaseConnectionManager):
             or_default=True,
         )
         image_url = self.profile.context.settings.get("image_url")
-
-        if not my_label:
-            my_label = self.profile.settings.get("default_label")
-
-        if public:
-            if not self.profile.settings.get("public_invites"):
-                raise ConnectionManagerError("Public invitations are not enabled")
-
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                public_did = await wallet.get_public_did()
-            if not public_did:
-                raise ConnectionManagerError(
-                    "Cannot create public invitation with no public DID"
-                )
-
-            if multi_use:
-                raise ConnectionManagerError(
-                    "Cannot use public and multi_use at the same time"
-                )
-
-            if metadata:
-                raise ConnectionManagerError(
-                    "Cannot use public and set metadata at the same time"
-                )
-
-            # FIXME - allow ledger instance to format public DID with prefix?
-            invitation = ConnectionInvitation(
-                label=my_label, did=f"did:sov:{public_did.did}", image_url=image_url
-            )
-
-            # Add mapping for multitenant relaying.
-            # Mediation of public keys is not supported yet
-            await self._route_manager.route_public_did(self.profile, public_did.verkey)
-
-            return None, invitation
+        invitation = None
+        connection = None
 
         invitation_mode = ConnRecord.INVITATION_MODE_ONCE
         if multi_use:
             invitation_mode = ConnRecord.INVITATION_MODE_MULTI
+
+        if not my_label:
+            my_label = self.profile.settings.get("default_label")
+
+        accept = (
+            ConnRecord.ACCEPT_AUTO
+            if (
+                auto_accept
+                or (
+                    auto_accept is None
+                    and self.profile.settings.get("debug.auto_accept_requests")
+                )
+            )
+            else ConnRecord.ACCEPT_MANUAL
+        )
 
         if recipient_keys:
             # TODO: register recipient keys for relay
@@ -182,50 +163,76 @@ class ConnectionManager(BaseConnectionManager):
             invitation_key = invitation_signing_key.verkey
             recipient_keys = [invitation_key]
 
-        accept = (
-            ConnRecord.ACCEPT_AUTO
-            if (
-                auto_accept
-                or (
-                    auto_accept is None
-                    and self.profile.settings.get("debug.auto_accept_requests")
+        if public:
+            if not self.profile.settings.get("public_invites"):
+                raise ConnectionManagerError("Public invitations are not enabled")
+
+            async with self.profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                public_did = await wallet.get_public_did()
+            if not public_did:
+                raise ConnectionManagerError(
+                    "Cannot create public invitation with no public DID"
                 )
+
+            # FIXME - allow ledger instance to format public DID with prefix?
+            invitation = ConnectionInvitation(
+                label=my_label, did=f"did:sov:{public_did.did}", image_url=image_url
             )
-            else ConnRecord.ACCEPT_MANUAL
-        )
 
-        # Create connection record
-        connection = ConnRecord(
-            invitation_key=invitation_key,  # TODO: determine correct key to use
-            their_role=ConnRecord.Role.REQUESTER.rfc160,
-            state=ConnRecord.State.INVITATION.rfc160,
-            accept=accept,
-            invitation_mode=invitation_mode,
-            alias=alias,
-            connection_protocol=CONN_PROTO,
-        )
-        async with self.profile.session() as session:
-            await connection.save(session, reason="Created new invitation")
+            connection = ConnRecord(  # create connection record
+                invitation_key=public_did.verkey,
+                invitation_msg_id=invitation._id,
+                invitation_mode=invitation_mode,
+                their_role=ConnRecord.Role.REQUESTER.rfc23,
+                state=ConnRecord.State.INVITATION.rfc23,
+                accept=accept,
+                alias=alias,
+                connection_protocol=CONN_PROTO,
+            )
 
-        await self._route_manager.route_invitation(
-            self.profile, connection, mediation_record
-        )
-        routing_keys, my_endpoint = await self._route_manager.routing_info(
-            self.profile,
-            my_endpoint or cast(str, self.profile.settings.get("default_endpoint")),
-            mediation_record,
-        )
+            async with self.profile.session() as session:
+                await connection.save(session, reason="Created new invitation")
 
-        # Create connection invitation message
-        # Note: Need to split this into two stages to support inbound routing of invites
-        # Would want to reuse create_did_document and convert the result
-        invitation = ConnectionInvitation(
-            label=my_label,
-            recipient_keys=recipient_keys,
-            routing_keys=routing_keys,
-            endpoint=my_endpoint,
-            image_url=image_url,
-        )
+            # Add mapping for multitenant relaying.
+            # Mediation of public keys is not supported yet
+            await self._route_manager.route_public_did(self.profile, public_did.verkey)
+
+        else:
+            # Create connection record
+            connection = ConnRecord(
+                invitation_key=invitation_key,  # TODO: determine correct key to use
+                their_role=ConnRecord.Role.REQUESTER.rfc160,
+                state=ConnRecord.State.INVITATION.rfc160,
+                accept=accept,
+                invitation_mode=invitation_mode,
+                alias=alias,
+                connection_protocol=CONN_PROTO,
+            )
+            async with self.profile.session() as session:
+                await connection.save(session, reason="Created new invitation")
+
+            await self._route_manager.route_invitation(
+                self.profile, connection, mediation_record
+            )
+            routing_keys, my_endpoint = await self._route_manager.routing_info(
+                self.profile,
+                my_endpoint or cast(str, self.profile.settings.get("default_endpoint")),
+                mediation_record,
+            )
+
+            # Create connection invitation message
+            # Note: Need to split this into two stages
+            # to support inbound routing of invites
+            # Would want to reuse create_did_document and convert the result
+            invitation = ConnectionInvitation(
+                label=my_label,
+                recipient_keys=recipient_keys,
+                routing_keys=routing_keys,
+                endpoint=my_endpoint,
+                image_url=image_url,
+            )
+
         async with self.profile.session() as session:
             await connection.attach_invitation(session, invitation)
 
@@ -529,6 +536,11 @@ class ConnectionManager(BaseConnectionManager):
                     their_role=ConnRecord.Role.REQUESTER.rfc160,
                 )
             if not connection:
+                if not self.profile.settings.get("requests_through_public_did"):
+                    raise ConnectionManagerError(
+                        "Unsolicited connection requests to "
+                        "public DID is not enabled"
+                    )
                 connection = ConnRecord()
             connection.invitation_key = connection_key
             connection.my_did = my_info.did
