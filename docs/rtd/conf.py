@@ -15,7 +15,7 @@ import sys
 
 from sphinx.domains.python import PythonDomain
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../.."))
 
 autodoc_mock_imports = [
     "setup",
