@@ -44,6 +44,7 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
+    build-essential \
     bzip2 \
     curl \
     git \
@@ -87,6 +88,9 @@ RUN chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache
 COPY --from=build /src/dist/aries_cloudagent*.whl .
 
 RUN pip install --no-cache-dir --find-links=. aries_cloudagent${acapy_reqs} && rm aries_cloudagent*.whl
+
+# Clean-up unneccessary build dependencies and reduce final image size
+RUN apt-get purge -y --auto-remove build-essential
 
 USER $user
 
