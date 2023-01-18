@@ -433,7 +433,7 @@ class AdminServer(BaseAdminServer):
         )
 
         server_routes = [
-            web.get("/", self.redirect_handler, allow_head=False),
+            web.get("/", self.redirect_handler, allow_head=True),
             web.get("/plugins", self.plugins_handler, allow_head=False),
             web.get("/status", self.status_handler, allow_head=False),
             web.get("/status/config", self.config_handler, allow_head=False),
