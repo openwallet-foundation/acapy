@@ -1,19 +1,35 @@
 """did method.py contains registry for did methods."""
 
+from enum import Enum
 from typing import Dict, List, Mapping, Optional
 
 from .error import BaseError
 from .key_type import BLS12381G2, ED25519, KeyType
 
 
+class HolderDefinedDid(Enum):
+    """Define if a holder can specify its own did for a given method."""
+
+    NO = "no"  # holder CANNOT provide a DID
+    ALLOWED = "allowed"  # holder CAN provide a DID
+    REQUIRED = "required"  # holder MUST provide a DID
+
+
 class DIDMethod:
     """Class to represent a did method."""
 
-    def __init__(self, name: str, key_types: List[KeyType], rotation: bool = False):
+    def __init__(
+        self,
+        name: str,
+        key_types: List[KeyType],
+        rotation: bool = False,
+        holder_defined_did: HolderDefinedDid = HolderDefinedDid.NO,
+    ):
         """Construct did method class."""
         self._method_name: str = name
         self._supported_key_types: List[KeyType] = key_types
         self._supports_rotation: bool = rotation
+        self._holder_defined_did: HolderDefinedDid = holder_defined_did
 
     @property
     def method_name(self):
@@ -34,8 +50,21 @@ class DIDMethod:
         """Check whether the current method supports the key type."""
         return key_type in self.supported_key_types
 
+    def holder_defined_did(self) -> HolderDefinedDid:
+        """Return the did derivation policy.
 
-SOV = DIDMethod(name="sov", key_types=[ED25519], rotation=True)
+        eg: did:key DIDs are derived from the verkey -> HolderDefinedDid.NO
+        eg: did:web DIDs cannot be derived from key material -> HolderDefinedDid.REQUIRED
+        """
+        return self._holder_defined_did
+
+
+SOV = DIDMethod(
+    name="sov",
+    key_types=[ED25519],
+    rotation=True,
+    holder_defined_did=HolderDefinedDid.ALLOWED,
+)
 KEY = DIDMethod(
     name="key",
     key_types=[ED25519, BLS12381G2],
@@ -55,7 +84,7 @@ class DIDMethods:
 
     def registered(self, method: str) -> bool:
         """Check for a supported method."""
-        return method in list(self._registry.items())
+        return method in self._registry.keys()
 
     def register(self, method: DIDMethod):
         """Register a new did method."""

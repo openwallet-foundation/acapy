@@ -3,7 +3,7 @@
 import json
 from typing import Any, Mapping, Optional, Union
 
-from marshmallow import fields
+from marshmallow import fields, validate
 
 from .....connections.models.conn_record import ConnRecord
 from .....core.profile import ProfileSession
@@ -248,6 +248,9 @@ class OobRecordSchema(BaseExchangeSchema):
         required=True,
         description="Out of band message exchange state",
         example=OobRecord.STATE_AWAIT_RESPONSE,
+        validate=validate.OneOf(
+            OobRecord.get_attributes_by_prefix("STATE_", walk_mro=True)
+        ),
     )
     invi_msg_id = fields.Str(
         required=True,
@@ -287,4 +290,7 @@ class OobRecordSchema(BaseExchangeSchema):
         description="OOB Role",
         required=False,
         example=OobRecord.ROLE_RECEIVER,
+        validate=validate.OneOf(
+            OobRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
+        ),
     )

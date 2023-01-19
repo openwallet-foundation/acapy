@@ -26,6 +26,7 @@ from ..messages.mediate_deny import MediationDeny
 from ..messages.mediate_grant import MediationGrant
 from ..messages.mediate_request import MediationRequest
 from ..models.mediation_record import MediationRecord
+from .....wallet.did_method import DIDMethods
 
 TEST_CONN_ID = "conn-id"
 TEST_THREAD_ID = "thread-id"
@@ -42,7 +43,9 @@ pytestmark = pytest.mark.asyncio
 def profile() -> Iterable[Profile]:
     """Fixture for profile used in tests."""
     # pylint: disable=W0621
-    yield InMemoryProfile.test_profile(bind={EventBus: MockEventBus()})
+    yield InMemoryProfile.test_profile(
+        bind={EventBus: MockEventBus(), DIDMethods: DIDMethods()}
+    )
 
 
 @pytest.fixture
