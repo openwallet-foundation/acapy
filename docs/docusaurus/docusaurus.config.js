@@ -8,7 +8,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: `${process.env.PROJECT_TITLE}`,
-  tagline: `${process.env.PROJECT_TITLE} Docs`,
+  tagline: `Everything you need to know to get started`,
   url: `https://${process.env.ORGANIZATION_NAME}.github.io`,
   baseUrl: `/${process.env.PROJECT_NAME}`,
   onBrokenLinks: 'warn',
