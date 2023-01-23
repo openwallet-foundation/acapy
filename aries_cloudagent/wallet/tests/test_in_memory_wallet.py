@@ -13,6 +13,7 @@ from ...wallet.key_type import BLS12381G1, BLS12381G1G2, BLS12381G2, ED25519, X2
 @pytest.fixture()
 async def wallet():
     profile = InMemoryProfile.test_profile()
+    profile.context.injector.bind_instance(DIDMethods, DIDMethods())
     wallet = InMemoryWallet(profile)
     yield wallet
 

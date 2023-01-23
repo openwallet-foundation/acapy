@@ -17,7 +17,7 @@ from ...indy.sdk.profile import IndySdkProfile, IndySdkProfileManager
 from ...indy.sdk.wallet_setup import IndyWalletConfig
 from ...ledger.endpoint_type import EndpointType
 from ...ledger.indy import IndySdkLedgerPool
-from ...wallet.did_method import SOV
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.key_type import ED25519
 from .. import indy as test_module
 from ..base import BaseWallet
@@ -28,7 +28,7 @@ from . import test_in_memory_wallet
 
 @pytest.fixture()
 async def in_memory_wallet():
-    profile = InMemoryProfile.test_profile()
+    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
     wallet = InMemoryWallet(profile)
     yield wallet
 
@@ -38,6 +38,7 @@ async def wallet():
     key = await IndySdkWallet.generate_wallet_key()
     context = InjectionContext()
     context.injector.bind_instance(IndySdkLedgerPool, IndySdkLedgerPool("name"))
+    context.injector.bind_instance(DIDMethods, DIDMethods())
     with async_mock.patch.object(IndySdkProfile, "_make_finalizer"):
         profile = cast(
             IndySdkProfile,

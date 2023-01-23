@@ -1377,7 +1377,7 @@ class DIFPresExchHandler:
                     if f"{cred_id}-{cred_id}" not in dict_of_descriptors:
                         descriptor_map = InputDescriptorMapping(
                             id=desc_id,
-                            fmt="ldp_vp",
+                            fmt="ldp_vc",
                             path=(f"$.verifiableCredential[{dict_of_creds[cred_id]}]"),
                         )
                         descriptors.append(descriptor_map)

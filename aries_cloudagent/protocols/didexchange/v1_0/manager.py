@@ -483,6 +483,10 @@ class DIDXManager(BaseConnectionManager):
                 )
         else:
             # request is against implicit invitation on public DID
+            if not self.profile.settings.get("requests_through_public_did"):
+                raise DIDXManagerError(
+                    "Unsolicited connection requests to " "public DID is not enabled"
+                )
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.create_local_did(
