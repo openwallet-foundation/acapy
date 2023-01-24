@@ -12,7 +12,6 @@ from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageError, StorageNotFoundError
 
-from .message_types import CRED_20_REQUEST
 from .messages.cred_ack import V20CredAck
 from .messages.cred_format import V20CredFormat
 from .messages.cred_issue import V20CredIssue
@@ -244,7 +243,8 @@ class V20CredManager:
         elif len(formats) >= 2:
             if not multiple_available and multiple_available <= 1:
                 raise V20CredManagerError(
-                    f"Multiple formats included but multiple_available is set as {str(multiple_available)}"
+                    "Multiple formats included but multiple_available"
+                    f" is set as {str(multiple_available)}"
                 )
             cred_ex_record.multiple_credentials = True
 
@@ -392,7 +392,8 @@ class V20CredManager:
             ):
                 raise V20CredManagerError(
                     f"Credential exchange {cred_ex_record.cred_ex_id} "
-                    f"in {cred_ex_record.multiple_issuance_state} multiple_issuance_state "
+                    f"in {cred_ex_record.multiple_issuance_state} "
+                    "multiple_issuance_state"
                 )
 
         request_formats = []
@@ -507,7 +508,8 @@ class V20CredManager:
             ):
                 raise V20CredManagerError(
                     f"Credential exchange {cred_ex_record.cred_ex_id} "
-                    f"in {cred_ex_record.multiple_issuance_state} multiple_issuance_state "
+                    f"in {cred_ex_record.multiple_issuance_state} "
+                    "multiple_issuance_state"
                 )
 
         handled_formats = []
@@ -583,7 +585,8 @@ class V20CredManager:
             ):
                 raise V20CredManagerError(
                     f"Credential exchange {cred_ex_record.cred_ex_id} "
-                    f"in {cred_ex_record.multiple_issuance_state} multiple_issuance_state "
+                    f"in {cred_ex_record.multiple_issuance_state} "
+                    "multiple_issuance_state "
                 )
 
         cred_issue_exists = False
@@ -697,7 +700,8 @@ class V20CredManager:
             ):
                 raise V20CredManagerError(
                     f"Credential exchange {cred_ex_record.cred_ex_id} "
-                    f"in {cred_ex_record.multiple_issuance_state} multiple_issuance_state "
+                    f"in {cred_ex_record.multiple_issuance_state} "
+                    "multiple_issuance_state"
                 )
 
         cred_request_message = cred_ex_record.cred_request
@@ -757,9 +761,12 @@ class V20CredManager:
                     report = V20CredProblemReport(
                         description={
                             "en": (
-                                "Holder requests no more credentials of this type to be issued."
+                                "Holder requests no more credentials "
+                                "of this type to be issued."
                             ),
-                            "code": ProblemReportReason.STOP_MORE_CREDENTIAL_ISSUANCE.value,
+                            "code": (
+                                ProblemReportReason.STOP_MORE_CREDENTIAL_ISSUANCE.value
+                            ),
                         }
                     )
                     if cred_ex_record.thread_id:
