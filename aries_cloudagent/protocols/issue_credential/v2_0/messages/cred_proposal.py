@@ -81,6 +81,25 @@ class V20CredProposal(AgentMessage):
             else None
         )
 
+    def attachment_by_id(self, attach_id: str) -> dict:
+        """
+        Return attached filter by attach identifier.
+
+        Args:
+            attach_id: string identifier
+
+        """
+        target_format = [
+            V20CredFormat.Format.get(f.format)
+            for f in self.formats
+            if f.attach_id == attach_id
+        ][0]
+        return (
+            target_format.get_attachment_data_by_id(attach_id, self.filters_attach)
+            if target_format
+            else None
+        )
+
 
 class V20CredProposalSchema(AgentMessageSchema):
     """Credential proposal schema."""

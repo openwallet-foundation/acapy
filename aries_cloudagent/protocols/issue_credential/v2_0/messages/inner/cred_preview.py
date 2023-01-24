@@ -2,7 +2,7 @@
 
 from typing import Sequence
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, ValidationError, pre_load, post_dump
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......wallet.util import b64_to_str
@@ -94,6 +94,15 @@ class V20CredAttrSpecSchema(BaseModelSchema):
     )
 
 
+class DictOrV20CredAttrSpecSchema(fields.Field):
+    """Mapping of ids to V20CredAttrSpecSchema or V20CredAttrSpecSchema."""
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if not isinstance(value, (V20CredAttrSpecSchema, dict)):
+            raise ValidationError("Field should be dict or V20CredAttrSpecSchema")
+        return super()._deserialize(value, attr, data, **kwargs)
+
+
 class V20CredPreview(BaseModel):
     """Credential preview."""
 
@@ -178,5 +187,33 @@ class V20CredPreviewSchema(BaseModelSchema):
         data_key="@type",
     )
     attributes = fields.Nested(
-        V20CredAttrSpecSchema, many=True, required=True, data_key="attributes"
+        V20CredAttrSpecSchema, many=True, required=False, data_key="attributes"
     )
+    attributes_dict = fields.Dict(
+        keys=fields.Str(description="identifier"),
+        values=fields.Nested(V20CredAttrSpecSchema, many=True, required=True),
+        required=False,
+    )
+
+    def check_cred_ident_in_keys(self, attr_dict):
+        for key, value in attr_dict.items():
+            if "indy" in key or "ld_proof" in key:
+                return True
+        return False
+
+    @pre_load
+    def extract_and_process_attributes(self, data, **kwargs):
+        if not data.get("attributes"):
+            raise ValidationError("test")
+        attr_data = data.get("attributes")
+        if isinstance(attr_data, dict) and self.check_ident_in_keys(attr_data):
+            data["attributes_dict"] = attr_data
+            del data["attributes"]
+        return data
+
+    @post_dump
+    def cleanup_attributes(self, data, **kwargs):
+        if not data.get("attributes") and data.get("attributes_dict"):
+            data["attributes"] = data.get("attributes_dict")
+            del data["attributes_dict"]
+        return data

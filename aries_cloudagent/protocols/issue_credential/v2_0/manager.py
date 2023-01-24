@@ -2,7 +2,8 @@
 
 import logging
 
-from typing import Mapping, Optional, Tuple
+from typing import Mapping, Optional, Tuple, Sequence
+from uuid import uuid4
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.oob_processor import OobRecord
@@ -11,6 +12,7 @@ from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageError, StorageNotFoundError
 
+from .message_types import CRED_20_REQUEST
 from .messages.cred_ack import V20CredAck
 from .messages.cred_format import V20CredFormat
 from .messages.cred_issue import V20CredIssue
@@ -200,6 +202,7 @@ class V20CredManager:
         counter_proposal: V20CredProposal = None,
         replacement_id: str = None,
         comment: str = None,
+        multiple_available: int = None,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
         """
         Create credential offer, update credential exchange record.
@@ -225,11 +228,12 @@ class V20CredManager:
         # Format specific create_offer handler
         for format in cred_proposal_message.formats:
             cred_format = V20CredFormat.Format.get(format.format)
+            attach_id = format.attach_id if format.attach_id != cred_format else None
 
             if cred_format:
                 formats.append(
                     await cred_format.handler(self.profile).create_offer(
-                        cred_proposal_message
+                        cred_proposal_message, attach_id
                     )
                 )
 
@@ -237,6 +241,12 @@ class V20CredManager:
             raise V20CredManagerError(
                 "Unable to create credential offer. No supported formats"
             )
+        elif len(formats) >= 2:
+            if not multiple_available and multiple_available <= 1:
+                raise V20CredManagerError(
+                    f"Multiple formats included but multiple_available is set as {str(multiple_available)}"
+                )
+            cred_ex_record.multiple_credentials = True
 
         cred_offer_message = V20CredOffer(
             replacement_id=replacement_id,
@@ -244,6 +254,7 @@ class V20CredManager:
             credential_preview=cred_proposal_message.credential_preview,
             formats=[format for (format, _) in formats],
             offers_attach=[attach for (_, attach) in formats],
+            multiple_available=multiple_available,
         )
 
         cred_offer_message._thread = {"thid": cred_ex_record.thread_id}
@@ -299,7 +310,7 @@ class V20CredManager:
                 auto_remove=not self._profile.settings.get("preserve_exchange_records"),
                 trace=(cred_offer_message._trace is not None),
             )
-
+        handled_formats = []
         # Format specific receive_offer handler
         for format in cred_offer_message.formats:
             cred_format = V20CredFormat.Format.get(format.format)
@@ -308,6 +319,12 @@ class V20CredManager:
                 await cred_format.handler(self.profile).receive_offer(
                     cred_ex_record, cred_offer_message
                 )
+                handled_formats.append(cred_format)
+
+        if len(handled_formats) == 0:
+            raise V20CredManagerError("No supported credential formats received.")
+        elif len(handled_formats) >= 2:
+            cred_ex_record.multiple_credentials = True
 
         cred_ex_record.cred_offer = cred_offer_message
         cred_ex_record.state = V20CredExRecord.STATE_OFFER_RECEIVED
@@ -318,7 +335,12 @@ class V20CredManager:
         return cred_ex_record
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, holder_did: str, comment: str = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        holder_did: str,
+        exclude_attach_ids: Sequence[str] = [],
+        comment: str = None,
+        multiple_credential_flow: bool = False,
     ) -> Tuple[V20CredExRecord, V20CredRequest]:
         """
         Create a credential request.
@@ -327,16 +349,21 @@ class V20CredManager:
             cred_ex_record: credential exchange record for which to create request
             holder_did: holder DID
             comment: optional human-readable comment to set in request message
-
+             :
+            multiple_credential_flow:
         Returns:
             A tuple (credential exchange record, credential request message)
 
         """
+        cred_request_exists = False
         if cred_ex_record.cred_request:
-            raise V20CredManagerError(
-                "create_request() called multiple times for "
-                f"v2.0 credential exchange {cred_ex_record.cred_ex_id}"
-            )
+            if multiple_credential_flow:
+                cred_request_exists = True
+            else:
+                raise V20CredManagerError(
+                    "create_request() called multiple times for "
+                    f"v2.0 credential exchange {cred_ex_record.cred_ex_id}"
+                )
 
         # react to credential offer, use offer formats
         if cred_ex_record.state:
@@ -356,21 +383,42 @@ class V20CredManager:
             cred_proposal = cred_ex_record.cred_proposal
             input_formats = cred_proposal.formats
 
+        if cred_ex_record.multiple_issuance_state:
+            if (
+                cred_ex_record.multiple_issuance_state
+                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
+                or cred_ex_record.multiple_issuance_state
+                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
+            ):
+                raise V20CredManagerError(
+                    f"Credential exchange {cred_ex_record.cred_ex_id} "
+                    f"in {cred_ex_record.multiple_issuance_state} multiple_issuance_state "
+                )
+
         request_formats = []
         # Format specific create_request handler
         for format in input_formats:
             cred_format = V20CredFormat.Format.get(format.format)
-
+            attach_id = format.attach_id if format.attach_id != cred_format else None
+            if not attach_id and cred_request_exists:
+                attach_id = f"{attach_id}-{str(uuid4())}"
+            if attach_id in exclude_attach_ids:
+                continue
             if cred_format:
                 request_formats.append(
                     await cred_format.handler(self.profile).create_request(
-                        cred_ex_record, {"holder_did": holder_did}
+                        cred_ex_record, {"holder_did": holder_did}, attach_id
                     )
                 )
 
         if len(request_formats) == 0:
             raise V20CredManagerError(
                 "Unable to create credential request. No supported formats"
+            )
+        elif len(request_formats) >= 2:
+            cred_ex_record.multiple_credentials = True
+            cred_ex_record.multiple_issuance_state = (
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_PENDING
             )
 
         cred_request_message = V20CredRequest(
@@ -387,7 +435,14 @@ class V20CredManager:
 
         cred_ex_record.thread_id = cred_request_message._thread_id
         cred_ex_record.state = V20CredExRecord.STATE_REQUEST_SENT
-        cred_ex_record.cred_request = cred_request_message
+        if cred_request_exists:
+            existing_cred_request = cred_ex_record.cred_request
+            for (fmt, atch) in request_formats:
+                existing_cred_request.add_attachments(fmt, atch)
+            cred_ex_record.cred_request = existing_cred_request
+            cred_ex_record.multiple_credentials = True
+        else:
+            cred_ex_record.cred_request = cred_request_message
 
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="create v2.0 credential request")
@@ -443,12 +498,46 @@ class V20CredManager:
         if connection_record:
             cred_ex_record.connection_id = connection_record.connection_id
 
+        if cred_ex_record.multiple_issuance_state:
+            if (
+                cred_ex_record.multiple_issuance_state
+                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
+                or cred_ex_record.multiple_issuance_state
+                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
+            ):
+                raise V20CredManagerError(
+                    f"Credential exchange {cred_ex_record.cred_ex_id} "
+                    f"in {cred_ex_record.multiple_issuance_state} multiple_issuance_state "
+                )
+
+        handled_formats = []
         for format in cred_request_message.formats:
             cred_format = V20CredFormat.Format.get(format.format)
             if cred_format:
                 await cred_format.handler(self.profile).receive_request(
                     cred_ex_record, cred_request_message
                 )
+                handled_formats.append(cred_format)
+
+        if len(handled_formats) == 0:
+            raise V20CredManagerError("No supported credential formats received.")
+        elif len(handled_formats) >= 2:
+            cred_ex_record.multiple_credentials = True
+            cred_ex_record.multiple_issuance_state = (
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_PENDING
+            )
+
+        if cred_ex_record.cred_request:
+            existing_cred_request = cred_ex_record.cred_request
+
+            existing_cred_request.add_formats(cred_request_message.formats)
+            existing_cred_request.add_requests_attach(
+                cred_request_message.requests_attach
+            )
+            cred_ex_record.cred_request = existing_cred_request
+            cred_ex_record.multiple_credentials = True
+        else:
+            cred_ex_record.cred_request = cred_request_message
 
         cred_ex_record.cred_request = cred_request_message
         cred_ex_record.state = V20CredExRecord.STATE_REQUEST_RECEIVED
@@ -463,6 +552,7 @@ class V20CredManager:
         cred_ex_record: V20CredExRecord,
         *,
         comment: str = None,
+        more_available: int = 0,
     ) -> Tuple[V20CredExRecord, V20CredIssue]:
         """
         Issue a credential.
@@ -470,7 +560,8 @@ class V20CredManager:
         Args:
             cred_ex_record: credential exchange record for which to issue credential
             comment: optional human-readable comment pertaining to credential issue
-
+            more_available: Count of the verifiable credential type for the Holder
+                that the Issuer is willing to issue
         Returns:
             Tuple: (Updated credential exchange record, credential issue message)
 
@@ -483,11 +574,27 @@ class V20CredManager:
                 f"(must be {V20CredExRecord.STATE_REQUEST_RECEIVED})"
             )
 
+        if cred_ex_record.multiple_issuance_state:
+            if (
+                cred_ex_record.multiple_issuance_state
+                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
+                or cred_ex_record.multiple_issuance_state
+                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
+            ):
+                raise V20CredManagerError(
+                    f"Credential exchange {cred_ex_record.cred_ex_id} "
+                    f"in {cred_ex_record.multiple_issuance_state} multiple_issuance_state "
+                )
+
+        cred_issue_exists = False
         if cred_ex_record.cred_issue:
-            raise V20CredManagerError(
-                "issue_credential() called multiple times for "
-                f"cred ex record {cred_ex_record.cred_ex_id}"
-            )
+            if cred_ex_record.multiple_credentials:
+                cred_issue_exists = True
+            else:
+                raise V20CredManagerError(
+                    "issue_credential() called multiple times for "
+                    f"cred ex record {cred_ex_record.cred_ex_id}"
+                )
 
         replacement_id = None
         input_formats = cred_ex_record.cred_request.formats
@@ -498,15 +605,20 @@ class V20CredManager:
 
         # Format specific issue_credential handler
         issue_formats = []
+        to_exclude = cred_ex_record.processed_attach_ids
         for format in input_formats:
             cred_format = V20CredFormat.Format.get(format.format)
-
+            attach_id = format.attach_id if format.attach_id != cred_format else None
+            if not attach_id and cred_issue_exists:
+                attach_id = f"{attach_id}-{str(uuid4())}"
             if cred_format:
                 issue_formats.append(
                     await cred_format.handler(self.profile).issue_credential(
-                        cred_ex_record
+                        cred_ex_record, attach_id
                     )
                 )
+                if attach_id and attach_id not in to_exclude:
+                    cred_ex_record.add_attach_ids([attach_id])
 
         if len(issue_formats) == 0:
             raise V20CredManagerError(
@@ -518,10 +630,27 @@ class V20CredManager:
             comment=comment,
             formats=[format for (format, _) in issue_formats],
             credentials_attach=[attach for (_, attach) in issue_formats],
+            more_available=more_available,
         )
-
-        cred_ex_record.state = V20CredExRecord.STATE_ISSUED
-        cred_ex_record.cred_issue = cred_issue_message
+        if not more_available or more_available == 0:
+            cred_ex_record.state = V20CredExRecord.STATE_ISSUED
+            if cred_ex_record.multiple_credentials:
+                cred_ex_record.multiple_issuance_state = (
+                    V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
+                )
+        else:
+            cred_ex_record.state = V20CredExRecord.STATE_OFFER_SENT
+            cred_ex_record.multiple_issuance_state = (
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_PENDING
+            )
+        if cred_issue_exists:
+            existing_cred_issue = cred_ex_record.cred_issue
+            for (fmt, atch) in issue_formats:
+                existing_cred_issue.add_attachments(fmt, atch)
+            cred_ex_record.cred_request = existing_cred_issue
+            cred_ex_record.multiple_credentials = True
+        else:
+            cred_ex_record.cred_issue = cred_issue_message
         async with self._profile.session() as session:
             # FIXME - re-fetch record to check state, apply transactional update
             await cred_ex_record.save(session, reason="v2.0 issue credential")
@@ -534,7 +663,10 @@ class V20CredManager:
         return (cred_ex_record, cred_issue_message)
 
     async def receive_credential(
-        self, cred_issue_message: V20CredIssue, connection_id: Optional[str]
+        self,
+        cred_issue_message: V20CredIssue,
+        connection_id: Optional[str],
+        stop_multiple_cred_flow: bool = False,
     ) -> V20CredExRecord:
         """
         Receive a credential issue message from an issuer.
@@ -556,37 +688,98 @@ class V20CredManager:
                 role=V20CredExRecord.ROLE_HOLDER,
             )
 
+        if cred_ex_record.multiple_issuance_state:
+            if (
+                cred_ex_record.multiple_issuance_state
+                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
+                or cred_ex_record.multiple_issuance_state
+                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
+            ):
+                raise V20CredManagerError(
+                    f"Credential exchange {cred_ex_record.cred_ex_id} "
+                    f"in {cred_ex_record.multiple_issuance_state} multiple_issuance_state "
+                )
+
         cred_request_message = cred_ex_record.cred_request
-        req_formats = [
+        req_format_ids = [
             V20CredFormat.Format.get(fmt.format)
             for fmt in cred_request_message.formats
             if V20CredFormat.Format.get(fmt.format)
         ]
-        issue_formats = [
+        issue_format_ids = [
             V20CredFormat.Format.get(fmt.format)
             for fmt in cred_issue_message.formats
             if V20CredFormat.Format.get(fmt.format)
         ]
+        issue_formats = cred_issue_message.formats
         handled_formats = []
+        more_available = cred_issue_message.more_available
 
         # check that we didn't receive any formats not present in the request
-        if set(issue_formats) - set(req_formats):
+        if set(issue_format_ids) - set(req_format_ids):
             raise V20CredManagerError(
                 "Received issue credential format(s) not present in credential "
-                f"request: {set(issue_formats) - set(req_formats)}"
+                f"request: {set(issue_format_ids) - set(req_format_ids)}"
+            )
+        for issue_format in issue_formats:
+            cred_format = V20CredFormat.Format.get(issue_format.format)
+            attach_id = (
+                issue_format.attach_id
+                if issue_format.attach_id != cred_format
+                else None
             )
 
-        for issue_format in issue_formats:
-            await issue_format.handler(self.profile).receive_credential(
-                cred_ex_record, cred_issue_message
-            )
-            handled_formats.append(issue_format)
+            if cred_format:
+                await cred_format.handler(self.profile).receive_credential(
+                    cred_ex_record, cred_issue_message, attach_id
+                )
+                handled_formats.append(cred_format)
 
         if len(handled_formats) == 0:
             raise V20CredManagerError("No supported credential formats received.")
 
-        cred_ex_record.cred_issue = cred_issue_message
-        cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+        if cred_ex_record.cred_issue:
+            existing_cred_issue = cred_ex_record.cred_issue
+
+            existing_cred_issue.add_formats(cred_request_message.formats)
+            existing_cred_issue.add_credentials_attach(
+                cred_request_message.requests_attach
+            )
+            cred_ex_record.cred_issue = existing_cred_issue
+            cred_ex_record.multiple_credentials = True
+        else:
+            cred_ex_record.cred_issue = cred_issue_message
+        if more_available > 0:
+            if stop_multiple_cred_flow:
+                cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+                responder = self._profile.inject_or(BaseResponder)
+                if responder:
+                    report = V20CredProblemReport(
+                        description={
+                            "en": (
+                                "Holder requests no more credentials of this type to be issued."
+                            ),
+                            "code": ProblemReportReason.STOP_MORE_CREDENTIAL_ISSUANCE.value,
+                        }
+                    )
+                    if cred_ex_record.thread_id:
+                        report.assign_thread_id(cred_ex_record.thread_id)
+                    await responder.send_reply(
+                        report, connection_id=cred_ex_record.connection_id
+                    )
+                cred_ex_record.multiple_issuance_state = (
+                    V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
+                )
+            else:
+                cred_ex_record.state = V20CredExRecord.STATE_OFFER_RECEIVED
+                cred_ex_record.multiple_issuance_state = (
+                    V20CredExRecord.STATE_MULTIPLE_ISSUANCE_PENDING
+                )
+        else:
+            cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+            cred_ex_record.multiple_issuance_state = (
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
+            )
 
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential issue")
@@ -612,17 +805,19 @@ class V20CredManager:
                 f"in {cred_ex_record.state} state "
                 f"(must be {V20CredExRecord.STATE_CREDENTIAL_RECEIVED})"
             )
-
+        to_exclude = cred_ex_record.processed_attach_ids
         # Format specific store_credential handler
         for format in cred_ex_record.cred_issue.formats:
             cred_format = V20CredFormat.Format.get(format.format)
-
+            attach_id = format.attach_id if format.attach_id != cred_format else None
             if cred_format:
                 await cred_format.handler(self.profile).store_credential(
-                    cred_ex_record, cred_id
+                    cred_ex_record, cred_id, attach_id
                 )
                 # TODO: if storing multiple credentials we can't reuse the same id
                 cred_id = None
+                if attach_id and attach_id not in to_exclude:
+                    cred_ex_record.add_attach_ids([attach_id])
 
         return cred_ex_record
 
@@ -738,11 +933,16 @@ class V20CredManager:
                 message._thread_id,
             )
 
-            cred_ex_record.state = V20CredExRecord.STATE_ABANDONED
             code = message.description.get(
                 "code",
                 ProblemReportReason.ISSUANCE_ABANDONED.value,
             )
+            if code == ProblemReportReason.ISSUANCE_ABANDONED.value:
+                cred_ex_record.state = V20CredExRecord.STATE_ABANDONED
+            elif code == ProblemReportReason.STOP_MORE_CREDENTIAL_ISSUANCE.value:
+                cred_ex_record.multiple_issuance_state = (
+                    V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
+                )
             cred_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await cred_ex_record.save(session, reason="received problem report")
 

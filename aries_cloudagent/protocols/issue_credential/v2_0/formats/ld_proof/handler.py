@@ -150,7 +150,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """
         return ATTACHMENT_FORMAT[message_type][LDProofCredFormatHandler.format.api]
 
-    def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
+    def get_format_data(
+        self, message_type: str, data: dict, attach_id: str = None
+    ) -> CredFormatAttachment:
         """Get credential format and attachment objects for use in cred ex messages.
 
         Returns a tuple of both credential format and attachment decorator for use
@@ -168,11 +170,11 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """
         return (
             V20CredFormat(
-                attach_id=LDProofCredFormatHandler.format.api,
+                attach_id=attach_id or LDProofCredFormatHandler.format.api,
                 format_=self.get_format_identifier(message_type),
             ),
             AttachDecorator.data_base64(
-                data, ident=LDProofCredFormatHandler.format.api
+                data, ident=attach_id or LDProofCredFormatHandler.format.api
             ),
         )
 
@@ -387,7 +389,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof credential proposal."""
 
     async def create_offer(
-        self, cred_proposal_message: V20CredProposal
+        self, cred_proposal_message: V20CredProposal, attach_id: str = None
     ) -> CredFormatAttachment:
         """Create linked data proof credential offer."""
         if not cred_proposal_message:
@@ -398,7 +400,12 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         # Parse offer data which is either a proposal or an offer.
         # Data is stored in proposal if we received a proposal
         # but also when we create an offer (manager does some weird stuff)
-        offer_data = cred_proposal_message.attachment(LDProofCredFormatHandler.format)
+        if attach_id:
+            offer_data = cred_proposal_message.attachment_by_id(attach_id)
+        else:
+            offer_data = cred_proposal_message.attachment(
+                LDProofCredFormatHandler.format
+            )
         detail = LDProofVCDetail.deserialize(offer_data)
         detail = await self._prepare_detail(detail)
 
@@ -418,7 +425,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             detail.credential.issuer_id, detail.options.proof_type
         )
 
-        return self.get_format_data(CRED_20_OFFER, detail.serialize())
+        return self.get_format_data(CRED_20_OFFER, detail.serialize(), attach_id)
 
     async def receive_offer(
         self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
@@ -426,21 +433,30 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof credential offer."""
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        request_data: Mapping = None,
+        attach_id: str = None,
     ) -> CredFormatAttachment:
         """Create linked data proof credential request."""
         holder_did = request_data.get("holder_did") if request_data else None
 
         if cred_ex_record.cred_offer:
-            request_data = cred_ex_record.cred_offer.attachment(
-                LDProofCredFormatHandler.format
-            )
+            if attach_id:
+                request_data = cred_ex_record.cred_offer.attachment_by_id(attach_id)
+            else:
+                request_data = cred_ex_record.cred_offer.attachment(
+                    LDProofCredFormatHandler.format
+                )
         # API data is stored in proposal (when starting from request)
         # It is a bit of a strage flow IMO.
         elif cred_ex_record.cred_proposal:
-            request_data = cred_ex_record.cred_proposal.attachment(
-                LDProofCredFormatHandler.format
-            )
+            if attach_id:
+                request_data = cred_ex_record.cred_proposal.attachment_by_id(attach_id)
+            else:
+                request_data = cred_ex_record.cred_proposal.attachment(
+                    LDProofCredFormatHandler.format
+                )
         else:
             raise V20CredFormatError(
                 "Cannot create linked data proof request without offer or input data"
@@ -449,7 +465,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         detail = LDProofVCDetail.deserialize(request_data)
         detail = await self._prepare_detail(detail, holder_did=holder_did)
 
-        return self.get_format_data(CRED_20_REQUEST, detail.serialize())
+        return self.get_format_data(CRED_20_REQUEST, detail.serialize(), attach_id)
 
     async def receive_request(
         self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
@@ -457,7 +473,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof request."""
 
     async def issue_credential(
-        self, cred_ex_record: V20CredExRecord, retries: int = 5
+        self,
+        cred_ex_record: V20CredExRecord,
+        retries: int = 5,
+        attach_id: str = None,
     ) -> CredFormatAttachment:
         """Issue linked data proof credential."""
         if not cred_ex_record.cred_request:
@@ -465,9 +484,12 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 "Cannot issue credential without credential request"
             )
 
-        detail_dict = cred_ex_record.cred_request.attachment(
-            LDProofCredFormatHandler.format
-        )
+        if attach_id:
+            detail_dict = cred_ex_record.cred_request.attachment_by_id(attach_id)
+        else:
+            detail_dict = cred_ex_record.cred_request.attachment(
+                LDProofCredFormatHandler.format
+            )
         detail = LDProofVCDetail.deserialize(detail_dict)
         detail = await self._prepare_detail(detail)
 
@@ -488,17 +510,23 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             purpose=proof_purpose,
         )
 
-        return self.get_format_data(CRED_20_ISSUE, vc)
+        return self.get_format_data(CRED_20_ISSUE, vc, attach_id)
 
     async def receive_credential(
-        self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_issue_message: V20CredIssue,
+        attach_id: str = None,
     ) -> None:
         """Receive linked data proof credential."""
-        cred_dict = cred_issue_message.attachment(LDProofCredFormatHandler.format)
-        detail_dict = cred_ex_record.cred_request.attachment(
-            LDProofCredFormatHandler.format
-        )
-
+        if attach_id:
+            cred_dict = cred_issue_message.attachment_by_id(attach_id)
+            detail_dict = cred_ex_record.cred_request.attachment_by_id(attach_id)
+        else:
+            cred_dict = cred_issue_message.attachment(LDProofCredFormatHandler.format)
+            detail_dict = cred_ex_record.cred_request.attachment(
+                LDProofCredFormatHandler.format
+            )
         vc = VerifiableCredential.deserialize(cred_dict, unknown=INCLUDE)
         detail = LDProofVCDetail.deserialize(detail_dict)
 
@@ -559,13 +587,19 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             )
 
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_id: str = None,
+        attach_id: str = None,
     ) -> None:
         """Store linked data proof credential."""
         # Get attachment data
-        cred_dict: dict = cred_ex_record.cred_issue.attachment(
-            LDProofCredFormatHandler.format
-        )
+        if attach_id:
+            cred_dict: dict = cred_ex_record.cred_issue.attachment_by_id(attach_id)
+        else:
+            cred_dict: dict = cred_ex_record.cred_issue.attachment(
+                LDProofCredFormatHandler.format
+            )
 
         # Deserialize objects
         credential = VerifiableCredential.deserialize(cred_dict, unknown=INCLUDE)

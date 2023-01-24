@@ -21,6 +21,7 @@ class ProblemReportReason(Enum):
     """Supported reason codes."""
 
     ISSUANCE_ABANDONED = "issuance-abandoned"
+    STOP_MORE_CREDENTIAL_ISSUANCE = "stop-more-credential-issuance"
 
 
 class V20CredProblemReport(ProblemReport):
