@@ -111,11 +111,6 @@ class V20CredExRecord(BaseExchangeRecord):
         return self._id
 
     @property
-    def multiple_issuance_state(self) -> str:
-        """Accessor for the multiple_issuance_state with this exchange."""
-        return self.multiple_issuance_state
-
-    @property
     def cred_preview(self) -> Mapping:
         """Credential preview (deserialized view) from credential proposal."""
         return self.cred_proposal and self.cred_proposal.credential_preview or None
