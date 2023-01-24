@@ -110,7 +110,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             exist = await IndyCredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id
             )
-        if exist:
+            cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
+        if exist and not cred_ex_record.multiple_credentials:
             raise V20CredFormatError(
                 f"{IndyCredFormatHandler.format.api} detail record already "
                 f"exists for cred ex id {cred_ex_id}"
@@ -128,7 +129,9 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """
         return ATTACHMENT_FORMAT[message_type][IndyCredFormatHandler.format.api]
 
-    def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
+    def get_format_data(
+        self, message_type: str, data: dict, attach_id: str = None
+    ) -> CredFormatAttachment:
         """Get credential format and attachment objects for use in cred ex messages.
 
         Returns a tuple of both credential format and attachment decorator for use
@@ -146,10 +149,12 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """
         return (
             V20CredFormat(
-                attach_id=IndyCredFormatHandler.format.api,
+                attach_id=attach_id or IndyCredFormatHandler.format.api,
                 format_=self.get_format_identifier(message_type),
             ),
-            AttachDecorator.data_base64(data, ident=IndyCredFormatHandler.format.api),
+            AttachDecorator.data_base64(
+                data, ident=attach_id or IndyCredFormatHandler.format.api
+            ),
         )
 
     async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
@@ -184,17 +189,21 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """
 
     async def create_offer(
-        self, cred_proposal_message: V20CredProposal
+        self, cred_proposal_message: V20CredProposal, attach_id: str = None
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
 
         issuer = self.profile.inject(IndyIssuer)
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
-
-        cred_def_id = await self._match_sent_cred_def_id(
-            cred_proposal_message.attachment(IndyCredFormatHandler.format)
-        )
+        if attach_id:
+            cred_def_id = await self._match_sent_cred_def_id(
+                cred_proposal_message.attachment_by_id(attach_id)
+            )
+        else:
+            cred_def_id = await self._match_sent_cred_def_id(
+                cred_proposal_message.attachment(IndyCredFormatHandler.format)
+            )
 
         async def _create():
             offer_json = await issuer.create_credential_offer(cred_def_id)
@@ -237,15 +246,20 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         if not cred_offer:
             cred_offer = await _create()
 
-        return self.get_format_data(CRED_20_OFFER, cred_offer)
+        return self.get_format_data(CRED_20_OFFER, cred_offer, attach_id)
 
     async def receive_offer(
-        self, cred_ex_record: V20CredExRecord, cred_offer_message: V20CredOffer
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_offer_message: V20CredOffer,
     ) -> None:
         """Receive indy credential offer."""
 
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        request_data: Mapping = None,
+        attach_id: str = None,
     ) -> CredFormatAttachment:
         """Create indy credential request."""
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
@@ -256,7 +270,12 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
         holder_did = request_data.get("holder_did") if request_data else None
-        cred_offer = cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
+        if attach_id:
+            cred_offer = cred_ex_record.cred_offer.attachment_by_id(attach_id)
+        else:
+            cred_offer = cred_ex_record.cred_offer.attachment(
+                IndyCredFormatHandler.format
+            )
 
         if "nonce" not in cred_offer:
             raise V20CredFormatError("Missing nonce in credential offer")
@@ -310,10 +329,14 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         async with self.profile.session() as session:
             await detail_record.save(session, reason="create v2.0 credential request")
 
-        return self.get_format_data(CRED_20_REQUEST, cred_req_result["request"])
+        return self.get_format_data(
+            CRED_20_REQUEST, cred_req_result["request"], attach_id
+        )
 
     async def receive_request(
-        self, cred_ex_record: V20CredExRecord, cred_request_message: V20CredRequest
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_request_message: V20CredRequest,
     ) -> None:
         """Receive indy credential request."""
         if not cred_ex_record.cred_offer:
@@ -322,15 +345,24 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             )
 
     async def issue_credential(
-        self, cred_ex_record: V20CredExRecord, retries: int = 5
+        self,
+        cred_ex_record: V20CredExRecord,
+        retries: int = 5,
+        attach_id: str = None,
     ) -> CredFormatAttachment:
         """Issue indy credential."""
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
 
-        cred_offer = cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
-        cred_request = cred_ex_record.cred_request.attachment(
-            IndyCredFormatHandler.format
-        )
+        if attach_id:
+            cred_offer = cred_ex_record.cred_offer.attachment_by_id(attach_id)
+            cred_request = cred_ex_record.cred_request.attachment_by_id(attach_id)
+        else:
+            cred_offer = cred_ex_record.cred_offer.attachment(
+                IndyCredFormatHandler.format
+            )
+            cred_request = cred_ex_record.cred_request.attachment(
+                IndyCredFormatHandler.format
+            )
         cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
             decode=False
         )
@@ -394,7 +426,9 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 await revoc.handle_full_registry(rev_reg_id)
                 del revoc
 
-            result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
+            result = self.get_format_data(
+                CRED_20_ISSUE, json.loads(cred_json), attach_id
+            )
             break
 
         if not result:
@@ -430,7 +464,9 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         return result
 
     async def receive_credential(
-        self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_issue_message: V20CredIssue,
     ) -> None:
         """Receive indy credential.
 
@@ -438,10 +474,16 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         """
 
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_id: str = None,
+        attach_id: str = None,
     ) -> None:
         """Store indy credential."""
-        cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
+        if attach_id:
+            cred = cred_ex_record.cred_issue.attachment_by_id(attach_id)
+        else:
+            cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 
         rev_reg_def = None
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)

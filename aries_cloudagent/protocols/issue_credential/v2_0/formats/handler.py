@@ -60,7 +60,9 @@ class V20CredFormatHandler(ABC):
         """
 
     @abstractmethod
-    def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
+    def get_format_data(
+        self, message_type: str, data: dict, attach_id: str = None
+    ) -> CredFormatAttachment:
         """Get credential format and attachment objects for use in cred ex messages."""
 
     @abstractclassmethod

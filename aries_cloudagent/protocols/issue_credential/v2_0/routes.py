@@ -344,6 +344,12 @@ class V20CredRequestRequestSchema(OpenAPISchema):
         allow_none=True,
         example="did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
     )
+    excluded_attach_ids = fields.List(
+        fields.Str(description="Attachment identifier"),
+        description="Attachment identifiers, all of which to exclude",
+        required=False,
+        data_key="excludeAttachmentIDs",
+    )
 
 
 class V20CredIssueRequestSchema(OpenAPISchema):
@@ -384,7 +390,7 @@ def _formats_filters(filt_spec: Mapping) -> Mapping:
             "formats": [
                 V20CredFormat(
                     attach_id=fmt_api,
-                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][fmt_api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][fmt_api.split("-")[0]],
                 )
                 for fmt_api in filt_spec
             ],
@@ -1229,10 +1235,12 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     profile = context.profile
     outbound_handler = request["outbound_message_router"]
+    excluded_attach_ids = []
 
     try:
         body = await request.json() or {}
         holder_did = body.get("holder_did")
+        excluded_attach_ids = body.get("excludeAttachmentIDs", [])
     except JSONDecodeError:
         holder_did = None
 
@@ -1280,6 +1288,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
         cred_ex_record, cred_request_message = await cred_manager.create_request(
             cred_ex_record,
             holder_did,
+            excluded_attach_ids,
         )
 
         result = cred_ex_record.serialize()

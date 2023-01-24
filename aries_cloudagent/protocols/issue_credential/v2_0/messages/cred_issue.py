@@ -32,6 +32,7 @@ class V20CredIssue(AgentMessage):
         self,
         _id: str = None,
         *,
+        more_available: int = 0,
         replacement_id: str = None,
         comment: str = None,
         formats: Sequence[V20CredFormat] = None,
@@ -46,6 +47,7 @@ class V20CredIssue(AgentMessage):
             credentials_attach: credentials attachments
             formats: acceptable attachment formats
             filter_attach: list of credential attachments
+            more_available: count of verifiable credentials willing to issue
 
         """
         super().__init__(_id=_id, **kwargs)
@@ -53,6 +55,7 @@ class V20CredIssue(AgentMessage):
         self.comment = comment
         self.formats = list(formats) if formats else []
         self.credentials_attach = list(credentials_attach) if credentials_attach else []
+        self.more_available = more_available
 
     def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
         """
@@ -79,6 +82,56 @@ class V20CredIssue(AgentMessage):
             else None
         )
 
+    def attachment_by_id(self, attach_id: str) -> dict:
+        """
+        Return attached credential by attach identifier.
+
+        Args:
+            attach_id: string identifier
+
+        """
+        target_format = [
+            V20CredFormat.Format.get(f.format)
+            for f in self.formats
+            if f.attach_id == attach_id
+        ][0]
+        return (
+            target_format.get_attachment_data_by_id(attach_id, self.credentials_attach)
+            if target_format
+            else None
+        )
+
+    def add_attachments(self, fmt: V20CredFormat, atch: AttachDecorator) -> None:
+        """
+        Update attachment format and cred issue attachment.
+
+        Args:
+            fmt: format of attachment
+            atch: attachment
+        """
+        self.formats.append(fmt)
+        self.credentials_attach.append(atch)
+
+    def add_formats(self, fmt_list: Sequence[V20CredFormat]) -> None:
+        """
+        Add format.
+
+        Args:
+            fmt_list: list of format attachment
+        """
+        for fmt in fmt_list:
+            self.formats.append(fmt)
+
+    def add_credentials_attach(self, atch_list: Sequence[AttachDecorator]) -> None:
+        """
+        Add credentials_attach.
+
+        Args:
+            atch_list: list of attachment
+        """
+        for atch in atch_list:
+            self.credentials_attach.append(atch)
+
 
 class V20CredIssueSchema(AgentMessageSchema):
     """Credential issue schema."""
@@ -97,6 +150,11 @@ class V20CredIssueSchema(AgentMessageSchema):
     )
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
+    )
+    more_available = fields.Int(
+        description="Count of the verifiable credential type for the Holder that the Issuer is willing to issue",
+        required=False,
+        strict=True,
     )
     formats = fields.Nested(
         V20CredFormatSchema,
