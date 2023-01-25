@@ -383,7 +383,7 @@ class TestV20CredRoutes(AsyncTestCase):
             await test_module.credential_exchange_send_bound_request(self.request)
 
             mock_cred_mgr.return_value.create_request.assert_called_once_with(
-                mock_cred_ex.retrieve_by_id.return_value, "holder-did"
+                mock_cred_ex.retrieve_by_id.return_value, "holder-did", []
             )
             mock_response.assert_called_once_with(
                 mock_cred_ex_record.serialize.return_value

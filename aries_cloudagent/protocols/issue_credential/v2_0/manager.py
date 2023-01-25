@@ -201,7 +201,7 @@ class V20CredManager:
         counter_proposal: V20CredProposal = None,
         replacement_id: str = None,
         comment: str = None,
-        multiple_available: int = None,
+        multiple_available: int = 1,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
         """
         Create credential offer, update credential exchange record.
@@ -753,7 +753,7 @@ class V20CredManager:
             cred_ex_record.multiple_credentials = True
         else:
             cred_ex_record.cred_issue = cred_issue_message
-        if more_available > 0:
+        if more_available and more_available > 0:
             if stop_multiple_cred_flow:
                 cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
                 responder = self._profile.inject_or(BaseResponder)

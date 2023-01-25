@@ -33,7 +33,7 @@ class V20CredOffer(AgentMessage):
         self,
         _id: str = None,
         *,
-        multiple_available: int = 1,
+        multiple_available: int = None,
         replacement_id: str = None,
         comment: str = None,
         credential_preview: V20CredPreview = None,
@@ -127,7 +127,10 @@ class V20CredOfferSchema(AgentMessageSchema):
         allow_none=True,
     )
     multiple_available = fields.Int(
-        description="Count of verifiable credentials of the indicated type available for issuance",
+        description=(
+            "Count of verifiable credentials of the indicated "
+            "type available for issuance"
+        ),
         required=False,
         strict=True,
     )

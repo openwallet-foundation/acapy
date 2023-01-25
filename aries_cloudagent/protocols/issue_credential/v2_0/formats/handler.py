@@ -83,7 +83,7 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def create_offer(
-        self, cred_proposal_message: V20CredProposal
+        self, cred_proposal_message: V20CredProposal, attach_id: str = None
     ) -> CredFormatAttachment:
         """Create format specific credential offer attachment data."""
 
@@ -95,7 +95,10 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        request_data: Mapping = None,
+        attach_id: str = None,
     ) -> CredFormatAttachment:
         """Create format specific credential request attachment data."""
 
@@ -107,7 +110,7 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def issue_credential(
-        self, cred_ex_record: V20CredExRecord, retries: int = 5
+        self, cred_ex_record: V20CredExRecord, retries: int = 5, attach_id: str = None
     ) -> CredFormatAttachment:
         """Create format specific issue credential attachment data."""
 
@@ -119,6 +122,9 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_id: str = None,
+        attach_id: str = None,
     ) -> None:
         """Store format specific credential from issue credential message."""
