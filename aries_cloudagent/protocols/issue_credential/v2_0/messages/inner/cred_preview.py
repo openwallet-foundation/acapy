@@ -196,6 +196,7 @@ class V20CredPreviewSchema(BaseModelSchema):
     )
 
     def check_cred_ident_in_keys(self, attr_dict):
+        """Check for indy or ld_proof in attachment identifier."""
         for key, value in attr_dict.items():
             if "indy" in key or "ld_proof" in key:
                 return True
@@ -203,16 +204,18 @@ class V20CredPreviewSchema(BaseModelSchema):
 
     @pre_load
     def extract_and_process_attributes(self, data, **kwargs):
+        """Process attributes and populate attributes_dict accordingly."""
         if not data.get("attributes"):
-            raise ValidationError("test")
+            raise ValidationError("Missing attributes dict")
         attr_data = data.get("attributes")
-        if isinstance(attr_data, dict) and self.check_ident_in_keys(attr_data):
+        if isinstance(attr_data, dict) and self.check_cred_ident_in_keys(attr_data):
             data["attributes_dict"] = attr_data
             del data["attributes"]
         return data
 
     @post_dump
     def cleanup_attributes(self, data, **kwargs):
+        """Cleanup attributes_dict and return as attributes."""
         if not data.get("attributes") and data.get("attributes_dict"):
             data["attributes"] = data.get("attributes_dict")
             del data["attributes_dict"]

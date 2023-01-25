@@ -32,7 +32,7 @@ class V20CredIssue(AgentMessage):
         self,
         _id: str = None,
         *,
-        more_available: int = 0,
+        more_available: int = None,
         replacement_id: str = None,
         comment: str = None,
         formats: Sequence[V20CredFormat] = None,
@@ -152,7 +152,10 @@ class V20CredIssueSchema(AgentMessageSchema):
         description="Human-readable comment", required=False, allow_none=True
     )
     more_available = fields.Int(
-        description="Count of the verifiable credential type for the Holder that the Issuer is willing to issue",
+        description=(
+            "Count of the verifiable credential type for the Holder "
+            "that the Issuer is willing to issue"
+        ),
         required=False,
         strict=True,
     )

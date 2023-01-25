@@ -356,7 +356,7 @@ class TestV20CredManager(AsyncTestCase):
             mock_save.assert_called_once()
 
             mock_handler.return_value.create_offer.assert_called_once_with(
-                cx_rec.cred_proposal
+                cx_rec.cred_proposal, "0"
             )
 
             assert cx_rec.cred_ex_id == ret_cx_rec._id  # cover property
@@ -430,7 +430,7 @@ class TestV20CredManager(AsyncTestCase):
             mock_save.assert_called_once()
 
             mock_handler.return_value.create_offer.assert_called_once_with(
-                cred_proposal
+                cred_proposal, "0"
             )
 
             assert cx_rec.thread_id == ret_offer._thread_id
@@ -642,7 +642,7 @@ class TestV20CredManager(AsyncTestCase):
             )
 
             mock_handler.return_value.create_request.assert_called_once_with(
-                stored_cx_rec, {"holder_did": holder_did}
+                stored_cx_rec, {"holder_did": holder_did}, "0"
             )
 
             assert ret_cred_req.attachment() == INDY_CRED_REQ
@@ -729,7 +729,7 @@ class TestV20CredManager(AsyncTestCase):
             )
 
             mock_handler.return_value.create_request.assert_called_once_with(
-                stored_cx_rec, {"holder_did": holder_did}
+                stored_cx_rec, {"holder_did": holder_did}, "0"
             )
 
             assert ret_cred_req.attachment() == LD_PROOF_VC_DETAIL
@@ -999,7 +999,7 @@ class TestV20CredManager(AsyncTestCase):
 
             mock_save.assert_called_once()
             mock_handler.return_value.issue_credential.assert_called_once_with(
-                ret_cx_rec
+                ret_cx_rec, "0"
             )
 
             assert ret_cx_rec.cred_issue.attachment() == INDY_CRED
@@ -1107,7 +1107,7 @@ class TestV20CredManager(AsyncTestCase):
             )
             mock_save.assert_called_once()
             mock_handler.return_value.receive_credential.assert_called_once_with(
-                ret_cx_rec, cred_issue
+                ret_cx_rec, cred_issue, "0"
             )
             assert ret_cx_rec.cred_issue.attachment() == INDY_CRED
             assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
@@ -1246,7 +1246,7 @@ class TestV20CredManager(AsyncTestCase):
             )
 
             mock_handler.return_value.store_credential.assert_called_once_with(
-                ret_cx_rec, cred_id
+                ret_cx_rec, cred_id, "0"
             )
 
             assert ret_cx_rec.cred_issue.attachment() == INDY_CRED

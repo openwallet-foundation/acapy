@@ -79,7 +79,7 @@ class V20CredExRecord(BaseExchangeRecord):
         cred_id_stored: str = None,  # backward compat: BaseRecord.from_storage()
         conn_id: str = None,  # backward compat: BaseRecord.from_storage()
         by_format: Mapping = None,  # backward compat: BaseRecord.from_storage()
-        multiple_credentials: bool = False,
+        multiple_credentials: bool = None,
         processed_attach_ids: Sequence[str] = [],
         multiple_issuance_state: str = None,
         **kwargs,
@@ -412,4 +412,9 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         fields.Str(description="Attachment ID", required=True),
         required=False,
         description="List of processed attachment IDs",
+    )
+    multiple_issuance_state = fields.Str(
+        required=False,
+        description="Multiple credential issuance flow state",
+        example=V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE,
     )
