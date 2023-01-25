@@ -70,6 +70,23 @@ if [ -n "${NETWORK_NAME}" ]; then
 else
   echo "No Docker network specified."
 fi
-echo ""
 
-$CONTAINER_RUNTIME run --rm -ti $ARGS aries-cloudagent-run "$@"
+if [ -n "${ARG_FILE}" ]; then
+  if [ -f "${ARG_FILE}" ]; then
+    ARG_FILE_IN_DOCKER="/home/indy/arg-file.yml"
+    ARGS="${ARGS} -v ${ARG_FILE}:${ARG_FILE_IN_DOCKER}"
+    echo ""
+    echo "Using acapy config file: ${ARG_FILE}"
+  else
+    echo "Config file not found: ${ARG_FILE}" || exit 1
+  fi
+fi
+
+ACAPY_ARGUMENTS=("$@")
+if [ -n "${ARG_FILE_IN_DOCKER}" ]; then
+  ACAPY_ARGUMENTS=("${ACAPY_ARGUMENTS[@]}" "--arg-file" "${ARG_FILE_IN_DOCKER}")
+fi
+
+echo ""
+# shellcheck disable=SC2086,SC2090
+$CONTAINER_RUNTIME run --rm -ti $ARGS aries-cloudagent-run "${ACAPY_ARGUMENTS[@]}"
