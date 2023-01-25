@@ -85,9 +85,7 @@ class BaseMultitenantManager(ABC):
         return False
 
     def get_webhook_urls(
-        self,
-        base_context: InjectionContext,
-        wallet_record: WalletRecord,
+        self, base_context: InjectionContext, wallet_record: WalletRecord
     ) -> list:
         """Get the webhook urls according to dispatch_type.
 
@@ -144,9 +142,7 @@ class BaseMultitenantManager(ABC):
         """
 
     async def create_wallet(
-        self,
-        settings: dict,
-        key_management_mode: str,
+        self, settings: dict, key_management_mode: str
     ) -> WalletRecord:
         """Create new wallet and wallet record.
 
@@ -187,9 +183,7 @@ class BaseMultitenantManager(ABC):
             profile = await self.get_wallet_profile(
                 self._profile.context,
                 wallet_record,
-                {
-                    "wallet.key": wallet_key,
-                },
+                {"wallet.key": wallet_key},
                 provision=True,
             )
 
@@ -208,11 +202,7 @@ class BaseMultitenantManager(ABC):
 
         return wallet_record
 
-    async def update_wallet(
-        self,
-        wallet_id: str,
-        new_settings: dict,
-    ) -> WalletRecord:
+    async def update_wallet(self, wallet_id: str, new_settings: dict) -> WalletRecord:
         """Update an existing wallet record.
 
         Args:
@@ -246,8 +236,7 @@ class BaseMultitenantManager(ABC):
         """
         async with self._profile.session() as session:
             wallet = cast(
-                WalletRecord,
-                await WalletRecord.retrieve_by_id(session, wallet_id),
+                WalletRecord, await WalletRecord.retrieve_by_id(session, wallet_id)
             )
 
         wallet_key = wallet_key or wallet.wallet_key
@@ -255,9 +244,7 @@ class BaseMultitenantManager(ABC):
             raise WalletKeyMissingError("Missing key to open wallet")
 
         profile = await self.get_wallet_profile(
-            self._profile.context,
-            wallet,
-            {"wallet.key": wallet_key},
+            self._profile.context, wallet, {"wallet.key": wallet_key}
         )
 
         await self.remove_wallet_profile(profile)

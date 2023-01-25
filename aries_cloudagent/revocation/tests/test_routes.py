@@ -96,10 +96,7 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_revoke_by_cred_ex_id(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "cred_ex_id": "dummy-cxid",
-                "publish": "false",
-            }
+            return_value={"cred_ex_id": "dummy-cxid", "publish": "false"}
         )
 
         with async_mock.patch.object(
@@ -353,9 +350,7 @@ class TestRevocationRoutes(AsyncTestCase):
             "retrieve_by_revoc_reg_id",
             async_mock.CoroutineMock(),
         ) as mock_retrieve, async_mock.patch.object(
-            test_module.IssuerCredRevRecord,
-            "query_by_ids",
-            async_mock.CoroutineMock(),
+            test_module.IssuerCredRevRecord, "query_by_ids", async_mock.CoroutineMock()
         ) as mock_query, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
@@ -387,10 +382,7 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         CRED_REV_ID = "1"
 
-        self.request.query = {
-            "rev_reg_id": REV_REG_ID,
-            "cred_rev_id": CRED_REV_ID,
-        }
+        self.request.query = {"rev_reg_id": REV_REG_ID, "cred_rev_id": CRED_REV_ID}
 
         with async_mock.patch.object(
             test_module.IssuerCredRevRecord,
@@ -434,10 +426,7 @@ class TestRevocationRoutes(AsyncTestCase):
         CRED_REV_ID = "1"
 
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "rev_reg_id": REV_REG_ID,
-                "cred_rev_id": CRED_REV_ID,
-            }
+            return_value={"rev_reg_id": REV_REG_ID, "cred_rev_id": CRED_REV_ID}
         )
 
         with async_mock.patch.object(
@@ -661,7 +650,7 @@ class TestRevocationRoutes(AsyncTestCase):
                     return_value=async_mock.MagicMock(
                         send_def=async_mock.CoroutineMock(
                             side_effect=test_module.RevocationError()
-                        ),
+                        )
                     )
                 )
             )
@@ -728,7 +717,7 @@ class TestRevocationRoutes(AsyncTestCase):
                     return_value=async_mock.MagicMock(
                         send_entry=async_mock.CoroutineMock(
                             side_effect=test_module.RevocationError()
-                        ),
+                        )
                     )
                 )
             )
@@ -811,7 +800,7 @@ class TestRevocationRoutes(AsyncTestCase):
                     return_value=async_mock.MagicMock(
                         set_tails_file_public_uri=async_mock.CoroutineMock(
                             side_effect=test_module.RevocationError()
-                        ),
+                        )
                     )
                 )
             )
@@ -825,13 +814,9 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "max_cred_num": "1000",
-            }
+            return_value={"max_cred_num": "1000"}
         )
-        self.request.query = {
-            "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
-        }
+        self.request.query = {"state": test_module.IssuerRevRegRecord.STATE_ACTIVE}
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -858,13 +843,9 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "max_cred_num": "1000",
-            }
+            return_value={"max_cred_num": "1000"}
         )
-        self.request.query = {
-            "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
-        }
+        self.request.query = {"state": test_module.IssuerRevRegRecord.STATE_ACTIVE}
 
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True

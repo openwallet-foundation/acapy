@@ -52,11 +52,7 @@ class TestActionMenuService(AsyncTestCase):
         thread_id = "thid"
 
         await self.menu_service.perform_menu_action(
-            self.context.profile,
-            action_name,
-            action_params,
-            connection,
-            thread_id,
+            self.context.profile, action_name, action_params, connection, thread_id
         )
 
         assert len(mock_event_bus.events) == 1

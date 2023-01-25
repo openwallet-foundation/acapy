@@ -134,10 +134,7 @@ class PresentationManager:
         indy_proof_request = await (
             presentation_exchange_record.presentation_proposal_dict
         ).presentation_proposal.indy_proof_request(
-            name=name,
-            version=version,
-            nonce=nonce,
-            profile=self._profile,
+            name=name, version=version, nonce=nonce, profile=self._profile
         )
         presentation_request_message = PresentationRequest(
             comment=comment,
@@ -331,15 +328,13 @@ class PresentationManager:
 
         async with self._profile.session() as session:
             # Find by thread_id and role. Verify connection id later
-            presentation_exchange_record = (
-                await V10PresentationExchange.retrieve_by_tag_filter(
-                    session,
-                    {"thread_id": thread_id},
-                    {
-                        "role": V10PresentationExchange.ROLE_VERIFIER,
-                        "connection_id": connection_id,
-                    },
-                )
+            presentation_exchange_record = await V10PresentationExchange.retrieve_by_tag_filter(
+                session,
+                {"thread_id": thread_id},
+                {
+                    "role": V10PresentationExchange.ROLE_VERIFIER,
+                    "connection_id": connection_id,
+                },
             )
 
         # Save connection id (if it wasn't already present)

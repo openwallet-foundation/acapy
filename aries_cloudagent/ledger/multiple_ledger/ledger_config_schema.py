@@ -1,11 +1,7 @@
 """Schema for configuring multiple ledgers."""
 import uuid
 
-from marshmallow import (
-    fields,
-    pre_load,
-    EXCLUDE,
-)
+from marshmallow import fields, pre_load, EXCLUDE
 
 from ...messaging.models.base import BaseModelSchema, BaseModel
 from ...messaging.models.openapi import OpenAPISchema
@@ -45,10 +41,7 @@ class LedgerConfigInstanceSchema(BaseModelSchema):
         model_class = LedgerConfigInstance
         unknown = EXCLUDE
 
-    id = fields.Str(
-        description="ledger_id",
-        required=False,
-    )
+    id = fields.Str(description="ledger_id", required=False)
     is_production = fields.Bool(description="is_production", required=False)
     genesis_transactions = fields.Str(
         description="genesis_transactions", required=False
@@ -68,11 +61,7 @@ class LedgerConfigListSchema(OpenAPISchema):
     """Schema for Ledger Config List."""
 
     ledger_config_list = fields.List(
-        fields.Nested(
-            LedgerConfigInstanceSchema(),
-            required=True,
-        ),
-        required=True,
+        fields.Nested(LedgerConfigInstanceSchema(), required=True), required=True
     )
 
 

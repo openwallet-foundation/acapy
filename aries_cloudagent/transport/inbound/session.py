@@ -174,10 +174,7 @@ class InboundSession:
                 base_responder: AdminResponder = profile.inject(BaseResponder)
 
                 # Create new responder based on base responder
-                responder = AdminResponder(
-                    profile,
-                    base_responder.send_fn,
-                )
+                responder = AdminResponder(profile, base_responder.send_fn)
                 profile.context.injector.bind_instance(BaseResponder, responder)
 
                 # overwrite session profile with wallet profile

@@ -2,12 +2,7 @@ import pytest
 from asynctest import mock as async_mock
 
 from ......connections.models import connection_target
-from ......connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 
@@ -43,23 +38,13 @@ def did_doc():
     ident = "1"
     pk_value = TEST_VERKEY
     pk = PublicKey(
-        TEST_DID,
-        ident,
-        pk_value,
-        PublicKeyType.ED25519_SIG_2018,
-        controller,
-        False,
+        TEST_DID, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False
     )
     doc.set(pk)
     recip_keys = [pk]
     router_keys = []
     service = Service(
-        TEST_DID,
-        "indy",
-        "IndyAgent",
-        recip_keys,
-        router_keys,
-        TEST_ENDPOINT,
+        TEST_DID, "indy", "IndyAgent", recip_keys, router_keys, TEST_ENDPOINT
     )
     doc.set(service)
     yield doc

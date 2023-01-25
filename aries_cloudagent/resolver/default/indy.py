@@ -168,8 +168,7 @@ class IndyDIDResolver(BaseDIDResolver):
             ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
-                did,
-                txn_record_type=GET_KEY_FOR_DID,
+                did, txn_record_type=GET_KEY_FOR_DID
             )
         )[1]
         if not ledger:

@@ -375,9 +375,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert update.updates[1].recipient_key == TEST_ROUTE_VERKEY
 
     async def test_store_update_results(
-        self,
-        session: ProfileSession,
-        manager: MediationManager,
+        self, session: ProfileSession, manager: MediationManager
     ):
         """test_store_update_results."""
         await RouteRecord(
@@ -408,7 +406,7 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
                 recipient_key=TEST_VERKEY,
                 action=KeylistUpdateRule.RULE_REMOVE,
                 result=KeylistUpdated.RESULT_SUCCESS,
-            ),
+            )
         ]
 
         with async_mock.patch.object(

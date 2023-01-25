@@ -396,11 +396,7 @@ class IndyCredxHolder(IndyHolder):
 
         if rev_reg_id:
             cred_rev_id = cred.rev_reg_index
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_reg_id,
-                fro,
-                to,
-            )
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_reg_id, fro, to)
             return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
         else:
             return False
@@ -442,8 +438,7 @@ class IndyCredxHolder(IndyHolder):
         try:
             async with self._profile.session() as session:
                 mime_types_record = await session.handle.fetch(
-                    IndyHolder.RECORD_TYPE_MIME_TYPES,
-                    credential_id,
+                    IndyHolder.RECORD_TYPE_MIME_TYPES, credential_id
                 )
         except AskarError as err:
             raise IndyHolderError("Error retrieving credential mime types") from err
@@ -516,10 +511,7 @@ class IndyCredxHolder(IndyHolder):
                 creds[cred_id] = await self._get_credential(cred_id)
             timestamp, rev_state = get_rev_state(cred_id, detail)
             present_creds.add_predicates(
-                creds[cred_id],
-                reft,
-                timestamp=timestamp,
-                rev_state=rev_state,
+                creds[cred_id], reft, timestamp=timestamp, rev_state=rev_state
             )
 
         try:

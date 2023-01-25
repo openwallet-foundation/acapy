@@ -150,15 +150,13 @@ class TestWalletConfig(AsyncTestCase):
 
     async def test_wallet_config_non_indy_x(self):
         self.context.update_settings(
-            {
-                "wallet.seed": "00000000000000000000000000000000",
-            }
+            {"wallet.seed": "00000000000000000000000000000000"}
         )
         self.profile.backend = "not-indy"
         mock_wallet = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
-            ),
+            )
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
         with async_mock.patch.object(
@@ -169,14 +167,12 @@ class TestWalletConfig(AsyncTestCase):
 
     async def test_wallet_config_bad_seed_x(self):
         self.context.update_settings(
-            {
-                "wallet.seed": "00000000000000000000000000000000",
-            }
+            {"wallet.seed": "00000000000000000000000000000000"}
         )
         mock_wallet = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(did=TEST_DID, verkey=TEST_VERKEY)
-            ),
+            )
         )
         self.injector.bind_instance(BaseWallet, mock_wallet)
 
@@ -218,9 +214,7 @@ class TestWalletConfig(AsyncTestCase):
 
     async def test_wallet_config_seed_public(self):
         self.context.update_settings(
-            {
-                "wallet.seed": "00000000000000000000000000000000",
-            }
+            {"wallet.seed": "00000000000000000000000000000000"}
         )
         mock_wallet = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(return_value=None),
@@ -261,9 +255,7 @@ class TestWalletConfig(AsyncTestCase):
 
     async def test_wallet_config_for_key_derivation_method(self):
         self.context.update_settings(
-            {
-                "wallet.key_derivation_method": "derivation_method",
-            }
+            {"wallet.key_derivation_method": "derivation_method"}
         )
         mock_wallet = async_mock.MagicMock(
             get_public_did=async_mock.CoroutineMock(
@@ -292,10 +284,7 @@ class TestWalletConfig(AsyncTestCase):
     async def test_update_version_to_storage(self):
         session = InMemoryProfile.test_session()
         storage = session.inject(BaseStorage)
-        record = StorageRecord(
-            "acapy_version",
-            "v0.7.2",
-        )
+        record = StorageRecord("acapy_version", "v0.7.2")
         await storage.add_record(record)
         await test_module.add_or_update_version_to_storage(session)
         records = await storage.find_all_records(RECORD_TYPE_ACAPY_VERSION)

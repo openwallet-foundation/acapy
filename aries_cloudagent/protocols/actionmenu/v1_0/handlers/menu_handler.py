@@ -1,10 +1,6 @@
 """Action menu message handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ..messages.menu import Menu
 from ..util import save_connection_menu

@@ -135,8 +135,7 @@ class OobRecord(BaseExchangeRecord):
         if self.connection_id:
             storage = session.inject(BaseStorage)
             await storage.delete_all_records(
-                self.RECORD_TYPE_METADATA,
-                {"connection_id": self.connection_id},
+                self.RECORD_TYPE_METADATA, {"connection_id": self.connection_id}
             )
 
     async def metadata_get(
@@ -221,8 +220,7 @@ class OobRecord(BaseExchangeRecord):
         assert self.connection_id
         storage: BaseStorage = session.inject(BaseStorage)
         records = await storage.find_all_records(
-            self.RECORD_TYPE_METADATA,
-            {"connection_id": self.connection_id},
+            self.RECORD_TYPE_METADATA, {"connection_id": self.connection_id}
         )
         return {record.tags["key"]: json.loads(record.value) for record in records}
 
@@ -240,9 +238,7 @@ class OobRecordSchema(BaseExchangeSchema):
         model_class = OobRecord
 
     oob_id = fields.Str(
-        required=True,
-        description="Oob record identifier",
-        example=UUIDFour.EXAMPLE,
+        required=True, description="Oob record identifier", example=UUIDFour.EXAMPLE
     )
     state = fields.Str(
         required=True,
@@ -263,10 +259,7 @@ class OobRecordSchema(BaseExchangeSchema):
         description="Out of band invitation message",
     )
 
-    their_service = fields.Nested(
-        ServiceDecoratorSchema(),
-        required=False,
-    )
+    their_service = fields.Nested(ServiceDecoratorSchema(), required=False)
 
     connection_id = fields.Str(
         description="Connection record identifier",

@@ -318,10 +318,7 @@ class TestCredentialRoutes(AsyncTestCase):
                     )
                 ),
                 prepare_send=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cred_ex_record,
-                        mock_cred_offer,
-                    )
+                    return_value=(mock_cred_ex_record, mock_cred_offer)
                 ),
             )
 
@@ -511,7 +508,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
         self.context.update_settings({"default_endpoint": "http://1.2.3.4:8081"})
         self.session_inject[BaseWallet] = async_mock.MagicMock(
-            get_public_did=async_mock.CoroutineMock(return_value=None),
+            get_public_did=async_mock.CoroutineMock(return_value=None)
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -562,16 +559,13 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_credential_manager:
             mock_cred_ex_record = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(
-                    side_effect=test_module.BaseModelError(),
+                    side_effect=test_module.BaseModelError()
                 ),
                 save_error_state=async_mock.CoroutineMock(),
             )
             mock_credential_manager.return_value = async_mock.MagicMock(
                 create_offer=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cred_ex_record,
-                        async_mock.MagicMock(),
-                    )
+                    return_value=(mock_cred_ex_record, async_mock.MagicMock())
                 )
             )
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -716,10 +710,7 @@ class TestCredentialRoutes(AsyncTestCase):
 
             mock_credential_manager.return_value = async_mock.MagicMock(
                 create_offer=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cred_ex_record,
-                        async_mock.MagicMock(),
-                    )
+                    return_value=(mock_cred_ex_record, async_mock.MagicMock())
                 )
             )
 
@@ -1194,10 +1185,7 @@ class TestCredentialRoutes(AsyncTestCase):
             )
             mock_credential_manager.return_value = async_mock.MagicMock(
                 issue_credential=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cred_ex_rec,
-                        async_mock.MagicMock(),
-                    )
+                    return_value=(mock_cred_ex_rec, async_mock.MagicMock())
                 )
             )
             with self.assertRaises(test_module.web.HTTPBadRequest):

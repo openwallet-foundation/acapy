@@ -15,9 +15,7 @@ class BaseOutboundTransport(ABC):
     """Base outbound transport class."""
 
     def __init__(
-        self,
-        wire_format: BaseWireFormat = None,
-        root_profile: Profile = None,
+        self, wire_format: BaseWireFormat = None, root_profile: Profile = None
     ) -> None:
         """Initialize a `BaseOutboundTransport` instance."""
         self._collector = None

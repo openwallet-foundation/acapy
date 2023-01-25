@@ -8,18 +8,9 @@ KC_PROOF = {
     "c": "123467890",
     "xz_cap": "12345678901234567890",
     "xr_cap": [
-        [
-            "remainder",
-            "1234567890",
-        ],
-        [
-            "number",
-            "12345678901234",
-        ],
-        [
-            "master_secret",
-            "12345678901234",
-        ],
+        ["remainder", "1234567890"],
+        ["number", "12345678901234"],
+        ["master_secret", "12345678901234"],
     ],
 }
 
@@ -84,10 +75,7 @@ class TestIndyAttrValue(TestCase):
 
     def test_serde(self):
         """Test de/serialization."""
-        obj = {
-            "raw": "test",
-            "encoded": "1234567890",
-        }
+        obj = {"raw": "test", "encoded": "1234567890"}
         attr_val = IndyAttrValue.deserialize(obj)
         assert type(attr_val) == IndyAttrValue
 
@@ -105,10 +93,7 @@ class TestIndyCredential(TestCase):
             "cred_def_id": CRED_DEF_ID,
             "rev_reg_id": None,
             "values": {
-                "busId": {
-                    "raw": "12345",
-                    "encoded": "12345",
-                },
+                "busId": {"raw": "12345", "encoded": "12345"},
                 "legalName": {
                     "raw": "Muffin Moon",
                     "encoded": "13419834198651328645901659586128164",

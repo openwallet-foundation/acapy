@@ -11,8 +11,7 @@ from .models.credential_exchange import V10CredentialExchange
 
 
 def problem_report_for_record(
-    record: Union[ConnRecord, V10CredentialExchange],
-    desc_en: str,
+    record: Union[ConnRecord, V10CredentialExchange], desc_en: str
 ) -> CredentialProblemReport:
     """
     Create problem report for record.
@@ -26,7 +25,7 @@ def problem_report_for_record(
         description={
             "en": desc_en,
             "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
-        },
+        }
     )
     if record:
         thid = getattr(record, "thread_id", None)

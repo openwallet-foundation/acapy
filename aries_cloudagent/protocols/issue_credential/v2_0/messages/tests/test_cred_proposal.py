@@ -57,8 +57,7 @@ class TestV20CredProposal(AsyncTestCase):
             formats=[V20CredFormat(attach_id="not_indy", format_="not_indy")],
             filters_attach=[
                 AttachDecorator.data_base64(
-                    ident="not_indy",
-                    mapping=TEST_PREVIEW.serialize(),
+                    ident="not_indy", mapping=TEST_PREVIEW.serialize()
                 )
             ],
         )
@@ -123,10 +122,7 @@ class TestV20CredProposal(AsyncTestCase):
             V20CredProposal.deserialize(obj)
 
         cred_proposal.formats.append(  # unknown format: no validation
-            V20CredFormat(
-                attach_id="not_indy",
-                format_="not_indy",
-            )
+            V20CredFormat(attach_id="not_indy", format_="not_indy")
         )
         obj = cred_proposal.serialize()
         obj["filters~attach"].append(

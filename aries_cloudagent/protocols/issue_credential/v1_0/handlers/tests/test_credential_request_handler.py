@@ -70,7 +70,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
                     attributes=(CredAttrSpec.list_plain(ATTR_DICT))
                 ).serialize(),
                 "cred_def_id": CD_ID,
-            },
+            }
         )
 
         with async_mock.patch.object(
@@ -125,7 +125,7 @@ class TestCredentialRequestHandler(AsyncTestCase):
                     attributes=(CredAttrSpec.list_plain(ATTR_DICT))
                 ).serialize(),
                 "cred_def_id": CD_ID,
-            },
+            }
         )
 
         with async_mock.patch.object(

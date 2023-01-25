@@ -29,9 +29,7 @@ class IndyProofReqAttrSpecSchema(OpenAPISchema):
         example="favouriteDrink", description="Attribute name", required=False
     )
     names = fields.List(
-        fields.Str(example="age"),
-        description="Attribute name group",
-        required=False,
+        fields.Str(example="age"), description="Attribute name group", required=False
     )
     restrictions = fields.List(
         fields.Dict(
@@ -208,11 +206,7 @@ class IndyProofRequestSchema(BaseModelSchema):
         model_class = IndyProofRequest
         unknown = EXCLUDE
 
-    nonce = fields.Str(
-        description="Nonce",
-        required=False,
-        **NUM_STR_NATURAL,
-    )
+    nonce = fields.Str(description="Nonce", required=False, **NUM_STR_NATURAL)
     name = fields.Str(
         description="Proof request name",
         required=False,

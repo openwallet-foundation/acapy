@@ -163,8 +163,7 @@ class DIDXManager(BaseConnectionManager):
             responder = self.profile.inject_or(BaseResponder)
             if responder:
                 await responder.send_reply(
-                    request,
-                    connection_id=conn_rec.connection_id,
+                    request, connection_id=conn_rec.connection_id
                 )
 
                 conn_rec.state = ConnRecord.State.REQUEST.rfc23
@@ -259,10 +258,7 @@ class DIDXManager(BaseConnectionManager):
         """
         # Mediation Support
         mediation_record = await self._route_manager.mediation_record_for_connection(
-            self.profile,
-            conn_rec,
-            mediation_id,
-            or_default=True,
+            self.profile, conn_rec, mediation_id, or_default=True
         )
 
         # Multitenancy setup
@@ -283,10 +279,7 @@ class DIDXManager(BaseConnectionManager):
             # Create new DID for connection
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(
-                    method=SOV,
-                    key_type=ED25519,
-                )
+                my_info = await wallet.create_local_did(method=SOV, key_type=ED25519)
             conn_rec.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -324,9 +317,7 @@ class DIDXManager(BaseConnectionManager):
         if not my_label:
             my_label = self.profile.settings.get("default_label")
         request = DIDXRequest(
-            label=my_label,
-            did=conn_rec.my_did,
-            did_doc_attach=attach,
+            label=my_label, did=conn_rec.my_did, did_doc_attach=attach
         )
         request.assign_thread_id(thid=request._id, pthid=pthid)
 
@@ -417,8 +408,7 @@ class DIDXManager(BaseConnectionManager):
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
                     my_info = await wallet.create_local_did(
-                        method=SOV,
-                        key_type=ED25519,
+                        method=SOV, key_type=ED25519
                     )
 
                 new_conn_rec = ConnRecord(
@@ -489,10 +479,7 @@ class DIDXManager(BaseConnectionManager):
                 )
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(
-                    method=SOV,
-                    key_type=ED25519,
-                )
+                my_info = await wallet.create_local_did(method=SOV, key_type=ED25519)
 
             auto_accept = bool(
                 auto_accept_implicit
@@ -533,10 +520,7 @@ class DIDXManager(BaseConnectionManager):
         return conn_rec
 
     async def create_response(
-        self,
-        conn_rec: ConnRecord,
-        my_endpoint: str = None,
-        mediation_id: str = None,
+        self, conn_rec: ConnRecord, my_endpoint: str = None, mediation_id: str = None
     ) -> DIDXResponse:
         """
         Create a connection response for a received connection request.
@@ -583,10 +567,7 @@ class DIDXManager(BaseConnectionManager):
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(
-                    method=SOV,
-                    key_type=ED25519,
-                )
+                my_info = await wallet.create_local_did(method=SOV, key_type=ED25519)
             conn_rec.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -645,9 +626,7 @@ class DIDXManager(BaseConnectionManager):
         return response
 
     async def accept_response(
-        self,
-        response: DIDXResponse,
-        receipt: MessageReceipt,
+        self, response: DIDXResponse, receipt: MessageReceipt
     ) -> ConnRecord:
         """
         Accept a connection response under RFC 23 (DID exchange).
@@ -768,9 +747,7 @@ class DIDXManager(BaseConnectionManager):
         return conn_rec
 
     async def accept_complete(
-        self,
-        complete: DIDXComplete,
-        receipt: MessageReceipt,
+        self, complete: DIDXComplete, receipt: MessageReceipt
     ) -> ConnRecord:
         """
         Accept a connection complete message under RFC 23 (DID exchange).
@@ -831,10 +808,7 @@ class DIDXManager(BaseConnectionManager):
         return conn_rec
 
     async def verify_diddoc(
-        self,
-        wallet: BaseWallet,
-        attached: AttachDecorator,
-        invi_key: str = None,
+        self, wallet: BaseWallet, attached: AttachDecorator, invi_key: str = None
     ) -> DIDDoc:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed

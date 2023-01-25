@@ -94,12 +94,7 @@ class V20PresFormat(BaseModel):
 
             return None
 
-    def __init__(
-        self,
-        *,
-        attach_id: str = None,
-        format_: str = None,
-    ):
+    def __init__(self, *, attach_id: str = None, format_: str = None):
         """Initialize present-proof protocol message attachment format."""
         self.attach_id = attach_id or uuid4()
         self.format_ = format_

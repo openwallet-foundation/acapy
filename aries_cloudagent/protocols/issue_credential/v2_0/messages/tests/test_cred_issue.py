@@ -80,10 +80,7 @@ class TestV20CredIssue(AsyncTestCase):
             )
         ],
         credentials_attach=[
-            AttachDecorator.data_base64(
-                mapping=INDY_CRED,
-                ident="indy",
-            )
+            AttachDecorator.data_base64(mapping=INDY_CRED, ident="indy")
         ],
     )
 
@@ -141,10 +138,7 @@ class TestV20CredIssue(AsyncTestCase):
             V20CredIssue.deserialize(obj)
 
         cred_issue.formats.append(  # unknown format: no validation
-            V20CredFormat(
-                attach_id="not_indy",
-                format_="not_indy",
-            )
+            V20CredFormat(attach_id="not_indy", format_="not_indy")
         )
         obj = cred_issue.serialize()
         obj["credentials~attach"].append(

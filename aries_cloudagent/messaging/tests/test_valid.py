@@ -180,13 +180,7 @@ class TestValid(TestCase):
         DID_KEY["validate"]("did:key:zQ4zqM7aXqm7gDQkUVLng9h")
 
     def test_did_posture(self):
-        non_did_postures = [
-            "not-me",
-            None,
-            "PUBLIC",
-            "Posted",
-            "wallet only",
-        ]
+        non_did_postures = ["not-me", None, "PUBLIC", "Posted", "wallet only"]
         for non_did_posture in non_did_postures:
             with self.assertRaises(ValidationError):
                 DID_POSTURE["validate"](non_did_posture)
@@ -245,7 +239,7 @@ class TestValid(TestCase):
                 INDY_REV_REG_ID["validate"](non_rev_reg_id)
 
         INDY_REV_REG_ID["validate"](
-            "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
+            "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0"
         )  # short
         INDY_REV_REG_ID["validate"](
             "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:"
@@ -377,13 +371,7 @@ class TestValid(TestCase):
         )
 
     def test_base64(self):
-        non_base64s = [
-            "####",
-            "abcde===",
-            "abcd====",
-            "=abcd123",
-            "=abcd123=",
-        ]
+        non_base64s = ["####", "abcde===", "abcd====", "=abcd123", "=abcd123="]
 
         for non_base64 in non_base64s:
             with self.assertRaises(ValidationError):

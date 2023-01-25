@@ -43,10 +43,7 @@ class IntroConnIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-@docs(
-    tags=["introduction"],
-    summary="Start an introduction between two connections",
-)
+@docs(tags=["introduction"], summary="Start an introduction between two connections")
 @match_info_schema(IntroConnIdMatchInfoSchema())
 @querystring_schema(IntroStartQueryStringSchema())
 @response_schema(IntroModuleResponseSchema, description="")

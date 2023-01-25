@@ -65,10 +65,7 @@ DATA_JSON = AttachDecoratorData(
 )
 LINK_1X1 = "https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png"
 SHA256_1X1 = "3eb10792d1f0c7e07e7248273540f1952d9a5a2996f4b5df70ab026cd9f05517"
-DATA_LINKS = AttachDecoratorData(
-    links_=LINK_1X1,
-    sha256_=SHA256_1X1,
-)
+DATA_LINKS = AttachDecoratorData(links_=LINK_1X1, sha256_=SHA256_1X1)
 
 
 @pytest.fixture()
@@ -190,10 +187,7 @@ class TestAttachDecorator(TestCase):
                 "signature": SIGNATURE,
                 "signatures": [one_jws.serialize(), one_jws.serialize()],
             },
-            {
-                "protected": PROTECTED,
-                "signature": SIGNATURE,
-            },
+            {"protected": PROTECTED, "signature": SIGNATURE},
         ]
         for bad in badness:
             with pytest.raises(BaseModelError) as excinfo:
@@ -304,9 +298,7 @@ class TestAttachDecorator(TestCase):
     def test_content(self):
         # data.base64
         deco_b64 = AttachDecorator.data_base64(
-            mapping=INDY_CRED,
-            ident=IDENT,
-            description=DESCRIPTION,
+            mapping=INDY_CRED, ident=IDENT, description=DESCRIPTION
         )
         assert deco_b64.mime_type == "application/json"
         assert hasattr(deco_b64.data, "base64_")
@@ -323,9 +315,7 @@ class TestAttachDecorator(TestCase):
 
         # data.json
         deco_json = AttachDecorator.data_json(
-            mapping=INDY_CRED,
-            ident=IDENT,
-            description=DESCRIPTION,
+            mapping=INDY_CRED, ident=IDENT, description=DESCRIPTION
         )
         assert deco_json.mime_type == "application/json"
         assert hasattr(deco_json.data, "json_")
@@ -346,10 +336,7 @@ class TestAttachDecorator(TestCase):
 
         # data.links
         deco_links = AttachDecorator.data_links(
-            links=LINK_1X1,
-            sha256=SHA256_1X1,
-            ident=IDENT,
-            description=DESCRIPTION,
+            links=LINK_1X1, sha256=SHA256_1X1, ident=IDENT, description=DESCRIPTION
         )
         assert deco_links.mime_type == "application/json"
         assert hasattr(deco_links.data, "links_")
@@ -358,12 +345,7 @@ class TestAttachDecorator(TestCase):
         assert deco_links.data.json is None
         assert deco_links.data.links is not None
         assert deco_links.data.sha256 is not None
-        assert deco_links.content == (
-            [
-                LINK_1X1,
-            ],
-            SHA256_1X1,
-        )
+        assert deco_links.content == ([LINK_1X1], SHA256_1X1)
         assert deco_links.ident == IDENT
         assert deco_links.description == DESCRIPTION
 
@@ -385,9 +367,7 @@ class TestAttachDecorator(TestCase):
 
     def test_data_json(self):
         deco_aries = AttachDecorator.data_json(
-            mapping=INDY_CRED,
-            ident=IDENT,
-            description=DESCRIPTION,
+            mapping=INDY_CRED, ident=IDENT, description=DESCRIPTION
         )
         assert deco_aries.mime_type == "application/json"
         assert hasattr(deco_aries.data, "json_")
@@ -406,9 +386,7 @@ class TestAttachDecorator(TestCase):
         data = {"key_one": "value_one", "key_two": "value_two"}
 
         deco_aries = AttachDecorator.data_json(
-            mapping=data,
-            ident=IDENT,
-            description=DESCRIPTION,
+            mapping=data, ident=IDENT, description=DESCRIPTION
         )
 
         # value should be cloned

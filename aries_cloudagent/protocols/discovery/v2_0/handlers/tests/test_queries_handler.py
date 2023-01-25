@@ -42,9 +42,7 @@ def request_context() -> RequestContext:
 class TestQueriesHandler:
     @pytest.mark.asyncio
     async def test_queries_all(self, request_context):
-        test_queries = [
-            QueryItem(feature_type="protocol", match="*"),
-        ]
+        test_queries = [QueryItem(feature_type="protocol", match="*")]
         queries = Queries(queries=test_queries)
         queries.assign_thread_id("test123")
         request_context.message = queries

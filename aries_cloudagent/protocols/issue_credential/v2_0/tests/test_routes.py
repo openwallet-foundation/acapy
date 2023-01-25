@@ -8,10 +8,7 @@ from ..formats.indy.handler import IndyCredFormatHandler
 from ..formats.ld_proof.handler import LDProofCredFormatHandler
 from ..messages.cred_format import V20CredFormat
 
-from . import (
-    LD_PROOF_VC_DETAIL,
-    TEST_DID,
-)
+from . import LD_PROOF_VC_DETAIL, TEST_DID
 
 
 class TestV20CredRoutes(AsyncTestCase):
@@ -42,10 +39,7 @@ class TestV20CredRoutes(AsyncTestCase):
             }
         )
         schema.validate_fields(
-            {
-                "indy": {},
-                "ld_proof": {"credential": {}, "options": {}},
-            }
+            {"indy": {}, "ld_proof": {"credential": {}, "options": {}}}
         )
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({})
@@ -473,10 +467,7 @@ class TestV20CredRoutes(AsyncTestCase):
                     )
                 ),
                 prepare_send=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cred_ex_record,
-                        mock_cred_offer,
-                    )
+                    return_value=(mock_cred_ex_record, mock_cred_offer)
                 ),
             )
 
@@ -514,10 +505,7 @@ class TestV20CredRoutes(AsyncTestCase):
     async def test_credential_exchange_send_proposal_no_filter(self):
         connection_id = "connection-id"
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "comment": "comment",
-                "connection_id": connection_id,
-            }
+            return_value={"comment": "comment", "connection_id": connection_id}
         )
 
         with self.assertRaises(test_module.web.HTTPBadRequest) as context:
@@ -658,16 +646,13 @@ class TestV20CredRoutes(AsyncTestCase):
         ) as mock_cred_mgr:
             mock_cx_rec = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(
-                    side_effect=test_module.BaseModelError(),
+                    side_effect=test_module.BaseModelError()
                 ),
                 save_error_state=async_mock.CoroutineMock(),
             )
             mock_cred_mgr.return_value = async_mock.MagicMock(
                 create_offer=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cx_rec,
-                        async_mock.MagicMock(),
-                    )
+                    return_value=(mock_cx_rec, async_mock.MagicMock())
                 )
             )
             with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -802,10 +787,7 @@ class TestV20CredRoutes(AsyncTestCase):
             )
             mock_cred_mgr.return_value = async_mock.CoroutineMock(
                 create_offer=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cx_rec,
-                        async_mock.MagicMock(),
-                    )
+                    return_value=(mock_cx_rec, async_mock.MagicMock())
                 )
             )
 
@@ -866,8 +848,8 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_cx_rec = async_mock.MagicMock()
 
             exception_message = "ex"
-            mock_cred_mgr.return_value.create_offer.side_effect = (
-                LinkedDataProofException(exception_message)
+            mock_cred_mgr.return_value.create_offer.side_effect = LinkedDataProofException(
+                exception_message
             )
             with self.assertRaises(test_module.web.HTTPBadRequest) as error:
                 await test_module.credential_exchange_send_bound_offer(self.request)
@@ -1084,9 +1066,7 @@ class TestV20CredRoutes(AsyncTestCase):
 
     async def test_credential_exchange_send_free_request(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
-            }
+            return_value={"filter": {"ld_proof": LD_PROOF_VC_DETAIL}}
         )
 
         with async_mock.patch.object(
@@ -1121,9 +1101,7 @@ class TestV20CredRoutes(AsyncTestCase):
 
     async def test_credential_exchange_send_free_request_no_conn_record(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
-            }
+            return_value={"filter": {"ld_proof": LD_PROOF_VC_DETAIL}}
         )
 
         with async_mock.patch.object(
@@ -1148,9 +1126,7 @@ class TestV20CredRoutes(AsyncTestCase):
 
     async def test_credential_exchange_send_free_request_not_ready(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
-            }
+            return_value={"filter": {"ld_proof": LD_PROOF_VC_DETAIL}}
         )
 
         with async_mock.patch.object(
@@ -1174,9 +1150,7 @@ class TestV20CredRoutes(AsyncTestCase):
 
     async def test_credential_exchange_send_free_request_x(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "filter": {"ld_proof": LD_PROOF_VC_DETAIL},
-            }
+            return_value={"filter": {"ld_proof": LD_PROOF_VC_DETAIL}}
         )
 
         with async_mock.patch.object(
@@ -1188,10 +1162,7 @@ class TestV20CredRoutes(AsyncTestCase):
         ) as mock_response:
 
             mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
-                side_effect=[
-                    test_module.LedgerError(),
-                    test_module.StorageError(),
-                ]
+                side_effect=[test_module.LedgerError(), test_module.StorageError()]
             )
 
             mock_cx_rec = async_mock.MagicMock()
@@ -1381,10 +1352,7 @@ class TestV20CredRoutes(AsyncTestCase):
             )
             mock_cred_mgr.return_value = async_mock.MagicMock(
                 issue_credential=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cx_rec,
-                        async_mock.MagicMock(),
-                    )
+                    return_value=(mock_cx_rec, async_mock.MagicMock())
                 )
             )
             mock_cred_mgr.return_value.get_detail_record = async_mock.CoroutineMock(
@@ -1604,10 +1572,7 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_cred_mgr.return_value = async_mock.MagicMock(
                 store_credential=async_mock.CoroutineMock(return_value=mock_cx_rec),
                 send_cred_ack=async_mock.CoroutineMock(
-                    return_value=(
-                        mock_cx_rec,
-                        async_mock.MagicMock(),
-                    )
+                    return_value=(mock_cx_rec, async_mock.MagicMock())
                 ),
             )
 

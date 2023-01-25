@@ -29,11 +29,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.ledger = async_mock.create_autospec(BaseLedger)
         self.ledger.__aenter__ = async_mock.CoroutineMock(return_value=self.ledger)
         self.ledger.create_and_send_credential_definition = async_mock.CoroutineMock(
-            return_value=(
-                CRED_DEF_ID,
-                {"cred": "def", "signed_txn": "..."},
-                True,
-            )
+            return_value=(CRED_DEF_ID, {"cred": "def", "signed_txn": "..."}, True)
         )
         self.ledger.get_credential_definition = async_mock.CoroutineMock(
             return_value={"cred": "def", "signed_txn": "..."}
@@ -75,10 +71,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         self.request.query = {"create_transaction_for_endorser": "false"}
 
         with async_mock.patch.object(test_module.web, "json_response") as mock_response:
-            result = (
-                await test_module.credential_definitions_send_credential_definition(
-                    self.request
-                )
+            result = await test_module.credential_definitions_send_credential_definition(
+                self.request
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
@@ -118,16 +112,11 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
             )
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "endorser_did": ("did"),
-                        "endorser_name": ("name"),
-                    }
+                    return_value={"endorser_did": ("did"), "endorser_name": ("name")}
                 )
             )
-            result = (
-                await test_module.credential_definitions_send_credential_definition(
-                    self.request
-                )
+            result = await test_module.credential_definitions_send_credential_definition(
+                self.request
             )
             assert result == mock_response.return_value
             mock_response.assert_called_once_with(
@@ -161,10 +150,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
 
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "endorser_did": ("did"),
-                        "endorser_name": ("name"),
-                    }
+                    return_value={"endorser_did": ("did"), "endorser_name": ("name")}
                 )
             )
             mock_txn_mgr.return_value = async_mock.MagicMock(
@@ -278,9 +264,7 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "endorser_name": ("name"),
-                    }
+                    return_value={"endorser_name": ("name")}
                 )
             )
             with self.assertRaises(test_module.web.HTTPForbidden):

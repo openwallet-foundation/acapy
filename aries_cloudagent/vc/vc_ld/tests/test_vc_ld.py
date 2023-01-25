@@ -103,7 +103,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
     async def test_verify_Ed25519Signature2018(self):
         # Verification requires lot less input parameters
         suite = Ed25519Signature2018(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519)
         )
         verified = await verify_credential(
             credential=CREDENTIAL_ISSUED,
@@ -118,9 +118,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
         credential.pop("issuer")
 
         result = await verify_credential(
-            credential=credential,
-            suites=[],
-            document_loader=async_mock.MagicMock(),
+            credential=credential, suites=[], document_loader=async_mock.MagicMock()
         )
 
         assert not result.verified
@@ -158,7 +156,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
     async def test_verify_BbsBlsSignature2020(self):
         # Verification requires lot less input parameters
         suite = BbsBlsSignature2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
         )
         result = await verify_credential(
             credential=CREDENTIAL_ISSUED_BBS,
@@ -235,7 +233,7 @@ class TestLinkedDataVerifiableCredential(TestCase):
 
     async def test_verify_presentation(self):
         suite = Ed25519Signature2018(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519)
         )
         verification_result = await verify_presentation(
             presentation=PRESENTATION_SIGNED,

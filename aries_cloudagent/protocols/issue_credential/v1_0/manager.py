@@ -40,9 +40,7 @@ from .messages.credential_problem_report import (
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
 from .messages.inner.credential_preview import CredentialPreview
-from .models.credential_exchange import (
-    V10CredentialExchange,
-)
+from .models.credential_exchange import V10CredentialExchange
 
 LOGGER = logging.getLogger(__name__)
 
@@ -119,9 +117,7 @@ class CredentialManager:
             trace=(credential_proposal._trace is not None),
         )
         (credential_exchange, credential_offer) = await self.create_offer(
-            cred_ex_record=credential_exchange,
-            counter_proposal=None,
-            comment=comment,
+            cred_ex_record=credential_exchange, counter_proposal=None, comment=comment
         )
         return (credential_exchange, credential_offer)
 
@@ -275,8 +271,7 @@ class CredentialManager:
             ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
-                cred_def_id,
-                txn_record_type=GET_CRED_DEF,
+                cred_def_id, txn_record_type=GET_CRED_DEF
             )
         )[1]
         async with ledger:
@@ -424,8 +419,7 @@ class CredentialManager:
                 ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
-                    credential_definition_id,
-                    txn_record_type=GET_CRED_DEF,
+                    credential_definition_id, txn_record_type=GET_CRED_DEF
                 )
             )[1]
             async with ledger:
@@ -435,9 +429,7 @@ class CredentialManager:
 
             holder = self._profile.inject(IndyHolder)
             request_json, metadata_json = await holder.create_credential_request(
-                cred_offer_ser,
-                credential_definition,
-                holder_did,
+                cred_offer_ser, credential_definition, holder_did
             )
             return {
                 "request": json.loads(request_json),
@@ -602,10 +594,8 @@ class CredentialManager:
         else:
             cred_offer_ser = cred_ex_record._credential_offer.ser
             cred_req_ser = cred_ex_record._credential_request.ser
-            cred_values = (
-                cred_ex_record.credential_proposal_dict.credential_proposal.attr_dict(
-                    decode=False
-                )
+            cred_values = cred_ex_record.credential_proposal_dict.credential_proposal.attr_dict(
+                decode=False
             )
             schema_id = cred_ex_record.schema_id
             cred_def_id = cred_ex_record.credential_definition_id
@@ -618,8 +608,7 @@ class CredentialManager:
                 ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
-                    schema_id,
-                    txn_record_type=GET_SCHEMA,
+                    schema_id, txn_record_type=GET_SCHEMA
                 )
             )[1]
             async with ledger:
@@ -799,8 +788,7 @@ class CredentialManager:
             ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
-                raw_cred_serde.de.cred_def_id,
-                txn_record_type=GET_CRED_DEF,
+                raw_cred_serde.de.cred_def_id, txn_record_type=GET_CRED_DEF
             )
         )[1]
         async with ledger:
@@ -863,8 +851,7 @@ class CredentialManager:
         return cred_ex_record
 
     async def send_credential_ack(
-        self,
-        cred_ex_record: V10CredentialExchange,
+        self, cred_ex_record: V10CredentialExchange
     ) -> Tuple[V10CredentialExchange, CredentialAck]:
         """
         Create, send, and return ack message for input credential exchange record.
@@ -924,8 +911,7 @@ class CredentialManager:
         responder = self._profile.inject_or(BaseResponder)
         if responder:
             await responder.send_reply(
-                credential_ack_message,
-                connection_id=cred_ex_record.connection_id,
+                credential_ack_message, connection_id=cred_ex_record.connection_id
             )
         else:
             LOGGER.warning(
@@ -1001,8 +987,7 @@ class CredentialManager:
 
             cred_ex_record.state = V10CredentialExchange.STATE_ABANDONED
             code = message.description.get(
-                "code",
-                ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "code", ProblemReportReason.ISSUANCE_ABANDONED.value
             )
             cred_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await cred_ex_record.save(txn, reason="received problem report")

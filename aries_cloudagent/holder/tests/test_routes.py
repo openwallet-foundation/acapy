@@ -320,10 +320,7 @@ class TestHolderRoutes(AsyncTestCase):
     async def test_w3c_creds_list(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "types": [
-                    "VerifiableCredential",
-                    "AlumniCredential",
-                ],
+                "types": ["VerifiableCredential", "AlumniCredential"],
                 "issuer_id": "https://example.edu/issuers/565049",
                 "subject_id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
                 "max_results": "1",
@@ -349,10 +346,7 @@ class TestHolderRoutes(AsyncTestCase):
     async def test_w3c_creds_list_not_found_x(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "types": [
-                    "VerifiableCredential",
-                    "AlumniCredential",
-                ],
+                "types": ["VerifiableCredential", "AlumniCredential"],
                 "issuer_id": "https://example.edu/issuers/565049",
                 "subject_id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
                 "max_results": "1",
@@ -377,10 +371,7 @@ class TestHolderRoutes(AsyncTestCase):
     async def test_w3c_creds_list_storage_x(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "types": [
-                    "VerifiableCredential",
-                    "AlumniCredential",
-                ],
+                "types": ["VerifiableCredential", "AlumniCredential"],
                 "issuer_id": "https://example.edu/issuers/565049",
                 "subject_id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
                 "max_results": "1",

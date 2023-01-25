@@ -2,12 +2,7 @@ from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
 
 from ......connections.models import connection_target, conn_record
-from ......connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......core.in_memory import InMemoryProfile
 from ......wallet.did_method import SOV, DIDMethods
 from ......wallet.key_type import ED25519
@@ -39,23 +34,13 @@ class TestDIDXRequestHandler(AsyncTestCase):
         ident = "1"
         pk_value = TEST_VERKEY
         pk = PublicKey(
-            TEST_DID,
-            ident,
-            pk_value,
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            False,
+            TEST_DID, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False
         )
         doc.set(pk)
         recip_keys = [pk]
         router_keys = []
         service = Service(
-            TEST_DID,
-            "indy",
-            "IndyAgent",
-            recip_keys,
-            router_keys,
-            TEST_ENDPOINT,
+            TEST_DID, "indy", "IndyAgent", recip_keys, router_keys, TEST_ENDPOINT
         )
         doc.set(service)
         return doc
@@ -63,8 +48,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
     async def setUp(self):
         self.ctx = RequestContext.test_context()
         self.ctx.message_receipt = MessageReceipt(
-            recipient_did="dummy",
-            recipient_did_public=True,
+            recipient_did="dummy", recipient_did_public=True
         )
         self.session = InMemoryProfile.test_session(
             {
@@ -94,9 +78,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
         await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)
 
         self.request = DIDXRequest(
-            label=TEST_LABEL,
-            did=TEST_DID,
-            did_doc_attach=self.did_doc_attach,
+            label=TEST_LABEL, did=TEST_DID, did_doc_attach=self.did_doc_attach
         )
 
     @async_mock.patch.object(test_module, "DIDXManager")
@@ -201,9 +183,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
             return_value=[mock_conn_target]
         )
         self.ctx.message = DIDXRequest(
-            label=TEST_LABEL,
-            did=TEST_DID,
-            did_doc_attach=self.did_doc_attach,
+            label=TEST_LABEL, did=TEST_DID, did_doc_attach=self.did_doc_attach
         )
         handler_inst = test_module.DIDXRequestHandler()
         responder = MockResponder()
@@ -219,9 +199,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
     @async_mock.patch.object(test_module, "DIDXManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
-        self,
-        mock_conn_target,
-        mock_didx_mgr,
+        self, mock_conn_target, mock_didx_mgr
     ):
         mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
@@ -232,9 +210,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
             side_effect=DIDXManagerError("no targets")
         )
         self.ctx.message = DIDXRequest(
-            label=TEST_LABEL,
-            did=TEST_DID,
-            did_doc_attach=self.did_doc_attach,
+            label=TEST_LABEL, did=TEST_DID, did_doc_attach=self.did_doc_attach
         )
         handler_inst = test_module.DIDXRequestHandler()
         responder = MockResponder()

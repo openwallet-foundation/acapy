@@ -1,7 +1,4 @@
-from asynctest import (
-    mock as async_mock,
-    TestCase as AsyncTestCase,
-)
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -64,10 +61,8 @@ class TestTransactionResendHandler(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "TransactionManager", autospec=True
         ) as mock_tran_mgr:
-            mock_tran_mgr.return_value.receive_transaction_resend = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.TransactionManagerError()
-                )
+            mock_tran_mgr.return_value.receive_transaction_resend = async_mock.CoroutineMock(
+                side_effect=test_module.TransactionManagerError()
             )
             request_context.message = TransactionResend()
             request_context.connection_record = ConnRecord(

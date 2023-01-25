@@ -331,9 +331,7 @@ def prepare_get_revoc_reg_delta_for_state(reply):
         accum_from_txn_time = reply[DATA][VALUE].get(ACCUM_FROM, {}).get(TXN_TIME)
         return (
             encode_state_value(
-                reply[DATA][VALUE].get(ACCUM_TO),
-                accum_to_seq_no,
-                accum_to_txn_time,
+                reply[DATA][VALUE].get(ACCUM_TO), accum_to_seq_no, accum_to_txn_time
             ),
             encode_state_value(
                 reply[DATA][VALUE].get(ACCUM_FROM),
@@ -420,8 +418,9 @@ def get_proof_nodes(reply):
     if reply.get("type") == GET_REVOC_REG_DELTA and STATE_PROOF_FROM in reply.get(DATA):
         proof_nodes_accum_to = reply[STATE_PROOF].get(PROOF_NODES)
         proof_nodes_accum_from = reply[DATA].get(STATE_PROOF_FROM, {}).get(PROOF_NODES)
-        return base64.b64decode(proof_nodes_accum_to), base64.b64decode(
-            proof_nodes_accum_from
+        return (
+            base64.b64decode(proof_nodes_accum_to),
+            base64.b64decode(proof_nodes_accum_from),
         )
     else:
         b64_encoded_nodes = reply[STATE_PROOF].get(PROOF_NODES)

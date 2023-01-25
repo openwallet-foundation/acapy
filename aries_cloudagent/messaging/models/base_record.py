@@ -28,10 +28,7 @@ RecordType = TypeVar("RecordType", bound="BaseRecord")
 
 
 def match_post_filter(
-    record: dict,
-    post_filter: dict,
-    positive: bool = True,
-    alt: bool = False,
+    record: dict, post_filter: dict, positive: bool = True, alt: bool = False
 ) -> bool:
     """
     Determine if a record value matches the post-filter.
@@ -320,15 +317,9 @@ class BaseRecord(BaseModel):
         for record in rows:
             vals = json.loads(record.value)
             if match_post_filter(
-                vals,
-                post_filter_positive,
-                positive=True,
-                alt=alt,
+                vals, post_filter_positive, positive=True, alt=alt
             ) and match_post_filter(
-                vals,
-                post_filter_negative,
-                positive=False,
-                alt=alt,
+                vals, post_filter_negative, positive=False, alt=alt
             ):
                 try:
                     result.append(cls.from_storage(record.id, vals))
@@ -521,12 +512,7 @@ class BaseExchangeRecord(BaseRecord):
     """Represents a base record with event tracing capability."""
 
     def __init__(
-        self,
-        id: str = None,
-        state: str = None,
-        *,
-        trace: bool = False,
-        **kwargs,
+        self, id: str = None, state: str = None, *, trace: bool = False, **kwargs
     ):
         """Initialize a new BaseExchangeRecord."""
 
@@ -554,9 +540,7 @@ class BaseRecordSchema(BaseModelSchema):
         model_class = None
 
     state = fields.Str(
-        required=False,
-        description="Current record state",
-        example="active",
+        required=False, description="Current record state", example="active"
     )
     created_at = fields.Str(
         required=False, description="Time of record creation", **INDY_ISO8601_DATETIME

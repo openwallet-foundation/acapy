@@ -37,8 +37,7 @@ class TestCredentialAckHandler(AsyncTestCase):
 
         mock_cred_mgr.assert_called_once_with(request_context.profile)
         mock_cred_mgr.return_value.receive_credential_ack.assert_called_once_with(
-            request_context.message,
-            request_context.connection_record.connection_id,
+            request_context.message, request_context.connection_record.connection_id
         )
         mock_oob_processor.find_oob_record_for_inbound_message.assert_called_once_with(
             request_context

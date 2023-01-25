@@ -13,9 +13,7 @@ from .......wallet.base import DIDInfo
 from .......messaging.decorators.attach_decorator import AttachDecorator
 from .......did.did_key import DIDKey
 from .......storage.vc_holder.vc_record import VCRecord
-from ..models.cred_detail import (
-    LDProofVCDetail,
-)
+from ..models.cred_detail import LDProofVCDetail
 from .......vc.ld_proofs import (
     DocumentLoader,
     DocumentVerificationResult,
@@ -37,9 +35,7 @@ from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_format import V20CredFormat
 from ....messages.cred_issue import V20CredIssue
 from ....messages.cred_offer import V20CredOffer
-from ....messages.cred_request import (
-    V20CredRequest,
-)
+from ....messages.cred_request import V20CredRequest
 from ....message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_PROPOSAL,
@@ -67,10 +63,7 @@ LD_PROOF_VC_DETAIL = {
         "issuanceDate": "2021-04-12",
         "issuer": TEST_DID_KEY,
     },
-    "options": {
-        "proofType": "Ed25519Signature2018",
-        "created": "2019-12-11T03:50:55",
-    },
+    "options": {"proofType": "Ed25519Signature2018", "created": "2019-12-11T03:50:55"},
 }
 LD_PROOF_VC_DETAIL_BBS = {
     "credential": {
@@ -83,10 +76,7 @@ LD_PROOF_VC_DETAIL_BBS = {
         "issuanceDate": "2021-04-12",
         "issuer": TEST_DID_KEY,
     },
-    "options": {
-        "proofType": "BbsBlsSignature2020",
-        "created": "2019-12-11T03:50:55",
-    },
+    "options": {"proofType": "BbsBlsSignature2020", "created": "2019-12-11T03:50:55"},
 }
 LD_PROOF_VC = {
     "@context": [
@@ -174,12 +164,8 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
     async def test_get_ld_proof_detail_record(self):
         cred_ex_id = "dummy"
         details_ld_proof = [
-            V20CredExRecordLDProof(
-                cred_ex_id=cred_ex_id,
-            ),
-            V20CredExRecordLDProof(
-                cred_ex_id=cred_ex_id,
-            ),
+            V20CredExRecordLDProof(cred_ex_id=cred_ex_id),
+            V20CredExRecordLDProof(cred_ex_id=cred_ex_id),
         ]
         await details_ld_proof[0].save(self.session)
         await details_ld_proof[1].save(self.session)  # exercise logger warning on get()
@@ -209,9 +195,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            LDProofCredFormatHandler,
-            "_did_info_for_did",
-            async_mock.CoroutineMock(),
+            LDProofCredFormatHandler, "_did_info_for_did", async_mock.CoroutineMock()
         ) as mock_did_info:
             did_info = DIDInfo(
                 did=TEST_DID_SOV,
@@ -270,9 +254,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             "_assert_can_issue_with_id_and_proof_type",
             async_mock.CoroutineMock(),
         ) as mock_can_issue, async_mock.patch.object(
-            LDProofCredFormatHandler,
-            "_did_info_for_did",
-            async_mock.CoroutineMock(),
+            LDProofCredFormatHandler, "_did_info_for_did", async_mock.CoroutineMock()
         ) as mock_did_info:
 
             suite = await self.handler._get_suite_for_detail(detail)
@@ -569,8 +551,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         )
 
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            cred_request=cred_request,
+            cred_ex_id="dummy-cxid", cred_request=cred_request
         )
 
         with async_mock.patch.object(
@@ -580,8 +561,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         ) as mock_get_suite, async_mock.patch.object(
             test_module, "issue", async_mock.CoroutineMock(return_value=LD_PROOF_VC)
         ) as mock_issue, async_mock.patch.object(
-            LDProofCredFormatHandler,
-            "_get_proof_purpose",
+            LDProofCredFormatHandler, "_get_proof_purpose"
         ) as mock_get_proof_purpose:
             (cred_format, attachment) = await self.handler.issue_credential(
                 cred_ex_record
@@ -622,8 +602,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         )
 
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            cred_request=cred_request,
+            cred_ex_id="dummy-cxid", cred_request=cred_request
         )
 
         with async_mock.patch.object(
@@ -633,8 +612,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         ) as mock_get_suite, async_mock.patch.object(
             test_module, "issue", async_mock.CoroutineMock(return_value=LD_PROOF_VC)
         ) as mock_issue, async_mock.patch.object(
-            LDProofCredFormatHandler,
-            "_get_proof_purpose",
+            LDProofCredFormatHandler, "_get_proof_purpose"
         ) as mock_get_proof_purpose:
             (cred_format, attachment) = await self.handler.issue_credential(
                 cred_ex_record
@@ -685,8 +663,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             ],
         )
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="cred-ex-id",
-            cred_request=cred_request,
+            cred_ex_id="cred-ex-id", cred_request=cred_request
         )
 
         await self.handler.receive_credential(cred_ex_record, cred_issue)
@@ -720,8 +697,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             requests_attach=[AttachDecorator.data_base64(detail, ident="0")],
         )
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="cred-ex-id",
-            cred_request=cred_request,
+            cred_ex_id="cred-ex-id", cred_request=cred_request
         )
 
         with self.assertRaises(V20CredFormatError) as context:
@@ -758,8 +734,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             requests_attach=[AttachDecorator.data_base64(detail, ident="0")],
         )
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="cred-ex-id",
-            cred_request=cred_request,
+            cred_ex_id="cred-ex-id", cred_request=cred_request
         )
 
         with self.assertRaises(V20CredFormatError) as context:
@@ -802,8 +777,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             requests_attach=[AttachDecorator.data_base64(detail, ident="0")],
         )
         cred_ex_record = V20CredExRecord(
-            cred_ex_id="cred-ex-id",
-            cred_request=cred_request,
+            cred_ex_id="cred-ex-id", cred_request=cred_request
         )
 
         with self.assertRaises(V20CredFormatError) as context:
@@ -850,8 +824,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 requests_attach=[AttachDecorator.data_base64(detail, ident="0")],
             )
             cred_ex_record = V20CredExRecord(
-                cred_ex_id="cred-ex-id",
-                cred_request=cred_request,
+                cred_ex_id="cred-ex-id", cred_request=cred_request
             )
 
             with self.assertRaises(V20CredFormatError) as context:
@@ -873,18 +846,13 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             credentials_attach=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0")],
         )
 
-        cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            cred_issue=cred_issue,
-        )
+        cred_ex_record = V20CredExRecord(cred_ex_id="dummy-cxid", cred_issue=cred_issue)
 
         cred_id = "cred_id"
         self.holder.store_credential = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
-            LDProofCredFormatHandler,
-            "_get_suite",
-            async_mock.CoroutineMock(),
+            LDProofCredFormatHandler, "_get_suite", async_mock.CoroutineMock()
         ) as mock_get_suite, async_mock.patch.object(
             test_module,
             "verify_credential",
@@ -892,8 +860,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 return_value=DocumentVerificationResult(verified=True)
             ),
         ) as mock_verify_credential, async_mock.patch.object(
-            LDProofCredFormatHandler,
-            "_get_proof_purpose",
+            LDProofCredFormatHandler, "_get_proof_purpose"
         ) as mock_get_proof_purpose:
             await self.handler.store_credential(cred_ex_record, cred_id)
 
@@ -936,18 +903,13 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             credentials_attach=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0")],
         )
 
-        cred_ex_record = V20CredExRecord(
-            cred_ex_id="dummy-cxid",
-            cred_issue=cred_issue,
-        )
+        cred_ex_record = V20CredExRecord(cred_ex_id="dummy-cxid", cred_issue=cred_issue)
 
         cred_id = "cred_id"
         self.holder.store_credential = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
-            LDProofCredFormatHandler,
-            "_get_suite",
-            async_mock.CoroutineMock(),
+            LDProofCredFormatHandler, "_get_suite", async_mock.CoroutineMock()
         ) as mock_get_suite, async_mock.patch.object(
             test_module,
             "verify_credential",
@@ -955,8 +917,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 return_value=DocumentVerificationResult(verified=False)
             ),
         ) as mock_verify_credential, async_mock.patch.object(
-            LDProofCredFormatHandler,
-            "_get_proof_purpose",
+            LDProofCredFormatHandler, "_get_proof_purpose"
         ) as mock_get_proof_purpose, self.assertRaises(
             V20CredFormatError
         ) as context:

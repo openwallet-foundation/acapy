@@ -34,9 +34,7 @@ class TestLedgerConfig(AsyncTestCase):
                 )
 
     async def test_get_genesis_url(self):
-        settings = {
-            "ledger.genesis_url": "00000000000000000000000000000000",
-        }
+        settings = {"ledger.genesis_url": "00000000000000000000000000000000"}
         with async_mock.patch.object(
             test_module,
             "fetch_genesis_transactions",
@@ -46,9 +44,7 @@ class TestLedgerConfig(AsyncTestCase):
         self.assertEqual(settings["ledger.genesis_transactions"], TEST_GENESIS)
 
     async def test_get_genesis_file(self):
-        settings = {
-            "ledger.genesis_file": "/tmp/genesis/path",
-        }
+        settings = {"ledger.genesis_file": "/tmp/genesis/path"}
         with async_mock.patch("builtins.open", async_mock.MagicMock()) as mock_open:
             mock_open.return_value = async_mock.MagicMock(
                 __enter__=async_mock.MagicMock(
@@ -61,9 +57,7 @@ class TestLedgerConfig(AsyncTestCase):
         self.assertEqual(settings["ledger.genesis_transactions"], TEST_GENESIS)
 
     async def test_get_genesis_file_io_x(self):
-        settings = {
-            "ledger.genesis_file": "/tmp/genesis/path",
-        }
+        settings = {"ledger.genesis_file": "/tmp/genesis/path"}
 
         with async_mock.patch("builtins.open", async_mock.MagicMock()) as mock_open:
             mock_open.side_effect = IOError("no read permission")
@@ -108,9 +102,7 @@ class TestLedgerConfig(AsyncTestCase):
             )
 
     async def test_accept_taa(self):
-        settings = {
-            "ledger.genesis_transactions": TEST_GENESIS,
-        }
+        settings = {"ledger.genesis_transactions": TEST_GENESIS}
         mock_ledger = async_mock.MagicMock(
             get_txn_author_agreement=async_mock.CoroutineMock(
                 return_value={
@@ -146,9 +138,7 @@ class TestLedgerConfig(AsyncTestCase):
             mock_accept_taa.assert_awaited_once()
 
     async def test_ledger_config_read_only_skip_taa_accept(self):
-        settings = {
-            "ledger.genesis_transactions": TEST_GENESIS,
-        }
+        settings = {"ledger.genesis_transactions": TEST_GENESIS}
         mock_ledger = async_mock.MagicMock(
             get_txn_author_agreement=async_mock.CoroutineMock(),
             get_latest_txn_author_acceptance=async_mock.CoroutineMock(),
@@ -159,7 +149,7 @@ class TestLedgerConfig(AsyncTestCase):
                 side_effect=LedgerError(
                     "Error cannot update endpoint when ledger is in read only mode"
                 )
-            ),
+            )
         )
 
         session = InMemoryProfile.test_session(settings=settings)
@@ -191,9 +181,7 @@ class TestLedgerConfig(AsyncTestCase):
             get_latest_txn_author_acceptance=async_mock.CoroutineMock(),
             read_only=True,
         )
-        mock_wallet = async_mock.MagicMock(
-            set_did_endpoint=async_mock.CoroutineMock(),
-        )
+        mock_wallet = async_mock.MagicMock(set_did_endpoint=async_mock.CoroutineMock())
 
         session = InMemoryProfile.test_session(settings=settings)
         profile = session.profile
@@ -227,9 +215,7 @@ class TestLedgerConfig(AsyncTestCase):
             update_endpoint_for_did=async_mock.CoroutineMock(),
             read_only=False,
         )
-        mock_wallet = async_mock.MagicMock(
-            set_did_endpoint=async_mock.CoroutineMock(),
-        )
+        mock_wallet = async_mock.MagicMock(set_did_endpoint=async_mock.CoroutineMock())
 
         session = InMemoryProfile.test_session(settings=settings)
         profile = session.profile
@@ -245,16 +231,12 @@ class TestLedgerConfig(AsyncTestCase):
             test_module, "accept_taa", async_mock.CoroutineMock()
         ) as mock_accept_taa:
             await test_module.ledger_config(
-                profile,
-                public_did=TEST_DID,
-                provision=False,
+                profile, public_did=TEST_DID, provision=False
             )
             mock_ledger.get_txn_author_agreement.called_once_with()
             mock_ledger.get_latest_txn_author_acceptance.assert_not_called()
             mock_ledger.update_endpoint_for_did.called_once_with(
-                TEST_DID,
-                settings["profile_endpoint"],
-                test_module.EndpointType.PROFILE,
+                TEST_DID, settings["profile_endpoint"], test_module.EndpointType.PROFILE
             )
 
     async def test_load_multiple_genesis_transactions_from_config_a(self):
@@ -333,7 +315,7 @@ class TestLedgerConfig(AsyncTestCase):
                     "is_production": True,
                     "genesis_url": "http://localhost:9000/genesis",
                 },
-            ],
+            ]
         }
         with async_mock.patch.object(
             test_module,
@@ -494,7 +476,7 @@ class TestLedgerConfig(AsyncTestCase):
                     "is_production": True,
                     "genesis_url": "http://localhost:9001/genesis",
                 },
-            ],
+            ]
         }
         with async_mock.patch.object(
             test_module,
@@ -627,7 +609,7 @@ class TestLedgerConfig(AsyncTestCase):
                     "is_production": True,
                     "genesis_url": "http://localhost:9000/genesis",
                 },
-            ],
+            ]
         }
         with async_mock.patch.object(
             test_module,
@@ -755,12 +737,7 @@ class TestLedgerConfig(AsyncTestCase):
             exit_parser.assert_called_once()
 
         result = parser.parse_args(
-            [
-                "--genesis-url",
-                "http://1.2.3.4:9000/genesis",
-                "--ledger-keepalive",
-                "10",
-            ]
+            ["--genesis-url", "http://1.2.3.4:9000/genesis", "--ledger-keepalive", "10"]
         )
 
         assert result.ledger_keepalive == 10

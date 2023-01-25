@@ -36,8 +36,7 @@ class TestCredentialRequest(TestCase):
         comment="Test",
         requests_attach=[
             AttachDecorator.data_base64(
-                mapping=indy_cred_req,
-                ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST],
+                mapping=indy_cred_req, ident=ATTACH_DECO_IDS[CREDENTIAL_REQUEST]
             )
         ],
     )

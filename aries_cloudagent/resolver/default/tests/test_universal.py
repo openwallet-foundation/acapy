@@ -161,11 +161,7 @@ async def test_setup_endpoint_regex_set(resolver: UniversalResolver):
 
 @pytest.mark.asyncio
 async def test_setup_endpoint_set(resolver: UniversalResolver):
-    settings = Settings(
-        {
-            "resolver.universal": "http://example.com",
-        }
-    )
+    settings = Settings({"resolver.universal": "http://example.com"})
     context = async_mock.MagicMock()
     context.settings = settings
     with async_mock.patch.object(
@@ -181,11 +177,7 @@ async def test_setup_endpoint_set(resolver: UniversalResolver):
 
 @pytest.mark.asyncio
 async def test_setup_endpoint_default(resolver: UniversalResolver):
-    settings = Settings(
-        {
-            "resolver.universal": "DEFAULT",
-        }
-    )
+    settings = Settings({"resolver.universal": "DEFAULT"})
     context = async_mock.MagicMock()
     context.settings = settings
     with async_mock.patch.object(

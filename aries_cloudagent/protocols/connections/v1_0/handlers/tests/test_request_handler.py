@@ -51,23 +51,13 @@ def did_doc():
     ident = "1"
     pk_value = TEST_VERKEY
     pk = PublicKey(
-        TEST_DID,
-        ident,
-        pk_value,
-        PublicKeyType.ED25519_SIG_2018,
-        controller,
-        False,
+        TEST_DID, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False
     )
     doc.set(pk)
     recip_keys = [pk]
     router_keys = []
     service = Service(
-        TEST_DID,
-        "indy",
-        "IndyAgent",
-        recip_keys,
-        router_keys,
-        TEST_ENDPOINT,
+        TEST_DID, "indy", "IndyAgent", recip_keys, router_keys, TEST_ENDPOINT
     )
     doc.set(service)
     yield doc
@@ -151,8 +141,7 @@ class TestRequestHandler:
             responder = MockResponder()
             await handler_inst.handle(request_context, responder)
             mock_conn_mgr.return_value.receive_request.assert_called_once_with(
-                request_context.message,
-                request_context.message_receipt,
+                request_context.message, request_context.message_receipt
             )
             assert not responder.messages
 

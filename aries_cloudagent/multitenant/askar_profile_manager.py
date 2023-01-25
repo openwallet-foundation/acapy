@@ -1,9 +1,7 @@
 """Manager for askar profile multitenancy mode."""
 
 from typing import Iterable, Optional, cast
-from ..core.profile import (
-    Profile,
-)
+from ..core.profile import Profile
 from ..config.wallet import wallet_config
 from ..config.injection_context import InjectionContext
 from ..wallet.models.wallet_record import WalletRecord

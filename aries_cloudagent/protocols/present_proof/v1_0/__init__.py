@@ -11,8 +11,7 @@ from .models.presentation_exchange import V10PresentationExchange
 
 
 def problem_report_for_record(
-    record: Union[ConnRecord, V10PresentationExchange],
-    desc_en: str,
+    record: Union[ConnRecord, V10PresentationExchange], desc_en: str
 ) -> PresentationProblemReport:
     """
     Create problem report for record.
@@ -23,10 +22,7 @@ def problem_report_for_record(
 
     """
     result = PresentationProblemReport(
-        description={
-            "en": desc_en,
-            "code": ProblemReportReason.ABANDONED.value,
-        },
+        description={"en": desc_en, "code": ProblemReportReason.ABANDONED.value}
     )
     if record:
         thid = getattr(record, "thread_id", None)

@@ -8,8 +8,7 @@ from .models.cred_ex_record import V20CredExRecord
 
 
 def problem_report_for_record(
-    record: Union[ConnRecord, V20CredExRecord],
-    desc_en: str,
+    record: Union[ConnRecord, V20CredExRecord], desc_en: str
 ) -> V20CredProblemReport:
     """
     Create problem report for record.
@@ -23,7 +22,7 @@ def problem_report_for_record(
         description={
             "en": desc_en,
             "code": ProblemReportReason.ISSUANCE_ABANDONED.value,
-        },
+        }
     )
     if record:
         thid = getattr(record, "thread_id", None)

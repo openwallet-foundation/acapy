@@ -105,9 +105,7 @@ class TestOobProcessor(AsyncTestCase):
         test_message.assign_thread_id("the-thid", "the-pthid")
 
         with async_mock.patch.object(
-            OobRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
+            OobRecord, "retrieve_by_tag_filter", async_mock.CoroutineMock()
         ) as mock_retrieve_oob:
             mock_retrieve_oob.side_effect = (StorageNotFoundError(),)
 
@@ -234,11 +232,7 @@ class TestOobProcessor(AsyncTestCase):
                 },
             }
 
-            message = json.dumps(
-                {
-                    "~service": {"already": "present"},
-                }
-            )
+            message = json.dumps({"~service": {"already": "present"}})
             outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
             await self.oob_processor.find_oob_target_for_outbound_message(
                 self.profile, outbound
@@ -285,9 +279,7 @@ class TestOobProcessor(AsyncTestCase):
 
         # Without pthid
         with async_mock.patch.object(
-            OobRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
+            OobRecord, "retrieve_by_tag_filter", async_mock.CoroutineMock()
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt()
 
@@ -620,8 +612,7 @@ class TestOobProcessor(AsyncTestCase):
             async_mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
-                thread_id="the-thid",
-                parent_thread_id="the-pthid",
+                thread_id="the-thid", parent_thread_id="the-pthid"
             )
 
             assert await self.oob_processor.find_oob_record_for_inbound_message(
@@ -636,9 +627,7 @@ class TestOobProcessor(AsyncTestCase):
                 "routingKeys": ["9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"],
             }
 
-    async def test_find_oob_record_for_inbound_message_session_emit_delete(
-        self,
-    ):
+    async def test_find_oob_record_for_inbound_message_session_emit_delete(self,):
 
         with async_mock.patch.object(
             OobRecord,
@@ -646,8 +635,7 @@ class TestOobProcessor(AsyncTestCase):
             async_mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
-                thread_id="the-thid",
-                parent_thread_id="the-pthid",
+                thread_id="the-thid", parent_thread_id="the-pthid"
             )
 
             assert await self.oob_processor.find_oob_record_for_inbound_message(
@@ -673,8 +661,7 @@ class TestOobProcessor(AsyncTestCase):
             async_mock.CoroutineMock(return_value=self.oob_record),
         ) as mock_retrieve:
             self.context.message_receipt = MessageReceipt(
-                thread_id="the-thid",
-                parent_thread_id="the-pthid",
+                thread_id="the-thid", parent_thread_id="the-pthid"
             )
 
             assert await self.oob_processor.find_oob_record_for_inbound_message(

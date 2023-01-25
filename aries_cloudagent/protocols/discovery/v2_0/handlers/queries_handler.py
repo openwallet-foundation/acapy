@@ -1,10 +1,6 @@
 """Handler for incoming queries messages."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ..manager import V20DiscoveryMgr
 from ..messages.queries import Queries

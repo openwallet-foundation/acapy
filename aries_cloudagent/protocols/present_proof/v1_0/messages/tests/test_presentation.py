@@ -1663,8 +1663,7 @@ PRES = Presentation(
     comment="Test",
     presentations_attach=[
         AttachDecorator.data_base64(
-            mapping=INDY_PROOF,
-            ident=ATTACH_DECO_IDS[PRESENTATION],
+            mapping=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION]
         )
     ],
 )
@@ -1690,8 +1689,7 @@ class TestPresentation(TestCase):
                 "comment": "Hello World",
                 "presentations~attach": [
                     AttachDecorator.data_base64(
-                        mapping=INDY_PROOF,
-                        ident=ATTACH_DECO_IDS[PRESENTATION],
+                        mapping=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION]
                     ).serialize()
                 ],
             }
@@ -1709,8 +1707,7 @@ class TestPresentation(TestCase):
             "@type": DIDCommPrefix.qualify_current(PRESENTATION),
             "presentations~attach": [
                 AttachDecorator.data_base64(
-                    mapping=INDY_PROOF,
-                    ident=ATTACH_DECO_IDS[PRESENTATION],
+                    mapping=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION]
                 ).serialize()
             ],
             "comment": "Test",

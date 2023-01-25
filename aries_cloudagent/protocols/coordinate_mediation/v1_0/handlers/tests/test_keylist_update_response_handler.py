@@ -101,7 +101,7 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
                         action=KeylistUpdateRule.RULE_REMOVE,
                         result=KeylistUpdated.RESULT_SUCCESS,
                     ),
-                ],
+                ]
             )
 
             response.assign_thread_id(TEST_THREAD_ID)
@@ -138,7 +138,7 @@ class TestKeylistUpdateResponseHandler(AsyncTestCase):
                     action=KeylistUpdateRule.RULE_REMOVE,
                     result=KeylistUpdated.RESULT_SUCCESS,
                 ),
-            ],
+            ]
         )
 
         response.assign_thread_id(TEST_THREAD_ID)

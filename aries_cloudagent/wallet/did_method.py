@@ -65,11 +65,7 @@ SOV = DIDMethod(
     rotation=True,
     holder_defined_did=HolderDefinedDid.ALLOWED,
 )
-KEY = DIDMethod(
-    name="key",
-    key_types=[ED25519, BLS12381G2],
-    rotation=False,
-)
+KEY = DIDMethod(name="key", key_types=[ED25519, BLS12381G2], rotation=False)
 
 
 class DIDMethods:

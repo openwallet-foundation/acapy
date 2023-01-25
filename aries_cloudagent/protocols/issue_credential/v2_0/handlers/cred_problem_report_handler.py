@@ -39,8 +39,7 @@ class CredProblemReportHandler(BaseHandler):
         cred_manager = V20CredManager(context.profile)
         try:
             await cred_manager.receive_problem_report(
-                context.message,
-                context.connection_record.connection_id,
+                context.message, context.connection_record.connection_id
             )
         except (StorageError, StorageNotFoundError):
             self._logger.exception(

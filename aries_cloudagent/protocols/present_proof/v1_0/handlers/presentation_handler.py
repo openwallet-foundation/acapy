@@ -74,8 +74,7 @@ class PresentationHandler(BaseHandler):
                 if presentation_exchange_record:
                     async with profile.session() as session:
                         await presentation_exchange_record.save_error_state(
-                            session,
-                            reason=err.roll_up,  # us: be specific
+                            session, reason=err.roll_up  # us: be specific
                         )
                     await responder.send_reply(
                         problem_report_for_record(

@@ -71,8 +71,5 @@ def vc_to_storage_record(cred: VCRecord) -> StorageRecord:
         tags.update(cred.cred_tags)
 
     return StorageRecord(
-        VC_CRED_RECORD_TYPE,
-        json.dumps(cred.cred_value),
-        tags,
-        cred.record_id,
+        VC_CRED_RECORD_TYPE, json.dumps(cred.cred_value), tags, cred.record_id
     )

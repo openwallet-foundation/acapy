@@ -213,10 +213,7 @@ class V10CredentialExchange(BaseExchangeRecord):
 
         try:
             await self.save(
-                session,
-                reason=reason,
-                log_params=log_params,
-                log_override=log_override,
+                session, reason=reason, log_params=log_params, log_override=log_override
             )
         except StorageError:
             LOGGER.exception("Error saving credential exchange error state")
@@ -282,10 +279,7 @@ class V10CredentialExchange(BaseExchangeRecord):
             if connection_id:
                 post_filter["connection_id"] = connection_id
             record = await cls.retrieve_by_tag_filter(
-                session,
-                {"thread_id": thread_id},
-                post_filter,
-                for_update=for_update,
+                session, {"thread_id": thread_id}, post_filter, for_update=for_update
             )
             await cls.set_cached_key(session, cache_key, record.credential_exchange_id)
         return record
@@ -348,19 +342,13 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
         description="Credential proposal message",
     )
     credential_offer_dict = fields.Nested(
-        CredentialOfferSchema(),
-        required=False,
-        description="Credential offer message",
+        CredentialOfferSchema(), required=False, description="Credential offer message"
     )
     credential_offer = fields.Nested(
-        IndyCredAbstractSchema(),
-        required=False,
-        description="(Indy) credential offer",
+        IndyCredAbstractSchema(), required=False, description="(Indy) credential offer"
     )
     credential_request = fields.Nested(
-        IndyCredRequestSchema(),
-        required=False,
-        description="(Indy) credential request",
+        IndyCredRequestSchema(), required=False, description="(Indy) credential request"
     )
     credential_request_metadata = fields.Dict(
         required=False, description="(Indy) credential request metadata"
@@ -374,9 +362,7 @@ class V10CredentialExchangeSchema(BaseExchangeSchema):
         description="Credential as received, prior to storage in holder wallet",
     )
     credential = fields.Nested(
-        IndyCredInfoSchema(),
-        required=False,
-        description="Credential as stored",
+        IndyCredInfoSchema(), required=False, description="Credential as stored"
     )
     auto_offer = fields.Bool(
         required=False,

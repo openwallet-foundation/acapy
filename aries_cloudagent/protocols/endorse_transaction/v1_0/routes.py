@@ -63,10 +63,7 @@ class TranIdMatchInfoSchema(OpenAPISchema):
 class EndorserDIDInfoSchema(OpenAPISchema):
     """Path parameters and validators for request Endorser DID."""
 
-    endorser_did = fields.Str(
-        description="Endorser DID",
-        required=False,
-    )
+    endorser_did = fields.Str(description="Endorser DID", required=False)
 
 
 class AssignTransactionJobsSchema(OpenAPISchema):
@@ -128,21 +125,12 @@ class EndorserWriteLedgerTransactionSchema(OpenAPISchema):
 class EndorserInfoSchema(OpenAPISchema):
     """Class for user to input the DID associated with the requested endorser."""
 
-    endorser_did = fields.Str(
-        description="Endorser DID",
-        required=True,
-    )
+    endorser_did = fields.Str(description="Endorser DID", required=True)
 
-    endorser_name = fields.Str(
-        description="Endorser Name",
-        required=False,
-    )
+    endorser_name = fields.Str(description="Endorser Name", required=False)
 
 
-@docs(
-    tags=["endorse-transaction"],
-    summary="Query transactions",
-)
+@docs(tags=["endorse-transaction"], summary="Query transactions")
 @querystring_schema(TransactionsListQueryStringSchema())
 @response_schema(TransactionListSchema(), 200)
 async def transactions_list(request: web.BaseRequest):
@@ -202,10 +190,7 @@ async def transactions_retrieve(request: web.BaseRequest):
 
 # todo - implementing changes for writing final transaction to the ledger
 # (For Sign Transaction Protocol)
-@docs(
-    tags=["endorse-transaction"],
-    summary="For author to send a transaction request",
-)
+@docs(tags=["endorse-transaction"], summary="For author to send a transaction request")
 @querystring_schema(TranIdMatchInfoSchema())
 @querystring_schema(EndorserWriteLedgerTransactionSchema())
 @request_schema(DateSchema())
@@ -486,8 +471,7 @@ async def cancel_transaction(request: web.BaseRequest):
             transaction,
             cancelled_transaction_response,
         ) = await transaction_mgr.cancel_transaction(
-            transaction=transaction,
-            state=TransactionRecord.STATE_TRANSACTION_CANCELLED,
+            transaction=transaction, state=TransactionRecord.STATE_TRANSACTION_CANCELLED
         )
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -563,10 +547,7 @@ async def transaction_resend(request: web.BaseRequest):
     return web.json_response(transaction.serialize())
 
 
-@docs(
-    tags=["endorse-transaction"],
-    summary="Set transaction jobs",
-)
+@docs(tags=["endorse-transaction"], summary="Set transaction jobs")
 @querystring_schema(AssignTransactionJobsSchema())
 @match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(TransactionJobsSchema(), 200)
@@ -604,10 +585,7 @@ async def set_endorser_role(request: web.BaseRequest):
     return web.json_response(jobs)
 
 
-@docs(
-    tags=["endorse-transaction"],
-    summary="Set Endorser Info",
-)
+@docs(tags=["endorse-transaction"], summary="Set Endorser Info")
 @querystring_schema(EndorserInfoSchema())
 @match_info_schema(TransactionConnIdMatchInfoSchema())
 @response_schema(EndorserInfoSchema(), 200)
@@ -765,9 +743,7 @@ async def on_startup_event(profile: Profile, event: Event):
         if invite:
             oob_mgr = OutOfBandManager(profile)
             oob_record = await oob_mgr.receive_invitation(
-                invitation=invite,
-                auto_accept=True,
-                alias=endorser_alias,
+                invitation=invite, auto_accept=True, alias=endorser_alias
             )
             async with profile.session() as session:
                 conn_record = await ConnRecord.retrieve_by_id(
@@ -778,9 +754,7 @@ async def on_startup_event(profile: Profile, event: Event):
             if invite:
                 conn_mgr = ConnectionManager(profile)
                 conn_record = await conn_mgr.receive_invitation(
-                    invitation=invite,
-                    auto_accept=True,
-                    alias=endorser_alias,
+                    invitation=invite, auto_accept=True, alias=endorser_alias
                 )
             else:
                 raise Exception(
@@ -807,7 +781,7 @@ async def on_startup_event(profile: Profile, event: Event):
     except Exception:
         # log the error, but continue
         LOGGER.exception(
-            "Error accepting endorser invitation/configuring endorser connection: %s",
+            "Error accepting endorser invitation/configuring endorser connection: %s"
         )
 
 
@@ -843,8 +817,5 @@ def post_process_routes(app: web.Application):
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []
     app._state["swagger_dict"]["tags"].append(
-        {
-            "name": "endorse-transaction",
-            "description": "Endorse a Transaction",
-        }
+        {"name": "endorse-transaction", "description": "Endorse a Transaction"}
     )

@@ -186,7 +186,7 @@ class OobMessageProcessor:
         ):
             LOGGER.debug(
                 f"Oob record connection id {oob_record.connection_id} is different from"
-                f" inbound message connection {context.connection_record.connection_id}",
+                f" inbound message connection {context.connection_record.connection_id}"
             )
             # Mismatch in connection id's in only allowed in state await response
             # (connection id can change bc of reuse)
@@ -251,8 +251,7 @@ class OobMessageProcessor:
 
         their_service = (
             cast(
-                ServiceDecorator,
-                ServiceDecorator.deserialize(oob_record.their_service),
+                ServiceDecorator, ServiceDecorator.deserialize(oob_record.their_service)
             )
             if oob_record.their_service
             else None

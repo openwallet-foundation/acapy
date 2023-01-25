@@ -116,7 +116,7 @@ class TestV20DiscoveryExchangeRecord(AsyncTestCase):
                 queries=[
                     QueryItem(feature_type="protocol", match="*"),
                     QueryItem(feature_type="goal-code", match="test"),
-                ],
+                ]
             ),
             connection_id="test123",
         )
@@ -134,7 +134,7 @@ class TestV20DiscoveryExchangeRecord(AsyncTestCase):
                 queries=[
                     QueryItem(feature_type="protocol", match="*"),
                     QueryItem(feature_type="goal-code", match="test"),
-                ],
+                ]
             ),
             connection_id="test123",
         )

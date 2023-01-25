@@ -37,10 +37,7 @@ class InMemoryWallet(BaseWallet):
         self.profile = profile
 
     async def create_signing_key(
-        self,
-        key_type: KeyType,
-        seed: str = None,
-        metadata: dict = None,
+        self, key_type: KeyType, seed: str = None, metadata: dict = None
     ) -> KeyInfo:
         """
         Create a new public/private signing keypair.

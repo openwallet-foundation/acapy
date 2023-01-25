@@ -25,12 +25,7 @@ class KeylistUpdateResponse(AgentMessage):
         message_type = KEYLIST_UPDATE_RESPONSE
         schema_class = "KeylistUpdateResponseSchema"
 
-    def __init__(
-        self,
-        *,
-        updated: Sequence[KeylistUpdated] = None,
-        **kwargs,
-    ):
+    def __init__(self, *, updated: Sequence[KeylistUpdated] = None, **kwargs):
         """
         Initialize keylist update object.
 

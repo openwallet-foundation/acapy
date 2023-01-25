@@ -75,9 +75,7 @@ class Profile(ABC):
         """
 
     def inject(
-        self,
-        base_cls: Type[InjectType],
-        settings: Mapping[str, object] = None,
+        self, base_cls: Type[InjectType], settings: Mapping[str, object] = None
     ) -> InjectType:
         """
         Get the provided instance of a given class identifier.
@@ -252,9 +250,7 @@ class ProfileSession(ABC):
         self._active = False
 
     def inject(
-        self,
-        base_cls: Type[InjectType],
-        settings: Mapping[str, object] = None,
+        self, base_cls: Type[InjectType], settings: Mapping[str, object] = None
     ) -> InjectType:
         """
         Get the provided instance of a given class identifier.

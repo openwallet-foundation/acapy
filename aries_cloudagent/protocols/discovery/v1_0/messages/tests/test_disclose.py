@@ -8,10 +8,7 @@ from ..disclose import Disclose
 
 class TestDisclose(TestCase):
     test_protocols = [
-        {
-            "pid": DIDCommPrefix.qualify_current("basicmessage/1.0/message"),
-            "roles": [],
-        }
+        {"pid": DIDCommPrefix.qualify_current("basicmessage/1.0/message"), "roles": []}
     ]
 
     def test_init(self):

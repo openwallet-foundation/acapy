@@ -295,10 +295,7 @@ class CredExIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-@docs(
-    tags=["issue-credential v1.0"],
-    summary="Fetch all credential exchange records",
-)
+@docs(tags=["issue-credential v1.0"], summary="Fetch all credential exchange records")
 @querystring_schema(V10CredentialExchangeListQueryStringSchema)
 @response_schema(V10CredentialExchangeListResultSchema(), 200, description="")
 async def credential_exchange_list(request: web.BaseRequest):
@@ -325,9 +322,7 @@ async def credential_exchange_list(request: web.BaseRequest):
     try:
         async with context.profile.session() as session:
             records = await V10CredentialExchange.query(
-                session=session,
-                tag_filter=tag_filter,
-                post_filter_positive=post_filter,
+                session=session, tag_filter=tag_filter, post_filter_positive=post_filter
             )
         results = [record.serialize() for record in records]
     except (StorageError, BaseModelError) as err:
@@ -337,8 +332,7 @@ async def credential_exchange_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["issue-credential v1.0"],
-    summary="Fetch a single credential exchange record",
+    tags=["issue-credential v1.0"], summary="Fetch a single credential exchange record"
 )
 @match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
@@ -425,10 +419,7 @@ async def credential_exchange_create(request: web.BaseRequest):
             credential_proposal=preview,
             **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
         )
-        credential_proposal.assign_trace_decorator(
-            context.settings,
-            trace_msg,
-        )
+        credential_proposal.assign_trace_decorator(context.settings, trace_msg)
 
         trace_event(
             context.settings,
@@ -511,10 +502,7 @@ async def credential_exchange_send(request: web.BaseRequest):
             credential_proposal=preview,
             **{t: body.get(t) for t in CRED_DEF_TAGS if body.get(t)},
         )
-        credential_proposal.assign_trace_decorator(
-            context.settings,
-            trace_msg,
-        )
+        credential_proposal.assign_trace_decorator(context.settings, trace_msg)
 
         trace_event(
             context.settings,
@@ -560,10 +548,7 @@ async def credential_exchange_send(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["issue-credential v1.0"],
-    summary="Send issuer a credential proposal",
-)
+@docs(tags=["issue-credential v1.0"], summary="Send issuer a credential proposal")
 @request_schema(V10CredentialProposalRequestOptSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_proposal(request: web.BaseRequest):
@@ -625,10 +610,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
             outbound_handler,
         )
 
-    await outbound_handler(
-        credential_proposal,
-        connection_id=connection_id,
-    )
+    await outbound_handler(credential_proposal, connection_id=connection_id)
 
     trace_event(
         context.settings,
@@ -654,14 +636,9 @@ async def _create_free_offer(
 
     credential_preview = CredentialPreview.deserialize(preview_spec)
     credential_proposal = CredentialProposal(
-        comment=comment,
-        credential_proposal=credential_preview,
-        cred_def_id=cred_def_id,
+        comment=comment, credential_proposal=credential_preview, cred_def_id=cred_def_id
     )
-    credential_proposal.assign_trace_decorator(
-        profile.settings,
-        trace_msg,
-    )
+    credential_proposal.assign_trace_decorator(profile.settings, trace_msg)
     credential_proposal_dict = credential_proposal.serialize()
 
     cred_ex_record = V10CredentialExchange(
@@ -678,9 +655,7 @@ async def _create_free_offer(
     credential_manager = CredentialManager(profile)
 
     (cred_ex_record, credential_offer_message) = await credential_manager.create_offer(
-        cred_ex_record,
-        counter_proposal=None,
-        comment=comment,
+        cred_ex_record, counter_proposal=None, comment=comment
     )
 
     return (cred_ex_record, credential_offer_message)
@@ -950,10 +925,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["issue-credential v1.0"],
-    summary="Send issuer a credential request",
-)
+@docs(tags=["issue-credential v1.0"], summary="Send issuer a credential request")
 @match_info_schema(CredExIdMatchInfoSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
 async def credential_exchange_send_request(request: web.BaseRequest):
@@ -1054,10 +1026,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["issue-credential v1.0"],
-    summary="Send holder a credential",
-)
+@docs(tags=["issue-credential v1.0"], summary="Send holder a credential")
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialIssueRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
@@ -1150,10 +1119,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["issue-credential v1.0"],
-    summary="Store a received credential",
-)
+@docs(tags=["issue-credential v1.0"], summary="Store a received credential")
 @match_info_schema(CredExIdMatchInfoSchema())
 @request_schema(V10CredentialStoreRequestSchema())
 @response_schema(V10CredentialExchangeSchema(), 200, description="")
@@ -1210,8 +1176,7 @@ async def credential_exchange_store(request: web.BaseRequest):
     try:
         credential_manager = CredentialManager(profile)
         cred_ex_record = await credential_manager.store_credential(
-            cred_ex_record,
-            credential_id,
+            cred_ex_record, credential_id
         )
 
     except (
@@ -1237,11 +1202,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         ) = await credential_manager.send_credential_ack(cred_ex_record)
         result = cred_ex_record.serialize()  # pick up state done
 
-    except (
-        BaseModelError,
-        CredentialManagerError,
-        StorageError,
-    ) as err:
+    except (BaseModelError, CredentialManagerError, StorageError) as err:
         # protocol finished OK: do not send problem report nor set record state error
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -1289,8 +1250,7 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
                 )
             report = problem_report_for_record(cred_ex_record, description)
             await cred_ex_record.save_error_state(
-                session,
-                reason=f"created problem report: {description}",
+                session, reason=f"created problem report: {description}"
             )
     except StorageNotFoundError as err:  # other party does not care about meta-problems
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -1379,8 +1339,7 @@ async def register(app: web.Application):
                 credential_exchange_problem_report,
             ),
             web.delete(
-                "/issue-credential/records/{cred_ex_id}",
-                credential_exchange_remove,
+                "/issue-credential/records/{cred_ex_id}", credential_exchange_remove
             ),
         ]
     )

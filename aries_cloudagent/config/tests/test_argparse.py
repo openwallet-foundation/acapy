@@ -132,14 +132,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.TransportGroup()
         group.add_arguments(parser)
 
-        result = parser.parse_args(
-            [
-                "--inbound-transport",
-                "http",
-                "0.0.0.0",
-                "80",
-            ]
-        )
+        result = parser.parse_args(["--inbound-transport", "http", "0.0.0.0", "80"])
 
         with self.assertRaises(argparse.ArgsParseError):
             settings = group.get_settings(result)
@@ -156,10 +149,7 @@ class TestArgParse(AsyncTestCase):
             exit_parser.assert_called_once()
 
         result = parser.parse_args(
-            [
-                "--arg-file",
-                "./aries_cloudagent/config/tests/test-general-args.yaml",
-            ]
+            ["--arg-file", "./aries_cloudagent/config/tests/test-general-args.yaml"]
         )
 
         assert result.external_plugins == ["foo"]
@@ -211,10 +201,7 @@ class TestArgParse(AsyncTestCase):
             exit_parser.assert_called_once()
 
         result = parser.parse_args(
-            [
-                "--arg-file",
-                "./aries_cloudagent/config/tests/test-transport-args.yaml",
-            ]
+            ["--arg-file", "./aries_cloudagent/config/tests/test-transport-args.yaml"]
         )
         # no asserts, just testing that the parser doesn't fail
 
@@ -409,10 +396,7 @@ class TestArgParse(AsyncTestCase):
         group.add_arguments(parser)
 
         result = parser.parse_args(
-            [
-                "--wallet-key-derivation-method",
-                key_derivation_method,
-            ]
+            ["--wallet-key-derivation-method", key_derivation_method]
         )
 
         settings = group.get_settings(result)
@@ -425,12 +409,7 @@ class TestArgParse(AsyncTestCase):
         group = argparse.WalletGroup()
         group.add_arguments(parser)
 
-        result = parser.parse_args(
-            [
-                "--wallet-key",
-                key_value,
-            ]
-        )
+        result = parser.parse_args(["--wallet-key", key_value])
 
         settings = group.get_settings(result)
 

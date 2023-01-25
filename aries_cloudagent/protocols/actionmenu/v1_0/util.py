@@ -1,11 +1,7 @@
 """Action menu utility methods."""
 
 from ....admin.request_context import AdminRequestContext
-from ....storage.base import (
-    BaseStorage,
-    StorageRecord,
-    StorageNotFoundError,
-)
+from ....storage.base import BaseStorage, StorageRecord, StorageNotFoundError
 
 from .messages.menu import Menu
 
@@ -55,8 +51,5 @@ async def save_connection_menu(
 
     await context.profile.notify(
         "acapy::actionmenu::received",
-        {
-            "connection_id": connection_id,
-            "menu": menu.serialize() if menu else None,
-        },
+        {"connection_id": connection_id, "menu": menu.serialize() if menu else None},
     )

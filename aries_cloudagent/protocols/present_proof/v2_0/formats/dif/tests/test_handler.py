@@ -58,12 +58,7 @@ DIF_PRES_REQUEST_A = {
     "presentation_definition": {
         "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
         "submission_requirements": [
-            {
-                "name": "Citizenship Information",
-                "rule": "pick",
-                "count": 2,
-                "from": "A",
-            }
+            {"name": "Citizenship Information", "rule": "pick", "count": 2, "from": "A"}
         ],
         "input_descriptors": [
             {
@@ -100,12 +95,7 @@ DIF_PRES_REQUEST_B = {
     "presentation_definition": {
         "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
         "submission_requirements": [
-            {
-                "name": "Citizenship Information",
-                "rule": "pick",
-                "min": 1,
-                "from": "A",
-            }
+            {"name": "Citizenship Information", "rule": "pick", "min": 1, "from": "A"}
         ],
         "input_descriptors": [
             {
@@ -122,10 +112,7 @@ DIF_PRES_REQUEST_B = {
                         {
                             "path": ["$.credentialSubject.givenName"],
                             "purpose": "The claim must be from one of the specified issuers",
-                            "filter": {
-                                "type": "string",
-                                "enum": ["JOHN", "CAI"],
-                            },
+                            "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
                         }
                     ],
                 },
@@ -142,11 +129,7 @@ DIF_PRES_REQUEST_SEQUENCE = {
     "presentation_definition": {
         "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
         "submission_requirements": [
-            {
-                "name": "Citizenship Information",
-                "rule": "all",
-                "from": "A",
-            },
+            {"name": "Citizenship Information", "rule": "all", "from": "A"},
             {
                 "name": "Citizenship Information v2",
                 "rule": "pick",
@@ -169,10 +152,7 @@ DIF_PRES_REQUEST_SEQUENCE = {
                         {
                             "path": ["$.credentialSubject.givenName"],
                             "purpose": "The claim must be from one of the specified issuers",
-                            "filter": {
-                                "type": "string",
-                                "enum": ["JOHN", "CAI"],
-                            },
+                            "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
                         }
                     ],
                 },
@@ -191,10 +171,7 @@ DIF_PRES_REQUEST_SEQUENCE = {
                         {
                             "path": ["$.credentialSubject.givenName"],
                             "purpose": "The claim must be from one of the specified issuers",
-                            "filter": {
-                                "type": "string",
-                                "enum": ["JOHN", "CAI"],
-                            },
+                            "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
                         }
                     ],
                 },
@@ -602,9 +579,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -645,9 +620,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
         request_data = {}
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -687,9 +660,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         request_data = {}
         request_data["dif"] = dif_pres_spec
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -713,9 +684,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                     "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="did:example:489398593",
-                subject_ids=[
-                    "did:sov:WgWxqztrNooG92RXvxSTWv",
-                ],
+                subject_ids=["did:sov:WgWxqztrNooG92RXvxSTWv"],
                 proof_types=["Ed25519Signature2018"],
                 schema_ids=["https://example.org/examples/degree.json"],
                 cred_value={"...", "..."},
@@ -764,9 +733,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -807,9 +774,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                     "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="did:example:489398593",
-                subject_ids=[
-                    "did:sov:WgWxqztrNooG92RXvxSTWv",
-                ],
+                subject_ids=["did:sov:WgWxqztrNooG92RXvxSTWv"],
                 proof_types=["Ed25519Signature2018"],
                 schema_ids=["https://example.org/examples/degree.json"],
                 cred_value={"...", "..."},
@@ -858,9 +823,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -881,9 +844,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                     "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="did:example:489398593",
-                subject_ids=[
-                    "did:sov:WgWxqztrNooG92RXvxSTWv",
-                ],
+                subject_ids=["did:sov:WgWxqztrNooG92RXvxSTWv"],
                 proof_types=["Ed25519Signature2018"],
                 schema_ids=["https://example.org/examples/degree.json"],
                 cred_value={"...", "..."},
@@ -941,9 +902,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -982,9 +941,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
         request_data = {}
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, request_data)
@@ -1070,9 +1027,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -1113,9 +1068,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -1414,9 +1367,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            async_mock.CoroutineMock(),
+            DIFPresExchHandler, "create_vp", async_mock.CoroutineMock()
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
@@ -1523,8 +1474,8 @@ class TestDIFFormatHandler(AsyncTestCase):
                 SchemaInputDescriptor(uri="test321", required=True),
             ]
         ]
-        test_one_of_uri_groups = (
-            await self.handler.retrieve_uri_list_from_schema_filter(test_schema_filter)
+        test_one_of_uri_groups = await self.handler.retrieve_uri_list_from_schema_filter(
+            test_schema_filter
         )
         assert test_one_of_uri_groups == [["test123", "test321"]]
 
@@ -1537,10 +1488,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=DIF_PRES,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=DIF_PRES, ident="dif")
             ],
         )
         dif_pres_request = V20PresRequest(
@@ -1584,10 +1532,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=dif_proof,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=dif_proof, ident="dif")
             ],
         )
 
@@ -1639,10 +1584,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=dif_proof,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=dif_proof, ident="dif")
             ],
         )
 
@@ -1654,17 +1596,11 @@ class TestDIFFormatHandler(AsyncTestCase):
             "fields": [
                 {
                     "path": ["$.credentialSubject.givenName.test"],
-                    "filter": {
-                        "type": "string",
-                        "enum": ["JOHN", "CAI"],
-                    },
+                    "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
                 },
                 {
                     "path": ["$.credentialSubject.test.test1.test2"],
-                    "filter": {
-                        "type": "string",
-                        "enum": ["TEST"],
-                    },
+                    "filter": {"type": "string", "enum": ["TEST"]},
                 },
             ],
         }
@@ -1705,10 +1641,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=DIF_PRES_SEQUENCE,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=DIF_PRES_SEQUENCE, ident="dif")
             ],
         )
         dif_pres_request = V20PresRequest(
@@ -1745,26 +1678,14 @@ class TestDIFFormatHandler(AsyncTestCase):
         cred_dict["credentialSubject"]["Patient"] = [
             {
                 "address": [
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
                 ]
             },
             {
                 "address": [
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
                 ]
             },
         ]
@@ -1779,10 +1700,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=dif_proof,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=dif_proof, ident="dif")
             ],
         )
         pres_request = deepcopy(DIF_PRES_REQUEST_B)
@@ -1846,14 +1764,8 @@ class TestDIFFormatHandler(AsyncTestCase):
         dif_proof = deepcopy(DIF_PRES)
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"]["Patient"]["address"] = [
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
         ]
         dif_proof["verifiableCredential"] = []
         dif_proof["verifiableCredential"].append(cred_dict)
@@ -1866,10 +1778,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=dif_proof,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=dif_proof, ident="dif")
             ],
         )
         pres_request = deepcopy(DIF_PRES_REQUEST_B)
@@ -1878,10 +1787,7 @@ class TestDIFFormatHandler(AsyncTestCase):
         ] = {
             "limit_disclosure": "required",
             "fields": [
-                {
-                    "path": ["$.credentialSubject.Patient[*].address"],
-                    "purpose": "Test",
-                }
+                {"path": ["$.credentialSubject.Patient[*].address"], "purpose": "Test"}
             ],
         }
         pres_request["presentation_definition"]["input_descriptors"][0]["schema"] = [
@@ -1934,10 +1840,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=dif_proof,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=dif_proof, ident="dif")
             ],
         )
 
@@ -1987,10 +1890,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=DIF_PRES,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=DIF_PRES, ident="dif")
             ],
         )
 
@@ -2040,10 +1940,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=DIF_PRES,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=DIF_PRES, ident="dif")
             ],
         )
 
@@ -2090,10 +1987,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=dif_proof,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=dif_proof, ident="dif")
             ],
         )
 
@@ -2140,10 +2034,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=dif_proof,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=dif_proof, ident="dif")
             ],
         )
 
@@ -2185,26 +2076,14 @@ class TestDIFFormatHandler(AsyncTestCase):
         cred_dict["credentialSubject"]["Patient"] = [
             {
                 "address": [
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
                 ]
             },
             {
                 "address": [
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
                 ]
             },
         ]
@@ -2219,10 +2098,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=dif_proof,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=dif_proof, ident="dif")
             ],
         )
         pres_request = deepcopy(DIF_PRES_REQUEST_B)
@@ -2319,9 +2195,7 @@ class TestDIFFormatHandler(AsyncTestCase):
                     "https://example.org/examples#UniversityDegreeCredential",
                 ],
                 issuer_id="did:example:489398593",
-                subject_ids=[
-                    "did:sov:WgWxqztrNooG92RXvxSTWv",
-                ],
+                subject_ids=["did:sov:WgWxqztrNooG92RXvxSTWv"],
                 proof_types=["Ed25519Signature2018"],
                 schema_ids=["https://example.org/examples/degree.json"],
                 cred_value={"...", "..."},

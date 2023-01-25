@@ -95,9 +95,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         )
 
     async def create_bound_request(
-        self,
-        pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        self, pres_ex_record: V20PresExRecord, request_data: dict = None
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """
         Create a presentation request bound to a proposal.
@@ -127,9 +125,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         return self.get_format_data(PRES_20_REQUEST, indy_proof_request)
 
     async def create_pres(
-        self,
-        pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        self, pres_ex_record: V20PresExRecord, request_data: dict = None
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
         requested_credentials = {}
@@ -139,12 +135,10 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                 indy_proof_request = proof_request.attachment(
                     IndyPresExchangeHandler.format
                 )
-                requested_credentials = (
-                    await indy_proof_req_preview2indy_requested_creds(
-                        indy_proof_request,
-                        preview=None,
-                        holder=self._profile.inject(IndyHolder),
-                    )
+                requested_credentials = await indy_proof_req_preview2indy_requested_creds(
+                    indy_proof_request,
+                    preview=None,
+                    holder=self._profile.inject(IndyHolder),
                 )
             except ValueError as err:
                 LOGGER.warning(f"{err}")
@@ -161,8 +155,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                 }
         indy_handler = IndyPresExchHandler(self._profile)
         indy_proof = await indy_handler.return_presentation(
-            pres_ex_record=pres_ex_record,
-            requested_credentials=requested_credentials,
+            pres_ex_record=pres_ex_record, requested_credentials=requested_credentials
         )
         return self.get_format_data(PRES_20, indy_proof)
 

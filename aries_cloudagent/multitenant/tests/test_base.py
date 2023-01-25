@@ -80,7 +80,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             settings={
                 "wallet.dispatch_type": "base",
                 "wallet.webhook_urls": ["subwallet-webhook-url"],
-            },
+            }
         )
         self.context.update_settings({"admin.webhook_urls": ["base-webhook-url"]})
         webhook_urls = self.manager.get_webhook_urls(self.context, wallet_record)
@@ -91,7 +91,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             settings={
                 "wallet.dispatch_type": "default",
                 "wallet.webhook_urls": ["subwallet-webhook-url"],
-            },
+            }
         )
         self.context.update_settings({"admin.webhook_urls": ["base-webhook-url"]})
         webhook_urls = self.manager.get_webhook_urls(self.context, wallet_record)
@@ -102,7 +102,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             settings={
                 "wallet.dispatch_type": "both",
                 "wallet.webhook_urls": ["subwallet-webhook-url"],
-            },
+            }
         )
         self.context.update_settings({"admin.webhook_urls": ["base-webhook-url"]})
         webhook_urls = self.manager.get_webhook_urls(self.context, wallet_record)
@@ -467,9 +467,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             )
 
             get_wallet_profile.assert_called_once_with(
-                self.profile.context,
-                wallet_record,
-                {},
+                self.profile.context, wallet_record, {}
             )
 
             assert profile == mock_profile
@@ -504,9 +502,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             )
 
             get_wallet_profile.assert_called_once_with(
-                self.profile.context,
-                wallet_record,
-                {},
+                self.profile.context, wallet_record, {}
             )
 
             assert profile == mock_profile
@@ -544,9 +540,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
             )
 
             get_wallet_profile.assert_called_once_with(
-                self.profile.context,
-                wallet_record,
-                {},
+                self.profile.context, wallet_record, {}
             )
 
             assert profile == mock_profile
@@ -574,22 +568,17 @@ class TestBaseMultitenantManager(AsyncTestCase):
             get_wallet_profile.return_value = mock_profile
 
             profile = await self.manager.get_profile_for_token(
-                self.profile.context,
-                token,
+                self.profile.context, token
             )
 
             get_wallet_profile.assert_called_once_with(
-                self.profile.context,
-                wallet_record,
-                {"wallet.key": "wallet_key"},
+                self.profile.context, wallet_record, {"wallet.key": "wallet_key"}
             )
 
             assert profile == mock_profile
 
     async def test_get_wallets_by_message_missing_wire_format_raises(self):
-        with self.assertRaises(
-            InjectionError,
-        ):
+        with self.assertRaises(InjectionError):
             await self.manager.get_wallets_by_message({})
 
     async def test_get_wallets_by_message(self):

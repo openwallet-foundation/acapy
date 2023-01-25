@@ -208,9 +208,7 @@ class IndyCredxIssuer(IndyIssuer):
             cred_def = CredentialDefinition.load(cred_def.raw_value)
 
             credential_offer = CredentialOffer.create(
-                schema_id or cred_def.schema_id,
-                cred_def,
-                key_proof.raw_value,
+                schema_id or cred_def.schema_id, cred_def, key_proof.raw_value
             )
         except CredxError as err:
             raise IndyIssuerError("Error creating credential offer") from err
@@ -361,10 +359,7 @@ class IndyCredxIssuer(IndyIssuer):
         return credential.to_json(), credential_revocation_id
 
     async def revoke_credentials(
-        self,
-        revoc_reg_id: str,
-        tails_file_path: str,
-        cred_revoc_ids: Sequence[str],
+        self, revoc_reg_id: str, tails_file_path: str, cred_revoc_ids: Sequence[str]
     ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.
@@ -614,8 +609,4 @@ class IndyCredxIssuer(IndyIssuer):
         except AskarError as err:
             raise IndyIssuerError("Error saving new revocation registry") from err
 
-        return (
-            rev_reg_def_id,
-            rev_reg_def_json,
-            rev_reg_json,
-        )
+        return (rev_reg_def_id, rev_reg_def_json, rev_reg_json)

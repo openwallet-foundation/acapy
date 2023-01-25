@@ -26,8 +26,7 @@ class TestInvitationRequestHandler(AsyncTestCase):
         self.context = RequestContext.test_context()
         self.context.connection_ready = True
         self.context.message = InvitationRequest(
-            responder="test-agent",
-            message="Hello World",
+            responder="test-agent", message="Hello World"
         )
         self.context.update_settings({"auto_accept_intro_invitation_requests": False})
 

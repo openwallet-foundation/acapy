@@ -64,8 +64,7 @@ class TestIntroductionService(AsyncTestCase):
         session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
-            connection_id=None,
-            state=ConnRecord.State.ABANDONED.rfc23,
+            connection_id=None, state=ConnRecord.State.ABANDONED.rfc23
         )
         await conn_rec_init.save(session)
         assert conn_rec_init._id
@@ -84,8 +83,7 @@ class TestIntroductionService(AsyncTestCase):
         session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
-            connection_id=None,
-            state=ConnRecord.State.COMPLETED.rfc23,
+            connection_id=None, state=ConnRecord.State.COMPLETED.rfc23
         )
         await conn_rec_init.save(session)
         assert conn_rec_init._id
@@ -104,15 +102,13 @@ class TestIntroductionService(AsyncTestCase):
         session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
-            connection_id=None,
-            state=ConnRecord.State.COMPLETED.rfc23,
+            connection_id=None, state=ConnRecord.State.COMPLETED.rfc23
         )
         await conn_rec_init.save(session)
         assert conn_rec_init._id
 
         conn_rec_target = ConnRecord(
-            connection_id=None,
-            state=ConnRecord.State.ABANDONED.rfc23,
+            connection_id=None, state=ConnRecord.State.ABANDONED.rfc23
         )
         await conn_rec_target.save(session)
         assert conn_rec_target._id
@@ -132,15 +128,13 @@ class TestIntroductionService(AsyncTestCase):
         session = await self.profile.session()
 
         conn_rec_init = ConnRecord(
-            connection_id=None,
-            state=ConnRecord.State.COMPLETED.rfc23,
+            connection_id=None, state=ConnRecord.State.COMPLETED.rfc23
         )
         await conn_rec_init.save(session)
         assert conn_rec_init._id
 
         conn_rec_target = ConnRecord(
-            connection_id=None,
-            state=ConnRecord.State.COMPLETED.rfc23,
+            connection_id=None, state=ConnRecord.State.COMPLETED.rfc23
         )
         await conn_rec_target.save(session)
         assert conn_rec_target._id
@@ -160,9 +154,7 @@ class TestIntroductionService(AsyncTestCase):
         assert target["connection_id"] == conn_rec_target._id
 
         invite = demo_service.IntroInvitation(
-            invitation=self.oob_invi_msg,
-            message="Hello Invite",
-            _id=result._id,
+            invitation=self.oob_invi_msg, message="Hello Invite", _id=result._id
         )
         return_responder = MockResponder()
 
@@ -181,16 +173,14 @@ class TestIntroductionService(AsyncTestCase):
 
     async def test_service_return_invitation_not_found(self):
         invite = demo_service.IntroInvitation(
-            invitation=self.oob_invi_msg,
-            message="Hello World",
+            invitation=self.oob_invi_msg, message="Hello World"
         )
 
         service = await demo_service.DemoIntroductionService.service_handler()()
         session = await self.profile.session()
 
         conn_rec_target = ConnRecord(
-            connection_id=None,
-            state=ConnRecord.State.COMPLETED.rfc23,
+            connection_id=None, state=ConnRecord.State.COMPLETED.rfc23
         )
         await conn_rec_target.save(session)
         assert conn_rec_target._id

@@ -41,8 +41,7 @@ class TestIssuerCredRevRecord(AsyncTestCase):
             for i in range(2)
         ]
         await recs[0].set_state(
-            self.session,
-            IssuerCredRevRecord.STATE_REVOKED,
+            self.session, IssuerCredRevRecord.STATE_REVOKED
         )  # saves
         assert recs[0] != recs[1]
 
@@ -54,33 +53,25 @@ class TestIssuerCredRevRecord(AsyncTestCase):
         ) == recs[0]
         assert (
             await IssuerCredRevRecord.query_by_ids(
-                self.session,
-                cred_def_id=CRED_DEF_ID,
+                self.session, cred_def_id=CRED_DEF_ID
+            )
+        )[0] == recs[0]
+        assert (
+            await IssuerCredRevRecord.query_by_ids(self.session, rev_reg_id=REV_REG_ID)
+        )[0] == recs[0]
+        assert (
+            await IssuerCredRevRecord.query_by_ids(
+                self.session, cred_def_id=CRED_DEF_ID, rev_reg_id=REV_REG_ID
             )
         )[0] == recs[0]
         assert (
             await IssuerCredRevRecord.query_by_ids(
-                self.session,
-                rev_reg_id=REV_REG_ID,
-            )
-        )[0] == recs[0]
-        assert (
-            await IssuerCredRevRecord.query_by_ids(
-                self.session,
-                cred_def_id=CRED_DEF_ID,
-                rev_reg_id=REV_REG_ID,
-            )
-        )[0] == recs[0]
-        assert (
-            await IssuerCredRevRecord.query_by_ids(
-                self.session,
-                state=IssuerCredRevRecord.STATE_REVOKED,
+                self.session, state=IssuerCredRevRecord.STATE_REVOKED
             )
         )[0] == recs[0]
         assert not (
             await IssuerCredRevRecord.query_by_ids(
-                self.session,
-                state=IssuerCredRevRecord.STATE_ISSUED,
+                self.session, state=IssuerCredRevRecord.STATE_ISSUED
             )
         )
 

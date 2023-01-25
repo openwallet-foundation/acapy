@@ -48,8 +48,7 @@ class DIDXRequestHandler(BaseHandler):
             # Auto respond
             if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
                 response = await mgr.create_response(
-                    conn_rec,
-                    mediation_id=mediation_id,
+                    conn_rec, mediation_id=mediation_id
                 )
                 await responder.send_reply(
                     response, connection_id=conn_rec.connection_id

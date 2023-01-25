@@ -54,8 +54,7 @@ class IndyRevocation:
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
-                cred_def_id,
-                txn_record_type=GET_CRED_DEF,
+                cred_def_id, txn_record_type=GET_CRED_DEF
             )
         )[1]
         async with ledger:
@@ -113,16 +112,11 @@ class IndyRevocation:
             )
             if registry.state == IssuerRevRegRecord.STATE_FULL:
                 return
-            await registry.set_state(
-                txn,
-                IssuerRevRegRecord.STATE_FULL,
-            )
+            await registry.set_state(txn, IssuerRevRegRecord.STATE_FULL)
             await txn.commit()
 
         await self.init_issuer_registry(
-            registry.cred_def_id,
-            registry.max_cred_num,
-            registry.revoc_def_type,
+            registry.cred_def_id, registry.max_cred_num, registry.revoc_def_type
         )
 
     async def get_active_issuer_rev_reg_record(
@@ -173,11 +167,7 @@ class IndyRevocation:
         """
         ledger = await self.get_ledger_for_registry(rev_reg_id)
         async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_reg_id,
-                fro,
-                to,
-            )
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_reg_id, fro, to)
 
         return rev_reg_delta
 
@@ -204,10 +194,7 @@ class IndyRevocation:
                 session, cred_def_id, {"$neq": IssuerRevRegRecord.STATE_FULL}
             )
             if not rev_reg_recs:
-                await self.init_issuer_registry(
-                    cred_def_id,
-                    max_cred_num=max_cred_num,
-                )
+                await self.init_issuer_registry(cred_def_id, max_cred_num=max_cred_num)
         return None
 
     async def get_ledger_registry(self, revoc_reg_id: str) -> RevocationRegistry:
@@ -233,8 +220,7 @@ class IndyRevocation:
             ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
-                revoc_reg_id,
-                txn_record_type=GET_REVOC_REG_DEF,
+                revoc_reg_id, txn_record_type=GET_REVOC_REG_DEF
             )
         )[1]
         return ledger

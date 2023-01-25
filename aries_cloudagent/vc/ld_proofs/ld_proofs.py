@@ -35,10 +35,7 @@ async def sign(
 
     """
     return await ProofSet.add(
-        document=document,
-        suite=suite,
-        purpose=purpose,
-        document_loader=document_loader,
+        document=document, suite=suite, purpose=purpose, document_loader=document_loader
     )
 
 

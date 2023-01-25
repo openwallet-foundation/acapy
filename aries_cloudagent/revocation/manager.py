@@ -18,9 +18,7 @@ from .util import notify_pending_cleared_event, notify_revocation_published_even
 from ..protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
-from ..protocols.issue_credential.v2_0.models.cred_ex_record import (
-    V20CredExRecord,
-)
+from ..protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 
 
 class RevocationManagerError(BaseError):
@@ -64,8 +62,7 @@ class RevocationManager:
         try:
             async with self._profile.session() as session:
                 rec = await IssuerCredRevRecord.retrieve_by_cred_ex_id(
-                    session,
-                    cred_ex_id,
+                    session, cred_ex_id
                 )
         except StorageNotFoundError as err:
             raise RevocationManagerError(
@@ -175,14 +172,11 @@ class RevocationManager:
 
         """
         return await rev_reg_record.fix_ledger_entry(
-            self._profile,
-            apply_ledger_update,
-            genesis_transactions,
+            self._profile, apply_ledger_update, genesis_transactions
         )
 
     async def publish_pending_revocations(
-        self,
-        rrid2crid: Mapping[Text, Sequence[Text]] = None,
+        self, rrid2crid: Mapping[Text, Sequence[Text]] = None
     ) -> Mapping[Text, Sequence[Text]]:
         """
         Publish pending revocations to the ledger.
@@ -226,9 +220,7 @@ class RevocationManager:
                 crids = crids.intersection(limit_crids)
             if crids:
                 (delta_json, failed_crids) = await issuer.revoke_credentials(
-                    issuer_rr_rec.revoc_reg_id,
-                    issuer_rr_rec.tails_local_path,
-                    crids,
+                    issuer_rr_rec.revoc_reg_id, issuer_rr_rec.tails_local_path, crids
                 )
                 async with self._profile.transaction() as txn:
                     issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(

@@ -338,8 +338,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         mock_profile = InMemoryProfile.test_profile()
         context = mock_profile.context
         context.injector.bind_instance(
-            IndyLedgerRequestsExecutor,
-            IndyLedgerRequestsExecutor(mock_profile),
+            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(mock_profile)
         )
         context.injector.bind_instance(
             BaseMultitenantManager,
@@ -350,10 +349,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
             await self.verifier.check_timestamps(
-                mock_profile,
-                INDY_PROOF_REQ_NAME,
-                INDY_PROOF_NAME,
-                REV_REG_DEFS,
+                mock_profile, INDY_PROOF_REQ_NAME, INDY_PROOF_NAME, REV_REG_DEFS
             )
 
         # all clear, with timestamps
@@ -367,10 +363,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         ) as mock_get_ledger:
             mock_get_ledger.return_value = (None, self.ledger)
             await self.verifier.check_timestamps(
-                mock_profile,
-                INDY_PROOF_REQ_NAME,
-                INDY_PROOF_NAME,
-                REV_REG_DEFS,
+                mock_profile, INDY_PROOF_REQ_NAME, INDY_PROOF_NAME, REV_REG_DEFS
             )
 
         # timestamp for irrevocable credential
@@ -381,19 +374,13 @@ class TestIndySdkVerifier(AsyncTestCase):
                 None,
                 async_mock.MagicMock(
                     get_credential_definition=async_mock.CoroutineMock(
-                        return_value={
-                            "...": "...",
-                            "value": {"no": "revocation"},
-                        }
+                        return_value={"...": "...", "value": {"no": "revocation"}}
                     )
                 ),
             )
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
-                    INDY_PROOF_REQ_NAME,
-                    INDY_PROOF_NAME,
-                    REV_REG_DEFS,
+                    mock_profile, INDY_PROOF_REQ_NAME, INDY_PROOF_NAME, REV_REG_DEFS
                 )
             assert "Timestamp in presentation identifier #" in str(context.exception)
 
@@ -408,10 +395,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             proof_req_x = deepcopy(INDY_PROOF_REQ_NAME)
             proof_req_x.pop("non_revoked")
             await self.verifier.check_timestamps(
-                mock_profile,
-                proof_req_x,
-                proof_x,
-                REV_REG_DEFS,
+                mock_profile, proof_req_x, proof_x, REV_REG_DEFS
             )
 
             # timestamp in the future
@@ -420,10 +404,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             proof_x["identifiers"][0]["timestamp"] = int(time()) + 3600
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
-                    proof_req_x,
-                    proof_x,
-                    REV_REG_DEFS,
+                    mock_profile, proof_req_x, proof_x, REV_REG_DEFS
                 )
             assert "in the future" in str(context.exception)
 
@@ -431,10 +412,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             proof_x["identifiers"][0]["timestamp"] = 1234567890
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
-                    proof_req_x,
-                    proof_x,
-                    REV_REG_DEFS,
+                    mock_profile, proof_req_x, proof_x, REV_REG_DEFS
                 )
             assert "predates rev reg" in str(context.exception)
 
@@ -450,10 +428,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             mock_get_ledger.return_value = (None, self.ledger)
             pre_logger_calls = mock_logger.info.call_count
             await self.verifier.check_timestamps(
-                mock_profile,
-                proof_req_x,
-                proof_x,
-                REV_REG_DEFS,
+                mock_profile, proof_req_x, proof_x, REV_REG_DEFS
             )
             assert mock_logger.info.call_count == pre_logger_calls + 1
 
@@ -467,10 +442,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             mock_get_ledger.return_value = (None, self.ledger)
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
-                    proof_req_x,
-                    proof_x,
-                    REV_REG_DEFS,
+                    mock_profile, proof_req_x, proof_x, REV_REG_DEFS
                 )
             assert "superfluous" in str(context.exception)
             # missing revealed attr
@@ -479,10 +451,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             proof_x["requested_proof"]["revealed_attrs"] = {}
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
-                    proof_req_x,
-                    proof_x,
-                    REV_REG_DEFS,
+                    mock_profile, proof_req_x, proof_x, REV_REG_DEFS
                 )
             assert "Presentation attributes mismatch requested" in str(
                 context.exception
@@ -501,10 +470,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             proof_x["requested_proof"].pop("revealed_attr_groups")
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
-                    INDY_PROOF_REQ_PRED_NAMES,
-                    proof_x,
-                    REV_REG_DEFS,
+                    mock_profile, INDY_PROOF_REQ_PRED_NAMES, proof_x, REV_REG_DEFS
                 )
             assert "Missing requested attribute group" in str(context.exception)
 
@@ -516,10 +482,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
-                    proof_req_x,
-                    proof_x,
-                    REV_REG_DEFS,
+                    mock_profile, proof_req_x, proof_x, REV_REG_DEFS
                 )
             assert "is superfluous vs. requested" in str(context.exception)
 
@@ -530,10 +493,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             proof_req_x["requested_predicates"]["18_busid_GE_uuid"].pop("non_revoked")
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
-                    proof_req_x,
-                    proof_x,
-                    REV_REG_DEFS,
+                    mock_profile, proof_req_x, proof_x, REV_REG_DEFS
                 )
             assert "is superfluous vs. requested predicate" in str(context.exception)
 
@@ -543,10 +503,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             proof_x["requested_proof"]["predicates"] = {}
             with self.assertRaises(ValueError) as context:
                 await self.verifier.check_timestamps(
-                    mock_profile,
-                    proof_req_x,
-                    proof_x,
-                    REV_REG_DEFS,
+                    mock_profile, proof_req_x, proof_x, REV_REG_DEFS
                 )
             assert "predicates mismatch requested predicate" in str(context.exception)
 
@@ -601,12 +558,7 @@ class TestIndySdkVerifier(AsyncTestCase):
         }
         big_pres = {
             "proof": {
-                "proofs": [
-                    {
-                        "primary_proof": "...",
-                        "non_revoc_proof": "...",
-                    }
-                ],
+                "proofs": [{"primary_proof": "...", "non_revoc_proof": "..."}],
                 "aggregated_proof": "...",
             },
             "requested_proof": {
@@ -680,8 +632,7 @@ class TestIndySdkVerifier(AsyncTestCase):
             )
         with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
-                {"requested_predicates": "...", "requested_attributes": "..."},
-                None,
+                {"requested_predicates": "...", "requested_attributes": "..."}, None
             )
         with self.assertRaises(ValueError):
             await self.verifier.pre_verify(
@@ -889,16 +840,11 @@ class TestIndySdkVerifier(AsyncTestCase):
                                             "value": 11198760,
                                         }
                                     },
-                                    {
-                                        "predicate": {
-                                            "attr_name": "id",
-                                            "value": 4,
-                                        }
-                                    },
+                                    {"predicate": {"attr_name": "id", "value": 4}},
                                 ],
                             }
                         }
-                    ],
+                    ]
                 },
                 "requested_proof": {
                     "revealed_attrs": {},

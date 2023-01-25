@@ -30,10 +30,7 @@ CRED_PREVIEW = V20CredPreview(
         + [V20CredAttrSpec(name="icon", value="cG90YXRv", mime_type="image/png")]
     )
 )
-INDY_FILTER = {
-    "schema_id": SCHEMA_ID,
-    "cred_def_id": CRED_DEF_ID,
-}
+INDY_FILTER = {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}
 
 
 class TestV20CredExRecord(AsyncTestCase):

@@ -217,10 +217,8 @@ class V20DiscoveryMgr:
                 if await V20DiscoveryExchangeRecord.exists_for_connection_id(
                     session=session, connection_id=connection_id
                 ):
-                    discovery_ex_rec = (
-                        await V20DiscoveryExchangeRecord.retrieve_by_connection_id(
-                            session=session, connection_id=connection_id
-                        )
+                    discovery_ex_rec = await V20DiscoveryExchangeRecord.retrieve_by_connection_id(
+                        session=session, connection_id=connection_id
                     )
                     discovery_ex_rec.disclosures = None
                     await discovery_ex_rec.save(session)
@@ -241,7 +239,7 @@ class V20DiscoveryMgr:
             try:
                 return await asyncio.wait_for(
                     self.check_if_disclosure_received(
-                        record_id=discovery_ex_rec.discovery_exchange_id,
+                        record_id=discovery_ex_rec.discovery_exchange_id
                     ),
                     5,
                 )

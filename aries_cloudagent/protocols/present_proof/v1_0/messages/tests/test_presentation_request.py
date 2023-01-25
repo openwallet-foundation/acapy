@@ -70,8 +70,7 @@ PRES_REQ = PresentationRequest(
     comment="Test",
     request_presentations_attach=[
         AttachDecorator.data_base64(
-            mapping=INDY_PROOF_REQ,
-            ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+            mapping=INDY_PROOF_REQ, ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST]
         )
     ],
 )
@@ -116,8 +115,7 @@ class TestPresentationRequest(TestCase):
             "@type": DIDCommPrefix.qualify_current(PRESENTATION_REQUEST),
             "request_presentations~attach": [
                 AttachDecorator.data_base64(
-                    mapping=INDY_PROOF_REQ,
-                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                    mapping=INDY_PROOF_REQ, ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST]
                 ).serialize()
             ],
             "comment": "Test",

@@ -141,9 +141,7 @@ class ThreadDecoratorSchema(BaseModelSchema):
     received_orders = fields.Dict(
         keys=fields.Str(description="Sender key"),
         values=fields.Int(
-            description="Highest sender_order value for sender",
-            example=3,
-            strict=True,
+            description="Highest sender_order value for sender", example=3, strict=True
         ),
         required=False,
         allow_none=True,

@@ -34,10 +34,7 @@ class TestIntroductionRoutes(AsyncTestCase):
             }
         )
         self.request.match_info = {"conn_id": "dummy"}
-        self.request.query = {
-            "target_connection_id": "dummy",
-            "message": "Hello",
-        }
+        self.request.query = {"target_connection_id": "dummy", "message": "Hello"}
 
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.introduction_start(self.request)
@@ -56,10 +53,7 @@ class TestIntroductionRoutes(AsyncTestCase):
             }
         )
         self.request.match_info = {"conn_id": "dummy"}
-        self.request.query = {
-            "target_connection_id": "dummy",
-            "message": "Hello",
-        }
+        self.request.query = {"target_connection_id": "dummy", "message": "Hello"}
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
 
@@ -96,10 +90,7 @@ class TestIntroductionRoutes(AsyncTestCase):
             }
         )
         self.request.match_info = {"conn_id": "dummy"}
-        self.request.query = {
-            "target_connection_id": "dummy",
-            "message": "Hello",
-        }
+        self.request.query = {"target_connection_id": "dummy", "message": "Hello"}
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
 

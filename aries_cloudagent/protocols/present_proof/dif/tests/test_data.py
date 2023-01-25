@@ -178,11 +178,7 @@ is_holder_pd = PresentationDefinition.deserialize(
     {
         "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
         "submission_requirements": [
-            {
-                "name": "European Union Citizenship Proofs",
-                "rule": "all",
-                "from": "A",
-            }
+            {"name": "European Union Citizenship Proofs", "rule": "all", "from": "A"}
         ],
         "input_descriptors": [
             {
@@ -220,11 +216,7 @@ is_holder_pd_multiple_fields_included = PresentationDefinition.deserialize(
     {
         "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
         "submission_requirements": [
-            {
-                "name": "European Union Citizenship Proofs",
-                "rule": "all",
-                "from": "A",
-            }
+            {"name": "European Union Citizenship Proofs", "rule": "all", "from": "A"}
         ],
         "input_descriptors": [
             {
@@ -274,11 +266,7 @@ is_holder_pd_multiple_fields_excluded = PresentationDefinition.deserialize(
     {
         "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
         "submission_requirements": [
-            {
-                "name": "European Union Citizenship Proofs",
-                "rule": "all",
-                "from": "A",
-            }
+            {"name": "European Union Citizenship Proofs", "rule": "all", "from": "A"}
         ],
         "input_descriptors": [
             {
@@ -1777,10 +1765,7 @@ TEST_CRED_DICT = {
         "Patient": {
             "@id": "urn:bnid:_:c14n7",
             "@type": "fhir:resource-types#Patient",
-            "address": {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
+            "address": {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
         },
     },
     "issuanceDate": "2021-10-01T20:16:40+02:00",
@@ -2591,10 +2576,5 @@ def get_test_data():
 
     pd_list = []
     for pd in pd_json_list:
-        pd_list.append(
-            (
-                PresentationDefinition.deserialize(json.loads(pd[0])),
-                pd[1],
-            )
-        )
+        pd_list.append((PresentationDefinition.deserialize(json.loads(pd[0])), pd[1]))
     return (vc_record_list, pd_list)

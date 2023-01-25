@@ -62,10 +62,7 @@ class IndySdkIssuer(IndyIssuer):
 
         with IndyErrorHandler("Error when creating schema", IndyIssuerError):
             schema_id, schema_json = await indy.anoncreds.issuer_create_schema(
-                origin_did,
-                schema_name,
-                schema_version,
-                json.dumps(attribute_names),
+                origin_did, schema_name, schema_version, json.dumps(attribute_names)
             )
         return (schema_id, schema_json)
 
@@ -218,8 +215,7 @@ class IndySdkIssuer(IndyIssuer):
             )
         except AnoncredsRevocationRegistryFullError:
             LOGGER.warning(
-                "Revocation registry %s is full: cannot create credential",
-                rev_reg_id,
+                "Revocation registry %s is full: cannot create credential", rev_reg_id
             )
             raise IndyIssuerRevocationRegistryFullError(
                 f"Revocation registry {rev_reg_id} is full"
@@ -243,10 +239,7 @@ class IndySdkIssuer(IndyIssuer):
         return (credential_json, cred_rev_id)
 
     async def revoke_credentials(
-        self,
-        rev_reg_id: str,
-        tails_file_path: str,
-        cred_rev_ids: Sequence[str],
+        self, rev_reg_id: str, tails_file_path: str, cred_rev_ids: Sequence[str]
     ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.

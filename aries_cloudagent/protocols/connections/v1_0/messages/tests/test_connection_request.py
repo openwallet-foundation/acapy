@@ -2,12 +2,7 @@ from unittest import mock, TestCase
 
 from asynctest import TestCase as AsyncTestCase
 
-from ......connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 
 from .....didcomm_prefix import DIDCommPrefix
 

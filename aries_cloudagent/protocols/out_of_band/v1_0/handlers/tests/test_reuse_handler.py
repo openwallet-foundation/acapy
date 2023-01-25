@@ -68,8 +68,8 @@ class TestHandshakeReuseHandler:
     @async_mock.patch.object(test_module, "OutOfBandManager")
     async def test_exception(self, mock_oob_mgr, request_context):
         mock_oob_mgr.return_value.receive_reuse_message = async_mock.CoroutineMock()
-        mock_oob_mgr.return_value.receive_reuse_message.side_effect = (
-            OutOfBandManagerError("error")
+        mock_oob_mgr.return_value.receive_reuse_message.side_effect = OutOfBandManagerError(
+            "error"
         )
         request_context.message = HandshakeReuse()
         handler = test_module.HandshakeReuseMessageHandler()

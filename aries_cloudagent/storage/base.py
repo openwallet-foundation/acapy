@@ -96,19 +96,12 @@ class BaseStorage(ABC):
 
     @abstractmethod
     async def find_all_records(
-        self,
-        type_filter: str,
-        tag_query: Mapping = None,
-        options: Mapping = None,
+        self, type_filter: str, tag_query: Mapping = None, options: Mapping = None
     ):
         """Retrieve all records matching a particular type filter and tag query."""
 
     @abstractmethod
-    async def delete_all_records(
-        self,
-        type_filter: str,
-        tag_query: Mapping = None,
-    ):
+    async def delete_all_records(self, type_filter: str, tag_query: Mapping = None):
         """Remove all records matching a particular type filter and tag query."""
 
 

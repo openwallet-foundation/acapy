@@ -106,9 +106,7 @@ class InjectionContext(BaseInjector):
         return None
 
     def inject(
-        self,
-        base_cls: Type[InjectType],
-        settings: Mapping[str, object] = None,
+        self, base_cls: Type[InjectType], settings: Mapping[str, object] = None
     ) -> InjectType:
         """
         Get the provided instance of a given class identifier.

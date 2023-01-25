@@ -44,9 +44,7 @@ class TestDiscloseHandler:
         )
         query_msg = Query(query="*")
         discovery_record = V10DiscoveryExchangeRecord(
-            connection_id="test123",
-            thread_id="test123",
-            query_msg=query_msg,
+            connection_id="test123", thread_id="test123", query_msg=query_msg
         )
         disclose_msg.assign_thread_id("test123")
         request_context.message = disclose_msg

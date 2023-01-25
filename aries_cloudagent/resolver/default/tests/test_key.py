@@ -31,10 +31,7 @@ def profile():
 async def test_supported_did_regex(profile, resolver: KeyDIDResolver):
     """Test the supported_did_regex."""
     assert resolver.supported_did_regex == DIDKey.PATTERN
-    assert await resolver.supports(
-        profile,
-        TEST_DID0,
-    )
+    assert await resolver.supports(profile, TEST_DID0)
 
 
 @pytest.mark.asyncio

@@ -16,23 +16,13 @@ class TestProblemReport(TestCase):
     def test_init_type(self):
         """Test initializer."""
 
-        prob = ProblemReport(
-            description={
-                "en": "oh no",
-                "code": "abandoned",
-            }
-        )
+        prob = ProblemReport(description={"en": "oh no", "code": "abandoned"})
         assert prob._type == DIDCommPrefix.qualify_current(PROBLEM_REPORT)
 
     def test_deserialize(self):
         """Test deserialization."""
 
-        obj = ProblemReport(
-            description={
-                "en": "oh no",
-                "code": "abandoned",
-            }
-        )
+        obj = ProblemReport(description={"en": "oh no", "code": "abandoned"})
 
         with mock.patch.object(
             ProblemReportSchema, "load", mock.MagicMock()
@@ -45,12 +35,7 @@ class TestProblemReport(TestCase):
     def test_serialize(self):
         """Test serialization."""
 
-        obj = ProblemReport(
-            description={
-                "en": "oh no",
-                "code": "abandoned",
-            }
-        )
+        obj = ProblemReport(description={"en": "oh no", "code": "abandoned"})
 
         with mock.patch.object(
             ProblemReportSchema, "dump", mock.MagicMock()
@@ -63,12 +48,7 @@ class TestProblemReport(TestCase):
     def test_make_model(self):
         """Test making model."""
 
-        prob = ProblemReport(
-            description={
-                "en": "oh no",
-                "code": "abandoned",
-            }
-        )
+        prob = ProblemReport(description={"en": "oh no", "code": "abandoned"})
         data = prob.serialize()
         model_instance = ProblemReport.deserialize(data)
         assert isinstance(model_instance, ProblemReport)

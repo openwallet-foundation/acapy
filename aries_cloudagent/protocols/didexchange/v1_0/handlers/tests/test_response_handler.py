@@ -3,12 +3,7 @@ from asynctest import mock as async_mock
 from asynctest import TestCase as AsyncTestCase
 
 from ......connections.models import connection_target
-from ......connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
+from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -38,23 +33,13 @@ class TestDIDXResponseHandler(AsyncTestCase):
         ident = "1"
         pk_value = TEST_VERKEY
         pk = PublicKey(
-            TEST_DID,
-            ident,
-            pk_value,
-            PublicKeyType.ED25519_SIG_2018,
-            controller,
-            False,
+            TEST_DID, ident, pk_value, PublicKeyType.ED25519_SIG_2018, controller, False
         )
         doc.set(pk)
         recip_keys = [pk]
         router_keys = []
         service = Service(
-            TEST_DID,
-            "indy",
-            "IndyAgent",
-            recip_keys,
-            router_keys,
-            TEST_ENDPOINT,
+            TEST_DID, "indy", "IndyAgent", recip_keys, router_keys, TEST_ENDPOINT
         )
         doc.set(service)
         return doc
@@ -65,18 +50,12 @@ class TestDIDXResponseHandler(AsyncTestCase):
 
         self.ctx.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         wallet = (await self.ctx.session()).wallet
-        self.did_info = await wallet.create_local_did(
-            method=SOV,
-            key_type=ED25519,
-        )
+        self.did_info = await wallet.create_local_did(method=SOV, key_type=ED25519)
 
         self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)
 
-        self.request = DIDXResponse(
-            did=TEST_DID,
-            did_doc_attach=self.did_doc_attach,
-        )
+        self.request = DIDXResponse(did=TEST_DID, did_doc_attach=self.did_doc_attach)
 
     @pytest.mark.asyncio
     @async_mock.patch.object(test_module, "DIDXManager")
@@ -134,11 +113,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
     @pytest.mark.asyncio
     @async_mock.patch.object(test_module, "DIDXManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
-    async def test_problem_report_did_doc(
-        self,
-        mock_conn_target,
-        mock_didx_mgr,
-    ):
+    async def test_problem_report_did_doc(self, mock_conn_target, mock_didx_mgr):
         mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
                 error_code=ProblemReportReason.RESPONSE_NOT_ACCEPTED.value
@@ -148,8 +123,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
             return_value=[mock_conn_target]
         )
         self.ctx.message = DIDXResponse(
-            did=TEST_DID,
-            did_doc_attach=self.did_doc_attach,
+            did=TEST_DID, did_doc_attach=self.did_doc_attach
         )
         handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()
@@ -167,9 +141,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
     @async_mock.patch.object(test_module, "DIDXManager")
     @async_mock.patch.object(connection_target, "ConnectionTarget")
     async def test_problem_report_did_doc_no_conn_target(
-        self,
-        mock_conn_target,
-        mock_didx_mgr,
+        self, mock_conn_target, mock_didx_mgr
     ):
         mock_didx_mgr.return_value.accept_response = async_mock.CoroutineMock(
             side_effect=DIDXManagerError(
@@ -180,8 +152,7 @@ class TestDIDXResponseHandler(AsyncTestCase):
             side_effect=DIDXManagerError("no target")
         )
         self.ctx.message = DIDXResponse(
-            did=TEST_DID,
-            did_doc_attach=self.did_doc_attach,
+            did=TEST_DID, did_doc_attach=self.did_doc_attach
         )
         handler_inst = test_module.DIDXResponseHandler()
         responder = MockResponder()

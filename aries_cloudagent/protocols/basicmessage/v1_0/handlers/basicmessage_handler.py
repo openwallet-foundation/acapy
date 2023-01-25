@@ -1,10 +1,6 @@
 """Basic message handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ..messages.basicmessage import BasicMessage
 

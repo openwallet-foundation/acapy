@@ -173,10 +173,7 @@ class V20CredExRecord(BaseExchangeRecord):
 
         try:
             await self.save(
-                session,
-                reason=reason,
-                log_params=log_params,
-                log_override=log_override,
+                session, reason=reason, log_params=log_params, log_override=log_override
             )
         except StorageError as err:
             LOGGER.exception(err)
@@ -232,9 +229,7 @@ class V20CredExRecord(BaseExchangeRecord):
             if connection_id:
                 post_filter["connection_id"] = connection_id
             record = await cls.retrieve_by_tag_filter(
-                session,
-                {"thread_id": thread_id},
-                post_filter,
+                session, {"thread_id": thread_id}, post_filter
             )
             await cls.set_cached_key(session, cache_key, record.cred_ex_id)
         return record
@@ -327,9 +322,7 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         description="Credential proposal message",
     )
     cred_offer = fields.Nested(
-        V20CredOfferSchema(),
-        required=False,
-        description="Credential offer message",
+        V20CredOfferSchema(), required=False, description="Credential offer message"
     )
     cred_request = fields.Nested(
         V20CredRequestSchema(),
@@ -376,7 +369,5 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         example=False,
     )
     error_msg = fields.Str(
-        required=False,
-        description="Error message",
-        example="The front fell off",
+        required=False, description="Error message", example="The front fell off"
     )

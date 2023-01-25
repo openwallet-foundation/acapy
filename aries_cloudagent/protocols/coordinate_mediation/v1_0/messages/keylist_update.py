@@ -24,12 +24,7 @@ class KeylistUpdate(AgentMessage):
         message_type = KEYLIST_UPDATE
         schema_class = "KeylistUpdateSchema"
 
-    def __init__(
-        self,
-        *,
-        updates: Sequence[KeylistUpdateRule] = None,
-        **kwargs,
-    ):
+    def __init__(self, *, updates: Sequence[KeylistUpdateRule] = None, **kwargs):
         """
         Initialize keylist update object.
 
@@ -49,6 +44,5 @@ class KeylistUpdateSchema(AgentMessageSchema):
         model_class = KeylistUpdate
 
     updates = fields.List(
-        fields.Nested(KeylistUpdateRuleSchema()),
-        description="List of update rules",
+        fields.Nested(KeylistUpdateRuleSchema()), description="List of update rules"
     )

@@ -117,10 +117,7 @@ class TestTransactionManager(AsyncTestCase):
         async with self.profile.session() as session:
             self.wallet: BaseWallet = session.inject_or(BaseWallet)
             await self.wallet.create_local_did(
-                SOV,
-                ED25519,
-                did="DJGEjaMunDtFtBVrn1qJMT",
-                metadata={"meta": "data"},
+                SOV, ED25519, did="DJGEjaMunDtFtBVrn1qJMT", metadata={"meta": "data"}
             )
             await self.wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
 
@@ -162,20 +159,13 @@ class TestTransactionManager(AsyncTestCase):
     async def test_txn_rec_retrieve_by_connection_and_thread_caching(self):
         async with self.profile.session() as sesn:
             sesn.context.injector.bind_instance(BaseCache, InMemoryCache())
-            txn_rec = TransactionRecord(
-                connection_id="123",
-                thread_id="456",
-            )
+            txn_rec = TransactionRecord(connection_id="123", thread_id="456")
             await txn_rec.save(sesn)
             await TransactionRecord.retrieve_by_connection_and_thread(
-                session=sesn,
-                connection_id="123",
-                thread_id="456",
+                session=sesn, connection_id="123", thread_id="456"
             )  # set in cache
             await TransactionRecord.retrieve_by_connection_and_thread(
-                session=sesn,
-                connection_id="123",
-                thread_id="456",
+                session=sesn, connection_id="123", thread_id="456"
             )  # get from cache
 
     async def test_create_request_bad_state(self):
@@ -201,8 +191,7 @@ class TestTransactionManager(AsyncTestCase):
                 transaction_record,
                 transaction_request,
             ) = await self.manager.create_request(
-                transaction_record,
-                expires_time=self.test_expires_time,
+                transaction_record, expires_time=self.test_expires_time
             )
             save_record.assert_called_once()
 
@@ -335,8 +324,7 @@ class TestTransactionManager(AsyncTestCase):
                 transaction_record,
                 endorsed_transaction_response,
             ) = await self.manager.create_endorse_response(
-                transaction_record,
-                state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
+                transaction_record, state=TransactionRecord.STATE_TRANSACTION_ENDORSED
             )
             save_record.assert_called_once()
 
@@ -398,12 +386,7 @@ class TestTransactionManager(AsyncTestCase):
         transaction_record.state = TransactionRecord.STATE_REQUEST_RECEIVED
         transaction_record.thread_id = self.test_author_transaction_id
         transaction_record.messages_attach[0]["data"]["json"] = json.dumps(
-            {
-                "did": "test",
-                "verkey": "test",
-                "alias": "test",
-                "role": "",
-            }
+            {"did": "test", "verkey": "test", "alias": "test", "role": ""}
         )
 
         with async_mock.patch.object(
@@ -413,8 +396,7 @@ class TestTransactionManager(AsyncTestCase):
                 transaction_record,
                 endorsed_transaction_response,
             ) = await self.manager.create_endorse_response(
-                transaction_record,
-                state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
+                transaction_record, state=TransactionRecord.STATE_TRANSACTION_ENDORSED
             )
             save_record.assert_called_once()
 
@@ -763,12 +745,7 @@ class TestTransactionManager(AsyncTestCase):
 
     async def test_set_transaction_my_job(self):
         conn_record = async_mock.MagicMock(
-            metadata_get=async_mock.CoroutineMock(
-                side_effect=[
-                    None,
-                    {"meta": "data"},
-                ]
-            ),
+            metadata_get=async_mock.CoroutineMock(side_effect=[None, {"meta": "data"}]),
             metadata_set=async_mock.CoroutineMock(),
         )
 
@@ -784,10 +761,7 @@ class TestTransactionManager(AsyncTestCase):
         ) as mock_retrieve:
             mock_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
-                    side_effect=[
-                        None,
-                        {"meta": "data"},
-                    ]
+                    side_effect=[None, {"meta": "data"}]
                 ),
                 metadata_set=async_mock.CoroutineMock(),
             )

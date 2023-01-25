@@ -17,16 +17,12 @@ from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.crypto import KeyType
 from .....wallet.did_method import SOV, KEY, DIDMethods
 from .....wallet.error import WalletNotFoundError
-from .....vc.ld_proofs import (
-    BbsBlsSignature2020,
-)
+from .....vc.ld_proofs import BbsBlsSignature2020
 from .....vc.ld_proofs.document_loader import DocumentLoader
 from .....vc.ld_proofs.error import LinkedDataProofException
 from .....vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .....vc.tests.document_loader import custom_document_loader
-from .....vc.tests.data import (
-    BBS_SIGNED_VC_MATTR,
-)
+from .....vc.tests.data import BBS_SIGNED_VC_MATTR
 
 from .. import pres_exch_handler as test_module
 from ..pres_exch import (
@@ -38,10 +34,7 @@ from ..pres_exch import (
     Constraints,
     DIFField,
 )
-from ..pres_exch_handler import (
-    DIFPresExchHandler,
-    DIFPresExchError,
-)
+from ..pres_exch_handler import DIFPresExchHandler, DIFPresExchError
 
 from .test_data import (
     get_test_data,
@@ -84,10 +77,7 @@ async def setup_tuple(profile):
         await wallet.create_local_did(
             method=SOV, key_type=ED25519, did="WgWxqztrNooG92RXvxSTWv"
         )
-        await wallet.create_local_did(
-            method=KEY,
-            key_type=BLS12381G2,
-        )
+        await wallet.create_local_did(method=KEY, key_type=BLS12381G2)
         creds, pds = get_test_data()
         return creds, pds
 
@@ -650,17 +640,11 @@ class TestPresExchHandler:
                 },
                 {
                     "path": ["$.issuer"],
-                    "filter": {
-                        "type": "string",
-                        "const": "did:example:489398593",
-                    },
+                    "filter": {"type": "string", "const": "did:example:489398593"},
                 },
                 {
                     "path": ["$.issuanceDate"],
-                    "filter": {
-                        "type": "string",
-                        "const": "2020-03-10T04:24:12.164Z",
-                    },
+                    "filter": {"type": "string", "const": "2020-03-10T04:24:12.164Z"},
                 },
             ],
         }
@@ -1588,10 +1572,7 @@ class TestPresExchHandler:
             oneof_filter=True,
             uri_groups=[
                 [
-                    SchemaInputDescriptor(
-                        uri="test123",
-                        required=True,
-                    ),
+                    SchemaInputDescriptor(uri="test123", required=True),
                     SchemaInputDescriptor(uri="test321"),
                 ],
                 [SchemaInputDescriptor(uri="test789")],
@@ -1630,15 +1611,9 @@ class TestPresExchHandler:
             cred_list[5],
         ]
         test_dict_2 = {}
-        test_dict_2["citizenship_input_2"] = [
-            cred_list[4],
-            cred_list[5],
-        ]
+        test_dict_2["citizenship_input_2"] = [cred_list[4], cred_list[5]]
         test_dict_3 = {}
-        test_dict_3["citizenship_input_2"] = [
-            cred_list[3],
-            cred_list[2],
-        ]
+        test_dict_3["citizenship_input_2"] = [cred_list[3], cred_list[2]]
         test_nested_result.append(test_dict_1)
         test_nested_result.append(test_dict_2)
         test_nested_result.append(test_dict_3)
@@ -1655,19 +1630,11 @@ class TestPresExchHandler:
         cred_list[1].record_id = str(uuid4())
         test_nested_result = []
         test_dict_1 = {}
-        test_dict_1["citizenship_input_1"] = [
-            cred_list[0],
-            cred_list[1],
-        ]
+        test_dict_1["citizenship_input_1"] = [cred_list[0], cred_list[1]]
         test_dict_2 = {}
-        test_dict_2["citizenship_input_2"] = [
-            cred_list[0],
-        ]
+        test_dict_2["citizenship_input_2"] = [cred_list[0]]
         test_dict_3 = {}
-        test_dict_3["citizenship_input_2"] = [
-            cred_list[0],
-            cred_list[1],
-        ]
+        test_dict_3["citizenship_input_2"] = [cred_list[0], cred_list[1]]
         test_nested_result.append(test_dict_1)
         test_nested_result.append(test_dict_2)
         test_nested_result.append(test_dict_3)
@@ -2046,9 +2013,7 @@ class TestPresExchHandler:
             ),
         ]
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "_did_info_for_did",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "_did_info_for_did", async_mock.AsyncMock()
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:sov:LjgpST2rjsoxYegQDRm7EL",
@@ -2111,9 +2076,7 @@ class TestPresExchHandler:
             ),
         ]
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "_did_info_for_did",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "_did_info_for_did", async_mock.AsyncMock()
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:sov:LjgpST2rjsoxYegQDRm7EL",
@@ -2179,9 +2142,7 @@ class TestPresExchHandler:
             ),
         ]
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "_did_info_for_did",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "_did_info_for_did", async_mock.AsyncMock()
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
@@ -2249,25 +2210,15 @@ class TestPresExchHandler:
             ),
         ]
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "_did_info_for_did",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "_did_info_for_did", async_mock.AsyncMock()
         ) as mock_did_info, async_mock.patch.object(
-            DIFPresExchHandler,
-            "make_requirement",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "make_requirement", async_mock.AsyncMock()
         ) as mock_make_req, async_mock.patch.object(
-            DIFPresExchHandler,
-            "apply_requirements",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "apply_requirements", async_mock.AsyncMock()
         ) as mock_apply_req, async_mock.patch.object(
-            DIFPresExchHandler,
-            "merge",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "merge", async_mock.AsyncMock()
         ) as mock_merge, async_mock.patch.object(
-            test_module,
-            "create_presentation",
-            async_mock.AsyncMock(),
+            test_module, "create_presentation", async_mock.AsyncMock()
         ) as mock_create_vp:
             mock_make_req.return_value = async_mock.MagicMock()
             mock_apply_req.return_value = async_mock.MagicMock()
@@ -2302,29 +2253,17 @@ class TestPresExchHandler:
         )
         cred_list, pd_list = setup_tuple
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "_did_info_for_did",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "_did_info_for_did", async_mock.AsyncMock()
         ) as mock_did_info, async_mock.patch.object(
-            DIFPresExchHandler,
-            "make_requirement",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "make_requirement", async_mock.AsyncMock()
         ) as mock_make_req, async_mock.patch.object(
-            DIFPresExchHandler,
-            "apply_requirements",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "apply_requirements", async_mock.AsyncMock()
         ) as mock_apply_req, async_mock.patch.object(
-            DIFPresExchHandler,
-            "merge",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "merge", async_mock.AsyncMock()
         ) as mock_merge, async_mock.patch.object(
-            test_module,
-            "create_presentation",
-            async_mock.AsyncMock(),
+            test_module, "create_presentation", async_mock.AsyncMock()
         ) as mock_create_vp, async_mock.patch.object(
-            test_module,
-            "sign_presentation",
-            async_mock.AsyncMock(),
+            test_module, "sign_presentation", async_mock.AsyncMock()
         ) as mock_sign_vp:
             mock_make_req.return_value = async_mock.MagicMock()
             mock_apply_req.return_value = async_mock.MagicMock()
@@ -2360,25 +2299,15 @@ class TestPresExchHandler:
         )
         cred_list, pd_list = setup_tuple
         with async_mock.patch.object(
-            DIFPresExchHandler,
-            "_did_info_for_did",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "_did_info_for_did", async_mock.AsyncMock()
         ) as mock_did_info, async_mock.patch.object(
-            DIFPresExchHandler,
-            "make_requirement",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "make_requirement", async_mock.AsyncMock()
         ) as mock_make_req, async_mock.patch.object(
-            DIFPresExchHandler,
-            "apply_requirements",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "apply_requirements", async_mock.AsyncMock()
         ) as mock_apply_req, async_mock.patch.object(
-            DIFPresExchHandler,
-            "merge",
-            async_mock.AsyncMock(),
+            DIFPresExchHandler, "merge", async_mock.AsyncMock()
         ) as mock_merge, async_mock.patch.object(
-            test_module,
-            "create_presentation",
-            async_mock.AsyncMock(),
+            test_module, "create_presentation", async_mock.AsyncMock()
         ) as mock_create_vp, async_mock.patch.object(
             DIFPresExchHandler,
             "get_sign_key_credential_subject_id",
@@ -3279,14 +3208,8 @@ class TestPresExchHandler:
         )
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"]["Patient"]["address"] = [
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
         ]
         constraint = {
             "limit_disclosure": "required",
@@ -3314,15 +3237,8 @@ class TestPresExchHandler:
         )
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"]["Patient"]["address"] = [
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-                "country": "test",
-            },
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума", "country": "test"},
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
         ]
         constraint = {
             "limit_disclosure": "required",
@@ -3371,10 +3287,7 @@ class TestPresExchHandler:
         constraint = {
             "limit_disclosure": "required",
             "fields": [
-                {
-                    "path": ["$.credentialSubject.Patient.address"],
-                    "purpose": "Test",
-                }
+                {"path": ["$.credentialSubject.Patient.address"], "purpose": "Test"}
             ],
         }
         constraint = Constraints.deserialize(constraint)
@@ -3405,14 +3318,8 @@ class TestPresExchHandler:
             )
 
         cred_dict["credentialSubject"]["Patient"]["address"] = [
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
         ]
         constraint = {
             "limit_disclosure": "required",
@@ -3435,26 +3342,14 @@ class TestPresExchHandler:
         cred_dict["credentialSubject"]["Patient"] = [
             {
                 "address": [
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
                 ]
             },
             {
                 "address": [
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
-                    {
-                        "@id": "urn:bnid:_:c14n1",
-                        "city": "Рума",
-                    },
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+                    {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
                 ]
             },
         ]
@@ -3543,7 +3438,7 @@ class TestPresExchHandler:
                     "path": ["$.credentialSubject.Patient.address.country"],
                     "purpose": "Test",
                 }
-            ],
+            ]
         }
         constraint = Constraints.deserialize(constraint)
         with async_mock.patch.object(
@@ -3561,14 +3456,8 @@ class TestPresExchHandler:
         )
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"]["Patient"]["address"] = [
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
-            {
-                "@id": "urn:bnid:_:c14n1",
-                "city": "Рума",
-            },
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
+            {"@id": "urn:bnid:_:c14n1", "city": "Рума"},
         ]
         original_path = "$.credentialSubject.Patient[*].address[0].city"
         updated_path = await dif_pres_exch_handler.get_updated_path(
@@ -3639,9 +3528,7 @@ class TestPresExchHandler:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
             vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
             field = DIFField.deserialize(
-                {
-                    "path": ["$.credentialSubject.Patient[0].address[0].city"],
-                }
+                {"path": ["$.credentialSubject.Patient[0].address[0].city"]}
             )
             assert not await dif_pres_exch_handler.filter_by_field(
                 field, vc_record_cred
@@ -3666,10 +3553,7 @@ class TestPresExchHandler:
             field = DIFField.deserialize(
                 {
                     "path": ["$.credentialSubject.lprNumber"],
-                    "filter": {
-                        "minimum": 5,
-                        "type": "number",
-                    },
+                    "filter": {"minimum": 5, "type": "number"},
                 }
             )
             assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
@@ -3706,11 +3590,7 @@ class TestPresExchHandler:
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
             vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
-            field = DIFField.deserialize(
-                {
-                    "path": ["$.credentialSubject.testFlag"],
-                }
-            )
+            field = DIFField.deserialize({"path": ["$.credentialSubject.testFlag"]})
             assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
         cred_dict = deepcopy(TEST_CRED_DICT)
         cred_dict["credentialSubject"] = {}

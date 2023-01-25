@@ -140,15 +140,12 @@ class TestV10DiscoveryManager(AsyncTestCase):
             )
             save_ex.assert_called_once()
             assert ex_rec == V10DiscoveryExchangeRecord(
-                disclose=self.disclose,
-                connection_id=test_conn_id,
+                disclose=self.disclose, connection_id=test_conn_id
             )
 
     async def test_check_if_disclosure_received(self):
         with async_mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "retrieve_by_id",
-            async_mock.CoroutineMock(),
+            V10DiscoveryExchangeRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_retrieve_by_id:
             mock_retrieve_by_id.side_effect = [
                 V10DiscoveryExchangeRecord(),
@@ -167,9 +164,7 @@ class TestV10DiscoveryManager(AsyncTestCase):
             "retrieve_by_connection_id",
             async_mock.CoroutineMock(),
         ) as mock_retrieve_by_connection_id, async_mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "save",
-            async_mock.CoroutineMock(),
+            V10DiscoveryExchangeRecord, "save", async_mock.CoroutineMock()
         ) as save_ex, async_mock.patch.object(
             V10DiscoveryMgr, "check_if_disclosure_received", async_mock.CoroutineMock()
         ) as mock_disclosure_received, async_mock.patch.object(
@@ -191,9 +186,7 @@ class TestV10DiscoveryManager(AsyncTestCase):
             "exists_for_connection_id",
             async_mock.CoroutineMock(),
         ) as mock_exists_for_connection_id, async_mock.patch.object(
-            V10DiscoveryExchangeRecord,
-            "save",
-            async_mock.CoroutineMock(),
+            V10DiscoveryExchangeRecord, "save", async_mock.CoroutineMock()
         ) as save_ex, async_mock.patch.object(
             V10DiscoveryMgr, "check_if_disclosure_received", async_mock.CoroutineMock()
         ) as mock_disclosure_received:
@@ -208,9 +201,7 @@ class TestV10DiscoveryManager(AsyncTestCase):
 
     async def test_create_and_send_query_with_no_connection(self):
         with async_mock.patch.object(
-            V10DiscoveryMgr,
-            "receive_query",
-            async_mock.CoroutineMock(),
+            V10DiscoveryMgr, "receive_query", async_mock.CoroutineMock()
         ) as mock_receive_query:
             mock_receive_query.return_value = Disclose()
             received_ex_rec = await self.manager.create_and_send_query(query="*")

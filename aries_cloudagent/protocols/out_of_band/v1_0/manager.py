@@ -117,9 +117,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         """
         mediation_record = await self._route_manager.mediation_record_if_id(
-            self.profile,
-            mediation_id,
-            or_default=True,
+            self.profile, mediation_id, or_default=True
         )
         image_url = self.profile.context.settings.get("image_url")
 
@@ -159,31 +157,27 @@ class OutOfBandManager(BaseConnectionManager):
                 try:
                     async with self.profile.session() as session:
                         cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                            session,
-                            a_id,
+                            session, a_id
                         )
                         message = cred_ex_rec.credential_offer_dict.serialize()
 
                 except StorageNotFoundError:
                     async with self.profile.session() as session:
                         cred_ex_rec = await V20CredExRecord.retrieve_by_id(
-                            session,
-                            a_id,
+                            session, a_id
                         )
                         message = cred_ex_rec.cred_offer.serialize()
             elif a_type == "present-proof":
                 try:
                     async with self.profile.session() as session:
                         pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
-                            session,
-                            a_id,
+                            session, a_id
                         )
                         message = pres_ex_rec.presentation_request_dict.serialize()
                 except StorageNotFoundError:
                     async with self.profile.session() as session:
                         pres_ex_rec = await V20PresExRecord.retrieve_by_id(
-                            session,
-                            a_id,
+                            session, a_id
                         )
                         message = pres_ex_rec.pres_request.serialize()
             else:
@@ -530,7 +524,7 @@ class OutOfBandManager(BaseConnectionManager):
                 raise OutOfBandManagerError(
                     "Connection not ready to process attach message "
                     f"for connection_id: {oob_record.connection_id} and "
-                    f"invitation_msg_id {invitation._id}",
+                    f"invitation_msg_id {invitation._id}"
                 )
 
             if not conn_rec:
@@ -570,11 +564,9 @@ class OutOfBandManager(BaseConnectionManager):
         self, service: Union[Service, str]
     ) -> ServiceDecorator:
         if isinstance(service, str):
-            (
-                endpoint,
-                recipient_keys,
-                routing_keys,
-            ) = await self.resolve_invitation(service)
+            (endpoint, recipient_keys, routing_keys) = await self.resolve_invitation(
+                service
+            )
 
             return ServiceDecorator(
                 endpoint=endpoint,
@@ -643,10 +635,7 @@ class OutOfBandManager(BaseConnectionManager):
                 return OobRecord.deserialize(event.payload)
 
         try:
-            oob_record = await asyncio.wait_for(
-                _wait_for_state(),
-                timeout,
-            )
+            oob_record = await asyncio.wait_for(_wait_for_state(), timeout)
 
             return oob_record
         except asyncio.TimeoutError:
@@ -686,10 +675,7 @@ class OutOfBandManager(BaseConnectionManager):
                 return ConnRecord.deserialize(event.payload)
 
         try:
-            return await asyncio.wait_for(
-                _wait_for_state(),
-                timeout,
-            )
+            return await asyncio.wait_for(_wait_for_state(), timeout)
 
         except asyncio.TimeoutError:
             LOGGER.warning(f"Connection for connection_id {connection_id} not ready")
@@ -771,8 +757,7 @@ class OutOfBandManager(BaseConnectionManager):
             # or something else that includes the key type. We now assume
             # ED25519 keys
             endpoint, recipient_keys, routing_keys = await self.resolve_invitation(
-                service,
-                service_accept=service_accept,
+                service, service_accept=service_accept
             )
             service = ServiceMessage.deserialize(
                 {
@@ -847,10 +832,7 @@ class OutOfBandManager(BaseConnectionManager):
         return oob_record
 
     async def _create_handshake_reuse_message(
-        self,
-        oob_record: OobRecord,
-        conn_record: ConnRecord,
-        version: str,
+        self, oob_record: OobRecord, conn_record: ConnRecord, version: str
     ) -> OobRecord:
         """
         Create and Send a Handshake Reuse message under RFC 0434.
@@ -875,10 +857,7 @@ class OutOfBandManager(BaseConnectionManager):
             )
 
             responder = self.profile.inject(BaseResponder)
-            await responder.send(
-                message=reuse_msg,
-                target_list=connection_targets,
-            )
+            await responder.send(message=reuse_msg, target_list=connection_targets)
 
             async with self.profile.session() as session:
                 oob_record.reuse_msg_id = reuse_msg._id
@@ -894,25 +873,18 @@ class OutOfBandManager(BaseConnectionManager):
 
     async def delete_stale_connection_by_invitation(self, invi_msg_id: str):
         """Delete unused connections, using existing an active connection instead."""
-        tag_filter = {
-            "invitation_msg_id": invi_msg_id,
-        }
+        tag_filter = {"invitation_msg_id": invi_msg_id}
         post_filter = {"invitation_mode": "once", "state": "invitation"}
 
         async with self.profile.session() as session:
             conn_records = await ConnRecord.query(
-                session,
-                tag_filter=tag_filter,
-                post_filter_positive=post_filter,
+                session, tag_filter=tag_filter, post_filter_positive=post_filter
             )
             for conn_rec in conn_records:
                 await conn_rec.delete_record(session)
 
     async def receive_reuse_message(
-        self,
-        reuse_msg: HandshakeReuse,
-        receipt: MessageReceipt,
-        conn_rec: ConnRecord,
+        self, reuse_msg: HandshakeReuse, receipt: MessageReceipt, conn_rec: ConnRecord
     ) -> None:
         """
         Receive and process a HandshakeReuse message under RFC 0434.
@@ -980,10 +952,7 @@ class OutOfBandManager(BaseConnectionManager):
             },
         )
 
-        await responder.send(
-            message=reuse_accept_msg,
-            target_list=connection_targets,
-        )
+        await responder.send(message=reuse_accept_msg, target_list=connection_targets)
 
     async def receive_reuse_accepted_message(
         self,

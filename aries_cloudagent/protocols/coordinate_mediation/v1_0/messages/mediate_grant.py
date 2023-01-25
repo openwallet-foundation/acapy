@@ -27,11 +27,7 @@ class MediationGrant(AgentMessage):
         schema_class = "MediationGrantSchema"
 
     def __init__(
-        self,
-        *,
-        endpoint: str = None,
-        routing_keys: Sequence[str] = None,
-        **kwargs,
+        self, *, endpoint: str = None, routing_keys: Sequence[str] = None, **kwargs
     ):
         """
         Initialize mediation grant object.

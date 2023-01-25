@@ -33,18 +33,12 @@ INDY_PROOF_REQ = [
                         "attr::player::value": "Richie Knucklez",
                     }
                 ],
-                "non_revoked": {
-                    "from": 1234567890,
-                    "to": 1234567890,
-                },
+                "non_revoked": {"from": 1234567890, "to": 1234567890},
             },
             "0_screencapture_uuid": {
                 "name": "screenCapture",
                 "restrictions": [{"cred_def_id": f"{CD_ID}"}],
-                "non_revoked": {
-                    "from": 1234567890,
-                    "to": 1234567890,
-                },
+                "non_revoked": {"from": 1234567890, "to": 1234567890},
             },
         },
         "requested_predicates": {
@@ -53,10 +47,7 @@ INDY_PROOF_REQ = [
                 "p_type": ">=",
                 "p_value": 1000000,
                 "restrictions": [{"cred_def_id": f"{CD_ID}"}],
-                "non_revoked": {
-                    "from": 1234567890,
-                    "to": 1234567890,
-                },
+                "non_revoked": {"from": 1234567890, "to": 1234567890},
             }
         },
     },
@@ -139,10 +130,7 @@ class TestV20PresProposal(TestCase):
                 V20PresProposal.deserialize(pres_proposal_dict)  # length mismatch
 
             pres_proposal.formats.append(  # unknown format: no validation
-                V20PresFormat(
-                    attach_id="not_indy",
-                    format_="not_indy",
-                )
+                V20PresFormat(attach_id="not_indy", format_="not_indy")
             )
             obj = pres_proposal.serialize()
             obj["proposals~attach"].append(

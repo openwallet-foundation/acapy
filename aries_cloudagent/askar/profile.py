@@ -103,8 +103,7 @@ class AskarProfile(Profile):
         injector.bind_provider(
             IndyHolder,
             ClassProvider(
-                "aries_cloudagent.indy.credx.holder.IndyCredxHolder",
-                ref(self),
+                "aries_cloudagent.indy.credx.holder.IndyCredxHolder", ref(self)
             ),
         )
         injector.bind_provider(
@@ -116,8 +115,7 @@ class AskarProfile(Profile):
         injector.bind_provider(
             VCHolder,
             ClassProvider(
-                "aries_cloudagent.storage.vc_holder.askar.AskarVCHolder",
-                ref(self),
+                "aries_cloudagent.storage.vc_holder.askar.AskarVCHolder", ref(self)
             ),
         )
 
@@ -129,8 +127,7 @@ class AskarProfile(Profile):
             injector.bind_provider(
                 IndyVerifier,
                 ClassProvider(
-                    "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
-                    ref(self),
+                    "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier", ref(self)
                 ),
             )
 

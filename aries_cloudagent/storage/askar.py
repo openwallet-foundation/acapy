@@ -176,10 +176,7 @@ class AskarStorage(BaseStorage):
         )
 
     async def find_all_records(
-        self,
-        type_filter: str,
-        tag_query: Mapping = None,
-        options: Mapping = None,
+        self, type_filter: str, tag_query: Mapping = None, options: Mapping = None
     ):
         """Retrieve all records matching a particular type filter and tag query."""
         for_update = bool(options and options.get("forUpdate"))
@@ -197,11 +194,7 @@ class AskarStorage(BaseStorage):
             )
         return results
 
-    async def delete_all_records(
-        self,
-        type_filter: str,
-        tag_query: Mapping = None,
-    ):
+    async def delete_all_records(self, type_filter: str, tag_query: Mapping = None):
         """Remove all records matching a particular type filter and tag query."""
         await self._session.handle.remove_all(type_filter, tag_query)
 

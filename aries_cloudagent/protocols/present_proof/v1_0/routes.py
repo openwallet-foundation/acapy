@@ -106,10 +106,7 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
-    presentation_proposal = fields.Nested(
-        IndyPresPreviewSchema(),
-        required=True,
-    )
+    presentation_proposal = fields.Nested(IndyPresPreviewSchema(), required=True)
     auto_present = fields.Boolean(
         description=(
             "Whether to respond automatically to presentation requests, building "
@@ -176,15 +173,10 @@ class CredentialsFetchQueryStringSchema(OpenAPISchema):
         example="1_name_uuid,2_score_uuid",
     )
     start = fields.Str(
-        description="Start index",
-        required=False,
-        strict=True,
-        **NUM_STR_WHOLE,
+        description="Start index", required=False, strict=True, **NUM_STR_WHOLE
     )
     count = fields.Str(
-        description="Maximum number to retrieve",
-        required=False,
-        **NUM_STR_NATURAL,
+        description="Maximum number to retrieve", required=False, **NUM_STR_NATURAL
     )
     extra_query = fields.Str(
         description="(JSON) object mapping referents to extra WQL queries",
@@ -234,9 +226,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
     try:
         async with context.profile.session() as session:
             records = await V10PresentationExchange.query(
-                session=session,
-                tag_filter=tag_filter,
-                post_filter_positive=post_filter,
+                session=session, tag_filter=tag_filter, post_filter_positive=post_filter
             )
         results = [record.serialize() for record in records]
     except (StorageError, BaseModelError) as err:
@@ -246,8 +236,7 @@ async def presentation_exchange_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["present-proof v1.0"],
-    summary="Fetch a single presentation exchange record",
+    tags=["present-proof v1.0"], summary="Fetch a single presentation exchange record"
 )
 @match_info_schema(V10PresExIdMatchInfoSchema())
 @response_schema(V10PresentationExchangeSchema(), 200, description="")
@@ -417,10 +406,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     trace_msg = body.get("trace")
-    presentation_proposal_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    presentation_proposal_message.assign_trace_decorator(context.settings, trace_msg)
     auto_present = body.get(
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
@@ -489,8 +475,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         comment=comment,
         request_presentations_attach=[
             AttachDecorator.data_base64(
-                mapping=indy_proof_request,
-                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                mapping=indy_proof_request, ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST]
             )
         ],
     )
@@ -498,10 +483,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
     trace_msg = body.get("trace")
-    presentation_request_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    presentation_request_message.assign_trace_decorator(context.settings, trace_msg)
 
     pres_ex_record = None
     try:
@@ -573,16 +555,12 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
         comment=comment,
         request_presentations_attach=[
             AttachDecorator.data_base64(
-                mapping=indy_proof_request,
-                ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                mapping=indy_proof_request, ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST]
             )
         ],
     )
     trace_msg = body.get("trace")
-    presentation_request_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    presentation_request_message.assign_trace_decorator(context.settings, trace_msg)
     auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
@@ -693,10 +671,7 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
         )
 
     trace_msg = body.get("trace")
-    presentation_request_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    presentation_request_message.assign_trace_decorator(context.settings, trace_msg)
     await outbound_handler(presentation_request_message, connection_id=conn_id)
 
     trace_event(
@@ -800,10 +775,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         )
 
     trace_msg = body.get("trace")
-    presentation_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    presentation_message.assign_trace_decorator(context.settings, trace_msg)
     await outbound_handler(
         presentation_message, connection_id=pres_ex_record.connection_id
     )
@@ -918,8 +890,7 @@ async def presentation_exchange_problem_report(request: web.BaseRequest):
             )
             report = problem_report_for_record(pres_ex_record, description)
             await pres_ex_record.save_error_state(
-                session,
-                reason=f"created problem report: {description}",
+                session, reason=f"created problem report: {description}"
             )
     except StorageNotFoundError as err:  # other party does not care about meta-problems
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -969,9 +940,7 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.get(
-                "/present-proof/records",
-                presentation_exchange_list,
-                allow_head=False,
+                "/present-proof/records", presentation_exchange_list, allow_head=False
             ),
             web.get(
                 "/present-proof/records/{pres_ex_id}",
@@ -984,16 +953,13 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.post(
-                "/present-proof/send-proposal",
-                presentation_exchange_send_proposal,
+                "/present-proof/send-proposal", presentation_exchange_send_proposal
             ),
             web.post(
-                "/present-proof/create-request",
-                presentation_exchange_create_request,
+                "/present-proof/create-request", presentation_exchange_create_request
             ),
             web.post(
-                "/present-proof/send-request",
-                presentation_exchange_send_free_request,
+                "/present-proof/send-request", presentation_exchange_send_free_request
             ),
             web.post(
                 "/present-proof/records/{pres_ex_id}/send-request",
@@ -1012,8 +978,7 @@ async def register(app: web.Application):
                 presentation_exchange_problem_report,
             ),
             web.delete(
-                "/present-proof/records/{pres_ex_id}",
-                presentation_exchange_remove,
+                "/present-proof/records/{pres_ex_id}", presentation_exchange_remove
             ),
         ]
     )

@@ -38,9 +38,7 @@ class TestEd25519Signature2018(TestCase):
         ).key_id
 
         self.sign_key_pair = WalletKeyPair(
-            wallet=self.wallet,
-            key_type=ED25519,
-            public_key_base58=self.key.verkey,
+            wallet=self.wallet, key_type=ED25519, public_key_base58=self.key.verkey
         )
         self.verify_key_pair = WalletKeyPair(wallet=self.wallet, key_type=ED25519)
 

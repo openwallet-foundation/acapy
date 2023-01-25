@@ -24,7 +24,7 @@ class TestPluginRegistry(AsyncTestCase):
             register_controllers=async_mock.MagicMock(),
         )
         self.goal_code_registry = async_mock.MagicMock(
-            register_controllers=async_mock.MagicMock(),
+            register_controllers=async_mock.MagicMock()
         )
         self.context.injector.bind_instance(ProtocolRegistry, self.proto_registry)
         self.context.injector.bind_instance(GoalCodeRegistry, self.goal_code_registry)
@@ -112,10 +112,7 @@ class TestPluginRegistry(AsyncTestCase):
         ) as load_module:
             await self.registry.register_admin_routes(app)
 
-            calls = [
-                call("definition", mod_name),
-                call(f"{mod_name}.routes"),
-            ]
+            calls = [call("definition", mod_name), call(f"{mod_name}.routes")]
             load_module.assert_has_calls(calls)
         assert mod.routes.register.call_count == 1
 
@@ -365,8 +362,7 @@ class TestPluginRegistry(AsyncTestCase):
             assert self.registry.validate_version(versions, mod_name) is True
 
             load_module.has_calls(
-                call(versions[0]["path"], mod_name),
-                call(versions[1]["path"], mod_name),
+                call(versions[0]["path"], mod_name), call(versions[1]["path"], mod_name)
             )
 
     async def test_validate_version_list_extra_attributes_ok(self):

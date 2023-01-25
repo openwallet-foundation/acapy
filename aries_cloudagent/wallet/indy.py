@@ -23,12 +23,7 @@ from ..storage.error import StorageDuplicateError, StorageNotFoundError
 from ..storage.record import StorageRecord
 
 from .base import BaseWallet
-from .crypto import (
-    create_keypair,
-    sign_message,
-    validate_seed,
-    verify_signed_message,
-)
+from .crypto import create_keypair, sign_message, validate_seed, verify_signed_message
 from .did_info import DIDInfo, KeyInfo
 from .did_method import SOV, KEY, DIDMethod
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
@@ -699,9 +694,7 @@ class IndySdkWallet(BaseWallet):
             storage = IndySdkStorage(self.opened)
             await storage.update_record(
                 StorageRecord(
-                    type=RECORD_TYPE_CONFIG,
-                    id=RECORD_NAME_PUBLIC_DID,
-                    value="{}",
+                    type=RECORD_TYPE_CONFIG, id=RECORD_NAME_PUBLIC_DID, value="{}"
                 ),
                 value=json.dumps({"did": info.did}),
                 tags=None,

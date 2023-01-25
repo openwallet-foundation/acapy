@@ -6,10 +6,7 @@ from .pres_preview import IndyPresPreview
 
 
 async def indy_proof_req_preview2indy_requested_creds(
-    indy_proof_req: dict,
-    preview: IndyPresPreview = None,
-    *,
-    holder: IndyHolder,
+    indy_proof_req: dict, preview: IndyPresPreview = None, *, holder: IndyHolder
 ):
     """
     Build indy requested-credentials structure.
@@ -117,10 +114,7 @@ def indy_proof_req2non_revoc_intervals(indy_proof_req: dict):
     non_revoc_intervals = {}
     for req_item_type in ("requested_attributes", "requested_predicates"):
         for (reft, req_item) in indy_proof_req[req_item_type].items():
-            interval = req_item.get(
-                "non_revoked",
-                indy_proof_req.get("non_revoked"),
-            )
+            interval = req_item.get("non_revoked", indy_proof_req.get("non_revoked"))
             if interval:
                 fro = interval.get("from")
                 to = interval.get("to")

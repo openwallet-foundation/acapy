@@ -24,9 +24,7 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
-from ..protocols.coordinate_mediation.v1_0.route_manager import (
-    RouteManager,
-)
+from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ..resolver.base import ResolverError
 from ..resolver.did_resolver import DIDResolver
 from ..storage.base import BaseStorage
@@ -176,9 +174,7 @@ class BaseConnectionManager:
             stored_doc, record = await self.fetch_did_document(did_doc.did)
         except StorageNotFoundError:
             record = StorageRecord(
-                self.RECORD_TYPE_DID_DOC,
-                did_doc.to_json(),
-                {"did": did_doc.did},
+                self.RECORD_TYPE_DID_DOC, did_doc.to_json(), {"did": did_doc.did}
             )
             async with self._profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)

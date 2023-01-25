@@ -41,10 +41,7 @@ from ....wallet.error import WalletNotFoundError
 
 from ..dif.pres_exch import InputDescriptors, ClaimFormat, SchemaInputDescriptor
 from ..dif.pres_proposal_schema import DIFProofProposalSchema
-from ..dif.pres_request_schema import (
-    DIFProofRequestSchema,
-    DIFPresSpecSchema,
-)
+from ..dif.pres_request_schema import DIFProofRequestSchema, DIFPresSpecSchema
 
 from . import problem_report_for_record, report_problem
 from .formats.handler import V20PresFormatHandlerError
@@ -154,8 +151,7 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
         description="Human-readable comment", required=False, allow_none=True
     )
     presentation_proposal = fields.Nested(
-        V20PresProposalByFormatSchema(),
-        required=True,
+        V20PresProposalByFormatSchema(), required=True
     )
     auto_present = fields.Boolean(
         description=(
@@ -289,15 +285,10 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
         example="1_name_uuid,2_score_uuid",
     )
     start = fields.Str(
-        description="Start index",
-        required=False,
-        strict=True,
-        **NUM_STR_WHOLE,
+        description="Start index", required=False, strict=True, **NUM_STR_WHOLE
     )
     count = fields.Str(
-        description="Maximum number to retrieve",
-        required=False,
-        **NUM_STR_NATURAL,
+        description="Maximum number to retrieve", required=False, **NUM_STR_NATURAL
     )
     extra_query = fields.Str(
         description="(JSON) object mapping referents to extra WQL queries",
@@ -341,8 +332,7 @@ def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
     return {
         "formats": [
             V20PresFormat(
-                attach_id=fmt_api,
-                format_=ATTACHMENT_FORMAT[msg_type][fmt_api],
+                attach_id=fmt_api, format_=ATTACHMENT_FORMAT[msg_type][fmt_api]
             )
             for fmt_api in by_format
         ],
@@ -379,9 +369,7 @@ async def present_proof_list(request: web.BaseRequest):
     try:
         async with profile.session() as session:
             records = await V20PresExRecord.query(
-                session=session,
-                tag_filter=tag_filter,
-                post_filter_positive=post_filter,
+                session=session, tag_filter=tag_filter, post_filter_positive=post_filter
             )
         results = [record.serialize() for record in records]
     except (StorageError, BaseModelError) as err:
@@ -391,8 +379,7 @@ async def present_proof_list(request: web.BaseRequest):
 
 
 @docs(
-    tags=["present-proof v2.0"],
-    summary="Fetch a single presentation exchange record",
+    tags=["present-proof v2.0"], summary="Fetch a single presentation exchange record"
 )
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @response_schema(V20PresExRecordSchema(), 200, description="")
@@ -487,14 +474,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             V20PresFormat.Format.INDY.api
         )
         if indy_pres_request:
-            indy_credentials = (
-                await indy_holder.get_credentials_for_presentation_request_by_referent(
-                    indy_pres_request,
-                    pres_referents,
-                    start,
-                    count,
-                    extra_query,
-                )
+            indy_credentials = await indy_holder.get_credentials_for_presentation_request_by_referent(
+                indy_pres_request, pres_referents, start, count, extra_query
             )
     except IndyHolderError as err:
         if pres_ex_record:
@@ -651,8 +632,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                         records = records + cred_group_vcrecord_list
                 else:
                     search = dif_holder.search_credentials(
-                        proof_types=proof_type,
-                        pd_uri_list=uri_list,
+                        proof_types=proof_type, pd_uri_list=uri_list
                     )
                     records = await search.fetch(count)
                 # Avoiding addition of duplicate records
@@ -665,10 +645,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 cred_value = dif_credential.cred_value
                 cred_value["record_id"] = dif_credential.record_id
                 dif_cred_value_list.append(cred_value)
-    except (
-        StorageNotFoundError,
-        V20PresFormatHandlerError,
-    ) as err:
+    except (StorageNotFoundError, V20PresFormatHandlerError) as err:
         if pres_ex_record:
             async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
@@ -751,10 +728,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=f"Connection {connection_id} not ready")
 
     trace_msg = body.get("trace")
-    pres_proposal_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    pres_proposal_message.assign_trace_decorator(context.settings, trace_msg)
     auto_present = body.get(
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
@@ -829,10 +803,7 @@ async def present_proof_create_request(request: web.BaseRequest):
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
     trace_msg = body.get("trace")
-    pres_request_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    pres_request_message.assign_trace_decorator(context.settings, trace_msg)
 
     pres_manager = V20PresManager(profile)
     pres_ex_record = None
@@ -910,10 +881,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
     trace_msg = body.get("trace")
-    pres_request_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    pres_request_message.assign_trace_decorator(context.settings, trace_msg)
 
     pres_manager = V20PresManager(profile)
     pres_ex_record = None
@@ -1020,10 +988,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
         )
 
     trace_msg = body.get("trace")
-    pres_request_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    pres_request_message.assign_trace_decorator(context.settings, trace_msg)
     await outbound_handler(pres_request_message, connection_id=connection_id)
 
     trace_event(
@@ -1105,9 +1070,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     pres_manager = V20PresManager(profile)
     try:
         pres_ex_record, pres_message = await pres_manager.create_pres(
-            pres_ex_record,
-            request_data=body,
-            comment=comment,
+            pres_ex_record, request_data=body, comment=comment
         )
         result = pres_ex_record.serialize()
     except (
@@ -1129,10 +1092,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
             outbound_handler,
         )
     trace_msg = body.get("trace")
-    pres_message.assign_trace_decorator(
-        context.settings,
-        trace_msg,
-    )
+    pres_message.assign_trace_decorator(context.settings, trace_msg)
     await outbound_handler(pres_message, connection_id=pres_ex_record.connection_id)
 
     trace_event(
@@ -1236,8 +1196,7 @@ async def present_proof_problem_report(request: web.BaseRequest):
         async with context.profile.session() as session:
             pres_ex_record = await V20PresExRecord.retrieve_by_id(session, pres_ex_id)
             await pres_ex_record.save_error_state(
-                session,
-                reason=f"created problem report: {description}",
+                session, reason=f"created problem report: {description}"
             )
         report = problem_report_for_record(pres_ex_record, description)
     except StorageNotFoundError as err:  # other party does not care about meta-problems
@@ -1294,11 +1253,7 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.get(
-                "/present-proof-2.0/records",
-                present_proof_list,
-                allow_head=False,
-            ),
+            web.get("/present-proof-2.0/records", present_proof_list, allow_head=False),
             web.get(
                 "/present-proof-2.0/records/{pres_ex_id}",
                 present_proof_retrieve,
@@ -1309,17 +1264,10 @@ async def register(app: web.Application):
                 present_proof_credentials_list,
                 allow_head=False,
             ),
+            web.post("/present-proof-2.0/send-proposal", present_proof_send_proposal),
+            web.post("/present-proof-2.0/create-request", present_proof_create_request),
             web.post(
-                "/present-proof-2.0/send-proposal",
-                present_proof_send_proposal,
-            ),
-            web.post(
-                "/present-proof-2.0/create-request",
-                present_proof_create_request,
-            ),
-            web.post(
-                "/present-proof-2.0/send-request",
-                present_proof_send_free_request,
+                "/present-proof-2.0/send-request", present_proof_send_free_request
             ),
             web.post(
                 "/present-proof-2.0/records/{pres_ex_id}/send-request",
@@ -1337,10 +1285,7 @@ async def register(app: web.Application):
                 "/present-proof-2.0/records/{pres_ex_id}/problem-report",
                 present_proof_problem_report,
             ),
-            web.delete(
-                "/present-proof-2.0/records/{pres_ex_id}",
-                present_proof_remove,
-            ),
+            web.delete("/present-proof-2.0/records/{pres_ex_id}", present_proof_remove),
         ]
     )
 

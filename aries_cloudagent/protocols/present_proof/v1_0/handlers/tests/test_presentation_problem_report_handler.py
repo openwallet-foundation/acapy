@@ -50,10 +50,8 @@ class TestPresentationProblemReportHandler(AsyncTestCase):
             test_module, "PresentationManager", autospec=True
         ) as mock_pres_mgr:
             request_context.connection_ready = True
-            mock_pres_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError("Disk full")
-                )
+            mock_pres_mgr.return_value.receive_problem_report = async_mock.CoroutineMock(
+                side_effect=test_module.StorageError("Disk full")
             )
             request_context.message = PresentationProblemReport(
                 description={

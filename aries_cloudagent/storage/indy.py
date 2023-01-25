@@ -169,10 +169,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
             raise StorageError(str(x_indy))
 
     async def find_all_records(
-        self,
-        type_filter: str,
-        tag_query: Mapping = None,
-        options: Mapping = None,
+        self, type_filter: str, tag_query: Mapping = None, options: Mapping = None
     ):
         """Retrieve all records matching a particular type filter and tag query."""
         results = []
@@ -185,11 +182,7 @@ class IndySdkStorage(BaseStorage, BaseStorageSearch):
                 break
         return results
 
-    async def delete_all_records(
-        self,
-        type_filter: str,
-        tag_query: Mapping = None,
-    ):
+    async def delete_all_records(self, type_filter: str, tag_query: Mapping = None):
         """Remove all records matching a particular type filter and tag query."""
         async for row in self.search_records(
             type_filter, tag_query, options={"retrieveTags": False}

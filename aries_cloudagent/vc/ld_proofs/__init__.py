@@ -15,14 +15,8 @@ from .suites import (
     _BbsBlsSignature2020 as BbsBlsSignature2020,
     _BbsBlsSignatureProof2020 as BbsBlsSignatureProof2020,
 )
-from .crypto import (
-    _KeyPair as KeyPair,
-    _WalletKeyPair as WalletKeyPair,
-)
-from .document_loader import (
-    DocumentLoader,
-    DocumentLoaderMethod,
-)
+from .crypto import _KeyPair as KeyPair, _WalletKeyPair as WalletKeyPair
+from .document_loader import DocumentLoader, DocumentLoaderMethod
 from .error import LinkedDataProofException
 from .validation_result import DocumentVerificationResult, ProofResult, PurposeResult
 from .check import get_properties_without_context

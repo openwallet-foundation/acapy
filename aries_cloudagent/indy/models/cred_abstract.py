@@ -41,14 +41,10 @@ class IndyKeyCorrectnessProofSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     c = fields.Str(
-        required=True,
-        description="c in key correctness proof",
-        **NUM_STR_WHOLE,
+        required=True, description="c in key correctness proof", **NUM_STR_WHOLE
     )
     xz_cap = fields.Str(
-        required=True,
-        description="xz_cap in key correctness proof",
-        **NUM_STR_WHOLE,
+        required=True, description="xz_cap in key correctness proof", **NUM_STR_WHOLE
     )
     xr_cap = fields.List(
         fields.List(
@@ -109,9 +105,7 @@ class IndyCredAbstractSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     schema_id = fields.Str(
-        required=True,
-        description="Schema identifier",
-        **INDY_SCHEMA_ID,
+        required=True, description="Schema identifier", **INDY_SCHEMA_ID
     )
     cred_def_id = fields.Str(
         required=True,
@@ -119,9 +113,7 @@ class IndyCredAbstractSchema(BaseModelSchema):
         **INDY_CRED_DEF_ID,
     )
     nonce = fields.Str(
-        required=True,
-        description="Nonce in credential abstract",
-        **NUM_STR_WHOLE,
+        required=True, description="Nonce in credential abstract", **NUM_STR_WHOLE
     )
     key_correctness_proof = fields.Nested(
         IndyKeyCorrectnessProofSchema(),

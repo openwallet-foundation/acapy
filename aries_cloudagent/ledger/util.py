@@ -13,7 +13,4 @@ EVENT_LISTENER_PATTERN = re.compile(f"^{DID_EVENT_PREFIX}(.*)?$")
 
 async def notify_register_did_event(profile: Profile, did: str, meta_data: dict):
     """Send notification for a DID post-process event."""
-    await profile.notify(
-        DID_EVENT_PREFIX + did,
-        meta_data,
-    )
+    await profile.notify(DID_EVENT_PREFIX + did, meta_data)

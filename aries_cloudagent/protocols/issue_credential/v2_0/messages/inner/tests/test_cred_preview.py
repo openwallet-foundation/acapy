@@ -4,10 +4,7 @@ from ......didcomm_prefix import DIDCommPrefix
 
 from ....message_types import CRED_20_PREVIEW
 
-from ..cred_preview import (
-    V20CredAttrSpec,
-    V20CredPreview,
-)
+from ..cred_preview import V20CredAttrSpec, V20CredPreview
 
 TEST_PREVIEW = V20CredPreview(
     attributes=(

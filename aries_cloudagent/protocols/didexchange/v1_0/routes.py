@@ -45,9 +45,7 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         **GENERIC_DID,
     )
     alias = fields.Str(
-        description="Alias for connection",
-        required=False,
-        example="Barry",
+        description="Alias for connection", required=False, example="Barry"
     )
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     my_label = fields.Str(
@@ -59,8 +57,7 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         **UUID4,
     )
     use_public_did = fields.Boolean(
-        required=False,
-        description="Use public DID for this connection",
+        required=False, description="Use public DID for this connection"
     )
 
 
@@ -68,14 +65,11 @@ class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive-request-implicit request query string."""
 
     alias = fields.Str(
-        description="Alias for connection",
-        required=False,
-        example="Barry",
+        description="Alias for connection", required=False, example="Barry"
     )
     my_endpoint = fields.Str(description="My URL endpoint", required=False, **ENDPOINT)
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
-        required=False,
+        description="Auto-accept connection (defaults to configuration)", required=False
     )
     mediation_id = fields.Str(
         required=False,
@@ -117,10 +111,7 @@ class DIDXConnIdRefIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-@docs(
-    tags=["did-exchange"],
-    summary="Accept a stored connection invitation",
-)
+@docs(tags=["did-exchange"], summary="Accept a stored connection invitation")
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptInvitationQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
@@ -257,10 +248,7 @@ async def didx_receive_request_implicit(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["did-exchange"],
-    summary="Accept a stored connection request",
-)
+@docs(tags=["did-exchange"], summary="Accept a stored connection request")
 @match_info_schema(DIDXConnIdMatchInfoSchema())
 @querystring_schema(DIDXAcceptRequestQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
@@ -287,9 +275,7 @@ async def didx_accept_request(request: web.BaseRequest):
         async with profile.session() as session:
             conn_rec = await ConnRecord.retrieve_by_id(session, connection_id)
         response = await didx_mgr.create_response(
-            conn_rec=conn_rec,
-            my_endpoint=my_endpoint,
-            mediation_id=mediation_id,
+            conn_rec=conn_rec, my_endpoint=my_endpoint, mediation_id=mediation_id
         )
         result = conn_rec.serialize()
     except StorageNotFoundError as err:
@@ -307,8 +293,7 @@ async def register(app: web.Application):
     app.add_routes(
         [
             web.post(
-                "/didexchange/{conn_id}/accept-invitation",
-                didx_accept_invitation,
+                "/didexchange/{conn_id}/accept-invitation", didx_accept_invitation
             ),
             web.post("/didexchange/create-request", didx_create_request_implicit),
             web.post("/didexchange/receive-request", didx_receive_request_implicit),

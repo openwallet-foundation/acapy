@@ -11,10 +11,7 @@ from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 from ...storage.error import StorageNotFoundError
 
-from ..error import (
-    RevocationNotSupportedError,
-    RevocationRegistryBadSizeError,
-)
+from ..error import RevocationNotSupportedError, RevocationRegistryBadSizeError
 from ..indy import IndyRevocation
 from ..models.issuer_rev_reg_record import DEFAULT_REGISTRY_SIZE, IssuerRevRegRecord
 from ..models.revocation_registry import RevocationRegistry
@@ -94,10 +91,7 @@ class TestIndyRevocation(AsyncTestCase):
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
 
         with self.assertRaises(RevocationRegistryBadSizeError) as x_revo:
-            await self.revoc.init_issuer_registry(
-                CRED_DEF_ID,
-                max_cred_num=1,
-            )
+            await self.revoc.init_issuer_registry(CRED_DEF_ID, max_cred_num=1)
             assert "Bad revocation registry size" in x_revo.message
 
     async def test_get_active_issuer_rev_reg_record(self):

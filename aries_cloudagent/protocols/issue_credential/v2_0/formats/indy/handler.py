@@ -207,8 +207,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
-                cred_def_id,
-                txn_record_type=GET_CRED_DEF,
+                cred_def_id, txn_record_type=GET_CRED_DEF
             )
         )[1]
         async with ledger:
@@ -272,8 +271,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
-                    cred_def_id,
-                    txn_record_type=GET_CRED_DEF,
+                    cred_def_id, txn_record_type=GET_CRED_DEF
                 )
             )[1]
             async with ledger:
@@ -345,8 +343,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
-                schema_id,
-                txn_record_type=GET_SCHEMA,
+                schema_id, txn_record_type=GET_SCHEMA
             )
         )[1]
         async with ledger:
@@ -451,8 +448,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
         ledger = (
             await ledger_exec_inst.get_ledger_for_identifier(
-                cred["cred_def_id"],
-                txn_record_type=GET_CRED_DEF,
+                cred["cred_def_id"], txn_record_type=GET_CRED_DEF
             )
         )[1]
         async with ledger:

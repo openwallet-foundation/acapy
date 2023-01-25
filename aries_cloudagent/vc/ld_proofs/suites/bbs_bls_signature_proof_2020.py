@@ -39,11 +39,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
 
     signature_type = "BbsBlsSignatureProof2020"
 
-    def __init__(
-        self,
-        *,
-        key_pair: KeyPair,
-    ):
+    def __init__(self, *, key_pair: KeyPair):
         """Create new BbsBlsSignatureProof2020 instance.
 
         Args:
@@ -104,10 +100,8 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         # Transform any blank node identifiers for the input
         # document statements into actual node identifiers
         # e.g _:c14n0 => urn:bnid:_:c14n0
-        transformed_input_document_statements = (
-            self._transform_blank_node_ids_into_placeholder_node_ids(
-                document_statements
-            )
+        transformed_input_document_statements = self._transform_blank_node_ids_into_placeholder_node_ids(
+            document_statements
         )
 
         # Transform the resulting RDF statements back into JSON-LD
@@ -245,10 +239,8 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
 
             # Transform the blank node identifier placeholders for the document statements
             # back into actual blank node identifiers
-            transformed_document_statements = (
-                self._transform_placeholder_node_ids_into_blank_node_ids(
-                    document_statements
-                )
+            transformed_document_statements = self._transform_placeholder_node_ids_into_blank_node_ids(
+                document_statements
             )
 
             # Combine all the statements to be verified
@@ -318,8 +310,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         return self._canonize(input=proof, document_loader=document_loader)
 
     def _transform_blank_node_ids_into_placeholder_node_ids(
-        self,
-        statements: List[str],
+        self, statements: List[str]
     ) -> List[str]:
         """Transform blank node identifiers for the input into actual node identifiers.
 
@@ -341,8 +332,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         return transformed_statements
 
     def _transform_placeholder_node_ids_into_blank_node_ids(
-        self,
-        statements: List[str],
+        self, statements: List[str]
     ) -> List[str]:
         """Transform the blank node placeholder identifiers back into actual blank nodes.
 

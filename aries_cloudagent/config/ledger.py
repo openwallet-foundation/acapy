@@ -242,10 +242,7 @@ async def select_aml_tty(taa_info, provision: bool = False) -> Optional[str]:
 
 
 async def accept_taa(
-    ledger: BaseLedger,
-    profile: Profile,
-    taa_info,
-    provision: bool = False,
+    ledger: BaseLedger, profile: Profile, taa_info, provision: bool = False
 ) -> bool:
     """Perform TAA acceptance."""
 

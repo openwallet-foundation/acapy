@@ -30,9 +30,7 @@ from ....messages.cred_format import V20CredFormat
 from ....messages.cred_issue import V20CredIssue
 from ....messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
 from ....messages.cred_offer import V20CredOffer
-from ....messages.cred_request import (
-    V20CredRequest,
-)
+from ....messages.cred_request import V20CredRequest
 from ....models.cred_ex_record import V20CredExRecord
 from ....message_types import (
     ATTACHMENT_FORMAT,
@@ -120,18 +118,9 @@ INDY_OFFER = {
         "c": "123467890",
         "xz_cap": "12345678901234567890",
         "xr_cap": [
-            [
-                "remainder",
-                "1234567890",
-            ],
-            [
-                "number",
-                "12345678901234",
-            ],
-            [
-                "master_secret",
-                "12345678901234",
-            ],
+            ["remainder", "1234567890"],
+            ["number", "12345678901234"],
+            ["master_secret", "12345678901234"],
         ],
     },
     "nonce": "1234567890",
@@ -278,14 +267,10 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         cred_ex_id = "dummy"
         details_indy = [
             V20CredExRecordIndy(
-                cred_ex_id=cred_ex_id,
-                rev_reg_id="rr-id",
-                cred_rev_id="0",
+                cred_ex_id=cred_ex_id, rev_reg_id="rr-id", cred_rev_id="0"
             ),
             V20CredExRecordIndy(
-                cred_ex_id=cred_ex_id,
-                rev_reg_id="rr-id",
-                cred_rev_id="1",
+                cred_ex_id=cred_ex_id, rev_reg_id="rr-id", cred_rev_id="1"
             ),
         ]
         await details_indy[0].save(self.session)
@@ -733,9 +718,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         ) as revoc:
             revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
                 return_value=(
-                    async_mock.MagicMock(  # active_rev_reg_rec
-                        revoc_reg_id=REV_REG_ID,
-                    ),
+                    async_mock.MagicMock(revoc_reg_id=REV_REG_ID),  # active_rev_reg_rec
                     async_mock.MagicMock(  # rev_reg
                         tails_local_path="dummy-path",
                         get_or_fetch_local_tails_path=(async_mock.CoroutineMock()),
@@ -749,12 +732,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             )
 
             self.issuer.create_credential.assert_called_once_with(
-                SCHEMA,
-                INDY_OFFER,
-                INDY_CRED_REQ,
-                attr_values,
-                REV_REG_ID,
-                "dummy-path",
+                SCHEMA, INDY_OFFER, INDY_CRED_REQ, attr_values, REV_REG_ID, "dummy-path"
             )
 
             # assert identifier match
@@ -832,12 +810,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             )
 
             self.issuer.create_credential.assert_called_once_with(
-                SCHEMA,
-                INDY_OFFER,
-                INDY_CRED_REQ,
-                attr_values,
-                None,
-                None,
+                SCHEMA, INDY_OFFER, INDY_CRED_REQ, attr_values, None, None
             )
 
         # assert identifier match
@@ -1052,8 +1025,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
                 return_value=(
                     async_mock.MagicMock(  # active_rev_reg_rec
-                        revoc_reg_id=REV_REG_ID,
-                        set_state=async_mock.CoroutineMock(),
+                        revoc_reg_id=REV_REG_ID, set_state=async_mock.CoroutineMock()
                     ),
                     async_mock.MagicMock(  # rev_reg
                         tails_local_path="dummy-path",
@@ -1177,8 +1149,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                 )
             )
             mock_get_detail_record.return_value = async_mock.MagicMock(
-                cred_request_metadata=cred_req_meta,
-                save=async_mock.CoroutineMock(),
+                cred_request_metadata=cred_req_meta, save=async_mock.CoroutineMock()
             )
 
             self.ledger.get_credential_definition.reset_mock()
@@ -1272,8 +1243,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             test_module.RevocationRegistry, "from_definition", async_mock.MagicMock()
         ) as mock_rev_reg:
             mock_get_detail_record.return_value = async_mock.MagicMock(
-                cred_request_metadata=cred_req_meta,
-                save=async_mock.CoroutineMock(),
+                cred_request_metadata=cred_req_meta, save=async_mock.CoroutineMock()
             )
             mock_rev_reg.return_value = async_mock.MagicMock(
                 get_or_fetch_local_tails_path=async_mock.CoroutineMock()

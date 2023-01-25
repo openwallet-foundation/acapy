@@ -74,8 +74,7 @@ class TestMultitenantManager(AsyncTestCase):
 
         for idx, wallet_record_settings in enumerate(all_wallet_record_settings):
             wallet_record = WalletRecord(
-                wallet_id=f"test.{idx}",
-                settings=wallet_record_settings,
+                wallet_id=f"test.{idx}", settings=wallet_record_settings
             )
 
             with async_mock.patch(
@@ -93,10 +92,7 @@ class TestMultitenantManager(AsyncTestCase):
                 assert profile.settings.get("extra_settings") == "extra_settings"
 
     async def test_get_wallet_profile_settings_reset(self):
-        wallet_record = WalletRecord(
-            wallet_id="test",
-            settings={},
-        )
+        wallet_record = WalletRecord(wallet_id="test", settings={})
 
         with async_mock.patch(
             "aries_cloudagent.multitenant.manager.wallet_config"
@@ -208,9 +204,7 @@ class TestMultitenantManager(AsyncTestCase):
             assert wallet_profile.settings.get("wallet.dispatch_type") == "default"
 
     async def test_remove_wallet_profile(self):
-        test_profile = InMemoryProfile.test_profile(
-            settings={"wallet.id": "test"},
-        )
+        test_profile = InMemoryProfile.test_profile(settings={"wallet.id": "test"})
         self.manager._profiles.put("test", test_profile)
 
         with async_mock.patch.object(InMemoryProfile, "remove") as profile_remove:

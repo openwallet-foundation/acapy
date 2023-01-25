@@ -45,8 +45,7 @@ class TestCredentialOffer(TestCase):
         credential_preview=preview,
         offers_attach=[
             AttachDecorator.data_base64(
-                mapping=indy_offer,
-                ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                mapping=indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER]
             )
         ],
     )
@@ -58,8 +57,7 @@ class TestCredentialOffer(TestCase):
             credential_preview=self.preview,
             offers_attach=[
                 AttachDecorator.data_base64(
-                    mapping=self.indy_offer,
-                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    mapping=self.indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER]
                 )
             ],
         )
@@ -74,8 +72,7 @@ class TestCredentialOffer(TestCase):
             credential_preview=self.preview,
             offers_attach=[
                 AttachDecorator.data_base64(
-                    mapping=self.indy_offer,
-                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    mapping=self.indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER]
                 )
             ],
         )
@@ -108,8 +105,7 @@ class TestCredentialOffer(TestCase):
             credential_preview=self.preview,
             offers_attach=[
                 AttachDecorator.data_base64(
-                    mapping=self.indy_offer,
-                    ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER],
+                    mapping=self.indy_offer, ident=ATTACH_DECO_IDS[CREDENTIAL_OFFER]
                 )
             ],
         )

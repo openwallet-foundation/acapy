@@ -51,9 +51,7 @@ class TestWalletRecord(AsyncTestCase):
         assert recs[1].is_managed
 
     async def test_requires_external_key_in_memory(self):
-        wallet_record = WalletRecord(
-            settings={"wallet.type": "in_memory"},
-        )
+        wallet_record = WalletRecord(settings={"wallet.type": "in_memory"})
 
         # should be false for in_memory wallets
         assert wallet_record.requires_external_key is False
@@ -79,20 +77,14 @@ class TestWalletRecord(AsyncTestCase):
         assert wallet_record.requires_external_key is True
 
     async def test_update_settings(self):
-        wallet_record = WalletRecord(
-            settings={"wallet.type": "in_memory"},
-        )
-        settings = {
-            "wallet.type": "indy",
-        }
+        wallet_record = WalletRecord(settings={"wallet.type": "in_memory"})
+        settings = {"wallet.type": "indy"}
         wallet_record.update_settings(settings)
 
         assert wallet_record.settings.get("wallet.type") == "indy"
 
     async def test_update_settings(self):
         wallet_record = WalletRecord()
-        settings = {
-            "wallet.id": "my-wallet-id",
-        }
+        settings = {"wallet.id": "my-wallet-id"}
         with self.assertRaises(WalletSettingsError):
             wallet_record.update_settings(settings)

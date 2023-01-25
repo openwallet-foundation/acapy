@@ -262,11 +262,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_local_metadata(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            SOV,
-            ED25519,
-            self.test_seed,
-            self.test_sov_did,
-            self.test_metadata,
+            SOV, ED25519, self.test_seed, self.test_sov_did, self.test_metadata
         )
         assert info.did == self.test_sov_did
         assert info.verkey == self.test_ed25519_verkey
@@ -292,11 +288,7 @@ class TestInMemoryWallet:
     @pytest.mark.ursa_bbs_signatures
     async def test_local_metadata_bbs(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            KEY,
-            BLS12381G2,
-            self.test_seed,
-            None,
-            self.test_metadata,
+            KEY, BLS12381G2, self.test_seed, None, self.test_metadata
         )
         assert info.did == self.test_key_bls12381g2_did
         assert info.verkey == self.test_bls12381g2_verkey
@@ -312,30 +304,20 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_create_public_did(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            SOV,
-            ED25519,
-            self.test_seed,
-            self.test_sov_did,
-            self.test_metadata,
+            SOV, ED25519, self.test_seed, self.test_sov_did, self.test_metadata
         )
         assert not info.metadata.get("posted")
 
         posted = await wallet.get_posted_dids()
         assert not posted
 
-        info_public = await wallet.create_public_did(
-            SOV,
-            ED25519,
-        )
+        info_public = await wallet.create_public_did(SOV, ED25519)
         assert info_public.metadata.get("posted")
         posted = await wallet.get_posted_dids()
         assert posted[0].did == info_public.did
 
         # test replace
-        info_replace = await wallet.create_public_did(
-            SOV,
-            ED25519,
-        )
+        info_replace = await wallet.create_public_did(SOV, ED25519)
         assert info_replace.metadata.get("posted")
         info_check = await wallet.get_local_did(info_public.did)
         assert info_check.metadata.get("posted")
@@ -349,10 +331,7 @@ class TestInMemoryWallet:
     @pytest.mark.asyncio
     async def test_create_public_did_x_not_sov(self, wallet: InMemoryWallet):
         with pytest.raises(WalletError) as context:
-            await wallet.create_public_did(
-                KEY,
-                ED25519,
-            )
+            await wallet.create_public_did(KEY, ED25519)
         assert "Setting public DID is only allowed for did:sov DIDs" in str(
             context.value
         )
@@ -362,20 +341,13 @@ class TestInMemoryWallet:
         self, wallet: InMemoryWallet
     ):
         with pytest.raises(WalletError) as context:
-            await wallet.create_public_did(
-                SOV,
-                BLS12381G2,
-            )
+            await wallet.create_public_did(SOV, BLS12381G2)
         assert "Invalid key type" in str(context.value)
 
     @pytest.mark.asyncio
     async def test_set_public_did(self, wallet: InMemoryWallet):
         info = await wallet.create_local_did(
-            SOV,
-            ED25519,
-            self.test_seed,
-            self.test_sov_did,
-            self.test_metadata,
+            SOV, ED25519, self.test_seed, self.test_sov_did, self.test_metadata
         )
         assert not info.metadata.get("posted")
 
@@ -402,10 +374,7 @@ class TestInMemoryWallet:
 
     @pytest.mark.asyncio
     async def test_set_public_did_x_not_sov(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(
-            KEY,
-            ED25519,
-        )
+        info = await wallet.create_local_did(KEY, ED25519)
         with pytest.raises(WalletError) as context:
             await wallet.set_public_did(info.did)
         assert "Setting public DID is only allowed for did:sov DIDs" in str(
@@ -559,16 +528,9 @@ class TestInMemoryWallet:
 
     @pytest.mark.asyncio
     async def test_set_did_endpoint_x_not_sov(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(
-            KEY,
-            ED25519,
-        )
+        info = await wallet.create_local_did(KEY, ED25519)
         with pytest.raises(WalletError) as context:
-            await wallet.set_did_endpoint(
-                info.did,
-                "https://google.com",
-                {},
-            )
+            await wallet.set_did_endpoint(info.did, "https://google.com", {})
         assert "Setting DID endpoint is only allowed for did:sov DIDs" in str(
             context.value
         )

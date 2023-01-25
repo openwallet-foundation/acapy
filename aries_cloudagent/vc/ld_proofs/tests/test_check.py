@@ -52,9 +52,7 @@ INVALID_INPUT_DOC = {
             "gender": "Male",
             "givenName": "JOHN",
         },
-        {
-            "some_random": "value",
-        },
+        {"some_random": "value"},
     ],
     "expirationDate": "2029-12-03T12:19:52Z",
     "issuanceDate": "2019-12-03T12:19:52Z",

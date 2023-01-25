@@ -11,11 +11,7 @@ from .base import (
     BaseStorageSearchSession,
     validate_record,
 )
-from .error import (
-    StorageDuplicateError,
-    StorageNotFoundError,
-    StorageSearchError,
-)
+from .error import StorageDuplicateError, StorageNotFoundError, StorageSearchError
 from .record import StorageRecord
 
 
@@ -108,10 +104,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
         del self.profile.records[record.id]
 
     async def find_all_records(
-        self,
-        type_filter: str,
-        tag_query: Mapping = None,
-        options: Mapping = None,
+        self, type_filter: str, tag_query: Mapping = None, options: Mapping = None
     ):
         """Retrieve all records matching a particular type filter and tag query."""
         results = []
@@ -120,11 +113,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
                 results.append(record)
         return results
 
-    async def delete_all_records(
-        self,
-        type_filter: str,
-        tag_query: Mapping = None,
-    ):
+    async def delete_all_records(self, type_filter: str, tag_query: Mapping = None):
         """Remove all records matching a particular type filter and tag query."""
         ids = []
         for record_id, record in self.profile.records.items():

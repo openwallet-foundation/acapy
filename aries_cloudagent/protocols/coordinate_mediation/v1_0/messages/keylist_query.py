@@ -25,11 +25,7 @@ class KeylistQuery(AgentMessage):
         schema_class = "KeylistQuerySchema"
 
     def __init__(
-        self,
-        *,
-        filter: dict = None,
-        paginate: KeylistQueryPaginate = None,
-        **kwargs,
+        self, *, filter: dict = None, paginate: KeylistQueryPaginate = None, **kwargs
     ):
         """
         Initialize keylist query object.
@@ -52,9 +48,7 @@ class KeylistQuerySchema(AgentMessageSchema):
         model_class = KeylistQuery
 
     filter = fields.Dict(
-        required=False,
-        description="Query dictionary object",
-        example={"filter": {}},
+        required=False, description="Query dictionary object", example={"filter": {}}
     )
     paginate = fields.Nested(
         KeylistQueryPaginateSchema(), required=False, description="Pagination info"

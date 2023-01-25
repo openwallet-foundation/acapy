@@ -136,8 +136,7 @@ class CreateCredDefTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
-        required=False,
+        description="Create Transaction For Endorser's signature", required=False
     )
 
 
@@ -190,8 +189,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
         found = await storage.find_all_records(
-            type_filter=CRED_DEF_SENT_RECORD_TYPE,
-            tag_query=tag_query,
+            type_filter=CRED_DEF_SENT_RECORD_TYPE, tag_query=tag_query
         )
         if 0 < len(found):
             # need to check the 'tag' value
@@ -277,9 +275,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             "tag": tag,
             "rev_reg_size": rev_reg_size,
         },
-        "processing": {
-            "create_pending_rev_reg": True,
-        },
+        "processing": {"create_pending_rev_reg": True},
     }
 
     if not create_transaction_for_endorser:
@@ -395,8 +391,7 @@ async def credential_definitions_get_credential_definition(request: web.BaseRequ
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-        cred_def_id,
-        txn_record_type=GET_CRED_DEF,
+        cred_def_id, txn_record_type=GET_CRED_DEF
     )
     if not ledger:
         reason = "No ledger available"
@@ -444,8 +439,7 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-        cred_def_id,
-        txn_record_type=GET_CRED_DEF,
+        cred_def_id, txn_record_type=GET_CRED_DEF
     )
     if not ledger:
         reason = "No ledger available"
@@ -464,9 +458,7 @@ async def credential_definitions_fix_cred_def_wallet_record(request: web.BaseReq
         # check if the record exists, if not add it
         found = await storage.find_all_records(
             type_filter=CRED_DEF_SENT_RECORD_TYPE,
-            tag_query={
-                "cred_def_id": cred_def_id,
-            },
+            tag_query={"cred_def_id": cred_def_id},
         )
         if 0 == len(found):
             await add_cred_def_non_secrets_record(

@@ -27,10 +27,7 @@ INDY_PROOF_REQ = {
     "version": "1.0",
     "nonce": "12345",
     "requested_attributes": {
-        "0_player_uuid": {
-            "name": "player",
-            "restrictions": [{"cred_def_id": CD_ID}],
-        },
+        "0_player_uuid": {"name": "player", "restrictions": [{"cred_def_id": CD_ID}]},
         "0_screencapture_uuid": {
             "name": "screenCapture",
             "restrictions": [{"cred_def_id": CD_ID}],
@@ -200,19 +197,11 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                 },
                 "requested_predicates": {},
@@ -223,8 +212,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
             comment="Hello World", presentation_proposal=PRES_PREVIEW
         )
         px_rec_instance = test_module.V10PresentationExchange(
-            presentation_proposal_dict=presentation_proposal,
-            auto_present=True,
+            presentation_proposal_dict=presentation_proposal, auto_present=True
         )
 
         mock_oob_processor = async_mock.MagicMock(
@@ -287,19 +275,11 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                 },
                 "requested_predicates": {},
@@ -371,19 +351,11 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                 },
                 "requested_predicates": {},
@@ -461,11 +433,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                         "name": "score",
                         "p_type": ">=",
                         "p_value": 1000000,
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     }
                 },
             }
@@ -533,11 +501,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                         "name": "score",
                         "p_type": ">=",
                         "p_value": 1000000,
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     }
                 },
             }
@@ -611,11 +575,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                         "name": "score",
                         "p_type": ">=",
                         "p_value": 1000000,
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     }
                 },
             }
@@ -689,19 +649,11 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                     "1_icon_uuid": {
                         "name": "icon",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     },
                 },
                 "requested_predicates": {},
@@ -821,11 +773,7 @@ class TestPresentationRequestHandler(AsyncTestCase):
                 "requested_attributes": {
                     "0_favourite_uuid": {
                         "name": "favourite",
-                        "restrictions": [
-                            {
-                                "cred_def_id": CD_ID,
-                            }
-                        ],
+                        "restrictions": [{"cred_def_id": CD_ID}],
                     }
                 },
                 "requested_predicates": {},

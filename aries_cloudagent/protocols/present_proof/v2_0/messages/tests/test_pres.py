@@ -1794,10 +1794,7 @@ PRES = V20Pres(
         )
     ],
     presentations_attach=[
-        AttachDecorator.data_base64(
-            mapping=INDY_PROOF,
-            ident="indy",
-        )
+        AttachDecorator.data_base64(mapping=INDY_PROOF, ident="indy")
     ],
 )
 
@@ -1809,12 +1806,7 @@ PRES_DIF = V20Pres(
             format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
         )
     ],
-    presentations_attach=[
-        AttachDecorator.data_json(
-            mapping=DIF_PROOF,
-            ident="dif",
-        )
-    ],
+    presentations_attach=[AttachDecorator.data_json(mapping=DIF_PROOF, ident="dif")],
 )
 
 
@@ -1870,10 +1862,7 @@ class TestV20Pres(TestCase):
             V20Pres.deserialize(pres_dict)
 
         pres_obj.formats.append(  # unknown format: no validation
-            V20PresFormat(
-                attach_id="not_indy",
-                format_="not_indy",
-            )
+            V20PresFormat(attach_id="not_indy", format_="not_indy")
         )
         pres_dict = pres_obj.serialize()
         pres_dict["presentations~attach"].append(

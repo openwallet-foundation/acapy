@@ -52,10 +52,7 @@ class TestDIDXRequest(AsyncTestCase, TestConfig):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet
-        self.did_info = await self.wallet.create_local_did(
-            method=SOV,
-            key_type=ED25519,
-        )
+        self.did_info = await self.wallet.create_local_did(method=SOV, key_type=ED25519)
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)
@@ -111,10 +108,7 @@ class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
         self.session = InMemoryProfile.test_session()
         self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.wallet
-        self.did_info = await self.wallet.create_local_did(
-            method=SOV,
-            key_type=ED25519,
-        )
+        self.did_info = await self.wallet.create_local_did(method=SOV, key_type=ED25519)
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
         await did_doc_attach.data.sign(self.did_info.verkey, self.wallet)

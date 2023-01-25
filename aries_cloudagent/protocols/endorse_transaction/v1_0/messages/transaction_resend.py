@@ -23,13 +23,7 @@ class TransactionResend(AgentMessage):
         message_type = TRANSACTION_RESEND
         schema_class = "TransactionResendSchema"
 
-    def __init__(
-        self,
-        *,
-        state: str = None,
-        thread_id: str = None,
-        **kwargs,
-    ):
+    def __init__(self, *, state: str = None, thread_id: str = None, **kwargs):
         """
         Initialize a transaction resend object.
 

@@ -323,11 +323,7 @@ class IndySdkHolder(IndyHolder):
 
         if rev_reg_id:
             cred_rev_id = int(cred["cred_rev_id"])
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_reg_id,
-                fro,
-                to,
-            )
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_reg_id, fro, to)
 
             return cred_rev_id in rev_reg_delta["value"].get("revoked", [])
         else:

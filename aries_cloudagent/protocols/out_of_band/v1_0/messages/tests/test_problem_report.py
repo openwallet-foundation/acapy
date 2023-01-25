@@ -63,10 +63,7 @@ class TestOOBProblemReportMessage(TestCase):
     def test_validate_and_logger(self):
         """Capture ValidationError and Logs."""
         data = OOBProblemReport(
-            description={
-                "en": "Insufficient credit",
-                "code": "invalid_code",
-            },
+            description={"en": "Insufficient credit", "code": "invalid_code"}
         )
         data.assign_thread_id(thid="test_thid", pthid="test_pthid")
         data = data.serialize()

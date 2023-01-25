@@ -249,12 +249,7 @@ INDY_PROOF = {
         "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
     },
     "identifiers": [
-        {
-            "schema_id": S_ID,
-            "cred_def_id": CD_ID,
-            "rev_reg_id": RR_ID,
-            "timestamp": NOW,
-        }
+        {"schema_id": S_ID, "cred_def_id": CD_ID, "rev_reg_id": RR_ID, "timestamp": NOW}
     ],
 }
 INDY_PROOF_NAMES = {
@@ -356,28 +351,20 @@ INDY_PROOF_NAMES = {
             "0_player_uuid": {
                 "sub_proof_index": 0,
                 "values": {
-                    "player": {
-                        "raw": "Richie Knucklez",
-                        "encoded": "516439982",
-                    },
+                    "player": {"raw": "Richie Knucklez", "encoded": "516439982"},
                     "screenCapture": {
                         "raw": "aW1hZ2luZSBhIHNjcmVlbiBjYXB0dXJl",
                         "encoded": "4434954949",
                     },
                 },
-            },
+            }
         },
         "self_attested_attrs": {},
         "unrevealed_attrs": {},
         "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
     },
     "identifiers": [
-        {
-            "schema_id": S_ID,
-            "cred_def_id": CD_ID,
-            "rev_reg_id": RR_ID,
-            "timestamp": NOW,
-        }
+        {"schema_id": S_ID, "cred_def_id": CD_ID, "rev_reg_id": RR_ID, "timestamp": NOW}
     ],
 }
 
@@ -496,10 +483,7 @@ class TestV20PresManager(AsyncTestCase):
             )
         ] * 2
         diff = [
-            V20PresExRecord(
-                pres_ex_id="dummy-1",
-                role=V20PresExRecord.ROLE_PROVER,
-            ),
+            V20PresExRecord(pres_ex_id="dummy-1", role=V20PresExRecord.ROLE_PROVER),
             V20PresExRecord(
                 pres_ex_id="dummy-0",
                 thread_id="thread-1",
@@ -551,8 +535,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
             px_rec = await self.manager.receive_pres_proposal(
-                proposal,
-                connection_record,
+                proposal, connection_record
             )
             save_ex.assert_called_once()
 
@@ -575,8 +558,7 @@ class TestV20PresManager(AsyncTestCase):
             ],
         )
         px_rec = V20PresExRecord(
-            pres_proposal=proposal.serialize(),
-            role=V20PresExRecord.ROLE_VERIFIER,
+            pres_proposal=proposal.serialize(), role=V20PresExRecord.ROLE_VERIFIER
         )
         px_rec.save = async_mock.CoroutineMock()
         request_data = {
@@ -585,9 +567,7 @@ class TestV20PresManager(AsyncTestCase):
             "nonce": PROOF_REQ_NONCE,
         }
         (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
-            pres_ex_record=px_rec,
-            request_data=request_data,
-            comment=comment,
+            pres_ex_record=px_rec, request_data=request_data, comment=comment
         )
         assert ret_px_rec is px_rec
         px_rec.save.assert_called_once()
@@ -609,48 +589,36 @@ class TestV20PresManager(AsyncTestCase):
             ],
         )
         px_rec = V20PresExRecord(
-            pres_proposal=proposal.serialize(),
-            role=V20PresExRecord.ROLE_VERIFIER,
+            pres_proposal=proposal.serialize(), role=V20PresExRecord.ROLE_VERIFIER
         )
         px_rec.save = async_mock.CoroutineMock()
         (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
-            pres_ex_record=px_rec,
-            comment=comment,
+            pres_ex_record=px_rec, comment=comment
         )
         assert ret_px_rec is px_rec
         px_rec.save.assert_called_once()
 
     async def test_create_bound_request_no_format(self):
         px_rec = V20PresExRecord(
-            pres_proposal=V20PresProposal(
-                formats=[],
-                proposals_attach=[],
-            ).serialize(),
+            pres_proposal=V20PresProposal(formats=[], proposals_attach=[]).serialize(),
             role=V20PresExRecord.ROLE_VERIFIER,
         )
         with self.assertRaises(V20PresManagerError) as context:
             await self.manager.create_bound_request(
-                pres_ex_record=px_rec,
-                request_data={},
-                comment="test",
+                pres_ex_record=px_rec, request_data={}, comment="test"
             )
         assert "No supported formats" in str(context.exception)
 
     async def test_create_pres_no_format(self):
         px_rec = V20PresExRecord(
-            pres_proposal=V20PresProposal(
-                formats=[],
-                proposals_attach=[],
-            ).serialize(),
+            pres_proposal=V20PresProposal(formats=[], proposals_attach=[]).serialize(),
             pres_request=V20PresRequest(
                 formats=[], request_presentations_attach=[]
             ).serialize(),
         )
         with self.assertRaises(V20PresManagerError) as context:
             await self.manager.create_pres(
-                pres_ex_record=px_rec,
-                request_data={},
-                comment="test",
+                pres_ex_record=px_rec, request_data={}, comment="test"
             )
         assert "No supported formats" in str(context.exception)
 
@@ -668,7 +636,7 @@ class TestV20PresManager(AsyncTestCase):
                 request_presentations_attach=[
                     AttachDecorator.data_json(DIF_PRES_REQ, ident="dif")
                 ],
-            ).serialize(),
+            ).serialize()
         )
         with async_mock.patch.object(
             DIFPresFormatHandler, "create_pres", autospec=True
@@ -676,9 +644,7 @@ class TestV20PresManager(AsyncTestCase):
             mock_create_pres.return_value = None
             with self.assertRaises(V20PresManagerError) as context:
                 await self.manager.create_pres(
-                    pres_ex_record=px_rec,
-                    request_data={},
-                    comment="test",
+                    pres_ex_record=px_rec, request_data={}, comment="test"
                 )
             assert "Unable to create presentation. ProblemReport message sent" in str(
                 context.exception
@@ -694,10 +660,7 @@ class TestV20PresManager(AsyncTestCase):
                 )
             ],
             presentations_attach=[
-                AttachDecorator.data_json(
-                    mapping=DIF_PRES,
-                    ident="dif",
-                )
+                AttachDecorator.data_json(mapping=DIF_PRES, ident="dif")
             ],
         )
         pres_req = V20PresRequest(
@@ -714,8 +677,7 @@ class TestV20PresManager(AsyncTestCase):
             ],
         )
         px_rec = V20PresExRecord(
-            pres_request=pres_req.serialize(),
-            pres=pres_x.serialize(),
+            pres_request=pres_req.serialize(), pres=pres_x.serialize()
         )
         with async_mock.patch.object(
             DIFPresFormatHandler, "receive_pres", autospec=True
@@ -1520,9 +1482,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         pres.assign_thread_id("thread-id")
 
-        px_rec_dummy = V20PresExRecord(
-            pres_request=pres_request.serialize(),
-        )
+        px_rec_dummy = V20PresExRecord(pres_request=pres_request.serialize())
 
         # cover by_format property
         by_format = px_rec_dummy.by_format
@@ -1596,9 +1556,7 @@ class TestV20PresManager(AsyncTestCase):
         )
         pres.assign_thread_id("thread-id")
 
-        px_rec_dummy = V20PresExRecord(
-            pres_request=pres_request.serialize(),
-        )
+        px_rec_dummy = V20PresExRecord(pres_request=pres_request.serialize())
 
         # cover by_format property
         by_format = px_rec_dummy.by_format
@@ -2114,10 +2072,7 @@ class TestV20PresManager(AsyncTestCase):
                 AttachDecorator.data_base64(INDY_PROOF, ident="indy")
             ],
         )
-        px_rec_in = V20PresExRecord(
-            pres_request=pres_request,
-            pres=pres,
-        )
+        px_rec_in = V20PresExRecord(pres_request=pres_request, pres=pres)
         self.profile.context.injector.bind_instance(
             BaseMultitenantManager,
             async_mock.MagicMock(MultitenantManager, autospec=True),
@@ -2170,10 +2125,7 @@ class TestV20PresManager(AsyncTestCase):
                 AttachDecorator.data_json(DIF_PRES, ident="dif"),
             ],
         )
-        px_rec_in = V20PresExRecord(
-            pres_request=pres_request,
-            pres=pres,
-        )
+        px_rec_in = V20PresExRecord(pres_request=pres_request, pres=pres)
 
         self.profile.context.injector.bind_instance(
             DocumentLoader, custom_document_loader
@@ -2304,9 +2256,7 @@ class TestV20PresManager(AsyncTestCase):
         with async_mock.patch.object(
             V20PresExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
-            V20PresExRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
+            V20PresExRecord, "retrieve_by_tag_filter", async_mock.CoroutineMock()
         ) as retrieve_ex, async_mock.patch.object(
             self.profile,
             "session",
@@ -2344,9 +2294,7 @@ class TestV20PresManager(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            V20PresExRecord,
-            "retrieve_by_tag_filter",
-            async_mock.CoroutineMock(),
+            V20PresExRecord, "retrieve_by_tag_filter", async_mock.CoroutineMock()
         ) as retrieve_ex:
             retrieve_ex.side_effect = StorageNotFoundError("No such record")
 

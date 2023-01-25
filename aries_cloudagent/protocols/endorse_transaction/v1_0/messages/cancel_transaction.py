@@ -23,13 +23,7 @@ class CancelTransaction(AgentMessage):
         message_type = CANCEL_TRANSACTION
         schema_class = "CancelTransactionSchema"
 
-    def __init__(
-        self,
-        *,
-        state: str = None,
-        thread_id: str = None,
-        **kwargs,
-    ):
+    def __init__(self, *, state: str = None, thread_id: str = None, **kwargs):
         """
         Initialize a cancel transaction object.
 

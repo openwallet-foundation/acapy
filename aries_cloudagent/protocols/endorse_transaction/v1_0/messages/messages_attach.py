@@ -54,10 +54,7 @@ class MessagesAttach(AgentMessage):
             "json": {
                 "endorser": endorser_did,
                 "identifier": author_did,
-                "operation": {
-                    "data": transaction_message,
-                    "type": transaction_type,
-                },
+                "operation": {"data": transaction_message, "type": transaction_type},
                 "protocol_version": PROTOCOL_VERSION,
                 "reqId": 1597766666168851000,
                 "signatures": {author_did: author_verkey},

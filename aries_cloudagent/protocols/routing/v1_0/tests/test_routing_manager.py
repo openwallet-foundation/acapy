@@ -4,11 +4,7 @@ from asynctest import mock as async_mock
 from marshmallow import ValidationError
 
 from .....messaging.request_context import RequestContext
-from .....storage.error import (
-    StorageDuplicateError,
-    StorageError,
-    StorageNotFoundError,
-)
+from .....storage.error import StorageDuplicateError, StorageError, StorageNotFoundError
 from .....storage.in_memory import InMemoryStorage
 from .....transport.inbound.receipt import MessageReceipt
 
@@ -174,8 +170,7 @@ class TestRoutingManager(AsyncTestCase):
         async with self.profile.session() as session:
             await route_rec.save(session)
             by_conn_id = await RouteRecord.retrieve_by_connection_id(
-                session=session,
-                connection_id=TEST_CONN_ID,
+                session=session, connection_id=TEST_CONN_ID
             )
         assert by_conn_id == route_rec
         assert route_rec != ValueError()

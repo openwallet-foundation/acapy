@@ -117,10 +117,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
         mock_ledger = async_mock.MagicMock(
             read_only=False, update_endpoint_for_did=async_mock.CoroutineMock()
         )
-        info_pub = await wallet.create_public_did(
-            SOV,
-            ED25519,
-        )
+        info_pub = await wallet.create_public_did(SOV, ED25519)
         await wallet.set_did_endpoint(info_pub.did, "https://example.com", mock_ledger)
         mock_ledger.update_endpoint_for_did.assert_called_once_with(
             info_pub.did,
@@ -164,10 +161,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
         mock_ledger = async_mock.MagicMock(
             read_only=True, update_endpoint_for_did=async_mock.CoroutineMock()
         )
-        info_pub = await wallet.create_public_did(
-            SOV,
-            ED25519,
-        )
+        info_pub = await wallet.create_public_did(SOV, ED25519)
         await wallet.set_did_endpoint(info_pub.did, "https://example.com", mock_ledger)
         mock_ledger.update_endpoint_for_did.assert_not_called()
         info_pub2 = await wallet.get_public_did()
@@ -204,11 +198,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
     @pytest.mark.asyncio
     async def test_replace_local_did_metadata_x(self, wallet: IndySdkWallet):
         info = await wallet.create_local_did(
-            SOV,
-            ED25519,
-            self.test_seed,
-            self.test_sov_did,
-            self.test_metadata,
+            SOV, ED25519, self.test_seed, self.test_sov_did, self.test_metadata
         )
         assert info.did == self.test_sov_did
         assert info.verkey == self.test_ed25519_verkey
@@ -234,10 +224,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
             )
             with pytest.raises(test_module.WalletError) as excinfo:
                 await wallet.verify_message(
-                    b"hello world",
-                    b"signature",
-                    self.test_ed25519_verkey,
-                    ED25519,
+                    b"hello world", b"signature", self.test_ed25519_verkey, ED25519
                 )
             assert "outlier" in str(excinfo.value)
 
@@ -257,12 +244,7 @@ class TestIndySdkWallet(test_in_memory_wallet.TestInMemoryWallet):
                 test_module.ErrorCode.CommonIOError, {"message": "outlier"}
             )
             with pytest.raises(test_module.WalletError) as excinfo:
-                await wallet.pack_message(
-                    b"hello world",
-                    [
-                        self.test_ed25519_verkey,
-                    ],
-                )
+                await wallet.pack_message(b"hello world", [self.test_ed25519_verkey])
             assert "outlier" in str(excinfo.value)
 
 
@@ -309,12 +291,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -357,12 +337,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -403,12 +381,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -452,12 +428,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -505,12 +479,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -555,12 +527,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -603,12 +573,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -651,12 +619,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -699,12 +665,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(
@@ -749,12 +713,10 @@ class TestWalletCompat:
                 "password": "mysecretpassword",
                 "admin_account": "postgres",
                 "admin_password": "mysecretpassword",
-            },
+            }
         )
         with async_mock.patch.object(
-            test_setup_module,
-            "load_postgres_plugin",
-            async_mock.MagicMock(),
+            test_setup_module, "load_postgres_plugin", async_mock.MagicMock()
         ) as mock_load, async_mock.patch.object(
             indy.wallet, "create_wallet", async_mock.CoroutineMock()
         ) as mock_create, async_mock.patch.object(

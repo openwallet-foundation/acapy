@@ -12,12 +12,7 @@ from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ...messaging.valid import DIDWeb
 
-from ..base import (
-    BaseDIDResolver,
-    DIDNotFound,
-    ResolverError,
-    ResolverType,
-)
+from ..base import BaseDIDResolver, DIDNotFound, ResolverError, ResolverType
 
 
 class WebDIDResolver(BaseDIDResolver):

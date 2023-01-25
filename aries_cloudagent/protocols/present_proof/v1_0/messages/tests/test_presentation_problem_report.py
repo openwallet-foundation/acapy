@@ -18,10 +18,7 @@ class TestPresentationProblemReport(TestCase):
         """Test initializer."""
 
         prob = PresentationProblemReport(
-            description={
-                "en": "oh no",
-                "code": ProblemReportReason.ABANDONED.value,
-            }
+            description={"en": "oh no", "code": ProblemReportReason.ABANDONED.value}
         )
         assert prob._type == DIDCommPrefix.qualify_current(PRESENTATION_PROBLEM_REPORT)
 
@@ -33,10 +30,7 @@ class TestPresentationProblemReport(TestCase):
         """Test deserialization."""
 
         obj = PresentationProblemReport(
-            description={
-                "en": "oh no",
-                "code": ProblemReportReason.ABANDONED.value,
-            }
+            description={"en": "oh no", "code": ProblemReportReason.ABANDONED.value}
         )
 
         prob = PresentationProblemReport.deserialize(obj)
@@ -52,10 +46,7 @@ class TestPresentationProblemReport(TestCase):
         """Test serialization."""
 
         obj = PresentationProblemReport(
-            description={
-                "en": "oh no",
-                "code": ProblemReportReason.ABANDONED.value,
-            }
+            description={"en": "oh no", "code": ProblemReportReason.ABANDONED.value}
         )
 
         ser = obj.serialize()
@@ -67,10 +58,7 @@ class TestPresentationProblemReport(TestCase):
         """Test making model."""
 
         prob = PresentationProblemReport(
-            description={
-                "en": "oh no",
-                "code": ProblemReportReason.ABANDONED.value,
-            }
+            description={"en": "oh no", "code": ProblemReportReason.ABANDONED.value}
         )
         data = prob.serialize()
         model_instance = PresentationProblemReport.deserialize(data)

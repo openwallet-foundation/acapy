@@ -64,19 +64,12 @@ from ..models.base import BaseModelError
 class SchemaSendRequestSchema(OpenAPISchema):
     """Request schema for schema send request."""
 
-    schema_name = fields.Str(
-        required=True,
-        description="Schema name",
-        example="prefs",
-    )
+    schema_name = fields.Str(required=True, description="Schema name", example="prefs")
     schema_version = fields.Str(
         required=True, description="Schema version", **INDY_VERSION
     )
     attributes = fields.List(
-        fields.Str(
-            description="attribute name",
-            example="score",
-        ),
+        fields.Str(description="attribute name", example="score"),
         required=True,
         description="List of schema attributes",
     )
@@ -88,19 +81,14 @@ class SchemaSendResultSchema(OpenAPISchema):
     schema_id = fields.Str(
         description="Schema identifier", required=True, **INDY_SCHEMA_ID
     )
-    schema = fields.Nested(
-        SchemaSchema(),
-        description="Schema definition",
-    )
+    schema = fields.Nested(SchemaSchema(), description="Schema definition")
 
 
 class TxnOrSchemaSendResultSchema(OpenAPISchema):
     """Result schema for schema send request."""
 
     sent = fields.Nested(
-        SchemaSendResultSchema(),
-        required=False,
-        description="Content sent",
+        SchemaSendResultSchema(), required=False, description="Content sent"
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
@@ -138,8 +126,7 @@ class CreateSchemaTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
-        required=False,
+        description="Create Transaction For Endorser's signature", required=False
     )
 
 
@@ -188,8 +175,7 @@ async def schemas_send_schema(request: web.BaseRequest):
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
         found = await storage.find_all_records(
-            type_filter=SCHEMA_SENT_RECORD_TYPE,
-            tag_query=tag_query,
+            type_filter=SCHEMA_SENT_RECORD_TYPE, tag_query=tag_query
         )
         if 0 < len(found):
             raise web.HTTPBadRequest(
@@ -319,10 +305,7 @@ async def schemas_send_schema(request: web.BaseRequest):
         )
 
 
-@docs(
-    tags=["schema"],
-    summary="Search for matching schema that agent originated",
-)
+@docs(tags=["schema"], summary="Search for matching schema that agent originated")
 @querystring_schema(SchemaQueryStringSchema())
 @response_schema(SchemasCreatedResultSchema(), 200, description="")
 async def schemas_created(request: web.BaseRequest):
@@ -374,8 +357,7 @@ async def schemas_get_schema(request: web.BaseRequest):
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-        schema_id,
-        txn_record_type=GET_SCHEMA,
+        schema_id, txn_record_type=GET_SCHEMA
     )
     if not ledger:
         reason = "No ledger available"
@@ -423,8 +405,7 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
     ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-        schema_id,
-        txn_record_type=GET_SCHEMA,
+        schema_id, txn_record_type=GET_SCHEMA
     )
     if not ledger:
         reason = "No ledger available"
@@ -438,10 +419,7 @@ async def schemas_fix_schema_wallet_record(request: web.BaseRequest):
 
             # check if the record exists, if not add it
             found = await storage.find_all_records(
-                type_filter=SCHEMA_SENT_RECORD_TYPE,
-                tag_query={
-                    "schema_id": schema_id,
-                },
+                type_filter=SCHEMA_SENT_RECORD_TYPE, tag_query={"schema_id": schema_id}
             )
             if 0 == len(found):
                 await add_schema_non_secrets_record(profile, schema_id)

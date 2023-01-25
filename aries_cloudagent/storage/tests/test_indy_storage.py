@@ -189,9 +189,7 @@ class TestIndySdkStorage(test_in_memory_storage.TestInMemoryStorage):
                 "update_wallet_record_tags",
                 async_mock.CoroutineMock(),
             ) as mock_update_tags, async_mock.patch.object(
-                indy.non_secrets,
-                "delete_wallet_record",
-                async_mock.CoroutineMock(),
+                indy.non_secrets, "delete_wallet_record", async_mock.CoroutineMock()
             ) as mock_delete:
                 mock_update_value.side_effect = test_module.IndyError(
                     ErrorCode.CommonInvalidStructure

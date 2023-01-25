@@ -3,9 +3,7 @@
 from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import INCLUDE, Schema, fields
-from pydid.verification_method import (
-    Ed25519VerificationKey2018,
-)
+from pydid.verification_method import Ed25519VerificationKey2018
 
 from ...admin.request_context import AdminRequestContext
 from ...config.base import InjectionError
@@ -14,9 +12,7 @@ from ...resolver.did_resolver import DIDResolver
 from ...wallet.error import WalletError
 from ..models.openapi import OpenAPISchema
 from .credential import sign_credential, verify_credential
-from .error import (
-    BaseJSONLDMessagingError,
-)
+from .error import BaseJSONLDMessagingError
 
 
 SUPPORTED_VERIFICATION_METHOD_TYPES = (Ed25519VerificationKey2018,)
@@ -35,14 +31,9 @@ class SignatureOptionsSchema(Schema):
 class DocSchema(OpenAPISchema):
     """Schema for LD doc to sign."""
 
-    credential = fields.Dict(
-        required=True,
-        description="Credential to sign",
-    )
+    credential = fields.Dict(required=True, description="Credential to sign")
     options = fields.Nested(
-        SignatureOptionsSchema,
-        required=True,
-        description="Signature options",
+        SignatureOptionsSchema, required=True, description="Signature options"
     )
 
 
@@ -50,10 +41,7 @@ class SignRequestSchema(OpenAPISchema):
     """Request schema for signing a jsonld doc."""
 
     verkey = fields.Str(required=True, description="Verkey to use for signing")
-    doc = fields.Nested(
-        DocSchema,
-        required=True,
-    )
+    doc = fields.Nested(DocSchema, required=True)
 
 
 class SignResponseSchema(OpenAPISchema):
@@ -145,8 +133,7 @@ async def verify(request: web.BaseRequest):
             if verkey is None:
                 resolver = session.inject(DIDResolver)
                 vmethod = await resolver.dereference(
-                    profile,
-                    doc["proof"]["verificationMethod"],
+                    profile, doc["proof"]["verificationMethod"]
                 )
 
                 if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):

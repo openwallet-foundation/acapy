@@ -19,10 +19,7 @@ class DIDXComplete(AgentMessage):
         message_type = DIDX_COMPLETE
         schema_class = "DIDXCompleteSchema"
 
-    def __init__(
-        self,
-        **kwargs,
-    ):
+    def __init__(self, **kwargs):
         """Initialize DID exchange complete message object."""
         super().__init__(**kwargs)
 

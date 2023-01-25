@@ -39,8 +39,7 @@ async def on_revocation_published(profile: Profile, event: Event):
     try:
         async with profile.session() as session:
             records = await RevNotificationRecord.query_by_rev_reg_id(
-                session,
-                rev_reg_id=event.payload["rev_reg_id"],
+                session, rev_reg_id=event.payload["rev_reg_id"]
             )
             records = [record for record in records if record.cred_rev_id in crids]
 

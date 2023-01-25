@@ -342,9 +342,7 @@ class ConnRecord(BaseRecord):
             initiator: Filter by the initiator value
         """
         tag_filter = {"invitation_msg_id": invitation_msg_id}
-        post_filter = {
-            "state": cls.State.INVITATION.rfc160,
-        }
+        post_filter = {"state": cls.State.INVITATION.rfc160}
         if their_role:
             post_filter["their_role"] = cls.Role.get(their_role).rfc160
         try:
@@ -363,10 +361,7 @@ class ConnRecord(BaseRecord):
             their_public_did: Inviter public DID
         """
         tag_filter = {"their_public_did": their_public_did}
-        conn_records = await cls.query(
-            session,
-            tag_filter=tag_filter,
-        )
+        conn_records = await cls.query(session, tag_filter=tag_filter)
         for conn_record in conn_records:
             if conn_record.state == ConnRecord.State.COMPLETED:
                 return conn_record
@@ -431,8 +426,7 @@ class ConnRecord(BaseRecord):
         assert self.connection_id
         storage = session.inject(BaseStorage)
         result = await storage.find_record(
-            self.RECORD_TYPE_INVITATION,
-            {"connection_id": self.connection_id},
+            self.RECORD_TYPE_INVITATION, {"connection_id": self.connection_id}
         )
         ser = json.loads(result.value)
         return (
@@ -442,9 +436,7 @@ class ConnRecord(BaseRecord):
         ).deserialize(ser)
 
     async def attach_request(
-        self,
-        session: ProfileSession,
-        request: Union[ConnectionRequest, DIDXRequest],
+        self, session: ProfileSession, request: Union[ConnectionRequest, DIDXRequest]
     ):
         """Persist the related connection request to storage.
 
@@ -462,8 +454,7 @@ class ConnRecord(BaseRecord):
         await storage.add_record(record)
 
     async def retrieve_request(
-        self,
-        session: ProfileSession,
+        self, session: ProfileSession
     ) -> Union[ConnectionRequest, DIDXRequest]:
         """Retrieve the related connection invitation.
 
@@ -520,8 +511,7 @@ class ConnRecord(BaseRecord):
         if self.connection_id:
             storage = session.inject(BaseStorage)
             await storage.delete_all_records(
-                self.RECORD_TYPE_METADATA,
-                {"connection_id": self.connection_id},
+                self.RECORD_TYPE_METADATA, {"connection_id": self.connection_id}
             )
 
     async def metadata_get(
@@ -606,8 +596,7 @@ class ConnRecord(BaseRecord):
         assert self.connection_id
         storage: BaseStorage = session.inject(BaseStorage)
         records = await storage.find_all_records(
-            self.RECORD_TYPE_METADATA,
-            {"connection_id": self.connection_id},
+            self.RECORD_TYPE_METADATA, {"connection_id": self.connection_id}
         )
         return {record.tags["key"]: json.loads(record.value) for record in records}
 
@@ -651,9 +640,7 @@ class ConnRecordSchema(BaseRecordSchema):
         example=ConnRecord.Protocol.RFC_0160.aries_protocol,
     )
     rfc23_state = fields.Str(
-        dump_only=True,
-        description="State per RFC 23",
-        example="invitation-sent",
+        dump_only=True, description="State per RFC 23", example="invitation-sent"
     )
     inbound_connection_id = fields.Str(
         required=False,

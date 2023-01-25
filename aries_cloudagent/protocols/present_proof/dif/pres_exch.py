@@ -11,11 +11,7 @@ from marshmallow import (
 from typing import Sequence, Union, Mapping
 
 from ....messaging.models.base import BaseModelSchema, BaseModel
-from ....messaging.valid import (
-    UUID4,
-    StrOrDictField,
-    StrOrNumberField,
-)
+from ....messaging.valid import UUID4, StrOrDictField, StrOrNumberField
 from ....vc.vc_ld import LinkedDataProofSchema
 
 
@@ -55,24 +51,12 @@ class ClaimFormatSchema(BaseModelSchema):
         model_class = ClaimFormat
         unknown = EXCLUDE
 
-    jwt = fields.Dict(
-        required=False,
-    )
-    jwt_vc = fields.Dict(
-        required=False,
-    )
-    jwt_vp = fields.Dict(
-        required=False,
-    )
-    ldp = fields.Dict(
-        required=False,
-    )
-    ldp_vc = fields.Dict(
-        required=False,
-    )
-    ldp_vp = fields.Dict(
-        required=False,
-    )
+    jwt = fields.Dict(required=False)
+    jwt_vc = fields.Dict(required=False)
+    jwt_vp = fields.Dict(required=False)
+    ldp = fields.Dict(required=False)
+    ldp_vc = fields.Dict(required=False)
+    ldp_vp = fields.Dict(required=False)
 
 
 class SubmissionRequirements(BaseModel):
@@ -124,10 +108,7 @@ class SubmissionRequirementsSchema(BaseModelSchema):
         validate=validate.OneOf(["all", "pick"]),
     )
     count = fields.Int(
-        description="Count Value",
-        example=1234,
-        required=False,
-        strict=True,
+        description="Count Value", example=1234, required=False, strict=True
     )
     minimum = fields.Int(
         description="Min Value",
@@ -146,8 +127,7 @@ class SubmissionRequirementsSchema(BaseModelSchema):
     _from = fields.Str(description="From", required=False, data_key="from")
     # Self References
     from_nested = fields.List(
-        fields.Nested(lambda: SubmissionRequirementsSchema()),
-        required=False,
+        fields.Nested(lambda: SubmissionRequirementsSchema()), required=False
     )
 
     @pre_load
@@ -174,12 +154,7 @@ class SchemaInputDescriptor(BaseModel):
 
         schema_class = "SchemaInputDescriptorSchema"
 
-    def __init__(
-        self,
-        *,
-        uri: str = None,
-        required: bool = None,
-    ):
+    def __init__(self, *, uri: str = None, required: bool = None):
         """Initialize SchemaInputDescriptor."""
         self.uri = uri
         self.required = required
@@ -194,10 +169,7 @@ class SchemaInputDescriptorSchema(BaseModelSchema):
         model_class = SchemaInputDescriptor
         unknown = EXCLUDE
 
-    uri = fields.Str(
-        description="URI",
-        required=False,
-    )
+    uri = fields.Str(description="URI", required=False)
     required = fields.Bool(description="Required", required=False)
 
 
@@ -264,12 +236,7 @@ class DIFHolder(BaseModel):
 
         schema_class = "DIFHolderSchema"
 
-    def __init__(
-        self,
-        *,
-        field_ids: Sequence[str] = None,
-        directive: str = None,
-    ):
+    def __init__(self, *, field_ids: Sequence[str] = None, directive: str = None):
         """Initialize Holder."""
         self.field_ids = field_ids
         self.directive = directive
@@ -285,11 +252,7 @@ class DIFHolderSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     field_ids = fields.List(
-        fields.Str(
-            description="FieldID",
-            required=False,
-            **UUID4,
-        ),
+        fields.Str(description="FieldID", required=False, **UUID4),
         required=False,
         data_key="field_id",
     )
@@ -349,23 +312,10 @@ class FilterSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     _type = fields.Str(description="Type", required=False, data_key="type")
-    fmt = fields.Str(
-        description="Format",
-        required=False,
-        data_key="format",
-    )
-    pattern = fields.Str(
-        description="Pattern",
-        required=False,
-    )
-    minimum = StrOrNumberField(
-        description="Minimum",
-        required=False,
-    )
-    maximum = StrOrNumberField(
-        description="Maximum",
-        required=False,
-    )
+    fmt = fields.Str(description="Format", required=False, data_key="format")
+    pattern = fields.Str(description="Pattern", required=False)
+    minimum = StrOrNumberField(description="Minimum", required=False)
+    maximum = StrOrNumberField(description="Maximum", required=False)
     min_length = fields.Int(
         description="Min Length",
         example=1234,
@@ -381,29 +331,19 @@ class FilterSchema(BaseModelSchema):
         data_key="maxLength",
     )
     exclusive_min = StrOrNumberField(
-        description="ExclusiveMinimum",
-        required=False,
-        data_key="exclusiveMinimum",
+        description="ExclusiveMinimum", required=False, data_key="exclusiveMinimum"
     )
     exclusive_max = StrOrNumberField(
-        description="ExclusiveMaximum",
-        required=False,
-        data_key="exclusiveMaximum",
+        description="ExclusiveMaximum", required=False, data_key="exclusiveMaximum"
     )
-    const = StrOrNumberField(
-        description="Const",
-        required=False,
-    )
+    const = StrOrNumberField(description="Const", required=False)
     enums = fields.List(
         StrOrNumberField(description="Enum", required=False),
         required=False,
         data_key="enum",
     )
     _not = fields.Boolean(
-        description="Not",
-        required=False,
-        example=False,
-        data_key="not",
+        description="Not", required=False, example=False, data_key="not"
     )
 
     @pre_load
@@ -464,14 +404,9 @@ class DIFFieldSchema(BaseModelSchema):
 
     id = fields.Str(description="ID", required=False)
     paths = fields.List(
-        fields.Str(description="Path", required=False),
-        required=False,
-        data_key="path",
+        fields.Str(description="Path", required=False), required=False, data_key="path"
     )
-    purpose = fields.Str(
-        description="Purpose",
-        required=False,
-    )
+    purpose = fields.Str(description="Purpose", required=False)
     predicate = fields.Str(
         description="Preference",
         required=False,
@@ -526,26 +461,19 @@ class ConstraintsSchema(BaseModelSchema):
     )
     limit_disclosure = fields.Str(description="LimitDisclosure", required=False)
     holders = fields.List(
-        fields.Nested(DIFHolderSchema),
-        required=False,
-        data_key="is_holder",
+        fields.Nested(DIFHolderSchema), required=False, data_key="is_holder"
     )
     _fields = fields.List(
-        fields.Nested(DIFFieldSchema),
-        required=False,
-        data_key="fields",
+        fields.Nested(DIFFieldSchema), required=False, data_key="fields"
     )
     status_active = fields.Str(
-        required=False,
-        validate=validate.OneOf(["required", "allowed", "disallowed"]),
+        required=False, validate=validate.OneOf(["required", "allowed", "disallowed"])
     )
     status_suspended = fields.Str(
-        required=False,
-        validate=validate.OneOf(["required", "allowed", "disallowed"]),
+        required=False, validate=validate.OneOf(["required", "allowed", "disallowed"])
     )
     status_revoked = fields.Str(
-        required=False,
-        validate=validate.OneOf(["required", "allowed", "disallowed"]),
+        required=False, validate=validate.OneOf(["required", "allowed", "disallowed"])
     )
 
     @pre_load
@@ -626,10 +554,7 @@ class InputDescriptorsSchema(BaseModelSchema):
 
     id = fields.Str(description="ID", required=False)
     groups = fields.List(
-        fields.Str(
-            description="Group",
-            required=False,
-        ),
+        fields.Str(description="Group", required=False),
         required=False,
         data_key="group",
     )
@@ -700,26 +625,16 @@ class RequirementSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     count = fields.Int(
-        description="Count Value",
-        example=1234,
-        strict=True,
-        required=False,
+        description="Count Value", example=1234, strict=True, required=False
     )
     maximum = fields.Int(
-        description="Max Value",
-        example=1234,
-        strict=True,
-        required=False,
+        description="Max Value", example=1234, strict=True, required=False
     )
     minimum = fields.Int(
-        description="Min Value",
-        example=1234,
-        strict=True,
-        required=False,
+        description="Min Value", example=1234, strict=True, required=False
     )
     input_descriptors = fields.List(
-        fields.Nested(InputDescriptorsSchema),
-        required=False,
+        fields.Nested(InputDescriptorsSchema), required=False
     )
     # Self References
     nested_req = fields.List(
@@ -766,11 +681,7 @@ class PresentationDefinitionSchema(BaseModelSchema):
         model_class = PresentationDefinition
         unknown = EXCLUDE
 
-    id = fields.Str(
-        required=False,
-        description="Unique Resource Identifier",
-        **UUID4,
-    )
+    id = fields.Str(required=False, description="Unique Resource Identifier", **UUID4)
     name = fields.Str(
         description=(
             "Human-friendly name that describes"
@@ -785,18 +696,12 @@ class PresentationDefinitionSchema(BaseModelSchema):
         ),
         required=False,
     )
-    fmt = fields.Nested(
-        ClaimFormatSchema,
-        required=False,
-        data_key="format",
-    )
+    fmt = fields.Nested(ClaimFormatSchema, required=False, data_key="format")
     submission_requirements = fields.List(
-        fields.Nested(SubmissionRequirementsSchema),
-        required=False,
+        fields.Nested(SubmissionRequirementsSchema), required=False
     )
     input_descriptors = fields.List(
-        fields.Nested(InputDescriptorsSchema),
-        required=False,
+        fields.Nested(InputDescriptorsSchema), required=False
     )
 
 
@@ -808,13 +713,7 @@ class InputDescriptorMapping(BaseModel):
 
         schema_class = "InputDescriptorMappingSchema"
 
-    def __init__(
-        self,
-        *,
-        id: str = None,
-        fmt: str = None,
-        path: str = None,
-    ):
+    def __init__(self, *, id: str = None, fmt: str = None, path: str = None):
         """Initialize InputDescriptorMapping."""
         self.id = id
         self.fmt = fmt
@@ -830,20 +729,11 @@ class InputDescriptorMappingSchema(BaseModelSchema):
         model_class = InputDescriptorMapping
         unknown = EXCLUDE
 
-    id = fields.Str(
-        description="ID",
-        required=False,
-    )
+    id = fields.Str(description="ID", required=False)
     fmt = fields.Str(
-        description="Format",
-        required=False,
-        default="ldp_vc",
-        data_key="format",
+        description="Format", required=False, default="ldp_vc", data_key="format"
     )
-    path = fields.Str(
-        description="Path",
-        required=False,
-    )
+    path = fields.Str(description="Path", required=False)
 
 
 class PresentationSubmission(BaseModel):
@@ -876,16 +766,8 @@ class PresentationSubmissionSchema(BaseModelSchema):
         model_class = PresentationSubmission
         unknown = EXCLUDE
 
-    id = fields.Str(
-        description="ID",
-        required=False,
-        **UUID4,
-    )
-    definition_id = fields.Str(
-        description="DefinitionID",
-        required=False,
-        **UUID4,
-    )
+    id = fields.Str(description="ID", required=False, **UUID4)
+    definition_id = fields.Str(description="DefinitionID", required=False, **UUID4)
     descriptor_maps = fields.List(
         fields.Nested(InputDescriptorMappingSchema),
         required=False,
@@ -929,18 +811,10 @@ class VerifiablePresentationSchema(BaseModelSchema):
         model_class = VerifiablePresentation
         unknown = INCLUDE
 
-    id = fields.Str(
-        description="ID",
-        required=False,
-        **UUID4,
-    )
-    contexts = fields.List(
-        StrOrDictField(),
-        data_key="@context",
-    )
+    id = fields.Str(description="ID", required=False, **UUID4)
+    contexts = fields.List(StrOrDictField(), data_key="@context")
     types = fields.List(
-        fields.Str(description="Types", required=False),
-        data_key="type",
+        fields.Str(description="Types", required=False), data_key="type"
     )
     credentials = fields.List(
         fields.Dict(description="Credentials", required=False),
@@ -962,12 +836,7 @@ class DIFOptions(BaseModel):
 
         schema_class = "DIFOptionsSchema"
 
-    def __init__(
-        self,
-        *,
-        challenge: str = None,
-        domain: str = None,
-    ):
+    def __init__(self, *, challenge: str = None, domain: str = None):
         """Initialize DIFOptions."""
         self.challenge = challenge
         self.domain = domain
@@ -983,9 +852,7 @@ class DIFOptionsSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     challenge = fields.String(
-        description="Challenge protect against replay attack",
-        required=False,
-        **UUID4,
+        description="Challenge protect against replay attack", required=False, **UUID4
     )
     domain = fields.String(
         description="Domain protect against replay attack",

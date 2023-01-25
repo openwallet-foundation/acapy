@@ -80,8 +80,7 @@ class V20CredIssueHandler(BaseHandler):
                 if cred_ex_record:
                     async with context.profile.session() as session:
                         await cred_ex_record.save_error_state(
-                            session,
-                            reason=err.roll_up,  # us: be specific
+                            session, reason=err.roll_up  # us: be specific
                         )
                     await responder.send_reply(
                         problem_report_for_record(

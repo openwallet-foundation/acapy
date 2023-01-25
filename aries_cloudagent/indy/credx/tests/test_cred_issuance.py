@@ -50,10 +50,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
                 return_value={"value": {}}
             ),
             get_revoc_reg_delta=async_mock.CoroutineMock(
-                return_value=(
-                    {"value": {"...": "..."}},
-                    1234567890,
-                )
+                return_value=({"value": {"...": "..."}}, 1234567890)
             ),
         )
         mock_ledger.__aenter__ = async_mock.CoroutineMock(return_value=mock_ledger)
@@ -99,10 +96,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
         )
 
         (s_id, schema_json) = await self.issuer.create_schema(
-            TEST_DID,
-            SCHEMA_NAME,
-            SCHEMA_VERSION,
-            ["name", "moniker"],
+            TEST_DID, SCHEMA_NAME, SCHEMA_VERSION, ["name", "moniker"]
         )
         assert s_id == SCHEMA_ID
         schema = json.loads(schema_json)
@@ -157,14 +151,8 @@ class TestIndyCredxIssuance(AsyncTestCase):
 
         assert not await self.holder.credential_revoked(self.ledger, cred_id)
 
-        pres_creds = (
-            await self.holder.get_credentials_for_presentation_request_by_referent(
-                PRES_REQ_NON_REV,
-                None,
-                0,
-                10,
-                {},
-            )
+        pres_creds = await self.holder.get_credentials_for_presentation_request_by_referent(
+            PRES_REQ_NON_REV, None, 0, 10, {}
         )
         assert pres_creds == [
             {
@@ -200,10 +188,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
         )
 
         (s_id, schema_json) = await self.issuer.create_schema(
-            TEST_DID,
-            SCHEMA_NAME,
-            SCHEMA_VERSION,
-            ["name", "moniker"],
+            TEST_DID, SCHEMA_NAME, SCHEMA_VERSION, ["name", "moniker"]
         )
         assert s_id == SCHEMA_ID
         schema = json.loads(schema_json)
@@ -261,10 +246,7 @@ class TestIndyCredxIssuance(AsyncTestCase):
             cred_data = json.loads(cred_json)
 
             cred_id = await self.holder.store_credential(
-                cred_def,
-                cred_data,
-                cred_req_meta,
-                rev_reg_def=reg_def,
+                cred_def, cred_data, cred_req_meta, rev_reg_def=reg_def
             )
 
             found = await self.holder.get_credential(cred_id)
@@ -277,14 +259,8 @@ class TestIndyCredxIssuance(AsyncTestCase):
 
             assert not await self.holder.credential_revoked(self.ledger, cred_id)
 
-            pres_creds = (
-                await self.holder.get_credentials_for_presentation_request_by_referent(
-                    PRES_REQ_REV,
-                    None,
-                    0,
-                    10,
-                    {},
-                )
+            pres_creds = await self.holder.get_credentials_for_presentation_request_by_referent(
+                PRES_REQ_REV, None, 0, 10, {}
             )
             assert pres_creds == [
                 {

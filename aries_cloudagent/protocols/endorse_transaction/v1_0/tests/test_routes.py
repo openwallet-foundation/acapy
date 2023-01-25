@@ -139,13 +139,9 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 await test_module.transactions_retrieve(self.request)
 
     async def test_transaction_create_request(self):
-        self.request.query = {
-            "tran_id": "dummy",
-        }
+        self.request.query = {"tran_id": "dummy"}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "expires_time": "2021-03-29T05:22:19Z",
-            }
+            return_value={"expires_time": "2021-03-29T05:22:19Z"}
         )
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -186,13 +182,9 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             mock_response.assert_called_once_with({"...": "..."})
 
     async def test_transaction_create_request_not_found_x(self):
-        self.request.query = {
-            "tran_id": "dummy",
-        }
+        self.request.query = {"tran_id": "dummy"}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "expires_time": "2021-03-29T05:22:19Z",
-            }
+            return_value={"expires_time": "2021-03-29T05:22:19Z"}
         )
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -203,13 +195,9 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 await test_module.transaction_create_request(self.request)
 
     async def test_transaction_create_request_base_model_x(self):
-        self.request.query = {
-            "tran_id": "dummy",
-        }
+        self.request.query = {"tran_id": "dummy"}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "expires_time": "2021-03-29T05:22:19Z",
-            }
+            return_value={"expires_time": "2021-03-29T05:22:19Z"}
         )
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -234,13 +222,9 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 await test_module.transaction_create_request(self.request)
 
     async def test_transaction_create_request_no_jobs_x(self):
-        self.request.query = {
-            "tran_id": "dummy",
-        }
+        self.request.query = {"tran_id": "dummy"}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "expires_time": "2021-03-29T05:22:19Z",
-            }
+            return_value={"expires_time": "2021-03-29T05:22:19Z"}
         )
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -270,13 +254,9 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 await test_module.transaction_create_request(self.request)
 
     async def test_transaction_create_request_no_my_job_x(self):
-        self.request.query = {
-            "tran_id": "dummy",
-        }
+        self.request.query = {"tran_id": "dummy"}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "expires_time": "2021-03-29T05:22:19Z",
-            }
+            return_value={"expires_time": "2021-03-29T05:22:19Z"}
         )
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -300,7 +280,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                     return_value={
                         "transaction_their_job": (
                             test_module.TransactionJob.TRANSACTION_ENDORSER.name
-                        ),
+                        )
                     }
                 )
             )
@@ -312,13 +292,9 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 await test_module.transaction_create_request(self.request)
 
     async def test_transaction_create_request_no_their_job_x(self):
-        self.request.query = {
-            "tran_id": "dummy",
-        }
+        self.request.query = {"tran_id": "dummy"}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "expires_time": "2021-03-29T05:22:19Z",
-            }
+            return_value={"expires_time": "2021-03-29T05:22:19Z"}
         )
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -342,7 +318,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                     return_value={
                         "transaction_my_job": (
                             test_module.TransactionJob.TRANSACTION_AUTHOR.name
-                        ),
+                        )
                     }
                 )
             )
@@ -354,13 +330,9 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 await test_module.transaction_create_request(self.request)
 
     async def test_transaction_create_request_my_wrong_job_x(self):
-        self.request.query = {
-            "tran_id": "dummy",
-        }
+        self.request.query = {"tran_id": "dummy"}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "expires_time": "2021-03-29T05:22:19Z",
-            }
+            return_value={"expires_time": "2021-03-29T05:22:19Z"}
         )
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -385,13 +357,9 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                 await test_module.transaction_create_request(self.request)
 
     async def test_transaction_create_request_mgr_create_request_x(self):
-        self.request.query = {
-            "tran_id": "dummy",
-        }
+        self.request.query = {"tran_id": "dummy"}
         self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "expires_time": "2021-03-29T05:22:19Z",
-            }
+            return_value={"expires_time": "2021-03-29T05:22:19Z"}
         )
         with async_mock.patch.object(
             ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
@@ -431,11 +399,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -510,11 +474,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -539,11 +499,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -574,11 +530,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -611,11 +563,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -666,11 +614,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -709,11 +653,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -767,11 +707,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -819,11 +755,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -877,11 +809,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -907,11 +835,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -942,11 +866,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -979,11 +899,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -1022,11 +938,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             async_mock.MagicMock(
                 get_public_did=async_mock.CoroutineMock(
                     return_value=DIDInfo(
-                        "did",
-                        "verkey",
-                        {"meta": "data"},
-                        method=SOV,
-                        key_type=ED25519,
+                        "did", "verkey", {"meta": "data"}, method=SOV, key_type=ED25519
                     )
                 )
             ),
@@ -1451,10 +1363,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                             ),
                         },
                         None,
-                        {
-                            "endorser_did": "did",
-                            "endorser_name": "name",
-                        },
+                        {"endorser_did": "did", "endorser_name": "name"},
                     ]
                 ),
                 metadata_set=async_mock.CoroutineMock(),
@@ -1462,10 +1371,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
             await test_module.set_endorser_info(self.request)
 
             mock_response.assert_called_once_with(
-                {
-                    "endorser_did": "did",
-                    "endorser_name": "name",
-                }
+                {"endorser_did": "did", "endorser_name": "name"}
             )
 
     async def test_set_endorser_info_not_found_x(self):
@@ -1517,7 +1423,7 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
                     return_value={
                         "transaction_their_job": (
                             test_module.TransactionJob.TRANSACTION_ENDORSER.name
-                        ),
+                        )
                     }
                 )
             )

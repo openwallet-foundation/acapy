@@ -281,10 +281,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
                 DIDInfo(
                     self.test_posted_did,
                     self.test_posted_verkey,
-                    {
-                        "posted": True,
-                        "public": False,
-                    },
+                    {"posted": True, "public": False},
                     SOV,
                     ED25519,
                 )
@@ -700,11 +697,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             ED25519,
         )
         self.wallet.get_public_did.return_value = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            DIDPosture.PUBLIC.metadata,
-            SOV,
-            ED25519,
+            self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata, SOV, ED25519
         )
 
         with async_mock.patch.object(
@@ -729,11 +722,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             ED25519,
         )
         self.wallet.get_public_did.return_value = DIDInfo(
-            self.test_did,
-            self.test_verkey,
-            DIDPosture.PUBLIC.metadata,
-            SOV,
-            ED25519,
+            self.test_did, self.test_verkey, DIDPosture.PUBLIC.metadata, SOV, ED25519
         )
         self.wallet.set_did_endpoint.side_effect = test_module.LedgerConfigError()
 
@@ -829,13 +818,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             test_module.web, "json_response", async_mock.Mock()
         ) as json_response:
             self.wallet.get_local_did = async_mock.AsyncMock(
-                return_value=DIDInfo(
-                    "did",
-                    "verkey",
-                    {"public": False},
-                    SOV,
-                    ED25519,
-                )
+                return_value=DIDInfo("did", "verkey", {"public": False}, SOV, ED25519)
             )
             self.wallet.rotate_did_keypair_start = async_mock.AsyncMock()
             self.wallet.rotate_did_keypair_apply = async_mock.AsyncMock()
@@ -865,11 +848,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
 
         self.wallet.get_local_did = async_mock.AsyncMock(
             return_value=DIDInfo(
-                "did",
-                "verkey",
-                {"posted": True, "public": True},
-                SOV,
-                ED25519,
+                "did", "verkey", {"posted": True, "public": True}, SOV, ED25519
             )
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
@@ -879,13 +858,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.request.query = {"did": "did"}
 
         self.wallet.get_local_did = async_mock.AsyncMock(
-            return_value=DIDInfo(
-                "did",
-                "verkey",
-                {"public": False},
-                SOV,
-                ED25519,
-            )
+            return_value=DIDInfo("did", "verkey", {"public": False}, SOV, ED25519)
         )
         self.wallet.rotate_did_keypair_start = async_mock.AsyncMock(
             side_effect=test_module.WalletError()

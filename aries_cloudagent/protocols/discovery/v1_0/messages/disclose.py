@@ -37,10 +37,7 @@ class ProtocolDescriptorSchema(Schema):
 
     pid = fields.Str(required=True)
     roles = fields.List(
-        fields.Str(
-            description="Role: requester or responder",
-            example="requester",
-        ),
+        fields.Str(description="Role: requester or responder", example="requester"),
         required=False,
         allow_none=True,
         description="List of roles",

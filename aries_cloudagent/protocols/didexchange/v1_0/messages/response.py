@@ -25,11 +25,7 @@ class DIDXResponse(AgentMessage):
         schema_class = "DIDXResponseSchema"
 
     def __init__(
-        self,
-        *,
-        did: str = None,
-        did_doc_attach: AttachDecorator = None,
-        **kwargs,
+        self, *, did: str = None, did_doc_attach: AttachDecorator = None, **kwargs
     ):
         """
         Initialize DID exchange response object under RFC 23.

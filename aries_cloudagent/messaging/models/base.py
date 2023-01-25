@@ -135,10 +135,7 @@ class BaseModel(ABC):
     @overload
     @classmethod
     def deserialize(
-        cls: Type[ModelType],
-        obj,
-        *,
-        unknown: Optional[str] = None,
+        cls: Type[ModelType], obj, *, unknown: Optional[str] = None
     ) -> ModelType:
         """Convert from JSON representation to a model instance."""
         ...
@@ -206,28 +203,18 @@ class BaseModel(ABC):
 
     @overload
     def serialize(
-        self,
-        *,
-        as_string: Literal[True],
-        unknown: Optional[str] = None,
+        self, *, as_string: Literal[True], unknown: Optional[str] = None
     ) -> str:
         """Create a JSON-compatible dict representation of the model instance."""
         ...
 
     @overload
-    def serialize(
-        self,
-        *,
-        unknown: Optional[str] = None,
-    ) -> dict:
+    def serialize(self, *, unknown: Optional[str] = None) -> dict:
         """Create a JSON-compatible dict representation of the model instance."""
         ...
 
     def serialize(
-        self,
-        *,
-        as_string: bool = False,
-        unknown: Optional[str] = None,
+        self, *, as_string: bool = False, unknown: Optional[str] = None
     ) -> Union[str, dict]:
         """
         Create a JSON-compatible dict representation of the model instance.
@@ -275,11 +262,7 @@ class BaseModel(ABC):
         return self
 
     @classmethod
-    def from_json(
-        cls,
-        json_repr: Union[str, bytes],
-        unknown: Optional[str] = None,
-    ):
+    def from_json(cls, json_repr: Union[str, bytes], unknown: Optional[str] = None):
         """
         Parse a JSON string into a model instance.
 

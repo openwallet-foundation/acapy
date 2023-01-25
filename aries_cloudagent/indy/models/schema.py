@@ -12,15 +12,11 @@ class SchemaSchema(OpenAPISchema):
     ver = fields.Str(description="Node protocol version", **INDY_VERSION)
     ident = fields.Str(data_key="id", description="Schema identifier", **INDY_SCHEMA_ID)
     name = fields.Str(
-        description="Schema name",
-        example=INDY_SCHEMA_ID["example"].split(":")[2],
+        description="Schema name", example=INDY_SCHEMA_ID["example"].split(":")[2]
     )
     version = fields.Str(description="Schema version", **INDY_VERSION)
     attr_names = fields.List(
-        fields.Str(
-            description="Attribute name",
-            example="score",
-        ),
+        fields.Str(description="Attribute name", example="score"),
         description="Schema attribute names",
         data_key="attrNames",
     )

@@ -43,26 +43,16 @@ class IndyCredRequestSchema(BaseModelSchema):
         model_class = IndyCredRequest
         unknown = EXCLUDE
 
-    prover_did = fields.Str(
-        required=True,
-        description="Prover DID",
-        **INDY_DID,
-    )
+    prover_did = fields.Str(required=True, description="Prover DID", **INDY_DID)
     cred_def_id = fields.Str(
         required=True,
         description="Credential definition identifier",
         **INDY_CRED_DEF_ID,
     )
-    blinded_ms = fields.Dict(
-        required=True,
-        description="Blinded master secret",
-    )
+    blinded_ms = fields.Dict(required=True, description="Blinded master secret")
     blinded_ms_correctness_proof = fields.Dict(
-        required=True,
-        description="Blinded master secret correctness proof",
+        required=True, description="Blinded master secret correctness proof"
     )
     nonce = fields.Str(
-        required=True,
-        description="Nonce in credential request",
-        **NUM_STR_WHOLE,
+        required=True, description="Nonce in credential request", **NUM_STR_WHOLE
     )

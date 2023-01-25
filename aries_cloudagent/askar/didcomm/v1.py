@@ -3,12 +3,7 @@
 from collections import OrderedDict
 from typing import Optional, Sequence, Tuple
 
-from aries_askar import (
-    crypto_box,
-    Key,
-    KeyAlg,
-    Session,
-)
+from aries_askar import crypto_box, Key, KeyAlg, Session
 from aries_askar.bindings import key_get_secret_bytes
 from marshmallow import ValidationError
 
@@ -65,7 +60,7 @@ def pack_message(
                 ("typ", "JWM/1.0"),
                 ("alg", "Authcrypt" if from_key else "Anoncrypt"),
             ]
-        ),
+        )
     )
     enc = cek.aead_encrypt(message, aad=wrapper.protected_bytes)
     ciphertext, tag, nonce = enc.parts

@@ -63,7 +63,7 @@ REVOC_REG_ENTRY_TXN = {
                     "issued": [],
                     "revoked": [10, 36, 3478],
                 },
-            },
+            }
         },
         "txnMetadata": {
             "txnTime": 1513945121,
@@ -82,11 +82,7 @@ class TestDomainTxnHandler(TestCase):
         with self.assertRaises(ValueError) as cm:
             _extract_attr_typed_value(test_txn_data)
             assert "ATTR should have one" in cm
-        test_txn_data = {
-            "raw": {...},
-            "enc": {...},
-            "hash": {...},
-        }
+        test_txn_data = {"raw": {...}, "enc": {...}, "hash": {...}}
         with self.assertRaises(ValueError) as cm:
             _extract_attr_typed_value(test_txn_data)
             assert "ATTR should have only one" in cm
@@ -139,7 +135,7 @@ class TestDomainTxnHandler(TestCase):
                         "ver": 1,
                         "dest": "N22KY2Dyvmuu2PyyqSFKue",
                         "raw": '{"name":"Alice"}',
-                    },
+                    }
                 },
                 "txnMetadata": {
                     "txnTime": 1513945121,
@@ -165,15 +161,7 @@ class TestDomainTxnHandler(TestCase):
         )
 
     def test_prepare_nym_for_state(self):
-        txn = {
-            "result": {
-                "txn": {
-                    "data": {
-                        "dest": "N22KY2Dyvmuu2PyyqSFKue",
-                    },
-                },
-            }
-        }
+        txn = {"result": {"txn": {"data": {"dest": "N22KY2Dyvmuu2PyyqSFKue"}}}}
         txn = txn.get("result")
         assert prepare_nym_for_state(txn)
 
@@ -282,7 +270,7 @@ class TestDomainTxnHandler(TestCase):
                     "seqNo": 10,
                     "txnId": "L5AD5g65TDQr1PPHHRoiGf:3:FC4aWomrA13YyvYC1Mxw7:3:CL:14:some_tag:CL_ACCUM:tag1",
                 },
-            },
+            }
         }
         txn = txn.get("result")
         path, value_bytes = prepare_revoc_def_for_state(txn)

@@ -108,12 +108,7 @@ class TestTracing(AsyncTestCase):
             perf_counter=None,
             outcome="processed Start",
         )
-        test_module.trace_event(
-            context,
-            ping,
-            perf_counter=ret,
-            outcome="processed OK",
-        )
+        test_module.trace_event(context, ping, perf_counter=ret, outcome="processed OK")
         context["trace.label"] = "trace-label"
         test_module.trace_event(context, ping)
         ping = Ping()

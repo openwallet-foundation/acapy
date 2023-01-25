@@ -205,8 +205,7 @@ class CreateAttribTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
-        required=False,
+        description="Create Transaction For Endorser's signature", required=False
     )
 
 
@@ -855,10 +854,7 @@ async def on_register_nym_event(profile: Profile, event: Event):
             )
         except Exception as err:
             # log the error, but continue
-            LOGGER.exception(
-                "Error promoting to public DID: %s",
-                err,
-            )
+            LOGGER.exception("Error promoting to public DID: %s", err)
             return
 
         transaction_mgr = TransactionManager(profile)
@@ -885,19 +881,13 @@ async def on_register_nym_event(profile: Profile, event: Event):
                 )
             except (StorageError, TransactionManagerError) as err:
                 # log the error, but continue
-                LOGGER.exception(
-                    "Error creating endorser transaction request: %s",
-                    err,
-                )
+                LOGGER.exception("Error creating endorser transaction request: %s", err)
 
             # TODO not sure how to get outbound_handler in an event ...
             # await outbound_handler(transaction_request, connection_id=connection_id)
             responder = profile.inject_or(BaseResponder)
             if responder:
-                await responder.send(
-                    transaction_request,
-                    connection_id=connection_id,
-                )
+                await responder.send(transaction_request, connection_id=connection_id)
             else:
                 LOGGER.warning(
                     "Configuration has no BaseResponder: cannot update "

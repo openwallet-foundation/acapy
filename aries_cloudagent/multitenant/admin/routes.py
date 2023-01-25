@@ -204,8 +204,7 @@ class WalletListSchema(OpenAPISchema):
     """Result schema for wallet list."""
 
     results = fields.List(
-        fields.Nested(WalletRecordSchema()),
-        description="List of wallet records",
+        fields.Nested(WalletRecordSchema()), description="List of wallet records"
     )
 
 
@@ -327,10 +326,7 @@ async def wallet_create(request: web.BaseRequest):
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    result = {
-        **format_wallet_record(wallet_record),
-        "token": token,
-    }
+    result = {**format_wallet_record(wallet_record), "token": token}
     return web.json_response(result)
 
 
@@ -430,10 +426,7 @@ async def wallet_create_token(request: web.BaseRequest):
     return web.json_response({"token": token})
 
 
-@docs(
-    tags=["multitenancy"],
-    summary="Remove a subwallet",
-)
+@docs(tags=["multitenancy"], summary="Remove a subwallet")
 @match_info_schema(WalletIdMatchInfoSchema())
 @request_schema(RemoveWalletRequestSchema)
 @response_schema(MultitenantModuleResponseSchema(), 200, description="")

@@ -21,8 +21,7 @@ class PresentationProblemReportHandler(BaseHandler):
             responder: responder callback
         """
         self._logger.debug(
-            "Present-proof v1.0 problem report handler called with context %s",
-            context,
+            "Present-proof v1.0 problem report handler called with context %s", context
         )
         assert isinstance(context.message, PresentationProblemReport)
 
@@ -39,8 +38,7 @@ class PresentationProblemReportHandler(BaseHandler):
         presentation_manager = PresentationManager(context.profile)
         try:
             await presentation_manager.receive_problem_report(
-                context.message,
-                context.connection_record.connection_id,
+                context.message, context.connection_record.connection_id
             )
         except (StorageError, StorageNotFoundError):
             self._logger.exception(

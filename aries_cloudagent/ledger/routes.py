@@ -37,9 +37,7 @@ from ..storage.error import StorageError, StorageNotFoundError
 from ..wallet.error import WalletError, WalletNotFoundError
 
 from .base import BaseLedger, Role as LedgerRole
-from .multiple_ledger.base_manager import (
-    BaseMultipleLedgerManager,
-)
+from .multiple_ledger.base_manager import BaseMultipleLedgerManager
 from .multiple_ledger.ledger_requests_executor import (
     GET_NYM_ROLE,
     GET_KEY_FOR_DID,
@@ -111,19 +109,11 @@ class TAAAcceptSchema(OpenAPISchema):
 class RegisterLedgerNymQueryStringSchema(OpenAPISchema):
     """Query string parameters and validators for register ledger nym request."""
 
-    did = fields.Str(
-        description="DID to register",
-        required=True,
-        **INDY_DID,
-    )
+    did = fields.Str(description="DID to register", required=True, **INDY_DID)
     verkey = fields.Str(
         description="Verification key", required=True, **INDY_RAW_PUBLIC_KEY
     )
-    alias = fields.Str(
-        description="Alias",
-        required=False,
-        example="Barry",
-    )
+    alias = fields.Str(description="Alias", required=False, example="Barry")
     role = fields.Str(
         description="Role",
         required=False,
@@ -137,8 +127,7 @@ class CreateDidTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature",
-        required=False,
+        description="Create Transaction For Endorser's signature", required=False
     )
 
 
@@ -173,8 +162,7 @@ class TxnOrRegisterLedgerNymResponseSchema(OpenAPISchema):
     """Response schema for ledger nym registration."""
 
     success = fields.Bool(
-        description="Success of nym registration operation",
-        example=True,
+        description="Success of nym registration operation", example=True
     )
 
     txn = fields.Nested(
@@ -198,9 +186,7 @@ class GetDIDVerkeyResponseSchema(OpenAPISchema):
     """Response schema to get DID verkey."""
 
     verkey = fields.Str(
-        description="Full verification key",
-        allow_none=True,
-        **INDY_RAW_PUBLIC_KEY,
+        description="Full verification key", allow_none=True, **INDY_RAW_PUBLIC_KEY
     )
 
 
@@ -208,16 +194,11 @@ class GetDIDEndpointResponseSchema(OpenAPISchema):
     """Response schema to get DID endpoint."""
 
     endpoint = fields.Str(
-        description="Full verification key",
-        allow_none=True,
-        **ENDPOINT,
+        description="Full verification key", allow_none=True, **ENDPOINT
     )
 
 
-@docs(
-    tags=["ledger"],
-    summary="Send a NYM registration to the ledger.",
-)
+@docs(tags=["ledger"], summary="Send a NYM registration to the ledger.")
 @querystring_schema(RegisterLedgerNymQueryStringSchema())
 @querystring_schema(CreateDidTxnForEndorserOptionSchema())
 @querystring_schema(SchemaConnIdMatchInfoSchema())
@@ -375,8 +356,7 @@ async def register_ledger_nym(request: web.BaseRequest):
 
 
 @docs(
-    tags=["ledger"],
-    summary="Get the role from the NYM registration of a public DID.",
+    tags=["ledger"], summary="Get the role from the NYM registration of a public DID."
 )
 @querystring_schema(QueryStringDIDSchema)
 @response_schema(GetNymRoleResponseSchema(), 200, description="")
@@ -400,8 +380,7 @@ async def get_nym_role(request: web.BaseRequest):
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
         ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-            did,
-            txn_record_type=GET_NYM_ROLE,
+            did, txn_record_type=GET_NYM_ROLE
         )
         if not ledger:
             reason = "No Indy ledger available"
@@ -451,10 +430,7 @@ async def rotate_public_did_keypair(request: web.BaseRequest):
     return web.json_response({})
 
 
-@docs(
-    tags=["ledger"],
-    summary="Get the verkey for a DID from the ledger.",
-)
+@docs(tags=["ledger"], summary="Get the verkey for a DID from the ledger.")
 @querystring_schema(QueryStringDIDSchema())
 @response_schema(GetDIDVerkeyResponseSchema(), 200, description="")
 async def get_did_verkey(request: web.BaseRequest):
@@ -477,8 +453,7 @@ async def get_did_verkey(request: web.BaseRequest):
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
         ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-            did,
-            txn_record_type=GET_KEY_FOR_DID,
+            did, txn_record_type=GET_KEY_FOR_DID
         )
         if not ledger:
             reason = "No ledger available"
@@ -500,10 +475,7 @@ async def get_did_verkey(request: web.BaseRequest):
         return web.json_response({"verkey": result})
 
 
-@docs(
-    tags=["ledger"],
-    summary="Get the endpoint for a DID from the ledger.",
-)
+@docs(tags=["ledger"], summary="Get the endpoint for a DID from the ledger.")
 @querystring_schema(QueryStringEndpointSchema())
 @response_schema(GetDIDEndpointResponseSchema(), 200, description="")
 async def get_did_endpoint(request: web.BaseRequest):
@@ -526,8 +498,7 @@ async def get_did_endpoint(request: web.BaseRequest):
         else:
             ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
         ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-            did,
-            txn_record_type=GET_ENDPOINT_FOR_DID,
+            did, txn_record_type=GET_ENDPOINT_FOR_DID
         )
         if not ledger:
             reason = "No Indy ledger available"
@@ -637,8 +608,7 @@ async def ledger_accept_taa(request: web.BaseRequest):
                 "version": accept_input["version"],
                 "text": accept_input["text"],
                 "digest": ledger.taa_digest(
-                    accept_input["version"],
-                    accept_input["text"],
+                    accept_input["version"], accept_input["text"]
                 ),
             }
             taa_record_digest = taa_record["digest"]

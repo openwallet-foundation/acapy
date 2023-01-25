@@ -170,10 +170,7 @@ class TestConnectionRoutes(AsyncTestCase):
             )
             await test_module.connections_endpoints(self.request)
             mock_response.assert_called_once_with(
-                {
-                    "my_endpoint": "localhost:8080",
-                    "their_endpoint": "1.2.3.4:8081",
-                }
+                {"my_endpoint": "localhost:8080", "their_endpoint": "1.2.3.4:8081"}
             )
 
     async def test_connections_endpoints_x(self):
@@ -455,10 +452,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
     async def test_connections_receive_invitation(self):
         self.request.json = async_mock.CoroutineMock()
-        self.request.query = {
-            "auto_accept": "true",
-            "alias": "alias",
-        }
+        self.request.query = {"auto_accept": "true", "alias": "alias"}
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
@@ -479,10 +473,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
     async def test_connections_receive_invitation_bad(self):
         self.request.json = async_mock.CoroutineMock()
-        self.request.query = {
-            "auto_accept": "true",
-            "alias": "alias",
-        }
+        self.request.query = {"auto_accept": "true", "alias": "alias"}
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
@@ -528,10 +519,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
     async def test_connections_accept_invitation(self):
         self.request.match_info = {"conn_id": "dummy"}
-        self.request.query = {
-            "my_label": "label",
-            "my_endpoint": "http://endpoint.ca",
-        }
+        self.request.query = {"my_label": "label", "my_endpoint": "http://endpoint.ca"}
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
@@ -594,9 +582,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
     async def test_connections_accept_request(self):
         self.request.match_info = {"conn_id": "dummy"}
-        self.request.query = {
-            "my_endpoint": "http://endpoint.ca",
-        }
+        self.request.query = {"my_endpoint": "http://endpoint.ca"}
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()
@@ -644,9 +630,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
     async def test_connections_establish_inbound(self):
         self.request.match_info = {"conn_id": "dummy", "ref_id": "ref"}
-        self.request.query = {
-            "my_endpoint": "http://endpoint.ca",
-        }
+        self.request.query = {"my_endpoint": "http://endpoint.ca"}
         mock_conn_rec = async_mock.MagicMock()
 
         with async_mock.patch.object(
@@ -675,9 +659,7 @@ class TestConnectionRoutes(AsyncTestCase):
 
     async def test_connections_establish_inbound_x(self):
         self.request.match_info = {"conn_id": "dummy", "ref_id": "ref"}
-        self.request.query = {
-            "my_endpoint": "http://endpoint.ca",
-        }
+        self.request.query = {"my_endpoint": "http://endpoint.ca"}
         mock_conn_rec = async_mock.MagicMock()
 
         with async_mock.patch.object(
@@ -749,10 +731,7 @@ class TestConnectionRoutes(AsyncTestCase):
                 "alias": "alias",
             }
         )
-        self.request.query = {
-            "auto_accept": "true",
-            "alias": "alias",
-        }
+        self.request.query = {"auto_accept": "true", "alias": "alias"}
         self.request.match_info = {"conn_id": "dummy"}
 
         mock_conn_rec = async_mock.MagicMock()
@@ -769,10 +748,8 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_conn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_conn_mgr.return_value.create_static_connection = (
-                async_mock.CoroutineMock(
-                    return_value=(mock_my_info, mock_their_info, mock_conn_rec)
-                )
+            mock_conn_mgr.return_value.create_static_connection = async_mock.CoroutineMock(
+                return_value=(mock_my_info, mock_their_info, mock_conn_rec)
             )
 
             await test_module.connections_create_static(self.request)
@@ -800,10 +777,7 @@ class TestConnectionRoutes(AsyncTestCase):
                 "alias": "alias",
             }
         )
-        self.request.query = {
-            "auto_accept": "true",
-            "alias": "alias",
-        }
+        self.request.query = {"auto_accept": "true", "alias": "alias"}
         self.request.match_info = {"conn_id": "dummy"}
 
         mock_conn_rec = async_mock.MagicMock()
@@ -818,8 +792,8 @@ class TestConnectionRoutes(AsyncTestCase):
         with async_mock.patch.object(
             test_module, "ConnectionManager", autospec=True
         ) as mock_conn_mgr:
-            mock_conn_mgr.return_value.create_static_connection = (
-                async_mock.CoroutineMock(side_effect=test_module.WalletError())
+            mock_conn_mgr.return_value.create_static_connection = async_mock.CoroutineMock(
+                side_effect=test_module.WalletError()
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest):

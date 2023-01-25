@@ -24,10 +24,7 @@ class HandshakeReuseAccept(AgentMessage):
         schema_class = "HandshakeReuseAcceptSchema"
 
     def __init__(
-        self,
-        version: str = DEFAULT_VERSION,
-        msg_type: Optional[Text] = None,
-        **kwargs,
+        self, version: str = DEFAULT_VERSION, msg_type: Optional[Text] = None, **kwargs
     ):
         """Initialize Handshake Reuse Accept object."""
         super().__init__(_type=msg_type, _version=version, **kwargs)

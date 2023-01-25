@@ -1,10 +1,6 @@
 """Transaction Job to send handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ..manager import TransactionManager, TransactionManagerError
 from ..messages.transaction_job_to_send import TransactionJobToSend

@@ -143,10 +143,7 @@ class IndyIssuer(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def revoke_credentials(
-        self,
-        revoc_reg_id: str,
-        tails_file_path: str,
-        cred_rev_ids: Sequence[str],
+        self, revoc_reg_id: str, tails_file_path: str, cred_rev_ids: Sequence[str]
     ) -> Tuple[str, Sequence[str]]:
         """
         Revoke a set of credentials in a revocation registry.

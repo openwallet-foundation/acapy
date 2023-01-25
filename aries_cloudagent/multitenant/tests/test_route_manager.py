@@ -33,22 +33,13 @@ def mock_responder():
 
 @pytest.fixture
 def root_profile(mock_responder: MockResponder):
-    yield InMemoryProfile.test_profile(
-        bind={
-            BaseResponder: mock_responder,
-        }
-    )
+    yield InMemoryProfile.test_profile(bind={BaseResponder: mock_responder})
 
 
 @pytest.fixture
 def sub_profile(mock_responder: MockResponder, wallet_id: str):
     yield InMemoryProfile.test_profile(
-        settings={
-            "wallet.id": wallet_id,
-        },
-        bind={
-            BaseResponder: mock_responder,
-        },
+        settings={"wallet.id": wallet_id}, bind={BaseResponder: mock_responder}
     )
 
 
@@ -164,11 +155,7 @@ async def test_route_for_key_base_mediator_no_sub_mediator(
         RoutingManager, "create_route_record", mock.CoroutineMock()
     ) as mock_create_route_record:
         keylist_update = await route_manager._route_for_key(
-            sub_profile,
-            TEST_VERKEY,
-            None,
-            skip_if_exists=False,
-            replace_key=None,
+            sub_profile, TEST_VERKEY, None, skip_if_exists=False, replace_key=None
         )
 
     mock_create_route_record.assert_called_once_with(
@@ -270,8 +257,7 @@ async def test_route_for_key_replace_key(
 
 @pytest.mark.asyncio
 async def test_route_for_key_no_mediator(
-    sub_profile: Profile,
-    route_manager: MultitenantRouteManager,
+    sub_profile: Profile, route_manager: MultitenantRouteManager
 ):
     assert (
         await route_manager._route_for_key(
@@ -287,8 +273,7 @@ async def test_route_for_key_no_mediator(
 
 @pytest.mark.asyncio
 async def test_routing_info_with_mediator(
-    sub_profile: Profile,
-    route_manager: MultitenantRouteManager,
+    sub_profile: Profile, route_manager: MultitenantRouteManager
 ):
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id",
@@ -305,8 +290,7 @@ async def test_routing_info_with_mediator(
 
 @pytest.mark.asyncio
 async def test_routing_info_no_mediator(
-    sub_profile: Profile,
-    route_manager: MultitenantRouteManager,
+    sub_profile: Profile, route_manager: MultitenantRouteManager
 ):
     keys, endpoint = await route_manager.routing_info(
         sub_profile, "http://example.com", None
@@ -317,8 +301,7 @@ async def test_routing_info_no_mediator(
 
 @pytest.mark.asyncio
 async def test_routing_info_with_base_mediator(
-    sub_profile: Profile,
-    route_manager: MultitenantRouteManager,
+    sub_profile: Profile, route_manager: MultitenantRouteManager
 ):
     base_mediation_record = MediationRecord(
         mediation_id="test-base-mediation-id",
@@ -341,8 +324,7 @@ async def test_routing_info_with_base_mediator(
 
 @pytest.mark.asyncio
 async def test_routing_info_with_base_mediator_and_sub_mediator(
-    sub_profile: Profile,
-    route_manager: MultitenantRouteManager,
+    sub_profile: Profile, route_manager: MultitenantRouteManager
 ):
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id",

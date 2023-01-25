@@ -16,11 +16,7 @@ class PleaseAckDecorator(BaseModel):
 
         schema_class = "PleaseAckDecoratorSchema"
 
-    def __init__(
-        self,
-        message_id: str = None,
-        on: Sequence[str] = None,
-    ):
+    def __init__(self, message_id: str = None, on: Sequence[str] = None):
         """
         Initialize a PleaseAckDecorator instance.
 

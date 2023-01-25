@@ -107,7 +107,7 @@ def mock_sign_request(mock_sign_credential):
                     ),
                     "proofPurpose": "assertionMethod",
                 },
-            },
+            }
         ),
         __getitem__=lambda _, k: request_dict[k],
     )
@@ -211,13 +211,7 @@ async def test_verify_bad_req_error(mock_verify_request, mock_response, error):
     assert "error" in mock_response.call_args[0][0]
 
 
-@pytest.mark.parametrize(
-    "error",
-    [
-        WalletError,
-        InjectionError,
-    ],
-)
+@pytest.mark.parametrize("error", [WalletError, InjectionError])
 @pytest.mark.asyncio
 async def test_verify_bad_req_http_error(mock_verify_request, mock_response, error):
     test_module.verify_credential = async_mock.CoroutineMock(side_effect=error())
@@ -235,19 +229,11 @@ async def test_verify_bad_ver_meth_deref_req_error(
 
 
 @pytest.mark.parametrize(
-    "vmethod",
-    [
-        "did:example:1234abcd#key-2",
-        "did:example:1234abcd#did-communication",
-    ],
+    "vmethod", ["did:example:1234abcd#key-2", "did:example:1234abcd#did-communication"]
 )
 @pytest.mark.asyncio
 async def test_verify_bad_vmethod_unsupported(
-    mock_resolver,
-    mock_verify_request,
-    mock_response,
-    request_body,
-    vmethod,
+    mock_resolver, mock_verify_request, mock_response, request_body, vmethod
 ):
     request_body["doc"]["proof"]["verificationMethod"] = vmethod
     with pytest.raises(web.HTTPBadRequest):
@@ -404,7 +390,7 @@ class TestJSONLDRoutes(AsyncTestCase):
                     ),
                 },
                 "https://www.w3.org/2018/credentials#credentialSubject": {
-                    "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd",
+                    "id": "did:key:z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
                 },
                 "https://www.w3.org/2018/credentials#issuanceDate": {
                     "type": "xsd:dateTime",
@@ -432,10 +418,7 @@ class TestJSONLDRoutes(AsyncTestCase):
                         "https://www.w3.org/2018/credentials/examples/v1",
                     ],
                     "id": "http://example.gov/credentials/3732",
-                    "type": [
-                        "VerifiableCredential",
-                        "UniversityDegreeCredential",
-                    ],
+                    "type": ["VerifiableCredential", "UniversityDegreeCredential"],
                     "issuer": (
                         "did:key:" "z6MkjRagNiMu91DduvCvgEsqLZDVzrJzFrwahc4tXLt9DoHd"
                     ),

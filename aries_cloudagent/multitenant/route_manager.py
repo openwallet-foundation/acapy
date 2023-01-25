@@ -28,10 +28,7 @@ LOGGER = logging.getLogger(__name__)
 class MultitenantRouteManager(RouteManager):
     """Multitenancy route manager."""
 
-    def __init__(
-        self,
-        root_profile: Profile,
-    ):
+    def __init__(self, root_profile: Profile):
         """Initialize multitenant route manager."""
         self.root_profile = root_profile
 

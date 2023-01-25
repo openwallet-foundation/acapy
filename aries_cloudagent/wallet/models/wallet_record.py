@@ -6,10 +6,7 @@ from marshmallow import fields
 from marshmallow import validate
 from marshmallow.utils import EXCLUDE
 
-from ...messaging.models.base_record import (
-    BaseRecord,
-    BaseRecordSchema,
-)
+from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import UUIDFour
 from ..error import WalletSettingsError
 
@@ -136,18 +133,13 @@ class WalletRecordSchema(BaseRecordSchema):
         unknown = EXCLUDE
 
     wallet_id = fields.Str(
-        required=True,
-        description="Wallet record ID",
-        example=UUIDFour.EXAMPLE,
+        required=True, description="Wallet record ID", example=UUIDFour.EXAMPLE
     )
     key_management_mode = fields.Str(
         required=True,
         description="Mode regarding management of wallet key",
         validate=validate.OneOf(
-            [
-                WalletRecord.MODE_MANAGED,
-                WalletRecord.MODE_UNMANAGED,
-            ]
+            [WalletRecord.MODE_MANAGED, WalletRecord.MODE_UNMANAGED]
         ),
     )
     settings = fields.Dict(required=False, description="Settings for this wallet.")

@@ -21,9 +21,7 @@ class TestQueries(TestCase):
         assert queries.queries[0].match == TEST_QUERY_PROTOCOL
         assert queries.queries[1].feature_type == "goal-code"
         assert queries.queries[1].match == TEST_QUERY_GOAL_CODE
-        test_queries = [
-            QueryItem(feature_type="protocol", match=TEST_QUERY_PROTOCOL),
-        ]
+        test_queries = [QueryItem(feature_type="protocol", match=TEST_QUERY_PROTOCOL)]
         queries = Queries(queries=test_queries)
         assert queries.queries[0].feature_type == "protocol"
         assert queries.queries[0].match == TEST_QUERY_PROTOCOL

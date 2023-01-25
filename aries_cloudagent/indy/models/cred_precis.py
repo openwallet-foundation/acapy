@@ -61,18 +61,12 @@ class IndyCredInfoSchema(BaseModelSchema):
         keys=fields.Str(example="userid"),  # marshmallow/apispec v3.0 ignores
         values=fields.Str(example="alice"),
     )
-    schema_id = fields.Str(
-        description="Schema identifier",
-        **INDY_SCHEMA_ID,
-    )
+    schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
-        allow_none=True,
+        description="Revocation registry identifier", **INDY_REV_REG_ID, allow_none=True
     )
     cred_rev_id = fields.Str(
         description="Credential revocation identifier",
@@ -84,17 +78,11 @@ class IndyCredInfoSchema(BaseModelSchema):
 class IndyCredPrecisSchema(OpenAPISchema):
     """Schema for precis that indy credential search returns (and aca-py augments)."""
 
-    cred_info = fields.Nested(
-        IndyCredInfoSchema(),
-        description="Credential info",
-    )
+    cred_info = fields.Nested(IndyCredInfoSchema(), description="Credential info")
     interval = fields.Nested(
         IndyNonRevocationIntervalSchema(),
         description="Non-revocation interval from presentation request",
     )
     presentation_referents = fields.List(  # aca-py augments with pres_referents
-        fields.Str(
-            description="presentation referent",
-            example="1_age_uuid",
-        ),
+        fields.Str(description="presentation referent", example="1_age_uuid")
     )

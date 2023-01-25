@@ -9,14 +9,8 @@ class TestV20CredExRecordLDProof(AsyncTestCase):
             V20CredExRecordLDProof(cred_ex_ld_proof_id="dummy-0", cred_ex_id="abc")
         ] * 2
         diff = [
-            V20CredExRecordLDProof(
-                cred_ex_ld_proof_id="dummy-0",
-                cred_ex_id="def",
-            ),
-            V20CredExRecordLDProof(
-                cred_ex_ld_proof_id="dummy-0",
-                cred_ex_id="abc",
-            ),
+            V20CredExRecordLDProof(cred_ex_ld_proof_id="dummy-0", cred_ex_id="def"),
+            V20CredExRecordLDProof(cred_ex_ld_proof_id="dummy-0", cred_ex_id="abc"),
         ]
 
         for i in range(len(same) - 1):

@@ -23,10 +23,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         )
 
     async def test_invitation_create(self):
-        self.request.query = {
-            "multi_use": "true",
-            "auto_accept": "true",
-        }
+        self.request.query = {"multi_use": "true", "auto_accept": "true"}
         body = {
             "attachments": async_mock.MagicMock(),
             "handshake_protocols": [test_module.HSProto.RFC23.name],
@@ -63,10 +60,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
             mock_json_response.assert_called_once_with({"abc": "123"})
 
     async def test_invitation_create_with_accept(self):
-        self.request.query = {
-            "multi_use": "true",
-            "auto_accept": "true",
-        }
+        self.request.query = {"multi_use": "true", "auto_accept": "true"}
         body = {
             "attachments": async_mock.MagicMock(),
             "handshake_protocols": [test_module.HSProto.RFC23.name],

@@ -72,16 +72,14 @@ async def test_resolver(mock_resolver, mock_response: async_mock.MagicMock, did_
     }
     request = async_mock.MagicMock(
         match_info={
-            "did": "did:ethr:mainnet:0xb9c5714089478a327f09197987f16f9e5d936e8a",
+            "did": "did:ethr:mainnet:0xb9c5714089478a327f09197987f16f9e5d936e8a"
         },
         query={},
         json=async_mock.CoroutineMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
     )
     with async_mock.patch.object(
-        context.profile,
-        "session",
-        async_mock.MagicMock(return_value=session),
+        context.profile, "session", async_mock.MagicMock(return_value=session)
     ) as mock_session:
         await test_module.resolve_did(request)
         mock_response.call_args[0][0] == did_doc.serialize()
@@ -115,16 +113,14 @@ async def test_resolver_not_found_error(mock_resolver, side_effect, error):
     }
     request = async_mock.MagicMock(
         match_info={
-            "did": "did:ethr:mainnet:0xb9c5714089478a327f09197987f16f9e5d936e8a",
+            "did": "did:ethr:mainnet:0xb9c5714089478a327f09197987f16f9e5d936e8a"
         },
         query={},
         json=async_mock.CoroutineMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
     )
     with async_mock.patch.object(
-        context.profile,
-        "session",
-        async_mock.MagicMock(return_value=session),
+        context.profile, "session", async_mock.MagicMock(return_value=session)
     ) as mock_session:
         with pytest.raises(error):
             await test_module.resolve_did(request)

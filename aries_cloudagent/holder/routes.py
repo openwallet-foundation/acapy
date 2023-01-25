@@ -54,51 +54,30 @@ class CredInfoListSchema(OpenAPISchema):
 class CredentialsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in credentials list query."""
 
-    start = fields.Str(
-        description="Start index",
-        required=False,
-        **NUM_STR_WHOLE,
-    )
+    start = fields.Str(description="Start index", required=False, **NUM_STR_WHOLE)
     count = fields.Str(
-        description="Maximum number to retrieve",
-        required=False,
-        **NUM_STR_NATURAL,
+        description="Maximum number to retrieve", required=False, **NUM_STR_NATURAL
     )
-    wql = fields.Str(
-        description="(JSON) WQL query",
-        required=False,
-        **INDY_WQL,
-    )
+    wql = fields.Str(description="(JSON) WQL query", required=False, **INDY_WQL)
 
 
 class W3CCredentialsListRequestSchema(OpenAPISchema):
     """Parameters and validators for W3C credentials request."""
 
     contexts = fields.List(
-        fields.Str(
-            description="Credential context to match",
-            **ENDPOINT,
-        ),
+        fields.Str(description="Credential context to match", **ENDPOINT),
         required=False,
     )
     types = fields.List(
-        fields.Str(
-            description="Credential type to match",
-            **ENDPOINT,
-        ),
-        required=False,
+        fields.Str(description="Credential type to match", **ENDPOINT), required=False
     )
     schema_ids = fields.List(
-        fields.Str(
-            description="Credential schema identifier",
-            **ENDPOINT,
-        ),
+        fields.Str(description="Credential schema identifier", **ENDPOINT),
         description="Schema identifiers, all of which to match",
         required=False,
     )
     issuer_id = fields.Str(
-        required=False,
-        description="Credential issuer identifier to match",
+        required=False, description="Credential issuer identifier to match"
     )
     subject_ids = fields.List(
         fields.Str(description="Subject identifier"),
@@ -282,10 +261,7 @@ async def credentials_remove(request: web.BaseRequest):
     return web.json_response({})
 
 
-@docs(
-    tags=["credentials"],
-    summary="Fetch credentials from wallet",
-)
+@docs(tags=["credentials"], summary="Fetch credentials from wallet")
 @querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(CredInfoListSchema(), 200, description="")
 async def credentials_list(request: web.BaseRequest):
@@ -321,10 +297,7 @@ async def credentials_list(request: web.BaseRequest):
     return web.json_response({"results": credentials})
 
 
-@docs(
-    tags=["credentials"],
-    summary="Fetch W3C credential from wallet by id",
-)
+@docs(tags=["credentials"], summary="Fetch W3C credential from wallet by id")
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(VCRecordSchema(), 200, description="")
 async def w3c_cred_get(request: web.BaseRequest):
@@ -353,10 +326,7 @@ async def w3c_cred_get(request: web.BaseRequest):
     return web.json_response(vc_record.serialize())
 
 
-@docs(
-    tags=["credentials"],
-    summary="Remove W3C credential from wallet by id",
-)
+@docs(tags=["credentials"], summary="Remove W3C credential from wallet by id")
 @match_info_schema(HolderCredIdMatchInfoSchema())
 @response_schema(HolderModuleResponseSchema(), 200, description="")
 async def w3c_cred_remove(request: web.BaseRequest):
@@ -390,10 +360,7 @@ async def w3c_cred_remove(request: web.BaseRequest):
     return web.json_response({})
 
 
-@docs(
-    tags=["credentials"],
-    summary="Fetch W3C credentials from wallet",
-)
+@docs(tags=["credentials"], summary="Fetch W3C credentials from wallet")
 @request_schema(W3CCredentialsListRequestSchema())
 @querystring_schema(CredentialsListQueryStringSchema())
 @response_schema(VCRecordListSchema(), 200, description="")
@@ -460,11 +427,7 @@ async def register(app: web.Application):
             ),
             web.delete("/credential/{credential_id}", credentials_remove),
             web.get("/credentials", credentials_list, allow_head=False),
-            web.get(
-                "/credential/w3c/{credential_id}",
-                w3c_cred_get,
-                allow_head=False,
-            ),
+            web.get("/credential/w3c/{credential_id}", w3c_cred_get, allow_head=False),
             web.delete("/credential/w3c/{credential_id}", w3c_cred_remove),
             web.post("/credentials/w3c", w3c_creds_list),
         ]

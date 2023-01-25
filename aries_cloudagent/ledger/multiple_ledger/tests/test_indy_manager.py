@@ -99,8 +99,7 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
             IndySdkLedgerPool("test_non_prod_2", checked=True), self.profile
         )
         self.manager = MultiIndyLedgerManager(
-            self.profile,
-            non_production_ledgers=self.non_production_ledger,
+            self.profile, non_production_ledgers=self.non_production_ledger
         )
         with async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
@@ -285,8 +284,7 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
             IndySdkLedgerPool("test_non_prod_2", checked=True), self.profile
         )
         self.manager = MultiIndyLedgerManager(
-            self.profile,
-            non_production_ledgers=self.non_production_ledger,
+            self.profile, non_production_ledgers=self.non_production_ledger
         )
         with async_mock.patch.object(
             test_module.asyncio, "wait", async_mock.CoroutineMock()
@@ -318,8 +316,7 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
             IndySdkLedgerPool("test_non_prod_2", checked=True), self.profile
         )
         self.manager = MultiIndyLedgerManager(
-            self.profile,
-            non_production_ledgers=self.non_production_ledger,
+            self.profile, non_production_ledgers=self.non_production_ledger
         )
         get_nym_reply = deepcopy(GET_NYM_REPLY)
         get_nym_reply["result"]["data"]["verkey"] = "ABUF7uxYTxZ6qYdZ4G9e1Gi"
@@ -389,7 +386,7 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
         cache = InMemoryCache()
         await cache.set("did_ledger_id_resolver::Av63wJYM7xYR4AiygYq4c3", "test_prod_2")
         self.profile.context.injector.bind_instance(BaseCache, cache)
-        (ledger_id, ledger_inst,) = await self.manager.lookup_did_in_configured_ledgers(
+        (ledger_id, ledger_inst) = await self.manager.lookup_did_in_configured_ledgers(
             "Av63wJYM7xYR4AiygYq4c3", cache_did=True
         )
         assert ledger_id == "test_prod_2"
@@ -401,7 +398,7 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
             "did_ledger_id_resolver::Av63wJYM7xYR4AiygYq4c3", "test_non_prod_2", None
         )
         self.profile.context.injector.bind_instance(BaseCache, cache)
-        (ledger_id, ledger_inst,) = await self.manager.lookup_did_in_configured_ledgers(
+        (ledger_id, ledger_inst) = await self.manager.lookup_did_in_configured_ledgers(
             "Av63wJYM7xYR4AiygYq4c3", cache_did=True
         )
         assert ledger_id == "test_non_prod_2"

@@ -226,9 +226,7 @@ class TestBaseRecord(AsyncTestCase):
             session, tag_filter, post_filter_positive={"a": "one"}
         )
         mock_storage.find_all_records.assert_awaited_once_with(
-            ARecordImpl.RECORD_TYPE,
-            tag_filter,
-            options={"retrieveTags": False},
+            ARecordImpl.RECORD_TYPE, tag_filter, options={"retrieveTags": False}
         )
         assert result and isinstance(result[0], ARecordImpl)
         assert result[0]._id == record_id

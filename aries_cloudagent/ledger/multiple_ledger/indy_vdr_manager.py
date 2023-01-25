@@ -64,9 +64,7 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         return self.non_production_ledgers
 
     async def _get_ledger_by_did(
-        self,
-        ledger_id: str,
-        did: str,
+        self, ledger_id: str, did: str
     ) -> Optional[Tuple[str, IndyVdrLedger, bool]]:
         """Build and submit GET_NYM request and process response.
 

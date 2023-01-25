@@ -48,10 +48,7 @@ class TestCMProblemReportMessage(TestCase):
     def test_validate_and_logger(self):
         """Capture ValidationError and Logs."""
         data = CMProblemReport(
-            description={
-                "en": "Insufficient credit",
-                "code": "invalid_code",
-            },
+            description={"en": "Insufficient credit", "code": "invalid_code"}
         ).serialize()
         self._caplog.set_level(logging.WARNING)
         CMProblemReportSchema().validate_fields(data)

@@ -64,12 +64,7 @@ DIF_PROOF_REQ = {
     "presentation_definition": {
         "id": "32f54163-7166-48f1-93d8-ff217bdb0654",
         "submission_requirements": [
-            {
-                "name": "Citizenship Information",
-                "rule": "pick",
-                "min": 1,
-                "from": "A",
-            }
+            {"name": "Citizenship Information", "rule": "pick", "min": 1, "from": "A"}
         ],
         "input_descriptors": [
             {
@@ -86,10 +81,7 @@ DIF_PROOF_REQ = {
                         {
                             "path": ["$.credentialSubject.givenName"],
                             "purpose": "The claim must be from one of the specified issuers",
-                            "filter": {
-                                "type": "string",
-                                "enum": ["JOHN", "CAI"],
-                            },
+                            "filter": {"type": "string", "enum": ["JOHN", "CAI"]},
                         }
                     ],
                 },
@@ -386,9 +378,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(returned_credentials)
 
     async def test_present_proof_credentials_list_dif(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
 
         returned_credentials = [
@@ -460,9 +450,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             )
 
     async def test_present_proof_credentials_list_dif_one_of_filter(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
 
         returned_credentials = [
@@ -548,9 +536,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             )
 
     async def test_present_proof_credentials_dif_no_tag_query(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
         test_pd = deepcopy(DIF_PROOF_REQ)
         test_pd["presentation_definition"]["input_descriptors"][0]["schema"][0][
@@ -628,9 +614,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             )
 
     async def test_present_proof_credentials_single_ldp_vp_claim_format(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
         test_pd = deepcopy(DIF_PROOF_REQ)
         test_pd["presentation_definition"]["format"] = {
@@ -708,9 +692,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             )
 
     async def test_present_proof_credentials_double_ldp_vp_claim_format(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
         test_pd = deepcopy(DIF_PROOF_REQ)
         test_pd["presentation_definition"]["format"] = {
@@ -788,9 +770,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             )
 
     async def test_present_proof_credentials_single_ldp_vp_error(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
         test_pd = deepcopy(DIF_PROOF_REQ)
         test_pd["presentation_definition"]["format"] = {
@@ -851,9 +831,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_credentials_list(self.request)
 
     async def test_present_proof_credentials_double_ldp_vp_error(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
         test_pd = deepcopy(DIF_PROOF_REQ)
         test_pd["presentation_definition"]["format"] = {
@@ -914,9 +892,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_credentials_list(self.request)
 
     async def test_present_proof_credentials_list_limit_disclosure_no_bbs(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
         test_pd = deepcopy(DIF_PROOF_REQ)
         test_pd["presentation_definition"]["format"] = {
@@ -974,9 +950,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_credentials_list(self.request)
 
     async def test_present_proof_credentials_no_ldp_vp(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
         test_pd = deepcopy(DIF_PROOF_REQ)
         test_pd["presentation_definition"]["format"] = {
@@ -1037,9 +1011,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 await test_module.present_proof_credentials_list(self.request)
 
     async def test_present_proof_credentials_list_schema_uri(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
         test_pd = deepcopy(DIF_PROOF_REQ)
         test_pd["presentation_definition"]["input_descriptors"][0]["schema"][0][
@@ -1115,9 +1087,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             )
 
     async def test_present_proof_credentials_list_dif_error(self):
-        self.request.match_info = {
-            "pres_ex_id": "123-456-789",
-        }
+        self.request.match_info = {"pres_ex_id": "123-456-789"}
         self.request.query = {"extra_query": {}}
 
         self.profile.context.injector.bind_instance(
@@ -1252,8 +1222,8 @@ class TestPresentProofRoutes(AsyncTestCase):
                 return_value=async_mock.MagicMock(is_ready=True)
             )
             mock_px_rec_inst = async_mock.MagicMock()
-            mock_pres_mgr.return_value.create_exchange_for_proposal = (
-                async_mock.CoroutineMock(return_value=mock_px_rec_inst)
+            mock_pres_mgr.return_value.create_exchange_for_proposal = async_mock.CoroutineMock(
+                return_value=mock_px_rec_inst
             )
 
             await test_module.present_proof_send_proposal(self.request)
@@ -1297,14 +1267,12 @@ class TestPresentProofRoutes(AsyncTestCase):
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
         ) as mock_pres_mgr:
-            mock_pres_mgr.return_value.create_exchange_for_proposal = (
-                async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        serialize=async_mock.MagicMock(
-                            side_effect=test_module.StorageError()
-                        ),
-                        save_error_state=async_mock.CoroutineMock(),
-                    )
+            mock_pres_mgr.return_value.create_exchange_for_proposal = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    serialize=async_mock.MagicMock(
+                        side_effect=test_module.StorageError()
+                    ),
+                    save_error_state=async_mock.CoroutineMock(),
                 )
             )
 
@@ -1500,9 +1468,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -1524,9 +1490,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_px_rec_inst
             )
-            mock_conn_rec_inst = async_mock.MagicMock(
-                is_ready=True,
-            )
+            mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
             mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_conn_rec_inst
             )
@@ -1557,9 +1521,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -1597,9 +1559,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -1617,9 +1577,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_px_rec_inst
             )
-            mock_conn_rec_inst = async_mock.MagicMock(
-                is_ready=False,
-            )
+            mock_conn_rec_inst = async_mock.MagicMock(is_ready=False)
             mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_conn_rec_inst
             )
@@ -1654,9 +1612,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -1689,9 +1645,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -1712,9 +1666,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             mock_px_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_px_rec_inst
             )
-            mock_conn_rec_inst = async_mock.MagicMock(
-                is_ready=True,
-            )
+            mock_conn_rec_inst = async_mock.MagicMock(is_ready=True)
             mock_conn_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_conn_rec_inst
             )
@@ -1740,14 +1692,10 @@ class TestPresentProofRoutes(AsyncTestCase):
                 }
             }
         )
-        self.request.match_info = {
-            "pres_ex_id": "dummy",
-        }
+        self.request.match_info = {"pres_ex_id": "dummy"}
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -1790,19 +1738,11 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_dif(self):
         proof_req = deepcopy(DIF_PROOF_REQ)
         proof_req["issuer_id"] = "test123"
-        self.request.json = async_mock.CoroutineMock(
-            return_value={
-                "dif": proof_req,
-            }
-        )
-        self.request.match_info = {
-            "pres_ex_id": "dummy",
-        }
+        self.request.json = async_mock.CoroutineMock(return_value={"dif": proof_req})
+        self.request.match_info = {"pres_ex_id": "dummy"}
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -1846,9 +1786,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(
             return_value={"dif": DIF_PROOF_REQ}
         )
-        self.request.match_info = {
-            "pres_ex_id": "dummy",
-        }
+        self.request.match_info = {"pres_ex_id": "dummy"}
         px_rec_instance = V20PresExRecord(
             state="request-received",
             role="prover",
@@ -1879,9 +1817,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -1923,9 +1859,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 }
             }
         )
-        self.request.match_info = {
-            "pres_ex_id": "dummy",
-        }
+        self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
@@ -1949,14 +1883,10 @@ class TestPresentProofRoutes(AsyncTestCase):
                 }
             }
         )
-        self.request.match_info = {
-            "pres_ex_id": "dummy",
-        }
+        self.request.match_info = {"pres_ex_id": "dummy"}
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -1994,14 +1924,10 @@ class TestPresentProofRoutes(AsyncTestCase):
                 }
             }
         )
-        self.request.match_info = {
-            "pres_ex_id": "dummy",
-        }
+        self.request.match_info = {"pres_ex_id": "dummy"}
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -2039,9 +1965,7 @@ class TestPresentProofRoutes(AsyncTestCase):
                 }
             }
         )
-        self.request.match_info = {
-            "pres_ex_id": "dummy",
-        }
+        self.request.match_info = {"pres_ex_id": "dummy"}
 
         with async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
@@ -2071,14 +1995,10 @@ class TestPresentProofRoutes(AsyncTestCase):
                 }
             }
         )
-        self.request.match_info = {
-            "pres_ex_id": "dummy",
-        }
+        self.request.match_info = {"pres_ex_id": "dummy"}
         self.profile.context.injector.bind_instance(
             IndyVerifier,
-            async_mock.MagicMock(
-                verify_presentation=async_mock.CoroutineMock(),
-            ),
+            async_mock.MagicMock(verify_presentation=async_mock.CoroutineMock()),
         )
 
         with async_mock.patch.object(
@@ -2109,10 +2029,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
             mock_pres_mgr_inst = async_mock.MagicMock(
                 create_pres=async_mock.CoroutineMock(
-                    side_effect=[
-                        test_module.LedgerError(),
-                        test_module.StorageError(),
-                    ]
+                    side_effect=[test_module.LedgerError(), test_module.StorageError()]
                 )
             )
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
@@ -2221,10 +2138,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
             mock_pres_mgr_inst = async_mock.MagicMock(
                 verify_pres=async_mock.CoroutineMock(
-                    side_effect=[
-                        test_module.LedgerError(),
-                        test_module.StorageError(),
-                    ]
+                    side_effect=[test_module.LedgerError(), test_module.StorageError()]
                 )
             )
             mock_pres_mgr_cls.return_value = mock_pres_mgr_inst
@@ -2442,9 +2356,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
     async def test_send_presentation_no_specification(self):
         self.request.json = async_mock.CoroutineMock(return_value={"comment": "test"})
-        self.request.match_info = {
-            "pres_ex_id": "dummy",
-        }
+        self.request.match_info = {"pres_ex_id": "dummy"}
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.present_proof_send_presentation(self.request)
 

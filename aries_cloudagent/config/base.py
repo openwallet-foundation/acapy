@@ -112,9 +112,7 @@ class BaseInjector(ABC):
 
     @abstractmethod
     def inject(
-        self,
-        base_cls: Type[InjectType],
-        settings: Optional[Mapping[str, Any]] = None,
+        self, base_cls: Type[InjectType], settings: Optional[Mapping[str, Any]] = None
     ) -> InjectType:
         """
         Get the provided instance of a given class identifier.

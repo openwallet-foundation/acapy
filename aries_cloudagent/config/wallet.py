@@ -99,10 +99,7 @@ async def wallet_config(
             metadata = {"endpoint": endpoint} if endpoint else None
 
             local_did_info = await wallet.create_local_did(
-                method=SOV,
-                key_type=ED25519,
-                seed=wallet_seed,
-                metadata=metadata,
+                method=SOV, key_type=ED25519, seed=wallet_seed, metadata=metadata
             )
             local_did = local_did_info.did
             if provision:

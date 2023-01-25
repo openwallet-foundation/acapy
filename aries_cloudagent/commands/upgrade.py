@@ -186,10 +186,8 @@ async def upgrade(settings: dict):
                 "update_existing_records" in upgrade_config
                 and upgrade_config.get("update_existing_records") is True
             ):
-                update_existing_recs_callable = (
-                    version_upgrade_config_inst.get_update_existing_func(
-                        config_from_version
-                    )
+                update_existing_recs_callable = version_upgrade_config_inst.get_update_existing_func(
+                    config_from_version
                 )
                 if not update_existing_recs_callable:
                     raise UpgradeError(
@@ -202,10 +200,7 @@ async def upgrade(settings: dict):
             storage = session.inject(BaseStorage)
             if not version_storage_record:
                 await storage.add_record(
-                    StorageRecord(
-                        RECORD_TYPE_ACAPY_VERSION,
-                        upgrade_to_version,
-                    )
+                    StorageRecord(RECORD_TYPE_ACAPY_VERSION, upgrade_to_version)
                 )
             else:
                 await storage.update_record(
@@ -246,11 +241,7 @@ def main():
 
 
 # Update every release
-CONFIG_v7_3 = {
-    "v0.7.2": {
-        "update_existing_function_inst": update_existing_records,
-    },
-}
+CONFIG_v7_3 = {"v0.7.2": {"update_existing_function_inst": update_existing_records}}
 
 
 main()

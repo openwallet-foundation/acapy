@@ -63,10 +63,7 @@ def diff_dict_keys(
             elif full.get("@type"):
                 doc["@type"] = full.get("@type")
 
-            expanded = jsonld.expand(
-                doc,
-                {"documentLoader": document_loader},
-            )
+            expanded = jsonld.expand(doc, {"documentLoader": document_loader})
 
             if len(expanded) > 0:
                 expanded = expanded[0]
@@ -135,9 +132,7 @@ def get_properties_without_context(
 
     # Removes unknown keys from object
     compact = jsonld.compact(
-        document,
-        document["@context"],
-        {"documentLoader": document_loader},
+        document, document["@context"], {"documentLoader": document_loader}
     )
 
     missing = diff_dict_keys(

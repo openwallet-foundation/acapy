@@ -77,8 +77,7 @@ class CredentialRequestHandler(BaseHandler):
                         cred_ex_record,
                         credential_issue_message,
                     ) = await credential_manager.issue_credential(
-                        cred_ex_record=cred_ex_record,
-                        comment=context.message.comment,
+                        cred_ex_record=cred_ex_record, comment=context.message.comment
                     )
                     await responder.send_reply(credential_issue_message)
                 except (
@@ -92,8 +91,7 @@ class CredentialRequestHandler(BaseHandler):
                     if cred_ex_record:
                         async with profile.session() as session:
                             await cred_ex_record.save_error_state(
-                                session,
-                                reason=err.roll_up,  # us: be specific
+                                session, reason=err.roll_up  # us: be specific
                             )
                         await responder.send_reply(  # them: be vague
                             problem_report_for_record(

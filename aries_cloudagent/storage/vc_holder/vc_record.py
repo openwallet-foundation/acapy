@@ -99,7 +99,7 @@ class VCRecordSchema(BaseModelSchema):
         fields.Str(
             description="JSON-LD expanded type extracted from type and context",
             example="https://w3id.org/citizenship#PermanentResidentCard",
-        ),
+        )
     )
     schema_ids = fields.List(
         fields.Str(
@@ -108,8 +108,7 @@ class VCRecordSchema(BaseModelSchema):
         )
     )
     issuer_id = fields.Str(
-        description="Issuer identifier",
-        example="https://example.edu/issuers/14",
+        description="Issuer identifier", example="https://example.edu/issuers/14"
     )
     subject_ids = fields.List(
         fields.Str(

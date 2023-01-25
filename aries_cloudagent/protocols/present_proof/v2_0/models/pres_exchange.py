@@ -173,10 +173,7 @@ class V20PresExRecord(BaseExchangeRecord):
 
         try:
             await self.save(
-                session,
-                reason=reason,
-                log_params=log_params,
-                log_override=log_override,
+                session, reason=reason, log_params=log_params, log_override=log_override
             )
         except StorageError as err:
             LOGGER.exception(err)
@@ -202,11 +199,7 @@ class V20PresExRecord(BaseExchangeRecord):
             },
             **{
                 prop: getattr(self, f"_{prop}").ser
-                for prop in (
-                    "pres_proposal",
-                    "pres_request",
-                    "pres",
-                )
+                for prop in ("pres_proposal", "pres_request", "pres")
                 if getattr(self, prop) is not None
             },
         }
@@ -273,9 +266,7 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         description="Presentation request message",
     )
     pres = fields.Nested(
-        V20PresSchema(),
-        required=False,
-        description="Presentation message",
+        V20PresSchema(), required=False, description="Presentation message"
     )
     by_format = fields.Nested(
         Schema.from_dict(

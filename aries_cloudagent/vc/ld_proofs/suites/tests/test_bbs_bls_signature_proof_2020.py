@@ -197,9 +197,7 @@ class TestBbsBlsSignatureProof2020(TestCase):
         assert result.verified
 
     async def test_derive_proof_x_invalid_proof_type(self):
-        suite = BbsBlsSignatureProof2020(
-            key_pair=self.key_pair,
-        )
+        suite = BbsBlsSignatureProof2020(key_pair=self.key_pair)
 
         with self.assertRaises(LinkedDataProofException):
             await suite.derive_proof(

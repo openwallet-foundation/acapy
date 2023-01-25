@@ -40,8 +40,7 @@ CONNECTION_ID_SCHEMA = fields.UUID(
 
 
 MEDIATION_ID_SCHEMA = fields.UUID(
-    description="Mediation record identifier",
-    example=UUIDFour.EXAMPLE,
+    description="Mediation record identifier", example=UUIDFour.EXAMPLE
 )
 
 
@@ -85,8 +84,7 @@ class MediationListSchema(OpenAPISchema):
     """Result schema for mediation list query."""
 
     results = fields.List(
-        fields.Nested(MediationRecordSchema),
-        description="List of mediation records",
+        fields.Nested(MediationRecordSchema), description="List of mediation records"
     )
 
 
@@ -139,18 +137,14 @@ class KeylistSchema(OpenAPISchema):
     """Result schema for mediation list query."""
 
     results = fields.List(
-        fields.Nested(RouteRecordSchema),
-        description="List of keylist records",
+        fields.Nested(RouteRecordSchema), description="List of keylist records"
     )
 
 
 class KeylistQueryFilterRequestSchema(OpenAPISchema):
     """Request schema for keylist query filtering."""
 
-    filter = fields.Dict(
-        required=False,
-        description="Filter for keylist query",
-    )
+    filter = fields.Dict(required=False, description="Filter for keylist query")
 
 
 class KeylistQueryPaginateQuerySchema(OpenAPISchema):
@@ -354,10 +348,7 @@ async def mediation_request_deny(request: web.BaseRequest):
     return web.json_response(result, status=201)
 
 
-@docs(
-    tags=["mediation"],
-    summary="Retrieve keylists by connection or role",
-)
+@docs(tags=["mediation"], summary="Retrieve keylists by connection or role")
 @querystring_schema(GetKeylistQuerySchema())
 @response_schema(KeylistSchema(), 200)
 async def get_keylist(request: web.BaseRequest):
@@ -381,10 +372,7 @@ async def get_keylist(request: web.BaseRequest):
     return web.json_response({"results": results}, status=200)
 
 
-@docs(
-    tags=["mediation"],
-    summary="Send keylist query to mediator",
-)
+@docs(tags=["mediation"], summary="Send keylist query to mediator")
 @match_info_schema(MediationIdMatchInfoSchema())
 @querystring_schema(KeylistQueryPaginateQuerySchema())
 @request_schema(KeylistQueryFilterRequestSchema())
@@ -563,8 +551,7 @@ async def register(app: web.Application):
             ),
             web.delete("/mediation/requests/{mediation_id}", delete_mediation_request),
             web.post(
-                "/mediation/requests/{mediation_id}/grant",
-                mediation_request_grant,
+                "/mediation/requests/{mediation_id}/grant", mediation_request_grant
             ),
             web.post("/mediation/requests/{mediation_id}/deny", mediation_request_deny),
             web.post("/mediation/request/{conn_id}", request_mediation),

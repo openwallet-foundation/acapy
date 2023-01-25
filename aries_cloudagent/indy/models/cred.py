@@ -37,14 +37,9 @@ class IndyAttrValueSchema(BaseModelSchema):
         model_class = IndyAttrValue
         unknown = EXCLUDE
 
-    raw = fields.Str(
-        required=True,
-        description="Attribute raw value",
-    )
+    raw = fields.Str(required=True, description="Attribute raw value")
     encoded = fields.Str(
-        required=True,
-        description="Attribute encoded value",
-        **NUM_STR_ANY,
+        required=True, description="Attribute encoded value", **NUM_STR_ANY
     )
 
 
@@ -88,9 +83,7 @@ class IndyCredentialSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     schema_id = fields.Str(
-        required=True,
-        description="Schema identifier",
-        **INDY_SCHEMA_ID,
+        required=True, description="Schema identifier", **INDY_SCHEMA_ID
     )
     cred_def_id = fields.Str(
         required=True,
@@ -98,32 +91,17 @@ class IndyCredentialSchema(BaseModelSchema):
         **INDY_CRED_DEF_ID,
     )
     rev_reg_id = fields.Str(
-        allow_none=True,
-        description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        allow_none=True, description="Revocation registry identifier", **INDY_REV_REG_ID
     )
     values = fields.Dict(
         keys=fields.Str(description="Attribute name"),
-        values=fields.Nested(
-            IndyAttrValueSchema(),
-            description="Attribute value",
-        ),
+        values=fields.Nested(IndyAttrValueSchema(), description="Attribute value"),
         required=True,
         description="Credential attributes",
     )
-    signature = fields.Dict(
-        required=True,
-        description="Credential signature",
-    )
+    signature = fields.Dict(required=True, description="Credential signature")
     signature_correctness_proof = fields.Dict(
-        required=True,
-        description="Credential signature correctness proof",
+        required=True, description="Credential signature correctness proof"
     )
-    rev_reg = fields.Dict(
-        allow_none=True,
-        description="Revocation registry state",
-    )
-    witness = fields.Dict(
-        allow_none=True,
-        description="Witness for revocation proof",
-    )
+    rev_reg = fields.Dict(allow_none=True, description="Revocation registry state")
+    witness = fields.Dict(allow_none=True, description="Witness for revocation proof")

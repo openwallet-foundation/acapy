@@ -100,9 +100,7 @@ class V20CredOfferSchema(AgentMessageSchema):
         example=UUIDFour.EXAMPLE,
     )
     comment = fields.Str(
-        description="Human-readable comment",
-        required=False,
-        allow_none=True,
+        description="Human-readable comment", required=False, allow_none=True
     )
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
     formats = fields.Nested(

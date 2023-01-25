@@ -53,11 +53,7 @@ class DIDResolver:
         for resolver in await self._match_did_to_resolver(profile, did):
             try:
                 LOGGER.debug("Resolving DID %s with %s", did, resolver)
-                document = await resolver.resolve(
-                    profile,
-                    did,
-                    service_accept,
-                )
+                document = await resolver.resolve(profile, did, service_accept)
                 return resolver, document
             except DIDNotFound:
                 LOGGER.debug("DID %s not found by resolver %s", did, resolver)

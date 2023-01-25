@@ -1,10 +1,6 @@
 """Action menu request message handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ..base_service import BaseMenuService
 from ..messages.menu_request import MenuRequest
@@ -29,9 +25,7 @@ class MenuRequestHandler(BaseHandler):
         service: BaseMenuService = context.inject_or(BaseMenuService)
         if service:
             menu = await service.get_active_menu(
-                context.profile,
-                context.connection_record,
-                context.message._thread_id,
+                context.profile, context.connection_record, context.message._thread_id
             )
             if menu:
                 await responder.send_reply(menu)

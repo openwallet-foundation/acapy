@@ -57,13 +57,7 @@ class IssuerRevRegRecord(BaseRecord):
     RECORD_TYPE = "issuer_rev_reg"
     RECORD_TOPIC = "revocation_registry"
     LOG_STATE_FLAG = "debug.revocation"
-    TAG_NAMES = {
-        "cred_def_id",
-        "issuer_did",
-        "revoc_def_type",
-        "revoc_reg_id",
-        "state",
-    }
+    TAG_NAMES = {"cred_def_id", "issuer_did", "revoc_def_type", "revoc_reg_id", "state"}
 
     REVOC_DEF_TYPE_CL = "CL_ACCUM"
 
@@ -156,10 +150,7 @@ class IssuerRevRegRecord(BaseRecord):
             },
             **{
                 prop: getattr(self, f"_{prop}").ser
-                for prop in (
-                    "revoc_reg_def",
-                    "revoc_reg_entry",
-                )
+                for prop in ("revoc_reg_def", "revoc_reg_entry")
                 if getattr(self, prop) is not None
             },
         }
@@ -232,10 +223,7 @@ class IssuerRevRegRecord(BaseRecord):
             await self.save(session, reason="Set tails file public URI")
 
     async def send_def(
-        self,
-        profile: Profile,
-        write_ledger: bool = True,
-        endorser_did: str = None,
+        self, profile: Profile, write_ledger: bool = True, endorser_did: str = None
     ) -> dict:
         """Send the revocation registry definition to the ledger."""
         if not (self.revoc_reg_def and self.issuer_did):
@@ -266,10 +254,7 @@ class IssuerRevRegRecord(BaseRecord):
         return rev_reg_res
 
     async def send_entry(
-        self,
-        profile: Profile,
-        write_ledger: bool = True,
-        endorser_did: str = None,
+        self, profile: Profile, write_ledger: bool = True, endorser_did: str = None
     ) -> dict:
         """Send a registry entry to the ledger."""
         if not (
@@ -314,9 +299,7 @@ class IssuerRevRegRecord(BaseRecord):
                     LOGGER.warn("Retry ledger update/fix due to error")
                     LOGGER.warn(err)
                     (_, _, res) = await self.fix_ledger_entry(
-                        profile,
-                        True,
-                        ledger.pool.genesis_txns,
+                        profile, True, ledger.pool.genesis_txns
                     )
                     rev_entry_res = {"result": res}
                     LOGGER.warn("Ledger update/fix applied")
@@ -343,10 +326,7 @@ class IssuerRevRegRecord(BaseRecord):
         return rev_entry_res
 
     async def fix_ledger_entry(
-        self,
-        profile: Profile,
-        apply_ledger_update: bool,
-        genesis_transactions: str,
+        self, profile: Profile, apply_ledger_update: bool, genesis_transactions: str
     ) -> Tuple[dict, dict, dict]:
         """Fix the ledger entry to match wallet-recorded credentials."""
         # get rev reg delta (revocations published to ledger)
@@ -392,9 +372,7 @@ class IssuerRevRegRecord(BaseRecord):
                     accum_count += 1
 
                 calculated_txn = await generate_ledger_rrrecovery_txn(
-                    genesis_transactions,
-                    self.revoc_reg_id,
-                    revoked_ids,
+                    genesis_transactions, self.revoc_reg_id, revoked_ids
                 )
                 recovery_txn = json.loads(calculated_txn.to_json())
 

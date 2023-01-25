@@ -21,16 +21,14 @@ class V20PresProblemReportHandler(BaseHandler):
             responder: responder callback
         """
         self._logger.debug(
-            "Present-proof v2.0 problem report handler called with context %s",
-            context,
+            "Present-proof v2.0 problem report handler called with context %s", context
         )
         assert isinstance(context.message, V20PresProblemReport)
 
         pres_manager = V20PresManager(context.profile)
         try:
             await pres_manager.receive_problem_report(
-                context.message,
-                context.connection_record.connection_id,
+                context.message, context.connection_record.connection_id
             )
         except (StorageError, StorageNotFoundError):
             self._logger.exception(

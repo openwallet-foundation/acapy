@@ -34,8 +34,7 @@ class WalletKeyPair(KeyPair):
                 "Unable to sign message with WalletKey: No key to sign with"
             )
         return await self.wallet.sign_message(
-            message=message,
-            from_verkey=self.public_key_base58,
+            message=message, from_verkey=self.public_key_base58
         )
 
     async def verify(

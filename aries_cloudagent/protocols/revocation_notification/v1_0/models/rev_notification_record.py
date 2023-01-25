@@ -23,12 +23,7 @@ class RevNotificationRecord(BaseRecord):
 
     RECORD_TYPE = "revocation_notification"
     RECORD_ID_NAME = "revocation_notification_id"
-    TAG_NAMES = {
-        "rev_reg_id",
-        "cred_rev_id",
-        "connection_id",
-        "version",
-    }
+    TAG_NAMES = {"rev_reg_id", "cred_rev_id", "connection_id", "version"}
 
     def __init__(
         self,
@@ -63,10 +58,7 @@ class RevNotificationRecord(BaseRecord):
 
     @classmethod
     async def query_by_ids(
-        cls,
-        session: ProfileSession,
-        cred_rev_id: str,
-        rev_reg_id: str,
+        cls, session: ProfileSession, cred_rev_id: str, rev_reg_id: str
     ) -> "RevNotificationRecord":
         """Retrieve revocation notification record by cred rev id and/or rev reg id.
 
@@ -94,9 +86,7 @@ class RevNotificationRecord(BaseRecord):
 
     @classmethod
     async def query_by_rev_reg_id(
-        cls,
-        session: ProfileSession,
-        rev_reg_id: str,
+        cls, session: ProfileSession, rev_reg_id: str
     ) -> Sequence["RevNotificationRecord"]:
         """Retrieve revocation notification records by rev reg id.
 
@@ -118,10 +108,7 @@ class RevNotificationRecord(BaseRecord):
                 "No thread ID set on revocation notification record, "
                 "cannot create message"
             )
-        return Revoke(
-            thread_id=self.thread_id,
-            comment=self.comment,
-        )
+        return Revoke(thread_id=self.thread_id, comment=self.comment)
 
 
 class RevNotificationRecordSchema(BaseRecordSchema):
@@ -134,9 +121,7 @@ class RevNotificationRecordSchema(BaseRecordSchema):
         unknown = EXCLUDE
 
     rev_reg_id = fields.Str(
-        required=False,
-        description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        required=False, description="Revocation registry identifier", **INDY_REV_REG_ID
     )
     cred_rev_id = fields.Str(
         required=False,
@@ -163,6 +148,5 @@ class RevNotificationRecordSchema(BaseRecordSchema):
         required=False,
     )
     version = fields.Str(
-        description="Version of Revocation Notification to send out",
-        required=False,
+        description="Version of Revocation Notification to send out", required=False
     )

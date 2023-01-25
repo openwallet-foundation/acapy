@@ -388,9 +388,7 @@ class TestPresExchSchemas(TestCase):
             ],
             [{"uri": "https://www.w3.org/Test#Test"}],
         ]
-        test_schemas_filter = {
-            "oneof_filter": test_schema_list,
-        }
+        test_schemas_filter = {"oneof_filter": test_schema_list}
 
         deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
             test_schemas_filter
@@ -415,9 +413,7 @@ class TestPresExchSchemas(TestCase):
             {"uri": "https://www.w3.org/Test#Test"},
             {"uri": "https://w3id.org/citizenship#PermanentResidentCard"},
         ]
-        test_schemas_filter = {
-            "oneof_filter": test_schema_list,
-        }
+        test_schemas_filter = {"oneof_filter": test_schema_list}
 
         deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
             test_schemas_filter

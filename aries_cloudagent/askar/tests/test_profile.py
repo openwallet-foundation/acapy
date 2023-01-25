@@ -17,9 +17,7 @@ def open_store():
 
 @pytest.mark.asyncio
 async def test_init_success(open_store):
-    askar_profile = AskarProfile(
-        open_store,
-    )
+    askar_profile = AskarProfile(open_store)
 
     assert askar_profile.opened == open_store
 

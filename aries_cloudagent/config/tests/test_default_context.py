@@ -19,12 +19,7 @@ class TestDefaultContext(AsyncTestCase):
         result = await builder.build_context()
         assert isinstance(result, InjectionContext)
 
-        for cls in (
-            BaseCache,
-            BaseWireFormat,
-            ProfileManager,
-            ProtocolRegistry,
-        ):
+        for cls in (BaseCache, BaseWireFormat, ProfileManager, ProtocolRegistry):
             assert isinstance(result.inject(cls), cls)
 
         builder = DefaultContextBuilder(

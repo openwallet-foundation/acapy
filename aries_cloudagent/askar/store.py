@@ -130,9 +130,7 @@ class AskarStoreConfig:
             await Store.remove(self.get_uri())
         except AskarError as err:
             if err.code == AskarErrorCode.NOT_FOUND:
-                raise ProfileNotFoundError(
-                    f"Store '{self.name}' not found",
-                )
+                raise ProfileNotFoundError(f"Store '{self.name}' not found")
             raise ProfileError("Error removing store") from err
 
     async def open_store(self, provision: bool = False) -> "AskarOpenStore":
@@ -155,19 +153,13 @@ class AskarStoreConfig:
                 )
             else:
                 store = await Store.open(
-                    self.get_uri(),
-                    self.key_derivation_method,
-                    self.key,
+                    self.get_uri(), self.key_derivation_method, self.key
                 )
         except AskarError as err:
             if err.code == AskarErrorCode.DUPLICATE:
-                raise ProfileDuplicateError(
-                    f"Duplicate store '{self.name}'",
-                )
+                raise ProfileDuplicateError(f"Duplicate store '{self.name}'")
             if err.code == AskarErrorCode.NOT_FOUND:
-                raise ProfileNotFoundError(
-                    f"Store '{self.name}' not found",
-                )
+                raise ProfileNotFoundError(f"Store '{self.name}' not found")
             raise ProfileError("Error opening store") from err
 
         return AskarOpenStore(self, provision, store)
@@ -176,12 +168,7 @@ class AskarStoreConfig:
 class AskarOpenStore:
     """Handle and metadata for an opened Askar store."""
 
-    def __init__(
-        self,
-        config: AskarStoreConfig,
-        created,
-        store: Store,
-    ):
+    def __init__(self, config: AskarStoreConfig, created, store: Store):
         """Create a new AskarOpenStore instance."""
         self.config = config
         self.created = created

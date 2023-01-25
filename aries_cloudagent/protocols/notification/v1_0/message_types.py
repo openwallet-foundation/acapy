@@ -13,7 +13,5 @@ NOTIF_10_ACK = "notification/1.0/ack"
 PROTOCOL_PACKAGE = "aries_cloudagent.protocols.notification.v1_0"
 
 MESSAGE_TYPES = DIDCommPrefix.qualify_all(
-    {
-        NOTIF_10_ACK: f"{PROTOCOL_PACKAGE}.messages.ack.V10Ack",
-    }
+    {NOTIF_10_ACK: f"{PROTOCOL_PACKAGE}.messages.ack.V10Ack"}
 )

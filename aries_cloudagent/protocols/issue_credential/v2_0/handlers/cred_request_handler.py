@@ -74,8 +74,7 @@ class V20CredRequestHandler(BaseHandler):
                     cred_ex_record,
                     cred_issue_message,
                 ) = await cred_manager.issue_credential(
-                    cred_ex_record=cred_ex_record,
-                    comment=context.message.comment,
+                    cred_ex_record=cred_ex_record, comment=context.message.comment
                 )
                 await responder.send_reply(cred_issue_message)
             except (
@@ -88,8 +87,7 @@ class V20CredRequestHandler(BaseHandler):
                 self._logger.exception(err)
                 async with profile.session() as session:
                     await cred_ex_record.save_error_state(
-                        session,
-                        reason=err.roll_up,  # us be specific
+                        session, reason=err.roll_up  # us be specific
                     )
                 await responder.send_reply(
                     problem_report_for_record(

@@ -75,8 +75,7 @@ class V20PresRequest(AgentMessage):
         )
         return (
             target_format.get_attachment_data(
-                self.formats,
-                self.request_presentations_attach,
+                self.formats, self.request_presentations_attach
             )
             if target_format
             else None

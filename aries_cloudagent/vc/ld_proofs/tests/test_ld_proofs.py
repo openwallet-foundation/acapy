@@ -79,7 +79,7 @@ class TestLDProofs(TestCase):
     async def test_verify_Ed25519Signature2018(self):
         # Verification requires lot less input parameters
         suite = Ed25519Signature2018(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519)
         )
 
         result = await verify(
@@ -128,7 +128,7 @@ class TestLDProofs(TestCase):
     async def test_verify_BbsBlsSignature2020(self):
         # Verification requires lot less input parameters
         suite = BbsBlsSignature2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
         )
 
         result = await verify(
@@ -144,7 +144,7 @@ class TestLDProofs(TestCase):
     async def test_derive_BbsBlsSignatureProof2020(self):
         # Verification requires lot less input parameters
         suite = BbsBlsSignatureProof2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
         )
 
         result = await derive(
@@ -160,7 +160,7 @@ class TestLDProofs(TestCase):
     async def test_verify_BbsBlsSignatureProof2020(self):
         # Verification requires lot less input parameters
         suite = BbsBlsSignatureProof2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
         )
 
         result = await verify(

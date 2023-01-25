@@ -19,12 +19,7 @@ class QueryItem(BaseModel):
 
         schema_class = "QueryItemSchema"
 
-    def __init__(
-        self,
-        *,
-        feature_type: str,
-        match: str,
-    ):
+    def __init__(self, *, feature_type: str, match: str):
         """Initialize QueryItem."""
         self.feature_type = feature_type
         self.match = match

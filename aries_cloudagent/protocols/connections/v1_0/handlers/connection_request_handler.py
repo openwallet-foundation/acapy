@@ -36,8 +36,7 @@ class ConnectionRequestHandler(BaseHandler):
 
         try:
             connection = await mgr.receive_request(
-                context.message,
-                context.message_receipt,
+                context.message, context.message_receipt
             )
 
             if connection.accept == ConnRecord.ACCEPT_AUTO:

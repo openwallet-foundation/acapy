@@ -25,11 +25,7 @@ class TransactionAcknowledgement(V10Ack):
         schema_class = "TransactionAcknowledgementSchema"
 
     def __init__(
-        self,
-        *,
-        thread_id: str = None,
-        ledger_response: dict = None,
-        **kwargs,
+        self, *, thread_id: str = None, ledger_response: dict = None, **kwargs
     ):
         """
         Initialize a transaction acknowledgement object.

@@ -87,9 +87,7 @@ async def sign_credential(session, credential, signature_options, verkey):
 
     document_loader = session.profile.inject_or(DocumentLoader)
     framed, verify_data_hex_string = create_verify_data(
-        credential,
-        signature_options,
-        document_loader,
+        credential, signature_options, document_loader
     )
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
     jws = await jws_sign(session, verify_data_bytes, verkey)
@@ -101,9 +99,7 @@ async def verify_credential(session, doc, verkey):
 
     document_loader = session.profile.inject_or(DocumentLoader)
     framed, verify_data_hex_string = create_verify_data(
-        doc,
-        doc["proof"],
-        document_loader,
+        doc, doc["proof"], document_loader
     )
     verify_data_bytes = bytes.fromhex(verify_data_hex_string)
     valid = await jws_verify(session, verify_data_bytes, framed["proof"]["jws"], verkey)

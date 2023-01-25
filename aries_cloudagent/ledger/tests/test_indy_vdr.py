@@ -62,10 +62,7 @@ class TestIndyVdrLedger:
             await ledger._submit("{}")
 
     @pytest.mark.asyncio
-    async def test_submit_signed(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_submit_signed(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
         test_msg = indy_vdr.ledger.build_get_txn_request(test_did.did, 1, 1)
@@ -88,10 +85,7 @@ class TestIndyVdrLedger:
             ledger.pool_handle.submit_request.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_fetch_txn_author_agreement(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_fetch_txn_author_agreement(self, ledger: IndyVdrLedger):
         async with ledger:
             with async_mock.patch.object(
                 ledger.pool_handle,
@@ -115,10 +109,7 @@ class TestIndyVdrLedger:
                 }
 
     @pytest.mark.asyncio
-    async def test_submit_signed_taa_accept(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_submit_signed_taa_accept(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
 
@@ -142,10 +133,7 @@ class TestIndyVdrLedger:
             assert result.get("taaAcceptance")
 
     @pytest.mark.asyncio
-    async def test_submit_unsigned(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_submit_unsigned(self, ledger: IndyVdrLedger):
         async with ledger:
             test_msg = indy_vdr.ledger.build_get_txn_request(None, 1, 1)
 
@@ -161,8 +149,7 @@ class TestIndyVdrLedger:
 
     @pytest.mark.asyncio
     async def test_submit_unsigned_ledger_transaction_error(
-        self,
-        ledger: IndyVdrLedger,
+        self, ledger: IndyVdrLedger
     ):
         async with ledger:
             test_msg = indy_vdr.ledger.build_get_txn_request(None, 1, 1)
@@ -172,10 +159,7 @@ class TestIndyVdrLedger:
                 await ledger._submit(test_msg, sign=False, taa_accept=False)
 
     @pytest.mark.asyncio
-    async def test_txn_endorse(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_txn_endorse(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
         test_msg = indy_vdr.ledger.build_get_txn_request(None, 1, 1)
 
@@ -196,10 +180,7 @@ class TestIndyVdrLedger:
             assert test_did.did in body["signatures"]
 
     @pytest.mark.asyncio
-    async def test_send_schema(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_send_schema(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
         issuer = async_mock.MagicMock(IndyIssuer)
@@ -245,10 +226,7 @@ class TestIndyVdrLedger:
             assert txn.get("signature")
 
     @pytest.mark.asyncio
-    async def test_send_schema_no_public_did(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_send_schema_no_public_did(self, ledger: IndyVdrLedger):
         issuer = async_mock.MagicMock(IndyIssuer)
         async with ledger:
             with pytest.raises(BadLedgerRequestError):
@@ -257,10 +235,7 @@ class TestIndyVdrLedger:
                 )
 
     @pytest.mark.asyncio
-    async def test_send_schema_already_exists(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_send_schema_already_exists(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
         issuer = async_mock.MagicMock(IndyIssuer)
@@ -287,10 +262,7 @@ class TestIndyVdrLedger:
                 assert schema_def == mock_check.return_value[1]
 
     @pytest.mark.asyncio
-    async def test_send_schema_ledger_read_only(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_send_schema_ledger_read_only(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
         issuer = async_mock.MagicMock(IndyIssuer)
@@ -316,10 +288,7 @@ class TestIndyVdrLedger:
                     )
 
     @pytest.mark.asyncio
-    async def test_send_schema_ledger_transaction_error(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_send_schema_ledger_transaction_error(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
         issuer = async_mock.MagicMock(IndyIssuer)
@@ -342,10 +311,7 @@ class TestIndyVdrLedger:
                     )
 
     @pytest.mark.asyncio
-    async def test_get_schema(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_schema(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {
                 "seqNo": 99,
@@ -368,20 +334,14 @@ class TestIndyVdrLedger:
             }
 
     @pytest.mark.asyncio
-    async def test_get_schema_not_found(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_schema_not_found(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {}
             result = await ledger.get_schema("55GkHamhTU1ZbTbV2ab9DE:2:schema_name:9.1")
             assert result is None
 
     @pytest.mark.asyncio
-    async def test_send_credential_definition(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_send_credential_definition(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
         schema_id = "55GkHamhTU1ZbTbV2ab9DE:2:schema_name:9.1"
@@ -393,12 +353,7 @@ class TestIndyVdrLedger:
             "type": "CL",
             "tag": "tag",
             "value": {
-                "primary": {
-                    "n": "...",
-                    "s": "...",
-                    "r": "...",
-                    "revocation": None,
-                }
+                "primary": {"n": "...", "s": "...", "r": "...", "revocation": None}
             },
         }
         issuer = async_mock.MagicMock(IndyIssuer)
@@ -435,8 +390,7 @@ class TestIndyVdrLedger:
 
     @pytest.mark.asyncio
     async def test_send_credential_definition_no_public_did(
-        self,
-        ledger: IndyVdrLedger,
+        self, ledger: IndyVdrLedger
     ):
         issuer = async_mock.MagicMock(IndyIssuer)
         async with ledger:
@@ -468,10 +422,7 @@ class TestIndyVdrLedger:
                 )
 
     @pytest.mark.asyncio
-    async def test_get_credential_definition(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_credential_definition(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {
                 "seqNo": 99,
@@ -495,10 +446,7 @@ class TestIndyVdrLedger:
             }
 
     @pytest.mark.asyncio
-    async def test_get_credential_definition_not_found(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_credential_definition_not_found(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {
                 "seqNo": 99,
@@ -515,49 +463,35 @@ class TestIndyVdrLedger:
             assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_key_for_did(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_key_for_did(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {
-                "data": r'{"verkey": "VK"}',
+                "data": r'{"verkey": "VK"}'
             }
             result = await ledger.get_key_for_did("55GkHamhTU1ZbTbV2ab9DE")
             assert result == "VK"
 
     @pytest.mark.asyncio
-    async def test_get_all_endpoints_for_did(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_all_endpoints_for_did(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {
-                "data": r'{"endpoint": {"default": "endp"}}',
+                "data": r'{"endpoint": {"default": "endp"}}'
             }
             result = await ledger.get_all_endpoints_for_did("55GkHamhTU1ZbTbV2ab9DE")
             assert result == {"default": "endp"}
 
     @pytest.mark.asyncio
-    async def test_get_all_endpoints_for_did_none(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_all_endpoints_for_did_none(self, ledger: IndyVdrLedger):
         async with ledger:
-            ledger.pool_handle.submit_request.return_value = {
-                "data": None,
-            }
+            ledger.pool_handle.submit_request.return_value = {"data": None}
             result = await ledger.get_all_endpoints_for_did("55GkHamhTU1ZbTbV2ab9DE")
             assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_endpoint_for_did(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_endpoint_for_did(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {
-                "data": r'{"endpoint": {"endpoint": "endp"}}',
+                "data": r'{"endpoint": {"endpoint": "endp"}}'
             }
             result = await ledger.get_endpoint_for_did(
                 "55GkHamhTU1ZbTbV2ab9DE", EndpointType.ENDPOINT
@@ -565,13 +499,10 @@ class TestIndyVdrLedger:
             assert result == "endp"
 
     @pytest.mark.asyncio
-    async def test_get_endpoint_for_did_address_none(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_endpoint_for_did_address_none(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {
-                "data": r'{"endpoint": null}',
+                "data": r'{"endpoint": null}'
             }
             result = await ledger.get_endpoint_for_did(
                 "55GkHamhTU1ZbTbV2ab9DE", EndpointType.ENDPOINT
@@ -579,24 +510,16 @@ class TestIndyVdrLedger:
             assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_endpoint_for_did_empty(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_endpoint_for_did_empty(self, ledger: IndyVdrLedger):
         async with ledger:
-            ledger.pool_handle.submit_request.return_value = {
-                "data": None,
-            }
+            ledger.pool_handle.submit_request.return_value = {"data": None}
             result = await ledger.get_endpoint_for_did(
                 "55GkHamhTU1ZbTbV2ab9DE", EndpointType.ENDPOINT
             )
             assert result is None
 
     @pytest.mark.asyncio
-    async def test_update_endpoint_for_did(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_update_endpoint_for_did(self, ledger: IndyVdrLedger):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
         async with ledger:
@@ -705,17 +628,11 @@ class TestIndyVdrLedger:
                     routing_keys=routing_keys,
                 )
                 mock_construct_attr_json.assert_called_once_with(
-                    "https://url",
-                    EndpointType.ENDPOINT,
-                    {},
-                    routing_keys,
+                    "https://url", EndpointType.ENDPOINT, {}, routing_keys
                 )
 
     @pytest.mark.asyncio
-    async def test_update_endpoint_for_did_no_public(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_update_endpoint_for_did_no_public(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {"data": None}
             with pytest.raises(BadLedgerRequestError):
@@ -724,10 +641,7 @@ class TestIndyVdrLedger:
                 )
 
     @pytest.mark.asyncio
-    async def test_update_endpoint_for_did_read_only(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_update_endpoint_for_did_read_only(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool.read_only = True
             ledger.pool_handle.submit_request.return_value = {"data": None}
@@ -737,10 +651,7 @@ class TestIndyVdrLedger:
                 )
 
     @pytest.mark.asyncio
-    async def test_register_nym_local(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_register_nym_local(self, ledger: IndyVdrLedger):
         wallet: BaseWallet = (await ledger.profile.session()).wallet
         public_did = await wallet.create_public_did(SOV, ED25519)
         post_did = await wallet.create_local_did(SOV, ED25519)
@@ -750,83 +661,52 @@ class TestIndyVdrLedger:
         assert did.metadata["posted"] == True
 
     @pytest.mark.asyncio
-    async def test_register_nym_non_local(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_register_nym_non_local(self, ledger: IndyVdrLedger):
         wallet: BaseWallet = (await ledger.profile.session()).wallet
         public_did = await wallet.create_public_did(SOV, ED25519)
         async with ledger:
             await ledger.register_nym("55GkHamhTU1ZbTbV2ab9DE", "verkey")
 
     @pytest.mark.asyncio
-    async def test_register_nym_no_public(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_register_nym_no_public(self, ledger: IndyVdrLedger):
         async with ledger:
             with pytest.raises(BadLedgerRequestError):
                 await ledger.register_nym("55GkHamhTU1ZbTbV2ab9DE", "verkey")
 
     @pytest.mark.asyncio
-    async def test_register_nym_read_only(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_register_nym_read_only(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool.read_only = True
             with pytest.raises(LedgerError):
-                await ledger.register_nym(
-                    "55GkHamhTU1ZbTbV2ab9DE",
-                    "verkey",
-                    "",
-                )
+                await ledger.register_nym("55GkHamhTU1ZbTbV2ab9DE", "verkey", "")
 
     @pytest.mark.asyncio
-    async def test_get_nym_role(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_nym_role(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {
                 "data": r'{"role":"TRUSTEE"}'
             }
-            result = await ledger.get_nym_role(
-                "55GkHamhTU1ZbTbV2ab9DE",
-            )
+            result = await ledger.get_nym_role("55GkHamhTU1ZbTbV2ab9DE")
             assert result == Role.TRUSTEE
 
     @pytest.mark.asyncio
-    async def test_get_nym_role_unknown(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_nym_role_unknown(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {"data": r"{}"}
             with pytest.raises(BadLedgerRequestError):
-                await ledger.get_nym_role(
-                    "55GkHamhTU1ZbTbV2ab9DE",
-                )
+                await ledger.get_nym_role("55GkHamhTU1ZbTbV2ab9DE")
 
     @pytest.mark.asyncio
-    async def test_get_nym_role_invalid(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_nym_role_invalid(self, ledger: IndyVdrLedger):
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {
                 "data": r'{"role":"INVALID"}'
             }
-            result = await ledger.get_nym_role(
-                "55GkHamhTU1ZbTbV2ab9DE",
-            )
+            result = await ledger.get_nym_role("55GkHamhTU1ZbTbV2ab9DE")
             assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_revoc_reg_def(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_revoc_reg_def(self, ledger: IndyVdrLedger):
         async with ledger:
             reg_id = (
                 "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
@@ -835,17 +715,12 @@ class TestIndyVdrLedger:
                 "data": {"id": reg_id},
                 "txnTime": 1234567890,
             }
-            result = await ledger.get_revoc_reg_def(
-                reg_id,
-            )
+            result = await ledger.get_revoc_reg_def(reg_id)
             assert result["id"] == reg_id
             assert result["txnTime"] == 1234567890
 
     @pytest.mark.asyncio
-    async def test_get_revoc_reg_entry(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_revoc_reg_entry(self, ledger: IndyVdrLedger):
         async with ledger:
             reg_id = (
                 "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
@@ -856,16 +731,13 @@ class TestIndyVdrLedger:
                     "txnTime": 1234567890,
                     "value": "...",
                     "revocRegDefId": reg_id,
-                },
+                }
             }
             result = await ledger.get_revoc_reg_entry(reg_id, 1234567890)
             assert result == ({"ver": "1.0", "value": "..."}, 1234567890)
 
     @pytest.mark.asyncio
-    async def test_get_revoc_reg_delta(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_get_revoc_reg_delta(self, ledger: IndyVdrLedger):
         async with ledger:
             reg_id = (
                 "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
@@ -881,7 +753,7 @@ class TestIndyVdrLedger:
                         "revoked": [3, 4],
                     },
                     "revocRegDefId": reg_id,
-                },
+                }
             }
             result = await ledger.get_revoc_reg_delta(reg_id)
             assert result == (
@@ -893,10 +765,7 @@ class TestIndyVdrLedger:
             )
 
     @pytest.mark.asyncio
-    async def test_send_revoc_reg_def(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_send_revoc_reg_def(self, ledger: IndyVdrLedger):
         wallet: BaseWallet = (await ledger.profile.session()).wallet
         public_did = await wallet.create_public_did(SOV, ED25519)
         async with ledger:
@@ -922,20 +791,14 @@ class TestIndyVdrLedger:
             assert result == {"result": {"status": "ok"}}
 
     @pytest.mark.asyncio
-    async def test_send_revoc_reg_entry(
-        self,
-        ledger: IndyVdrLedger,
-    ):
+    async def test_send_revoc_reg_entry(self, ledger: IndyVdrLedger):
         wallet: BaseWallet = (await ledger.profile.session()).wallet
         public_did = await wallet.create_public_did(SOV, ED25519)
         async with ledger:
             reg_id = (
                 "55GkHamhTU1ZbTbV2ab9DE:4:55GkHamhTU1ZbTbV2ab9DE:3:CL:99:tag:CL_ACCUM:0"
             )
-            reg_entry = {
-                "ver": "1.0",
-                "value": {},
-            }
+            reg_entry = {"ver": "1.0", "value": {}}
             ledger.pool_handle.submit_request.return_value = {"status": "ok"}
             result = await ledger.send_revoc_reg_entry(reg_id, "CL_ACCUM", reg_entry)
             assert result == {"result": {"status": "ok"}}

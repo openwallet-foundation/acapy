@@ -48,14 +48,7 @@ def ecdh_es_encrypt(to_verkeys: Mapping[str, Key], message: bytes) -> bytes:
             )
         )
 
-    wrapper.set_protected(
-        OrderedDict(
-            [
-                ("alg", alg_id),
-                ("enc", enc_id),
-            ]
-        )
-    )
+    wrapper.set_protected(OrderedDict([("alg", alg_id), ("enc", enc_id)]))
     try:
         payload = cek.aead_encrypt(message, aad=wrapper.protected_bytes)
     except AskarError:
@@ -65,11 +58,7 @@ def ecdh_es_encrypt(to_verkeys: Mapping[str, Key], message: bytes) -> bytes:
     return wrapper.to_json().encode("utf-8")
 
 
-def ecdh_es_decrypt(
-    wrapper: JweEnvelope,
-    recip_kid: str,
-    recip_key: Key,
-) -> bytes:
+def ecdh_es_decrypt(wrapper: JweEnvelope, recip_kid: str, recip_key: Key) -> bytes:
     """Decode a message with DIDComm v2 anonymous encryption."""
 
     alg_id = wrapper.protected.get("alg")
@@ -96,11 +85,7 @@ def ecdh_es_decrypt(
 
     try:
         cek = ecdh.EcdhEs(alg_id, apu, apv).receiver_unwrap_key(
-            wrap_alg,
-            enc_alg,
-            epk,
-            recip_key,
-            recip.encrypted_key,
+            wrap_alg, enc_alg, epk, recip_key, recip.encrypted_key
         )
     except AskarError:
         raise DidcommEnvelopeError("Error decrypting content encryption key")
@@ -185,10 +170,7 @@ def ecdh_1pu_encrypt(
 
 
 def ecdh_1pu_decrypt(
-    wrapper: JweEnvelope,
-    recip_kid: str,
-    recip_key: Key,
-    sender_key: Key,
+    wrapper: JweEnvelope, recip_kid: str, recip_key: Key, sender_key: Key
 ) -> Tuple[str, str, str]:
     """Decode a message with DIDComm v2 authenticated encryption."""
 

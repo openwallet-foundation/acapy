@@ -33,11 +33,7 @@ class DIDParametersValidation:
             )
 
     def validate_or_derive_did(
-        self,
-        method: DIDMethod,
-        key_type: KeyType,
-        verkey: bytes,
-        did: Optional[str],
+        self, method: DIDMethod, key_type: KeyType, verkey: bytes, did: Optional[str]
     ) -> str:
         """
         Validate compatibility of the provided did (if any) with the given DID method.

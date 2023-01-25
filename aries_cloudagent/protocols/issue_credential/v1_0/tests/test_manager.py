@@ -322,9 +322,7 @@ class TestCredentialManager(AsyncTestCase):
             await self.session.storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
-                cred_ex_record=stored_exchange,
-                counter_proposal=None,
-                comment=comment,
+                cred_ex_record=stored_exchange, counter_proposal=None, comment=comment
             )
             assert ret_exchange is stored_exchange
             save_ex.assert_called_once()
@@ -342,9 +340,7 @@ class TestCredentialManager(AsyncTestCase):
             assert stored_exchange._credential_offer.ser == INDY_OFFER
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
-                cred_ex_record=stored_exchange,
-                counter_proposal=None,
-                comment=comment,
+                cred_ex_record=stored_exchange, counter_proposal=None, comment=comment
             )  # once more to cover case where offer is available in cache
 
     async def test_create_free_offer_attr_mismatch(self):
@@ -462,9 +458,7 @@ class TestCredentialManager(AsyncTestCase):
             await self.session.storage.add_record(cred_def_record)
 
             (ret_exchange, ret_offer) = await self.manager.create_offer(
-                cred_ex_record=stored_exchange,
-                counter_proposal=None,
-                comment=comment,
+                cred_ex_record=stored_exchange, counter_proposal=None, comment=comment
             )
             assert ret_exchange is stored_exchange
             save_ex.assert_called_once()
@@ -620,9 +614,7 @@ class TestCredentialManager(AsyncTestCase):
         thread_id = "thread-id"
         holder_did = "did"
 
-        credential_offer_dict = CredentialOffer(
-            "thread-id",
-        )
+        credential_offer_dict = CredentialOffer("thread-id")
         credential_offer_dict._thread = ThreadDecorator(pthid="some-pthid")
 
         stored_exchange = V10CredentialExchange(
@@ -690,9 +682,7 @@ class TestCredentialManager(AsyncTestCase):
         thread_id = "thread-id"
         holder_did = "did"
 
-        credential_offer_dict = CredentialOffer(
-            "thread-id",
-        )
+        credential_offer_dict = CredentialOffer("thread-id")
         credential_offer_dict._thread = ThreadDecorator(pthid="some-pthid")
 
         stored_exchange = V10CredentialExchange(
@@ -817,9 +807,7 @@ class TestCredentialManager(AsyncTestCase):
             requests_attach=[CredentialRequest.wrap_indy_cred_req(INDY_CRED_REQ)]
         )
 
-        mock_conn = async_mock.MagicMock(
-            connection_id="test_conn_id",
-        )
+        mock_conn = async_mock.MagicMock(connection_id="test_conn_id")
         mock_oob = async_mock.MagicMock()
 
         with async_mock.patch.object(
@@ -858,9 +846,7 @@ class TestCredentialManager(AsyncTestCase):
             requests_attach=[CredentialRequest.wrap_indy_cred_req(INDY_CRED_REQ)]
         )
 
-        mock_conn = async_mock.MagicMock(
-            connection_id="test_conn_id",
-        )
+        mock_conn = async_mock.MagicMock(connection_id="test_conn_id")
 
         with async_mock.patch.object(
             V10CredentialExchange, "save", autospec=True
@@ -923,9 +909,7 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex:
             revoc.return_value.get_or_create_active_registry = async_mock.CoroutineMock(
                 return_value=(
-                    async_mock.MagicMock(  # active_rev_reg_rec
-                        revoc_reg_id=REV_REG_ID,
-                    ),
+                    async_mock.MagicMock(revoc_reg_id=REV_REG_ID),  # active_rev_reg_rec
                     async_mock.MagicMock(  # rev_reg
                         registry_id=REV_REG_ID,
                         tails_local_path="dummy-path",
@@ -941,12 +925,7 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             issuer.create_credential.assert_called_once_with(
-                SCHEMA,
-                INDY_OFFER,
-                INDY_CRED_REQ,
-                cred_values,
-                REV_REG_ID,
-                "dummy-path",
+                SCHEMA, INDY_OFFER, INDY_CRED_REQ, cred_values, REV_REG_ID, "dummy-path"
             )
 
             assert ret_exchange._credential.ser == cred
@@ -1026,12 +1005,7 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             issuer.create_credential.assert_called_once_with(
-                SCHEMA,
-                INDY_OFFER,
-                INDY_CRED_REQ,
-                cred_values,
-                None,
-                None,
+                SCHEMA, INDY_OFFER, INDY_CRED_REQ, cred_values, None, None
             )
 
             assert ret_exchange._credential.ser == cred
@@ -1107,12 +1081,7 @@ class TestCredentialManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             issuer.create_credential.assert_called_once_with(
-                SCHEMA,
-                INDY_OFFER,
-                INDY_CRED_REQ,
-                cred_values,
-                REV_REG_ID,
-                "dummy-path",
+                SCHEMA, INDY_OFFER, INDY_CRED_REQ, cred_values, REV_REG_ID, "dummy-path"
             )
 
             revoc.return_value.handle_full_registry.assert_awaited_once_with(REV_REG_ID)

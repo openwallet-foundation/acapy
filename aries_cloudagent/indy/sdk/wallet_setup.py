@@ -112,9 +112,7 @@ class IndyWalletConfig:
                     ProfileDuplicateError,
                 ) from x_indy
             raise IndyErrorHandler.wrap_error(
-                x_indy,
-                f"Error creating wallet '{self.name}'",
-                ProfileError,
+                x_indy, f"Error creating wallet '{self.name}'", ProfileError
             ) from x_indy
 
         try:
@@ -141,9 +139,7 @@ class IndyWalletConfig:
         except IndyError as x_indy:
             if x_indy.error_code == ErrorCode.WalletNotFoundError:
                 raise IndyErrorHandler.wrap_error(
-                    x_indy,
-                    f"Wallet '{self.name}' not found",
-                    ProfileNotFoundError,
+                    x_indy, f"Wallet '{self.name}' not found", ProfileNotFoundError
                 ) from x_indy
             raise IndyErrorHandler.wrap_error(
                 x_indy, f"Error removing wallet '{self.name}'", ProfileError
@@ -210,11 +206,7 @@ class IndyOpenWallet:
     """Handle and metadata for an opened Indy wallet."""
 
     def __init__(
-        self,
-        config: IndyWalletConfig,
-        created,
-        handle,
-        master_secret_id: str,
+        self, config: IndyWalletConfig, created, handle, master_secret_id: str
     ):
         """Create a new IndyOpenWallet instance."""
         self.config = config

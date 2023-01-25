@@ -107,7 +107,7 @@ class MultitenantManager(BaseMultitenantManager):
             extra_settings = {
                 "admin.webhook_urls": self.get_webhook_urls(
                     self._profile.context, wallet_record
-                ),
+                )
             }
             profile.settings.update(extra_settings)
 

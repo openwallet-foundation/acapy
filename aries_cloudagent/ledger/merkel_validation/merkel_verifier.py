@@ -9,13 +9,7 @@ class MerkleVerifier:
         """Initialize MerkleVerifier."""
         self.hasher = hasher
 
-    async def calculate_root_hash(
-        self,
-        leaf,
-        leaf_index,
-        audit_path,
-        tree_size,
-    ):
+    async def calculate_root_hash(self, leaf, leaf_index, audit_path, tree_size):
         """Calculate root hash, used to verify Merkel AuditPath.
 
         Reference: section 2.1.1 of RFC6962.

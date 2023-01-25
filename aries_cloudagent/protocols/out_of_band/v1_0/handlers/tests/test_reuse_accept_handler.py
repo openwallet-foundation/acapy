@@ -62,8 +62,8 @@ class TestHandshakeReuseAcceptHandler:
         mock_oob_mgr.return_value.receive_reuse_accepted_message = (
             async_mock.CoroutineMock()
         )
-        mock_oob_mgr.return_value.receive_reuse_accepted_message.side_effect = (
-            OutOfBandManagerError("error")
+        mock_oob_mgr.return_value.receive_reuse_accepted_message.side_effect = OutOfBandManagerError(
+            "error"
         )
         request_context.message = HandshakeReuseAccept()
         handler = test_module.HandshakeReuseAcceptMessageHandler()

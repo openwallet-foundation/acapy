@@ -229,8 +229,7 @@ async def test_mediation_record_if_id_with_id_and_default(
 
 @pytest.mark.asyncio
 async def test_mediation_record_if_id_without_id_and_default(
-    profile: Profile,
-    route_manager: RouteManager,
+    profile: Profile, route_manager: RouteManager
 ):
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id", state=MediationRecord.STATE_GRANTED
@@ -252,8 +251,7 @@ async def test_mediation_record_if_id_without_id_and_default(
 
 @pytest.mark.asyncio
 async def test_mediation_record_if_id_without_id_and_no_default(
-    profile: Profile,
-    route_manager: RouteManager,
+    profile: Profile, route_manager: RouteManager
 ):
     with mock.patch.object(
         MediationRecord, "retrieve_by_id", mock.CoroutineMock(return_value=None)
@@ -408,18 +406,13 @@ async def test_route_static(
     ):
         await route_manager.route_static(profile, conn_record, mediation_record)
         route_manager._route_for_key.assert_called_once_with(
-            profile,
-            mock_did_info.verkey,
-            mediation_record,
-            skip_if_exists=True,
+            profile, mock_did_info.verkey, mediation_record, skip_if_exists=True
         )
 
 
 @pytest.mark.asyncio
 async def test_save_mediator_for_connection_record(
-    profile: Profile,
-    route_manager: RouteManager,
-    conn_record: ConnRecord,
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     session = mock.MagicMock()
@@ -442,9 +435,7 @@ async def test_save_mediator_for_connection_record(
 
 @pytest.mark.asyncio
 async def test_save_mediator_for_connection_id(
-    profile: Profile,
-    route_manager: RouteManager,
-    conn_record: ConnRecord,
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     mediation_record = MediationRecord(mediation_id="test-mediation-id")
     session = mock.MagicMock()
@@ -469,9 +460,7 @@ async def test_save_mediator_for_connection_id(
 
 @pytest.mark.asyncio
 async def test_save_mediator_for_connection_no_mediator(
-    profile: Profile,
-    route_manager: RouteManager,
-    conn_record: ConnRecord,
+    profile: Profile, route_manager: RouteManager, conn_record: ConnRecord
 ):
     with mock.patch.object(
         MediationRecord, "retrieve_by_id", mock.CoroutineMock()
@@ -523,11 +512,7 @@ async def test_mediation_route_for_key(
         mediation_id="test-mediation-id", connection_id="test-mediator-conn-id"
     )
     keylist_update = await mediation_route_manager._route_for_key(
-        profile,
-        TEST_VERKEY,
-        mediation_record,
-        skip_if_exists=False,
-        replace_key=None,
+        profile, TEST_VERKEY, mediation_record, skip_if_exists=False, replace_key=None
     )
     assert keylist_update
     assert keylist_update.serialize()["updates"] == [
@@ -625,8 +610,7 @@ async def test_mediation_route_for_key_replace_key(
 
 @pytest.mark.asyncio
 async def test_mediation_route_for_key_no_mediator(
-    profile: Profile,
-    mediation_route_manager: CoordinateMediationV1RouteManager,
+    profile: Profile, mediation_route_manager: CoordinateMediationV1RouteManager
 ):
     assert (
         await mediation_route_manager._route_for_key(
@@ -642,8 +626,7 @@ async def test_mediation_route_for_key_no_mediator(
 
 @pytest.mark.asyncio
 async def test_mediation_routing_info_with_mediator(
-    profile: Profile,
-    mediation_route_manager: CoordinateMediationV1RouteManager,
+    profile: Profile, mediation_route_manager: CoordinateMediationV1RouteManager
 ):
     mediation_record = MediationRecord(
         mediation_id="test-mediation-id",
@@ -660,8 +643,7 @@ async def test_mediation_routing_info_with_mediator(
 
 @pytest.mark.asyncio
 async def test_mediation_routing_info_no_mediator(
-    profile: Profile,
-    mediation_route_manager: CoordinateMediationV1RouteManager,
+    profile: Profile, mediation_route_manager: CoordinateMediationV1RouteManager
 ):
     keys, endpoint = await mediation_route_manager.routing_info(
         profile, "http://example.com", None

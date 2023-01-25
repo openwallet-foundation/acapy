@@ -107,8 +107,7 @@ class TestConnectionInvitationSchema(TestCase):
                 endpoint="https://example.com/endpoint",
             ),
             ConnectionInvitation(
-                label="no-did-no-recip-keys",
-                endpoint="https://example.com/endpoint",
+                label="no-did-no-recip-keys", endpoint="https://example.com/endpoint"
             ),
             ConnectionInvitation(
                 label="no-did-no-endpoint",

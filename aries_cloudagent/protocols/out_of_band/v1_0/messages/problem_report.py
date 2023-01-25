@@ -5,13 +5,7 @@ import logging
 from enum import Enum
 from typing import Optional, Text
 
-from marshmallow import (
-    EXCLUDE,
-    fields,
-    pre_dump,
-    validates_schema,
-    ValidationError,
-)
+from marshmallow import EXCLUDE, fields, pre_dump, validates_schema, ValidationError
 
 from ....problem_report.v1_0.message import ProblemReport, ProblemReportSchema
 

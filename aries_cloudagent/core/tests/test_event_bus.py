@@ -92,9 +92,7 @@ async def test_sub_notify(event_bus: EventBus, profile, event, processor):
 
 @pytest.mark.asyncio
 async def test_sub_notify_error_logged_and_exec_continues(
-    event_bus: EventBus,
-    profile,
-    event,
+    event_bus: EventBus, profile, event
 ):
     """Test subscriber errors are logged but do not halt execution."""
 

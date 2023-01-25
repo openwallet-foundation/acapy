@@ -11,11 +11,7 @@ REV_REG_ID = f"{TEST_DID}:4:{CRED_DEF_ID}:CL_ACCUM:0"
 
 CRED_INFO = {
     "referent": "abc123",
-    "attrs": {
-        "userid": "alice",
-        "dob": "2000-01-01",
-        "favourite_colour": "purple",
-    },
+    "attrs": {"userid": "alice", "dob": "2000-01-01", "favourite_colour": "purple"},
     "schema_id": SCHEMA_ID,
     "cred_def_id": CRED_DEF_ID,
     "rev_reg_id": REV_REG_ID,

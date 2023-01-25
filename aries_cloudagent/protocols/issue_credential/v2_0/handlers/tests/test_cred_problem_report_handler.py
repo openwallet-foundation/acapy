@@ -47,10 +47,8 @@ class TestCredProblemReportHandler(AsyncTestCase):
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
             request_context.connection_ready = True
-            mock_cred_mgr.return_value.receive_problem_report = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.StorageError("Disk full")
-                )
+            mock_cred_mgr.return_value.receive_problem_report = async_mock.CoroutineMock(
+                side_effect=test_module.StorageError("Disk full")
             )
             request_context.message = V20CredProblemReport(
                 description={

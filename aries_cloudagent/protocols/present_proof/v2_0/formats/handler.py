@@ -64,17 +64,13 @@ class V20PresFormatHandler(ABC):
 
     @abstractmethod
     async def create_bound_request(
-        self,
-        pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        self, pres_ex_record: V20PresExRecord, request_data: dict = None
     ) -> PresFormatAttachment:
         """Create a presentation request bound to a proposal."""
 
     @abstractmethod
     async def create_pres(
-        self,
-        pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        self, pres_ex_record: V20PresExRecord, request_data: dict = None
     ) -> PresFormatAttachment:
         """Create a presentation."""
 

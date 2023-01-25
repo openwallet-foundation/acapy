@@ -2,10 +2,7 @@ import json
 
 from asynctest import TestCase
 
-from ..domain_txn_handler import (
-    prepare_for_state_read,
-    get_proof_nodes,
-)
+from ..domain_txn_handler import prepare_for_state_read, get_proof_nodes
 from ..hasher import TreeHasher, HexTreeHasher
 from ..trie import SubTrie
 from ..merkel_verifier import MerkleVerifier
@@ -128,12 +125,10 @@ class TestMPTStateProofValidation(TestCase):
         proof_nodes = get_proof_nodes(reply_c)
         expected_values = prepare_for_state_read(reply_c)
         assert await SubTrie.verify_spv_proof(
-            proof_nodes=proof_nodes[0],
-            expected_value=expected_values[0],
+            proof_nodes=proof_nodes[0], expected_value=expected_values[0]
         )
         assert await SubTrie.verify_spv_proof(
-            proof_nodes=proof_nodes[1],
-            expected_value=expected_values[1],
+            proof_nodes=proof_nodes[1], expected_value=expected_values[1]
         )
 
 
@@ -147,10 +142,7 @@ class TestMerkleRootHashValidation(TestCase):
         )
         assert (
             await merkle_verifier.calculate_root_hash(
-                RAW_HEX_LEAF,
-                leaf_index,
-                SHA256_AUDIT_PATH[:],
-                tree_size,
+                RAW_HEX_LEAF, leaf_index, SHA256_AUDIT_PATH[:], tree_size
             )
             == expected_root_hash
         )

@@ -5,11 +5,7 @@ import logging
 
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import ProfileSession
-from ....storage.base import (
-    BaseStorage,
-    StorageRecord,
-    StorageNotFoundError,
-)
+from ....storage.base import BaseStorage, StorageRecord, StorageNotFoundError
 
 from .base_service import BaseIntroductionService, IntroductionError
 from .messages.forward_invitation import ForwardInvitation
@@ -77,8 +73,7 @@ class DemoIntroductionService(BaseIntroductionService):
             )
 
         msg = IntroInvitationRequest(
-            responder=init_connection.their_label,
-            message=message,
+            responder=init_connection.their_label, message=message
         )
 
         record = StorageRecord(
@@ -116,8 +111,7 @@ class DemoIntroductionService(BaseIntroductionService):
         tag_filter = {"target_connection_id": target_connection_id}
         storage = session.inject(BaseStorage)
         records = await storage.find_all_records(
-            DemoIntroductionService.RECORD_TYPE,
-            tag_filter,
+            DemoIntroductionService.RECORD_TYPE, tag_filter
         )
 
         found = False

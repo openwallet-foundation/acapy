@@ -101,10 +101,7 @@ class V20CredProposalSchema(AgentMessageSchema):
         allow_none=False,
     )
     formats = fields.Nested(
-        V20CredFormatSchema,
-        many=True,
-        required=True,
-        description="Attachment formats",
+        V20CredFormatSchema, many=True, required=True, description="Attachment formats"
     )
     filters_attach = fields.Nested(
         AttachDecoratorSchema,

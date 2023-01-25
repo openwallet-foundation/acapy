@@ -23,9 +23,7 @@ class TestWalletKeyPair(TestCase):
     async def test_sign(self):
         public_key_base58 = "verkey"
         key_pair = WalletKeyPair(
-            wallet=self.wallet,
-            key_type=ED25519,
-            public_key_base58=public_key_base58,
+            wallet=self.wallet, key_type=ED25519, public_key_base58=public_key_base58
         )
         signed = async_mock.MagicMock()
 
@@ -48,9 +46,7 @@ class TestWalletKeyPair(TestCase):
     async def test_verify(self):
         public_key_base58 = "verkey"
         key_pair = WalletKeyPair(
-            wallet=self.wallet,
-            key_type=ED25519,
-            public_key_base58=public_key_base58,
+            wallet=self.wallet, key_type=ED25519, public_key_base58=public_key_base58
         )
         self.wallet.verify_message = async_mock.CoroutineMock(return_value=True)
 

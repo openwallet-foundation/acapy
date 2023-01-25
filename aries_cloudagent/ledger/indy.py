@@ -264,11 +264,7 @@ class IndySdkLedger(BaseLedger):
 
     BACKEND_NAME = "indy"
 
-    def __init__(
-        self,
-        pool: IndySdkLedgerPool,
-        profile: "IndySdkProfile",
-    ):
+    def __init__(self, pool: IndySdkLedgerPool, profile: "IndySdkProfile"):
         """
         Initialize an IndySdkLedger instance.
 
@@ -329,11 +325,7 @@ class IndySdkLedger(BaseLedger):
             wallet = session.inject(BaseWallet)
             return await wallet.get_public_did()
 
-    async def _endorse(
-        self,
-        request_json: str,
-        endorse_did: DIDInfo = None,
-    ) -> str:
+    async def _endorse(self, request_json: str, endorse_did: DIDInfo = None) -> str:
         if not self.pool.handle:
             raise ClosedPoolError(
                 f"Cannot endorse request with closed pool '{self.pool.name}'"
@@ -439,11 +431,7 @@ class IndySdkLedger(BaseLedger):
                 f"Unexpected operation code from ledger: {operation}"
             )
 
-    async def txn_endorse(
-        self,
-        request_json: str,
-        endorse_did: DIDInfo = None,
-    ) -> str:
+    async def txn_endorse(self, request_json: str, endorse_did: DIDInfo = None) -> str:
         """Endorse a (signed) ledger transaction."""
         return await self._endorse(request_json, endorse_did=endorse_did)
 

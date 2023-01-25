@@ -71,8 +71,7 @@ class TestCredentialIssue(TestCase):
         comment="Test",
         credentials_attach=[
             AttachDecorator.data_base64(
-                mapping=indy_cred,
-                ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                mapping=indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE]
             )
         ],
     )
@@ -83,8 +82,7 @@ class TestCredentialIssue(TestCase):
             comment="Test",
             credentials_attach=[
                 AttachDecorator.data_base64(
-                    mapping=self.indy_cred,
-                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                    mapping=self.indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE]
                 )
             ],
         )
@@ -98,8 +96,7 @@ class TestCredentialIssue(TestCase):
             comment="Test",
             credentials_attach=[
                 AttachDecorator.data_base64(
-                    mapping=self.indy_cred,
-                    ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE],
+                    mapping=self.indy_cred, ident=ATTACH_DECO_IDS[CREDENTIAL_ISSUE]
                 )
             ],
         )

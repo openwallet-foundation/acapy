@@ -6,14 +6,7 @@ import logging
 
 from typing import List, Sequence, Tuple, Union
 
-from aries_askar import (
-    AskarError,
-    AskarErrorCode,
-    Entry,
-    Key,
-    KeyAlg,
-    SeedMethod,
-)
+from aries_askar import AskarError, AskarErrorCode, Entry, Key, KeyAlg, SeedMethod
 
 from .did_parameters_validation import DIDParametersValidation
 from ..askar.didcomm.v1 import pack_message, unpack_message
@@ -25,11 +18,7 @@ from ..storage.askar import AskarStorage
 from ..storage.base import StorageRecord, StorageDuplicateError, StorageNotFoundError
 
 from .base import BaseWallet, KeyInfo, DIDInfo
-from .crypto import (
-    sign_message,
-    validate_seed,
-    verify_signed_message,
-)
+from .crypto import sign_message, validate_seed, verify_signed_message
 from .did_method import SOV, DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyType, KeyTypes
@@ -412,14 +401,10 @@ class AskarWallet(BaseWallet):
                     )
                 else:
                     await self.replace_local_did_metadata(info.did, metadata)
-                info = info._replace(
-                    metadata=metadata,
-                )
+                info = info._replace(metadata=metadata)
             await storage.update_record(
                 StorageRecord(
-                    type=CATEGORY_CONFIG,
-                    id=RECORD_NAME_PUBLIC_DID,
-                    value="{}",
+                    type=CATEGORY_CONFIG, id=RECORD_NAME_PUBLIC_DID, value="{}"
                 ),
                 value=json.dumps({"did": info.did}),
                 tags=None,
@@ -506,10 +491,7 @@ class AskarWallet(BaseWallet):
         keypair = _create_keypair(ED25519, next_seed)
         verkey = bytes_to_b58(keypair.get_public_bytes())
         try:
-            await self._session.handle.insert_key(
-                verkey,
-                keypair,
-            )
+            await self._session.handle.insert_key(verkey, keypair)
         except AskarError as err:
             if err.code == AskarErrorCode.DUPLICATE:
                 pass
@@ -594,9 +576,7 @@ class AskarWallet(BaseWallet):
             if key.algorithm == KeyAlg.BLS12_381_G2:
                 # for now - must extract the key and use sign_message
                 return sign_message(
-                    message=message,
-                    secret=key.get_secret_bytes(),
-                    key_type=BLS12381G2,
+                    message=message, secret=key.get_secret_bytes(), key_type=BLS12381G2
                 )
 
             else:
@@ -648,10 +628,7 @@ class AskarWallet(BaseWallet):
 
         # other key types are currently verified outside of Askar
         return verify_signed_message(
-            message=message,
-            signature=signature,
-            verkey=verkey,
-            key_type=key_type,
+            message=message, signature=signature, verkey=verkey, key_type=key_type
         )
 
     async def pack_message(
@@ -707,11 +684,9 @@ class AskarWallet(BaseWallet):
         if not enc_message:
             raise WalletError("Message not provided")
         try:
-            (
-                unpacked_json,
-                recipient,
-                sender,
-            ) = await unpack_message(self._session.handle, enc_message)
+            (unpacked_json, recipient, sender) = await unpack_message(
+                self._session.handle, enc_message
+            )
         except AskarError as err:
             raise WalletError("Exception when unpacking message") from err
         return unpacked_json.decode("utf-8"), sender, recipient

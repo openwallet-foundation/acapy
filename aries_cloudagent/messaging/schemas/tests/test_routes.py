@@ -74,16 +74,10 @@ class TestSchemaRoutes(AsyncTestCase):
                 {
                     "sent": {
                         "schema_id": SCHEMA_ID,
-                        "schema": {
-                            "schema": "def",
-                            "signed_txn": "...",
-                        },
+                        "schema": {"schema": "def", "signed_txn": "..."},
                     },
                     "schema_id": SCHEMA_ID,
-                    "schema": {
-                        "schema": "def",
-                        "signed_txn": "...",
-                    },
+                    "schema": {"schema": "def", "signed_txn": "..."},
                 }
             )
 
@@ -117,10 +111,7 @@ class TestSchemaRoutes(AsyncTestCase):
             )
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "endorser_did": ("did"),
-                        "endorser_name": ("name"),
-                    }
+                    return_value={"endorser_did": ("did"), "endorser_name": ("name")}
                 )
             )
             result = await test_module.schemas_send_schema(self.request)
@@ -129,10 +120,7 @@ class TestSchemaRoutes(AsyncTestCase):
                 {
                     "sent": {
                         "schema_id": SCHEMA_ID,
-                        "schema": {
-                            "schema": "def",
-                            "signed_txn": "...",
-                        },
+                        "schema": {"schema": "def", "signed_txn": "..."},
                     },
                     "txn": {"...": "..."},
                 }
@@ -165,10 +153,7 @@ class TestSchemaRoutes(AsyncTestCase):
             )
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "endorser_did": ("did"),
-                        "endorser_name": ("name"),
-                    }
+                    return_value={"endorser_did": ("did"), "endorser_name": ("name")}
                 )
             )
 
@@ -261,9 +246,7 @@ class TestSchemaRoutes(AsyncTestCase):
         ) as mock_conn_rec_retrieve:
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
-                    return_value={
-                        "endorser_name": ("name"),
-                    }
+                    return_value={"endorser_name": ("name")}
                 )
             )
             with self.assertRaises(test_module.web.HTTPForbidden):

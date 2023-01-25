@@ -28,10 +28,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
 
     async def test_didx_accept_invitation(self):
         self.request.match_info = {"conn_id": "dummy"}
-        self.request.query = {
-            "my_label": "label",
-            "my_endpoint": "http://endpoint.ca",
-        }
+        self.request.query = {"my_label": "label", "my_endpoint": "http://endpoint.ca"}
 
         mock_conn_rec = async_mock.MagicMock(save=async_mock.CoroutineMock())
         mock_conn_rec.serialize = async_mock.MagicMock()
@@ -89,13 +86,9 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
         ) as mock_didx_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_didx_mgr.return_value.create_request_implicit = (
-                async_mock.CoroutineMock(
-                    return_value=async_mock.MagicMock(
-                        serialize=async_mock.MagicMock(
-                            return_value="mock serialization"
-                        )
-                    )
+            mock_didx_mgr.return_value.create_request_implicit = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    serialize=async_mock.MagicMock(return_value="mock serialization")
                 )
             )
 
@@ -115,8 +108,8 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
         ) as mock_didx_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_didx_mgr.return_value.create_request_implicit = (
-                async_mock.CoroutineMock(side_effect=StorageNotFoundError("not found"))
+            mock_didx_mgr.return_value.create_request_implicit = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError("not found")
             )
 
             with self.assertRaises(test_module.web.HTTPNotFound) as context:
@@ -135,10 +128,8 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
         ) as mock_didx_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-            mock_didx_mgr.return_value.create_request_implicit = (
-                async_mock.CoroutineMock(
-                    side_effect=test_module.WalletError("wallet error")
-                )
+            mock_didx_mgr.return_value.create_request_implicit = async_mock.CoroutineMock(
+                side_effect=test_module.WalletError("wallet error")
             )
 
             with self.assertRaises(test_module.web.HTTPBadRequest) as context:
@@ -146,10 +137,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             assert "wallet error" in str(context.exception)
 
     async def test_didx_receive_request_implicit(self):
-        self.request.query = {
-            "alias": "Jimmy",
-            "my_endpoint": "http://endpoint.ca",
-        }
+        self.request.query = {"alias": "Jimmy", "my_endpoint": "http://endpoint.ca"}
         self.request._thread.pthid = "did:sov:0000000000000000000000"
         self.request.json = async_mock.CoroutineMock()
 
@@ -171,10 +159,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(mock_conn_rec.serialize.return_value)
 
     async def test_didx_receive_request_implicit_not_found_x(self):
-        self.request.query = {
-            "alias": "Jimmy",
-            "my_endpoint": "http://endpoint.ca",
-        }
+        self.request.query = {"alias": "Jimmy", "my_endpoint": "http://endpoint.ca"}
         self.request._thread.pthid = "did:sov:0000000000000000000000"
         self.request.json = async_mock.CoroutineMock()
 
@@ -194,10 +179,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             assert "tricorder must be broken" in str(context.exception)
 
     async def test_didx_receive_request_implicit_bad_request_x(self):
-        self.request.query = {
-            "alias": "Jimmy",
-            "my_endpoint": "http://endpoint.ca",
-        }
+        self.request.query = {"alias": "Jimmy", "my_endpoint": "http://endpoint.ca"}
         self.request._thread.pthid = "did:sov:0000000000000000000000"
         self.request.json = async_mock.CoroutineMock()
 
@@ -215,9 +197,7 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
 
     async def test_didx_accept_request(self):
         self.request.match_info = {"conn_id": "dummy"}
-        self.request.query = {
-            "my_endpoint": "http://endpoint.ca",
-        }
+        self.request.query = {"my_endpoint": "http://endpoint.ca"}
 
         mock_conn_rec = async_mock.MagicMock()
         mock_conn_rec.serialize = async_mock.MagicMock()

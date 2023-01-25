@@ -34,12 +34,10 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
-        required=False,
+        description="Auto-accept connection (defaults to configuration)", required=False
     )
     multi_use = fields.Boolean(
-        description="Create invitation for multiple use (default false)",
-        required=False,
+        description="Create invitation for multiple use (default false)", required=False
     )
 
 
@@ -50,9 +48,7 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         """Attachment Schema."""
 
         _id = fields.Str(
-            data_key="id",
-            description="Attachment identifier",
-            example="attachment-0",
+            data_key="id", description="Attachment identifier", example="attachment-0"
         )
         _type = fields.Str(
             data_key="type",
@@ -102,14 +98,10 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         example="Invitation to Barry",
     )
     protocol_version = fields.Str(
-        description="OOB protocol version",
-        required=False,
-        example="1.1",
+        description="OOB protocol version", required=False, example="1.1"
     )
     alias = fields.Str(
-        description="Alias for connection",
-        required=False,
-        example="Barry",
+        description="Alias for connection", required=False, example="Barry"
     )
     mediation_id = fields.Str(
         required=False,
@@ -122,13 +114,10 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
     alias = fields.Str(
-        description="Alias for connection",
-        required=False,
-        example="Barry",
+        description="Alias for connection", required=False, example="Barry"
     )
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
-        required=False,
+        description="Auto-accept connection (defaults to configuration)", required=False
     )
     use_existing_connection = fields.Boolean(
         description="Use an existing connection, if possible",
@@ -142,10 +131,7 @@ class InvitationReceiveQueryStringSchema(OpenAPISchema):
     )
 
 
-@docs(
-    tags=["out-of-band"],
-    summary="Create a new connection invitation",
-)
+@docs(tags=["out-of-band"], summary="Create a new connection invitation")
 @querystring_schema(InvitationCreateQueryStringSchema())
 @request_schema(InvitationCreateRequestSchema())
 @response_schema(InvitationRecordSchema(), description="")
@@ -200,10 +186,7 @@ async def invitation_create(request: web.BaseRequest):
     return web.json_response(invi_rec.serialize())
 
 
-@docs(
-    tags=["out-of-band"],
-    summary="Receive a new connection invitation",
-)
+@docs(tags=["out-of-band"], summary="Receive a new connection invitation")
 @querystring_schema(InvitationReceiveQueryStringSchema())
 @request_schema(InvitationMessageSchema())
 @response_schema(OobRecordSchema(), 200, description="")
@@ -269,9 +252,6 @@ def post_process_routes(app: web.Application):
         {
             "name": "out-of-band",
             "description": "Out-of-band connections",
-            "externalDocs": {
-                "description": "Design",
-                "url": SPEC_URI,
-            },
+            "externalDocs": {"description": "Design", "url": SPEC_URI},
         }
     )

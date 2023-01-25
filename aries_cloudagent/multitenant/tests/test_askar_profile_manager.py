@@ -44,7 +44,7 @@ class TestAskarProfileMultitenantManager(AsyncTestCase):
         with async_mock.patch(
             "aries_cloudagent.multitenant.askar_profile_manager.wallet_config"
         ) as wallet_config, async_mock.patch(
-            "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile",
+            "aries_cloudagent.multitenant.askar_profile_manager.AskarProfile"
         ) as AskarProfile:
             sub_wallet_profile_context = InjectionContext()
             sub_wallet_profile = AskarProfile(None, None)

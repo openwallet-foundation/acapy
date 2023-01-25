@@ -120,13 +120,10 @@ class IndyRevRegDefValueSchema(BaseModelSchema):
         description="Public keys",
     )
     tails_hash = fields.Str(
-        data_key="tailsHash",
-        description="Tails hash value",
-        **BASE58_SHA256_HASH,
+        data_key="tailsHash", description="Tails hash value", **BASE58_SHA256_HASH
     )
     tails_location = fields.Str(
-        description="Tails file location",
-        data_key="tailsLocation",
+        description="Tails file location", data_key="tailsLocation"
     )
 
 
@@ -167,8 +164,7 @@ class IndyRevRegDefSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     ver = fields.Str(
-        description="Version of revocation registry definition",
-        **INDY_VERSION,
+        description="Version of revocation registry definition", **INDY_VERSION
     )
     id_ = fields.Str(
         description="Indy revocation registry identifier",
@@ -201,10 +197,7 @@ class IndyRevRegEntryValue(BaseModel):
         schema_class = "IndyRevRegEntryValueSchema"
 
     def __init__(
-        self,
-        prev_accum: str = None,
-        accum: str = None,
-        revoked: Sequence[int] = None,
+        self, prev_accum: str = None, accum: str = None, revoked: Sequence[int] = None
     ):
         """Initialize."""
         self.prev_accum = prev_accum
@@ -262,11 +255,7 @@ class IndyRevRegEntrySchema(BaseModelSchema):
         model_class = IndyRevRegEntry
         unknown = EXCLUDE
 
-    ver = fields.Str(
-        description="Version of revocation registry entry",
-        **INDY_VERSION,
-    )
+    ver = fields.Str(description="Version of revocation registry entry", **INDY_VERSION)
     value = fields.Nested(
-        IndyRevRegEntryValueSchema(),
-        description="Revocation registry entry value",
+        IndyRevRegEntryValueSchema(), description="Revocation registry entry value"
     )

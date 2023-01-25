@@ -31,11 +31,7 @@ class IndySdkProfile(Profile):
 
     BACKEND_NAME = "indy"
 
-    def __init__(
-        self,
-        opened: IndyOpenWallet,
-        context: InjectionContext = None,
-    ):
+    def __init__(self, opened: IndyOpenWallet, context: InjectionContext = None):
         """Create a new IndyProfile instance."""
         super().__init__(context=context, name=opened.name, created=opened.created)
         self.opened = opened
@@ -98,8 +94,7 @@ class IndySdkProfile(Profile):
             injector.bind_provider(
                 IndyVerifier,
                 ClassProvider(
-                    "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
-                    ref(self),
+                    "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier", ref(self)
                 ),
             )
 

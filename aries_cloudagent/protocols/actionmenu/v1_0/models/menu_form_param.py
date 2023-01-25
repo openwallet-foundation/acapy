@@ -52,18 +52,12 @@ class MenuFormParamSchema(BaseModelSchema):
         model_class = MenuFormParam
         unknown = EXCLUDE
 
-    name = fields.Str(
-        required=True,
-        description="Menu parameter name",
-        example="delay",
-    )
+    name = fields.Str(required=True, description="Menu parameter name", example="delay")
     title = fields.Str(
         required=True, description="Menu parameter title", example="Delay in seconds"
     )
     default = fields.Str(
-        required=False,
-        description="Default parameter value",
-        example="0",
+        required=False, description="Default parameter value", example="0"
     )
     description = fields.Str(
         required=False,
@@ -77,7 +71,5 @@ class MenuFormParamSchema(BaseModelSchema):
         data_key="type",
     )
     required = fields.Bool(
-        required=False,
-        description="Whether parameter is required",
-        example="False",
+        required=False, description="Whether parameter is required", example="False"
     )

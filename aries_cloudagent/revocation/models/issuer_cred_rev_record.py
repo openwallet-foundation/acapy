@@ -109,9 +109,7 @@ class IssuerCredRevRecord(BaseRecord):
 
     @classmethod
     async def retrieve_by_cred_ex_id(
-        cls,
-        session: ProfileSession,
-        cred_ex_id: str,
+        cls, session: ProfileSession, cred_ex_id: str
     ) -> "IssuerCredRevRecord":
         """Retrieve an issuer cred rev record by rev reg id and cred rev id."""
         return await cls.retrieve_by_tag_filter(session, {"cred_ex_id": cred_ex_id})
@@ -150,9 +148,7 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
         example=UUIDFour.EXAMPLE,
     )
     rev_reg_id = fields.Str(
-        required=False,
-        description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
+        required=False, description="Revocation registry identifier", **INDY_REV_REG_ID
     )
     cred_def_id = fields.Str(
         required=False,
@@ -165,6 +161,5 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
         **INDY_CRED_REV_ID,
     )
     cred_ex_version = fields.Str(
-        required=False,
-        description="Credential exchange version",
+        required=False, description="Credential exchange version"
     )

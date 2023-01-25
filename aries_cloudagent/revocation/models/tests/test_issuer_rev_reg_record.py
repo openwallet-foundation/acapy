@@ -52,7 +52,7 @@ REV_REG_ENTRY = {
 class TestIssuerRevRegRecord(AsyncTestCase):
     async def setUp(self):
         self.profile = InMemoryProfile.test_profile(
-            settings={"tails_server_base_url": "http://1.2.3.4:8088"},
+            settings={"tails_server_base_url": "http://1.2.3.4:8088"}
         )
         self.context = self.profile.context
 
@@ -81,9 +81,7 @@ class TestIssuerRevRegRecord(AsyncTestCase):
 
     async def test_generate_registry_etc(self):
         rec = IssuerRevRegRecord(
-            issuer_did=TEST_DID,
-            cred_def_id=CRED_DEF_ID,
-            revoc_reg_id=REV_REG_ID,
+            issuer_did=TEST_DID, cred_def_id=CRED_DEF_ID, revoc_reg_id=REV_REG_ID
         )
         issuer = async_mock.MagicMock(IndyIssuer)
         self.profile.context.injector.bind_instance(IndyIssuer, issuer)

@@ -19,13 +19,9 @@ class TestInvitation(AsyncTestCase):
         self.key = "8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"
         self.test_message = "test message"
 
-        self.conn_invi_msg = ConnectionInvitation(
-            label=self.label,
-            did=self.test_did,
-        )
+        self.conn_invi_msg = ConnectionInvitation(label=self.label, did=self.test_did)
         self.intro_invitation = IntroInvitation(
-            invitation=self.conn_invi_msg,
-            message=self.test_message,
+            invitation=self.conn_invi_msg, message=self.test_message
         )
 
     def test_init(self):
@@ -57,8 +53,7 @@ class TestInvitation(AsyncTestCase):
 
     async def test_make_model(self):
         intro_invi = IntroInvitation(
-            invitation=self.conn_invi_msg,
-            message=self.test_message,
+            invitation=self.conn_invi_msg, message=self.test_message
         )
 
         data = intro_invi.serialize()

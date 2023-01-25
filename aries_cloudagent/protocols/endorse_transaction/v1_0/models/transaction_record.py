@@ -3,10 +3,7 @@
 from marshmallow import fields
 
 from .....core.profile import ProfileSession
-from .....messaging.models.base_record import (
-    BaseExchangeRecord,
-    BaseExchangeSchema,
-)
+from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 
 from ..controller import (
@@ -149,11 +146,7 @@ class TransactionRecordSchema(BaseExchangeSchema):
     transaction_id = fields.Str(
         required=False, description="Transaction identifier", example=UUIDFour.EXAMPLE
     )
-    _type = fields.Str(
-        required=False,
-        description="Transaction type",
-        example="101",
-    )
+    _type = fields.Str(required=False, description="Transaction type", example="101")
     signature_request = fields.List(
         fields.Dict(
             example={

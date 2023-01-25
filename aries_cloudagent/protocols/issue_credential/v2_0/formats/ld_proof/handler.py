@@ -593,10 +593,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         # Saving expanded type as a cred_tag
         expanded = jsonld.expand(cred_dict)
-        types = JsonLdProcessor.get_values(
-            expanded[0],
-            "@type",
-        )
+        types = JsonLdProcessor.get_values(expanded[0], "@type")
 
         # create VC record for storage
         vc_record = VCRecord(

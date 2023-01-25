@@ -26,20 +26,9 @@ INDY_PROOF_REQ = {
     "requested_attributes": {
         "0_favourite_uuid": {
             "name": "favourite",
-            "restrictions": [
-                {
-                    "cred_def_id": CD_ID,
-                }
-            ],
+            "restrictions": [{"cred_def_id": CD_ID}],
         },
-        "1_icon_uuid": {
-            "name": "icon",
-            "restrictions": [
-                {
-                    "cred_def_id": CD_ID,
-                }
-            ],
-        },
+        "1_icon_uuid": {"name": "icon", "restrictions": [{"cred_def_id": CD_ID}]},
     },
     "requested_predicates": {},
 }
@@ -53,11 +42,7 @@ INDY_PROOF_REQ_PRED = {
             "name": "score",
             "p_type": ">=",
             "p_value": 1000000,
-            "restrictions": [
-                {
-                    "cred_def_id": CD_ID,
-                }
-            ],
+            "restrictions": [{"cred_def_id": CD_ID}],
         }
     },
 }
@@ -200,18 +185,14 @@ class TestPresRequestHandler(AsyncTestCase):
 
         pres_proposal = V20PresProposal(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ],
             proposals_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
             ],
         )
         px_rec_instance = test_module.V20PresExRecord(
-            pres_proposal=pres_proposal.serialize(),
-            auto_present=True,
+            pres_proposal=pres_proposal.serialize(), auto_present=True
         )
 
         with async_mock.patch.object(
@@ -260,18 +241,14 @@ class TestPresRequestHandler(AsyncTestCase):
 
         pres_proposal = V20PresProposal(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ],
             proposals_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
             ],
         )
         px_rec_instance = test_module.V20PresExRecord(
-            pres_proposal=pres_proposal.serialize(),
-            auto_present=True,
+            pres_proposal=pres_proposal.serialize(), auto_present=True
         )
 
         with async_mock.patch.object(
@@ -314,10 +291,7 @@ class TestPresRequestHandler(AsyncTestCase):
 
         pres_proposal = V20PresProposal(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ],
             proposals_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
@@ -391,18 +365,14 @@ class TestPresRequestHandler(AsyncTestCase):
 
         pres_proposal = V20PresProposal(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ],
             proposals_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
             ],
         )
         mock_px_rec = test_module.V20PresExRecord(
-            pres_proposal=pres_proposal.serialize(),
-            auto_present=True,
+            pres_proposal=pres_proposal.serialize(), auto_present=True
         )
 
         mock_holder = async_mock.MagicMock(
@@ -457,10 +427,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V20PresRequest(
             formats=[
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=V20PresFormat.Format.DIF.aries,
-                )
+                V20PresFormat(attach_id="dif", format_=V20PresFormat.Format.DIF.aries)
             ]
         )
         request_context.message.attachment = async_mock.MagicMock(
@@ -477,17 +444,13 @@ class TestPresRequestHandler(AsyncTestCase):
 
         pres_proposal = V20PresProposal(
             formats=[
-                V20PresFormat(
-                    attach_id="dif",
-                    format_=V20PresFormat.Format.DIF.aries,
-                )
+                V20PresFormat(attach_id="dif", format_=V20PresFormat.Format.DIF.aries)
             ],
             proposals_attach=[AttachDecorator.data_json(DIF_PROP_REQ, ident="dif")],
         )
 
         px_rec_instance = test_module.V20PresExRecord(
-            pres_proposal=pres_proposal,
-            auto_present=True,
+            pres_proposal=pres_proposal, auto_present=True
         )
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
@@ -530,10 +493,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V20PresRequest(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ]
         )
         request_context.message.attachment = async_mock.MagicMock(
@@ -606,10 +566,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
         pres_proposal = V20PresProposal(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ],
             proposals_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
@@ -672,10 +629,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V20PresRequest(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ]
         )
         request_context.message.attachment = async_mock.MagicMock(
@@ -741,10 +695,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V20PresRequest(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ]
         )
         request_context.message.attachment = async_mock.MagicMock(
@@ -813,10 +764,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.connection_record.connection_id = "dummy"
         request_context.message = V20PresRequest(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ]
         )
         request_context.message.attachment = async_mock.MagicMock(
@@ -825,10 +773,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.message_receipt = MessageReceipt()
         pres_proposal = V20PresProposal(
             formats=[
-                V20PresFormat(
-                    attach_id="indy",
-                    format_=V20PresFormat.Format.INDY.aries,
-                )
+                V20PresFormat(attach_id="indy", format_=V20PresFormat.Format.INDY.aries)
             ],
             proposals_attach=[
                 AttachDecorator.data_base64(INDY_PROOF_REQ, ident="indy")
@@ -886,8 +831,7 @@ class TestPresRequestHandler(AsyncTestCase):
         request_context.injector.bind_instance(IndyHolder, mock_holder)
 
         px_rec_instance = test_module.V20PresExRecord(
-            pres_proposal=pres_proposal.serialize(),
-            auto_present=True,
+            pres_proposal=pres_proposal.serialize(), auto_present=True
         )
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True

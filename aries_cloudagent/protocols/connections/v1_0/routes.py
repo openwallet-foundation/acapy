@@ -17,12 +17,7 @@ from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
-from ....messaging.valid import (
-    ENDPOINT,
-    INDY_DID,
-    INDY_RAW_PUBLIC_KEY,
-    UUIDFour,
-)
+from ....messaging.valid import ENDPOINT, INDY_DID, INDY_RAW_PUBLIC_KEY, UUIDFour
 from ....storage.error import StorageError, StorageNotFoundError
 from ....wallet.error import WalletError
 
@@ -42,8 +37,7 @@ class ConnectionListSchema(OpenAPISchema):
     """Result schema for connection list."""
 
     results = fields.List(
-        fields.Nested(ConnRecordSchema()),
-        description="List of connection records",
+        fields.Nested(ConnRecordSchema()), description="List of connection records"
     )
 
 
@@ -51,7 +45,7 @@ class ConnectionMetadataSchema(OpenAPISchema):
     """Result schema for connection metadata."""
 
     results = fields.Dict(
-        description="Dictionary of metadata associated with connection.",
+        description="Dictionary of metadata associated with connection."
     )
 
 
@@ -59,8 +53,7 @@ class ConnectionMetadataSetRequestSchema(OpenAPISchema):
     """Request Schema for set metadata."""
 
     metadata = fields.Dict(
-        required=True,
-        description="Dictionary of metadata to set for connection.",
+        required=True, description="Dictionary of metadata to set for connection."
     )
 
 
@@ -78,10 +71,7 @@ class ReceiveInvitationRequestSchema(ConnectionInvitationSchema):
         """Bypass middleware field validation: marshmallow has no data yet."""
 
 
-MEDIATION_ID_SCHEMA = {
-    "validate": UUIDFour(),
-    "example": UUIDFour.EXAMPLE,
-}
+MEDIATION_ID_SCHEMA = {"validate": UUIDFour(), "example": UUIDFour.EXAMPLE}
 
 
 class CreateInvitationRequestSchema(OpenAPISchema):
@@ -169,11 +159,7 @@ class ConnectionStaticResultSchema(OpenAPISchema):
 class ConnectionsListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for connections list request query string."""
 
-    alias = fields.Str(
-        description="Alias",
-        required=False,
-        example="Barry",
-    )
+    alias = fields.Str(description="Alias", required=False, example="Barry")
     invitation_key = fields.Str(
         description="invitation key", required=False, **INDY_RAW_PUBLIC_KEY
     )
@@ -215,14 +201,9 @@ class ConnectionsListQueryStringSchema(OpenAPISchema):
 class CreateInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for create invitation request query string."""
 
-    alias = fields.Str(
-        description="Alias",
-        required=False,
-        example="Barry",
-    )
+    alias = fields.Str(description="Alias", required=False, example="Barry")
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
-        required=False,
+        description="Auto-accept connection (defaults to configuration)", required=False
     )
     public = fields.Boolean(
         description="Create invitation from public DID (default false)", required=False
@@ -235,14 +216,9 @@ class CreateInvitationQueryStringSchema(OpenAPISchema):
 class ReceiveInvitationQueryStringSchema(OpenAPISchema):
     """Parameters and validators for receive invitation request query string."""
 
-    alias = fields.Str(
-        description="Alias",
-        required=False,
-        example="Barry",
-    )
+    alias = fields.Str(description="Alias", required=False, example="Barry")
     auto_accept = fields.Boolean(
-        description="Auto-accept connection (defaults to configuration)",
-        required=False,
+        description="Auto-accept connection (defaults to configuration)", required=False
     )
     mediation_id = fields.Str(
         required=False,
@@ -314,10 +290,7 @@ def connection_sort_key(conn):
     return pfx + conn["created_at"]
 
 
-@docs(
-    tags=["connection"],
-    summary="Query agent-to-agent connections",
-)
+@docs(tags=["connection"], summary="Query agent-to-agent connections")
 @querystring_schema(ConnectionsListQueryStringSchema())
 @response_schema(ConnectionListSchema(), 200, description="")
 async def connections_list(request: web.BaseRequest):
@@ -484,10 +457,7 @@ async def connections_metadata_set(request: web.BaseRequest):
     return web.json_response({"results": result})
 
 
-@docs(
-    tags=["connection"],
-    summary="Create a new connection invitation",
-)
+@docs(tags=["connection"], summary="Create a new connection invitation")
 @querystring_schema(CreateInvitationQueryStringSchema())
 @request_schema(CreateInvitationRequestSchema())
 @response_schema(InvitationResultSchema(), 200, description="")
@@ -556,10 +526,7 @@ async def connections_create_invitation(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["connection"],
-    summary="Receive a new connection invitation",
-)
+@docs(tags=["connection"], summary="Receive a new connection invitation")
 @querystring_schema(ReceiveInvitationQueryStringSchema())
 @request_schema(ReceiveInvitationRequestSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
@@ -598,10 +565,7 @@ async def connections_receive_invitation(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["connection"],
-    summary="Accept a stored connection invitation",
-)
+@docs(tags=["connection"], summary="Accept a stored connection invitation")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptInvitationQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
@@ -649,10 +613,7 @@ async def connections_accept_invitation(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(
-    tags=["connection"],
-    summary="Accept a stored connection request",
-)
+@docs(tags=["connection"], summary="Accept a stored connection request")
 @match_info_schema(ConnectionsConnIdMatchInfoSchema())
 @querystring_schema(AcceptRequestQueryStringSchema())
 @response_schema(ConnRecordSchema(), 200, description="")
@@ -821,8 +782,7 @@ async def register(app: web.Application):
                 connections_accept_invitation,
             ),
             web.post(
-                "/connections/{conn_id}/accept-request",
-                connections_accept_request,
+                "/connections/{conn_id}/accept-request", connections_accept_request
             ),
             web.post(
                 "/connections/{conn_id}/establish-inbound/{ref_id}",

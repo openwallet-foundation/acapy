@@ -3,16 +3,12 @@ from typing import Coroutine, Union
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 
-from .messages.pres_problem_report import (
-    V20PresProblemReport,
-    ProblemReportReason,
-)
+from .messages.pres_problem_report import V20PresProblemReport, ProblemReportReason
 from .models.pres_exchange import V20PresExRecord
 
 
 def problem_report_for_record(
-    record: Union[ConnRecord, V20PresExRecord],
-    desc_en: str,
+    record: Union[ConnRecord, V20PresExRecord], desc_en: str
 ) -> V20PresProblemReport:
     """
     Create problem report for record.
@@ -23,10 +19,7 @@ def problem_report_for_record(
 
     """
     result = V20PresProblemReport(
-        description={
-            "en": desc_en,
-            "code": ProblemReportReason.ABANDONED.value,
-        },
+        description={"en": desc_en, "code": ProblemReportReason.ABANDONED.value}
     )
     if record:
         thid = getattr(record, "thread_id", None)

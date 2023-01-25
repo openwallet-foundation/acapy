@@ -118,8 +118,7 @@ class NumericStrAny(Regexp):
         """Initializer."""
 
         super().__init__(
-            NumericStrAny.PATTERN,
-            error="Value {input} is not a numeric string",
+            NumericStrAny.PATTERN, error="Value {input} is not a numeric string"
         )
 
 
@@ -215,8 +214,7 @@ class JSONWebToken(Regexp):
         """Initializer."""
 
         super().__init__(
-            JSONWebToken.PATTERN,
-            error="Value {input} is not a valid JSON Web token",
+            JSONWebToken.PATTERN, error="Value {input} is not a valid JSON Web token"
         )
 
 
@@ -294,8 +292,7 @@ class DIDValidation(Regexp):
         """Initializer."""
 
         super().__init__(
-            DIDValidation.PATTERN,
-            error="Value {input} is not a valid DID",
+            DIDValidation.PATTERN, error="Value {input} is not a valid DID"
         )
 
 
@@ -309,10 +306,7 @@ class MaybeIndyDID(Regexp):
     def __init__(self):
         """Initializer."""
 
-        super().__init__(
-            MaybeIndyDID.PATTERN,
-            error="Value {input} is not a valid DID",
-        )
+        super().__init__(MaybeIndyDID.PATTERN, error="Value {input} is not a valid DID")
 
 
 class IndyRawPublicKey(Regexp):
@@ -399,8 +393,7 @@ class IndySchemaId(Regexp):
         """Initializer."""
 
         super().__init__(
-            IndySchemaId.PATTERN,
-            error="Value {input} is not an indy schema identifier",
+            IndySchemaId.PATTERN, error="Value {input} is not an indy schema identifier"
         )
 
 
@@ -484,8 +477,7 @@ class RFC3339DateTime(Regexp):
         """Initializer."""
 
         super().__init__(
-            RFC3339DateTime.PATTERN,
-            error="Value {input} is not a date in valid format",
+            RFC3339DateTime.PATTERN, error="Value {input} is not a date in valid format"
         )
 
 
@@ -499,8 +491,7 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Initializer."""
 
         super().__init__(
-            IndyWQL.PATTERN,
-            error="Value {input} is not a valid WQL query",
+            IndyWQL.PATTERN, error="Value {input} is not a valid WQL query"
         )
 
     def __call__(self, value):
@@ -527,8 +518,7 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
         """Initializer."""
 
         super().__init__(
-            IndyExtraWQL.PATTERN,
-            error="Value {input} is not a valid extra WQL query",
+            IndyExtraWQL.PATTERN, error="Value {input} is not a valid extra WQL query"
         )
 
     def __call__(self, value):
@@ -555,8 +545,7 @@ class Base64(Regexp):
         """Initializer."""
 
         super().__init__(
-            Base64.PATTERN,
-            error="Value {input} is not a valid base64 encoding",
+            Base64.PATTERN, error="Value {input} is not a valid base64 encoding"
         )
 
 
@@ -570,8 +559,7 @@ class Base64URL(Regexp):
         """Initializer."""
 
         super().__init__(
-            Base64URL.PATTERN,
-            error="Value {input} is not a valid base64url encoding",
+            Base64URL.PATTERN, error="Value {input} is not a valid base64url encoding"
         )
 
 
@@ -667,8 +655,7 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
         """Initializer."""
 
         super().__init__(
-            Endpoint.PATTERN,
-            error="Value {input} is not a valid endpoint",
+            Endpoint.PATTERN, error="Value {input} is not a valid endpoint"
         )
 
 
@@ -767,9 +754,7 @@ class IndyOrKeyDID(Regexp):
     PATTERN = "|".join(x.pattern for x in [DIDKey.PATTERN, IndyDID.PATTERN])
     EXAMPLE = IndyDID.EXAMPLE
 
-    def __init__(
-        self,
-    ):
+    def __init__(self,):
         """Initializer."""
         super().__init__(
             IndyOrKeyDID.PATTERN,
@@ -833,7 +818,4 @@ CREDENTIAL_SUBJECT = {
     "validate": CredentialSubject(),
     "example": CredentialSubject.EXAMPLE,
 }
-INDY_OR_KEY_DID = {
-    "validate": IndyOrKeyDID(),
-    "example": IndyOrKeyDID.EXAMPLE,
-}
+INDY_OR_KEY_DID = {"validate": IndyOrKeyDID(), "example": IndyOrKeyDID.EXAMPLE}

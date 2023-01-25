@@ -39,9 +39,7 @@ class TestBbsBlsSignature2020(TestCase):
         ).key_id
 
         self.sign_key_pair = WalletKeyPair(
-            wallet=self.wallet,
-            key_type=BLS12381G2,
-            public_key_base58=self.key.verkey,
+            wallet=self.wallet, key_type=BLS12381G2, public_key_base58=self.key.verkey
         )
         self.verify_key_pair = WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
 
@@ -133,8 +131,7 @@ class TestBbsBlsSignature2020(TestCase):
 
     async def test_verify_signature_x_invalid_proof_value(self):
         suite = BbsBlsSignature2020(
-            key_pair=self.sign_key_pair,
-            verification_method=self.verification_method,
+            key_pair=self.sign_key_pair, verification_method=self.verification_method
         )
 
         with self.assertRaises(LinkedDataProofException):

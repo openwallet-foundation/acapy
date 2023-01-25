@@ -109,15 +109,9 @@ ATTRIB_EVENT_LISTENER_PATTERN = re.compile(f"^{DID_ATTRIB_EVENT_PREFIX}(.*)?$")
 
 async def notify_endorse_did_event(profile: Profile, did: str, meta_data: dict):
     """Send notification for a DID post-process event."""
-    await profile.notify(
-        DID_EVENT_PREFIX + did,
-        meta_data,
-    )
+    await profile.notify(DID_EVENT_PREFIX + did, meta_data)
 
 
 async def notify_endorse_did_attrib_event(profile: Profile, did: str, meta_data: dict):
     """Send notification for a DID ATTRIB post-process event."""
-    await profile.notify(
-        DID_ATTRIB_EVENT_PREFIX + did,
-        meta_data,
-    )
+    await profile.notify(DID_ATTRIB_EVENT_PREFIX + did, meta_data)

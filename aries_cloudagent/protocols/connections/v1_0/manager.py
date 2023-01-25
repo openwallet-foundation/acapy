@@ -122,9 +122,7 @@ class ConnectionManager(BaseConnectionManager):
         # Mediation Record can still be None after this operation if no
         # mediation id passed and no default
         mediation_record = await self._route_manager.mediation_record_if_id(
-            self.profile,
-            mediation_id,
-            or_default=True,
+            self.profile, mediation_id, or_default=True
         )
         image_url = self.profile.context.settings.get("image_url")
         invitation = None
@@ -270,8 +268,7 @@ class ConnectionManager(BaseConnectionManager):
                 )
             if not invitation.endpoint:
                 raise ConnectionManagerError(
-                    "Invitation must contain an endpoint",
-                    error_code="missing-endpoint",
+                    "Invitation must contain an endpoint", error_code="missing-endpoint"
                 )
         accept = (
             ConnRecord.ACCEPT_AUTO
@@ -346,10 +343,7 @@ class ConnectionManager(BaseConnectionManager):
         """
 
         mediation_record = await self._route_manager.mediation_record_for_connection(
-            self.profile,
-            connection,
-            mediation_id,
-            or_default=True,
+            self.profile, connection, mediation_id, or_default=True
         )
 
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
@@ -413,9 +407,7 @@ class ConnectionManager(BaseConnectionManager):
         return request
 
     async def receive_request(
-        self,
-        request: ConnectionRequest,
-        receipt: MessageReceipt,
+        self, request: ConnectionRequest, receipt: MessageReceipt
     ) -> ConnRecord:
         """
         Receive and store a connection request.
@@ -570,10 +562,7 @@ class ConnectionManager(BaseConnectionManager):
         return connection
 
     async def create_response(
-        self,
-        connection: ConnRecord,
-        my_endpoint: str = None,
-        mediation_id: str = None,
+        self, connection: ConnRecord, my_endpoint: str = None, mediation_id: str = None
     ) -> ConnectionResponse:
         """
         Create a connection response for a received connection request.
@@ -799,13 +788,11 @@ class ConnectionManager(BaseConnectionManager):
             wallet = session.inject(BaseWallet)
             my_did_info = await wallet.get_local_did(connection.my_did)
         my_endpoint = my_did_info.metadata.get(
-            "endpoint",
-            self.profile.settings.get("default_endpoint"),
+            "endpoint", self.profile.settings.get("default_endpoint")
         )
 
         conn_targets = await self.get_connection_targets(
-            connection_id=connection.connection_id,
-            connection=connection,
+            connection_id=connection.connection_id, connection=connection
         )
         return (my_endpoint, conn_targets[0].endpoint)
 
@@ -954,9 +941,7 @@ class ConnectionManager(BaseConnectionManager):
             try:
                 async with self.profile.session() as session:
                     connection = await ConnRecord.retrieve_by_invitation_key(
-                        session,
-                        my_verkey,
-                        their_role=ConnRecord.Role.REQUESTER.rfc160,
+                        session, my_verkey, their_role=ConnRecord.Role.REQUESTER.rfc160
                     )
             except StorageError:
                 pass

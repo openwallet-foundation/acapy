@@ -50,16 +50,11 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
     """Query string parameter for Discover Features v1.0 exchange record."""
 
     connection_id = fields.Str(
-        description="Connection identifier",
-        example=UUIDFour.EXAMPLE,
-        required=False,
+        description="Connection identifier", example=UUIDFour.EXAMPLE, required=False
     )
 
 
-@docs(
-    tags=["discover-features"],
-    summary="Query supported features",
-)
+@docs(tags=["discover-features"], summary="Query supported features")
 @querystring_schema(QueryFeaturesQueryStringSchema())
 @response_schema(V10DiscoveryRecordSchema(), 200, description="")
 async def query_features(request: web.BaseRequest):
@@ -80,17 +75,12 @@ async def query_features(request: web.BaseRequest):
     comment = request.query.get("comment", "*")
     connection_id = request.query.get("connection_id")
     result = await mgr.create_and_send_query(
-        connection_id=connection_id,
-        query=query,
-        comment=comment,
+        connection_id=connection_id, query=query, comment=comment
     )
     return web.json_response(result.serialize())
 
 
-@docs(
-    tags=["discover-features"],
-    summary="Discover Features records",
-)
+@docs(tags=["discover-features"], summary="Discover Features records")
 @querystring_schema(QueryDiscoveryExchRecordsSchema())
 @response_schema(V10DiscoveryExchangeListResultSchema(), 200, description="")
 async def query_records(request: web.BaseRequest):

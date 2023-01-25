@@ -25,10 +25,7 @@ from ...ledger.multiple_ledger.base_manager import (
 class IndyLedgerRequestsExecutor:
     """Executes Ledger Requests based on multiple ledger config, if set."""
 
-    def __init__(
-        self,
-        profile: Profile,
-    ):
+    def __init__(self, profile: Profile):
         """Initialize IndyLedgerRequestsExecutor.
 
         Args:

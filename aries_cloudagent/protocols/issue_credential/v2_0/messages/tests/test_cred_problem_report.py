@@ -94,10 +94,7 @@ class TestCredProblemReport(TestCase):
     def test_validate_and_logger(self):
         """Capture ValidationError and Logs."""
         data = V20CredProblemReport(
-            description={
-                "en": "Insufficient credit",
-                "code": "invalid_code",
-            },
+            description={"en": "Insufficient credit", "code": "invalid_code"}
         ).serialize()
         self._caplog.set_level(logging.WARNING)
         V20CredProblemReportSchema().validate_fields(data)

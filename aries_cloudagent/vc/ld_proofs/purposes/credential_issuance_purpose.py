@@ -46,12 +46,7 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
             # FIXME: Other implementations don't expand, but
             # if we don't expand we can't get the property using
             # the full CREDENTIALS_ISSUER_URL.
-            [expanded] = jsonld.expand(
-                document,
-                {
-                    "documentLoader": document_loader,
-                },
-            )
+            [expanded] = jsonld.expand(document, {"documentLoader": document_loader})
 
             issuer: List[dict] = JsonLdProcessor.get_values(
                 expanded, CREDENTIALS_ISSUER_URL

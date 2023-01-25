@@ -50,10 +50,7 @@ async def holder():
 
 def test_record() -> VCRecord:
     return VCRecord(
-        contexts=[
-            VC_CONTEXT,
-            "https://www.w3.org/2018/credentials/examples/v1",
-        ],
+        contexts=[VC_CONTEXT, "https://www.w3.org/2018/credentials/examples/v1"],
         expanded_types=[
             VC_TYPE,
             "https://example.org/examples#UniversityDegreeCredential",

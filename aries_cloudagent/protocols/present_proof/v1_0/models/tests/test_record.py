@@ -25,23 +25,14 @@ INDY_PROOF_REQ = {
         "0_player_uuid": {
             "name": "player",
             "restrictions": [
-                {
-                    "cred_def_id": f"{CD_ID}",
-                    "attr::player::value": "Richie Knucklez",
-                }
+                {"cred_def_id": f"{CD_ID}", "attr::player::value": "Richie Knucklez"}
             ],
-            "non_revoked": {
-                "from": 1234567890,
-                "to": 1234567890,
-            },
+            "non_revoked": {"from": 1234567890, "to": 1234567890},
         },
         "0_screencapture_uuid": {
             "name": "screenCapture",
             "restrictions": [{"cred_def_id": f"{CD_ID}"}],
-            "non_revoked": {
-                "from": 1234567890,
-                "to": 1234567890,
-            },
+            "non_revoked": {"from": 1234567890, "to": 1234567890},
         },
     },
     "requested_predicates": {
@@ -50,10 +41,7 @@ INDY_PROOF_REQ = {
             "p_type": ">=",
             "p_value": 1000000,
             "restrictions": [{"cred_def_id": f"{CD_ID}"}],
-            "non_revoked": {
-                "from": 1234567890,
-                "to": 1234567890,
-            },
+            "non_revoked": {"from": 1234567890, "to": 1234567890},
         }
     },
 }

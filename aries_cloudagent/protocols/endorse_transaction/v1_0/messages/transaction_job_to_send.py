@@ -22,12 +22,7 @@ class TransactionJobToSend(AgentMessage):
         message_type = TRANSACTION_JOB_TO_SEND
         schema_class = "TransactionJobToSendSchema"
 
-    def __init__(
-        self,
-        *,
-        job: str = None,
-        **kwargs,
-    ):
+    def __init__(self, *, job: str = None, **kwargs):
         """
         Initialize transaction job to send.
 

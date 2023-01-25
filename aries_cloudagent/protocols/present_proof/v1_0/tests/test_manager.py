@@ -199,20 +199,14 @@ INDY_PROOF = {
         "predicates": {"0_highscore_GE_uuid": {"sub_proof_index": 0}},
     },
     "identifiers": [
-        {
-            "schema_id": S_ID,
-            "cred_def_id": CD_ID,
-            "rev_reg_id": RR_ID,
-            "timestamp": NOW,
-        }
+        {"schema_id": S_ID, "cred_def_id": CD_ID, "rev_reg_id": RR_ID, "timestamp": NOW}
     ],
 }
 PRES = Presentation(
     comment="Test",
     presentations_attach=[
         AttachDecorator.data_base64(
-            mapping=INDY_PROOF,
-            ident=ATTACH_DECO_IDS[PRESENTATION],
+            mapping=INDY_PROOF, ident=ATTACH_DECO_IDS[PRESENTATION]
         )
     ],
 )
@@ -415,8 +409,7 @@ class TestPresentationManager(AsyncTestCase):
         pres_req = PresentationRequest(
             request_presentations_attach=[
                 AttachDecorator.data_base64(
-                    mapping=indy_proof_req,
-                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                    mapping=indy_proof_req, ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST]
                 )
             ]
         )
@@ -1214,8 +1207,7 @@ class TestPresentationManager(AsyncTestCase):
         pres_req = PresentationRequest(
             request_presentations_attach=[
                 AttachDecorator.data_base64(
-                    mapping=indy_proof_req,
-                    ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST],
+                    mapping=indy_proof_req, ident=ATTACH_DECO_IDS[PRESENTATION_REQUEST]
                 )
             ]
         )

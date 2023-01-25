@@ -50,15 +50,10 @@ class V20CredExRecordLDProof(BaseRecord):
 
     @classmethod
     async def query_by_cred_ex_id(
-        cls,
-        session: ProfileSession,
-        cred_ex_id: str,
+        cls, session: ProfileSession, cred_ex_id: str
     ) -> Sequence["V20CredExRecordLDProof"]:
         """Retrieve a credential exchange LDProof detail record by its cred ex id."""
-        return await cls.query(
-            session=session,
-            tag_filter={"cred_ex_id": cred_ex_id},
-        )
+        return await cls.query(session=session, tag_filter={"cred_ex_id": cred_ex_id})
 
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
@@ -75,9 +70,7 @@ class V20CredExRecordLDProofSchema(BaseRecordSchema):
         unknown = EXCLUDE
 
     cred_ex_ld_proof_id = fields.Str(
-        required=False,
-        description="Record identifier",
-        example=UUIDFour.EXAMPLE,
+        required=False, description="Record identifier", example=UUIDFour.EXAMPLE
     )
     cred_ex_id = fields.Str(
         required=False,

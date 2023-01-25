@@ -143,16 +143,11 @@ class V20CredManager:
         cred_proposal_message.assign_trace_decorator(self._profile.settings, trace)
 
         async with self._profile.session() as session:
-            await cred_ex_record.save(
-                session,
-                reason="create v2.0 credential proposal",
-            )
+            await cred_ex_record.save(session, reason="create v2.0 credential proposal")
         return cred_ex_record
 
     async def receive_proposal(
-        self,
-        cred_proposal_message: V20CredProposal,
-        connection_id: str,
+        self, cred_proposal_message: V20CredProposal, connection_id: str
     ) -> V20CredExRecord:
         """
         Receive a credential proposal.
@@ -188,8 +183,7 @@ class V20CredManager:
 
         async with self._profile.session() as session:
             await cred_ex_record.save(
-                session,
-                reason="receive v2.0 credential proposal",
+                session, reason="receive v2.0 credential proposal"
             )
 
         return cred_ex_record
@@ -264,9 +258,7 @@ class V20CredManager:
         return (cred_ex_record, cred_offer_message)
 
     async def receive_offer(
-        self,
-        cred_offer_message: V20CredOffer,
-        connection_id: Optional[str],
+        self, cred_offer_message: V20CredOffer, connection_id: Optional[str]
     ) -> V20CredExRecord:
         """
         Receive a credential offer.
@@ -463,10 +455,7 @@ class V20CredManager:
         return cred_ex_record
 
     async def issue_credential(
-        self,
-        cred_ex_record: V20CredExRecord,
-        *,
-        comment: str = None,
+        self, cred_ex_record: V20CredExRecord, *, comment: str = None
     ) -> Tuple[V20CredExRecord, V20CredIssue]:
         """
         Issue a credential.
@@ -632,10 +621,7 @@ class V20CredManager:
 
         return cred_ex_record
 
-    async def send_cred_ack(
-        self,
-        cred_ex_record: V20CredExRecord,
-    ):
+    async def send_cred_ack(self, cred_ex_record: V20CredExRecord):
         """
         Create, send, and return ack message for input cred ex record.
 
@@ -670,8 +656,7 @@ class V20CredManager:
         responder = self._profile.inject_or(BaseResponder)
         if responder:
             await responder.send_reply(
-                cred_ack_message,
-                connection_id=cred_ex_record.connection_id,
+                cred_ack_message, connection_id=cred_ex_record.connection_id
             )
         else:
             LOGGER.warning(
@@ -719,10 +704,7 @@ class V20CredManager:
 
         async with self._profile.session() as session:
             for fmt in V20CredFormat.Format:  # details first: do not strand any orphans
-                for record in await fmt.detail.query_by_cred_ex_id(
-                    session,
-                    cred_ex_id,
-                ):
+                for record in await fmt.detail.query_by_cred_ex_id(session, cred_ex_id):
                     await record.delete_record(session)
 
             cred_ex_record = await V20CredExRecord.retrieve_by_id(session, cred_ex_id)
@@ -742,16 +724,13 @@ class V20CredManager:
         async with self._profile.session() as session:
             cred_ex_record = await (
                 V20CredExRecord.retrieve_by_conn_and_thread(
-                    session,
-                    connection_id,
-                    message._thread_id,
+                    session, connection_id, message._thread_id
                 )
             )
 
             cred_ex_record.state = V20CredExRecord.STATE_ABANDONED
             code = message.description.get(
-                "code",
-                ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "code", ProblemReportReason.ISSUANCE_ABANDONED.value
             )
             cred_ex_record.error_msg = f"{code}: {message.description.get('en', code)}"
             await cred_ex_record.save(session, reason="received problem report")

@@ -22,8 +22,7 @@ class V20DiscoveryExchangeResultSchema(OpenAPISchema):
     """Result schema for Discover Features v2.0 exchange record."""
 
     results = fields.Nested(
-        V20DiscoveryRecordSchema,
-        description="Discover Features v2.0 exchange record",
+        V20DiscoveryRecordSchema, description="Discover Features v2.0 exchange record"
     )
 
 
@@ -61,16 +60,11 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
     """Query string parameter for Discover Features v2.0 exchange record."""
 
     connection_id = fields.Str(
-        description="Connection identifier",
-        example=UUIDFour.EXAMPLE,
-        required=False,
+        description="Connection identifier", example=UUIDFour.EXAMPLE, required=False
     )
 
 
-@docs(
-    tags=["discover-features v2.0"],
-    summary="Query supported features",
-)
+@docs(tags=["discover-features v2.0"], summary="Query supported features")
 @querystring_schema(QueryFeaturesQueryStringSchema())
 @response_schema(V20DiscoveryExchangeResultSchema(), 200, description="")
 async def query_features(request: web.BaseRequest):
@@ -98,10 +92,7 @@ async def query_features(request: web.BaseRequest):
     return web.json_response(result.serialize())
 
 
-@docs(
-    tags=["discover-features v2.0"],
-    summary="Discover Features v2.0 records",
-)
+@docs(tags=["discover-features v2.0"], summary="Discover Features v2.0 records")
 @querystring_schema(QueryDiscoveryExchRecordsSchema())
 @response_schema(V20DiscoveryExchangeListResultSchema(), 200, description="")
 async def query_records(request: web.BaseRequest):

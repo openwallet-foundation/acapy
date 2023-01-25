@@ -58,7 +58,7 @@ class TestBbsMattrInterop(TestCase):
         )
 
         self.signature_suite = BbsBlsSignature2020(
-            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2),
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)
         )
         self.proof_suite = BbsBlsSignatureProof2020(
             key_pair=WalletKeyPair(wallet=self.wallet, key_type=BLS12381G2)

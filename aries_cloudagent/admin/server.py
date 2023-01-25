@@ -28,6 +28,7 @@ from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager, MultitenantManagerError
+from ..protocols.security.v1_0.secure import sign_secret
 from ..storage.error import StorageNotFoundError
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
@@ -103,12 +104,7 @@ class AdminShutdownSchema(OpenAPISchema):
 class AdminResponder(BaseResponder):
     """Handle outgoing messages from message handlers."""
 
-    def __init__(
-        self,
-        profile: Profile,
-        send: Coroutine,
-        **kwargs,
-    ):
+    def __init__(self, profile: Profile, send: Coroutine, **kwargs):
         """
         Initialize an instance of `AdminResponder`.
 
@@ -401,10 +397,7 @@ class AdminServer(BaseAdminServer):
                     raise web.HTTPUnauthorized()
 
             # Create a responder with the request specific context
-            responder = AdminResponder(
-                profile,
-                self.outbound_message_router,
-            )
+            responder = AdminResponder(profile, self.outbound_message_router)
             profile.context.injector.bind_instance(BaseResponder, responder)
 
             # TODO may dynamically adjust the profile used here according to
@@ -637,9 +630,7 @@ class AdminServer(BaseAdminServer):
         }
         for index in range(len(config.get("admin.webhook_urls", []))):
             config["admin.webhook_urls"][index] = re.sub(
-                r"#.*",
-                "",
-                config["admin.webhook_urls"][index],
+                r"#.*", "", config["admin.webhook_urls"][index]
             )
 
         return web.json_response({"config": config})
@@ -866,20 +857,17 @@ class AdminServer(BaseAdminServer):
         """Add a webhook to the queue, to send to all registered targets."""
         wallet_id = profile.settings.get("wallet.id")
         webhook_urls = profile.settings.get("admin.webhook_urls")
+        secret_key = profile.settings.get("secret_key")
 
-        metadata = None
+        metadata = {}
         if wallet_id:
             metadata = {"x-wallet-id": wallet_id}
 
         if self.webhook_router:
             for endpoint in webhook_urls:
-                self.webhook_router(
-                    topic,
-                    payload,
-                    endpoint,
-                    None,
-                    metadata,
-                )
+                self.webhook_router(topic, payload, endpoint, None, metadata)
+                signed_secret = sign_secret(secret_key, payload)
+                metadata["ACAPY_Webhook_HMAC"] = signed_secret
 
         # set ws webhook body, optionally add wallet id for multitenant mode
         webhook_body = {"topic": topic, "payload": payload}

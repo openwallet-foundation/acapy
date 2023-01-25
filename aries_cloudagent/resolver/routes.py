@@ -107,15 +107,7 @@ async def resolve_did(request: web.Request):
 async def register(app: web.Application):
     """Register routes."""
 
-    app.add_routes(
-        [
-            web.get(
-                "/resolver/resolve/{did}",
-                resolve_did,
-                allow_head=False,
-            ),
-        ]
-    )
+    app.add_routes([web.get("/resolver/resolve/{did}", resolve_did, allow_head=False)])
 
 
 def post_process_routes(app: web.Application):

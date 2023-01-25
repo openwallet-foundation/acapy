@@ -55,12 +55,7 @@ class TestV20CredOffer(AsyncTestCase):
                 format_=ATTACHMENT_FORMAT[CRED_20_OFFER][V20CredFormat.Format.INDY.api],
             )
         ],
-        offers_attach=[
-            AttachDecorator.data_base64(
-                mapping=indy_offer,
-                ident="indy",
-            )
-        ],
+        offers_attach=[AttachDecorator.data_base64(mapping=indy_offer, ident="indy")],
     )
 
     async def test_init_type(self):
@@ -117,10 +112,7 @@ class TestV20CredOffer(AsyncTestCase):
             V20CredOffer.deserialize(obj)
 
         cred_offer.formats.append(  # unknown format: no validation
-            V20CredFormat(
-                attach_id="not_indy",
-                format_="not_indy",
-            )
+            V20CredFormat(attach_id="not_indy", format_="not_indy")
         )
         obj = cred_offer.serialize()
         obj["offers~attach"].append(
@@ -151,8 +143,7 @@ class TestV20CredOfferSchema(AsyncTestCase):
             ],
             offers_attach=[
                 AttachDecorator.data_base64(
-                    mapping=TestV20CredOffer.indy_offer,
-                    ident="indy",
+                    mapping=TestV20CredOffer.indy_offer, ident="indy"
                 )
             ],
         )

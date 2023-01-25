@@ -100,11 +100,7 @@ class RouteRecord(BaseRecord):
         """Accessor for JSON record value."""
         return {
             prop: getattr(self, prop)
-            for prop in (
-                "connection_id",
-                "wallet_id",
-                "recipient_key",
-            )
+            for prop in ("connection_id", "wallet_id", "recipient_key")
         }
 
 

@@ -39,8 +39,7 @@ class CredentialProblemReportHandler(BaseHandler):
         credential_manager = CredentialManager(context.profile)
         try:
             await credential_manager.receive_problem_report(
-                context.message,
-                context.connection_record.connection_id,
+                context.message, context.connection_record.connection_id
             )
         except (StorageError, StorageNotFoundError):
             self._logger.exception(

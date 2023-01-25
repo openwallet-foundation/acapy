@@ -72,16 +72,12 @@ class DIFPresExchError(BaseError):
 class DIFPresExchHandler:
     """Base Presentation Exchange Handler."""
 
-    ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        Ed25519Signature2018: ED25519,
-    }
+    ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {Ed25519Signature2018: ED25519}
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
         ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
 
-    DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        BbsBlsSignatureProof2020: BLS12381G2,
-    }
+    DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {BbsBlsSignatureProof2020: BLS12381G2}
     PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
         suite.signature_type: suite
         for suite, key_type in ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING.items()
@@ -109,12 +105,7 @@ class DIFPresExchHandler:
         self.is_holder = False
         self.reveal_doc_frame = reveal_doc
 
-    async def _get_issue_suite(
-        self,
-        *,
-        wallet: BaseWallet,
-        issuer_id: str,
-    ):
+    async def _get_issue_suite(self, *, wallet: BaseWallet, issuer_id: str):
         """Get signature suite for signing presentation."""
         did_info = await self._did_info_for_did(issuer_id)
         verification_method = self._get_verification_method(issuer_id)
@@ -132,11 +123,7 @@ class DIFPresExchHandler:
             ),
         )
 
-    async def _get_derive_suite(
-        self,
-        *,
-        wallet: BaseWallet,
-    ):
+    async def _get_derive_suite(self, *, wallet: BaseWallet):
         """Get signature suite for deriving credentials."""
         # Get signature class based on proof type
         SignatureClass = self.DERIVED_PROOF_TYPE_SIGNATURE_SUITE_MAPPING[
@@ -148,7 +135,7 @@ class DIFPresExchHandler:
             key_pair=WalletKeyPair(
                 wallet=wallet,
                 key_type=self.DERIVE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[SignatureClass],
-            ),
+            )
         )
 
     def _get_verification_method(self, did: str):
@@ -296,14 +283,10 @@ class DIFPresExchHandler:
             descriptors = []
         if len(srs) == 0:
             requirement = Requirement(
-                count=len(descriptors),
-                input_descriptors=descriptors,
+                count=len(descriptors), input_descriptors=descriptors
             )
             return requirement
-        requirement = Requirement(
-            count=len(srs),
-            nested_req=[],
-        )
+        requirement = Requirement(count=len(srs), nested_req=[])
         for submission_requirement in srs:
             try:
                 requirement.nested_req.append(
@@ -357,9 +340,7 @@ class DIFPresExchHandler:
         return False
 
     async def filter_constraints(
-        self,
-        constraints: Constraints,
-        credentials: Sequence[VCRecord],
+        self, constraints: Constraints, credentials: Sequence[VCRecord]
     ) -> Sequence[VCRecord]:
         """
         Return list of applicable VCRecords after applying filtering.
@@ -412,9 +393,7 @@ class DIFPresExchHandler:
                 )
                 async with self.profile.session() as session:
                     wallet = session.inject(BaseWallet)
-                    derive_suite = await self._get_derive_suite(
-                        wallet=wallet,
-                    )
+                    derive_suite = await self._get_derive_suite(wallet=wallet)
                     signed_new_credential_dict = await derive_credential(
                         credential=credential_dict,
                         reveal_document=new_credential_dict,
@@ -436,10 +415,7 @@ class DIFPresExchHandler:
                 reqd_field_ids = set.union(reqd_field_ids, set(holder.field_ids))
         return list(reqd_field_ids)
 
-    async def process_constraint_holders(
-        self,
-        subject_ids: Sequence[str],
-    ) -> bool:
+    async def process_constraint_holders(self, subject_ids: Sequence[str]) -> bool:
         """Check if holder or subject of claim still controls the identifier."""
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
@@ -495,10 +471,7 @@ class DIFPresExchHandler:
             schemas = [schemas]
         schema_ids = [schema.get("id") for schema in schemas]
         expanded = jsonld.expand(cred_dict)
-        types = JsonLdProcessor.get_values(
-            expanded[0],
-            "@type",
-        )
+        types = JsonLdProcessor.get_values(expanded[0], "@type")
         return VCRecord(
             contexts=contexts,
             expanded_types=types,
@@ -658,8 +631,8 @@ class DIFPresExchHandler:
                     if isinstance(to_check, str):
                         if _filter.fmt == "date" or _filter.fmt == "date-time":
                             try:
-                                to_compare_date = (
-                                    self.string_to_timezone_aware_datetime(to_check)
+                                to_compare_date = self.string_to_timezone_aware_datetime(
+                                    to_check
                                 )
                                 if isinstance(to_compare_date, datetime):
                                     return True
@@ -1003,18 +976,14 @@ class DIFPresExchHandler:
                 if schema.required and not applicable:
                     break
                 if applicable:
-                    if schema.uri in [
-                        EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
-                    ]:
+                    if schema.uri in [EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE]:
                         continue
                     else:
                         break
         return applicable
 
     async def filter_schema(
-        self,
-        credentials: Sequence[VCRecord],
-        schemas: SchemasInputDescriptorFilter,
+        self, credentials: Sequence[VCRecord], schemas: SchemasInputDescriptorFilter
     ) -> Sequence[VCRecord]:
         """
         Filter by schema.
@@ -1102,13 +1071,11 @@ class DIFPresExchHandler:
                 )
             else:
                 filtered_by_schema = await self.filter_schema(
-                    credentials=credentials,
-                    schemas=descriptor.schemas,
+                    credentials=credentials, schemas=descriptor.schemas
                 )
             # Filter credentials based upon path expressions specified in constraints
             filtered = await self.filter_constraints(
-                constraints=descriptor.constraint,
-                credentials=filtered_by_schema,
+                constraints=descriptor.constraint, credentials=filtered_by_schema
             )
             if len(filtered) != 0:
                 result[descriptor.id] = filtered
@@ -1324,8 +1291,7 @@ class DIFPresExchHandler:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 issue_suite = await self._get_issue_suite(
-                    wallet=wallet,
-                    issuer_id=issuer_id,
+                    wallet=wallet, issuer_id=issuer_id
                 )
                 signed_vp = await sign_presentation(
                     presentation=vp,
@@ -1345,8 +1311,7 @@ class DIFPresExchHandler:
         return False
 
     async def merge(
-        self,
-        dict_descriptor_creds: dict,
+        self, dict_descriptor_creds: dict
     ) -> Tuple[Sequence[VCRecord], Sequence[InputDescriptorMapping]]:
         """
         Return applicable credentials and descriptor_map for attachment.
@@ -1386,9 +1351,7 @@ class DIFPresExchHandler:
         return (result, descriptors)
 
     async def verify_received_pres(
-        self,
-        pd: PresentationDefinition,
-        pres: Union[Sequence[dict], dict],
+        self, pd: PresentationDefinition, pres: Union[Sequence[dict], dict]
     ):
         """
         Verify credentials received in presentation.
@@ -1600,11 +1563,7 @@ class DIFPresExchHandler:
             return match[0].value
 
     def build_nested_paths_dict(
-        self,
-        key: str,
-        value: str,
-        nested_field_paths: dict,
-        cred_dict: dict,
+        self, key: str, value: str, nested_field_paths: dict, cred_dict: dict
     ) -> dict:
         """Build and return nested_field_paths dict."""
         additional_attrs = self.get_dict_keys_from_path(cred_dict, key)

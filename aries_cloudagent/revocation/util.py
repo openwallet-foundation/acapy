@@ -24,9 +24,7 @@ async def notify_revocation_reg_init_event(
 ):
     """Send notification for a revocation registry init event."""
     meta_data = {
-        "context": {
-            "issuer_rev_id": issuer_rev_id,
-        },
+        "context": {"issuer_rev_id": issuer_rev_id},
         "processing": {"create_pending_rev_reg": create_pending_rev_reg},
     }
     if endorser_connection_id:
@@ -60,19 +58,14 @@ async def notify_revocation_entry_endorsed_event(
 
 
 async def notify_revocation_published_event(
-    profile: Profile,
-    rev_reg_id: str,
-    crids: Sequence[str],
+    profile: Profile, rev_reg_id: str, crids: Sequence[str]
 ):
     """Send notification of credential revoked as issuer."""
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_PUBLISHED_EVENT}::{rev_reg_id}"
     await profile.notify(topic, {"rev_reg_id": rev_reg_id, "crids": crids})
 
 
-async def notify_pending_cleared_event(
-    profile: Profile,
-    rev_reg_id: str,
-):
+async def notify_pending_cleared_event(profile: Profile, rev_reg_id: str):
     """Send notification of credential revoked as issuer."""
     topic = f"{REVOCATION_EVENT_PREFIX}{REVOCATION_CLEAR_PENDING_EVENT}::{rev_reg_id}"
     await profile.notify(topic, {"rev_reg_id": rev_reg_id})

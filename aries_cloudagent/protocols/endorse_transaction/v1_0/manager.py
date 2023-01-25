@@ -21,10 +21,7 @@ from ....revocation.util import (
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.util import (
-    notify_endorse_did_event,
-    notify_endorse_did_attrib_event,
-)
+from ....wallet.util import notify_endorse_did_event, notify_endorse_did_attrib_event
 
 from .messages.cancel_transaction import CancelTransaction
 from .messages.endorsed_transaction_response import EndorsedTransactionResponse
@@ -211,10 +208,7 @@ class TransactionManager:
     # todo - implementing changes for writing final transaction to the ledger
     # (For Sign Transaction Protocol)
     async def create_endorse_response(
-        self,
-        transaction: TransactionRecord,
-        state: str,
-        use_endorser_did: str = None,
+        self, transaction: TransactionRecord, state: str, use_endorser_did: str = None
     ):
         """
         Create a response to endorse a transaction.
@@ -800,9 +794,7 @@ class TransactionManager:
 
         # setup meta_data to pass to future events, if necessary
         meta_data = transaction.meta_data
-        meta_data["endorser"] = {
-            "connection_id": transaction.connection_id,
-        }
+        meta_data["endorser"] = {"connection_id": transaction.connection_id}
 
         # write the wallet non-secrets record
         if ledger_response["result"]["txn"]["type"] == "101":

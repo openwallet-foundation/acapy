@@ -22,10 +22,7 @@ from ...ld_proofs.constants import (
     CREDENTIALS_CONTEXT_V1_URL,
     VERIFIABLE_CREDENTIAL_TYPE,
 )
-from .linked_data_proof import (
-    LDProof,
-    LinkedDataProofSchema,
-)
+from .linked_data_proof import LDProof, LinkedDataProofSchema
 
 
 class VerifiableCredential(BaseModel):
@@ -272,9 +269,7 @@ class CredentialSchema(BaseModelSchema):
         model_class = VerifiableCredential
 
     context = fields.List(
-        UriOrDictField(
-            required=True,
-        ),
+        UriOrDictField(required=True),
         data_key="@context",
         required=True,
         description="The JSON-LD context of the credential",
@@ -319,9 +314,7 @@ class CredentialSchema(BaseModelSchema):
     )
 
     credential_subject = DictOrDictListField(
-        required=True,
-        data_key="credentialSubject",
-        **CREDENTIAL_SUBJECT,
+        required=True, data_key="credentialSubject", **CREDENTIAL_SUBJECT
     )
 
     proof = fields.Nested(

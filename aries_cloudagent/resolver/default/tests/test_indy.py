@@ -157,14 +157,8 @@ class TestIndyResolver:
     @pytest.mark.parametrize(
         "types, result",
         [
-            (
-                [],
-                ["endpoint", "did-communication"],
-            ),
-            (
-                ["did-communication"],
-                ["did-communication"],
-            ),
+            ([], ["endpoint", "did-communication"]),
+            (["did-communication"], ["did-communication"]),
             (
                 ["endpoint", "did-communication", "DIDComm", "other-endpoint-type"],
                 ["endpoint", "did-communication"],

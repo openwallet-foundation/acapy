@@ -153,10 +153,7 @@ def sign_message(
         if len(messages) > 1:
             raise WalletError("ed25519 can only sign a single message")
 
-        return sign_message_ed25519(
-            message=messages[0],
-            secret=secret,
-        )
+        return sign_message_ed25519(message=messages[0], secret=secret)
     elif key_type == BLS12381G2:
         return sign_messages_bls12381g2(messages=messages, secret=secret)
     else:
@@ -371,7 +368,7 @@ def encode_pack_message(
                 ("typ", "JWM/1.0"),
                 ("alg", "Authcrypt" if from_secret else "Anoncrypt"),
             ]
-        ),
+        )
     )
     ciphertext, nonce, tag = encrypt_plaintext(message, wrapper.protected_bytes, cek)
     wrapper.set_payload(ciphertext, nonce, tag)

@@ -43,9 +43,7 @@ class TestPleaseAckDecorator(TestCase):
         assert decorator.message_id is None
         assert decorator.on == list(ON)
         dumped = decorator.serialize()
-        assert dumped == {
-            "on": list(ON),
-        }
+        assert dumped == {"on": list(ON)}
         loaded = PleaseAckDecorator.deserialize(dumped)
         assert type(loaded) == PleaseAckDecorator
         assert loaded.message_id is None
@@ -56,10 +54,7 @@ class TestPleaseAckDecorator(TestCase):
         assert decorator.message_id == MESSAGE_ID
         assert decorator.on == list(ON)
         dumped = decorator.serialize()
-        assert dumped == {
-            "message_id": MESSAGE_ID,
-            "on": list(ON),
-        }
+        assert dumped == {"message_id": MESSAGE_ID, "on": list(ON)}
         loaded = PleaseAckDecorator.deserialize(dumped)
         assert type(loaded) == PleaseAckDecorator
         assert loaded.message_id == MESSAGE_ID

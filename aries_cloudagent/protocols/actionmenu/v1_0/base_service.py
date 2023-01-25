@@ -29,10 +29,7 @@ class BaseMenuService(ABC):
 
     @abstractmethod
     async def get_active_menu(
-        self,
-        profile: Profile,
-        connection: ConnRecord = None,
-        thread_id: str = None,
+        self, profile: Profile, connection: ConnRecord = None, thread_id: str = None
     ) -> Menu:
         """
         Render the current menu.

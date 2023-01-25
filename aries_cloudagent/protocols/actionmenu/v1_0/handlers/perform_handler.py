@@ -1,10 +1,6 @@
 """Action menu perform request message handler."""
 
-from .....messaging.base_handler import (
-    BaseHandler,
-    BaseResponder,
-    RequestContext,
-)
+from .....messaging.base_handler import BaseHandler, BaseResponder, RequestContext
 
 from ..base_service import BaseMenuService
 from ..messages.perform import Perform

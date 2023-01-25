@@ -149,8 +149,7 @@ class IndyVdrLedgerPool:
             cmp_genesis = open(genesis_path).read()
             if _normalize_txns(cmp_genesis) == genesis:
                 LOGGER.debug(
-                    "Pool ledger config '%s' is consistent, skipping write",
-                    self.name,
+                    "Pool ledger config '%s' is consistent, skipping write", self.name
                 )
                 return
             elif not recreate:
@@ -253,11 +252,7 @@ class IndyVdrLedger(BaseLedger):
 
     BACKEND_NAME = "indy-vdr"
 
-    def __init__(
-        self,
-        pool: IndyVdrLedgerPool,
-        profile: Profile,
-    ):
+    def __init__(self, pool: IndyVdrLedgerPool, profile: Profile):
         """
         Initialize an IndyVdrLedger instance.
 
@@ -1017,10 +1012,7 @@ class IndyVdrLedger(BaseLedger):
             ) from err
 
         ledger_timestamp = response["data"]["txnTime"]
-        reg_entry = {
-            "ver": "1.0",
-            "value": response["data"]["value"],
-        }
+        reg_entry = {"ver": "1.0", "value": response["data"]["value"]}
         if response["data"]["revocRegDefId"] != revoc_reg_id:
             raise LedgerError(
                 "ID of revocation registry response does not match requested ID"
@@ -1150,11 +1142,7 @@ class IndyVdrLedger(BaseLedger):
             wallet = session.inject(BaseWallet)
             return await wallet.get_public_did()
 
-    async def txn_endorse(
-        self,
-        request_json: str,
-        endorse_did: DIDInfo = None,
-    ) -> str:
+    async def txn_endorse(self, request_json: str, endorse_did: DIDInfo = None) -> str:
         """Endorse (sign) the provided transaction."""
         try:
             request = ledger.build_custom_request(request_json)

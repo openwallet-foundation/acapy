@@ -150,15 +150,12 @@ class TestV20DiscoveryManager(AsyncTestCase):
             )
             save_ex.assert_called_once()
             assert ex_rec == V20DiscoveryExchangeRecord(
-                disclosures=self.disclosures,
-                connection_id=test_conn_id,
+                disclosures=self.disclosures, connection_id=test_conn_id
             )
 
     async def test_proactive_disclosure(self):
         with async_mock.patch.object(
-            V20DiscoveryMgr,
-            "receive_query",
-            async_mock.CoroutineMock(),
+            V20DiscoveryMgr, "receive_query", async_mock.CoroutineMock()
         ) as mock_receive_query, async_mock.patch.object(
             self.responder, "send", async_mock.CoroutineMock()
         ) as mock_send:
@@ -169,9 +166,7 @@ class TestV20DiscoveryManager(AsyncTestCase):
     async def test_proactive_disclosure_no_responder(self):
         self.profile.context.injector.clear_binding(BaseResponder)
         with async_mock.patch.object(
-            V20DiscoveryMgr,
-            "receive_query",
-            async_mock.CoroutineMock(),
+            V20DiscoveryMgr, "receive_query", async_mock.CoroutineMock()
         ) as mock_receive_query, async_mock.patch.object(
             self.responder, "send", async_mock.CoroutineMock()
         ) as mock_send:
@@ -184,9 +179,7 @@ class TestV20DiscoveryManager(AsyncTestCase):
 
     async def test_check_if_disclosure_received(self):
         with async_mock.patch.object(
-            V20DiscoveryExchangeRecord,
-            "retrieve_by_id",
-            async_mock.CoroutineMock(),
+            V20DiscoveryExchangeRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_retrieve_by_id:
             mock_retrieve_by_id.side_effect = [
                 V20DiscoveryExchangeRecord(),
@@ -217,9 +210,7 @@ class TestV20DiscoveryManager(AsyncTestCase):
             "retrieve_by_connection_id",
             async_mock.CoroutineMock(),
         ) as mock_retrieve_by_connection_id, async_mock.patch.object(
-            V20DiscoveryExchangeRecord,
-            "save",
-            async_mock.CoroutineMock(),
+            V20DiscoveryExchangeRecord, "save", async_mock.CoroutineMock()
         ) as save_ex, async_mock.patch.object(
             V20DiscoveryMgr, "check_if_disclosure_received", async_mock.CoroutineMock()
         ) as mock_disclosure_received, async_mock.patch.object(
@@ -241,9 +232,7 @@ class TestV20DiscoveryManager(AsyncTestCase):
             "exists_for_connection_id",
             async_mock.CoroutineMock(),
         ) as mock_exists_for_connection_id, async_mock.patch.object(
-            V20DiscoveryExchangeRecord,
-            "save",
-            async_mock.CoroutineMock(),
+            V20DiscoveryExchangeRecord, "save", async_mock.CoroutineMock()
         ) as save_ex, async_mock.patch.object(
             V20DiscoveryMgr, "check_if_disclosure_received", async_mock.CoroutineMock()
         ) as mock_disclosure_received:
@@ -269,9 +258,7 @@ class TestV20DiscoveryManager(AsyncTestCase):
 
     async def test_create_and_send_query_with_no_connection(self):
         with async_mock.patch.object(
-            V20DiscoveryMgr,
-            "receive_query",
-            async_mock.CoroutineMock(),
+            V20DiscoveryMgr, "receive_query", async_mock.CoroutineMock()
         ) as mock_receive_query:
             mock_receive_query.return_value = Disclosures()
             received_ex_rec = await self.manager.create_and_send_query(

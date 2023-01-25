@@ -6,11 +6,7 @@ from typing import Coroutine, Sequence
 
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....storage.error import (
-    StorageError,
-    StorageDuplicateError,
-    StorageNotFoundError,
-)
+from ....storage.error import StorageError, StorageDuplicateError, StorageNotFoundError
 
 from .messages.route_update_request import RouteUpdateRequest
 from .models.route_record import RouteRecord

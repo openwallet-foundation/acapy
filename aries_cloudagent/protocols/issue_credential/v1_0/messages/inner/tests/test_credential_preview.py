@@ -4,10 +4,7 @@ from ......didcomm_prefix import DIDCommPrefix
 
 from ....message_types import CREDENTIAL_PREVIEW
 
-from ..credential_preview import (
-    CredAttrSpec,
-    CredentialPreview,
-)
+from ..credential_preview import CredAttrSpec, CredentialPreview
 
 CRED_PREVIEW = CredentialPreview(
     attributes=(

@@ -359,8 +359,7 @@ class IndyPresPreview(BaseModel):
                         ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
                     ledger = (
                         await ledger_exec_inst.get_ledger_for_identifier(
-                            cd_id,
-                            txn_record_type=GET_CRED_DEF,
+                            cd_id, txn_record_type=GET_CRED_DEF
                         )
                     )[1]
                 if ledger:
@@ -390,8 +389,7 @@ class IndyPresPreview(BaseModel):
             else:
                 proof_req["requested_attributes"][
                     "{}_{}_uuid".format(
-                        len(proof_req["requested_attributes"]),
-                        canon(attr_spec.name),
+                        len(proof_req["requested_attributes"]), canon(attr_spec.name)
                     )
                 ] = {
                     "name": attr_spec.name,
@@ -422,8 +420,7 @@ class IndyPresPreview(BaseModel):
                         ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
                     ledger = (
                         await ledger_exec_inst.get_ledger_for_identifier(
-                            cd_id,
-                            txn_record_type=GET_CRED_DEF,
+                            cd_id, txn_record_type=GET_CRED_DEF
                         )
                     )[1]
                 if ledger:

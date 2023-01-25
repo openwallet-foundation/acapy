@@ -204,10 +204,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         )
         await DefaultContextBuilder().load_plugins(context)
         server = self.get_admin_server(
-            {
-                "admin.admin_insecure_mode": False,
-                "admin.admin_api_key": "test-api-key",
-            },
+            {"admin.admin_insecure_mode": False, "admin.admin_api_key": "test-api-key"},
             context,
         )
 
@@ -278,9 +275,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             text=async_mock.AsyncMock(return_value="abc123"),
         )
         with async_mock.patch.object(
-            server.multitenant_manager,
-            "get_profile_for_token",
-            async_mock.AsyncMock(),
+            server.multitenant_manager, "get_profile_for_token", async_mock.AsyncMock()
         ) as mock_get_profile:
             mock_get_profile.side_effect = [
                 test_module.MultitenantManagerError("corrupt token"),
@@ -423,9 +418,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             ]
 
     async def test_visit_shutting_down(self):
-        settings = {
-            "admin.admin_insecure_mode": True,
-        }
+        settings = {"admin.admin_insecure_mode": True}
         server = self.get_admin_server(settings)
         await server.start()
 
@@ -446,9 +439,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         await server.stop()
 
     async def test_server_health_state(self):
-        settings = {
-            "admin.admin_insecure_mode": True,
-        }
+        settings = {"admin.admin_insecure_mode": True}
         server = self.get_admin_server(settings)
         await server.start()
 

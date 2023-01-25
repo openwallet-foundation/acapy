@@ -126,10 +126,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             session = await conductor.root_profile.session()
 
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
+            await wallet.create_public_did(SOV, ED25519)
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
             mock_outbound_mgr.return_value.setup.assert_awaited_once()
@@ -458,8 +455,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             test_module, "OutboundTransportManager", async_mock.MagicMock()
         ) as mock_outbound_mgr:
             mock_outbound_mgr.return_value = async_mock.MagicMock(
-                setup=async_mock.AsyncMock(),
-                enqueue_message=async_mock.AsyncMock(),
+                setup=async_mock.AsyncMock(), enqueue_message=async_mock.AsyncMock()
             )
 
             payload = "{}"
@@ -595,10 +591,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
-        await wallet.create_public_did(
-            SOV,
-            ED25519,
-        )
+        await wallet.create_public_did(SOV, ED25519)
 
         with async_mock.patch.object(
             admin, "start", autospec=True
@@ -639,10 +632,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
         session = await conductor.root_profile.session()
         wallet = session.inject(BaseWallet)
-        await wallet.create_public_did(
-            SOV,
-            ED25519,
-        )
+        await wallet.create_public_did(SOV, ED25519)
 
         with async_mock.patch.object(
             admin, "start", autospec=True
@@ -711,10 +701,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
+            await wallet.create_public_did(SOV, ED25519)
 
             mock_mgr.return_value.create_static_connection = async_mock.AsyncMock()
             await conductor.start()
@@ -881,10 +868,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
             session = await conductor.root_profile.session()
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
+            await wallet.create_public_did(SOV, ED25519)
 
             await conductor.start()
             await conductor.stop()
@@ -1055,12 +1039,10 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             assert isinstance(multitenant_mgr, MultitenantManager)
 
             multitenant_mgr._profiles.put(
-                "test1",
-                async_mock.MagicMock(close=async_mock.AsyncMock()),
+                "test1", async_mock.MagicMock(close=async_mock.AsyncMock())
             )
             multitenant_mgr._profiles.put(
-                "test2",
-                async_mock.MagicMock(close=async_mock.AsyncMock()),
+                "test2", async_mock.MagicMock(close=async_mock.AsyncMock())
             )
 
             await conductor.stop()
@@ -1395,10 +1377,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             session = await conductor.root_profile.session()
 
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
+            await wallet.create_public_did(SOV, ED25519)
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
             mock_outbound_mgr.return_value.setup.assert_awaited_once()
@@ -1432,10 +1411,7 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             session = await conductor.root_profile.session()
 
             wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
+            await wallet.create_public_did(SOV, ED25519)
 
             mock_inbound_mgr.return_value.setup.assert_awaited_once()
             mock_outbound_mgr.return_value.setup.assert_awaited_once()

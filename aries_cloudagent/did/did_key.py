@@ -230,7 +230,7 @@ def construct_did_key_x25519(did_key: "DIDKey") -> dict:
                 "type": "X25519KeyAgreementKey2019",
                 "controller": did_key.did,
                 "publicKeyBase58": did_key.public_key_b58,
-            },
+            }
         ],
         "authentication": [],
         "assertionMethod": [],

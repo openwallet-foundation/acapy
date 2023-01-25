@@ -21,18 +21,12 @@ INDY_PROOF_REQ = [
             "0_player_uuid": {
                 "name": "player",
                 "restrictions": [{"cred_def_id": f"{CD_ID}"}],
-                "non_revoked": {
-                    "from": 1234567890,
-                    "to": 1234567890,
-                },
+                "non_revoked": {"from": 1234567890, "to": 1234567890},
             },
             "0_screencapture_uuid": {
                 "name": "screenCapture",
                 "restrictions": [{"cred_def_id": f"{CD_ID}"}],
-                "non_revoked": {
-                    "from": 1234567890,
-                    "to": 1234567890,
-                },
+                "non_revoked": {"from": 1234567890, "to": 1234567890},
             },
         },
         "requested_predicates": {
@@ -41,10 +35,7 @@ INDY_PROOF_REQ = [
                 "p_type": ">=",
                 "p_value": 1000000,
                 "restrictions": [{"cred_def_id": f"{CD_ID}"}],
-                "non_revoked": {
-                    "from": 1234567890,
-                    "to": 1234567890,
-                },
+                "non_revoked": {"from": 1234567890, "to": 1234567890},
             }
         },
     },
@@ -109,8 +100,7 @@ class TestV20FormatFormat(TestCase):
                 V20PresFormat.Format.INDY.get_attachment_data(
                     formats=[
                         V20PresFormat(
-                            attach_id="indy",
-                            format_=V20PresFormat.Format.INDY,
+                            attach_id="indy", format_=V20PresFormat.Format.INDY
                         )
                     ],
                     attachments=[
@@ -124,8 +114,7 @@ class TestV20FormatFormat(TestCase):
                 V20PresFormat.Format.INDY.get_attachment_data(
                     formats=[
                         V20PresFormat(
-                            attach_id="indy",
-                            format_=V20PresFormat.Format.INDY,
+                            attach_id="indy", format_=V20PresFormat.Format.INDY
                         )
                     ],
                     attachments=[AttachDecorator.data_base64(proof_req, ident="xxx")],
@@ -137,8 +126,7 @@ class TestV20FormatFormat(TestCase):
                 V20PresFormat.Format.DIF.get_attachment_data(
                     formats=[
                         V20PresFormat(
-                            attach_id="indy",
-                            format_=V20PresFormat.Format.INDY,
+                            attach_id="indy", format_=V20PresFormat.Format.INDY
                         )
                     ],
                     attachments=[AttachDecorator.data_base64(proof_req, ident="indy")],

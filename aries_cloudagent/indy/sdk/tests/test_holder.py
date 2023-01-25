@@ -18,10 +18,7 @@ class TestIndySdkHolder(AsyncTestCase):
         mock_ledger = async_mock.MagicMock(
             get_credential_definition=async_mock.MagicMock(return_value={"value": {}}),
             get_revoc_reg_delta=async_mock.CoroutineMock(
-                return_value=(
-                    {"value": {"...": "..."}},
-                    1234567890,
-                )
+                return_value=({"value": {"...": "..."}}, 1234567890)
             ),
         )
         mock_ledger.__aenter__ = async_mock.CoroutineMock(return_value=mock_ledger)
@@ -255,20 +252,12 @@ class TestIndySdkHolder(AsyncTestCase):
             "requested_attributes": {"attr_0_uuid": {"...": "..."}},
             "requested_predicates": {"pred_0_uuid": {"...": "..."}},
         }
-        credentials = (
-            await self.holder.get_credentials_for_presentation_request_by_referent(
-                PROOF_REQ,
-                ("asdb",),
-                50,
-                SIZE,
-                {"extra": "query"},
-            )
+        credentials = await self.holder.get_credentials_for_presentation_request_by_referent(
+            PROOF_REQ, ("asdb",), 50, SIZE, {"extra": "query"}
         )
 
         mock_prover_search_credentials_for_proof_req.assert_called_once_with(
-            self.wallet.handle,
-            json.dumps(PROOF_REQ),
-            json.dumps({"extra": "query"}),
+            self.wallet.handle, json.dumps(PROOF_REQ), json.dumps({"extra": "query"})
         )
 
         assert mock_prover_fetch_credentials_for_proof_req.call_count == 3
@@ -310,13 +299,8 @@ class TestIndySdkHolder(AsyncTestCase):
             "requested_predicates": {"2_c_ge_80": {"...": "..."}},
         }
 
-        credentials = (
-            await self.holder.get_credentials_for_presentation_request_by_referent(
-                PRES_REQ,
-                None,
-                2,
-                3,
-            )
+        credentials = await self.holder.get_credentials_for_presentation_request_by_referent(
+            PRES_REQ, None, 2, 3
         )
 
         mock_prover_search_credentials_for_proof_req.assert_called_once_with(
@@ -349,11 +333,7 @@ class TestIndySdkHolder(AsyncTestCase):
             self.holder, "get_credential", async_mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
-                {
-                    "rev_reg_id": "dummy-rrid",
-                    "cred_rev_id": "123",
-                    "...": "...",
-                }
+                {"rev_reg_id": "dummy-rrid", "cred_rev_id": "123", "...": "..."}
             )
             result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
@@ -362,35 +342,19 @@ class TestIndySdkHolder(AsyncTestCase):
             self.holder, "get_credential", async_mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
-                {
-                    "rev_reg_id": None,
-                    "cred_rev_id": None,
-                    "...": "...",
-                }
+                {"rev_reg_id": None, "cred_rev_id": None, "...": "..."}
             )
             result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
 
         self.ledger.get_revoc_reg_delta = async_mock.CoroutineMock(
-            return_value=(
-                {
-                    "value": {
-                        "revoked": [1, 2, 3],
-                        "...": "...",
-                    }
-                },
-                1234567890,
-            )
+            return_value=({"value": {"revoked": [1, 2, 3], "...": "..."}}, 1234567890)
         )
         with async_mock.patch.object(  # cred not revoked
             self.holder, "get_credential", async_mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
-                {
-                    "rev_reg_id": "dummy-rrid",
-                    "cred_rev_id": "123",
-                    "...": "...",
-                }
+                {"rev_reg_id": "dummy-rrid", "cred_rev_id": "123", "...": "..."}
             )
             result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert not result
@@ -399,11 +363,7 @@ class TestIndySdkHolder(AsyncTestCase):
             self.holder, "get_credential", async_mock.CoroutineMock()
         ) as mock_get_cred:
             mock_get_cred.return_value = json.dumps(
-                {
-                    "rev_reg_id": "dummy-rrid",
-                    "cred_rev_id": "2",
-                    "...": "...",
-                }
+                {"rev_reg_id": "dummy-rrid", "cred_rev_id": "2", "...": "..."}
             )
             result = await self.holder.credential_revoked(self.ledger, "credential_id")
             assert result
@@ -487,10 +447,7 @@ class TestIndySdkHolder(AsyncTestCase):
         }
 
         presentation_json = await self.holder.create_presentation(
-            PROOF_REQ,
-            "requested_credentials",
-            "schemas",
-            "credential_definitions",
+            PROOF_REQ, "requested_credentials", "schemas", "credential_definitions"
         )
 
         mock_create_proof.assert_called_once_with(

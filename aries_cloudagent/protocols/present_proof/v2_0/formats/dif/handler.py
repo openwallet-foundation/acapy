@@ -28,10 +28,7 @@ from .....problem_report.v1_0.message import ProblemReport
 from ....dif.pres_exch import PresentationDefinition, SchemaInputDescriptor
 from ....dif.pres_exch_handler import DIFPresExchHandler, DIFPresExchError
 from ....dif.pres_proposal_schema import DIFProofProposalSchema
-from ....dif.pres_request_schema import (
-    DIFProofRequestSchema,
-    DIFPresSpecSchema,
-)
+from ....dif.pres_request_schema import DIFProofRequestSchema, DIFPresSpecSchema
 from ....dif.pres_schema import DIFProofSchema
 from ....v2_0.messages.pres_problem_report import ProblemReportReason
 
@@ -55,9 +52,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
     format = V20PresFormat.Format.DIF
 
-    ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
-        Ed25519Signature2018: ED25519,
-    }
+    ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {Ed25519Signature2018: ED25519}
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
         ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING[BbsBlsSignature2020] = BLS12381G2
@@ -68,9 +63,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         suites = []
         for suite, key_type in self.ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING.items():
             suites.append(
-                suite(
-                    key_pair=WalletKeyPair(wallet=wallet, key_type=key_type),
-                )
+                suite(key_pair=WalletKeyPair(wallet=wallet, key_type=key_type))
             )
         return suites
 
@@ -131,9 +124,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         )
 
     async def create_bound_request(
-        self,
-        pres_ex_record: V20PresExRecord,
-        request_data: dict = None,
+        self, pres_ex_record: V20PresExRecord, request_data: dict = None
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """
         Create a presentation request bound to a proposal.
@@ -166,9 +157,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         return self.get_format_data(PRES_20_REQUEST, dif_proof_request)
 
     async def create_pres(
-        self,
-        pres_ex_record: V20PresExRecord,
-        request_data: dict = {},
+        self, pres_ex_record: V20PresExRecord, request_data: dict = {}
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
         proof_request = pres_ex_record.pres_request.attachment(
@@ -214,10 +203,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 one_of_uri_groups = []
                 if input_descriptor.schemas:
                     if input_descriptor.schemas.oneof_filter:
-                        one_of_uri_groups = (
-                            await self.retrieve_uri_list_from_schema_filter(
-                                input_descriptor.schemas.uri_groups
-                            )
+                        one_of_uri_groups = await self.retrieve_uri_list_from_schema_filter(
+                            input_descriptor.schemas.uri_groups
                         )
                     else:
                         schema_uris = input_descriptor.schemas.uri_groups[0]

@@ -59,10 +59,7 @@ class TestV20CredRequest(AsyncTestCase):
             )
         ],
         requests_attach=[
-            AttachDecorator.data_base64(
-                ident="indy",
-                mapping=indy_cred_req,
-            )
+            AttachDecorator.data_base64(ident="indy", mapping=indy_cred_req)
         ],
     )
 
@@ -88,8 +85,7 @@ class TestV20CredRequest(AsyncTestCase):
             formats=[V20CredFormat(attach_id="not_indy", format_="not_indy")],
             requests_attach=[
                 AttachDecorator.data_base64(
-                    ident="not_indy",
-                    mapping=TestV20CredRequest.indy_cred_req,
+                    ident="not_indy", mapping=TestV20CredRequest.indy_cred_req
                 )
             ],
         )
@@ -121,10 +117,7 @@ class TestV20CredRequest(AsyncTestCase):
             V20CredRequest.deserialize(obj)
 
         cred_request.formats.append(  # unknown format: no validation
-            V20CredFormat(
-                attach_id="not_indy",
-                format_="not_indy",
-            )
+            V20CredFormat(attach_id="not_indy", format_="not_indy")
         )
         obj = cred_request.serialize()
         obj["requests~attach"].append(

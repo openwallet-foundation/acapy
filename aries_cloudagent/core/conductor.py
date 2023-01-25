@@ -293,8 +293,7 @@ class Conductor:
             # This allows webhooks to be called when a connection is marked active,
             # for example
             responder = AdminResponder(
-                self.root_profile,
-                self.admin_server.outbound_message_router,
+                self.root_profile, self.admin_server.outbound_message_router
             )
             context.injector.bind_instance(BaseResponder, responder)
 
@@ -316,8 +315,7 @@ class Conductor:
             agent_version = f"v{__version__}"
             try:
                 record = await storage.find_record(
-                    type_filter=RECORD_TYPE_ACAPY_VERSION,
-                    tag_query={},
+                    type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
                 )
                 if record.value != agent_version:
                     LOGGER.exception(
@@ -419,8 +417,8 @@ class Conductor:
         try:
             async with self.root_profile.session() as session:
                 invite_store = MediationInviteStore(session.context.inject(BaseStorage))
-                mediation_invite_record = (
-                    await invite_store.get_mediation_invite_record(provided_invite)
+                mediation_invite_record = await invite_store.get_mediation_invite_record(
+                    provided_invite
                 )
         except Exception:
             LOGGER.exception("Error retrieving mediator invitation")
@@ -504,10 +502,7 @@ class Conductor:
         await shutdown.complete(timeout)
 
     def inbound_message_router(
-        self,
-        profile: Profile,
-        message: InboundMessage,
-        can_respond: bool = False,
+        self, profile: Profile, message: InboundMessage, can_respond: bool = False
     ):
         """
         Route inbound messages.

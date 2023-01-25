@@ -66,9 +66,7 @@ class TestOps(AsyncTestCase):
         self.profile = self.session.profile
         self.context = self.profile.context
         setattr(
-            self.profile,
-            "session",
-            async_mock.MagicMock(return_value=self.session),
+            self.profile, "session", async_mock.MagicMock(return_value=self.session)
         )
 
         self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
@@ -76,18 +74,13 @@ class TestOps(AsyncTestCase):
     async def test_verify_credential(self):
         for input_ in TEST_VERIFY_OBJS:
             assert await verify_credential(
-                self.session,
-                input_.get("doc"),
-                input_.get("verkey"),
+                self.session, input_.get("doc"), input_.get("verkey")
             )
 
     async def test_sign_credential(self):
         for input_ in TEST_SIGN_OBJS:
             result = await sign_credential(
-                self.session,
-                input_.get("doc"),
-                input_.get("options"),
-                TEST_VERKEY,
+                self.session, input_.get("doc"), input_.get("options"), TEST_VERKEY
             )
             assert "proof" in result.keys()
             assert "jws" in result.get("proof", {}).keys()
@@ -96,10 +89,7 @@ class TestOps(AsyncTestCase):
         for input_ in TEST_SIGN_ERROR_OBJS:
             with self.assertRaises(DroppedAttributeError) as context:
                 await sign_credential(
-                    self.session,
-                    input_.get("doc"),
-                    input_.get("options"),
-                    TEST_VERKEY,
+                    self.session, input_.get("doc"), input_.get("options"), TEST_VERKEY
                 )
             assert "attribute2drop" in str(context.exception)
 
@@ -108,10 +98,7 @@ class TestOps(AsyncTestCase):
             with self.assertRaises(SignatureTypeError):
                 input_["options"]["type"] = "Ed25519Signature2038"
                 await sign_credential(
-                    self.session,
-                    input_.get("doc"),
-                    input_.get("options"),
-                    TEST_VERKEY,
+                    self.session, input_.get("doc"), input_.get("options"), TEST_VERKEY
                 )
 
     async def test_invalid_jws_header(self):

@@ -100,10 +100,7 @@ class TestCredentialProblemReport(TestCase):
     def test_validate_and_logger(self):
         """Capture ValidationError and Logs."""
         data = CredentialProblemReport(
-            description={
-                "en": "oh no",
-                "code": "invalid_code",
-            },
+            description={"en": "oh no", "code": "invalid_code"}
         ).serialize()
         self._caplog.set_level(logging.WARNING)
         CredentialProblemReportSchema().validate_fields(data)

@@ -388,7 +388,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
                 DIDCommPrefix.qualify_current(
                     StubAgentMessage.Meta.message_type
                 ): StubAgentMessage
-            },
+            }
         )
 
         dispatcher = test_module.Dispatcher(profile)
@@ -409,10 +409,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
 
     async def test_create_send_outbound(self):
         profile = make_profile()
-        context = RequestContext(
-            profile,
-            settings={"timing.enabled": True},
-        )
+        context = RequestContext(profile, settings={"timing.enabled": True})
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         outbound_message = await responder.create_outbound(message)

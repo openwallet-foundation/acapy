@@ -31,10 +31,7 @@ class IndyPresExchHandlerError(BaseError):
 class IndyPresExchHandler:
     """Base Presentation Exchange Handler."""
 
-    def __init__(
-        self,
-        profile: Profile,
-    ):
+    def __init__(self, profile: Profile):
         """Initialize PresExchange Handler."""
         super().__init__()
         self._profile = profile
@@ -101,8 +98,7 @@ class IndyPresExchHandler:
                 ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
-                    schema_id,
-                    txn_record_type=GET_SCHEMA,
+                    schema_id, txn_record_type=GET_SCHEMA
                 )
             )[1]
             async with ledger:
@@ -139,8 +135,7 @@ class IndyPresExchHandler:
                 ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
-                    rev_reg_id,
-                    txn_record_type=GET_REVOC_REG_DELTA,
+                    rev_reg_id, txn_record_type=GET_REVOC_REG_DELTA
                 )
             )[1]
             async with ledger:
@@ -206,18 +201,13 @@ class IndyPresExchHandler:
                     "timestamp"
                 ] = precis["timestamp"]
         indy_proof_json = await holder.create_presentation(
-            proof_request,
-            requested_credentials,
-            schemas,
-            cred_defs,
-            revocation_states,
+            proof_request, requested_credentials, schemas, cred_defs, revocation_states
         )
         indy_proof = json.loads(indy_proof_json)
         return indy_proof
 
     async def process_pres_identifiers(
-        self,
-        identifiers: list,
+        self, identifiers: list
     ) -> Tuple[dict, dict, dict, dict]:
         """Return schemas, cred_defs, rev_reg_defs, rev_reg_entries."""
         schema_ids = []
@@ -238,8 +228,7 @@ class IndyPresExchHandler:
                 ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
-                    identifier["schema_id"],
-                    txn_record_type=GET_SCHEMA,
+                    identifier["schema_id"], txn_record_type=GET_SCHEMA
                 )
             )[1]
             async with ledger:
@@ -278,9 +267,4 @@ class IndyPresExchHandler:
                             rev_reg_entries[identifier["rev_reg_id"]][
                                 identifier["timestamp"]
                             ] = found_rev_reg_entry
-        return (
-            schemas,
-            cred_defs,
-            rev_reg_defs,
-            rev_reg_entries,
-        )
+        return (schemas, cred_defs, rev_reg_defs, rev_reg_entries)

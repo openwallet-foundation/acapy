@@ -20,10 +20,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             "outbound_message_router": self.outbound_message_router,
         }
         self.request = async_mock.MagicMock(
-            match_info={
-                "mediation_id": "test-mediation-id",
-                "conn_id": "test-conn-id",
-            },
+            match_info={"mediation_id": "test-mediation-id", "conn_id": "test-conn-id"},
             query={},
             json=async_mock.CoroutineMock(return_value={}),
             __getitem__=lambda _, k: self.request_dict[k],
@@ -232,7 +229,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                 return_value=(
                     self.mock_record,
                     async_mock.MagicMock(  # mediation request
-                        serialize=async_mock.MagicMock(return_value={"a": "value"}),
+                        serialize=async_mock.MagicMock(return_value={"a": "value"})
                     ),
                 )
             )
@@ -408,9 +405,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             "query",
             async_mock.CoroutineMock(return_value=query_results),
         ) as mock_query, async_mock.patch.object(
-            self.profile,
-            "session",
-            async_mock.MagicMock(return_value=session),
+            self.profile, "session", async_mock.MagicMock(return_value=session)
         ) as mock_session, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -426,13 +421,9 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     async def test_get_keylist_no_matching_records(self):
         session = await self.profile.session()
         with async_mock.patch.object(
-            test_module.RouteRecord,
-            "query",
-            async_mock.CoroutineMock(return_value=[]),
+            test_module.RouteRecord, "query", async_mock.CoroutineMock(return_value=[])
         ) as mock_query, async_mock.patch.object(
-            self.profile,
-            "session",
-            async_mock.MagicMock(return_value=session),
+            self.profile, "session", async_mock.MagicMock(return_value=session)
         ) as mock_session, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
@@ -501,7 +492,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                 {
                     "recipient_key": "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx",
                     "action": "wrong",
-                },
+                }
             ]
         }
 
@@ -514,7 +505,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                 {
                     "recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up",
                     "action": "add",
-                },
+                }
             ]
         }
 
@@ -540,7 +531,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                 {
                     "recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up",
                     "action": "add",
-                },
+                }
             ]
         }
         with async_mock.patch.object(
@@ -556,7 +547,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                 {
                     "recipient_key": "EwUKjVLboiLSuoWSEtDvrgrd41EUxG5bLecQrkHB63Up",
                     "action": "add",
-                },
+                }
             ]
         }
 
@@ -619,8 +610,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         ) as mock_mgr_get_default_record:
             await test_module.get_default_mediator(self.request)
             json_response.assert_called_once_with(
-                self.mock_record.serialize.return_value,
-                status=200,
+                self.mock_record.serialize.return_value, status=200
             )
 
     async def test_get_empty_default_mediator(self):
@@ -633,10 +623,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
             async_mock.CoroutineMock(return_value=None),
         ) as mock_mgr_get_default_record:
             await test_module.get_default_mediator(self.request)
-            json_response.assert_called_once_with(
-                {},
-                status=200,
-            )
+            json_response.assert_called_once_with({}, status=200)
 
     async def test_get_default_mediator_storage_error(self):
         self.request.query = {}
@@ -651,9 +638,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
                 await test_module.get_default_mediator(self.request)
 
     async def test_set_default_mediator(self):
-        self.request.match_info = {
-            "mediation_id": "fake_id",
-        }
+        self.request.match_info = {"mediation_id": "fake_id"}
         self.request.query = {}
         with async_mock.patch.object(
             test_module.MediationManager,
@@ -668,14 +653,11 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         ) as json_response:
             await test_module.set_default_mediator(self.request)
             json_response.assert_called_once_with(
-                self.mock_record.serialize.return_value,
-                status=201,
+                self.mock_record.serialize.return_value, status=201
             )
 
     async def test_set_default_mediator_storage_error(self):
-        self.request.match_info = {
-            "mediation_id": "bad_id",
-        }
+        self.request.match_info = {"mediation_id": "bad_id"}
         self.request.query = {}
         with async_mock.patch.object(
             test_module.MediationManager,
@@ -706,8 +688,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
         ) as json_response:
             await test_module.clear_default_mediator(self.request)
             json_response.assert_called_once_with(
-                self.mock_record.serialize.return_value,
-                status=201,
+                self.mock_record.serialize.return_value, status=201
             )
 
     async def test_clear_default_mediator_storage_error(self):
@@ -729,9 +710,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     async def test_update_keylist_for_connection(self):
         self.request.query = {}
         self.request.json.return_value = {"mediation_id": "test-mediation-id"}
-        self.request.match_info = {
-            "conn_id": "test-conn-id",
-        }
+        self.request.match_info = {"conn_id": "test-conn-id"}
         mock_route_manager = async_mock.MagicMock(RouteManager)
         mock_keylist_update = async_mock.MagicMock()
         mock_keylist_update.serialize.return_value = {"mock": "serialized"}
@@ -751,9 +730,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     async def test_update_keylist_for_connection_not_found(self):
         self.request.query = {}
         self.request.json.return_value = {"mediation_id": "test-mediation-id"}
-        self.request.match_info = {
-            "conn_id": "test-conn-id",
-        }
+        self.request.match_info = {"conn_id": "test-conn-id"}
         mock_route_manager = async_mock.MagicMock(RouteManager)
         mock_keylist_update = async_mock.MagicMock()
         mock_keylist_update.serialize.return_value = {"mock": "serialized"}
@@ -773,9 +750,7 @@ class TestCoordinateMediationRoutes(AsyncTestCase):
     async def test_update_keylist_for_connection_storage_error(self):
         self.request.query = {}
         self.request.json.return_value = {"mediation_id": "test-mediation-id"}
-        self.request.match_info = {
-            "conn_id": "test-conn-id",
-        }
+        self.request.match_info = {"conn_id": "test-conn-id"}
         mock_route_manager = async_mock.MagicMock(RouteManager)
         mock_keylist_update = async_mock.MagicMock()
         mock_keylist_update.serialize.return_value = {"mock": "serialized"}

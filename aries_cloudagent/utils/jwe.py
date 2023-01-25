@@ -170,12 +170,7 @@ class JweEnvelope:
                 raise ValidationError("Invalid JWE: flattened form with 'recipients'")
             recipients = [JweRecipient.deserialize(recip) for recip in recipients]
         elif encrypted_key:
-            recipients = [
-                JweRecipient(
-                    encrypted_key=encrypted_key,
-                    header=header,
-                )
-            ]
+            recipients = [JweRecipient(encrypted_key=encrypted_key, header=header)]
             flat_recipients = True
         else:
             raise ValidationError("Invalid JWE: no recipients")
@@ -237,10 +232,7 @@ class JweEnvelope:
         """Add a recipient to the JWE envelope."""
         self._recipients.append(recip)
 
-    def set_protected(
-        self,
-        protected: Mapping[str, Any],
-    ):
+    def set_protected(self, protected: Mapping[str, Any]):
         """Set the protected headers of the JWE envelope."""
         protected = OrderedDict(protected.items())
         if self.with_protected_recipients:

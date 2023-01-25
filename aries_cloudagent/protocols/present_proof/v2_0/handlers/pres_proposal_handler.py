@@ -66,8 +66,7 @@ class V20PresProposalHandler(BaseHandler):
                     pres_ex_record,
                     pres_request_message,
                 ) = await pres_manager.create_bound_request(
-                    pres_ex_record=pres_ex_record,
-                    comment=context.message.comment,
+                    pres_ex_record=pres_ex_record, comment=context.message.comment
                 )
                 await responder.send_reply(pres_request_message)
             except (BaseModelError, LedgerError, StorageError) as err:
@@ -75,8 +74,7 @@ class V20PresProposalHandler(BaseHandler):
                 if pres_ex_record:
                     async with profile.session() as session:
                         await pres_ex_record.save_error_state(
-                            session,
-                            reason=err.roll_up,  # us: be specific
+                            session, reason=err.roll_up  # us: be specific
                         )
                     await responder.send_reply(
                         problem_report_for_record(

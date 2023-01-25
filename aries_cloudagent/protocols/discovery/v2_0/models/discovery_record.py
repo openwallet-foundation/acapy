@@ -110,12 +110,9 @@ class V20DiscoveryExchangeRecord(BaseExchangeRecord):
         return {
             **{
                 prop: getattr(self, f"_{prop}").ser
-                for prop in (
-                    "queries_msg",
-                    "disclosures",
-                )
+                for prop in ("queries_msg", "disclosures")
                 if getattr(self, prop) is not None
-            },
+            }
         }
 
     def __eq__(self, other: Any) -> bool:
@@ -143,12 +140,8 @@ class V20DiscoveryRecordSchema(BaseExchangeSchema):
         required=False, description="Thread identifier", example=UUIDFour.EXAMPLE
     )
     queries_msg = fields.Nested(
-        QueriesSchema(),
-        required=False,
-        description="Queries message",
+        QueriesSchema(), required=False, description="Queries message"
     )
     disclosures = fields.Nested(
-        DisclosuresSchema(),
-        required=False,
-        description="Disclosures message",
+        DisclosuresSchema(), required=False, description="Disclosures message"
     )

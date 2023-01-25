@@ -1,8 +1,4 @@
-from ...ld_proofs import (
-    DocumentVerificationResult,
-    ProofResult,
-    PurposeResult,
-)
+from ...ld_proofs import DocumentVerificationResult, ProofResult, PurposeResult
 
 # All signed documents manually tested for validity on https://univerifier.io
 

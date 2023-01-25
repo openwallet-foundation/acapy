@@ -60,15 +60,13 @@ class IndyEQProofSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     revealed_attrs = fields.Dict(
-        keys=fields.Str(example="preference"),
-        values=fields.Str(**NUM_STR_ANY),
+        keys=fields.Str(example="preference"), values=fields.Str(**NUM_STR_ANY)
     )
     a_prime = fields.Str(**NUM_STR_WHOLE)
     e = fields.Str(**NUM_STR_WHOLE)
     v = fields.Str(**NUM_STR_WHOLE)
     m = fields.Dict(
-        keys=fields.Str(example="master_secret"),
-        values=fields.Str(**NUM_STR_WHOLE),
+        keys=fields.Str(example="master_secret"), values=fields.Str(**NUM_STR_WHOLE)
     )
     m2 = fields.Str(**NUM_STR_WHOLE)
 
@@ -82,11 +80,7 @@ class IndyGEProofPred(BaseModel):
         schema_class = "IndyGEProofPredSchema"
 
     def __init__(
-        self,
-        attr_name: str = None,
-        p_type: str = None,
-        value: int = None,
-        **kwargs,
+        self, attr_name: str = None, p_type: str = None, value: int = None, **kwargs
     ):
         """Initialize indy GE proof predicate."""
         super().__init__(**kwargs)
@@ -190,10 +184,7 @@ class IndyPrimaryProofSchema(BaseModelSchema):
         IndyEQProofSchema, allow_none=True, description="Indy equality proof"
     )
     ge_proofs = fields.Nested(
-        IndyGEProofSchema,
-        many=True,
-        allow_none=True,
-        description="Indy GE proofs",
+        IndyGEProofSchema, many=True, allow_none=True, description="Indy GE proofs"
     )
 
 
@@ -205,12 +196,7 @@ class IndyNonRevocProof(BaseModel):
 
         schema_class = "IndyNonRevocProofSchema"
 
-    def __init__(
-        self,
-        x_list: Mapping = None,
-        c_list: Mapping = None,
-        **kwargs,
-    ):
+    def __init__(self, x_list: Mapping = None, c_list: Mapping = None, **kwargs):
         """Initialize indy non-revocation proof."""
         super().__init__(**kwargs)
         self.x_list = x_list
@@ -260,8 +246,7 @@ class IndyProofProofProofsProofSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     primary_proof = fields.Nested(
-        IndyPrimaryProofSchema,
-        description="Indy primary proof",
+        IndyPrimaryProofSchema, description="Indy primary proof"
     )
     non_revoc_proof = fields.Nested(
         IndyNonRevocProofSchema,
@@ -279,10 +264,7 @@ class IndyProofProofAggregatedProof(BaseModel):
         schema_class = "IndyProofProofAggregatedProofSchema"
 
     def __init__(
-        self,
-        c_hash: str = None,
-        c_list: Sequence[Sequence[int]] = None,
-        **kwargs,
+        self, c_hash: str = None, c_list: Sequence[Sequence[int]] = None, **kwargs
     ):
         """Initialize indy proof.proof agreggated proof."""
         super().__init__(**kwargs)
@@ -301,8 +283,7 @@ class IndyProofProofAggregatedProofSchema(BaseModelSchema):
 
     c_hash = fields.Str(description="c_hash value")
     c_list = fields.List(
-        fields.List(fields.Int(strict=True)),
-        description="c_list value",
+        fields.List(fields.Int(strict=True)), description="c_list value"
     )
 
 
@@ -336,13 +317,10 @@ class IndyProofProofSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     proofs = fields.Nested(
-        IndyProofProofProofsProofSchema,
-        many=True,
-        description="Indy proof proofs",
+        IndyProofProofProofsProofSchema, many=True, description="Indy proof proofs"
     )
     aggregated_proof = fields.Nested(
-        IndyProofProofAggregatedProofSchema,
-        description="Indy proof aggregated proof",
+        IndyProofProofAggregatedProofSchema, description="Indy proof aggregated proof"
     )
 
 
@@ -354,12 +332,7 @@ class RawEncoded(BaseModel):
 
         schema_class = "RawEncodedSchema"
 
-    def __init__(
-        self,
-        raw: str = None,
-        encoded: str = None,
-        **kwargs,
-    ):
+    def __init__(self, raw: str = None, encoded: str = None, **kwargs):
         """Initialize raw and encoded attribute values."""
         super().__init__(**kwargs)
         self.raw = raw
@@ -387,11 +360,7 @@ class IndyProofRequestedProofRevealedAttr(RawEncoded):
 
         schema_class = "IndyProofRequestedProofRevealedAttrSchema"
 
-    def __init__(
-        self,
-        sub_proof_index: int = None,
-        **kwargs,
-    ):
+    def __init__(self, sub_proof_index: int = None, **kwargs):
         """Initialize indy proof requested proof revealed attr."""
         super().__init__(**kwargs)
         self.sub_proof_index = sub_proof_index
@@ -454,11 +423,7 @@ class IndyProofRequestedProofPredicate(BaseModel):
 
         schema_class = "IndyProofRequestedProofPredicateSchema"
 
-    def __init__(
-        self,
-        sub_proof_index: int = None,
-        **kwargs,
-    ):
+    def __init__(self, sub_proof_index: int = None, **kwargs):
         """Initialize indy proof requested proof predicate."""
         super().__init__(**kwargs)
         self.sub_proof_index = sub_proof_index
@@ -488,8 +453,7 @@ class IndyProofRequestedProof(BaseModel):
         self,
         revealed_attrs: Mapping[str, IndyProofRequestedProofRevealedAttr] = None,
         revealed_attr_groups: Mapping[
-            str,
-            IndyProofRequestedProofRevealedAttrGroup,
+            str, IndyProofRequestedProofRevealedAttrGroup
         ] = None,
         self_attested_attrs: Mapping = None,
         unrevealed_attrs: Mapping = None,
@@ -532,9 +496,7 @@ class IndyProofRequestedProofSchema(BaseModelSchema):
     unrevealed_attrs = fields.Dict(description="Unrevealed attributes")
     predicates = fields.Dict(
         keys=fields.Str(),
-        values=fields.Nested(
-            IndyProofRequestedProofPredicateSchema,
-        ),
+        values=fields.Nested(IndyProofRequestedProofPredicateSchema),
         description="Proof requested proof predicates.",
     )
 
@@ -574,19 +536,13 @@ class IndyProofIdentifierSchema(BaseModelSchema):
 
     schema_id = fields.Str(description="Schema identifier", **INDY_SCHEMA_ID)
     cred_def_id = fields.Str(
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
+        description="Credential definition identifier", **INDY_CRED_DEF_ID
     )
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier",
-        allow_none=True,
-        **INDY_REV_REG_ID,
+        description="Revocation registry identifier", allow_none=True, **INDY_REV_REG_ID
     )
     timestamp = fields.Int(
-        strict=True,
-        allow_none=True,
-        description="Timestamp epoch",
-        **INT_EPOCH,
+        strict=True, allow_none=True, description="Timestamp epoch", **INT_EPOCH
     )
 
 
@@ -621,13 +577,9 @@ class IndyProofSchema(BaseModelSchema):
         model_class = IndyProof
         unknown = EXCLUDE
 
-    proof = fields.Nested(
-        IndyProofProofSchema,
-        description="Indy proof.proof content",
-    )
+    proof = fields.Nested(IndyProofProofSchema, description="Indy proof.proof content")
     requested_proof = fields.Nested(
-        IndyProofRequestedProofSchema,
-        description="Indy proof.requested_proof content",
+        IndyProofRequestedProofSchema, description="Indy proof.requested_proof content"
     )
     identifiers = fields.Nested(
         IndyProofIdentifierSchema,

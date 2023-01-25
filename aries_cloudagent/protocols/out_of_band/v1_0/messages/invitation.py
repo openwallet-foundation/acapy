@@ -6,13 +6,7 @@ from re import sub
 from typing import Optional, Sequence, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
-from marshmallow import (
-    EXCLUDE,
-    fields,
-    post_dump,
-    validates_schema,
-    ValidationError,
-)
+from marshmallow import EXCLUDE, fields, post_dump, validates_schema, ValidationError
 
 from .....messaging.agent_message import AgentMessage, AgentMessageSchema
 from .....messaging.decorators.attach_decorator import (
@@ -42,9 +36,7 @@ class HSProto(Enum):
         {"connection", "connections", "conn", "conns", "rfc160", "160", "old"},
     )
     RFC23 = HSProtoSpec(
-        23,
-        DIDX_PROTO,
-        {"didexchange", "didx", "didex", "rfc23", "23", "new"},
+        23, DIDX_PROTO, {"didexchange", "didx", "didex", "rfc23", "23", "new"}
     )
 
     @classmethod
@@ -172,10 +164,7 @@ class InvitationMessage(AgentMessage):
                 if isinstance(service_item, Service):
                     endpoint = service_item.service_endpoint
                     break
-        result = urljoin(
-            (base_url if base_url else endpoint),
-            "?oob={}".format(oob),
-        )
+        result = urljoin((base_url if base_url else endpoint), "?oob={}".format(oob))
         return result
 
     @classmethod

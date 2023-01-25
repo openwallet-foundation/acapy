@@ -43,10 +43,7 @@ async def holder():
 
 def test_record() -> VCRecord:
     return VCRecord(
-        contexts=[
-            VC_CONTEXT,
-            "https://www.w3.org/2018/credentials/examples/v1",
-        ],
+        contexts=[VC_CONTEXT, "https://www.w3.org/2018/credentials/examples/v1"],
         expanded_types=[
             VC_TYPE,
             "https://example.org/examples#UniversityDegreeCredential",
@@ -58,10 +55,7 @@ def test_record() -> VCRecord:
         given_id=VC_GIVEN_ID,
         cred_tags={"tag": "value"},
         cred_value={
-            "@context": [
-                VC_CONTEXT,
-                "https://www.w3.org/2018/credentials/examples/v1",
-            ],
+            "@context": [VC_CONTEXT, "https://www.w3.org/2018/credentials/examples/v1"],
             "id": VC_GIVEN_ID,
             "type": ["VerifiableCredential", "UniversityDegreeCredential"],
             "issuer": VC_ISSUER_ID,

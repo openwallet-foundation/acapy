@@ -108,11 +108,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         return msgs
 
     async def check_timestamps(
-        self,
-        profile: Profile,
-        pres_req: Mapping,
-        pres: Mapping,
-        rev_reg_defs: Mapping,
+        self, profile: Profile, pres_req: Mapping, pres: Mapping, rev_reg_defs: Mapping
     ) -> list:
         """
         Check for suspicious, missing, and superfluous timestamps.
@@ -142,8 +138,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                 ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
             ledger = (
                 await ledger_exec_inst.get_ledger_for_identifier(
-                    cred_def_id,
-                    txn_record_type=GET_CRED_DEF,
+                    cred_def_id, txn_record_type=GET_CRED_DEF
                 )
             )[1]
             async with ledger:

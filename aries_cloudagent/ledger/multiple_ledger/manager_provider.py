@@ -96,8 +96,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                                 socks_proxy=socks_proxy,
                             )
                             ledger_instance = ledger_class(
-                                pool=ledger_pool,
-                                profile=self.root_profile,
+                                pool=ledger_pool, profile=self.root_profile
                             )
                             if ledger_is_production:
                                 indy_sdk_production_ledgers[ledger_id] = ledger_instance
@@ -144,8 +143,7 @@ class MultiIndyLedgerManagerProvider(BaseProvider):
                             socks_proxy=socks_proxy,
                         )
                         ledger_instance = ledger_class(
-                            pool=ledger_pool,
-                            profile=self.root_profile,
+                            pool=ledger_pool, profile=self.root_profile
                         )
                         if ledger_is_write:
                             write_ledger_info = (ledger_id, ledger_instance)

@@ -1,19 +1,9 @@
 """Validates State Proof."""
 import json
 
-from collections import (
-    OrderedDict,
-)
-from rlp import (
-    encode as rlp_encode,
-    decode as rlp_decode,
-    DecodingError,
-)
-from .utils import (
-    sha3_256,
-    NIBBLE_TERMINATOR,
-    unpack_to_nibbles,
-)
+from collections import OrderedDict
+from rlp import encode as rlp_encode, decode as rlp_decode, DecodingError
+from .utils import sha3_256, NIBBLE_TERMINATOR, unpack_to_nibbles
 
 from .constants import (
     NODE_TYPE_BLANK,

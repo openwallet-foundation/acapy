@@ -57,12 +57,7 @@ CRED_REQ = V20CredRequest(
             format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][V20CredFormat.Format.INDY.api],
         )
     ],
-    requests_attach=[
-        AttachDecorator.data_base64(
-            ident="indy",
-            mapping=INDY_CRED_REQ,
-        )
-    ],
+    requests_attach=[AttachDecorator.data_base64(ident="indy", mapping=INDY_CRED_REQ)],
 )
 CRED_ISSUE = V20CredIssue(
     replacement_id="0",
@@ -73,12 +68,7 @@ CRED_ISSUE = V20CredIssue(
             format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][V20CredFormat.Format.INDY.api],
         )
     ],
-    credentials_attach=[
-        AttachDecorator.data_base64(
-            mapping=INDY_CRED,
-            ident="indy",
-        )
-    ],
+    credentials_attach=[AttachDecorator.data_base64(mapping=INDY_CRED, ident="indy")],
 )
 
 
@@ -219,8 +209,7 @@ class TestV20CredManager(AsyncTestCase):
                         ],
                     ),
                     AttachDecorator.data_base64(
-                        LD_PROOF_VC_DETAIL,
-                        ident=V20CredFormat.Format.LD_PROOF.api,
+                        LD_PROOF_VC_DETAIL, ident=V20CredFormat.Format.LD_PROOF.api
                     ),
                 )
             )
@@ -426,9 +415,7 @@ class TestV20CredManager(AsyncTestCase):
             )
 
             (ret_cx_rec, ret_offer) = await self.manager.create_offer(
-                cred_ex_record=cx_rec,
-                counter_proposal=None,
-                comment=comment,
+                cred_ex_record=cx_rec, counter_proposal=None, comment=comment
             )
             assert ret_cx_rec == cx_rec
             mock_save.assert_called_once()
@@ -448,10 +435,7 @@ class TestV20CredManager(AsyncTestCase):
     async def test_create_offer_x_no_formats(self):
         comment = "comment"
 
-        cred_proposal = V20CredProposal(
-            formats=[],
-            filters_attach=[],
-        )
+        cred_proposal = V20CredProposal(formats=[], filters_attach=[])
 
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
@@ -461,9 +445,7 @@ class TestV20CredManager(AsyncTestCase):
 
         with self.assertRaises(V20CredManagerError) as context:
             await self.manager.create_offer(
-                cred_ex_record=cx_rec,
-                counter_proposal=None,
-                comment=comment,
+                cred_ex_record=cx_rec, counter_proposal=None, comment=comment
             )
         assert "No supported formats" in str(context.exception)
 
@@ -658,10 +640,7 @@ class TestV20CredManager(AsyncTestCase):
     async def test_create_request_x_no_formats(self):
         comment = "comment"
 
-        cred_proposal = V20CredProposal(
-            formats=[],
-            filters_attach=[],
-        )
+        cred_proposal = V20CredProposal(formats=[], filters_attach=[])
 
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
@@ -671,9 +650,7 @@ class TestV20CredManager(AsyncTestCase):
 
         with self.assertRaises(V20CredManagerError) as context:
             await self.manager.create_request(
-                cred_ex_record=cx_rec,
-                holder_did="holder_did",
-                comment=comment,
+                cred_ex_record=cx_rec, holder_did="holder_did", comment=comment
             )
         assert "No supported formats" in str(context.exception)
 
@@ -754,9 +731,7 @@ class TestV20CredManager(AsyncTestCase):
     async def test_create_request_bad_state(self):
         holder_did = "did"
 
-        stored_cx_rec = V20CredExRecord(
-            state=V20CredExRecord.STATE_PROPOSAL_SENT,
-        )
+        stored_cx_rec = V20CredExRecord(state=V20CredExRecord.STATE_PROPOSAL_SENT)
 
         with self.assertRaises(V20CredManagerError) as context:
             await self.manager.create_request(stored_cx_rec, holder_did)
@@ -930,11 +905,7 @@ class TestV20CredManager(AsyncTestCase):
             ],
             filters_attach=[
                 AttachDecorator.data_base64(
-                    {
-                        "schema_id": SCHEMA_ID,
-                        "cred_def_id": CRED_DEF_ID,
-                    },
-                    ident="0",
+                    {"schema_id": SCHEMA_ID, "cred_def_id": CRED_DEF_ID}, ident="0"
                 )
             ],
         )
@@ -1017,10 +988,7 @@ class TestV20CredManager(AsyncTestCase):
     async def test_issue_credential_x_no_formats(self):
         comment = "comment"
 
-        cred_request = V20CredRequest(
-            formats=[],
-            requests_attach=[],
-        )
+        cred_request = V20CredRequest(formats=[], requests_attach=[])
 
         cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
@@ -1030,16 +998,12 @@ class TestV20CredManager(AsyncTestCase):
         )
 
         with self.assertRaises(V20CredManagerError) as context:
-            await self.manager.issue_credential(
-                cred_ex_record=cx_rec,
-                comment=comment,
-            )
+            await self.manager.issue_credential(cred_ex_record=cx_rec, comment=comment)
         assert "No supported formats" in str(context.exception)
 
     async def test_issue_credential_existing_cred(self):
         stored_cx_rec = V20CredExRecord(
-            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
-            cred_issue=CRED_ISSUE,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED, cred_issue=CRED_ISSUE
         )
 
         with self.assertRaises(V20CredManagerError) as context:
@@ -1047,9 +1011,7 @@ class TestV20CredManager(AsyncTestCase):
         assert "called multiple times" in str(context.exception)
 
     async def test_issue_credential_request_bad_state(self):
-        stored_cx_rec = V20CredExRecord(
-            state=V20CredExRecord.STATE_PROPOSAL_SENT,
-        )
+        stored_cx_rec = V20CredExRecord(state=V20CredExRecord.STATE_PROPOSAL_SENT)
 
         with self.assertRaises(V20CredManagerError) as context:
             await self.manager.issue_credential(stored_cx_rec)
@@ -1093,9 +1055,7 @@ class TestV20CredManager(AsyncTestCase):
         with async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as mock_save, async_mock.patch.object(
-            V20CredExRecord,
-            "retrieve_by_conn_and_thread",
-            async_mock.CoroutineMock(),
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
         ) as mock_retrieve, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
@@ -1103,8 +1063,7 @@ class TestV20CredManager(AsyncTestCase):
             mock_handler.return_value.receive_credential = async_mock.CoroutineMock()
             mock_retrieve.return_value = stored_cx_rec
             ret_cx_rec = await self.manager.receive_credential(
-                cred_issue,
-                connection_id,
+                cred_issue, connection_id
             )
 
             mock_retrieve.assert_called_once_with(
@@ -1162,17 +1121,12 @@ class TestV20CredManager(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            V20CredExRecord,
-            "retrieve_by_conn_and_thread",
-            async_mock.CoroutineMock(),
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
         ) as mock_retrieve:
             mock_retrieve.return_value = stored_cx_rec
 
             with self.assertRaises(V20CredManagerError) as context:
-                await self.manager.receive_credential(
-                    cred_issue,
-                    connection_id,
-                )
+                await self.manager.receive_credential(cred_issue, connection_id)
             assert (
                 "Received issue credential format(s) not present in credential"
                 in str(context.exception)
@@ -1200,17 +1154,12 @@ class TestV20CredManager(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            V20CredExRecord,
-            "retrieve_by_conn_and_thread",
-            async_mock.CoroutineMock(),
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
         ) as mock_retrieve:
             mock_retrieve.return_value = stored_cx_rec
 
             with self.assertRaises(V20CredManagerError) as context:
-                await self.manager.receive_credential(
-                    cred_issue,
-                    connection_id,
-                )
+                await self.manager.receive_credential(cred_issue, connection_id)
             assert "No supported credential formats received." in str(context.exception)
 
     async def test_store_credential(self):
@@ -1330,10 +1279,7 @@ class TestV20CredManager(AsyncTestCase):
             test_module.V20CredManager, "delete_cred_ex_record", autospec=True
         ) as mock_delete:
             mock_retrieve.return_value = stored_cx_rec
-            ret_cx_rec = await self.manager.receive_credential_ack(
-                ack,
-                connection_id,
-            )
+            ret_cx_rec = await self.manager.receive_credential_ack(ack, connection_id)
 
             mock_retrieve.assert_called_once_with(
                 self.session,
@@ -1395,9 +1341,7 @@ class TestV20CredManager(AsyncTestCase):
         with async_mock.patch.object(
             V20CredExRecord, "save", autospec=True
         ) as save_ex, async_mock.patch.object(
-            V20CredExRecord,
-            "retrieve_by_conn_and_thread",
-            async_mock.CoroutineMock(),
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
         ) as retrieve_ex:
             retrieve_ex.return_value = stored_exchange
 
@@ -1427,9 +1371,7 @@ class TestV20CredManager(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            V20CredExRecord,
-            "retrieve_by_conn_and_thread",
-            async_mock.CoroutineMock(),
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
         ) as retrieve_ex:
             retrieve_ex.side_effect = test_module.StorageNotFoundError("No such record")
 
