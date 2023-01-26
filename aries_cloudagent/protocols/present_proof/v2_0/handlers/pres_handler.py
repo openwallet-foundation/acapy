@@ -70,7 +70,7 @@ class V20PresHandler(BaseHandler):
             or context.settings.get("debug.auto_verify_presentation")
         ):
             try:
-                await pres_manager.verify_pres(pres_ex_record)
+                await pres_manager.verify_pres(pres_ex_record, responder)
             except (BaseModelError, LedgerError, StorageError) as err:
                 self._logger.exception(err)
                 if pres_ex_record:
