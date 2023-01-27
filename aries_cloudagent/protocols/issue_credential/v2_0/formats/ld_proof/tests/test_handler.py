@@ -428,6 +428,48 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         # assert data is encoded as base64
         assert attachment.data.base64
 
+    async def test_create_offer_multiple_cred_offer(self):
+        cred_proposal = V20CredProposal(
+            formats=[
+                V20CredFormat(
+                    attach_id="ld_proof-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="ld_proof-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+            ],
+            filters_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-0"),
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-1"),
+            ],
+        )
+        with async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_assert_can_issue_with_id_and_proof_type",
+            async_mock.CoroutineMock(),
+        ) as mock_can_issue, patch.object(
+            test_module, "get_properties_without_context", return_value=[]
+        ):
+            (cred_format, attachment) = await self.handler.create_offer(
+                cred_proposal, "ld_proof-0"
+            )
+            assert cred_format.attach_id == "ld_proof-0"
+            assert attachment.content == LD_PROOF_VC_DETAIL
+            assert attachment.data.base64
+
+            (cred_format, attachment) = await self.handler.create_offer(
+                cred_proposal, "ld_proof-1"
+            )
+            assert cred_format.attach_id == "ld_proof-1"
+            assert attachment.content == LD_PROOF_VC_DETAIL
+            assert attachment.data.base64
+
     async def test_create_offer_adds_bbs_context(self):
         cred_proposal = V20CredProposal(
             formats=[
@@ -517,6 +559,90 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         # assert data is encoded as base64
         assert attachment.data.base64
 
+    async def test_create_bound_request_multiple_cred_flow_from_offer(self):
+        cred_offer = V20CredOffer(
+            formats=[
+                V20CredFormat(
+                    attach_id="ld_proof-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="ld_proof-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+            ],
+            offers_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-0"),
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-1"),
+            ],
+        )
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-id",
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            cred_offer=cred_offer,
+            multiple_credentials=True,
+        )
+
+        (cred_format, attachment) = await self.handler.create_request(
+            cred_ex_record=cred_ex_record, attach_id="ld_proof-0"
+        )
+        assert cred_format.attach_id == "ld_proof-0"
+        assert attachment.content == LD_PROOF_VC_DETAIL
+        assert attachment.data.base64
+
+        (cred_format, attachment) = await self.handler.create_request(
+            cred_ex_record=cred_ex_record, attach_id="ld_proof-1"
+        )
+        assert cred_format.attach_id == "ld_proof-1"
+        assert attachment.content == LD_PROOF_VC_DETAIL
+        assert attachment.data.base64
+
+    async def test_create_bound_request_multiple_cred_flow_from_proposal(self):
+        cred_proposal = V20CredProposal(
+            formats=[
+                V20CredFormat(
+                    attach_id="ld_proof-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="ld_proof-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+            ],
+            filters_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-0"),
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-1"),
+            ],
+        )
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-id",
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            cred_proposal=cred_proposal,
+            multiple_credentials=True,
+        )
+
+        (cred_format, attachment) = await self.handler.create_request(
+            cred_ex_record=cred_ex_record, attach_id="ld_proof-0"
+        )
+        assert cred_format.attach_id == "ld_proof-0"
+        assert attachment.content == LD_PROOF_VC_DETAIL
+        assert attachment.data.base64
+
+        (cred_format, attachment) = await self.handler.create_request(
+            cred_ex_record=cred_ex_record, attach_id="ld_proof-1"
+        )
+        assert cred_format.attach_id == "ld_proof-1"
+        assert attachment.content == LD_PROOF_VC_DETAIL
+        assert attachment.data.base64
+
     async def test_create_free_request(self):
         cred_ex_record = V20CredExRecord(
             cred_ex_id="dummy-id",
@@ -551,6 +677,61 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         # Not much to assert. Receive request doesn't do anything
         await self.handler.receive_request(cred_ex_record, cred_request_message)
+
+    async def test_issue_credential_multiple_cred_flow(self):
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="ld_proof-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="ld_proof-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-0"),
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-1"),
+            ],
+        )
+
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_request=cred_request,
+        )
+
+        with async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_suite_for_detail",
+            async_mock.CoroutineMock(),
+        ) as mock_get_suite, async_mock.patch.object(
+            test_module, "issue", async_mock.CoroutineMock(return_value=LD_PROOF_VC)
+        ) as mock_issue, async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_proof_purpose",
+        ) as mock_get_proof_purpose:
+            (cred_format, attachment) = await self.handler.issue_credential(
+                cred_ex_record=cred_ex_record, attach_id="ld_proof-0"
+            )
+            detail = LDProofVCDetail.deserialize(LD_PROOF_VC_DETAIL)
+            mock_get_suite.assert_called_with(detail)
+            assert cred_format.attach_id == "ld_proof-0"
+            assert attachment.content == LD_PROOF_VC
+            assert attachment.data.base64
+
+            (cred_format, attachment) = await self.handler.issue_credential(
+                cred_ex_record=cred_ex_record, attach_id="ld_proof-1"
+            )
+            detail = LDProofVCDetail.deserialize(LD_PROOF_VC_DETAIL)
+            mock_get_suite.assert_called_with(detail)
+            assert cred_format.attach_id == "ld_proof-1"
+            assert attachment.content == LD_PROOF_VC
+            assert attachment.data.base64
 
     async def test_issue_credential(self):
         cred_request = V20CredRequest(
@@ -657,6 +838,55 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         assert "Cannot issue credential without credential request" in str(
             context.exception
         )
+
+    async def test_receive_credential_multiple_cred_flow(self):
+        cred_issue = V20CredIssue(
+            formats=[
+                V20CredFormat(
+                    attach_id="ld_proof-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="ld_proof-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+            ],
+            credentials_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC, ident="ld_proof-0"),
+                AttachDecorator.data_base64(LD_PROOF_VC, ident="ld_proof-1"),
+            ],
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="ld_proof-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="ld_proof-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-0"),
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-1"),
+            ],
+        )
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="cred-ex-id",
+            cred_request=cred_request,
+        )
+
+        await self.handler.receive_credential(cred_ex_record, cred_issue, "ld_proof-0")
+        await self.handler.receive_credential(cred_ex_record, cred_issue, "ld_proof-1")
 
     async def test_receive_credential(self):
         cred_issue = V20CredIssue(
@@ -858,6 +1088,53 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             assert f"does not match options.{property} from credential request" in str(
                 context.exception
             )
+
+    async def test_store_credential_multiple_cred_flow(self):
+        cred_issue = V20CredIssue(
+            formats=[
+                V20CredFormat(
+                    attach_id="ld_proof-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="ld_proof-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+            ],
+            credentials_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC, ident="ld_proof-0"),
+                AttachDecorator.data_base64(LD_PROOF_VC, ident="ld_proof-1"),
+            ],
+        )
+
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_issue=cred_issue,
+        )
+
+        cred_id = "cred_id"
+        self.holder.store_credential = async_mock.CoroutineMock()
+
+        with async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_suite",
+            async_mock.CoroutineMock(),
+        ) as mock_get_suite, async_mock.patch.object(
+            test_module,
+            "verify_credential",
+            async_mock.CoroutineMock(
+                return_value=DocumentVerificationResult(verified=True)
+            ),
+        ) as mock_verify_credential, async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_proof_purpose",
+        ) as mock_get_proof_purpose:
+            await self.handler.store_credential(cred_ex_record, cred_id, "ld_proof-0")
+            await self.handler.store_credential(cred_ex_record, cred_id, "ld_proof-1")
 
     async def test_store_credential(self):
         cred_issue = V20CredIssue(

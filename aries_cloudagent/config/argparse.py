@@ -360,6 +360,12 @@ class DebugGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--disable-multiple-credential-flow",
+            action="store_true",
+            env_var="ACAPY_DISABLE_MULTIPLE_CREDENTIAL_FLOW",
+            help=("Disable multiple credential flow"),
+        )
+        parser.add_argument(
             "--auto-respond-credential-offer",
             action="store_true",
             env_var="ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER",
@@ -461,6 +467,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.auto_accept_requests"] = True
         if args.auto_respond_messages:
             settings["debug.auto_respond_messages"] = True
+        if args.disable_multiple_credential_flow:
+            settings["debug.disable_multiple_credential_flow"] = True
         return settings
 
 

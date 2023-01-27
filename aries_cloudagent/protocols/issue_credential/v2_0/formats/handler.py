@@ -116,7 +116,10 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def receive_credential(
-        self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_issue_message: V20CredIssue,
+        attach_id: str = None,
     ) -> None:
         """Create format specific issue credential message."""
 

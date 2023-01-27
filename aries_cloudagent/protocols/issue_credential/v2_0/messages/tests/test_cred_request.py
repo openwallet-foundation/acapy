@@ -1,4 +1,5 @@
 from asynctest import TestCase as AsyncTestCase
+from copy import deepcopy
 
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.models.base import BaseModelError
@@ -66,6 +67,34 @@ class TestV20CredRequest(AsyncTestCase):
         ],
     )
 
+    CRED_REQUEST_MULTIPLE = V20CredRequest(
+        comment="Test",
+        formats=[
+            V20CredFormat(
+                attach_id="indy-0",
+                format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                    V20CredFormat.Format.INDY.api
+                ],
+            ),
+            V20CredFormat(
+                attach_id="indy-1",
+                format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                    V20CredFormat.Format.INDY.api
+                ],
+            ),
+        ],
+        requests_attach=[
+            AttachDecorator.data_base64(
+                ident="indy-0",
+                mapping=indy_cred_req,
+            ),
+            AttachDecorator.data_base64(
+                ident="indy-1",
+                mapping=indy_cred_req,
+            ),
+        ],
+    )
+
     async def test_init_type(self):
         """Test initializer and type."""
         assert (
@@ -78,6 +107,49 @@ class TestV20CredRequest(AsyncTestCase):
         )
         assert TestV20CredRequest.CRED_REQUEST._type == DIDCommPrefix.qualify_current(
             CRED_20_REQUEST
+        )
+        assert (
+            TestV20CredRequest.CRED_REQUEST_MULTIPLE.attachment_by_id("indy-1")
+            == TestV20CredRequest.indy_cred_req
+        )
+        cred_req_single = deepcopy(TestV20CredRequest.CRED_REQUEST)
+        cred_req_single.add_attachments(
+            V20CredFormat(
+                attach_id="indy-abc",
+                format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                    V20CredFormat.Format.INDY.api
+                ],
+            ),
+            AttachDecorator.data_base64(
+                ident="indy-abc",
+                mapping=TestV20CredRequest.indy_cred_req,
+            ),
+        )
+        assert (
+            cred_req_single.attachment_by_id("indy-abc")
+            == TestV20CredRequest.indy_cred_req
+        )
+        cred_req_single.add_requests_attach(
+            [
+                AttachDecorator.data_base64(
+                    ident="indy-123",
+                    mapping=TestV20CredRequest.indy_cred_req,
+                )
+            ]
+        )
+        cred_req_single.add_formats(
+            [
+                V20CredFormat(
+                    attach_id="indy-123",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ]
+        )
+        assert (
+            cred_req_single.attachment_by_id("indy-123")
+            == TestV20CredRequest.indy_cred_req
         )
 
     async def test_attachment_no_target_format(self):
