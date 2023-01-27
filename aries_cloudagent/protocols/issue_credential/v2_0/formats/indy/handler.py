@@ -224,9 +224,17 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             schema_id = await ledger.credential_definition_id2schema_id(cred_def_id)
             schema = await ledger.get_schema(schema_id)
         schema_attrs = {attr for attr in schema["attrNames"]}
-        preview_attrs = {
-            attr for attr in cred_proposal_message.credential_preview.attr_dict()
-        }
+        if attach_id:
+            preview_attrs = {
+                attr
+                for attr in cred_proposal_message.credential_preview.attr_dict(
+                    attach_id=attach_id
+                )
+            }
+        else:
+            preview_attrs = {
+                attr for attr in cred_proposal_message.credential_preview.attr_dict()
+            }
         if preview_attrs != schema_attrs:
             raise V20CredFormatError(
                 f"Preview attributes {preview_attrs} "
@@ -363,9 +371,14 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             cred_request = cred_ex_record.cred_request.attachment(
                 IndyCredFormatHandler.format
             )
-        cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
-            decode=False
-        )
+        if attach_id:
+            cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
+                decode=False, attach_id=attach_id
+            )
+        else:
+            cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
+                decode=False
+            )
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
 
@@ -467,6 +480,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         self,
         cred_ex_record: V20CredExRecord,
         cred_issue_message: V20CredIssue,
+        attach_id: str = None,
     ) -> None:
         """Receive indy credential.
 
@@ -506,7 +520,12 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_offer_message = cred_ex_record.cred_offer
         mime_types = None
         if cred_offer_message and cred_offer_message.credential_preview:
-            mime_types = cred_offer_message.credential_preview.mime_types() or None
+            if attach_id:
+                mime_types = (
+                    cred_offer_message.credential_preview.mime_types(attach_id) or None
+                )
+            else:
+                mime_types = cred_offer_message.credential_preview.mime_types() or None
 
         if rev_reg_def:
             rev_reg = RevocationRegistry.from_definition(rev_reg_def, True)

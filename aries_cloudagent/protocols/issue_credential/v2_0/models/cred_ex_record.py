@@ -81,6 +81,7 @@ class V20CredExRecord(BaseExchangeRecord):
         by_format: Mapping = None,  # backward compat: BaseRecord.from_storage()
         multiple_credentials: bool = None,
         processed_attach_ids: Sequence[str] = [],
+        stored_attach_ids: Sequence[str] = [],  # Will be empty for issuers
         multiple_issuance_state: str = None,
         **kwargs,
     ):
@@ -102,7 +103,8 @@ class V20CredExRecord(BaseExchangeRecord):
         self.auto_remove = auto_remove
         self.error_msg = error_msg
         self.multiple_credentials = multiple_credentials
-        self.processed_attach_ids = processed_attach_ids
+        self.processed_attach_ids = list(processed_attach_ids)
+        self.stored_attach_ids = list(stored_attach_ids)
         self.multiple_issuance_state = multiple_issuance_state
 
     @property
@@ -155,16 +157,23 @@ class V20CredExRecord(BaseExchangeRecord):
         """Setter; store de/serialized views."""
         self._cred_issue = V20CredIssue.serde(value)
 
-    def add_attach_ids(self, attach_id_list: Sequence[str]):
+    def process_attach_id(self, attach_id: str):
         """
         Add attach_id to processed_attach_ids list.
 
         Args:
+            attach_id: Attachment identifier
+        """
+        self.processed_attach_ids.append(attach_id)
+
+    def store_attach_id(self, attach_id: str):
+        """
+        Add attach_id to stored_attach_ids list.
+
+        Args:
             attach id: Attachment identifier
         """
-        for attach_id in attach_id_list:
-            if attach_id not in self.processed_attach_ids:
-                self.processed_attach_ids.append(attach_id)
+        self.stored_attach_ids.append(attach_id)
 
     async def save_error_state(
         self,
@@ -222,6 +231,7 @@ class V20CredExRecord(BaseExchangeRecord):
                     "multiple_credentials",
                     "multiple_issuance_state",
                     "processed_attach_ids",
+                    "stored_attach_ids",
                 )
             },
             **{
@@ -412,6 +422,11 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         fields.Str(description="Attachment ID", required=True),
         required=False,
         description="List of processed attachment IDs",
+    )
+    stored_attach_ids = fields.List(
+        fields.Str(description="Attachment ID", required=True),
+        required=False,
+        description="List of stored attachment IDs",
     )
     multiple_issuance_state = fields.Str(
         required=False,
