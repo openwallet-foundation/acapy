@@ -541,7 +541,7 @@ class ConnectionManager(BaseConnectionManager):
                 new_connection = ConnRecord(
                     invitation_key=connection_key,
                     my_did=my_info.did,
-                    state=ConnRecord.State.INVITATION.rfc160,
+                    state=ConnRecord.State.REQUEST.rfc160,
                     accept=connection.accept,
                     their_role=connection.their_role,
                     connection_protocol=CONN_PROTO,
