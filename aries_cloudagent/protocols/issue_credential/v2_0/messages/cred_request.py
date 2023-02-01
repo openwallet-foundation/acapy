@@ -86,11 +86,14 @@ class V20CredRequest(AgentMessage):
             attach_id: string identifier
 
         """
-        target_format = [
+        _format_list = [
             V20CredFormat.Format.get(f.format)
             for f in self.formats
             if f.attach_id == attach_id
-        ][0]
+        ]
+        if len(_format_list) == 0:
+            return None
+        target_format = _format_list[0]
         return (
             target_format.get_attachment_data_by_id(attach_id, self.requests_attach)
             if target_format
@@ -107,26 +110,6 @@ class V20CredRequest(AgentMessage):
         """
         self.formats.append(fmt)
         self.requests_attach.append(atch)
-
-    def add_formats(self, fmt_list: Sequence[V20CredFormat]) -> None:
-        """
-        Add format.
-
-        Args:
-            fmt_list: list of format attachment
-        """
-        for fmt in fmt_list:
-            self.formats.append(fmt)
-
-    def add_requests_attach(self, atch_list: Sequence[AttachDecorator]) -> None:
-        """
-        Add request_attach.
-
-        Args:
-            atch_list: list of attachment
-        """
-        for atch in atch_list:
-            self.requests_attach.append(atch)
 
 
 class V20CredRequestSchema(AgentMessageSchema):

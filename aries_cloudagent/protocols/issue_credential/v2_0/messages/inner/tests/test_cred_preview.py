@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from .......messaging.models.base import BaseModelError
+
 from ......didcomm_prefix import DIDCommPrefix
 
 from ....message_types import CRED_20_PREVIEW
@@ -98,6 +100,57 @@ class TestV20CredPreview(TestCase):
                 {"name": "icon", "mime-type": "image/png", "value": "cG90YXRv"},
             ],
         }
+
+    def test_check_cred_ident_in_keys(self):
+        """Test serialization."""
+
+        attr_dict = {
+            "@type": DIDCommPrefix.qualify_current(CRED_20_PREVIEW),
+            "attributes": {
+                "indy-0": [
+                    {"name": "test", "value": "123"},
+                    {"name": "hello", "value": "world"},
+                    {"name": "icon", "mime-type": "image/png", "value": "cG90YXRv"},
+                ]
+            },
+        }
+        cred20_preview = V20CredPreview.deserialize(attr_dict)
+        assert "indy-0" in cred20_preview.attributes_dict
+        assert cred20_preview.attributes == []
+        attr_dict = {
+            "@type": DIDCommPrefix.qualify_current(CRED_20_PREVIEW),
+            "attributes": {
+                "test-0": [
+                    {"name": "test", "value": "123"},
+                    {"name": "hello", "value": "world"},
+                    {"name": "icon", "mime-type": "image/png", "value": "cG90YXRv"},
+                ]
+            },
+        }
+        with self.assertRaises(BaseModelError):
+            cred20_preview = V20CredPreview.deserialize(attr_dict)
+        attr_dict = {
+            "@type": DIDCommPrefix.qualify_current(CRED_20_PREVIEW),
+        }
+        with self.assertRaises(BaseModelError):
+            cred20_preview = V20CredPreview.deserialize(attr_dict)
+        attr_dict = {
+            "@type": DIDCommPrefix.qualify_current(CRED_20_PREVIEW),
+            "attributes": [
+                {"name": "test", "value": "123"},
+                {"name": "hello", "value": "world"},
+                {"name": "icon", "mime-type": "image/png", "value": "cG90YXRv"},
+            ],
+            "attributes_dict": {
+                "indy-0": [
+                    {"name": "test", "value": "123"},
+                    {"name": "hello", "value": "world"},
+                    {"name": "icon", "mime-type": "image/png", "value": "cG90YXRv"},
+                ]
+            },
+        }
+        with self.assertRaises(BaseModelError):
+            cred20_preview = V20CredPreview.deserialize(attr_dict)
 
 
 class TestV20CredPreviewSchema(TestCase):
