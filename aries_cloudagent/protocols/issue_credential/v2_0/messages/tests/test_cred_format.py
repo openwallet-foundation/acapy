@@ -85,3 +85,11 @@ class TestV20FormatFormat(TestCase):
             )
             == TEST_INDY_FILTER
         )
+        assert not (
+            V20CredFormat.Format.INDY.get_attachment_data_by_id(
+                attach_id="indy",
+                attachments=[
+                    AttachDecorator.data_base64(TEST_INDY_FILTER, ident="indy-1")
+                ],
+            )
+        )

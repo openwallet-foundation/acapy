@@ -144,27 +144,6 @@ class TestV20CredIssue(AsyncTestCase):
         assert (
             cred_issue_single.attachment_by_id("indy-abc") == TestV20CredIssue.INDY_CRED
         )
-        cred_issue_single.add_credentials_attach(
-            [
-                AttachDecorator.data_base64(
-                    mapping=TestV20CredIssue.INDY_CRED,
-                    ident="indy-123",
-                )
-            ]
-        )
-        cred_issue_single.add_formats(
-            [
-                V20CredFormat(
-                    attach_id="indy-123",
-                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
-                        V20CredFormat.Format.INDY.api
-                    ],
-                )
-            ]
-        )
-        assert (
-            cred_issue_single.attachment_by_id("indy-123") == TestV20CredIssue.INDY_CRED
-        )
 
     async def test_attachment_no_target_format(self):
         """Test attachment behaviour for only unknown formats."""

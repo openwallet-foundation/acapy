@@ -94,11 +94,14 @@ class V20CredOffer(AgentMessage):
             attach_id: string identifier
 
         """
-        target_format = [
+        _format_list = [
             V20CredFormat.Format.get(f.format)
             for f in self.formats
             if f.attach_id == attach_id
-        ][0]
+        ]
+        if len(_format_list) == 0:
+            return None
+        target_format = _format_list[0]
         return (
             target_format.get_attachment_data_by_id(attach_id, self.offers_attach)
             if target_format
