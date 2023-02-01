@@ -388,12 +388,10 @@ class V20CredManager:
             input_formats = cred_proposal.formats
 
         if cred_ex_record.multiple_issuance_state:
-            if (
-                cred_ex_record.multiple_issuance_state
-                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
-                or cred_ex_record.multiple_issuance_state
-                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
-            ):
+            if cred_ex_record.multiple_issuance_state in [
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE,
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED,
+            ]:
                 raise V20CredManagerError(
                     f"Credential exchange {cred_ex_record.cred_ex_id} "
                     f"in {cred_ex_record.multiple_issuance_state} "
@@ -509,12 +507,10 @@ class V20CredManager:
             cred_ex_record.connection_id = connection_record.connection_id
 
         if cred_ex_record.multiple_issuance_state:
-            if (
-                cred_ex_record.multiple_issuance_state
-                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
-                or cred_ex_record.multiple_issuance_state
-                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
-            ):
+            if cred_ex_record.multiple_issuance_state in [
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE,
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED,
+            ]:
                 raise V20CredManagerError(
                     f"Credential exchange {cred_ex_record.cred_ex_id} "
                     f"in {cred_ex_record.multiple_issuance_state} "
@@ -584,12 +580,10 @@ class V20CredManager:
             )
 
         if cred_ex_record.multiple_issuance_state:
-            if (
-                cred_ex_record.multiple_issuance_state
-                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
-                or cred_ex_record.multiple_issuance_state
-                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
-            ):
+            if cred_ex_record.multiple_issuance_state in [
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE,
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED,
+            ]:
                 raise V20CredManagerError(
                     f"Credential exchange {cred_ex_record.cred_ex_id} "
                     f"in {cred_ex_record.multiple_issuance_state} "
@@ -704,12 +698,10 @@ class V20CredManager:
             )
 
         if cred_ex_record.multiple_issuance_state:
-            if (
-                cred_ex_record.multiple_issuance_state
-                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
-                or cred_ex_record.multiple_issuance_state
-                != V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
-            ):
+            if cred_ex_record.multiple_issuance_state in [
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE,
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED,
+            ]:
                 raise V20CredManagerError(
                     f"Credential exchange {cred_ex_record.cred_ex_id} "
                     f"in {cred_ex_record.multiple_issuance_state} "
