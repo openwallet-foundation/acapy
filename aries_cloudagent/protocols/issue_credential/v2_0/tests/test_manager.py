@@ -438,7 +438,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.create_offer = async_mock.CoroutineMock(
                 side_effect=[
                     (
@@ -532,7 +531,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.create_offer = async_mock.CoroutineMock(
                 side_effect=[
                     (
@@ -1032,7 +1030,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.create_request = async_mock.CoroutineMock(
                 side_effect=[
                     (
@@ -1503,6 +1500,36 @@ class TestV20CredManager(AsyncTestCase):
                 in str(context.exception)
             )
 
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="test",
+                    format_="random",
+                )
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(INDY_CRED_REQ, ident="test"),
+            ],
+        )
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=mock_conn.connection_id,
+            initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_OFFER_SENT,
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
+        ) as mock_retrieve:
+            mock_retrieve.return_value = stored_cx_rec
+
+            with self.assertRaises(V20CredManagerError) as context:
+                await self.manager.receive_request(cred_request, mock_conn, None)
+            assert "No supported credential formats received" in str(context.exception)
+
     async def test_receive_request_no_connection_cred_request(self):
         stored_cx_rec = V20CredExRecord(
             cred_ex_id="dummy-cxid",
@@ -1775,7 +1802,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.issue_credential = async_mock.CoroutineMock(
                 side_effect=[
                     (
@@ -1809,7 +1835,7 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cx_rec.state == V20CredExRecord.STATE_ISSUED
             assert ret_cred_issue._thread_id == thread_id
 
-    async def test_issue_credential_multiple_cred_flow_existing(self):
+    async def test_issue_credential_multiple_cred_flow_existing_a(self):
         connection_id = "test_conn_id"
         thread_id = "thread-id"
         comment = "comment"
@@ -1884,11 +1910,7 @@ class TestV20CredManager(AsyncTestCase):
             V20CredExRecord, "save", autospec=True
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
-        ) as mock_handler, async_mock.patch.object(
-            test_module, "uuid4", async_mock.MagicMock()
-        ) as mock_uuid:
-            mock_uuid.return_value = "abc123"
-
+        ) as mock_handler:
             mock_handler.return_value.issue_credential = async_mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -1909,6 +1931,111 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cred_issue.attachment_by_id("indy-abc123") == INDY_CRED
             assert not ret_cred_issue.attachment_by_id("indy")
             assert ret_cx_rec.state == V20CredExRecord.STATE_ISSUED
+            assert ret_cred_issue._thread_id == thread_id
+
+    async def test_issue_credential_multiple_cred_flow_existing_b(self):
+        connection_id = "test_conn_id"
+        thread_id = "thread-id"
+        comment = "comment"
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id=V20CredFormat.Format.INDY.api,
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="indy-abc123",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="indy-abc321",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(
+                    INDY_CRED_REQ, ident=V20CredFormat.Format.INDY.api
+                ),
+                AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-abc123"),
+                AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-abc321"),
+            ],
+        )
+        cred_issue = V20CredIssue(
+            formats=[
+                V20CredFormat(
+                    attach_id=V20CredFormat.Format.INDY.api,
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="indy-abc321",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            credentials_attach=[
+                AttachDecorator.data_base64(
+                    INDY_CRED, ident=V20CredFormat.Format.INDY.api
+                ),
+                AttachDecorator.data_base64(INDY_CRED, ident="indy-abc321"),
+            ],
+        )
+
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            cred_request=cred_request,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+            thread_id=thread_id,
+            cred_issue=cred_issue,
+            multiple_credentials=True,
+            processed_attach_ids=[V20CredFormat.Format.INDY.api, "indy-abc321"],
+        )
+
+        issuer = async_mock.MagicMock()
+        cred_rev_id = "1000"
+        issuer.create_credential = async_mock.CoroutineMock(
+            return_value=(json.dumps(INDY_CRED), cred_rev_id)
+        )
+        self.context.injector.bind_instance(IndyIssuer, issuer)
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V20CredFormat.Format, "handler"
+        ) as mock_handler:
+            mock_handler.return_value.issue_credential = async_mock.CoroutineMock(
+                return_value=(
+                    V20CredFormat(
+                        attach_id="indy-abc123",
+                        format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                    AttachDecorator.data_base64(INDY_CRED, ident="indy-abc123"),
+                )
+            )
+            (ret_cx_rec, ret_cred_issue) = await self.manager.issue_credential(
+                stored_cx_rec, comment=comment, more_available=1
+            )
+
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy") == INDY_CRED
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy-abc123") == INDY_CRED
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy-abc321") == INDY_CRED
+            assert ret_cred_issue.attachment_by_id("indy-abc123") == INDY_CRED
+            assert not ret_cred_issue.attachment_by_id("indy")
+            assert not ret_cred_issue.attachment_by_id("indy-abc321")
+            assert ret_cx_rec.state == V20CredExRecord.STATE_OFFER_SENT
             assert ret_cred_issue._thread_id == thread_id
 
     async def test_issue_credential_multiple_cred_flow_x(self):
@@ -2037,6 +2164,429 @@ class TestV20CredManager(AsyncTestCase):
             )
             assert ret_cx_rec.cred_issue.attachment() == INDY_CRED
             assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+
+    async def test_receive_cred_multiple_cred_flow(self):
+        connection_id = "test_conn_id"
+
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-1"),
+            ],
+        )
+
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+            cred_request=cred_request,
+            role=V20CredExRecord.ROLE_ISSUER,
+        )
+
+        cred_issue = V20CredIssue(
+            formats=[
+                V20CredFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            credentials_attach=[
+                AttachDecorator.data_base64(INDY_CRED, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_CRED, ident="indy-1"),
+            ],
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V20CredExRecord,
+            "retrieve_by_conn_and_thread",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            V20CredFormat.Format, "handler"
+        ) as mock_handler:
+            mock_handler.return_value.receive_credential = async_mock.CoroutineMock()
+            mock_retrieve.return_value = stored_cx_rec
+            ret_cx_rec = await self.manager.receive_credential(
+                cred_issue,
+                connection_id,
+            )
+
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy-0") == INDY_CRED
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy-1") == INDY_CRED
+            assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+
+    async def test_receive_cred_multiple_cred_flow_existing_a(self):
+        connection_id = "test_conn_id"
+
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id=V20CredFormat.Format.INDY.api,
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="indy-abc123",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(
+                    INDY_CRED_REQ, ident=V20CredFormat.Format.INDY.api
+                ),
+                AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-abc123"),
+            ],
+        )
+
+        cred_issue = V20CredIssue(
+            formats=[
+                V20CredFormat(
+                    attach_id=V20CredFormat.Format.INDY.api,
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            credentials_attach=[
+                AttachDecorator.data_base64(
+                    INDY_CRED, ident=V20CredFormat.Format.INDY.api
+                )
+            ],
+        )
+
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_issue=cred_issue,
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+            cred_request=cred_request,
+            role=V20CredExRecord.ROLE_ISSUER,
+            processed_attach_ids=[V20CredFormat.Format.INDY.api],
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V20CredExRecord,
+            "retrieve_by_conn_and_thread",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            V20CredFormat.Format, "handler"
+        ) as mock_handler:
+            mock_handler.return_value.receive_credential = async_mock.CoroutineMock()
+            mock_retrieve.return_value = stored_cx_rec
+            cred_issue = V20CredIssue(
+                formats=[
+                    V20CredFormat(
+                        attach_id="indy-abc123",
+                        format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    )
+                ],
+                credentials_attach=[
+                    AttachDecorator.data_base64(INDY_CRED, ident="indy-abc123")
+                ],
+                more_available=1,
+            )
+            ret_cx_rec = await self.manager.receive_credential(
+                cred_issue,
+                connection_id,
+            )
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy") == INDY_CRED
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy-abc123") == INDY_CRED
+            assert ret_cx_rec.state == V20CredExRecord.STATE_OFFER_RECEIVED
+            assert (
+                ret_cx_rec.multiple_issuance_state
+                == V20CredExRecord.STATE_MULTIPLE_ISSUANCE_PENDING
+            )
+
+            cred_request = V20CredRequest(
+                formats=[
+                    V20CredFormat(
+                        attach_id=V20CredFormat.Format.INDY.api,
+                        format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                    V20CredFormat(
+                        attach_id="indy-abc123",
+                        format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                    V20CredFormat(
+                        attach_id="indy-abc321",
+                        format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                ],
+                requests_attach=[
+                    AttachDecorator.data_base64(
+                        INDY_CRED_REQ, ident=V20CredFormat.Format.INDY.api
+                    ),
+                    AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-abc123"),
+                    AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-abc321"),
+                ],
+            )
+            stored_cx_rec.cred_request = cred_request
+            mock_retrieve.return_value = stored_cx_rec
+            cred_issue = V20CredIssue(
+                formats=[
+                    V20CredFormat(
+                        attach_id="indy-abc321",
+                        format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    )
+                ],
+                credentials_attach=[
+                    AttachDecorator.data_base64(INDY_CRED, ident="indy-abc321")
+                ],
+                more_available=0,
+            )
+            ret_cx_rec = await self.manager.receive_credential(
+                cred_issue,
+                connection_id,
+            )
+
+            cred_request = V20CredRequest(
+                formats=[
+                    V20CredFormat(
+                        attach_id=V20CredFormat.Format.INDY.api,
+                        format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                    V20CredFormat(
+                        attach_id="indy-abc123",
+                        format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                    V20CredFormat(
+                        attach_id="indy-abc321",
+                        format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                    V20CredFormat(
+                        attach_id="indy-abc456",
+                        format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                ],
+                requests_attach=[
+                    AttachDecorator.data_base64(
+                        INDY_CRED_REQ, ident=V20CredFormat.Format.INDY.api
+                    ),
+                    AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-abc123"),
+                    AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-abc321"),
+                    AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-abc456"),
+                ],
+            )
+            stored_cx_rec.cred_request = cred_request
+            stored_cx_rec.processed_attach_ids = ["indy", "indy-abc123", "indy-abc321"]
+            stored_cx_rec.multiple_issuance_state = (
+                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_PENDING
+            )
+            mock_retrieve.return_value = stored_cx_rec
+            cred_issue = V20CredIssue(
+                formats=[
+                    V20CredFormat(
+                        attach_id="indy-abc321",
+                        format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                    V20CredFormat(
+                        attach_id="indy-abc456",
+                        format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    ),
+                ],
+                credentials_attach=[
+                    AttachDecorator.data_base64(INDY_CRED, ident="indy-abc321"),
+                    AttachDecorator.data_base64(INDY_CRED, ident="indy-abc456"),
+                ],
+                more_available=0,
+            )
+            ret_cx_rec = await self.manager.receive_credential(
+                cred_issue,
+                connection_id,
+            )
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy") == INDY_CRED
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy-abc123") == INDY_CRED
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy-abc321") == INDY_CRED
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy-abc456") == INDY_CRED
+            assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+            assert (
+                ret_cx_rec.multiple_issuance_state
+                == V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
+            )
+
+    async def test_receive_cred_multiple_cred_flow_existing_b(self):
+        connection_id = "test_conn_id"
+        thread_id = "thread-id"
+        self.context.update_settings(
+            {
+                "debug.disable_multiple_credential_flow": True,
+            }
+        )
+        mock_responder = MockResponder()
+        self.context.injector.bind_instance(BaseResponder, mock_responder)
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id=V20CredFormat.Format.INDY.api,
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="indy-abc123",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(
+                    INDY_CRED_REQ, ident=V20CredFormat.Format.INDY.api
+                ),
+                AttachDecorator.data_base64(INDY_CRED_REQ, ident="indy-abc123"),
+            ],
+        )
+
+        cred_issue = V20CredIssue(
+            formats=[
+                V20CredFormat(
+                    attach_id=V20CredFormat.Format.INDY.api,
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            credentials_attach=[
+                AttachDecorator.data_base64(
+                    INDY_CRED, ident=V20CredFormat.Format.INDY.api
+                )
+            ],
+        )
+
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_issue=cred_issue,
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_EXTERNAL,
+            cred_request=cred_request,
+            role=V20CredExRecord.ROLE_ISSUER,
+            processed_attach_ids=[V20CredFormat.Format.INDY.api],
+            thread_id=thread_id,
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as mock_save, async_mock.patch.object(
+            V20CredExRecord,
+            "retrieve_by_conn_and_thread",
+            async_mock.CoroutineMock(),
+        ) as mock_retrieve, async_mock.patch.object(
+            V20CredFormat.Format, "handler"
+        ) as mock_handler:
+            mock_handler.return_value.receive_credential = async_mock.CoroutineMock()
+            mock_retrieve.return_value = stored_cx_rec
+            cred_issue = V20CredIssue(
+                formats=[
+                    V20CredFormat(
+                        attach_id="indy-abc123",
+                        format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                            V20CredFormat.Format.INDY.api
+                        ],
+                    )
+                ],
+                credentials_attach=[
+                    AttachDecorator.data_base64(INDY_CRED, ident="indy-abc123")
+                ],
+                more_available=1,
+            )
+            ret_cx_rec = await self.manager.receive_credential(
+                cred_issue,
+                connection_id,
+            )
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy") == INDY_CRED
+            assert ret_cx_rec.cred_issue.attachment_by_id("indy-abc123") == INDY_CRED
+            assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+            assert (
+                ret_cx_rec.multiple_issuance_state
+                == V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
+            )
+
+    async def test_receive_cred_multiple_cred_flow_x(self):
+        connection_id = "test_conn_id"
+
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+            multiple_issuance_state=V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE,
+        )
+
+        cred_issue = V20CredIssue(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            credentials_attach=[AttachDecorator.data_base64(LD_PROOF_VC, ident="0")],
+        )
+        with async_mock.patch.object(
+            V20CredExRecord, "retrieve_by_conn_and_thread", async_mock.CoroutineMock()
+        ) as mock_retrieve:
+            mock_retrieve.return_value = stored_cx_rec
+            with self.assertRaises(V20CredManagerError) as context:
+                await self.manager.receive_credential(
+                    cred_issue,
+                    connection_id,
+                )
+            assert (
+                f"in {V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE} multiple_issuance_state"
+                in str(context.exception)
+            )
 
     async def test_receive_cred_x_extra_formats(self):
         connection_id = "test_conn_id"
@@ -2327,6 +2877,43 @@ class TestV20CredManager(AsyncTestCase):
             save_ex.assert_called_once()
 
             assert ret_exchange.state == V20CredExRecord.STATE_ABANDONED
+
+    async def test_receive_problem_report_more_cred_flow(self):
+        connection_id = "connection-id"
+        stored_exchange = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+        )
+        problem = V20CredProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.STOP_MORE_CREDENTIAL_ISSUANCE.value,
+                "en": "Holder requests no more credentials of this type to be issued.",
+            }
+        )
+
+        with async_mock.patch.object(
+            V20CredExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20CredExRecord,
+            "retrieve_by_conn_and_thread",
+            async_mock.CoroutineMock(),
+        ) as retrieve_ex:
+            retrieve_ex.return_value = stored_exchange
+
+            ret_exchange = await self.manager.receive_problem_report(
+                problem, connection_id
+            )
+            retrieve_ex.assert_called_once_with(
+                self.session, connection_id, problem._thread_id
+            )
+            save_ex.assert_called_once()
+
+            assert (
+                ret_exchange.multiple_issuance_state
+                == V20CredExRecord.STATE_MULTIPLE_ISSUANCE_ABANDONED
+            )
 
     async def test_receive_problem_report_x(self):
         connection_id = "connection-id"
