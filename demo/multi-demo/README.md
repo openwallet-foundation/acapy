@@ -36,5 +36,5 @@ This will leave the agent's wallet data, so if you restart the agent it will mai
 - to remove the agent's wallet:
 
 ```bash
-docker volume rm docker-agent_wallet-db-data
+docker volume rm multi-demo_wallet-db-data
 ```
