@@ -78,7 +78,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as mock_perform, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
 
             res = await test_module.actionmenu_perform(self.request)
@@ -97,7 +96,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as mock_conn_record, async_mock.patch.object(
             test_module, "Perform", autospec=True
         ) as mock_perform:
-
             # Emulate storage not found (bad connection id)
             mock_conn_record.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -115,7 +113,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as mock_conn_record, async_mock.patch.object(
             test_module, "Perform", autospec=True
         ) as mock_perform:
-
             # Emulate connection not ready
             mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_conn_record.retrieve_by_id.return_value.is_ready = False
@@ -134,7 +131,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as menu_request, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
 
             res = await test_module.actionmenu_request(self.request)
@@ -153,7 +149,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as mock_conn_record, async_mock.patch.object(
             test_module, "Perform", autospec=True
         ) as mock_perform:
-
             # Emulate storage not found (bad connection id)
             mock_conn_record.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -171,7 +166,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as mock_conn_record, async_mock.patch.object(
             test_module, "Perform", autospec=True
         ) as mock_perform:
-
             # Emulate connection not ready
             mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_conn_record.retrieve_by_id.return_value.is_ready = False
@@ -190,7 +184,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as mock_menu, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_menu.deserialize = async_mock.MagicMock()
 
@@ -210,7 +203,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as mock_conn_record, async_mock.patch.object(
             test_module, "Menu", autospec=True
         ) as mock_menu:
-
             mock_conn_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_menu.deserialize = async_mock.MagicMock(
                 side_effect=test_module.BaseModelError("cannot deserialize")
@@ -228,7 +220,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as mock_conn_record, async_mock.patch.object(
             test_module, "Menu", autospec=True
         ) as mock_menu:
-
             mock_menu.deserialize = async_mock.MagicMock()
 
             # Emulate storage not found (bad connection id)
@@ -248,7 +239,6 @@ class TestActionMenuRoutes(AsyncTestCase):
         ) as mock_conn_record, async_mock.patch.object(
             test_module, "Menu", autospec=True
         ) as mock_menu:
-
             mock_menu.deserialize = async_mock.MagicMock()
 
             # Emulate connection not ready

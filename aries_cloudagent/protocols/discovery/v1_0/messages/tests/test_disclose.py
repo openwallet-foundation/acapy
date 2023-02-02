@@ -42,7 +42,6 @@ class TestDisclose(TestCase):
 
 
 class TestDiscloseSchema(TestCase):
-
     disclose = Disclose(protocols=[])
 
     def test_make_model(self):

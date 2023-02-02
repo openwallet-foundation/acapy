@@ -378,7 +378,7 @@ class BaseMultitenantManager(ABC):
                 )
 
             return wallet
-        except (RouteNotFoundError):
+        except RouteNotFoundError:
             pass
 
     async def get_profile_for_key(

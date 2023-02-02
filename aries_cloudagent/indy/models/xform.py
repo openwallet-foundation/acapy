@@ -30,7 +30,7 @@ async def indy_proof_req_preview2indy_requested_creds(
         "requested_predicates": {},
     }
 
-    for (referent, req_item) in indy_proof_req["requested_attributes"].items():
+    for referent, req_item in indy_proof_req["requested_attributes"].items():
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             presentation_request=indy_proof_req,
             referents=(referent,),
@@ -116,7 +116,7 @@ def indy_proof_req2non_revoc_intervals(indy_proof_req: dict):
     """Return non-revocation intervals by requested item referent in proof request."""
     non_revoc_intervals = {}
     for req_item_type in ("requested_attributes", "requested_predicates"):
-        for (reft, req_item) in indy_proof_req[req_item_type].items():
+        for reft, req_item in indy_proof_req[req_item_type].items():
             interval = req_item.get(
                 "non_revoked",
                 indy_proof_req.get("non_revoked"),
