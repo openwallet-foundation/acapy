@@ -879,7 +879,7 @@ async def _create_free_offer(
     preview_spec: dict = None,
     comment: str = None,
     trace_msg: bool = None,
-    multiple_available: bool = None,
+    multiple_available: int = 1,
 ):
     """Create a credential offer and related exchange record."""
 
@@ -962,7 +962,9 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
             preview_spec=preview_spec,
             comment=comment,
             trace_msg=trace_msg,
-            multiple_available=multiple_available,
+            multiple_available=multiple_available
+            if multiple_available and isinstance(multiple_available, int)
+            else 1,
         )
         result = cred_ex_record.serialize()
     except (
@@ -1043,7 +1045,9 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             preview_spec=preview_spec,
             comment=comment,
             trace_msg=trace_msg,
-            multiple_available=multiple_available,
+            multiple_available=multiple_available
+            if multiple_available and isinstance(multiple_available, int)
+            else 1,
         )
         result = cred_ex_record.serialize()
 
@@ -1149,7 +1153,9 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             if preview_spec
             else None,
             comment=None,
-            multiple_available=multiple_available,
+            multiple_available=multiple_available
+            if multiple_available and isinstance(multiple_available, int)
+            else 1,
         )
 
         result = cred_ex_record.serialize()
@@ -1467,7 +1473,9 @@ async def credential_exchange_issue(request: web.BaseRequest):
         (cred_ex_record, cred_issue_message) = await cred_manager.issue_credential(
             cred_ex_record,
             comment=comment,
-            more_available=more_available,
+            more_available=more_available
+            if more_available and isinstance(more_available, int)
+            else 0,
         )
 
         details = await _get_attached_credentials(profile, cred_ex_record)
