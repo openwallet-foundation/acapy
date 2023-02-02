@@ -3,6 +3,9 @@
 # To shut down the services run `docker-compose rm` - this will retain the postgres database, so you can change aca-py startup parameters
 # and restart the docker containers without losing your wallet data
 # If you want to delete your wallet data just run `docker volume ls -q | xargs docker volume rm`
+
+# Note this requires von-network (https://github.com/bcgov/von-network) and indy-tails-server (https://github.com/bcgov/indy-tails-server) are already running
+
 version: "3"
 services:
   vcr-agent:
@@ -41,7 +44,7 @@ services:
         --wallet-key 'key' \
         --wallet-storage-type 'postgres_storage' \
         --wallet-storage-config '{\"url\":\"wallet-db:5432\",\"max_connections\":5}' \
-        --wallet-storage-creds '{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}' \
+        --wallet-storage-creds '{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}' \
         --admin '0.0.0.0' 8010 \
         --admin-insecure-mode \
         --label 'tester_agent' \
@@ -58,12 +61,10 @@ services:
 #        --genesis-transactions-list 'ledgers.yaml' \
 
   wallet-db:
-    image: vcr-postgresql
+    image: postgres:12
     environment:
-      - POSTGRESQL_USER=DB_USER
-      - POSTGRESQL_PASSWORD=DB_PASSWORD
-      - POSTGRESQL_DATABASE=DB_USER
-      - POSTGRESQL_ADMIN_PASSWORD=mysecretpassword
+      - POSTGRES_USER=DB_USER
+      - POSTGRES_PASSWORD=DB_PASSWORD
     ports:
       - 5433:5432
     volumes:
