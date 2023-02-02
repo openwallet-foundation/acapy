@@ -15,7 +15,9 @@ async def secret_key_receiver(request: web.BaseRequest) -> json:
         # set verify signature token to true
         decoded_token = jwt.decode(request_token, options={"verify_signature": False})
         multitenant_mgr = context.profile.inject(BaseMultitenantManager)
-        wallet_record = await multitenant_mgr.update_wallet(decoded_token["wallet_id"], secret_key)
+        wallet_record = await multitenant_mgr.update_wallet(
+            decoded_token["wallet_id"], secret_key
+        )
         return web.json_response({"message": "Secret Key received successfully"})
     except Exception as e:
         return web.json_response({"error Message": str(e)})

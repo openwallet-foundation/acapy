@@ -4,7 +4,6 @@ from .. import routes as test_module
 
 
 class TestSecurity(AsyncTestCase):
-
     async def test_register(self):
         mock_app = async_mock.MagicMock()
         mock_app.add_routes = async_mock.MagicMock()
