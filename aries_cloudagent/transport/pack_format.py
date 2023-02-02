@@ -69,7 +69,6 @@ class PackWireFormat(BaseWireFormat):
 
         # packed messages are detected by the absence of @type
         if "@type" not in message_dict:
-
             try:
                 unpack = self.unpack(session, message_body, receipt)
                 message_json = await (

@@ -472,12 +472,10 @@ class V20PresManager:
         """
         # FIXME use transaction, fetch for_update
         async with self._profile.session() as session:
-            pres_ex_record = await (
-                V20PresExRecord.retrieve_by_tag_filter(
-                    session,
-                    {"thread_id": message._thread_id},
-                    {"connection_id": connection_id},
-                )
+            pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
+                session,
+                {"thread_id": message._thread_id},
+                {"connection_id": connection_id},
             )
 
             pres_ex_record.state = V20PresExRecord.STATE_ABANDONED

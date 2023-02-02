@@ -87,7 +87,6 @@ class TestRevocationRoutes(AsyncTestCase):
         ) as mock_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock()
 
             await test_module.revoke(self.request)
@@ -107,7 +106,6 @@ class TestRevocationRoutes(AsyncTestCase):
         ) as mock_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock()
 
             await test_module.revoke(self.request)
@@ -128,7 +126,6 @@ class TestRevocationRoutes(AsyncTestCase):
         ) as mock_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
             )

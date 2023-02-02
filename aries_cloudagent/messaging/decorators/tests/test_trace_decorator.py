@@ -4,7 +4,6 @@ from unittest import TestCase
 
 
 class TestTraceDecorator(TestCase):
-
     target_api = "http://example.com/api/trace/"
     full_thread_api = False
     target_msg = TRACE_MESSAGE_TARGET
@@ -20,7 +19,6 @@ class TestTraceDecorator(TestCase):
     outcome = "OK ..."
 
     def test_init_api(self):
-
         decorator = TraceDecorator(
             target=self.target_api,
             full_thread=self.full_thread_api,
@@ -29,7 +27,6 @@ class TestTraceDecorator(TestCase):
         assert decorator.full_thread == self.full_thread_api
 
     def test_init_message(self):
-
         x_msg_id = self.msg_id
         x_thread_id = self.thread_id
         x_trace_report = TraceReport(
@@ -64,7 +61,6 @@ class TestTraceDecorator(TestCase):
         assert trace_report.outcome == self.outcome
 
     def test_serialize_load(self):
-
         x_msg_id = self.msg_id
         x_thread_id = self.thread_id
         x_trace_report = TraceReport(

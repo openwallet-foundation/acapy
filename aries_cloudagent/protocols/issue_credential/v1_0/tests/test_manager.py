@@ -1357,7 +1357,6 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             V10CredentialExchange, "delete_record", autospec=True
         ) as delete_ex:
-
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     get_or_fetch_local_tails_path=async_mock.CoroutineMock()

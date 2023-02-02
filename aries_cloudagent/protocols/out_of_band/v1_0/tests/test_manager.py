@@ -91,7 +91,6 @@ from ..models.oob_record import OobRecord
 
 
 class TestConfig:
-
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_endpoint = "http://localhost"
@@ -712,7 +711,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert "Cannot create public invitation with" in str(context.exception)
 
     async def test_create_invitation_requests_attach_x_multi_use(self):
-
         with self.assertRaises(OutOfBandManagerError) as context:
             await self.manager.create_invitation(
                 public=False,
@@ -1094,7 +1092,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_oob.side_effect = (StorageNotFoundError,)
 
             with self.assertRaises(test_module.OutOfBandManagerError) as err:
-
                 await self.manager.receive_reuse_accepted_message(
                     reuse_msg_accepted, receipt, self.test_conn_rec
                 )

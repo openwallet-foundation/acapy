@@ -187,7 +187,6 @@ class TestWalletConfig(AsyncTestCase):
         ) as mock_seed_to_did, async_mock.patch.object(
             test_module, "add_or_update_version_to_storage", async_mock.CoroutineMock()
         ):
-
             with self.assertRaises(test_module.ConfigError):
                 await test_module.wallet_config(self.context, provision=True)
 

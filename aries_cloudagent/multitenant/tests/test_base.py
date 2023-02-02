@@ -209,7 +209,6 @@ class TestBaseMultitenantManager(AsyncTestCase):
                 )
 
     async def test_create_wallet_saves_wallet_record_creates_profile(self):
-
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.route_public_did = async_mock.CoroutineMock()
         self.context.injector.bind_instance(RouteManager, mock_route_manager)

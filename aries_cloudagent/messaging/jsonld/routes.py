@@ -84,7 +84,7 @@ async def sign(request: web.BaseRequest):
                 session, doc.get("credential"), doc.get("options"), body.get("verkey")
             )
             response["signed_doc"] = doc_with_proof
-    except (BaseJSONLDMessagingError) as err:
+    except BaseJSONLDMessagingError as err:
         response["error"] = str(err)
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
