@@ -464,7 +464,6 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_no_ledger(self):
-
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
         mock_route_manager.__aenter__ = async_mock.AsyncMock(

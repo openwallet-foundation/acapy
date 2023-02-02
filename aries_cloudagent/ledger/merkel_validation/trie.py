@@ -79,7 +79,7 @@ class SubTrie:
                             json.loads(rlp_decode(decoded_node[1])[0].decode("utf-8"))
                         ) == expected_value:
                             return True
-                except (DecodingError):
+                except DecodingError:
                     continue
             return False
         except Exception:

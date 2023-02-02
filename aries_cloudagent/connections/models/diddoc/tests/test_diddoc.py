@@ -26,7 +26,6 @@ from ..util import canon_did, canon_ref
 
 class TestDIDDoc(AsyncTestCase):
     async def test_basic(self):
-
         # One authn key by reference
         dd_in = {
             "@context": "https://w3id.org/did/v1",

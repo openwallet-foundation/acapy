@@ -259,7 +259,6 @@ class TestLinkedDataVerifiableCredential(TestCase):
         )
 
     async def test_sign_presentation_x_no_purpose_challenge(self):
-
         with self.assertRaises(LinkedDataProofException) as context:
             await sign_presentation(
                 presentation=PRESENTATION_UNSIGNED,

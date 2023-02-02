@@ -274,7 +274,6 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             "_did_info_for_did",
             async_mock.CoroutineMock(),
         ) as mock_did_info:
-
             suite = await self.handler._get_suite_for_detail(detail)
 
             assert suite.signature_type == detail.options.proof_type

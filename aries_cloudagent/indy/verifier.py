@@ -59,12 +59,12 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
 
         """
         msgs = []
-        for (req_proof_key, pres_key) in {
+        for req_proof_key, pres_key in {
             "revealed_attrs": "requested_attributes",
             "revealed_attr_groups": "requested_attributes",
             "predicates": "requested_predicates",
         }.items():
-            for (uuid, spec) in pres["requested_proof"].get(req_proof_key, {}).items():
+            for uuid, spec in pres["requested_proof"].get(req_proof_key, {}).items():
                 if (
                     "revocation"
                     not in cred_defs[
@@ -132,7 +132,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         LOGGER.debug(f">>> got non-revoc intervals: {non_revoc_intervals}")
         # timestamp for irrevocable credential
         cred_defs = []
-        for (index, ident) in enumerate(pres["identifiers"]):
+        for index, ident in enumerate(pres["identifiers"]):
             LOGGER.debug(f">>> got (index, ident): ({index},{ident})")
             cred_def_id = ident["cred_def_id"]
             multitenant_mgr = profile.inject_or(BaseMultitenantManager)
@@ -184,7 +184,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         revealed_groups = pres["requested_proof"].get("revealed_attr_groups", {})
         self_attested = pres["requested_proof"].get("self_attested_attrs", {})
         preds = pres["requested_proof"].get("predicates", {})
-        for (uuid, req_attr) in pres_req["requested_attributes"].items():
+        for uuid, req_attr in pres_req["requested_attributes"].items():
             if "name" in req_attr:
                 if uuid in revealed_attrs:
                     index = revealed_attrs[uuid]["sub_proof_index"]
@@ -258,7 +258,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                             f"{non_revoc_intervals[uuid]}"
                         )
 
-        for (uuid, req_pred) in pres_req["requested_predicates"].items():
+        for uuid, req_pred in pres_req["requested_predicates"].items():
             pred_spec = preds.get(uuid)
             if pred_spec is None or "sub_proof_index" not in pred_spec:
                 raise ValueError(
@@ -314,7 +314,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         if "proof" not in pres:
             raise ValueError("Presentation missing 'proof'")
 
-        for (uuid, req_pred) in pres_req["requested_predicates"].items():
+        for uuid, req_pred in pres_req["requested_predicates"].items():
             try:
                 canon_attr = canon(req_pred["name"])
                 matched = False
@@ -340,7 +340,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
         unrevealed_attrs = pres["requested_proof"].get("unrevealed_attrs", {})
         revealed_groups = pres["requested_proof"].get("revealed_attr_groups", {})
         self_attested = pres["requested_proof"].get("self_attested_attrs", {})
-        for (uuid, req_attr) in pres_req["requested_attributes"].items():
+        for uuid, req_attr in pres_req["requested_attributes"].items():
             if "name" in req_attr:
                 if uuid in revealed_attrs:
                     pres_req_attr_spec = {req_attr["name"]: revealed_attrs[uuid]}
@@ -375,7 +375,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     f"Request attribute missing 'name' and 'names': '{uuid}'"
                 )
 
-            for (attr, spec) in pres_req_attr_spec.items():
+            for attr, spec in pres_req_attr_spec.items():
                 try:
                     primary_enco = pres["proof"]["proofs"][spec["sub_proof_index"]][
                         "primary_proof"

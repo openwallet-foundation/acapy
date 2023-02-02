@@ -337,7 +337,6 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-
         mock_append_taa.return_value = "{}"
         mock_sign_submit.return_value = '{"op": "REPLY"}'
 
@@ -387,7 +386,6 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-
         mock_did = async_mock.MagicMock()
 
         future = asyncio.Future()
@@ -419,7 +417,6 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-
         mock_did = async_mock.MagicMock()
 
         future = asyncio.Future()
@@ -454,7 +451,6 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-
         mock_did = async_mock.MagicMock()
 
         future = asyncio.Future()
@@ -690,7 +686,6 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_is_ledger_read_only.return_value = False
@@ -736,7 +731,6 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
 
@@ -778,7 +772,6 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
         mock_is_ledger_read_only.return_value = False
@@ -823,7 +816,6 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_create_config,
         mock_set_proto,
     ):
-
         mock_wallet = async_mock.MagicMock()
         self.session.context.injector.bind_provider(BaseWallet, mock_wallet)
 

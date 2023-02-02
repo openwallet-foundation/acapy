@@ -157,7 +157,6 @@ class TestSchemaRoutes(AsyncTestCase):
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             test_module, "TransactionManager", async_mock.MagicMock()
         ) as mock_txn_mgr:
-
             mock_txn_mgr.return_value = async_mock.MagicMock(
                 create_record=async_mock.CoroutineMock(
                     side_effect=test_module.StorageError()

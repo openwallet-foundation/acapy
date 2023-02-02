@@ -4,7 +4,6 @@ from unittest import TestCase
 
 
 class TestThreadDecorator(TestCase):
-
     LOCALE = "en-ca"
     LOCALIZABLE = ["a", "b"]
     CATALOGS = ["http://192.168.56.111/my-project/catalog.json"]

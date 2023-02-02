@@ -84,7 +84,6 @@ class TestConnectionInvitation(TestCase):
 
 
 class TestConnectionInvitationSchema(TestCase):
-
     connection_invitation = ConnectionInvitation(
         label="label", did="did:sov:QmWbsNYhMrjHiqZDTUTEJs"
     )

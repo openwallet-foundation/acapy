@@ -150,7 +150,7 @@ class BaseConnectionManager:
                 routing_keys = [*routing_keys, *mediator_routing_keys]
                 svc_endpoints = [mediation_record.endpoint]
 
-        for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
+        for endpoint_index, svc_endpoint in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
             service = Service(
                 did_info.did,

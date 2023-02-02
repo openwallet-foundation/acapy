@@ -360,7 +360,6 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_conn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_mgr.return_value.create_invitation = async_mock.CoroutineMock(
                 return_value=(
                     async_mock.MagicMock(  # connection record
@@ -543,7 +542,6 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_conn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_conn_mgr.return_value.create_request = async_mock.CoroutineMock()
 
