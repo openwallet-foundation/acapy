@@ -1,4 +1,4 @@
-ARG python_version=3.6.13
+ARG python_version=3.9.16
 FROM python:${python_version}-slim-bullseye AS build
 
 WORKDIR /src
