@@ -327,6 +327,7 @@ class ConnRecord(BaseRecord):
 
         if their_role:
             post_filter["their_role"] = cls.Role.get(their_role).rfc160
+            tag_filter["their_role"] = cls.Role.get(their_role).rfc160
 
         return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
 
