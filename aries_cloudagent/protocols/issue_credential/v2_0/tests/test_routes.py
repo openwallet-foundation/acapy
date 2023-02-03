@@ -6,6 +6,7 @@ from .....admin.request_context import AdminRequestContext
 from .. import routes as test_module
 from ..formats.indy.handler import IndyCredFormatHandler
 from ..formats.ld_proof.handler import LDProofCredFormatHandler
+from ..formats.ld_proof.models.tests import test_cred_detail as ld_proof_test_module
 from ..messages.cred_format import V20CredFormat
 
 from . import (
@@ -29,43 +30,32 @@ class TestV20CredRoutes(AsyncTestCase):
             __getitem__=lambda _, k: self.request_dict[k],
         )
 
-    async def test_validate_cred_filter_schema(self):
-        schema = test_module.V20CredFilterSchema()
-        schema.validate_fields({"indy": {"issuer_did": TEST_DID}})
-        schema.validate_fields(
-            {"indy": {"issuer_did": TEST_DID, "schema_version": "1.0"}}
-        )
-        schema.validate_fields(
-            {
-                "indy": {"issuer_did": TEST_DID},
-                "ld_proof": {"credential": {}, "options": {}},
-            }
-        )
-        schema.validate_fields(
-            {
-                "indy": {},
-                "ld_proof": {"credential": {}, "options": {}},
-            }
-        )
-        with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields({})
-        with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields(["hopeless", "stop"])
-        with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields({"veres-one": {"no": "support"}})
-
     async def test_validate_create_schema(self):
         schema = test_module.V20IssueCredSchemaCore()
         schema.validate(
             {
-                "filter": {"indy": {"issuer_did": TEST_DID}},
+                "filter_": {"indy-0": {"issuer_did": TEST_DID}},
                 "credential_preview": {"..": ".."},
             }
         )
-        schema.validate({"filter": {"ld_proof": {"..": ".."}}})
+        schema.validate({"filter_": {"ld_proof": ld_proof_test_module.VC_DETAIL}})
 
         with self.assertRaises(test_module.ValidationError):
-            schema.validate({"filter": {"indy": {"..": ".."}}})
+            schema.validate({"filter_": {"indy": {"..": ".."}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"indy-0": {"issuer_did": TEST_DID}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"ld_proof": {"...": "..."}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"random": {"..": ".."}}})
+
+    async def test_validate_request_free_schema(self):
+        schema = test_module.V20CredRequestFreeSchema()
+        schema.validate({"filter_": {"ld_proof": ld_proof_test_module.VC_DETAIL}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"ld_proof": {"...": "..."}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"random": {"..": ".."}}})
 
     async def test_validate_bound_offer_request_schema(self):
         schema = test_module.V20CredBoundOfferRequestSchema()
@@ -74,12 +64,19 @@ class TestV20CredRoutes(AsyncTestCase):
             {"filter_": {"indy": {"issuer_did": TEST_DID}}, "counter_preview": {}}
         )
         schema.validate_fields(
-            {"filter_": {"ld_proof": {"issuer_did": TEST_DID}}, "counter_preview": {}}
+            {
+                "filter_": {"ld_proof": ld_proof_test_module.VC_DETAIL},
+                "counter_preview": {},
+            }
         )
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"filter_": {"indy": {"issuer_did": TEST_DID}}})
+        with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"filter_": {"ld_proof": {"issuer_did": TEST_DID}}})
+        with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"counter_preview": {}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"filter_": {"random": {}}, "counter_preview": {}})
 
     async def test_credential_exchange_list(self):
         self.request.query = {

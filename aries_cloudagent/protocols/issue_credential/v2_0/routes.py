@@ -52,6 +52,37 @@ from .formats.handler import V20CredFormatError
 from .formats.ld_proof.models.cred_detail import LDProofVCDetailSchema
 
 LOGGER = logging.getLogger(__name__)
+_FILTER_EXAMPLE = {
+    "indy": {
+        "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+        "issuer_did": "WgWxqztrNooG92RXvxSTWv",
+        "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+        "schema_issuer_did": "WgWxqztrNooG92RXvxSTWv",
+        "schema_name": "preferences",
+        "schema_version": "1.0",
+    },
+    "ld_proof": {
+        "credential": {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+            ],
+            "credentialSubject": {
+                "familyName": "SMITH",
+                "gender": "Male",
+                "givenName": "JOHN",
+                "type": ["PermanentResident", "Person"],
+            },
+            "description": "Government of Example Permanent Resident Card.",
+            "identifier": "83627465",
+            "issuanceDate": "2019-12-03T12:19:52Z",
+            "issuer": "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th",
+            "name": "Permanent Resident Card",
+            "type": ["VerifiableCredential", "PermanentResidentCard"],
+        },
+        "options": {"proofType": "Ed25519Signature2018"},
+    },
+}
 
 
 class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
@@ -154,48 +185,14 @@ class V20CredFilterIndySchema(OpenAPISchema):
     )
 
 
-class V20CredFilterSchema(OpenAPISchema):
-    """Credential filtration criteria."""
-
-    indy = fields.Nested(
-        V20CredFilterIndySchema,
-        required=False,
-        description="Credential filter for indy",
-    )
-    ld_proof = fields.Nested(
-        LDProofVCDetailSchema,
-        required=False,
-        description="Credential filter for linked data proof",
-    )
-
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
-
-        Data must have indy, ld_proof, or both.
-
-        Args:
-            data: The data to validate
-
-        Raises:
-            ValidationError: if data has neither indy nor ld_proof
-
-        """
-        if not any(f.api in data for f in V20CredFormat.Format):
-            raise ValidationError(
-                "V20CredFilterSchema requires indy, ld_proof, or both"
-            )
-
-
 class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     """Filter, auto-remove, comment, trace."""
 
-    filter_ = fields.Nested(
-        V20CredFilterSchema,
+    filter_ = fields.Dict(
         required=True,
         data_key="filter",
         description="Credential specification criteria by format",
+        example=_FILTER_EXAMPLE,
     )
     auto_remove = fields.Bool(
         description=(
@@ -224,22 +221,36 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
 
     @validates_schema
     def validate(self, data, **kwargs):
-        """Make sure preview is present when indy format is present."""
-
-        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
-            raise ValidationError(
-                "Credential preview is required if indy filter is present"
-            )
-
-
-class V20CredFilterLDProofSchema(OpenAPISchema):
-    """Credential filtration criteria."""
-
-    ld_proof = fields.Nested(
-        LDProofVCDetailSchema,
-        required=True,
-        description="Credential filter for linked data proof",
-    )
+        """Validate filter and checks for preview when indy format is present."""
+        filter_dict = data.get("filter_")
+        filter_attach_ids_handled = []
+        if filter_dict:
+            for attach_id in filter_dict.keys():
+                if "indy" in attach_id:
+                    try:
+                        V20CredFilterIndySchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "V20CredFilterIndySchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    if not data.get("credential_preview"):
+                        raise ValidationError(
+                            "Credential preview is required if indy filter is present"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+                if "ld_proof" in attach_id:
+                    try:
+                        LDProofVCDetailSchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            f"LDProofVCDetailSchema schema validation failed for {attach_id}"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+            if len(filter_attach_ids_handled) == 0:
+                raise ValidationError(
+                    "V20IssueCredSchemaCore requires indy, ld_proof, or both"
+                )
 
 
 class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
@@ -250,12 +261,11 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
         required=True,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
     )
-    # Request can only start with LD Proof
-    filter_ = fields.Nested(
-        V20CredFilterLDProofSchema,
+    filter_ = fields.Dict(
         required=True,
         data_key="filter",
         description="Credential specification criteria by format",
+        example=_FILTER_EXAMPLE,
     )
     auto_remove = fields.Bool(
         description=(
@@ -286,6 +296,26 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
         required=False,
     )
 
+    @validates_schema
+    def validate(self, data, **kwargs):
+        """Validate filter and checks for preview when indy format is present."""
+        filter_dict = data.get("filter_")
+        filter_attach_ids_handled = []
+        if filter_dict:
+            for attach_id in filter_dict.keys():
+                if "ld_proof" in attach_id:
+                    try:
+                        LDProofVCDetailSchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            f"LDProofVCDetailSchema schema validation failed for {attach_id}"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+            if len(filter_attach_ids_handled) == 0:
+                raise ValidationError(
+                    "Credential filter for linked data proof is required"
+                )
+
 
 class V20CredExFreeSchema(V20IssueCredSchemaCore):
     """Request schema for sending credential admin message."""
@@ -300,11 +330,11 @@ class V20CredExFreeSchema(V20IssueCredSchemaCore):
 class V20CredBoundOfferRequestSchema(OpenAPISchema):
     """Request schema for sending bound credential offer admin message."""
 
-    filter_ = fields.Nested(
-        V20CredFilterSchema,
+    filter_ = fields.Dict(
         required=False,
         data_key="filter",
         description="Credential specification criteria by format",
+        example=_FILTER_EXAMPLE,
     )
     counter_preview = fields.Nested(
         V20CredPreviewSchema,
@@ -339,10 +369,32 @@ class V20CredBoundOfferRequestSchema(OpenAPISchema):
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate schema fields: need both filter and counter_preview or neither."""
-        if (
-            "filter_" in data
-            and ("indy" in data["filter_"] or "ld_proof" in data["filter_"])
-        ) ^ ("counter_preview" in data):
+        filter_dict = data.get("filter_")
+        filter_attach_ids_handled = []
+        if filter_dict:
+            for attach_id in filter_dict.keys():
+                if "indy" in attach_id:
+                    try:
+                        V20CredFilterIndySchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "V20CredFilterIndySchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+                if "ld_proof" in attach_id:
+                    try:
+                        LDProofVCDetailSchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            f"LDProofVCDetailSchema schema validation failed for {attach_id}"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+            if len(filter_attach_ids_handled) == 0:
+                raise ValidationError(
+                    "V20CredBoundOfferRequestSchema requires indy, ld_proof, or both"
+                )
+        if (len(filter_attach_ids_handled) > 0) ^ ("counter_preview" in data):
             raise ValidationError(
                 f"V20CredBoundOfferRequestSchema\n{data}\nrequires "
                 "both indy/ld_proof filter and counter_preview or neither"
