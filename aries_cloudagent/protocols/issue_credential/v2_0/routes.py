@@ -244,7 +244,8 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
                         LDProofVCDetailSchema().load(filter_dict.get(attach_id))
                     except ValidationError:
                         raise ValidationError(
-                            f"LDProofVCDetailSchema schema validation failed for {attach_id}"
+                            "LDProofVCDetailSchema schema validation "
+                            f"failed for {attach_id}"
                         )
                     filter_attach_ids_handled.append(attach_id)
             if len(filter_attach_ids_handled) == 0:
@@ -308,7 +309,8 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
                         LDProofVCDetailSchema().load(filter_dict.get(attach_id))
                     except ValidationError:
                         raise ValidationError(
-                            f"LDProofVCDetailSchema schema validation failed for {attach_id}"
+                            "LDProofVCDetailSchema schema validation "
+                            f"failed for {attach_id}"
                         )
                     filter_attach_ids_handled.append(attach_id)
             if len(filter_attach_ids_handled) == 0:
@@ -387,7 +389,8 @@ class V20CredBoundOfferRequestSchema(OpenAPISchema):
                         LDProofVCDetailSchema().load(filter_dict.get(attach_id))
                     except ValidationError:
                         raise ValidationError(
-                            f"LDProofVCDetailSchema schema validation failed for {attach_id}"
+                            "LDProofVCDetailSchema schema validation "
+                            f"failed for {attach_id}"
                         )
                     filter_attach_ids_handled.append(attach_id)
             if len(filter_attach_ids_handled) == 0:
