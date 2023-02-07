@@ -98,11 +98,6 @@ const config = {
             href: 'https://aries-cloud-agent-python.readthedocs.io/en/latest/'
           },
           {
-            type: 'docsVersionDropdown',
-            position: 'right',
-            sidebarId: '1.0',
-          },
-          {
             label: 'GitHub',
             href: `https://github.com/${process.env.ORGANIZATION_NAME}/${process.env.PROJECT_NAME}`,
             position: 'right',
