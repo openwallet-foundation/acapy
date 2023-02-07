@@ -7,3 +7,5 @@ docs
 dist
 test-reports
 .python-version
+docker
+env
