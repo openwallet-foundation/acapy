@@ -10,6 +10,8 @@ from ......messaging.valid import UUIDFour
 
 from .. import UNENCRYPTED_TAGS
 
+LD_PROOF_KEY = "ld_proof"
+
 
 class V20CredExRecordLDProof(BaseRecord):
     """Credential exchange linked data proof detail record."""
@@ -30,6 +32,7 @@ class V20CredExRecordLDProof(BaseRecord):
         *,
         cred_ex_id: str = None,
         cred_id_stored: str = None,
+        attach_id: str = None,
         **kwargs,
     ):
         """Initialize LD Proof credential exchange record details."""
@@ -37,6 +40,7 @@ class V20CredExRecordLDProof(BaseRecord):
 
         self.cred_ex_id = cred_ex_id
         self.cred_id_stored = cred_id_stored
+        self.attach_id = attach_id or LD_PROOF_KEY
 
     @property
     def cred_ex_ld_proof_id(self) -> str:
@@ -46,7 +50,13 @@ class V20CredExRecordLDProof(BaseRecord):
     @property
     def record_value(self) -> dict:
         """Accessor for the JSON record value generated for this credential exchange."""
-        return {prop: getattr(self, prop) for prop in ("cred_id_stored",)}
+        return {
+            prop: getattr(self, prop)
+            for prop in (
+                "cred_id_stored",
+                "attach_id",
+            )
+        }
 
     @classmethod
     async def query_by_cred_ex_id(
@@ -88,4 +98,8 @@ class V20CredExRecordLDProofSchema(BaseRecordSchema):
         required=False,
         description="Credential identifier stored in wallet",
         example=UUIDFour.EXAMPLE,
+    )
+    attach_id = fields.Str(
+        required=False,
+        description="Format attachment identifier",
     )

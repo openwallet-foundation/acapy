@@ -146,9 +146,12 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_handler.return_value.get_detail_record = async_mock.CoroutineMock(
                 side_effect=[
-                    async_mock.MagicMock(  # indy
-                        serialize=async_mock.MagicMock(return_value={"...": "..."})
-                    ),
+                    [
+                        async_mock.MagicMock(  # indy
+                            serialize=async_mock.MagicMock(return_value={"...": "..."}),
+                            attach_id="indy",
+                        )
+                    ],
                     None,  # ld_proof
                 ]
             )
@@ -182,12 +185,20 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_handler.return_value.get_detail_record = async_mock.CoroutineMock(
                 side_effect=[
-                    async_mock.MagicMock(  # indy
-                        serialize=async_mock.MagicMock(return_value={"in": "dy"})
-                    ),
-                    async_mock.MagicMock(  # ld_proof
-                        serialize=async_mock.MagicMock(return_value={"ld": "proof"})
-                    ),
+                    [
+                        async_mock.MagicMock(  # indy
+                            serialize=async_mock.MagicMock(return_value={"in": "dy"}),
+                            attach_id=None,
+                        )
+                    ],
+                    [
+                        async_mock.MagicMock(  # ld_proof
+                            serialize=async_mock.MagicMock(
+                                return_value={"ld": "proof"}
+                            ),
+                            attach_id="ld_proof",
+                        )
+                    ],
                 ]
             )
 
@@ -1214,9 +1225,12 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_handler.return_value.get_detail_record = async_mock.CoroutineMock(
                 side_effect=[
-                    async_mock.MagicMock(  # indy
-                        serialize=async_mock.MagicMock(return_value={"...": "..."})
-                    ),
+                    [
+                        async_mock.MagicMock(  # indy
+                            serialize=async_mock.MagicMock(return_value={"...": "..."}),
+                            attach_id=None,
+                        )
+                    ],
                     None,  # ld_proof
                 ]
             )
@@ -1407,9 +1421,12 @@ class TestV20CredRoutes(AsyncTestCase):
             )
             mock_handler.return_value.get_detail_record = async_mock.CoroutineMock(
                 side_effect=[
-                    async_mock.MagicMock(  # indy
-                        serialize=async_mock.MagicMock(return_value={"...": "..."})
-                    ),
+                    [
+                        async_mock.MagicMock(  # indy
+                            serialize=async_mock.MagicMock(return_value={"...": "..."}),
+                            attach_id="indy",
+                        )
+                    ],
                     None,  # ld_proof
                 ]
             )
@@ -1458,9 +1475,12 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_cx_rec = async_mock.MagicMock()
 
-            mock_indy_get_detail_record.return_value = async_mock.MagicMock(  # indy
-                serialize=async_mock.MagicMock(return_value={"...": "..."})
-            )
+            mock_indy_get_detail_record.return_value = [
+                async_mock.MagicMock(  # indy
+                    serialize=async_mock.MagicMock(return_value={"...": "..."}),
+                    attach_id="indy-0",
+                )
+            ]
             mock_ld_proof_get_detail_record.return_value = None  # ld_proof
 
             mock_cred_mgr.return_value.store_credential.return_value = mock_cx_rec
@@ -1474,7 +1494,7 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
-                    "indy": {"...": "..."},
+                    "indy-0": {"...": "..."},
                     "ld_proof": None,
                 }
             )

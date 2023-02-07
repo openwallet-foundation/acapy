@@ -7,9 +7,18 @@ from ...message_types import ATTACHMENT_FORMAT, CRED_20_PROPOSAL
 from ...messages.cred_format import V20CredFormat
 from ...messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
 from ...messages.cred_proposal import V20CredProposal
+from ...messages.cred_offer import V20CredOffer
+from ...messages.cred_request import V20CredRequest
 
 from .. import cred_ex_record as test_module
 from ..cred_ex_record import V20CredExRecord
+
+from ...formats.indy.tests.test_handler import (
+    INDY_OFFER,
+    CRED_20_OFFER,
+    CRED_20_REQUEST,
+    INDY_CRED_REQ,
+)
 
 TEST_DID = "LjgpST2rjsoxYegQDRm7EL"
 SCHEMA_NAME = "bc-reg"
@@ -133,3 +142,54 @@ class TestV20CredExRecord(AsyncTestCase):
             mock_save.side_effect = test_module.StorageError()
             await record.save_error_state(session, reason="test")
             mock_log_exc.assert_called_once()
+
+    def test_by_format(self):
+        attr_values = {
+            "legalName": "value",
+            "jurisdictionId": "value",
+            "incorporationDate": "value",
+        }
+
+        cred_preview = V20CredPreview(
+            attributes=[
+                V20CredAttrSpec(name=k, value=v) for (k, v) in attr_values.items()
+            ]
+        )
+        cred_offer = V20CredOffer(
+            credential_preview=cred_preview,
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_OFFER][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            offers_attach=[AttachDecorator.data_base64(INDY_OFFER, ident="0")],
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id=V20CredFormat.Format.INDY.api,
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(
+                    INDY_CRED_REQ, ident=V20CredFormat.Format.INDY.api
+                )
+            ],
+        )
+
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_offer=cred_offer.serialize(),
+            cred_request=cred_request.serialize(),
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_REQUEST_RECEIVED,
+        )
+
+        assert cred_ex_record.by_format

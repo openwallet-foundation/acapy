@@ -5,7 +5,7 @@ from ......vc.ld_proofs.error import LinkedDataProofException
 from ......vc.ld_proofs.check import get_properties_without_context
 import logging
 
-from typing import Mapping
+from typing import Mapping, Sequence, Optional
 
 from marshmallow import EXCLUDE, INCLUDE
 
@@ -121,22 +121,24 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         # Validate, throw if not valid
         Schema(unknown=EXCLUDE).load(attachment_data)
 
-    async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordLDProof:
+    async def get_detail_record(
+        self, cred_ex_id: str
+    ) -> Optional[Sequence[V20CredExRecordLDProof]]:
         """Retrieve credential exchange detail record by cred_ex_id."""
 
         async with self.profile.session() as session:
             records = await LDProofCredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id
             )
-
-        if len(records) > 1:
-            LOGGER.warning(
-                "Cred ex id %s has %d %s detail records: should be 1",
-                cred_ex_id,
-                len(records),
-                LDProofCredFormatHandler.format.api,
-            )
-        return records[0] if records else None
+        # Not valid with multi-cred feature
+        # if len(records) > 1:
+        #     LOGGER.warning(
+        #         "Cred ex id %s has %d %s detail records: should be 1",
+        #         cred_ex_id,
+        #         len(records),
+        #         LDProofCredFormatHandler.format.api,
+        #     )
+        return records if records else None
 
     def get_format_identifier(self, message_type: str) -> str:
         """Get attachment format identifier for format and message combination.
@@ -648,7 +650,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         # Create detail record with cred_id_stored
         detail_record = V20CredExRecordLDProof(
-            cred_ex_id=cred_ex_record.cred_ex_id, cred_id_stored=vc_record.record_id
+            cred_ex_id=cred_ex_record.cred_ex_id,
+            cred_id_stored=vc_record.record_id,
+            attach_id=attach_id,
         )
 
         # save credential and detail record
