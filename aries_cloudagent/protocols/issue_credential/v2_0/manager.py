@@ -829,16 +829,19 @@ class V20CredManager:
         # Format specific store_credential handler
         for format in cred_ex_record.cred_issue.formats:
             cred_format = V20CredFormat.Format.get(format.format)
-            attach_id = (
-                format.attach_id if format.attach_id != cred_format.api else None
-            )
+
             if cred_format:
+                attach_id = (
+                    format.attach_id if format.attach_id != cred_format.api else None
+                )
+                if attach_id in to_exclude:
+                    continue
                 await cred_format.handler(self.profile).store_credential(
-                    cred_ex_record, cred_id, attach_id
+                    cred_ex_record=cred_ex_record, cred_id=cred_id, attach_id=attach_id
                 )
                 # TODO: if storing multiple credentials we can't reuse the same id
                 cred_id = None
-                if attach_id and attach_id not in to_exclude:
+                if attach_id:
                     cred_ex_record.store_attach_id(attach_id)
 
         return cred_ex_record
