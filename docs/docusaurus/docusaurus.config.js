@@ -34,10 +34,10 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          // routeBasePath: '/', // Serve the docs at the site's root
+          routeBasePath: '/', // Serve the docs at the site's root
           sidebarPath: require.resolve('./sidebars.js'),
           // Remove this to remove the "edit this page" links.
-          editUrl: `https://github.com/${process.env.ORGANIZATION_NAME}/${process.env.PROJECT_NAME}/tree/${process.env.BRANCH_NAME}/docs/docusaurus`,
+          editUrl: `https://github.com/${process.env.ORGANIZATION_NAME}/${process.env.PROJECT_NAME}/tree/${process.env.BRANCH_NAME}`,
         },
         blog: false, // Disable the blog plugin
         theme: {
@@ -76,22 +76,9 @@ const config = {
         title: 'Aries Cloud Agent Python',
         logo: {
           alt: 'ACA-Py',
-          src: 'img/logo.png',
+          src: 'img/logo.svg',
         },
         items: [
-          {
-            type: 'doc',
-            docId: 'index',
-            position: 'left',
-            label: 'Documentation',
-          },
-          {
-            type: 'doc',
-            docId: 'index',
-            position: 'left',
-            label: 'Code',
-            docsPluginId: 'code'
-          },
           {
             label: 'GitHub',
             href: `https://github.com/${process.env.ORGANIZATION_NAME}/${process.env.PROJECT_NAME}`,
