@@ -47,6 +47,8 @@ class TestV20CredProposal(AsyncTestCase):
         )
         assert cred_proposal.credential_preview == TEST_PREVIEW
         assert cred_proposal.attachment() == TEST_INDY_FILTER
+        assert cred_proposal.attachment_by_id("indy") == TEST_INDY_FILTER
+        assert not cred_proposal.attachment_by_id("random")
         assert cred_proposal._type == DIDCommPrefix.qualify_current(CRED_20_PROPOSAL)
 
     async def test_attachment_no_target_format(self):

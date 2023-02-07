@@ -537,11 +537,15 @@ async def _get_attached_credentials(
     result = {}
 
     for fmt in V20CredFormat.Format:
-        detail_record = await fmt.handler(profile).get_detail_record(
+        detail_records = await fmt.handler(profile).get_detail_record(
             cred_ex_record.cred_ex_id
         )
-        if detail_record:
-            result[fmt.api] = detail_record
+        if detail_records:
+            for detail_record in detail_records:
+                if not detail_record.attach_id or detail_record.attach_id == fmt.api:
+                    result[fmt.api] = detail_record
+                elif detail_record.attach_id:
+                    result[detail_record.attach_id] = detail_record
 
     return result
 
@@ -551,10 +555,19 @@ def _format_result_with_details(
 ) -> Mapping:
     """Get credential exchange result with detail records."""
     result = {"cred_ex_record": cred_ex_record.serialize()}
-    for fmt in V20CredFormat.Format:
-        ident = fmt.api
-        detail_record = details.get(ident)
-        result[ident] = detail_record.serialize() if detail_record else None
+    detail_keys = list(details.keys())
+    formats_added = set()
+    for key in detail_keys:
+        if V20CredFormat.Format.INDY.api in key:
+            formats_added.add(V20CredFormat.Format.INDY.api)
+        if V20CredFormat.Format.LD_PROOF.api in key:
+            formats_added.add(V20CredFormat.Format.LD_PROOF.api)
+        detail_record = details.get(key)
+        result[key] = detail_record.serialize()
+    if V20CredFormat.Format.INDY.api not in formats_added:
+        result[V20CredFormat.Format.INDY.api] = None
+    if V20CredFormat.Format.LD_PROOF.api not in formats_added:
+        result[V20CredFormat.Format.LD_PROOF.api] = None
     return result
 
 

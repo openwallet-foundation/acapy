@@ -294,8 +294,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         with async_mock.patch.object(
             INDY_LOGGER, "warning", async_mock.MagicMock()
         ) as mock_warning:
-            assert await self.handler.get_detail_record(cred_ex_id) in details_indy
-            mock_warning.assert_called_once()
+            assert await self.handler.get_detail_record(cred_ex_id) == details_indy
 
     async def test_check_uniqueness(self):
         with async_mock.patch.object(
@@ -1495,15 +1494,30 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                     get_or_fetch_local_tails_path=async_mock.CoroutineMock()
                 )
             )
-            mock_get_detail_record.return_value = async_mock.MagicMock(
-                cred_request_metadata=cred_req_meta,
-                save=async_mock.CoroutineMock(),
-            )
+            mock_get_detail_record.return_value = [
+                async_mock.MagicMock(
+                    cred_request_metadata=cred_req_meta,
+                    attach_id="indy-0",
+                    save=async_mock.CoroutineMock(),
+                )
+            ]
 
             self.ledger.get_credential_definition.reset_mock()
             await self.handler.store_credential(
                 stored_cx_rec, cred_id=cred_id, attach_id="indy-0"
             )
+            mock_get_detail_record.return_value = [
+                async_mock.MagicMock(
+                    cred_request_metadata=cred_req_meta,
+                    attach_id="indy-0",
+                    save=async_mock.CoroutineMock(),
+                ),
+                async_mock.MagicMock(
+                    cred_request_metadata=cred_req_meta,
+                    attach_id="indy-1",
+                    save=async_mock.CoroutineMock(),
+                ),
+            ]
             await self.handler.store_credential(
                 stored_cx_rec, cred_id=cred_id, attach_id="indy-1"
             )
@@ -1611,10 +1625,12 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
                     get_or_fetch_local_tails_path=async_mock.CoroutineMock()
                 )
             )
-            mock_get_detail_record.return_value = async_mock.MagicMock(
-                cred_request_metadata=cred_req_meta,
-                save=async_mock.CoroutineMock(),
-            )
+            mock_get_detail_record.return_value = [
+                async_mock.MagicMock(
+                    cred_request_metadata=cred_req_meta,
+                    save=async_mock.CoroutineMock(),
+                )
+            ]
 
             self.ledger.get_credential_definition.reset_mock()
             await self.handler.store_credential(stored_cx_rec, cred_id=cred_id)
@@ -1706,10 +1722,13 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         ) as mock_get_detail_record, async_mock.patch.object(
             test_module.RevocationRegistry, "from_definition", async_mock.MagicMock()
         ) as mock_rev_reg:
-            mock_get_detail_record.return_value = async_mock.MagicMock(
-                cred_request_metadata=cred_req_meta,
-                save=async_mock.CoroutineMock(),
-            )
+            mock_get_detail_record.return_value = [
+                async_mock.MagicMock(
+                    cred_request_metadata=cred_req_meta,
+                    attach_id="0",
+                    save=async_mock.CoroutineMock(),
+                )
+            ]
             mock_rev_reg.return_value = async_mock.MagicMock(
                 get_or_fetch_local_tails_path=async_mock.CoroutineMock()
             )

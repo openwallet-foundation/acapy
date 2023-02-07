@@ -130,6 +130,7 @@ class TestV20CredIssue(AsyncTestCase):
             TestV20CredIssue.CRED_ISSUE_MULTIPLE.attachment_by_id("indy-1")
             == TestV20CredIssue.INDY_CRED
         )
+        assert not TestV20CredIssue.CRED_ISSUE_MULTIPLE.attachment_by_id("indy")
         cred_issue_single = deepcopy(TestV20CredIssue.CRED_ISSUE)
         cred_issue_single.add_attachments(
             V20CredFormat(

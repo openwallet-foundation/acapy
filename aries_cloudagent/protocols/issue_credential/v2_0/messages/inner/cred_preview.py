@@ -9,6 +9,7 @@ from ......wallet.util import b64_to_str
 
 from .....didcomm_prefix import DIDCommPrefix
 
+from ...messages.cred_format import V20CredFormat
 from ...message_types import CRED_20_PREVIEW
 
 
@@ -207,7 +208,7 @@ class V20CredPreviewSchema(BaseModelSchema):
     def check_cred_ident_in_keys(self, attr_dict):
         """Check for indy or ld_proof in attachment identifier."""
         for key, value in attr_dict.items():
-            if "indy" in key or "ld_proof" in key:
+            if V20CredFormat.Format.INDY.api in key:
                 return True
         return False
 

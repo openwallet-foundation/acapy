@@ -796,9 +796,10 @@ class V20CredManager:
                 )
         else:
             cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_RECEIVED
-            cred_ex_record.multiple_issuance_state = (
-                V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
-            )
+            if cred_ex_record.multiple_credentials:
+                cred_ex_record.multiple_issuance_state = (
+                    V20CredExRecord.STATE_MULTIPLE_ISSUANCE_COMPLETE
+                )
 
         async with self._profile.session() as session:
             await cred_ex_record.save(session, reason="receive v2.0 credential issue")

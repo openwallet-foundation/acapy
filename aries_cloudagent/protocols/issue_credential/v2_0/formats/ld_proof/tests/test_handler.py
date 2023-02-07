@@ -187,8 +187,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         with async_mock.patch.object(
             LD_PROOF_LOGGER, "warning", async_mock.MagicMock()
         ) as mock_warning:
-            assert await self.handler.get_detail_record(cred_ex_id) in details_ld_proof
-            mock_warning.assert_called_once()
+            assert await self.handler.get_detail_record(cred_ex_id) == details_ld_proof
 
     async def test_assert_can_issue_with_id_and_proof_type(self):
         with self.assertRaises(V20CredFormatError) as context:

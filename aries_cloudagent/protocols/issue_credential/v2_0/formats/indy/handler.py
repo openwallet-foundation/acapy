@@ -4,7 +4,7 @@ import logging
 
 from marshmallow import RAISE
 import json
-from typing import Mapping, Tuple
+from typing import Mapping, Tuple, Sequence, Optional
 import asyncio
 
 from ......cache.base import BaseCache
@@ -87,22 +87,24 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         # Validate, throw if not valid
         Schema(unknown=RAISE).load(attachment_data)
 
-    async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordIndy:
+    async def get_detail_record(
+        self, cred_ex_id: str
+    ) -> Optional[Sequence[V20CredExRecordIndy]]:
         """Retrieve credential exchange detail record by cred_ex_id."""
 
         async with self.profile.session() as session:
             records = await IndyCredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id
             )
-
-        if len(records) > 1:
-            LOGGER.warning(
-                "Cred ex id %s has %d %s detail records: should be 1",
-                cred_ex_id,
-                len(records),
-                IndyCredFormatHandler.format.api,
-            )
-        return records[0] if records else None
+        # Not valid with multi-cred feature
+        # if len(records) > 1:
+        #     LOGGER.warning(
+        #         "Cred ex id %s has %d %s detail records: should be 1",
+        #         cred_ex_id,
+        #         len(records),
+        #         IndyCredFormatHandler.format.api,
+        #     )
+        return records if records else None
 
     async def _check_uniqueness(self, cred_ex_id: str):
         """Raise exception on evidence that cred ex already has cred issued to it."""
@@ -332,6 +334,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         detail_record = V20CredExRecordIndy(
             cred_ex_id=cred_ex_record.cred_ex_id,
             cred_request_metadata=cred_req_result["metadata"],
+            attach_id=attach_id,
         )
 
         async with self.profile.session() as session:
@@ -454,6 +457,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 cred_ex_id=cred_ex_record.cred_ex_id,
                 rev_reg_id=rev_reg_id,
                 cred_rev_id=cred_rev_id,
+                attach_id=attach_id,
             )
             await detail_record.save(txn, reason="v2.0 issue credential")
 
@@ -531,7 +535,19 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             rev_reg = RevocationRegistry.from_definition(rev_reg_def, True)
             await rev_reg.get_or_fetch_local_tails_path()
         try:
-            detail_record = await self.get_detail_record(cred_ex_record.cred_ex_id)
+            detail_records = await self.get_detail_record(cred_ex_record.cred_ex_id)
+            detail_record = None
+            if detail_records and attach_id:
+                detail_record = next(
+                    (
+                        record
+                        for record in detail_records
+                        if record.attach_id == attach_id
+                    ),
+                    None,
+                )
+            elif detail_records:
+                detail_record = detail_records[0]
             if detail_record is None:
                 raise V20CredFormatError(
                     f"No credential exchange {IndyCredFormatHandler.format.aries} "
