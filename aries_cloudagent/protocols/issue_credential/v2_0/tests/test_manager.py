@@ -2722,7 +2722,7 @@ class TestV20CredManager(AsyncTestCase):
             )
 
             mock_handler.return_value.store_credential.assert_called_once_with(
-                ret_cx_rec, cred_id, "0"
+                cred_ex_record=ret_cx_rec, cred_id=cred_id, attach_id="0"
             )
 
             assert ret_cx_rec.cred_issue.attachment() == INDY_CRED
