@@ -259,7 +259,6 @@ class V20CredExRecord(BaseExchangeRecord):
                     "multiple_credentials",
                     "multiple_issuance_state",
                     "processed_attach_ids",
-                    "stored_attach_ids",
                 )
             },
             **{
