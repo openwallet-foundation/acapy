@@ -253,7 +253,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager:
-
             # Emulate storage not found (bad connection id)
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
@@ -280,7 +279,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager:
-
             # Emulate connection not ready
             mock_conn_rec.retrieve_by_id.return_value.is_ready = False
 
@@ -343,7 +341,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_credential_manager, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_cred_ex_record = async_mock.MagicMock()
             mock_credential_manager.return_value.create_proposal.return_value = (
                 mock_cred_ex_record
@@ -367,7 +364,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_credential_manager, async_mock.patch.object(
             test_module.CredentialPreview, "deserialize", autospec=True
         ) as mock_preview_deserialize:
-
             # Emulate storage not found (bad connection id)
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
@@ -405,7 +401,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_credential_manager, async_mock.patch.object(
             test_module.CredentialPreview, "deserialize", autospec=True
         ) as mock_preview_deserialize:
-
             # Emulate connection not ready
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock()
             mock_conn_rec.retrieve_by_id.return_value.is_ready = False
@@ -595,7 +590,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_credential_manager, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_credential_manager.return_value.create_offer = (
                 async_mock.CoroutineMock()
             )
@@ -647,7 +641,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager:
-
             # Emulate storage not found (bad connection id)
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
@@ -673,7 +666,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_conn_rec, async_mock.patch.object(
             test_module, "CredentialManager", autospec=True
         ) as mock_credential_manager:
-
             # Emulate connection not ready
             mock_conn_rec.retrieve_by_id = async_mock.CoroutineMock()
             mock_conn_rec.retrieve_by_id.return_value.is_ready = False
@@ -739,7 +731,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_cred_ex, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
             mock_cred_ex.retrieve_by_id.return_value.state = (
                 mock_cred_ex.STATE_PROPOSAL_RECEIVED
@@ -878,7 +869,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_cred_ex, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
             mock_cred_ex.retrieve_by_id.return_value.state = (
                 mock_cred_ex.STATE_OFFER_RECEIVED
@@ -912,7 +902,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_cred_ex, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_oob_rec.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=async_mock.MagicMock(our_recipient_key="our-recipient_key")
             )
@@ -1037,7 +1026,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_cred_ex, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
             mock_cred_ex.retrieve_by_id.return_value.state = (
                 mock_cred_ex.STATE_REQUEST_RECEIVED
@@ -1087,7 +1075,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_credential_manager, async_mock.patch.object(
             test_module, "V10CredentialExchange", autospec=True
         ) as mock_cred_ex_cls:
-
             mock_cred_ex_rec.state = mock_cred_ex_cls.STATE_REQUEST_RECEIVED
             mock_cred_ex_cls.retrieve_by_id = async_mock.CoroutineMock(
                 return_value=mock_cred_ex_rec
@@ -1120,7 +1107,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_credential_manager, async_mock.patch.object(
             test_module, "V10CredentialExchange", autospec=True
         ) as mock_cred_ex:
-
             mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
             mock_cred_ex.retrieve_by_id.return_value.state = (
                 mock_cred_ex.STATE_REQUEST_RECEIVED
@@ -1216,7 +1202,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_cred_ex, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
             mock_cred_ex.retrieve_by_id.return_value.state = (
                 mock_cred_ex.STATE_CREDENTIAL_RECEIVED
@@ -1253,7 +1238,6 @@ class TestCredentialRoutes(AsyncTestCase):
         ) as mock_cred_ex, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_cred_ex.retrieve_by_id = async_mock.CoroutineMock()
             mock_cred_ex.retrieve_by_id.return_value.state = (
                 mock_cred_ex.STATE_CREDENTIAL_RECEIVED

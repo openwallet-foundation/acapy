@@ -23,7 +23,6 @@ from ..messaging.valid import (
     ENDPOINT,
     ENDPOINT_TYPE,
     INDY_DID,
-    INDY_OR_KEY_DID,
     INDY_RAW_PUBLIC_KEY,
     GENERIC_DID,
 )
@@ -55,7 +54,7 @@ class WalletModuleResponseSchema(OpenAPISchema):
 class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
-    did = fields.Str(description="DID of interest", **INDY_OR_KEY_DID)
+    did = fields.Str(description="DID of interest", **GENERIC_DID)
     verkey = fields.Str(description="Public verification key", **INDY_RAW_PUBLIC_KEY)
     posture = fields.Str(
         description=(
@@ -66,11 +65,7 @@ class DIDSchema(OpenAPISchema):
         **DID_POSTURE,
     )
     method = fields.Str(
-        description="Did method associated with the DID",
-        example=SOV.method_name,
-        validate=validate.OneOf(
-            [method.method_name for method in [SOV, KEY]]
-        ),  # TODO: support more methods
+        description="Did method associated with the DID", example=SOV.method_name
     )
     key_type = fields.Str(
         description="Key type associated with the DID",

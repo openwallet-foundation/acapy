@@ -284,13 +284,11 @@ class V20CredManager:
         # or create it (issuer sent offer first)
         try:
             async with self._profile.session() as session:
-                cred_ex_record = await (
-                    V20CredExRecord.retrieve_by_conn_and_thread(
-                        session,
-                        connection_id,
-                        cred_offer_message._thread_id,
-                        role=V20CredExRecord.ROLE_HOLDER,
-                    )
+                cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
+                    session,
+                    connection_id,
+                    cred_offer_message._thread_id,
+                    role=V20CredExRecord.ROLE_HOLDER,
                 )
         except StorageNotFoundError:  # issuer sent this offer free of any proposal
             cred_ex_record = V20CredExRecord(
@@ -420,13 +418,11 @@ class V20CredManager:
 
         async with self._profile.session() as session:
             try:
-                cred_ex_record = await (
-                    V20CredExRecord.retrieve_by_conn_and_thread(
-                        session,
-                        connection_id,
-                        cred_request_message._thread_id,
-                        role=V20CredExRecord.ROLE_ISSUER,
-                    )
+                cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
+                    session,
+                    connection_id,
+                    cred_request_message._thread_id,
+                    role=V20CredExRecord.ROLE_ISSUER,
                 )
             except StorageNotFoundError:
                 # holder sent this request free of any offer
@@ -553,13 +549,11 @@ class V20CredManager:
 
         # FIXME use transaction, fetch for_update
         async with self._profile.session() as session:
-            cred_ex_record = await (
-                V20CredExRecord.retrieve_by_conn_and_thread(
-                    session,
-                    connection_id,
-                    cred_issue_message._thread_id,
-                    role=V20CredExRecord.ROLE_HOLDER,
-                )
+            cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
+                session,
+                connection_id,
+                cred_issue_message._thread_id,
+                role=V20CredExRecord.ROLE_HOLDER,
             )
 
         cred_request_message = cred_ex_record.cred_request
@@ -697,13 +691,11 @@ class V20CredManager:
         """
         # FIXME use transaction, fetch for_update
         async with self._profile.session() as session:
-            cred_ex_record = await (
-                V20CredExRecord.retrieve_by_conn_and_thread(
-                    session,
-                    connection_id,
-                    cred_ack_message._thread_id,
-                    role=V20CredExRecord.ROLE_ISSUER,
-                )
+            cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
+                session,
+                connection_id,
+                cred_ack_message._thread_id,
+                role=V20CredExRecord.ROLE_ISSUER,
             )
 
             cred_ex_record.state = V20CredExRecord.STATE_DONE
@@ -740,12 +732,10 @@ class V20CredManager:
         """
         # FIXME use transaction, fetch for_update
         async with self._profile.session() as session:
-            cred_ex_record = await (
-                V20CredExRecord.retrieve_by_conn_and_thread(
-                    session,
-                    connection_id,
-                    message._thread_id,
-                )
+            cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
+                session,
+                connection_id,
+                message._thread_id,
             )
 
             cred_ex_record.state = V20CredExRecord.STATE_ABANDONED

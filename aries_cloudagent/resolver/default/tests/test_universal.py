@@ -54,7 +54,7 @@ class MockClientSession:
     def __init__(self, response: MockResponse = None):
         self.response = response
 
-    def __call__(self):
+    def __call__(self, headers):
         return self
 
     async def __aenter__(self):
@@ -101,7 +101,7 @@ async def test_resolve_not_found(profile, resolver, mock_client_session):
 
 
 @pytest.mark.asyncio
-async def test_resolve_unexpeceted_status(profile, resolver, mock_client_session):
+async def test_resolve_unexpected_status(profile, resolver, mock_client_session):
     mock_client_session.response = MockResponse(
         500, "Server failed to complete request"
     )
@@ -112,21 +112,21 @@ async def test_resolve_unexpeceted_status(profile, resolver, mock_client_session
 @pytest.mark.asyncio
 async def test_fetch_resolver_props(mock_client_session: MockClientSession):
     mock_client_session.response = MockResponse(200, {"test": "json"})
-    assert await test_module._fetch_resolver_props("test") == {"test": "json"}
+    assert await UniversalResolver()._fetch_resolver_props() == {"test": "json"}
     mock_client_session.response = MockResponse(404, "Not found")
     with pytest.raises(ResolverError):
-        await test_module._fetch_resolver_props("test")
+        await UniversalResolver()._fetch_resolver_props()
 
 
 @pytest.mark.asyncio
 async def test_get_supported_did_regex():
     props = {"example": {"http": {"pattern": "match a test string"}}}
     with async_mock.patch.object(
-        test_module,
+        UniversalResolver,
         "_fetch_resolver_props",
         async_mock.CoroutineMock(return_value=props),
     ):
-        pattern = await test_module._get_supported_did_regex("test")
+        pattern = await UniversalResolver()._get_supported_did_regex()
         assert pattern.fullmatch("match a test string")
 
 
@@ -169,7 +169,7 @@ async def test_setup_endpoint_set(resolver: UniversalResolver):
     context = async_mock.MagicMock()
     context.settings = settings
     with async_mock.patch.object(
-        test_module,
+        UniversalResolver,
         "_get_supported_did_regex",
         async_mock.CoroutineMock(return_value="pattern"),
     ):
@@ -189,7 +189,7 @@ async def test_setup_endpoint_default(resolver: UniversalResolver):
     context = async_mock.MagicMock()
     context.settings = settings
     with async_mock.patch.object(
-        test_module,
+        UniversalResolver,
         "_get_supported_did_regex",
         async_mock.CoroutineMock(return_value="pattern"),
     ):
@@ -205,7 +205,7 @@ async def test_setup_endpoint_unset(resolver: UniversalResolver):
     context = async_mock.MagicMock()
     context.settings = settings
     with async_mock.patch.object(
-        test_module,
+        UniversalResolver,
         "_get_supported_did_regex",
         async_mock.CoroutineMock(return_value="pattern"),
     ):

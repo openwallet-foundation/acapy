@@ -19,7 +19,6 @@ from ..connection_response import ConnectionResponse
 
 
 class TestConfig:
-
     test_seed = "testseed000000000000000000000001"
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"

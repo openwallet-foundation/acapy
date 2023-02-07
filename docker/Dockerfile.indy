@@ -1,9 +1,9 @@
-ARG python_version=3.6.13
+ARG python_version=3.9.16
 ARG rust_version=1.46
 
 # This image could be replaced with an "indy" image from another repo,
 # such as the indy-sdk
-FROM rust:${rust_version}-slim-buster as indy-builder
+FROM rust:${rust_version}-slim as indy-builder
 
 ARG user=indy
 ENV HOME="/home/$user"
@@ -80,7 +80,7 @@ RUN rm -rf indy-sdk indy-postgres
 # Indy Base Image
 # This image could be replaced with an "indy-python" image from another repo,
 # such as the indy-sdk
-FROM python:${python_version}-slim-buster as indy-base
+FROM python:${python_version}-slim-bullseye as indy-base
 
 ARG uid=1001
 ARG user=indy
@@ -97,7 +97,7 @@ ENV HOME="/home/$user" \
     SHELL=/bin/bash \
     SUMMARY="indy-python base image" \
     DESCRIPTION="aries-cloudagent provides a base image for running Hyperledger Aries agents in Docker. \
-    This image provides all the necessary dependencies to use the indy-sdk in python. Based on Debian Buster."
+    This image provides all the necessary dependencies to use the indy-sdk in python. Based on Debian bullseye."
 
 LABEL summary="$SUMMARY" \
     description="$DESCRIPTION" \
@@ -120,7 +120,7 @@ RUN apt-get update -y && \
     curl \
     git \
     less \
-    libffi6 \
+    libffi-dev \
     libgmp10 \
     liblzma5 \
     libncurses5 \
@@ -205,7 +205,7 @@ ENTRYPOINT ["/bin/bash", "-c", "pytest \"$@\"", "--"]
 
 # ACA-Py Builder
 # Build ACA-Py wheel using setuptools
-FROM python:${python_version}-slim-buster AS acapy-builder
+FROM python:${python_version}-slim-bullseye AS acapy-builder
 
 WORKDIR /src
 
