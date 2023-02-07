@@ -118,22 +118,25 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         return ATTACHMENT_FORMAT[message_type][DIFPresFormatHandler.format.api]
 
     def get_format_data(
-        self, message_type: str, data: dict
+        self, message_type: str, data: dict, attach_id: str = None
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Get presentation format and attach objects for use in pres_ex messages."""
 
         return (
             V20PresFormat(
-                attach_id=DIFPresFormatHandler.format.api,
+                attach_id=attach_id or DIFPresFormatHandler.format.api,
                 format_=self.get_format_identifier(message_type),
             ),
-            AttachDecorator.data_json(data, ident=DIFPresFormatHandler.format.api),
+            AttachDecorator.data_json(
+                data, ident=attach_id or DIFPresFormatHandler.format.api
+            ),
         )
 
     async def create_bound_request(
         self,
         pres_ex_record: V20PresExRecord,
         request_data: dict = None,
+        attach_id: str = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """
         Create a presentation request bound to a proposal.
@@ -151,9 +154,14 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
         """
         dif_proof_request = {}
-        pres_proposal_dict = pres_ex_record.pres_proposal.attachment(
-            DIFPresFormatHandler.format
-        )
+        if attach_id:
+            pres_proposal_dict = pres_ex_record.pres_proposal.attachment_by_id(
+                attach_id=attach_id
+            )
+        else:
+            pres_proposal_dict = pres_ex_record.pres_proposal.attachment(
+                DIFPresFormatHandler.format
+            )
         if "options" not in pres_proposal_dict:
             dif_proof_request["options"] = {"challenge": str(uuid4())}
         else:
@@ -163,24 +171,37 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 dif_proof_request["options"]["challenge"] = str(uuid4())
         dif_proof_request["presentation_definition"] = pres_proposal_dict
 
-        return self.get_format_data(PRES_20_REQUEST, dif_proof_request)
+        return self.get_format_data(
+            PRES_20_REQUEST, dif_proof_request, attach_id=attach_id
+        )
 
     async def create_pres(
         self,
         pres_ex_record: V20PresExRecord,
         request_data: dict = {},
+        attach_id: str = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
-        proof_request = pres_ex_record.pres_request.attachment(
-            DIFPresFormatHandler.format
-        )
+        if attach_id:
+            proof_request = pres_ex_record.pres_request.attachment_by_id(
+                attach_id=attach_id
+            )
+        else:
+            proof_request = pres_ex_record.pres_request.attachment(
+                DIFPresFormatHandler.format
+            )
         pres_definition = None
         limit_record_ids = None
         reveal_doc_frame = None
         challenge = None
         domain = None
-        if request_data != {} and DIFPresFormatHandler.format.api in request_data:
-            dif_spec = request_data.get(DIFPresFormatHandler.format.api)
+        if request_data != {} and (
+            DIFPresFormatHandler.format.api in request_data or attach_id in request_data
+        ):
+            if attach_id:
+                dif_spec = request_data.get(attach_id)
+            else:
+                dif_spec = request_data.get(DIFPresFormatHandler.format.api)
             pres_spec_payload = DIFPresSpecSchema().load(dif_spec)
             # Overriding with prover provided pres_spec
             pres_definition = pres_spec_payload.get("presentation_definition")
@@ -378,7 +399,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 credentials=credentials_list,
                 records_filter=limit_record_ids,
             )
-            return self.get_format_data(PRES_20, pres)
+            return self.get_format_data(PRES_20, pres, attach_id=attach_id)
         except DIFPresExchError as err:
             LOGGER.error(str(err))
             responder = self._profile.inject_or(BaseResponder)
@@ -419,13 +440,21 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 group_schema_uri_list.append(uri_list)
         return group_schema_uri_list
 
-    async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):
+    async def receive_pres(
+        self, message: V20Pres, pres_ex_record: V20PresExRecord, attach_id: str = None
+    ):
         """Receive a presentation, from message in context on manager creation."""
         dif_handler = DIFPresExchHandler(self._profile)
-        dif_proof = message.attachment(DIFPresFormatHandler.format)
-        proof_request = pres_ex_record.pres_request.attachment(
-            DIFPresFormatHandler.format
-        )
+        if attach_id:
+            dif_proof = message.attachment_by_id(attach_id=attach_id)
+            proof_request = pres_ex_record.pres_request.attachment_by_id(
+                attach_id=attach_id
+            )
+        else:
+            dif_proof = message.attachment(DIFPresFormatHandler.format)
+            proof_request = pres_ex_record.pres_request.attachment(
+                DIFPresFormatHandler.format
+            )
         pres_definition = PresentationDefinition.deserialize(
             proof_request.get("presentation_definition")
         )
@@ -449,7 +478,9 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 )
                 return False
 
-    async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
+    async def verify_pres(
+        self, pres_ex_record: V20PresExRecord, attach_id: str = None
+    ) -> V20PresExRecord:
         """
         Verify a presentation.
 
@@ -463,10 +494,16 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         """
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
-            dif_proof = pres_ex_record.pres.attachment(DIFPresFormatHandler.format)
-            pres_request = pres_ex_record.pres_request.attachment(
-                DIFPresFormatHandler.format
-            )
+            if attach_id:
+                dif_proof = pres_ex_record.pres.attachment_by_id(attach_id=attach_id)
+                pres_request = pres_ex_record.pres_request.attachment_by_id(
+                    attach_id=attach_id
+                )
+            else:
+                dif_proof = pres_ex_record.pres.attachment(DIFPresFormatHandler.format)
+                pres_request = pres_ex_record.pres_request.attachment(
+                    DIFPresFormatHandler.format
+                )
             challenge = None
             if "options" in pres_request:
                 challenge = pres_request["options"].get("challenge", str(uuid4()))

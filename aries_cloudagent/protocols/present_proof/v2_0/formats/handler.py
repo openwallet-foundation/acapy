@@ -55,7 +55,9 @@ class V20PresFormatHandler(ABC):
         """
 
     @abstractmethod
-    def get_format_data(self, message_type: str, data: dict) -> PresFormatAttachment:
+    def get_format_data(
+        self, message_type: str, data: dict, attach_id: str = None
+    ) -> PresFormatAttachment:
         """Get presentation format and attach objects for use in pres_ex messages."""
 
     @abstractclassmethod
@@ -67,6 +69,7 @@ class V20PresFormatHandler(ABC):
         self,
         pres_ex_record: V20PresExRecord,
         request_data: dict = None,
+        attach_id: str = None,
     ) -> PresFormatAttachment:
         """Create a presentation request bound to a proposal."""
 
@@ -75,13 +78,23 @@ class V20PresFormatHandler(ABC):
         self,
         pres_ex_record: V20PresExRecord,
         request_data: dict = None,
+        attach_id: str = None,
     ) -> PresFormatAttachment:
         """Create a presentation."""
 
     @abstractmethod
-    async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):
+    async def receive_pres(
+        self,
+        message: V20Pres,
+        pres_ex_record: V20PresExRecord,
+        attach_id: str = None,
+    ):
         """Receive a presentation, from message in context on manager creation."""
 
     @abstractmethod
-    async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
+    async def verify_pres(
+        self,
+        pres_ex_record: V20PresExRecord,
+        attach_id: str = None,
+    ) -> V20PresExRecord:
         """Verify a presentation."""

@@ -82,22 +82,25 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         return ATTACHMENT_FORMAT[message_type][IndyPresExchangeHandler.format.api]
 
     def get_format_data(
-        self, message_type: str, data: dict
+        self, message_type: str, data: dict, attach_id: str = None
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Get presentation format and attach objects for use in pres_ex messages."""
 
         return (
             V20PresFormat(
-                attach_id=IndyPresExchangeHandler.format.api,
+                attach_id=attach_id or IndyPresExchangeHandler.format.api,
                 format_=self.get_format_identifier(message_type),
             ),
-            AttachDecorator.data_base64(data, ident=IndyPresExchangeHandler.format.api),
+            AttachDecorator.data_base64(
+                data, ident=attach_id or IndyPresExchangeHandler.format.api
+            ),
         )
 
     async def create_bound_request(
         self,
         pres_ex_record: V20PresExRecord,
         request_data: dict = None,
+        attach_id: str = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """
         Create a presentation request bound to a proposal.
@@ -111,9 +114,14 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             A tuple (updated presentation exchange record, presentation request message)
 
         """
-        indy_proof_request = pres_ex_record.pres_proposal.attachment(
-            IndyPresExchangeHandler.format
-        )
+        if attach_id:
+            indy_proof_request = pres_ex_record.pres_proposal.attachment_by_id(
+                attach_id=attach_id
+            )
+        else:
+            indy_proof_request = pres_ex_record.pres_proposal.attachment(
+                IndyPresExchangeHandler.format
+            )
         if request_data:
             indy_proof_request["name"] = request_data.get("name", "proof-request")
             indy_proof_request["version"] = request_data.get("version", "1.0")
@@ -124,21 +132,29 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             indy_proof_request["name"] = "proof-request"
             indy_proof_request["version"] = "1.0"
             indy_proof_request["nonce"] = await generate_pr_nonce()
-        return self.get_format_data(PRES_20_REQUEST, indy_proof_request)
+        return self.get_format_data(
+            PRES_20_REQUEST, indy_proof_request, attach_id=attach_id
+        )
 
     async def create_pres(
         self,
         pres_ex_record: V20PresExRecord,
         request_data: dict = None,
+        attach_id: str = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
         requested_credentials = {}
         if not request_data:
             try:
                 proof_request = pres_ex_record.pres_request
-                indy_proof_request = proof_request.attachment(
-                    IndyPresExchangeHandler.format
-                )
+                if attach_id:
+                    indy_proof_request = proof_request.attachment_by_id(
+                        attach_id=attach_id
+                    )
+                else:
+                    indy_proof_request = proof_request.attachment(
+                        IndyPresExchangeHandler.format
+                    )
                 requested_credentials = (
                     await indy_proof_req_preview2indy_requested_creds(
                         indy_proof_request,
@@ -152,8 +168,14 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                     f"No matching Indy credentials found: {err}"
                 )
         else:
-            if IndyPresExchangeHandler.format.api in request_data:
-                indy_spec = request_data.get(IndyPresExchangeHandler.format.api)
+            if (
+                IndyPresExchangeHandler.format.api in request_data
+                or attach_id in request_data
+            ):
+                if attach_id:
+                    indy_spec = request_data.get(attach_id)
+                else:
+                    indy_spec = request_data.get(IndyPresExchangeHandler.format.api)
                 requested_credentials = {
                     "self_attested_attributes": indy_spec["self_attested_attributes"],
                     "requested_attributes": indy_spec["requested_attributes"],
@@ -164,16 +186,23 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             pres_ex_record=pres_ex_record,
             requested_credentials=requested_credentials,
         )
-        return self.get_format_data(PRES_20, indy_proof)
+        return self.get_format_data(PRES_20, indy_proof, attach_id=attach_id)
 
-    async def receive_pres(self, message: V20Pres, pres_ex_record: V20PresExRecord):
+    async def receive_pres(
+        self, message: V20Pres, pres_ex_record: V20PresExRecord, attach_id: str = None
+    ):
         """Receive a presentation and check for presented values vs. proposal request."""
 
         def _check_proof_vs_proposal():
             """Check for bait and switch in presented values vs. proposal request."""
-            proof_req = pres_ex_record.pres_request.attachment(
-                IndyPresExchangeHandler.format
-            )
+            if attach_id:
+                proof_req = pres_ex_record.pres_request.attachment_by_id(
+                    attach_id=attach_id
+                )
+            else:
+                proof_req = pres_ex_record.pres_request.attachment(
+                    IndyPresExchangeHandler.format
+                )
 
             # revealed attrs
             for reft, attr_spec in proof["requested_proof"]["revealed_attrs"].items():
@@ -302,10 +331,15 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                         f"restrictions {req_restrictions}"
                     )
 
-        proof = message.attachment(IndyPresExchangeHandler.format)
+        if attach_id:
+            proof = message.attachment_by_id(attach_id=attach_id)
+        else:
+            proof = message.attachment(IndyPresExchangeHandler.format)
         _check_proof_vs_proposal()
 
-    async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
+    async def verify_pres(
+        self, pres_ex_record: V20PresExRecord, attach_id: str = None
+    ) -> V20PresExRecord:
         """
         Verify a presentation.
 
@@ -318,8 +352,14 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
         """
         pres_request_msg = pres_ex_record.pres_request
-        indy_proof_request = pres_request_msg.attachment(IndyPresExchangeHandler.format)
-        indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
+        if attach_id:
+            indy_proof_request = pres_request_msg.attachment_by_id(attach_id=attach_id)
+            indy_proof = pres_ex_record.pres.attachment_by_id(attach_id=attach_id)
+        else:
+            indy_proof_request = pres_request_msg.attachment(
+                IndyPresExchangeHandler.format
+            )
+            indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
         indy_handler = IndyPresExchHandler(self._profile)
         (
             schemas,

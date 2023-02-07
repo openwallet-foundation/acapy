@@ -2,7 +2,7 @@
 
 import logging
 
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Union, Sequence
 
 from marshmallow import fields, Schema, validate
 
@@ -68,6 +68,9 @@ class V20PresExRecord(BaseExchangeRecord):
         error_msg: str = None,
         trace: bool = False,  # backward compat: BaseRecord.FromStorage()
         by_format: Mapping = None,  # backward compat: BaseRecord.FromStorage()
+        multiple_presentations: bool = None,
+        processed_attach_ids: Sequence[str] = [],
+        verified_attach_ids: Sequence[str] = [], # Will be empty for prover
         **kwargs,
     ):
         """Initialize a new PresExRecord."""
@@ -85,6 +88,9 @@ class V20PresExRecord(BaseExchangeRecord):
         self.auto_present = auto_present
         self.auto_verify = auto_verify
         self.error_msg = error_msg
+        self.multiple_presentations = multiple_presentations
+        self.processed_attach_ids = list(processed_attach_ids)
+        self.verified_attach_ids = list(verified_attach_ids)
 
     @property
     def pres_ex_id(self) -> str:
@@ -145,6 +151,22 @@ class V20PresExRecord(BaseExchangeRecord):
         """Setter; store de/serialized views."""
         self._pres = V20Pres.serde(value)
 
+    def process_attach_id(self, attach_id: str):
+        """
+        Add attach_id to processed_attach_ids list.
+        Args:
+            attach_id: Attachment identifier
+        """
+        self.processed_attach_ids.append(attach_id)
+
+    def verify_attach_id(self, attach_id: str):
+        """
+        Add attach_id to verified_attach_ids list.
+        Args:
+            attach_id: Attachment identifier
+        """
+        self.verified_attach_ids.append(attach_id)
+
     async def save_error_state(
         self,
         session: ProfileSession,
@@ -198,6 +220,8 @@ class V20PresExRecord(BaseExchangeRecord):
                     "auto_verify",
                     "error_msg",
                     "trace",
+                    "multiple_presentations",
+                    "processed_attach_ids",
                 )
             },
             **{
@@ -315,4 +339,18 @@ class V20PresExRecordSchema(BaseExchangeSchema):
     )
     error_msg = fields.Str(
         required=False, description="Error message", example="Invalid structure"
+    )
+    multiple_presentations = fields.Boolean(
+        description="Multiple presentations",
+        required=False,
+    )
+    processed_attach_ids = fields.List(
+        fields.Str(description="Attachment ID", required=True),
+        required=False,
+        description="List of processed attachment IDs",
+    )
+    verified_attach_ids = fields.List(
+        fields.Str(description="Attachment ID", required=True),
+        required=False,
+        description="List of varified attachment IDs",
     )

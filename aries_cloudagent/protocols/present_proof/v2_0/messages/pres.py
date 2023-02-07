@@ -33,6 +33,7 @@ class V20Pres(AgentMessage):
         comment: str = None,
         formats: Sequence[V20PresFormat] = None,
         presentations_attach: Sequence[AttachDecorator] = None,
+        last_presentation: bool = None,
         **kwargs,
     ):
         """
@@ -49,6 +50,7 @@ class V20Pres(AgentMessage):
         self.presentations_attach = (
             list(presentations_attach) if presentations_attach else []
         )
+        self.last_presentation = last_presentation or True
 
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
         """
@@ -75,6 +77,38 @@ class V20Pres(AgentMessage):
             else None
         )
 
+    def attachment_by_id(self, attach_id: str) -> dict:
+        """
+        Return attached presentation.
+        Args:
+            attach_id: string identifier
+        """
+        _format_list = [
+            V20PresFormat.Format.get(f.format)
+            for f in self.formats
+            if f.attach_id == attach_id
+        ]
+        if len(_format_list) == 0:
+            return None
+        target_format = _format_list[0]
+        return (
+            target_format.get_attachment_data_by_id(
+                attach_id, self.presentations_attach
+            )
+            if target_format
+            else None
+        )
+
+    def add_attachments(self, fmt: V20PresFormat, atch: AttachDecorator) -> None:
+        """
+        Update attachment format and presentation attachment.
+        Args:
+            fmt: format of attachment
+            atch: attachment
+        """
+        self.formats.append(fmt)
+        self.presentations_attach.append(atch)
+
 
 class V20PresSchema(AgentMessageSchema):
     """Presentation schema."""
@@ -96,6 +130,13 @@ class V20PresSchema(AgentMessageSchema):
     )
     presentations_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="presentations~attach"
+    )
+    last_presentation  = fields.Bool(
+        required=False,
+        description=(
+            "Whether  this is the last presentation message to be sent in "
+            "satisfying the presentation request."
+        ),
     )
 
     @validates_schema
