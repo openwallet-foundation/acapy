@@ -131,7 +131,7 @@ class V20PresSchema(AgentMessageSchema):
     presentations_attach = fields.Nested(
         AttachDecoratorSchema, required=True, many=True, data_key="presentations~attach"
     )
-    last_presentation  = fields.Bool(
+    last_presentation = fields.Bool(
         required=False,
         description=(
             "Whether  this is the last presentation message to be sent in "

@@ -70,7 +70,7 @@ class V20PresExRecord(BaseExchangeRecord):
         by_format: Mapping = None,  # backward compat: BaseRecord.FromStorage()
         multiple_presentations: bool = None,
         processed_attach_ids: Sequence[str] = [],
-        verified_attach_ids: Sequence[str] = [], # Will be empty for prover
+        verified_attach_ids: Sequence[str] = [],  # Will be empty for prover
         **kwargs,
     ):
         """Initialize a new PresExRecord."""
