@@ -8,6 +8,7 @@ from marshmallow import fields, Schema, validate
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
+from .....messaging.models.light_webhook import LightWeightWebhook
 from .....messaging.valid import UUIDFour
 from .....storage.base import StorageError
 
@@ -181,6 +182,33 @@ class V20CredExRecord(BaseExchangeRecord):
         except StorageError as err:
             LOGGER.exception(err)
 
+    # Override
+    async def emit_event(self, session: ProfileSession, payload: Any = None):
+        """
+        Emit an event.
+
+        Args:
+            session: The profile session to use
+            payload: The event payload
+        """
+
+        if not self.RECORD_TOPIC:
+            return
+
+        if self.state:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}::{self.state}"
+        else:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
+
+        if not payload:
+            payload = self.serialize()
+        
+        if session.profile.settings.get("transport.light_weight_webhook"):
+            payload = LightWeightWebhook(2, **self.__dict__)
+            payload = payload.__dict__
+        
+        await session.profile.notify(topic, payload)
+    
     @property
     def record_value(self) -> Mapping:
         """Accessor for the JSON record value generated for this credential exchange."""

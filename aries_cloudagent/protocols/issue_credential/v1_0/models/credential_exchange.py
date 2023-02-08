@@ -12,6 +12,7 @@ from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSch
 from .....indy.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
 from .....indy.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
+from .....messaging.models.light_webhook import LightWeightWebhook
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 from .....storage.base import StorageError
 
@@ -220,6 +221,33 @@ class V10CredentialExchange(BaseExchangeRecord):
             )
         except StorageError:
             LOGGER.exception("Error saving credential exchange error state")
+
+    # Override
+    async def emit_event(self, session: ProfileSession, payload: Any = None):
+        """
+        Emit an event.
+
+        Args:
+            session: The profile session to use
+            payload: The event payload
+        """
+
+        if not self.RECORD_TOPIC:
+            return
+
+        if self.state:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}::{self.state}"
+        else:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
+
+        if not payload:
+            payload = self.serialize()
+        
+        if session.profile.settings.get("transport.light_weight_webhook"):
+            payload = LightWeightWebhook(1, **self.__dict__)
+            payload = payload.__dict__
+        
+        await session.profile.notify(topic, payload)
 
     @property
     def record_value(self) -> dict:
