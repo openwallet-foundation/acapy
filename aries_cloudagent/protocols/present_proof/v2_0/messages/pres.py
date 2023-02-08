@@ -80,8 +80,10 @@ class V20Pres(AgentMessage):
     def attachment_by_id(self, attach_id: str) -> dict:
         """
         Return attached presentation.
+
         Args:
             attach_id: string identifier
+
         """
         _format_list = [
             V20PresFormat.Format.get(f.format)
@@ -102,9 +104,11 @@ class V20Pres(AgentMessage):
     def add_attachments(self, fmt: V20PresFormat, atch: AttachDecorator) -> None:
         """
         Update attachment format and presentation attachment.
+
         Args:
             fmt: format of attachment
             atch: attachment
+
         """
         self.formats.append(fmt)
         self.presentations_attach.append(atch)

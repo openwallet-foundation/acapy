@@ -115,6 +115,8 @@ class TestRecord(AsyncTestCase):
             "auto_verify": False,
             "error_msg": "error",
             "trace": False,
+            "multiple_presentations": None,
+            "processed_attach_ids": [],
         }
 
         bx_record = BasexRecordImpl()

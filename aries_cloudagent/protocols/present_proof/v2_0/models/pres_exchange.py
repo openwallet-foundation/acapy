@@ -108,13 +108,17 @@ class V20PresExRecord(BaseExchangeRecord):
         }.items():
             msg = getattr(self, item)
             if msg:
+                attach_ids_list = [
+                    V20PresFormat.Format.get(f.format).api
+                    if f.attach_id == V20PresFormat.Format.get(f.format).api
+                    else f.attach_id
+                    for f in msg.formats
+                ]
                 result.update(
                     {
                         item: {
-                            V20PresFormat.Format.get(f.format).api: msg.attachment(
-                                V20PresFormat.Format.get(f.format)
-                            )
-                            for f in msg.formats
+                            attach_id: msg.attachment_by_id(attach_id)
+                            for attach_id in attach_ids_list
                         }
                     }
                 )
@@ -154,16 +158,20 @@ class V20PresExRecord(BaseExchangeRecord):
     def process_attach_id(self, attach_id: str):
         """
         Add attach_id to processed_attach_ids list.
+
         Args:
             attach_id: Attachment identifier
+
         """
         self.processed_attach_ids.append(attach_id)
 
     def verify_attach_id(self, attach_id: str):
         """
         Add attach_id to verified_attach_ids list.
+
         Args:
             attach_id: Attachment identifier
+
         """
         self.verified_attach_ids.append(attach_id)
 

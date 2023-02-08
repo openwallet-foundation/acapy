@@ -78,8 +78,10 @@ class V20PresProposal(AgentMessage):
     def attachment_by_id(self, attach_id: str) -> dict:
         """
         Return attached proposal by attach identifier.
+
         Args:
             attach_id: string identifier
+
         """
         _format_list = [
             V20PresFormat.Format.get(f.format)
