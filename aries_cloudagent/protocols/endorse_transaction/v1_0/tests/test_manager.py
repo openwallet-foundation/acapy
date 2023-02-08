@@ -12,7 +12,7 @@ from .....connections.models.conn_record import ConnRecord
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....wallet.base import BaseWallet
-from .....wallet.did_method import SOV
+from .....wallet.did_method import SOV, DIDMethods
 from .....wallet.key_type import ED25519
 from ..manager import TransactionManager, TransactionManagerError
 from ..models.transaction_record import TransactionRecord
@@ -112,6 +112,7 @@ class TestTransactionManager(AsyncTestCase):
         self.profile = self.context.profile
         injector = self.profile.context.injector
         injector.bind_instance(BaseLedger, self.ledger)
+        injector.bind_instance(DIDMethods, DIDMethods())
 
         async with self.profile.session() as session:
             self.wallet: BaseWallet = session.inject_or(BaseWallet)
@@ -495,7 +496,6 @@ class TestTransactionManager(AsyncTestCase):
         ) as save_record, async_mock.patch.object(
             ConnRecord, "retrieve_by_id"
         ) as mock_conn_rec_retrieve:
-
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
                     return_value={

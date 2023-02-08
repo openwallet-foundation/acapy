@@ -8,7 +8,7 @@ from ...core.in_memory import InMemoryProfile
 from ...protocols.didcomm_prefix import DIDCommPrefix
 from ...protocols.routing.v1_0.message_types import FORWARD
 from ...wallet.base import BaseWallet
-from ...wallet.did_method import SOV
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.error import WalletError
 from ...wallet.key_type import ED25519
 from .. import pack_format as test_module
@@ -33,6 +33,7 @@ class TestPackWireFormat(AsyncTestCase):
 
     def setUp(self):
         self.session = InMemoryProfile.test_session()
+        self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.inject(BaseWallet)
 
     async def test_errors(self):

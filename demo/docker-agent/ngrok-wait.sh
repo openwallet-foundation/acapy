@@ -37,7 +37,7 @@ exec aca-py start \
     --wallet-key "secret_key" \
     --wallet-storage-type "postgres_storage" \
     --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}" \
-    --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}" \
+    --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}" \
     --admin '0.0.0.0' 8010 \
     --label "test_author" \
     --admin-insecure-mode \

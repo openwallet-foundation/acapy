@@ -455,11 +455,9 @@ class Conductor:
                         auto_accept=True,
                     )
                     async with self.root_profile.session() as session:
-                        await (
-                            MediationInviteStore(
-                                session.context.inject(BaseStorage)
-                            ).mark_default_invite_as_used()
-                        )
+                        await MediationInviteStore(
+                            session.context.inject(BaseStorage)
+                        ).mark_default_invite_as_used()
 
                         await record.metadata_set(
                             session, MediationManager.SEND_REQ_AFTER_CONNECTION, True

@@ -643,6 +643,14 @@ class GeneralGroup(ArgumentGroup):
                 "resolver instance."
             ),
         )
+        parser.add_argument(
+            "--universal-resolver-bearer-token",
+            type=str,
+            nargs="?",
+            metavar="<universal_resolver_token>",
+            env_var="ACAPY_UNIVERSAL_RESOLVER_BEARER_TOKEN",
+            help="Bearer token if universal resolver instance requires authentication.",
+        ),
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -688,11 +696,20 @@ class GeneralGroup(ArgumentGroup):
                 "--universal-resolver-regex cannot be used without --universal-resolver"
             )
 
+        if args.universal_resolver_bearer_token and not args.universal_resolver:
+            raise ArgsParseError(
+                "--universal-resolver-bearer-token "
+                + "cannot be used without --universal-resolver"
+            )
+
         if args.universal_resolver:
             settings["resolver.universal"] = args.universal_resolver
 
         if args.universal_resolver_regex:
             settings["resolver.universal.supported"] = args.universal_resolver_regex
+
+        if args.universal_resolver_bearer_token:
+            settings["resolver.universal.token"] = args.universal_resolver_bearer_token
 
         return settings
 
@@ -1039,7 +1056,17 @@ class ProtocolGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_PUBLIC_INVITES",
             help=(
-                "Send invitations out, and receive connection requests, "
+                "Send invitations out using the public DID for the agent, "
+                "and receive connection requests solicited by invitations "
+                "which use the public DID. Default: false."
+            ),
+        )
+        parser.add_argument(
+            "--requests-through-public-did",
+            action="store_true",
+            env_var="ACAPY_REQUESTS_THROUGH_PUBLIC_DID",
+            help=(
+                "Allow agent to receive unsolicited connection requests, "
                 "using the public DID for the agent. Default: false."
             ),
         )
@@ -1134,6 +1161,13 @@ class ProtocolGroup(ArgumentGroup):
             settings["monitor_forward"] = args.monitor_forward
         if args.public_invites:
             settings["public_invites"] = True
+        if args.requests_through_public_did:
+            if not args.public_invites:
+                raise ArgsParseError(
+                    "--public-invites is required to use "
+                    "--requests-through-public-did"
+                )
+            settings["requests_through_public_did"] = True
         if args.timing:
             settings["timing.enabled"] = True
         if args.timing_log:

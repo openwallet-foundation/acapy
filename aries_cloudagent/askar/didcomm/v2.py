@@ -33,7 +33,7 @@ def ecdh_es_encrypt(to_verkeys: Mapping[str, Key], message: bytes) -> bytes:
     except AskarError:
         raise DidcommEnvelopeError("Error creating content encryption key")
 
-    for (kid, recip_key) in to_verkeys.items():
+    for kid, recip_key in to_verkeys.items():
         try:
             epk = Key.generate(recip_key.algorithm, ephemeral=True)
         except AskarError:
@@ -145,7 +145,7 @@ def ecdh_1pu_encrypt(
 
     apu = b64url(sender_kid)
     apv = []
-    for (kid, recip_key) in to_verkeys.items():
+    for kid, recip_key in to_verkeys.items():
         if agree_alg:
             if agree_alg != recip_key.algorithm:
                 raise DidcommEnvelopeError("Recipient key types must be consistent")
@@ -173,7 +173,7 @@ def ecdh_1pu_encrypt(
         raise DidcommEnvelopeError("Error encrypting message payload")
     wrapper.set_payload(payload.ciphertext, payload.nonce, payload.tag)
 
-    for (kid, recip_key) in to_verkeys.items():
+    for kid, recip_key in to_verkeys.items():
         enc_key = ecdh.Ecdh1PU(alg_id, apu, apv).sender_wrap_key(
             wrap_alg, epk, sender_key, recip_key, cek, cc_tag=payload.tag
         )

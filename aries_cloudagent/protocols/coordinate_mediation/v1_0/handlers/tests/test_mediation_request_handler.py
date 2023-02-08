@@ -13,6 +13,7 @@ from ...messages.problem_report import CMProblemReport
 from ...models.mediation_record import MediationRecord
 
 from ..mediation_request_handler import MediationRequestHandler
+from ......wallet.did_method import DIDMethods
 
 TEST_CONN_ID = "conn-id"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -24,6 +25,7 @@ class TestMediationRequestHandler(AsyncTestCase):
     async def setUp(self):
         """setup dependencies of messaging"""
         self.context = RequestContext.test_context()
+        self.context.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.session = await self.context.session()
         self.context.message = MediationRequest()
         self.context.connection_ready = True

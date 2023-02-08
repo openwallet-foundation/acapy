@@ -33,7 +33,6 @@ class TestDecoratorSet(TestCase):
         assert all(k in deco_set.models for k in DEFAULT_MODELS)
 
     def test_extract(self):
-
         decor_value = {}
         message = {"~decorator": decor_value, "one": "TWO"}
 
@@ -47,7 +46,6 @@ class TestDecoratorSet(TestCase):
         assert remain == {"one": "TWO"}
 
     def test_dict(self):
-
         decors = BaseDecoratorSet()
         decors["test"] = "TEST"
         assert decors["test"] == "TEST"
@@ -55,7 +53,6 @@ class TestDecoratorSet(TestCase):
         assert result == {"~test": "TEST"}
 
     def test_decorator_model(self):
-
         decor_value = {}
         message = {"~test": {"value": "TEST"}}
 
@@ -70,7 +67,6 @@ class TestDecoratorSet(TestCase):
         assert result == message
 
     def test_field_decorator(self):
-
         decor_value = {}
         message = {"test~decorator": decor_value, "one": "TWO"}
 
@@ -86,7 +82,6 @@ class TestDecoratorSet(TestCase):
         assert "test~decorator" in decors.to_dict()
 
     def test_skip_decorator(self):
-
         decor_value = {}
         message = {"handled~decorator": decor_value, "one": "TWO"}
 

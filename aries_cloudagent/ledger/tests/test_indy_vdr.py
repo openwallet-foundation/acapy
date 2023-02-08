@@ -28,7 +28,7 @@ from ..indy_vdr import (
 
 @pytest.fixture()
 def ledger():
-    profile = InMemoryProfile.test_profile()
+    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
     ledger = IndyVdrLedger(IndyVdrLedgerPool("test-ledger"), profile)
 
     async def open():

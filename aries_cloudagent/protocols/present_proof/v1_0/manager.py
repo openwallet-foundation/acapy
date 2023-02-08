@@ -354,7 +354,7 @@ class PresentationManager:
             presentation_preview = exchange_pres_proposal.presentation_proposal
 
             proof_req = presentation_exchange_record._presentation_request.ser
-            for (reft, attr_spec) in presentation["requested_proof"][
+            for reft, attr_spec in presentation["requested_proof"][
                 "revealed_attrs"
             ].items():
                 name = proof_req["requested_attributes"][reft]["name"]
@@ -540,12 +540,10 @@ class PresentationManager:
         """
         # FIXME use transaction, fetch for_update
         async with self._profile.session() as session:
-            pres_ex_record = await (
-                V10PresentationExchange.retrieve_by_tag_filter(
-                    session,
-                    {"thread_id": message._thread_id},
-                    {"connection_id": connection_id},
-                )
+            pres_ex_record = await V10PresentationExchange.retrieve_by_tag_filter(
+                session,
+                {"thread_id": message._thread_id},
+                {"connection_id": connection_id},
             )
 
             pres_ex_record.state = V10PresentationExchange.STATE_ABANDONED
