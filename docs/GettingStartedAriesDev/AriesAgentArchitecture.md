@@ -10,6 +10,6 @@ Between the two is a simple interface. The agent sends event notifications to th
 
 As such, the agent is just a configured dependency in an Aries cloud agent deployment. Thus, the vast majority of Aries developers will focus on building controllers (business logic) and perhaps some custom plugins (protocols, as we'll discuss soon) for the agent. Only a relatively small group of Aries cloud agent maintainers will focus on adding and maintaining the agent dependency.
 
-Want more details about the agent and controller internals? Take a look at the [Aries cloud agent deployment model](../deploymentModel.md) document.
+Want more details about the agent and controller internals? Take a look at the [Aries cloud agent deployment model](../DeploymentModel.md) document.
 
 > Back to the [Aries Developer - Getting Started Guide](README.md).

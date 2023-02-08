@@ -22,7 +22,7 @@ getting started guide
 <https://github.com/hyperledger/aries-cloudagent-python/tree/main/docs/GettingStartedAriesDev>`_.
 
 Want to quick overview of the deployment model for ACA-Py? See 
-`this document <https://github.com/hyperledger/aries-cloudagent-python/blob/main/deploymentModel.md>`_.
+`this document <https://github.com/hyperledger/aries-cloudagent-python/blob/main/docs/DeploymentModel.md>`_.
 
 To investigate the code, use search or click the package links in the left menu to
 drill into the modules, subpackages and submodules that make up ACA-Py.
