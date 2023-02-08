@@ -1,10 +1,10 @@
-# Multi-ledger in ACA-Py <!-- omit in toc -->
+# Multi-ledger in ACA-Py
 
 Ability to use multiple Indy ledgers (both IndySdk and IndyVdr) for resolving a `DID` by the ACA-Py agent. For read requests, checking of multiple ledgers in parallel is done dynamically according to logic detailed in [Read Requests Ledger Selection](#read-requests). For write requests, dynamic allocation of `write_ledger` is not supported. Write ledger can be assigned using `is_write` in the [configuration](#config-properties) or using any of the `--genesis-url`, `--genesis-file`, and `--genesis-transactions` startup (ACA-Py) arguments. If no write ledger is assigned then a `ConfigError` is raised.
 
 More background information including problem statement, design (algorithm) and more can be found [here](https://docs.google.com/document/d/109C_eMsuZnTnYe2OAd02jAts1vC4axwEKIq7_4dnNVA).
 
-## Table of Contents <!-- omit in toc -->
+## Table of Contents
 
 - [Usage](#usage)
   - [Example config file:](#example-config-file)
