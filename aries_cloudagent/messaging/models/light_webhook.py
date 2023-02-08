@@ -32,7 +32,7 @@ class LightWeightWebhook:
         [
             self.__setattr__(key, kwargs.get(key))
             for key in self.__acceptable_keys_list
-            if kwargs.get(key) != None
+            if kwargs.get(key) is not None
         ]
         if version == 2:
             self.cred_ex_id = kwargs.get("_id")

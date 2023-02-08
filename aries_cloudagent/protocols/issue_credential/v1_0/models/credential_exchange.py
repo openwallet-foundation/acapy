@@ -242,11 +242,11 @@ class V10CredentialExchange(BaseExchangeRecord):
 
         if not payload:
             payload = self.serialize()
-        
+
         if session.profile.settings.get("transport.light_weight_webhook"):
             payload = LightWeightWebhook(1, **self.__dict__)
             payload = payload.__dict__
-        
+
         await session.profile.notify(topic, payload)
 
     @property

@@ -202,13 +202,13 @@ class V20CredExRecord(BaseExchangeRecord):
 
         if not payload:
             payload = self.serialize()
-        
+
         if session.profile.settings.get("transport.light_weight_webhook"):
             payload = LightWeightWebhook(2, **self.__dict__)
             payload = payload.__dict__
-        
+
         await session.profile.notify(topic, payload)
-    
+
     @property
     def record_value(self) -> Mapping:
         """Accessor for the JSON record value generated for this credential exchange."""
