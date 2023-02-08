@@ -1,7 +1,3 @@
-import json
-from aries_cloudagent.messaging.models.base_record import BaseExchangeRecord
-
-
 class LightWeightWebhook:
     __acceptable_keys_list = [
         "connection_id",
