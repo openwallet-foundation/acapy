@@ -9,14 +9,14 @@ included in the `1.0.0-rc1` release. The categorized list of PRs separates those
 that are new from those in the `1.0.0-rc1` release candidate.
 
 With this release, a new automated process publishes container images in the
-Hyperledger container image repository. New images for the release are automatically published by the GitHubAction
-Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered when
-a release is tagged, so no manual action is needed. The images are published in
-the [Hyperledger Package Repository under
-aries-cloudagent-python](https://github.com/orgs/hyperledger/packages?repo_name=aries-cloudagent-python)
-and a link to the packages added to the repositories main page (under
-"Packages"). Additional information about the container image publication process can be
-found in the document [Container Images and Github Actions].
+Hyperledger container image repository. New images for the release are
+automatically published by the GitHubAction Workflows: [publish.yml] and
+[publish-indy.yml]. The actions are triggered when a release is tagged, so no
+manual action is needed. The images are published in the [Hyperledger Package
+Repository under aries-cloudagent-python] and a link to the packages added to
+the repositories main page (under "Packages"). Additional information about the
+container image publication process can be found in the document [Container
+Images and Github Actions].
 
 There are not a lot of new Aries Framework features in this release, as the
 focus has been on cleanup and optimization. The biggest addition is the
@@ -32,18 +32,24 @@ Endorser service.
 The images are based on [Python 3.6 and 3.9 `slim-bullseye`
 images](https://hub.docker.com/_/python), and are built to support `linux/386
 (x86)`, `linux/amd64 (x64)`, and `linux/arm64`. There are two flavors of image
-built for each Python version. One containing the Indy/Aries Shared Libraries
+built for each Python version. One contains only the Indy/Aries Shared Libraries
 only ([Aries Askar](https://github.com/hyperledger/aries-askar), [Indy
 VDR](https://github.com/hyperledger/indy-vdr) and [Indy Shared
 RS](https://github.com/hyperledger/indy-shared-rs), supporting only the use of
-`--wallet-type askar`), and one containing the Indy/Aries shared libraries and
-the Indy SDK (considered deprecated). The images containing the Indy SDK are
-labeled `indy`. For new deployments, we recommend using the Python 3.9 Shared
-Library images. For existing deployments, we recommend migrating to those
-images. For those migrating an Indy SDK deployment, a new secure storage
-migration capability from Indy SDK to Aries Askar is available--contact the
-ACA-Py maintainers on Hyperledger Discord for details.
+`--wallet-type askar`). The other (labelled `indy`) contains the Indy/Aries
+shared libraries and the Indy SDK (considered deprecated). For new deployments,
+we recommend using the Python 3.9 Shared Library images. For existing
+deployments, we recommend migrating to those images. For those migrating an Indy
+SDK deployment, a new secure storage database migration capability from Indy SDK
+to Aries Askar is available--contact the ACA-Py maintainers on Hyperledger
+Discord for details.
 
+Those currently using the container images published by [BC Gov on Docker
+Hub](https://hub.docker.com/r/bcgovimages/aries-cloudagent) should change to use
+those published to the [Hyperledger Package Repository under
+aries-cloudagent-python].
+
+[Hyperledger Package Repository under aries-cloudagent-python]: https://github.com/orgs/hyperledger/packages?repo_name=aries-cloudagent-python
 
 ## Breaking Changes
 
