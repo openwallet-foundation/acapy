@@ -3,8 +3,10 @@
 ## February 8, 2023
 
 0.8.0 is a breaking change that contains all updates since release 0.7.5. It
-extends the previously tagged `1.0.0-rc1` release because it is not clear
-when that release will be finalized.
+extends the previously tagged `1.0.0-rc1` release because it is not clear when
+that release will be finalized. Many of the PRs in this release were previously
+included in the `1.0.0-rc1` release. The categorized list of PRs separates those
+that are new from those in the `1.0.0-rc1` release candidate.
 
 With this release, a new automated process publishes container
 images in the Hyperledger container image repository for this version of ACA-Py
@@ -155,6 +157,7 @@ is unlikely to impact any deployments.
     - Redis Plugins \[redis\_cache & redis\_queue\] related updates [\#1937](https://github.com/hyperledger/aries-cloudagent-python/pull/1937) ([shaangill025](https://github.com/shaangill025))
 
 - Release management pull requests
+  - 0.8.0-rc0 release updates [\#2115](https://github.com/hyperledger/aries-cloudagent-python/pull/2115) ([swcurran](https://github.com/swcurran))
   - Previously flagged in release 1.0.0-rc1
     - Release 1.0.0-rc0 [\#1904](https://github.com/hyperledger/aries-cloudagent-python/pull/1904) ([swcurran](https://github.com/swcurran))
     - Add 0.7.5 patch Changelog entry to main branch Changelog [\#1996](https://github.com/hyperledger/aries-cloudagent-python/pull/1996) ([swcurran](https://github.com/swcurran))
