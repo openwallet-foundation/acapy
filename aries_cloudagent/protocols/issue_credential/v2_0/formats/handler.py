@@ -99,6 +99,7 @@ class V20CredFormatHandler(ABC):
         cred_ex_record: V20CredExRecord,
         request_data: Mapping = None,
         attach_id: str = None,
+        init_cred_req_flow: bool = False,
     ) -> CredFormatAttachment:
         """Create format specific credential request attachment data."""
 

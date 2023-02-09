@@ -270,6 +270,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_ex_record: V20CredExRecord,
         request_data: Mapping = None,
         attach_id: str = None,
+        init_cred_req_flow: bool = False,
     ) -> CredFormatAttachment:
         """Create indy credential request."""
         if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:

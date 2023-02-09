@@ -84,6 +84,30 @@ _FILTER_EXAMPLE = {
     },
 }
 
+_FILTER_LD_PROOF_EXAMPLE = {
+    "ld_proof": {
+        "credential": {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+            ],
+            "credentialSubject": {
+                "familyName": "SMITH",
+                "gender": "Male",
+                "givenName": "JOHN",
+                "type": ["PermanentResident", "Person"],
+            },
+            "description": "Government of Example Permanent Resident Card.",
+            "identifier": "83627465",
+            "issuanceDate": "2019-12-03T12:19:52Z",
+            "issuer": "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th",
+            "name": "Permanent Resident Card",
+            "type": ["VerifiableCredential", "PermanentResidentCard"],
+        },
+        "options": {"proofType": "Ed25519Signature2018"},
+    }
+}
+
 
 class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
     """Response schema for v2.0 Issue Credential Module."""
@@ -266,7 +290,7 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
         required=True,
         data_key="filter",
         description="Credential specification criteria by format",
-        example=_FILTER_EXAMPLE,
+        example=_FILTER_LD_PROOF_EXAMPLE,
     )
     auto_remove = fields.Bool(
         description=(
@@ -484,6 +508,27 @@ class V20CredIssueRequestSchema(OpenAPISchema):
         ),
         required=False,
     )
+    filter_ = fields.Dict(
+        required=False,
+        data_key="filter",
+        description="LD_PROOF credential specification criteria",
+        example=_FILTER_LD_PROOF_EXAMPLE,
+    )
+
+    @validates_schema
+    def validate(self, data, **kwargs):
+        """Validate filter and checks for preview when indy format is present."""
+        filter_dict = data.get("filter_")
+        if filter_dict:
+            for attach_id in filter_dict.keys():
+                if "ld_proof" in attach_id:
+                    try:
+                        LDProofVCDetailSchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "LDProofVCDetailSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
 
 
 class V20CredIssueProblemReportRequestSchema(OpenAPISchema):
@@ -1512,9 +1557,11 @@ async def credential_exchange_issue(request: web.BaseRequest):
     body = await request.json()
     comment = body.get("comment")
     more_available = body.get("more_available")
+    filt_spec = body.get("filter")
 
     cred_ex_id = request.match_info["cred_ex_id"]
 
+    cred_proposal = None
     cred_ex_record = None
     conn_record = None
     try:
@@ -1538,12 +1585,17 @@ async def credential_exchange_issue(request: web.BaseRequest):
             )
 
         cred_manager = V20CredManager(profile)
+        if filt_spec:
+            cred_proposal = V20CredProposal(
+                **_formats_filters(filt_spec),
+            )
         (cred_ex_record, cred_issue_message) = await cred_manager.issue_credential(
             cred_ex_record,
             comment=comment,
             more_available=more_available
             if more_available and isinstance(more_available, int)
             else 0,
+            credential_spec=cred_proposal,
         )
 
         details = await _get_attached_credentials(profile, cred_ex_record)

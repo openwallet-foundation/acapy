@@ -49,6 +49,18 @@ class TestV20CredRoutes(AsyncTestCase):
         with self.assertRaises(test_module.ValidationError):
             schema.validate({"filter_": {"random": {"..": ".."}}})
 
+    async def test_validate_cred_issue_schema(self):
+        schema = test_module.V20CredIssueRequestSchema()
+        schema.validate(
+            {
+                "filter_": {"ld_proof": ld_proof_test_module.VC_DETAIL},
+                "more_available": 1,
+                "comment": "test",
+            }
+        )
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"ld_proof": {"...": "..."}}})
+
     async def test_validate_request_free_schema(self):
         schema = test_module.V20CredRequestFreeSchema()
         schema.validate({"filter_": {"ld_proof": ld_proof_test_module.VC_DETAIL}})
