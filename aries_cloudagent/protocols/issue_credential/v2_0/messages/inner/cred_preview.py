@@ -147,7 +147,7 @@ class V20CredPreview(BaseModel):
             decode: whether first to decode attributes with MIME type
 
         """
-        if attach_id:
+        if attach_id and attach_id != V20CredFormat.Format.INDY.api:
             return {
                 attr.name: b64_to_str(attr.value)
                 if attr.mime_type and decode
@@ -169,7 +169,7 @@ class V20CredPreview(BaseModel):
         Return empty dict if no attribute has MIME type.
 
         """
-        if attach_id:
+        if attach_id and attach_id != V20CredFormat.Format.INDY.api:
             return {
                 attr.name: attr.mime_type
                 for attr in self.attributes_dict.get(attach_id)
