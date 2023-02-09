@@ -439,30 +439,36 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         cred_ex_record: V20CredExRecord,
         request_data: Mapping = None,
         attach_id: str = None,
+        init_cred_req_flow: bool = False,
     ) -> CredFormatAttachment:
         """Create linked data proof credential request."""
         holder_did = request_data.get("holder_did") if request_data else None
 
-        if cred_ex_record.cred_offer:
-            if attach_id:
-                request_data = cred_ex_record.cred_offer.attachment_by_id(attach_id)
-            else:
-                request_data = cred_ex_record.cred_offer.attachment(
-                    LDProofCredFormatHandler.format
-                )
-        # API data is stored in proposal (when starting from request)
-        # It is a bit of a strage flow IMO.
-        elif cred_ex_record.cred_proposal:
-            if attach_id:
-                request_data = cred_ex_record.cred_proposal.attachment_by_id(attach_id)
-            else:
-                request_data = cred_ex_record.cred_proposal.attachment(
-                    LDProofCredFormatHandler.format
-                )
+        if attach_id and request_data and attach_id in request_data:
+            request_data = request_data.get(attach_id)
         else:
-            raise V20CredFormatError(
-                "Cannot create linked data proof request without offer or input data"
-            )
+            if cred_ex_record.cred_offer:
+                if attach_id:
+                    request_data = cred_ex_record.cred_offer.attachment_by_id(attach_id)
+                else:
+                    request_data = cred_ex_record.cred_offer.attachment(
+                        LDProofCredFormatHandler.format
+                    )
+            # API data is stored in proposal (when starting from request)
+            # It is a bit of a strage flow IMO.
+            elif cred_ex_record.cred_proposal:
+                if attach_id and not init_cred_req_flow:
+                    request_data = cred_ex_record.cred_proposal.attachment_by_id(
+                        attach_id
+                    )
+                else:
+                    request_data = cred_ex_record.cred_proposal.attachment(
+                        LDProofCredFormatHandler.format
+                    )
+            else:
+                raise V20CredFormatError(
+                    "Cannot create linked data proof request without offer or input data"
+                )
 
         detail = LDProofVCDetail.deserialize(request_data)
         detail = await self._prepare_detail(detail, holder_did=holder_did)
@@ -511,6 +517,15 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             document_loader=document_loader,
             purpose=proof_purpose,
         )
+
+        detail_record = V20CredExRecordLDProof(
+            cred_ex_id=cred_ex_record.cred_ex_id,
+            attach_id=attach_id,
+        )
+        async with self.profile.session() as session:
+            await detail_record.save(
+                session, reason="create V20CredExRecordLDProof detail record"
+            )
 
         return self.get_format_data(CRED_20_ISSUE, vc, attach_id)
 

@@ -230,7 +230,9 @@ class V20CredManager:
             cred_format = V20CredFormat.Format.get(format.format)
             if cred_format:
                 attach_id = (
-                    format.attach_id if format.attach_id != cred_format.api else None
+                    format.attach_id
+                    if format.attach_id != cred_format.api
+                    else cred_format.api
                 )
                 formats.append(
                     await cred_format.handler(self.profile).create_offer(
@@ -370,6 +372,7 @@ class V20CredManager:
                 )
 
         # react to credential offer, use offer formats
+        init_cred_req_flow = False
         if cred_ex_record.state:
             if cred_ex_record.state != V20CredExRecord.STATE_OFFER_RECEIVED:
                 raise V20CredManagerError(
@@ -379,8 +382,12 @@ class V20CredManager:
                 )
 
             cred_offer = cred_ex_record.cred_offer
-
-            input_formats = cred_offer.formats
+            if not cred_offer and cred_request_exists:
+                cred_proposal = cred_ex_record.cred_proposal
+                input_formats = cred_proposal.formats
+                init_cred_req_flow = True
+            else:
+                input_formats = cred_offer.formats
         # start with request (not allowed for indy -> checked in indy format handler)
         # use proposal formats
         else:
@@ -405,9 +412,11 @@ class V20CredManager:
 
             if cred_format:
                 attach_id = (
-                    format.attach_id if format.attach_id != cred_format.api else None
+                    format.attach_id
+                    if format.attach_id != cred_format.api
+                    else cred_format.api
                 )
-                if not attach_id and cred_request_exists:
+                if cred_request_exists and attach_id == cred_format.api:
                     attach_id = f"{attach_id}-{str(uuid4())}"
                 if attach_id in exclude_attach_ids:
                     continue
@@ -416,6 +425,7 @@ class V20CredManager:
                         cred_ex_record=cred_ex_record,
                         request_data={"holder_did": holder_did},
                         attach_id=attach_id,
+                        init_cred_req_flow=init_cred_req_flow,
                     )
                 )
 
@@ -436,7 +446,10 @@ class V20CredManager:
         )
 
         # Assign thid (and optionally pthid) to message
-        cred_request_message.assign_thread_from(cred_ex_record.cred_offer)
+        if not cred_ex_record.cred_offer:
+            cred_request_message._thread = {"thid": cred_ex_record.thread_id}
+        else:
+            cred_request_message.assign_thread_from(cred_ex_record.cred_offer)
         cred_request_message.assign_trace_decorator(
             self._profile.settings, cred_ex_record.trace
         )
@@ -558,6 +571,7 @@ class V20CredManager:
         *,
         comment: str = None,
         more_available: int = 0,
+        credential_spec: V20CredProposal = None,
     ) -> Tuple[V20CredExRecord, V20CredIssue]:
         """
         Issue a credential.
@@ -571,7 +585,48 @@ class V20CredManager:
             Tuple: (Updated credential exchange record, credential issue message)
 
         """
+        if credential_spec:
+            if not cred_ex_record.multiple_credentials:
+                raise V20CredManagerError(
+                    "Credential spec included but cred_ex_record "
+                    "multiple_credentials set as "
+                    f"{str(cred_ex_record.multiple_credentials)}"
+                )
+            input_formats = credential_spec.formats
+            # Creating requests for the credential spec
+            request_formats = []
+            for format in input_formats:
+                cred_format = V20CredFormat.Format.get(format.format)
 
+                if cred_format:
+                    attach_id = (
+                        format.attach_id
+                        if format.attach_id != cred_format.api
+                        else None
+                    )
+                    request_formats.append(
+                        await cred_format.handler(self.profile).create_request(
+                            cred_ex_record=cred_ex_record,
+                            attach_id=attach_id,
+                            request_data={
+                                attach_id: credential_spec.attachment_by_id(attach_id)
+                            },
+                        )
+                    )
+            if len(request_formats) >= 1:
+                cred_request_message = V20CredRequest(
+                    formats=[format for (format, _) in request_formats],
+                    requests_attach=[attach for (_, attach) in request_formats],
+                )
+                cred_request_message.assign_thread_from(cred_ex_record.cred_offer)
+                cred_request_message.assign_trace_decorator(
+                    self._profile.settings, cred_ex_record.trace
+                )
+                if cred_ex_record.cred_request and cred_ex_record.multiple_credentials:
+                    existing_cred_request = cred_ex_record.cred_request
+                    for fmt, atch in request_formats:
+                        existing_cred_request.add_attachments(fmt, atch)
+                    cred_ex_record.cred_request = existing_cred_request
         if cred_ex_record.state != V20CredExRecord.STATE_REQUEST_RECEIVED:
             raise V20CredManagerError(
                 f"Credential exchange {cred_ex_record.cred_ex_id} "
@@ -614,7 +669,9 @@ class V20CredManager:
             cred_format = V20CredFormat.Format.get(format.format)
             if cred_format:
                 attach_id = (
-                    format.attach_id if format.attach_id != cred_format.api else None
+                    format.attach_id
+                    if format.attach_id != cred_format.api
+                    else cred_format.api
                 )
                 if attach_id and attach_id in to_exclude:
                     continue
@@ -623,8 +680,7 @@ class V20CredManager:
                         cred_ex_record=cred_ex_record, attach_id=attach_id
                     )
                 )
-                if attach_id:
-                    cred_ex_record.process_attach_id(attach_id)
+                cred_ex_record.process_attach_id(attach_id)
 
         if len(issue_formats) == 0:
             raise V20CredManagerError(
@@ -736,15 +792,14 @@ class V20CredManager:
                 attach_id = (
                     issue_format.attach_id
                     if issue_format.attach_id != cred_format.api
-                    else None
+                    else cred_format.api
                 )
                 if attach_id and attach_id in alrady_processed_attach:
                     continue
                 await cred_format.handler(self.profile).receive_credential(
                     cred_ex_record, cred_issue_message, attach_id
                 )
-                if attach_id:
-                    cred_ex_record.process_attach_id(attach_id)
+                cred_ex_record.process_attach_id(attach_id)
                 handled_formats.append(cred_format)
 
         if len(handled_formats) == 0:
@@ -832,7 +887,9 @@ class V20CredManager:
 
             if cred_format:
                 attach_id = (
-                    format.attach_id if format.attach_id != cred_format.api else None
+                    format.attach_id
+                    if format.attach_id != cred_format.api
+                    else cred_format.api
                 )
                 if attach_id in to_exclude:
                     continue
@@ -841,8 +898,7 @@ class V20CredManager:
                 )
                 # TODO: if storing multiple credentials we can't reuse the same id
                 cred_id = None
-                if attach_id:
-                    cred_ex_record.store_attach_id(attach_id)
+                cred_ex_record.store_attach_id(attach_id)
 
         return cred_ex_record
 

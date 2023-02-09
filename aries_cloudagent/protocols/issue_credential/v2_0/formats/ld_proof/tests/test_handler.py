@@ -558,6 +558,47 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         # assert data is encoded as base64
         assert attachment.data.base64
 
+    async def test_create_request_from_cred_spec(self):
+        cred_proposal = V20CredProposal(
+            formats=[
+                V20CredFormat(
+                    attach_id="ld_proof-0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+                V20CredFormat(
+                    attach_id="ld_proof-1",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                ),
+            ],
+            filters_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-0"),
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL, ident="ld_proof-1"),
+            ],
+        )
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-id",
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+        )
+
+        (cred_format, attachment) = await self.handler.create_request(
+            cred_ex_record=cred_ex_record,
+            request_data={"ld_proof-0": cred_proposal.attachment_by_id("ld_proof-0")},
+            attach_id="ld_proof-0",
+        )
+
+        # assert identifier match
+        assert cred_format.attach_id == attachment.ident
+
+        # assert content of attachment is proposal data
+        assert attachment.content == LD_PROOF_VC_DETAIL
+
+        # assert data is encoded as base64
+        assert attachment.data.base64
+
     async def test_create_bound_request_multiple_cred_flow_from_offer(self):
         cred_offer = V20CredOffer(
             formats=[
