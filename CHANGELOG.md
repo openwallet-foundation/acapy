@@ -8,26 +8,50 @@ that release will be finalized. Many of the PRs in this release were previously
 included in the `1.0.0-rc1` release. The categorized list of PRs separates those
 that are new from those in the `1.0.0-rc1` release candidate.
 
-With this release, a new automated process publishes container
-images in the Hyperledger container image repository for this version of ACA-Py
-based on both Python 3.6 and 3.9. We recommend using Python 3.9 with ACA-Py.
+With this release, a new automated process publishes container images in the
+Hyperledger container image repository. New images for the release are automatically published by the GitHubAction
+Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered when
+a release is tagged, so no manual action is needed. The images are published in
+the [Hyperledger Package Repository under
+aries-cloudagent-python](https://github.com/orgs/hyperledger/packages?repo_name=aries-cloudagent-python)
+and a link to the packages added to the repositories main page (under
+"Packages"). Additional information about the container image publication process can be
+found in the document [Container Images and Github Actions].
 
-There are not a lot of new features in this release, as the focus has been on
-cleanup and optimization. The biggest addition is the inclusion with ACA-Py of a
-universal resolver interface, allowing an instance to have both local resolvers
-for some DID Methods and a call out to an external universal resolver for other
-DID Methods. Another significant new capability is full support for Hyperledger
-Indy transaction endorsement for Authors and Endorsers. A new repo
+There are not a lot of new Aries Framework features in this release, as the
+focus has been on cleanup and optimization. The biggest addition is the
+inclusion with ACA-Py of a universal resolver interface, allowing an instance to
+have both local resolvers for some DID Methods and a call out to an external
+universal resolver for other DID Methods. Another significant new capability is
+full support for Hyperledger Indy transaction endorsement for Authors and
+Endorsers. A new repo
 [aries-endorser-service](https://github.com/hyperledger/aries-endorser-service)
 has been created that is a pre-configured instance of ACA-Py for use as an
 Endorser service.
+
+The images are based on [Python 3.6 and 3.9 `slim-bullseye`
+images](https://hub.docker.com/_/python), and are built to support `linux/386
+(x86)`, `linux/amd64 (x64)`, and `linux/arm64`. There are two flavors of image
+built for each Python version. One containing the Indy/Aries Shared Libraries
+only ([Aries Askar](https://github.com/hyperledger/aries-askar), [Indy
+VDR](https://github.com/hyperledger/indy-vdr) and [Indy Shared
+RS](https://github.com/hyperledger/indy-shared-rs), supporting only the use of
+`--wallet-type askar`), and one containing the Indy/Aries shared libraries and
+the Indy SDK (considered deprecated). The images containing the Indy SDK are
+labeled `indy`. For new deployments, we recommend using the Python 3.9 Shared
+Library images. For existing deployments, we recommend migrating to those
+images. For those migrating an Indy SDK deployment, a new secure storage
+migration capability from Indy SDK to Aries Askar is available--contact the
+ACA-Py maintainers on Hyperledger Discord for details.
+
 
 ## Breaking Changes
 
 ### PR [\#2034](https://github.com/hyperledger/aries-cloudagent-python/pull/2034) -- Implicit connections
 
-The break impacts existing  deployments that supported connections coming via a
-public DID. Such deployments need to add the configuration parameter
+The break impacts existing deployments that support implicit connections, those
+initiated by another agent using a Public DID for this instance instead of an
+explicit invitation. Such deployments need to add the configuration parameter
 `--requests-through-public-did` to continue to support that feature. The use
 case is that an ACA-Py instance publishes a public DID on a ledger with a
 DIDComm `service` in the DIDDoc. Other agents resolve that DID, and attempt to

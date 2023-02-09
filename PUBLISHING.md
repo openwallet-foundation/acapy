@@ -107,12 +107,20 @@ Once you have the list of PRs:
    PRs in the release, to complement the manually curated Changelog. Verify on
    PyPi that the version is published.
 
-9. Publish a new docker container on Docker Hub
-   ([bcgovimages/aries-cloudagent](https://hub.docker.com/r/bcgovimages/aries-cloudagent/))
-   by following the README.md instructions to create a PR for the release in the
-   repository
-   [https://github.com/bcgov/aries-cloudagent-container](https://github.com/bcgov/aries-cloudagent-container).
-   Appropriate permissions are required to publish the image.
+9. New images for the release are automatically published by the GitHubAction
+   Workflows: [publish.yml] and [publish-indy.yml]. The actions are triggered
+   when a release is tagged, so no manual action is needed. The images are
+   published in the [Hyperledger Package Repository under
+   aries-cloudagent-python](https://github.com/orgs/hyperledger/packages?repo_name=aries-cloudagent-python)
+   and a link to the packages added to the repositories main page (under
+   "Packages").
+
+   Additional information about the container image publication process can be
+   found in the document [Container Images and Github Actions]().
+
+[publish.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish.yml
+[publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
+[Container Images and Github Actions]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/ContainerImagesAndGithubActions.md
 
 10. Update the ACA-Py Read The Docs site by building the new "latest" (main
     branch) and activating and building the new release. Appropriate permissions
