@@ -8,16 +8,6 @@ that release will be finalized. Many of the PRs in this release were previously
 included in the `1.0.0-rc1` release. The categorized list of PRs separates those
 that are new from those in the `1.0.0-rc1` release candidate.
 
-With this release, a new automated process publishes container images in the
-Hyperledger container image repository. New images for the release are
-automatically published by the GitHubAction Workflows: [publish.yml] and
-[publish-indy.yml]. The actions are triggered when a release is tagged, so no
-manual action is needed. The images are published in the [Hyperledger Package
-Repository under aries-cloudagent-python] and a link to the packages added to
-the repositories main page (under "Packages"). Additional information about the
-container image publication process can be found in the document [Container
-Images and Github Actions].
-
 There are not a lot of new Aries Framework features in this release, as the
 focus has been on cleanup and optimization. The biggest addition is the
 inclusion with ACA-Py of a universal resolver interface, allowing an instance to
@@ -29,7 +19,19 @@ Endorsers. A new repo
 has been created that is a pre-configured instance of ACA-Py for use as an
 Endorser service.
 
-The images are based on [Python 3.6 and 3.9 `slim-bullseye`
+### Container Publishing Updated
+
+With this release, a new automated process publishes container images in the
+Hyperledger container image repository. New images for the release are
+automatically published by the GitHubAction Workflows: [publish.yml] and
+[publish-indy.yml]. The actions are triggered when a release is tagged, so no
+manual action is needed. The images are published in the [Hyperledger Package
+Repository under aries-cloudagent-python] and a link to the packages added to
+the repositories main page (under "Packages"). Additional information about the
+container image publication process can be found in the document [Container
+Images and Github Actions].
+
+The ACA-Py container images are based on [Python 3.6 and 3.9 `slim-bullseye`
 images](https://hub.docker.com/_/python), and are built to support `linux/386
 (x86)`, `linux/amd64 (x64)`, and `linux/arm64`. There are two flavors of image
 built for each Python version. One contains only the Indy/Aries Shared Libraries
@@ -50,6 +52,10 @@ those published to the [Hyperledger Package Repository under
 aries-cloudagent-python].
 
 [Hyperledger Package Repository under aries-cloudagent-python]: https://github.com/orgs/hyperledger/packages?repo_name=aries-cloudagent-python
+[publish.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish.yml
+[publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
+[Container Images and Github Actions]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/ContainerImagesAndGithubActions.md
+
 
 ## Breaking Changes
 
