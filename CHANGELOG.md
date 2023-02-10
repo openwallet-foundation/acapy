@@ -139,6 +139,7 @@ is unlikely to impact any deployments.
     - Add seed command line parameter but use only if also an "allow insecure seed" parameter is set [\#1714](https://github.com/hyperledger/aries-cloudagent-python/pull/1714) ([DaevMithran](https://github.com/DaevMithran))
 
 - Internal Aries framework data handling updates
+  - fix: resolver api schema inconsistency [\#2112](https://github.com/hyperledger/aries-cloudagent-python/pull/2112) ([TimoGlastra](https://github.com/chumbert))
   - fix: return if return route but no response [\#1853](https://github.com/hyperledger/aries-cloudagent-python/pull/1853) ([TimoGlastra](https://github.com/TimoGlastra))
   - Multi-ledger/Multi-tenant issues [\#2022](https://github.com/hyperledger/aries-cloudagent-python/pull/2022) ([ianco](https://github.com/ianco))
   - fix: Correct typo in model -- required spelled incorrectly [\#2031](https://github.com/hyperledger/aries-cloudagent-python/pull/2031) ([swcurran](https://github.com/swcurran))
