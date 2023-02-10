@@ -8,7 +8,6 @@ from marshmallow import fields, Schema, validate
 
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.models.light_webhook import LightWeightWebhook
 from .....messaging.valid import UUIDFour
 from .....storage.base import StorageError
 
@@ -18,6 +17,7 @@ from ..messages.cred_proposal import V20CredProposal, V20CredProposalSchema
 from ..messages.cred_offer import V20CredOffer, V20CredOfferSchema
 from ..messages.cred_request import V20CredRequest, V20CredRequestSchema
 from ..messages.inner.cred_preview import V20CredPreviewSchema
+from ..messages.cred_ex_record_webhook import LightWeightV20CredExRecordWebhook
 
 from . import UNENCRYPTED_TAGS
 
@@ -204,7 +204,7 @@ class V20CredExRecord(BaseExchangeRecord):
             payload = self.serialize()
 
         if session.profile.settings.get("transport.light_weight_webhook"):
-            payload = LightWeightWebhook(2, **self.__dict__)
+            payload = LightWeightV20CredExRecordWebhook(**self.__dict__)
             payload = payload.__dict__
 
         await session.profile.notify(topic, payload)

@@ -12,12 +12,14 @@ from .....indy.models.cred_abstract import IndyCredAbstract, IndyCredAbstractSch
 from .....indy.models.cred_precis import IndyCredInfo, IndyCredInfoSchema
 from .....indy.models.cred_request import IndyCredRequest, IndyCredRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
-from .....messaging.models.light_webhook import LightWeightWebhook
 from .....messaging.valid import INDY_CRED_DEF_ID, INDY_SCHEMA_ID, UUIDFour
 from .....storage.base import StorageError
 
 from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
 from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
+from ..messages.credential_exchange_webhook import (
+    LightWeightV10CredentialExchangeWebhook,
+)
 
 from . import UNENCRYPTED_TAGS
 
@@ -244,7 +246,7 @@ class V10CredentialExchange(BaseExchangeRecord):
             payload = self.serialize()
 
         if session.profile.settings.get("transport.light_weight_webhook"):
-            payload = LightWeightWebhook(1, **self.__dict__)
+            payload = LightWeightV10CredentialExchangeWebhook(**self.__dict__)
             payload = payload.__dict__
 
         await session.profile.notify(topic, payload)

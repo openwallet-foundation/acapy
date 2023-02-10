@@ -1,4 +1,8 @@
-class LightWeightWebhook:
+"""v1.0 credential exchange light weight webhook"""
+
+class LightWeightV10CredentialExchangeWebhook:
+    """Class representing a state only credential exchange webhook."""
+
     __acceptable_keys_list = [
         "connection_id",
         "credential_exchange_id",
@@ -26,15 +30,16 @@ class LightWeightWebhook:
 
     def __init__(
         self,
-        version,  # 2 = V20CredExRecord ; 1 = V10CredentialExchange
         **kwargs,
     ):
+        """
+        Initialize webhook object from V10CredentialExchange
+        from a list of accepted attributes.
+        """
         [
             self.__setattr__(key, kwargs.get(key))
             for key in self.__acceptable_keys_list
             if kwargs.get(key) is not None
         ]
-        if version == 2:
-            self.cred_ex_id = kwargs.get("_id")
-        else:
+        if kwargs.get("_id") is not None:
             self.credential_exchange_id = kwargs.get("_id")
