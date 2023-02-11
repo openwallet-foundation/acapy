@@ -2,7 +2,7 @@ name: Publish ACA-Py Image (Indy)
 run-name: Publish ACA-Py ${{ inputs.tag || github.event.release.tag_name }} Image (Indy ${{ inputs.indy_version || '1.16.0' }})
 on:
   release:
-    types: [released]
+    types: [published]
 
   workflow_dispatch:
     inputs:
