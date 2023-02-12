@@ -1,3 +1,7 @@
+import os
+import shutil
+import unittest
+
 from aiohttp.web import HTTPBadRequest, HTTPNotFound
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -881,6 +885,34 @@ class TestRevocationRoutes(AsyncTestCase):
                 result = await test_module.set_rev_reg_state(self.request)
             mock_json_response.assert_not_called()
 
+    # async def test_delete_tail(self):
+    #     CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
+    #     REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
+    #         self.test_did, self.test_did
+    #     )
+    #     self.request.query = {"cred_def_id": CRED_DEF_ID,
+    #                           "rev_reg_id": REV_REG_ID}
+    #     self.request.json = async_mock.CoroutineMock(
+    #         return_value={
+    #             "message": "All files deleted successfully"
+    #         }
+    #     )
+    #
+    #     with async_mock.patch.object(
+    #             test_module, "IndyRevocation", autospec=True
+    #     ) as mock_indy_revoc, async_mock.patch.object(
+    #         test_module.web, "json_response", async_mock.Mock()
+    #     ) as mock_json_response:
+    #         mock_indy_revoc.return_value = async_mock.MagicMock(
+    #             get_issuer_rev_reg_record=async_mock.CoroutineMock(
+    #                 tails_local_path=f"/tmp/tails/{REV_REG_ID}",
+    #                 return_value={"dummy": "dummy"})
+    #         )
+    #
+    #         result = await test_module.delete_tails(self.request)
+    #         mock_json_response.assert_called_once_with({"message": "All files deleted successfully"})
+    #         assert result is mock_json_response.return_value
+
     async def test_register(self):
         mock_app = async_mock.MagicMock()
         mock_app.add_routes = async_mock.MagicMock()
@@ -906,3 +938,55 @@ class TestRevocationRoutes(AsyncTestCase):
         ]["get"]["responses"]["200"]["schema"] == {"type": "string", "format": "binary"}
 
         assert "tags" in mock_app._state["swagger_dict"]
+
+class TestDeleteTails(unittest.TestCase):
+    def setUp(self):
+        self.rev_reg_id = "rev_reg_id_123"
+        self.cred_def_id = "cred_def_id_456"
+
+        self.main_dir_rev = "path/to/main/dir/rev"
+        self.tails_path = os.path.join(self.main_dir_rev, "tails.txt")
+        os.makedirs(self.main_dir_rev)
+        open(self.tails_path, "w").close()
+
+    async def test_delete_tails_by_rev_reg_id(self):
+        # Setup
+        rev_reg_id = self.rev_reg_id
+
+        # Test
+        result = await test_module.delete_tails({"context": None, "query": {"rev_reg_id": rev_reg_id}})
+
+        # Assert
+        self.assertEqual(result, {"message": "All files deleted successfully"})
+        self.assertFalse(os.path.exists(self.main_dir_rev))
+
+    async def test_delete_tails_by_cred_def_id(self):
+        # Setup
+        cred_def_id = self.cred_def_id
+        main_dir_cred = "path/to/main/dir/cred"
+        os.makedirs(main_dir_cred)
+        cred_dir = os.path.join(main_dir_cred, cred_def_id)
+        os.makedirs(cred_dir)
+
+        # Test
+        result = await test_module.delete_tails({"context": None, "query": {"cred_def_id": cred_def_id}})
+
+        # Assert
+        self.assertEqual(result, {"message": "All files deleted successfully"})
+        self.assertFalse(os.path.exists(cred_dir))
+        self.assertTrue(os.path.exists(main_dir_cred))
+
+    async def test_delete_tails_not_found(self):
+        # Setup
+        cred_def_id = "invalid_cred_def_id"
+
+        # Test
+        result = await test_module.delete_tails({"context": None, "query": {"cred_def_id": cred_def_id}})
+
+        # Assert
+        self.assertEqual(result, {"message": "No such file or directory"})
+        self.assertTrue(os.path.exists(self.main_dir_rev))
+
+    async def tearDown(self):
+        if os.path.exists(self.main_dir_rev):
+            shutil.rmtree(self.main_dir_rev)
