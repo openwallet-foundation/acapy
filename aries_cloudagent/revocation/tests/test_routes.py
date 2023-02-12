@@ -885,33 +885,6 @@ class TestRevocationRoutes(AsyncTestCase):
                 result = await test_module.set_rev_reg_state(self.request)
             mock_json_response.assert_not_called()
 
-    # async def test_delete_tail(self):
-    #     CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
-    #     REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-    #         self.test_did, self.test_did
-    #     )
-    #     self.request.query = {"cred_def_id": CRED_DEF_ID,
-    #                           "rev_reg_id": REV_REG_ID}
-    #     self.request.json = async_mock.CoroutineMock(
-    #         return_value={
-    #             "message": "All files deleted successfully"
-    #         }
-    #     )
-    #
-    #     with async_mock.patch.object(
-    #             test_module, "IndyRevocation", autospec=True
-    #     ) as mock_indy_revoc, async_mock.patch.object(
-    #         test_module.web, "json_response", async_mock.Mock()
-    #     ) as mock_json_response:
-    #         mock_indy_revoc.return_value = async_mock.MagicMock(
-    #             get_issuer_rev_reg_record=async_mock.CoroutineMock(
-    #                 tails_local_path=f"/tmp/tails/{REV_REG_ID}",
-    #                 return_value={"dummy": "dummy"})
-    #         )
-    #
-    #         result = await test_module.delete_tails(self.request)
-    #         mock_json_response.assert_called_once_with({"message": "All files deleted successfully"})
-    #         assert result is mock_json_response.return_value
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()
