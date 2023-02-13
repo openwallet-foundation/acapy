@@ -230,9 +230,7 @@ class V20CredManager:
             cred_format = V20CredFormat.Format.get(format.format)
             if cred_format:
                 attach_id = (
-                    format.attach_id
-                    if format.attach_id != cred_format.api
-                    else cred_format.api
+                    format.attach_id if format.attach_id != cred_format.api else None
                 )
                 formats.append(
                     await cred_format.handler(self.profile).create_offer(
@@ -412,13 +410,13 @@ class V20CredManager:
 
             if cred_format:
                 attach_id = (
-                    format.attach_id
-                    if format.attach_id != cred_format.api
-                    else cred_format.api
+                    format.attach_id if format.attach_id != cred_format.api else None
                 )
-                if cred_request_exists and attach_id == cred_format.api:
-                    attach_id = f"{attach_id}-{str(uuid4())}"
-                if attach_id in exclude_attach_ids:
+                if cred_request_exists and (
+                    not attach_id or attach_id == cred_format.api
+                ):
+                    attach_id = f"{attach_id or cred_format.api}-{str(uuid4())}"
+                if attach_id and attach_id in exclude_attach_ids:
                     continue
                 request_formats.append(
                     await cred_format.handler(self.profile).create_request(
@@ -595,6 +593,7 @@ class V20CredManager:
             input_formats = credential_spec.formats
             # Creating requests for the credential spec
             request_formats = []
+            cred_issue_attach_id_exists = False
             for format in input_formats:
                 cred_format = V20CredFormat.Format.get(format.format)
 
@@ -604,12 +603,36 @@ class V20CredManager:
                         if format.attach_id != cred_format.api
                         else None
                     )
+                    if not attach_id:
+                        if (
+                            cred_ex_record.cred_issue
+                            and cred_ex_record.cred_issue.attachment_by_id(
+                                cred_format.api
+                            )
+                            is not None
+                        ):
+                            cred_issue_attach_id_exists = True
+                        cred_spec_attch = credential_spec.attachment()
+                    else:
+                        if (
+                            cred_ex_record.cred_issue
+                            and cred_ex_record.cred_issue.attachment_by_id(attach_id)
+                            is not None
+                        ):
+                            cred_issue_attach_id_exists = True
+                        cred_spec_attch = credential_spec.attachment_by_id(attach_id)
+                    if cred_issue_attach_id_exists:
+                        raise V20CredManagerError(
+                            f"{attach_id or cred_format.api} identifier in "
+                            "credential_spec already exists with cred_issue "
+                            f"in cred_ex_record {cred_ex_record.cred_ex_id}"
+                        )
                     request_formats.append(
                         await cred_format.handler(self.profile).create_request(
                             cred_ex_record=cred_ex_record,
                             attach_id=attach_id,
                             request_data={
-                                attach_id: credential_spec.attachment_by_id(attach_id)
+                                attach_id or cred_format.api: cred_spec_attch
                             },
                         )
                     )
@@ -669,9 +692,7 @@ class V20CredManager:
             cred_format = V20CredFormat.Format.get(format.format)
             if cred_format:
                 attach_id = (
-                    format.attach_id
-                    if format.attach_id != cred_format.api
-                    else cred_format.api
+                    format.attach_id if format.attach_id != cred_format.api else None
                 )
                 if attach_id and attach_id in to_exclude:
                     continue
@@ -680,7 +701,7 @@ class V20CredManager:
                         cred_ex_record=cred_ex_record, attach_id=attach_id
                     )
                 )
-                cred_ex_record.process_attach_id(attach_id)
+                cred_ex_record.process_attach_id(attach_id or cred_format.api)
 
         if len(issue_formats) == 0:
             raise V20CredManagerError(
@@ -792,14 +813,14 @@ class V20CredManager:
                 attach_id = (
                     issue_format.attach_id
                     if issue_format.attach_id != cred_format.api
-                    else cred_format.api
+                    else None
                 )
                 if attach_id and attach_id in alrady_processed_attach:
                     continue
                 await cred_format.handler(self.profile).receive_credential(
                     cred_ex_record, cred_issue_message, attach_id
                 )
-                cred_ex_record.process_attach_id(attach_id)
+                cred_ex_record.process_attach_id(attach_id or cred_format.api)
                 handled_formats.append(cred_format)
 
         if len(handled_formats) == 0:
@@ -887,18 +908,16 @@ class V20CredManager:
 
             if cred_format:
                 attach_id = (
-                    format.attach_id
-                    if format.attach_id != cred_format.api
-                    else cred_format.api
+                    format.attach_id if format.attach_id != cred_format.api else None
                 )
-                if attach_id in to_exclude:
+                if attach_id and attach_id in to_exclude:
                     continue
                 await cred_format.handler(self.profile).store_credential(
                     cred_ex_record=cred_ex_record, cred_id=cred_id, attach_id=attach_id
                 )
                 # TODO: if storing multiple credentials we can't reuse the same id
                 cred_id = None
-                cred_ex_record.store_attach_id(attach_id)
+                cred_ex_record.store_attach_id(attach_id or cred_format.api)
 
         return cred_ex_record
 

@@ -524,7 +524,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         holder = self.profile.inject(IndyHolder)
         cred_offer_message = cred_ex_record.cred_offer
         mime_types = None
-        if cred_offer_message and cred_offer_message.credential_preview:
+        if cred_offer_message and cred_offer_message.credential_preview is not None:
             if attach_id:
                 mime_types = (
                     cred_offer_message.credential_preview.mime_types(attach_id) or None
