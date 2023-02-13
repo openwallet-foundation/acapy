@@ -43,7 +43,6 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
         ) as mock_didx_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_rec_class.retrieve_by_id.return_value = mock_conn_rec
             mock_didx_mgr.return_value.create_request = async_mock.CoroutineMock()
 

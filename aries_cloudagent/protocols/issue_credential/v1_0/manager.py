@@ -356,13 +356,15 @@ class CredentialManager:
             # Get credential exchange record (holder sent proposal first)
             # or create it (issuer sent offer first)
             try:
-                cred_ex_record = await (
-                    V10CredentialExchange.retrieve_by_connection_and_thread(
-                        txn,
-                        connection_id,
-                        message._thread_id,
-                        role=V10CredentialExchange.ROLE_HOLDER,
-                        for_update=True,
+                cred_ex_record = (
+                    await (
+                        V10CredentialExchange.retrieve_by_connection_and_thread(
+                            txn,
+                            connection_id,
+                            message._thread_id,
+                            role=V10CredentialExchange.ROLE_HOLDER,
+                            for_update=True,
+                        )
                     )
                 )
             except StorageNotFoundError:  # issuer sent this offer free of any proposal
@@ -532,13 +534,15 @@ class CredentialManager:
 
         async with self._profile.transaction() as txn:
             try:
-                cred_ex_record = await (
-                    V10CredentialExchange.retrieve_by_connection_and_thread(
-                        txn,
-                        connection_id,
-                        message._thread_id,
-                        role=V10CredentialExchange.ROLE_ISSUER,
-                        for_update=True,
+                cred_ex_record = (
+                    await (
+                        V10CredentialExchange.retrieve_by_connection_and_thread(
+                            txn,
+                            connection_id,
+                            message._thread_id,
+                            role=V10CredentialExchange.ROLE_ISSUER,
+                            for_update=True,
+                        )
                     )
                 )
             except StorageNotFoundError:
@@ -741,13 +745,15 @@ class CredentialManager:
 
         async with self._profile.transaction() as txn:
             try:
-                cred_ex_record = await (
-                    V10CredentialExchange.retrieve_by_connection_and_thread(
-                        txn,
-                        connection_id,
-                        message._thread_id,
-                        role=V10CredentialExchange.ROLE_HOLDER,
-                        for_update=True,
+                cred_ex_record = (
+                    await (
+                        V10CredentialExchange.retrieve_by_connection_and_thread(
+                            txn,
+                            connection_id,
+                            message._thread_id,
+                            role=V10CredentialExchange.ROLE_HOLDER,
+                            for_update=True,
+                        )
                     )
                 )
             except StorageNotFoundError:
@@ -947,13 +953,15 @@ class CredentialManager:
         """
         async with self._profile.transaction() as txn:
             try:
-                cred_ex_record = await (
-                    V10CredentialExchange.retrieve_by_connection_and_thread(
-                        txn,
-                        connection_id,
-                        message._thread_id,
-                        role=V10CredentialExchange.ROLE_ISSUER,
-                        for_update=True,
+                cred_ex_record = (
+                    await (
+                        V10CredentialExchange.retrieve_by_connection_and_thread(
+                            txn,
+                            connection_id,
+                            message._thread_id,
+                            role=V10CredentialExchange.ROLE_ISSUER,
+                            for_update=True,
+                        )
                     )
                 )
             except StorageNotFoundError:
@@ -987,9 +995,11 @@ class CredentialManager:
         """
         async with self._profile.transaction() as txn:
             try:
-                cred_ex_record = await (
-                    V10CredentialExchange.retrieve_by_connection_and_thread(
-                        txn, connection_id, message._thread_id, for_update=True
+                cred_ex_record = (
+                    await (
+                        V10CredentialExchange.retrieve_by_connection_and_thread(
+                            txn, connection_id, message._thread_id, for_update=True
+                        )
                     )
                 )
             except StorageNotFoundError:

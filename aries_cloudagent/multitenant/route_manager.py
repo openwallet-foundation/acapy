@@ -66,7 +66,7 @@ class MultitenantRouteManager(RouteManager):
 
                 # If no error is thrown, it means there is already a record
                 return None
-            except (StorageNotFoundError):
+            except StorageNotFoundError:
                 pass
 
         await routing_mgr.create_route_record(

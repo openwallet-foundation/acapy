@@ -165,7 +165,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.create_proposal = async_mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -209,7 +208,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.create_proposal = async_mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -261,7 +259,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.receive_proposal = async_mock.CoroutineMock()
 
             cred_proposal = V20CredProposal(
@@ -335,7 +332,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.create_offer = async_mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -627,7 +623,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.create_request = async_mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -715,7 +710,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.create_request = async_mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -986,7 +980,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_save, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.issue_credential = async_mock.CoroutineMock(
                 return_value=(
                     V20CredFormat(
@@ -1099,7 +1092,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_retrieve, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.receive_credential = async_mock.CoroutineMock()
             mock_retrieve.return_value = stored_cx_rec
             ret_cx_rec = await self.manager.receive_credential(
@@ -1247,7 +1239,6 @@ class TestV20CredManager(AsyncTestCase):
         ) as mock_delete, async_mock.patch.object(
             V20CredFormat.Format, "handler"
         ) as mock_handler:
-
             mock_handler.return_value.store_credential = async_mock.CoroutineMock()
 
             ret_cx_rec = await self.manager.store_credential(

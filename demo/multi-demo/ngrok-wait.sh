@@ -32,20 +32,16 @@ exec aca-py start \
     --auto-ping-connection \
     --monitor-ping \
     --public-invites \
-    --wallet-type "indy" \
-    --wallet-name "test_author" \
+    --wallet-type "askar" \
+    --wallet-name "test_multi" \
     --wallet-key "secret_key" \
     --wallet-storage-type "postgres_storage" \
-    --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}" \
+    --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5,\"scheme\":\"MultiWalletSingleTable\"}" \
     --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}" \
     --admin '0.0.0.0' 8010 \
-    --label "test_author" \
+    --label "test_multi" \
     --admin-insecure-mode \
-    --endorser-protocol-role author \
-    --endorser-alias 'Endorser' \
-    --auto-request-endorsement \
-    --auto-write-transactions \
-    --auto-create-revocation-transactions \
+    --multitenant \
+    --multitenant-admin \
+    --jwt-secret "very_secret_secret" \
     --log-level "error" 
-
-#    --genesis-url "https://raw.githubusercontent.com/ICCS-ISAC/dtrust-reconu/main/CANdy/dev/pool_transactions_genesis" \

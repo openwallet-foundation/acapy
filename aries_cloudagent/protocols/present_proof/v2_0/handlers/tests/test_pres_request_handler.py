@@ -219,7 +219,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
-
             mock_px_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
             )
@@ -279,7 +278,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_px_rec_cls:
-
             mock_px_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
             )
@@ -349,7 +347,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
-
             mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -419,7 +416,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
-
             mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -494,7 +490,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
-
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -565,7 +560,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
-
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -640,7 +634,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
-
             mock_pres_ex_rec_cls.return_value = mock_px_rec
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -705,7 +698,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
-
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -777,7 +769,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
-
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -894,7 +885,6 @@ class TestPresRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls:
-
             mock_pres_ex_rec_cls.return_value = px_rec_instance
             mock_pres_ex_rec_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance

@@ -273,7 +273,6 @@ class OutOfBandManager(BaseConnectionManager):
                 ).serialize()
 
         else:
-
             if not my_endpoint:
                 my_endpoint = self.profile.settings.get("default_endpoint")
 
