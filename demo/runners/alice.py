@@ -103,6 +103,15 @@ async def input_invitation(agent_container):
         connection = await agent_container.input_invitation(details, wait=True)
 
 
+async def fetch_credentials(agent_container):
+    indy_creds = await agent_container.admin_GET("/credentials")
+    jsonld_creds = await agent_container.admin_POST("/credentials/w3c", data={})
+    return {
+        "indy": indy_creds["results"],
+        "json-ld": jsonld_creds["results"],
+    }
+
+
 async def main(args):
     alice_agent = await create_agent_with_args(args, ident="alice")
 
@@ -137,7 +146,11 @@ async def main(args):
         log_status("#9 Input faber.py invitation details")
         await input_invitation(alice_agent)
 
-        options = "    (3) Send Message\n" "    (4) Input New Invitation\n"
+        options = (
+            "    (3) Send Message\n"
+            "    (4) Input New Invitation\n"
+            "    (5) View Received Credentials\n"
+        )
         if alice_agent.endorser_role and alice_agent.endorser_role == "author":
             options += "    (D) Set Endorser's DID\n"
         if alice_agent.multitenant:
@@ -190,6 +203,11 @@ async def main(args):
                 # handle new invitation
                 log_status("Input new invitation details")
                 await input_invitation(alice_agent)
+
+            elif option == "5":
+                # display all credentials
+                creds = await fetch_credentials(alice_agent)
+                log_msg(json.dumps(creds))
 
         if alice_agent.show_timing:
             timing = await alice_agent.agent.fetch_timing()

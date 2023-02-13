@@ -71,3 +71,18 @@ Feature: RFC 0453 Aries agent issue credential
     Examples:
        | Acme_capabilities                        | Bob_capabilities  | Schema_name    | Credential_data          |
        | --revocation --public-did --mediation    | --mediation       | driverslicense | Data_DL_NormalizedValues |
+
+  @T005-RFC453
+  Scenario Outline: Issue multiple credentials (no revocation, beginning with an offer) and holder accepts all credentials
+    Given we have "2" agents
+      | name  | role    | capabilities        |
+      | Acme  | issuer  | <Acme_capabilities> |
+      | Bob   | holder  | <Bob_capabilities>  |
+    And "Acme" and "Bob" have an existing connection
+    And "Acme" is ready to issue a credential for <Schema_name>
+    When "Acme" offers multiple credentials with data <Multi_Credential_data>
+    And "Bob" has the credential issued
+
+    Examples:
+       | Acme_capabilities                      | Bob_capabilities  | Schema_name    | Multi_Credential_data          |
+       | --public-did                           |                   | driverslicense | Data_DL_Multi_NormalizedValues |

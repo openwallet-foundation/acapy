@@ -115,13 +115,37 @@ def aries_container_issue_credential(
     )
 
 
+def aries_container_issue_credentials(
+    the_container: AgentContainer,
+    cred_def_id: str,
+    cred_attrs: dict,
+):
+    return run_coroutine(
+        the_container.issue_multiple_credentials,
+        cred_def_id,
+        cred_attrs,
+    )
+
+
 def aries_container_receive_credential(
+    the_container: AgentContainer,
+    cred_def_id: str,
+    creds_attrs: dict,
+):
+    return run_coroutine(
+        the_container.receive_credential,
+        cred_def_id,
+        creds_attrs,
+    )
+
+
+def aries_container_receive_credentials(
     the_container: AgentContainer,
     cred_def_id: str,
     cred_attrs: list,
 ):
     return run_coroutine(
-        the_container.receive_credential,
+        the_container.receive_credentials,
         cred_def_id,
         cred_attrs,
     )
@@ -173,6 +197,19 @@ def read_credential_data(schema_name: str, cred_scenario_name: str):
         if attr["value"] == "@uuid":
             attr["value"] = str(uuid.uuid4())
     return cred_data["attributes"]
+
+
+def read_credentials_data(schema_name: str, creds_scenario_name: str):
+    schema_creds_data = read_json_data("cred_data_schema_" + schema_name + ".json")
+    creds_data = schema_creds_data[creds_scenario_name]
+    # attrs are in a dictionary indexed by "indy-{i}"
+    i = 0
+    while f"indy-{i}" in creds_data["attributes"]:
+        for attr in creds_data["attributes"][f"indy-{i}"]:
+            if attr["value"] == "@uuid":
+                attr["value"] = str(uuid.uuid4())
+        i += 1
+    return creds_data["attributes"]
 
 
 def read_proof_req_data(proof_req_name: str):
