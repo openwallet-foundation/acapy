@@ -6,9 +6,12 @@ import time
 from bdd_support.agent_backchannel_client import (
     aries_container_create_schema_cred_def,
     aries_container_issue_credential,
+    aries_container_issue_credentials,
     aries_container_receive_credential,
+    aries_container_receive_credentials,
     read_schema_data,
     read_credential_data,
+    read_credentials_data,
     agent_container_GET,
     agent_container_POST,
     async_sleep,
@@ -66,6 +69,28 @@ def step_impl(context, issuer, credential_data):
 
     context.cred_attrs = cred_attrs
     context.cred_exchange = cred_exchange
+
+    # TODO Check the issuers State
+    # assert resp_json["state"] == "offer-sent"
+
+    # TODO Check the state of the holder after issuers call of send-offer
+    # assert expected_agent_state(context.holder_url, "issue-credential", context.cred_thread_id, "offer-received")
+
+
+@when('"{issuer}" offers multiple credentials with data {credentials_data}')
+def step_impl(context, issuer, credentials_data):
+    agent = context.active_agents[issuer]
+
+    creds_attrs = read_credentials_data(context.schema_name, credentials_data)
+    creds_exchange = aries_container_issue_credentials(
+        agent["agent"],
+        context.cred_def_id,
+        creds_attrs,
+    )
+
+    context.cred_attrs = creds_attrs["indy-0"]
+    context.creds_attrs = creds_attrs
+    context.cred_exchange = creds_exchange
 
     # TODO Check the issuers State
     # assert resp_json["state"] == "offer-sent"
@@ -255,6 +280,23 @@ def step_impl(context, holder):
     # check the received credential status (up to 10 seconds)
     for i in range(10):
         if aries_container_receive_credential(agent["agent"], cred_def_id, cred_attrs):
+            return
+
+    assert False
+
+
+@when('"{holder}" has the multiple credentials issued')
+@then('"{holder}" has the multiple credentials issued')
+def step_impl(context, holder):
+    agent = context.active_agents[holder]
+
+    cred_def_id = context.cred_def_id
+    cred_attrs = context.cred_attrs
+    creds_attrs = context.creds_attrs
+
+    # check the received credential status (up to 10 seconds)
+    for i in range(10):
+        if aries_container_receive_credentials(agent["agent"], cred_def_id, creds_attrs):
             return
 
     assert False

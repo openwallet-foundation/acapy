@@ -64,6 +64,7 @@ class FaberAgent(AriesAgent):
         # TODO define a dict to hold credential attributes
         # based on cred_def_id
         self.cred_attrs = {}
+        self.multi_cred_attrs = {}
 
     async def detect_connection(self):
         await self._connection_ready
@@ -170,6 +171,131 @@ class FaberAgent(AriesAgent):
 
         else:
             raise Exception(f"Error invalid AIP level: {self.aip}")
+
+    def generate_multi_credential_offers(
+        self, cred_type, cred_def_id, exchange_tracing
+    ):
+        age = 24
+        d = datetime.date.today()
+        birth_date = datetime.date(d.year - age, d.month, d.day)
+        birth_date_format = "%Y%m%d"
+
+        if cred_type == CRED_FORMAT_INDY:
+            self.multi_cred_attrs[cred_def_id] = [
+                {
+                    "name": "Alice Smith",
+                    "date": "2018-05-28",
+                    "degree": "Maths",
+                    "birthdate_dateint": birth_date.strftime(birth_date_format),
+                    "timestamp": str(int(time.time())),
+                },
+                {
+                    "name": "Alice Smith",
+                    "date": "2020-04-30",
+                    "degree": "PhDMaths",
+                    "birthdate_dateint": birth_date.strftime(birth_date_format),
+                    "timestamp": str(int(time.time())),
+                },
+                {
+                    "name": "Alice Smith",
+                    "date": "2022-12-31",
+                    "degree": "BA",
+                    "birthdate_dateint": birth_date.strftime(birth_date_format),
+                    "timestamp": str(int(time.time())),
+                },
+            ]
+
+            cred_preview = {
+                "@type": CRED_PREVIEW_TYPE,
+                "attributes": {},
+            }
+            formats = []
+            filters = {}
+            i = 0
+            for cred_attrs in self.multi_cred_attrs[cred_def_id]:
+                attributes = [{"name": n, "value": v} for (n, v) in cred_attrs.items()]
+                cred_preview["attributes"][f"indy-{i}"] = attributes
+                formats.append(
+                    {
+                        "attach_id": f"indy-{i}",
+                        "format": "hlindy/cred-abstract@v2.0",
+                    }
+                )
+                filters[f"indy-{i}"] = {"cred_def_id": cred_def_id}
+                i += 1
+            offer_request = {
+                "connection_id": self.connection_id,
+                "comment": f"Offers on cred def id {cred_def_id}",
+                "auto_remove": False,
+                "multiple_available": len(cred_preview["attributes"]),
+                "formats": formats,
+                "credential_preview": cred_preview,
+                "filter": filters,
+                "trace": exchange_tracing,
+            }
+            return offer_request
+
+        elif cred_type == CRED_FORMAT_JSON_LD:
+            offer_request = {
+                "connection_id": self.connection_id,
+                "multiple_available": 2,
+                "filter": {
+                    "ld_proof-0": {
+                        "credential": {
+                            "@context": [
+                                "https://www.w3.org/2018/credentials/v1",
+                                "https://w3id.org/citizenship/v1",
+                                "https://w3id.org/security/bbs/v1",
+                            ],
+                            "type": [
+                                "VerifiableCredential",
+                                "PermanentResident",
+                            ],
+                            "id": "https://credential.example.com/residents/1234567890",
+                            "issuer": self.did,
+                            "issuanceDate": "2020-01-01T12:00:00Z",
+                            "credentialSubject": {
+                                "type": ["PermanentResident"],
+                                "givenName": "ALICE",
+                                "familyName": "SMITH",
+                                "gender": "Female",
+                                "birthCountry": "Bahamas",
+                                "birthDate": "1958-07-17",
+                            },
+                        },
+                        "options": {"proofType": SIG_TYPE_BLS},
+                    },
+                    "ld_proof-1": {
+                        "credential": {
+                            "@context": [
+                                "https://www.w3.org/2018/credentials/v1",
+                                "https://w3id.org/citizenship/v1",
+                                "https://w3id.org/security/bbs/v1",
+                            ],
+                            "type": [
+                                "VerifiableCredential",
+                                "PermanentResident",
+                            ],
+                            "id": "https://credential.example.com/residents/1234567890",
+                            "issuer": self.did,
+                            "issuanceDate": "2020-01-01T12:00:00Z",
+                            "credentialSubject": {
+                                "type": ["PermanentResident"],
+                                "givenName": "BOB",
+                                "familyName": "SMITH",
+                                "gender": "Male",
+                                "birthCountry": "Canada",
+                                "birthDate": "1957-08-19",
+                            },
+                        },
+                        "options": {"proofType": SIG_TYPE_BLS},
+                    },
+                },
+            }
+            return offer_request
+
+        else:
+            raise Exception(f"Error invalid credential type: {self.cred_type}")
 
     def generate_proof_request_web_request(
         self, aip, cred_type, revocation, exchange_tracing, connectionless=False
@@ -432,9 +558,13 @@ async def main(args):
         )
 
         exchange_tracing = False
-        options = (
-            "    (1) Issue Credential\n"
-            "    (2) Send Proof Request\n"
+        options = "    (1) Issue Credential\n"
+        if faber_agent.aip == 20:
+            options += "    (1m) Issue Multiple Credentials\n"
+        options += "    (2) Send Proof Request\n"
+        if faber_agent.aip == 20:
+            options += "    (2m) Send Multiple Proof Requests\n"
+        options += (
             "    (2a) Send *Connectionless* Proof Request (requires a Mobile client)\n"
             "    (3) Send Message\n"
             "    (4) Create New Invitation\n"
@@ -544,6 +674,39 @@ async def main(args):
                 else:
                     raise Exception(f"Error invalid AIP level: {faber_agent.aip}")
 
+            elif option == "1m":
+                if faber_agent.aip == 20:
+                    if faber_agent.cred_type == CRED_FORMAT_INDY:
+                        offer_request = (
+                            faber_agent.agent.generate_multi_credential_offers(
+                                faber_agent.cred_type,
+                                faber_agent.cred_def_id,
+                                exchange_tracing,
+                            )
+                        )
+
+                    elif faber_agent.cred_type == CRED_FORMAT_JSON_LD:
+                        offer_request = (
+                            faber_agent.agent.generate_multi_credential_offers(
+                                faber_agent.cred_type,
+                                None,
+                                exchange_tracing,
+                            )
+                        )
+
+                    else:
+                        raise Exception(
+                            f"Error invalid credential type: {faber_agent.cred_type}"
+                        )
+
+                    print(">>> posting with:", json.dumps(offer_request))
+                    await faber_agent.agent.admin_POST(
+                        "/issue-credential-2.0/send-offer", offer_request
+                    )
+
+                else:
+                    raise Exception(f"Error invalid AIP level: {faber_agent.aip}")
+
             elif option == "2":
                 log_status("#20 Request proof of degree from alice")
                 if faber_agent.aip == 10:
@@ -592,6 +755,12 @@ async def main(args):
 
                 else:
                     raise Exception(f"Error invalid AIP level: {faber_agent.aip}")
+
+            elif option == "2m":
+                if faber_agent.aip == 20:
+                    pass
+                else:
+                    pass
 
             elif option == "2a":
                 log_status("#20 Request * Connectionless * proof of degree from alice")

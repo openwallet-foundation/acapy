@@ -246,6 +246,7 @@ class AriesAgent(DemoAgent):
 
         elif state == "offer-received":
             log_status("#15 After receiving credential offer, send credential request")
+            print(">>> offer-received message:", json.dumps(message))
             if message["by_format"]["cred_offer"].get("indy"):
                 await self.admin_POST(
                     f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
@@ -259,6 +260,20 @@ class AriesAgent(DemoAgent):
                 await self.admin_POST(
                     f"/issue-credential-2.0/records/{cred_ex_id}/send-request", data
                 )
+            elif message["cred_offer"].get("multiple_available"):
+                if message["cred_offer"]["formats"][0]["format"].startswith("hlindy"):
+                    await self.admin_POST(
+                        f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
+                    )
+                elif message["cred_offer"]["formats"][0]["format"].startswith("aries/ld-proof"):
+                    holder_did = await self.admin_POST(
+                        "/wallet/did/create",
+                        {"method": "key", "options": {"key_type": "bls12381g2"}},
+                    )
+                    data = {"holder_did": holder_did["result"]["did"]}
+                    await self.admin_POST(
+                        f"/issue-credential-2.0/records/{cred_ex_id}/send-request", data
+                    )
 
         elif state == "done":
             pass
@@ -274,6 +289,7 @@ class AriesAgent(DemoAgent):
         cred_id_stored = message.get("cred_id_stored")
 
         if cred_id_stored:
+            print(">>> cred-stored message:", json.dumps(message))
             cred_id = message["cred_id_stored"]
             log_status(f"#18.1 Stored credential {cred_id} in wallet")
             cred = await self.admin_GET(f"/credential/{cred_id}")
@@ -901,6 +917,55 @@ class AgentContainer:
         else:
             raise Exception("Invalid credential type:" + self.cred_type)
 
+    async def issue_multiple_credentials(
+        self,
+        cred_def_id: str,
+        multi_cred_attrs: dict,
+    ):
+        log_status("#13 Issue credential offer to X")
+
+        if self.cred_type == CRED_FORMAT_INDY:
+            cred_preview = {
+                "@type": CRED_PREVIEW_TYPE,
+                "attributes": {},
+            }
+            formats = []
+            filters = {}
+            i = 0
+            while f"indy-{i}" in multi_cred_attrs:
+                cred_preview["attributes"][f"indy-{i}"] = multi_cred_attrs[f"indy-{i}"]
+                formats.append(
+                    {
+                        "attach_id": f"indy-{i}",
+                        "format": "hlindy/cred-abstract@v2.0",
+                    }
+                )
+                filters[f"indy-{i}"] = {"cred_def_id": cred_def_id}
+                i += 1
+            offer_request = {
+                "connection_id": self.agent.connection_id,
+                "comment": f"Offers on cred def id {cred_def_id}",
+                "auto_remove": False,
+                "multiple_available": len(cred_preview["attributes"]),
+                "formats": formats,
+                "credential_preview": cred_preview,
+                "filter": filters,
+                "trace": self.exchange_tracing,
+            }
+            cred_exchange = await self.agent.admin_POST(
+                "/issue-credential-2.0/send-offer", offer_request
+            )
+
+            return cred_exchange
+
+        elif self.cred_type == CRED_FORMAT_JSON_LD:
+            # TODO create and send the json-ld credential offer
+            pass
+            return None
+
+        else:
+            raise Exception("Invalid credential type:" + self.cred_type)
+
     async def receive_credential(
         self,
         cred_def_id: str,
@@ -920,6 +985,7 @@ class AgentContainer:
             return False
 
         # check if attribute values match those of issued credential
+        print(">>> last cred received:", self.agent.last_credential_received)
         wallet_attrs = self.agent.last_credential_received["attrs"]
         matched = True
         for cred_attr in cred_attrs:
@@ -928,6 +994,43 @@ class AgentContainer:
                     matched = False
             else:
                 matched = False
+
+        return matched
+
+    async def receive_credentials(
+        self,
+        cred_def_id: str,
+        creds_attrs: dict,
+    ):
+        await asyncio.sleep(1.0)
+
+        # check if the requested credential (any of them) matches out last received
+        if not self.agent.last_credential_received:
+            # no credential received
+            print("No credential received")
+            return False
+
+        if cred_def_id != self.agent.last_credential_received["cred_def_id"]:
+            # wrong credential definition
+            print("Wrong credential definition id")
+            return False
+
+        # check if attribute values match those of issued credential
+        print(">>> last cred received:", self.agent.last_credential_received)
+        wallet_attrs = self.agent.last_credential_received["attrs"]
+        for cred_attr_key in creds_attrs:
+            cred_attrs = creds_attrs["attributes"][cred_attr_key]
+            print(">>> wallet_attrs:", wallet_attrs)
+            print(">>> cred_attrs  :", cred_attrs)
+            matched = True
+            for cred_attr in cred_attrs:
+                if cred_attr["name"] in wallet_attrs:
+                    if wallet_attrs[cred_attr["name"]] != cred_attr["value"]:
+                        matched = False
+                else:
+                    matched = False
+            if matched:
+                return matched
 
         return matched
 

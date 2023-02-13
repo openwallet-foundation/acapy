@@ -79,5 +79,56 @@
             "value":"20"
          }
       ]
+   },
+   "Data_DL_Multi_NormalizedValues":{
+      "cred_name":"Data_DriversLicense_MinValues",
+      "schema_name":"Schema_DriversLicense",
+      "schema_version":"1.0.1",
+      "attributes": {
+         "indy-0": [
+            {
+               "name":"id",
+               "value":"@uuid"
+            },
+            {
+               "name":"address",
+               "value":"9"
+            },
+            {
+               "name":"DL_number",
+               "value":"0"
+            },
+            {
+               "name":"expiry",
+               "value":"10/12/2022"
+            },
+            {
+               "name":"age",
+               "value":"20"
+            }
+         ],
+         "indy-1": [
+            {
+               "name":"id",
+               "value":"@uuid"
+            },
+            {
+               "name":"address",
+               "value":"99"
+            },
+            {
+               "name":"DL_number",
+               "value":"90"
+            },
+            {
+               "name":"expiry",
+               "value":"9/19/2022"
+            },
+            {
+               "name":"age",
+               "value":"19"
+            }
+         ]
+      }
    }
 }
