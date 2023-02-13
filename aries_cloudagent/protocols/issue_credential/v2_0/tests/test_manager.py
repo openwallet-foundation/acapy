@@ -1112,6 +1112,7 @@ class TestV20CredManager(AsyncTestCase):
             role=V20CredExRecord.ROLE_HOLDER,
             state=V20CredExRecord.STATE_OFFER_RECEIVED,
             thread_id=thread_id,
+            multiple_credentials=True,
         )
 
         self.cache = InMemoryCache()
@@ -1872,6 +1873,87 @@ class TestV20CredManager(AsyncTestCase):
             "multiple_credentials" in str(context.exception)
         )
 
+        cred_issue = V20CredIssue(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            credentials_attach=[AttachDecorator.data_base64(INDY_CRED, ident="0")],
+        )
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            cred_proposal=cred_proposal,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            thread_id=thread_id,
+            cred_issue=cred_issue,
+            multiple_credentials=True,
+        )
+
+        with self.assertRaises(V20CredManagerError) as context:
+            await self.manager.issue_credential(
+                stored_cx_rec,
+                comment=comment,
+                credential_spec=cred_proposal,
+            )
+        assert (
+            "identifier in credential_spec already exists "
+            "with cred_issue " in str(context.exception)
+        )
+
+        cred_issue = V20CredIssue(
+            formats=[
+                V20CredFormat(
+                    attach_id=V20CredFormat.Format.INDY.api,
+                    format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            credentials_attach=[
+                AttachDecorator.data_base64(
+                    INDY_CRED, ident=V20CredFormat.Format.INDY.api
+                )
+            ],
+        )
+        cred_proposal.formats[0].attach_id = "indy"
+        cred_proposal.filters_attach[0] = AttachDecorator.data_base64(
+            {
+                "schema_id": SCHEMA_ID,
+                "cred_def_id": CRED_DEF_ID,
+            },
+            ident="indy",
+        )
+
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            cred_proposal=cred_proposal,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_OFFER_RECEIVED,
+            thread_id=thread_id,
+            cred_issue=cred_issue,
+            multiple_credentials=True,
+        )
+
+        with self.assertRaises(V20CredManagerError) as context:
+            await self.manager.issue_credential(
+                stored_cx_rec,
+                comment=comment,
+                credential_spec=cred_proposal,
+            )
+        assert (
+            "identifier in credential_spec already exists "
+            "with cred_issue " in str(context.exception)
+        )
+
     async def test_issue_credential_credential_spec(self):
         connection_id = "test_conn_id"
         thread_id = "thread-id"
@@ -1934,7 +2016,6 @@ class TestV20CredManager(AsyncTestCase):
             cred_ex_id="dummy-cxid",
             connection_id=connection_id,
             cred_proposal=cred_proposal,
-            cred_offer=cred_offer,
             cred_request=cred_request,
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_ISSUER,
@@ -2457,6 +2538,8 @@ class TestV20CredManager(AsyncTestCase):
             cred_request=cred_request,
             role=V20CredExRecord.ROLE_ISSUER,
         )
+        alt_stored_cx_rec = deepcopy(stored_cx_rec)
+        alt_stored_cx_rec.process_attach_id = ["indy"]
 
         cred_issue = V20CredIssue(
             formats=[
@@ -2498,6 +2581,27 @@ class TestV20CredManager(AsyncTestCase):
             assert ret_cx_rec.cred_issue.attachment_by_id("indy-0") == INDY_CRED
             assert ret_cx_rec.cred_issue.attachment_by_id("indy-1") == INDY_CRED
             assert ret_cx_rec.state == V20CredExRecord.STATE_CREDENTIAL_RECEIVED
+
+            mock_retrieve.return_value = alt_stored_cx_rec
+            with self.assertRaises(V20CredManagerError):
+                await self.manager.receive_credential(
+                    V20CredIssue(
+                        formats=[
+                            V20CredFormat(
+                                attach_id=V20CredFormat.Format.INDY.api,
+                                format_=ATTACHMENT_FORMAT[CRED_20_ISSUE][
+                                    V20CredFormat.Format.INDY.api
+                                ],
+                            ),
+                        ],
+                        credentials_attach=[
+                            AttachDecorator.data_base64(
+                                INDY_CRED, ident=V20CredFormat.Format.INDY.api
+                            ),
+                        ],
+                    ),
+                    connection_id,
+                )
 
     async def test_receive_cred_multiple_cred_flow_existing_a(self):
         connection_id = "test_conn_id"
