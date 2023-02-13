@@ -33,6 +33,7 @@ class V20CredOffer(AgentMessage):
         self,
         _id: str = None,
         *,
+        multiple_available: int = None,
         replacement_id: str = None,
         comment: str = None,
         credential_preview: V20CredPreview = None,
@@ -49,6 +50,7 @@ class V20CredOffer(AgentMessage):
             credential_preview: credential preview
             formats: acceptable attachment formats
             offers_attach: list of offer attachments
+            multiple_available: count of verifiable credentials available for issuance
 
         """
         super().__init__(_id=_id, **kwargs)
@@ -57,6 +59,7 @@ class V20CredOffer(AgentMessage):
         self.credential_preview = credential_preview
         self.formats = list(formats) if formats else []
         self.offers_attach = list(offers_attach) if offers_attach else []
+        self.multiple_available = multiple_available
 
     def attachment(self, fmt: V20CredFormat.Format = None) -> dict:
         """
@@ -83,6 +86,28 @@ class V20CredOffer(AgentMessage):
             else None
         )
 
+    def attachment_by_id(self, attach_id: str) -> dict:
+        """
+        Return attached offer.
+
+        Args:
+            attach_id: string identifier
+
+        """
+        _format_list = [
+            V20CredFormat.Format.get(f.format)
+            for f in self.formats
+            if f.attach_id == attach_id
+        ]
+        if len(_format_list) == 0:
+            return None
+        target_format = _format_list[0]
+        return (
+            target_format.get_attachment_data_by_id(attach_id, self.offers_attach)
+            if target_format
+            else None
+        )
+
 
 class V20CredOfferSchema(AgentMessageSchema):
     """Credential offer schema."""
@@ -103,6 +128,14 @@ class V20CredOfferSchema(AgentMessageSchema):
         description="Human-readable comment",
         required=False,
         allow_none=True,
+    )
+    multiple_available = fields.Int(
+        description=(
+            "Count of verifiable credentials of the indicated "
+            "type available for issuance"
+        ),
+        required=False,
+        strict=True,
     )
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
     formats = fields.Nested(

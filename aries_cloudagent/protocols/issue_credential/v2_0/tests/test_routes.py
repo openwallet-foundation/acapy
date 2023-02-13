@@ -6,6 +6,7 @@ from .....admin.request_context import AdminRequestContext
 from .. import routes as test_module
 from ..formats.indy.handler import IndyCredFormatHandler
 from ..formats.ld_proof.handler import LDProofCredFormatHandler
+from ..formats.ld_proof.models.tests import test_cred_detail as ld_proof_test_module
 from ..messages.cred_format import V20CredFormat
 
 from . import (
@@ -29,43 +30,44 @@ class TestV20CredRoutes(AsyncTestCase):
             __getitem__=lambda _, k: self.request_dict[k],
         )
 
-    async def test_validate_cred_filter_schema(self):
-        schema = test_module.V20CredFilterSchema()
-        schema.validate_fields({"indy": {"issuer_did": TEST_DID}})
-        schema.validate_fields(
-            {"indy": {"issuer_did": TEST_DID, "schema_version": "1.0"}}
-        )
-        schema.validate_fields(
-            {
-                "indy": {"issuer_did": TEST_DID},
-                "ld_proof": {"credential": {}, "options": {}},
-            }
-        )
-        schema.validate_fields(
-            {
-                "indy": {},
-                "ld_proof": {"credential": {}, "options": {}},
-            }
-        )
-        with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields({})
-        with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields(["hopeless", "stop"])
-        with self.assertRaises(test_module.ValidationError):
-            schema.validate_fields({"veres-one": {"no": "support"}})
-
     async def test_validate_create_schema(self):
         schema = test_module.V20IssueCredSchemaCore()
         schema.validate(
             {
-                "filter": {"indy": {"issuer_did": TEST_DID}},
+                "filter_": {"indy-0": {"issuer_did": TEST_DID}},
                 "credential_preview": {"..": ".."},
             }
         )
-        schema.validate({"filter": {"ld_proof": {"..": ".."}}})
+        schema.validate({"filter_": {"ld_proof": ld_proof_test_module.VC_DETAIL}})
 
         with self.assertRaises(test_module.ValidationError):
-            schema.validate({"filter": {"indy": {"..": ".."}}})
+            schema.validate({"filter_": {"indy": {"..": ".."}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"indy-0": {"issuer_did": TEST_DID}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"ld_proof": {"...": "..."}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"random": {"..": ".."}}})
+
+    async def test_validate_cred_issue_schema(self):
+        schema = test_module.V20CredIssueRequestSchema()
+        schema.validate(
+            {
+                "filter_": {"ld_proof": ld_proof_test_module.VC_DETAIL},
+                "more_available": 1,
+                "comment": "test",
+            }
+        )
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"ld_proof": {"...": "..."}}})
+
+    async def test_validate_request_free_schema(self):
+        schema = test_module.V20CredRequestFreeSchema()
+        schema.validate({"filter_": {"ld_proof": ld_proof_test_module.VC_DETAIL}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"ld_proof": {"...": "..."}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate({"filter_": {"random": {"..": ".."}}})
 
     async def test_validate_bound_offer_request_schema(self):
         schema = test_module.V20CredBoundOfferRequestSchema()
@@ -74,12 +76,19 @@ class TestV20CredRoutes(AsyncTestCase):
             {"filter_": {"indy": {"issuer_did": TEST_DID}}, "counter_preview": {}}
         )
         schema.validate_fields(
-            {"filter_": {"ld_proof": {"issuer_did": TEST_DID}}, "counter_preview": {}}
+            {
+                "filter_": {"ld_proof": ld_proof_test_module.VC_DETAIL},
+                "counter_preview": {},
+            }
         )
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"filter_": {"indy": {"issuer_did": TEST_DID}}})
+        with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"filter_": {"ld_proof": {"issuer_did": TEST_DID}}})
+        with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"counter_preview": {}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"filter_": {"random": {}}, "counter_preview": {}})
 
     async def test_credential_exchange_list(self):
         self.request.query = {
@@ -149,9 +158,12 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_handler.return_value.get_detail_record = async_mock.CoroutineMock(
                 side_effect=[
-                    async_mock.MagicMock(  # indy
-                        serialize=async_mock.MagicMock(return_value={"...": "..."})
-                    ),
+                    [
+                        async_mock.MagicMock(  # indy
+                            serialize=async_mock.MagicMock(return_value={"...": "..."}),
+                            attach_id="indy",
+                        )
+                    ],
                     None,  # ld_proof
                 ]
             )
@@ -185,12 +197,20 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_handler.return_value.get_detail_record = async_mock.CoroutineMock(
                 side_effect=[
-                    async_mock.MagicMock(  # indy
-                        serialize=async_mock.MagicMock(return_value={"in": "dy"})
-                    ),
-                    async_mock.MagicMock(  # ld_proof
-                        serialize=async_mock.MagicMock(return_value={"ld": "proof"})
-                    ),
+                    [
+                        async_mock.MagicMock(  # indy
+                            serialize=async_mock.MagicMock(return_value={"in": "dy"}),
+                            attach_id=None,
+                        )
+                    ],
+                    [
+                        async_mock.MagicMock(  # ld_proof
+                            serialize=async_mock.MagicMock(
+                                return_value={"ld": "proof"}
+                            ),
+                            attach_id="ld_proof",
+                        )
+                    ],
                 ]
             )
 
@@ -383,7 +403,10 @@ class TestV20CredRoutes(AsyncTestCase):
             await test_module.credential_exchange_send_bound_request(self.request)
 
             mock_cred_mgr.return_value.create_request.assert_called_once_with(
-                mock_cred_ex.retrieve_by_id.return_value, "holder-did"
+                cred_ex_record=mock_cred_ex.retrieve_by_id.return_value,
+                holder_did="holder-did",
+                exclude_attach_ids=[],
+                multiple_credential_flow=False,
             )
             mock_response.assert_called_once_with(
                 mock_cred_ex_record.serialize.return_value
@@ -1214,9 +1237,12 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_handler.return_value.get_detail_record = async_mock.CoroutineMock(
                 side_effect=[
-                    async_mock.MagicMock(  # indy
-                        serialize=async_mock.MagicMock(return_value={"...": "..."})
-                    ),
+                    [
+                        async_mock.MagicMock(  # indy
+                            serialize=async_mock.MagicMock(return_value={"...": "..."}),
+                            attach_id=None,
+                        )
+                    ],
                     None,  # ld_proof
                 ]
             )
@@ -1407,9 +1433,12 @@ class TestV20CredRoutes(AsyncTestCase):
             )
             mock_handler.return_value.get_detail_record = async_mock.CoroutineMock(
                 side_effect=[
-                    async_mock.MagicMock(  # indy
-                        serialize=async_mock.MagicMock(return_value={"...": "..."})
-                    ),
+                    [
+                        async_mock.MagicMock(  # indy
+                            serialize=async_mock.MagicMock(return_value={"...": "..."}),
+                            attach_id="indy",
+                        )
+                    ],
                     None,  # ld_proof
                 ]
             )
@@ -1458,9 +1487,12 @@ class TestV20CredRoutes(AsyncTestCase):
 
             mock_cx_rec = async_mock.MagicMock()
 
-            mock_indy_get_detail_record.return_value = async_mock.MagicMock(  # indy
-                serialize=async_mock.MagicMock(return_value={"...": "..."})
-            )
+            mock_indy_get_detail_record.return_value = [
+                async_mock.MagicMock(  # indy
+                    serialize=async_mock.MagicMock(return_value={"...": "..."}),
+                    attach_id="indy-0",
+                )
+            ]
             mock_ld_proof_get_detail_record.return_value = None  # ld_proof
 
             mock_cred_mgr.return_value.store_credential.return_value = mock_cx_rec
@@ -1474,7 +1506,7 @@ class TestV20CredRoutes(AsyncTestCase):
             mock_response.assert_called_once_with(
                 {
                     "cred_ex_record": mock_cx_rec.serialize.return_value,
-                    "indy": {"...": "..."},
+                    "indy-0": {"...": "..."},
                     "ld_proof": None,
                 }
             )

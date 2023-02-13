@@ -78,6 +78,39 @@ class V20CredRequest(AgentMessage):
             else None
         )
 
+    def attachment_by_id(self, attach_id: str) -> dict:
+        """
+        Return attached credential request.
+
+        Args:
+            attach_id: string identifier
+
+        """
+        _format_list = [
+            V20CredFormat.Format.get(f.format)
+            for f in self.formats
+            if f.attach_id == attach_id
+        ]
+        if len(_format_list) == 0:
+            return None
+        target_format = _format_list[0]
+        return (
+            target_format.get_attachment_data_by_id(attach_id, self.requests_attach)
+            if target_format
+            else None
+        )
+
+    def add_attachments(self, fmt: V20CredFormat, atch: AttachDecorator) -> None:
+        """
+        Update attachment format and requests attachment.
+
+        Args:
+            fmt: format of attachment
+            atch: attachment
+        """
+        self.formats.append(fmt)
+        self.requests_attach.append(atch)
+
 
 class V20CredRequestSchema(AgentMessageSchema):
     """Credential request schema."""

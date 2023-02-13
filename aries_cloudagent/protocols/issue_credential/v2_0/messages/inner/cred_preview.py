@@ -1,14 +1,15 @@
 """Credential preview inner object."""
 
-from typing import Sequence
+from typing import Sequence, Mapping
 
-from marshmallow import EXCLUDE, fields
+from marshmallow import EXCLUDE, fields, ValidationError, pre_load, post_dump
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
 from ......wallet.util import b64_to_str
 
 from .....didcomm_prefix import DIDCommPrefix
 
+from ...messages.cred_format import V20CredFormat
 from ...message_types import CRED_20_PREVIEW
 
 
@@ -108,6 +109,7 @@ class V20CredPreview(BaseModel):
         *,
         _type: str = None,
         attributes: Sequence[V20CredAttrSpec] = None,
+        attributes_dict: Mapping = None,
         **kwargs,
     ):
         """
@@ -130,13 +132,14 @@ class V20CredPreview(BaseModel):
         """
         super().__init__(**kwargs)
         self.attributes = list(attributes) if attributes else []
+        self.attributes_dict = attributes_dict
 
     @property
     def _type(self):
         """Accessor for message type."""
         return DIDCommPrefix.qualify_current(V20CredPreview.Meta.message_type)
 
-    def attr_dict(self, decode: bool = False):
+    def attr_dict(self, decode: bool = False, attach_id: str = None):
         """
         Return name:value pair per attribute.
 
@@ -144,22 +147,38 @@ class V20CredPreview(BaseModel):
             decode: whether first to decode attributes with MIME type
 
         """
+        if attach_id:
+            return {
+                attr.name: b64_to_str(attr.value)
+                if attr.mime_type and decode
+                else attr.value
+                for attr in self.attributes_dict.get(attach_id)
+            }
+        else:
+            return {
+                attr.name: b64_to_str(attr.value)
+                if attr.mime_type and decode
+                else attr.value
+                for attr in self.attributes
+            }
 
-        return {
-            attr.name: b64_to_str(attr.value)
-            if attr.mime_type and decode
-            else attr.value
-            for attr in self.attributes
-        }
-
-    def mime_types(self):
+    def mime_types(self, attach_id: str = None):
         """
         Return per-attribute mapping from name to MIME type.
 
         Return empty dict if no attribute has MIME type.
 
         """
-        return {attr.name: attr.mime_type for attr in self.attributes if attr.mime_type}
+        if attach_id:
+            return {
+                attr.name: attr.mime_type
+                for attr in self.attributes_dict.get(attach_id)
+                if attr.mime_type
+            }
+        else:
+            return {
+                attr.name: attr.mime_type for attr in self.attributes if attr.mime_type
+            }
 
 
 class V20CredPreviewSchema(BaseModelSchema):
@@ -178,5 +197,39 @@ class V20CredPreviewSchema(BaseModelSchema):
         data_key="@type",
     )
     attributes = fields.Nested(
-        V20CredAttrSpecSchema, many=True, required=True, data_key="attributes"
+        V20CredAttrSpecSchema, many=True, required=False, data_key="attributes"
     )
+    attributes_dict = fields.Dict(
+        keys=fields.Str(description="identifier"),
+        values=fields.Nested(V20CredAttrSpecSchema, many=True, required=True),
+        required=False,
+    )
+
+    def check_cred_ident_in_keys(self, attr_dict):
+        """Check for indy or ld_proof in attachment identifier."""
+        for key, value in attr_dict.items():
+            if V20CredFormat.Format.INDY.api in key:
+                return True
+        return False
+
+    @pre_load
+    def extract_and_process_attributes(self, data, **kwargs):
+        """Process attributes and populate attributes_dict accordingly."""
+        if not data.get("attributes") and not data.get("attributes_dict"):
+            raise ValidationError("Missing attributes dict")
+        elif data.get("attributes") and data.get("attributes_dict"):
+            raise ValidationError("Only specify either attributes or attributes_dict")
+        elif data.get("attributes") and not data.get("attributes_dict"):
+            attr_data = data.get("attributes")
+            if isinstance(attr_data, dict) and self.check_cred_ident_in_keys(attr_data):
+                data["attributes_dict"] = attr_data
+                del data["attributes"]
+        return data
+
+    @post_dump
+    def cleanup_attributes(self, data, **kwargs):
+        """Cleanup attributes_dict and return as attributes."""
+        if data.get("attributes_dict"):
+            data["attributes"] = data.get("attributes_dict")
+            del data["attributes_dict"]
+        return data

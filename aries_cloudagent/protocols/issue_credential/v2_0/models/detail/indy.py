@@ -10,6 +10,8 @@ from ......messaging.valid import INDY_CRED_REV_ID, INDY_REV_REG_ID, UUIDFour
 
 from .. import UNENCRYPTED_TAGS
 
+INDY_KEY = "indy"
+
 
 class V20CredExRecordIndy(BaseRecord):
     """Credential exchange indy detail record."""
@@ -33,6 +35,7 @@ class V20CredExRecordIndy(BaseRecord):
         cred_request_metadata: Mapping = None,
         rev_reg_id: str = None,
         cred_rev_id: str = None,
+        attach_id: str = None,
         **kwargs,
     ):
         """Initialize indy credential exchange record details."""
@@ -43,6 +46,7 @@ class V20CredExRecordIndy(BaseRecord):
         self.cred_request_metadata = cred_request_metadata
         self.rev_reg_id = rev_reg_id
         self.cred_rev_id = cred_rev_id
+        self.attach_id = attach_id or INDY_KEY
 
     @property
     def cred_ex_indy_id(self) -> str:
@@ -59,6 +63,7 @@ class V20CredExRecordIndy(BaseRecord):
                 "cred_request_metadata",
                 "rev_reg_id",
                 "cred_rev_id",
+                "attach_id",
             )
         }
 
@@ -115,4 +120,8 @@ class V20CredExRecordIndySchema(BaseRecordSchema):
         required=False,
         description="Credential revocation identifier within revocation registry",
         **INDY_CRED_REV_ID,
+    )
+    attach_id = fields.Str(
+        required=False,
+        description="Format attachment identifier",
     )

@@ -52,6 +52,61 @@ from .formats.handler import V20CredFormatError
 from .formats.ld_proof.models.cred_detail import LDProofVCDetailSchema
 
 LOGGER = logging.getLogger(__name__)
+_FILTER_EXAMPLE = {
+    "indy": {
+        "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
+        "issuer_did": "WgWxqztrNooG92RXvxSTWv",
+        "schema_id": "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
+        "schema_issuer_did": "WgWxqztrNooG92RXvxSTWv",
+        "schema_name": "preferences",
+        "schema_version": "1.0",
+    },
+    "ld_proof": {
+        "credential": {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+            ],
+            "credentialSubject": {
+                "familyName": "SMITH",
+                "gender": "Male",
+                "givenName": "JOHN",
+                "type": ["PermanentResident", "Person"],
+            },
+            "description": "Government of Example Permanent Resident Card.",
+            "identifier": "83627465",
+            "issuanceDate": "2019-12-03T12:19:52Z",
+            "issuer": "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th",
+            "name": "Permanent Resident Card",
+            "type": ["VerifiableCredential", "PermanentResidentCard"],
+        },
+        "options": {"proofType": "Ed25519Signature2018"},
+    },
+}
+
+_FILTER_LD_PROOF_EXAMPLE = {
+    "ld_proof": {
+        "credential": {
+            "@context": [
+                "https://www.w3.org/2018/credentials/v1",
+                "https://w3id.org/citizenship/v1",
+            ],
+            "credentialSubject": {
+                "familyName": "SMITH",
+                "gender": "Male",
+                "givenName": "JOHN",
+                "type": ["PermanentResident", "Person"],
+            },
+            "description": "Government of Example Permanent Resident Card.",
+            "identifier": "83627465",
+            "issuanceDate": "2019-12-03T12:19:52Z",
+            "issuer": "did:key:z6MkmjY8GnV5i9YTDtPETC2uUAW6ejw3nk5mXF5yci5ab7th",
+            "name": "Permanent Resident Card",
+            "type": ["VerifiableCredential", "PermanentResidentCard"],
+        },
+        "options": {"proofType": "Ed25519Signature2018"},
+    }
+}
 
 
 class V20IssueCredentialModuleResponseSchema(OpenAPISchema):
@@ -154,48 +209,14 @@ class V20CredFilterIndySchema(OpenAPISchema):
     )
 
 
-class V20CredFilterSchema(OpenAPISchema):
-    """Credential filtration criteria."""
-
-    indy = fields.Nested(
-        V20CredFilterIndySchema,
-        required=False,
-        description="Credential filter for indy",
-    )
-    ld_proof = fields.Nested(
-        LDProofVCDetailSchema,
-        required=False,
-        description="Credential filter for linked data proof",
-    )
-
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields.
-
-        Data must have indy, ld_proof, or both.
-
-        Args:
-            data: The data to validate
-
-        Raises:
-            ValidationError: if data has neither indy nor ld_proof
-
-        """
-        if not any(f.api in data for f in V20CredFormat.Format):
-            raise ValidationError(
-                "V20CredFilterSchema requires indy, ld_proof, or both"
-            )
-
-
 class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     """Filter, auto-remove, comment, trace."""
 
-    filter_ = fields.Nested(
-        V20CredFilterSchema,
+    filter_ = fields.Dict(
         required=True,
         data_key="filter",
         description="Credential specification criteria by format",
+        example=_FILTER_EXAMPLE,
     )
     auto_remove = fields.Bool(
         description=(
@@ -207,27 +228,54 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
-
-    credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
+    credential_preview = fields.Nested(
+        V20CredPreviewSchema,
+        required=False,
+        example={
+            "@type": "issue-credential/2.0/credential-preview",
+            "attributes": [
+                {
+                    "mime-type": "image/jpeg",
+                    "name": "favourite_drink",
+                    "value": "martini",
+                }
+            ],
+        },
+    )
 
     @validates_schema
     def validate(self, data, **kwargs):
-        """Make sure preview is present when indy format is present."""
-
-        if data.get("filter", {}).get("indy") and not data.get("credential_preview"):
-            raise ValidationError(
-                "Credential preview is required if indy filter is present"
-            )
-
-
-class V20CredFilterLDProofSchema(OpenAPISchema):
-    """Credential filtration criteria."""
-
-    ld_proof = fields.Nested(
-        LDProofVCDetailSchema,
-        required=True,
-        description="Credential filter for linked data proof",
-    )
+        """Validate filter and checks for preview when indy format is present."""
+        filter_dict = data.get("filter_")
+        filter_attach_ids_handled = []
+        if filter_dict:
+            for attach_id in filter_dict.keys():
+                if "indy" in attach_id:
+                    try:
+                        V20CredFilterIndySchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "V20CredFilterIndySchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    if not data.get("credential_preview"):
+                        raise ValidationError(
+                            "Credential preview is required if indy filter is present"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+                if "ld_proof" in attach_id:
+                    try:
+                        LDProofVCDetailSchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "LDProofVCDetailSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+            if len(filter_attach_ids_handled) == 0:
+                raise ValidationError(
+                    "V20IssueCredSchemaCore requires indy, ld_proof, or both"
+                )
 
 
 class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
@@ -238,12 +286,11 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
         required=True,
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
     )
-    # Request can only start with LD Proof
-    filter_ = fields.Nested(
-        V20CredFilterLDProofSchema,
+    filter_ = fields.Dict(
         required=True,
         data_key="filter",
         description="Credential specification criteria by format",
+        example=_FILTER_LD_PROOF_EXAMPLE,
     )
     auto_remove = fields.Bool(
         description=(
@@ -266,6 +313,34 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
         allow_none=True,
         example="did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
     )
+    multiple_credential_flow = fields.Bool(
+        description=(
+            "Flag to indicate if this request is being created as part of "
+            "multiple credential issuance flow"
+        ),
+        required=False,
+    )
+
+    @validates_schema
+    def validate(self, data, **kwargs):
+        """Validate filter and checks for preview when indy format is present."""
+        filter_dict = data.get("filter_")
+        filter_attach_ids_handled = []
+        if filter_dict:
+            for attach_id in filter_dict.keys():
+                if "ld_proof" in attach_id:
+                    try:
+                        LDProofVCDetailSchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "LDProofVCDetailSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+            if len(filter_attach_ids_handled) == 0:
+                raise ValidationError(
+                    "Credential filter for linked data proof is required"
+                )
 
 
 class V20CredExFreeSchema(V20IssueCredSchemaCore):
@@ -281,25 +356,72 @@ class V20CredExFreeSchema(V20IssueCredSchemaCore):
 class V20CredBoundOfferRequestSchema(OpenAPISchema):
     """Request schema for sending bound credential offer admin message."""
 
-    filter_ = fields.Nested(
-        V20CredFilterSchema,
+    filter_ = fields.Dict(
         required=False,
         data_key="filter",
         description="Credential specification criteria by format",
+        example=_FILTER_EXAMPLE,
     )
     counter_preview = fields.Nested(
         V20CredPreviewSchema,
         required=False,
         description="Optional content for counter-proposal",
+        example={
+            "@type": "issue-credential/2.0/credential-preview",
+            "attributes": {
+                "indy-0": [
+                    {
+                        "mime-type": "image/jpeg",
+                        "name": "favourite_drink",
+                        "value": "martini",
+                    },
+                    {
+                        "mime-type": "image/jpeg",
+                        "name": "favourite_drink",
+                        "value": "martini",
+                    },
+                ]
+            },
+        },
+    )
+    multiple_available = fields.Int(
+        strict=True,
+        description=(
+            "Count of verifiable credentials of the indicated type available for issuance"
+        ),
+        required=False,
     )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate schema fields: need both filter and counter_preview or neither."""
-        if (
-            "filter_" in data
-            and ("indy" in data["filter_"] or "ld_proof" in data["filter_"])
-        ) ^ ("counter_preview" in data):
+        filter_dict = data.get("filter_")
+        filter_attach_ids_handled = []
+        if filter_dict:
+            for attach_id in filter_dict.keys():
+                if "indy" in attach_id:
+                    try:
+                        V20CredFilterIndySchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "V20CredFilterIndySchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+                if "ld_proof" in attach_id:
+                    try:
+                        LDProofVCDetailSchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "LDProofVCDetailSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    filter_attach_ids_handled.append(attach_id)
+            if len(filter_attach_ids_handled) == 0:
+                raise ValidationError(
+                    "V20CredBoundOfferRequestSchema requires indy, ld_proof, or both"
+                )
+        if (len(filter_attach_ids_handled) > 0) ^ ("counter_preview" in data):
             raise ValidationError(
                 f"V20CredBoundOfferRequestSchema\n{data}\nrequires "
                 "both indy/ld_proof filter and counter_preview or neither"
@@ -321,6 +443,13 @@ class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
         ),
         required=False,
     )
+    multiple_available = fields.Int(
+        strict=True,
+        description=(
+            "Count of verifiable credentials of the indicated type available for issuance"
+        ),
+        required=False,
+    )
 
 
 class V20CredOfferConnFreeRequestSchema(V20IssueCredSchemaCore):
@@ -330,6 +459,13 @@ class V20CredOfferConnFreeRequestSchema(V20IssueCredSchemaCore):
         description=(
             "Whether to respond automatically to credential requests, creating "
             "and issuing requested credentials"
+        ),
+        required=False,
+    )
+    multiple_available = fields.Int(
+        strict=True,
+        description=(
+            "Count of verifiable credentials of the indicated type available for issuance"
         ),
         required=False,
     )
@@ -344,6 +480,19 @@ class V20CredRequestRequestSchema(OpenAPISchema):
         allow_none=True,
         example="did:key:ahsdkjahsdkjhaskjdhakjshdkajhsdkjahs",
     )
+    excluded_attach_ids = fields.List(
+        fields.Str(description="Attachment identifier"),
+        description="Attachment identifiers, all of which to exclude",
+        required=False,
+        data_key="excludeAttachmentIDs",
+    )
+    multiple_credential_flow = fields.Bool(
+        description=(
+            "Flag to indicate if this request is being created as part of "
+            "multiple credential issuance flow"
+        ),
+        required=False,
+    )
 
 
 class V20CredIssueRequestSchema(OpenAPISchema):
@@ -352,6 +501,34 @@ class V20CredIssueRequestSchema(OpenAPISchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
+    more_available = fields.Int(
+        strict=True,
+        description=(
+            "Count of verifiable credentials of the indicated type willing to issue"
+        ),
+        required=False,
+    )
+    filter_ = fields.Dict(
+        required=False,
+        data_key="filter",
+        description="LD_PROOF credential specification criteria",
+        example=_FILTER_LD_PROOF_EXAMPLE,
+    )
+
+    @validates_schema
+    def validate(self, data, **kwargs):
+        """Validate filter and checks for preview when indy format is present."""
+        filter_dict = data.get("filter_")
+        if filter_dict:
+            for attach_id in filter_dict.keys():
+                if "ld_proof" in attach_id:
+                    try:
+                        LDProofVCDetailSchema().load(filter_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "LDProofVCDetailSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
 
 
 class V20CredIssueProblemReportRequestSchema(OpenAPISchema):
@@ -384,7 +561,7 @@ def _formats_filters(filt_spec: Mapping) -> Mapping:
             "formats": [
                 V20CredFormat(
                     attach_id=fmt_api,
-                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][fmt_api],
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][fmt_api.split("-")[0]],
                 )
                 for fmt_api in filt_spec
             ],
@@ -405,11 +582,15 @@ async def _get_attached_credentials(
     result = {}
 
     for fmt in V20CredFormat.Format:
-        detail_record = await fmt.handler(profile).get_detail_record(
+        detail_records = await fmt.handler(profile).get_detail_record(
             cred_ex_record.cred_ex_id
         )
-        if detail_record:
-            result[fmt.api] = detail_record
+        if detail_records:
+            for detail_record in detail_records:
+                if not detail_record.attach_id or detail_record.attach_id == fmt.api:
+                    result[fmt.api] = detail_record
+                elif detail_record.attach_id:
+                    result[detail_record.attach_id] = detail_record
 
     return result
 
@@ -419,10 +600,19 @@ def _format_result_with_details(
 ) -> Mapping:
     """Get credential exchange result with detail records."""
     result = {"cred_ex_record": cred_ex_record.serialize()}
-    for fmt in V20CredFormat.Format:
-        ident = fmt.api
-        detail_record = details.get(ident)
-        result[ident] = detail_record.serialize() if detail_record else None
+    detail_keys = list(details.keys())
+    formats_added = set()
+    for key in detail_keys:
+        if V20CredFormat.Format.INDY.api in key:
+            formats_added.add(V20CredFormat.Format.INDY.api)
+        if V20CredFormat.Format.LD_PROOF.api in key:
+            formats_added.add(V20CredFormat.Format.LD_PROOF.api)
+        detail_record = details.get(key)
+        result[key] = detail_record.serialize()
+    if V20CredFormat.Format.INDY.api not in formats_added:
+        result[V20CredFormat.Format.INDY.api] = None
+    if V20CredFormat.Format.LD_PROOF.api not in formats_added:
+        result[V20CredFormat.Format.LD_PROOF.api] = None
     return result
 
 
@@ -802,6 +992,7 @@ async def _create_free_offer(
     preview_spec: dict = None,
     comment: str = None,
     trace_msg: bool = None,
+    multiple_available: int = 1,
 ):
     """Create a credential offer and related exchange record."""
 
@@ -830,6 +1021,7 @@ async def _create_free_offer(
     (cred_ex_record, cred_offer_message) = await cred_manager.create_offer(
         cred_ex_record,
         comment=comment,
+        multiple_available=multiple_available,
     )
 
     return (cred_ex_record, cred_offer_message)
@@ -869,6 +1061,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     filt_spec = body.get("filter")
+    multiple_available = body.get("multiple_available")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     trace_msg = body.get("trace")
@@ -882,6 +1075,9 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
             preview_spec=preview_spec,
             comment=comment,
             trace_msg=trace_msg,
+            multiple_available=multiple_available
+            if multiple_available and isinstance(multiple_available, int)
+            else 1,
         )
         result = cred_ex_record.serialize()
     except (
@@ -943,6 +1139,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     trace_msg = body.get("trace")
+    multiple_available = body.get("multiple_available")
 
     cred_ex_record = None
     conn_record = None
@@ -961,6 +1158,9 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             preview_spec=preview_spec,
             comment=comment,
             trace_msg=trace_msg,
+            multiple_available=multiple_available
+            if multiple_available and isinstance(multiple_available, int)
+            else 1,
         )
         result = cred_ex_record.serialize()
 
@@ -1026,6 +1226,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     body = await request.json() if request.body_exists else {}
     filt_spec = body.get("filter")
     preview_spec = body.get("counter_preview")
+    multiple_available = body.get("multiple_available")
 
     cred_ex_id = request.match_info["cred_ex_id"]
     cred_ex_record = None
@@ -1065,6 +1266,9 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
             if preview_spec
             else None,
             comment=None,
+            multiple_available=multiple_available
+            if multiple_available and isinstance(multiple_available, int)
+            else 1,
         )
 
         result = cred_ex_record.serialize()
@@ -1139,6 +1343,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     auto_remove = body.get("auto_remove")
     trace_msg = body.get("trace")
     holder_did = body.get("holder_did")
+    multiple_credential_flow = body.get("multiple_credential_flow") or False
 
     conn_record = None
     cred_ex_record = None
@@ -1171,6 +1376,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
             cred_ex_record=cred_ex_record,
             holder_did=holder_did,
             comment=comment,
+            multiple_credential_flow=multiple_credential_flow,
         )
 
         result = cred_ex_record.serialize()
@@ -1229,12 +1435,16 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     profile = context.profile
     outbound_handler = request["outbound_message_router"]
+    excluded_attach_ids = []
 
     try:
         body = await request.json() or {}
         holder_did = body.get("holder_did")
+        excluded_attach_ids = body.get("excludeAttachmentIDs", [])
+        multiple_credential_flow = body.get("multiple_credential_flow") or False
     except JSONDecodeError:
         holder_did = None
+        multiple_credential_flow = False
 
     cred_ex_id = request.match_info["cred_ex_id"]
 
@@ -1278,8 +1488,10 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
         cred_manager = V20CredManager(profile)
         cred_ex_record, cred_request_message = await cred_manager.create_request(
-            cred_ex_record,
-            holder_did,
+            cred_ex_record=cred_ex_record,
+            holder_did=holder_did,
+            exclude_attach_ids=excluded_attach_ids,
+            multiple_credential_flow=multiple_credential_flow,
         )
 
         result = cred_ex_record.serialize()
@@ -1344,9 +1556,12 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     body = await request.json()
     comment = body.get("comment")
+    more_available = body.get("more_available")
+    filt_spec = body.get("filter")
 
     cred_ex_id = request.match_info["cred_ex_id"]
 
+    cred_proposal = None
     cred_ex_record = None
     conn_record = None
     try:
@@ -1370,9 +1585,17 @@ async def credential_exchange_issue(request: web.BaseRequest):
             )
 
         cred_manager = V20CredManager(profile)
+        if filt_spec:
+            cred_proposal = V20CredProposal(
+                **_formats_filters(filt_spec),
+            )
         (cred_ex_record, cred_issue_message) = await cred_manager.issue_credential(
             cred_ex_record,
             comment=comment,
+            more_available=more_available
+            if more_available and isinstance(more_available, int)
+            else 0,
+            credential_spec=cred_proposal,
         )
 
         details = await _get_attached_credentials(profile, cred_ex_record)

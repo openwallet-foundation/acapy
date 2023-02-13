@@ -63,6 +63,31 @@ class TestV20CredOffer(AsyncTestCase):
         ],
     )
 
+    CRED_OFFER_MULTIPLE = V20CredOffer(
+        comment="shaken, not stirred",
+        credential_preview=preview,
+        formats=[
+            V20CredFormat(
+                attach_id="indy-0",
+                format_=ATTACHMENT_FORMAT[CRED_20_OFFER][V20CredFormat.Format.INDY.api],
+            ),
+            V20CredFormat(
+                attach_id="indy-1",
+                format_=ATTACHMENT_FORMAT[CRED_20_OFFER][V20CredFormat.Format.INDY.api],
+            ),
+        ],
+        offers_attach=[
+            AttachDecorator.data_base64(
+                mapping=indy_offer,
+                ident="indy-0",
+            ),
+            AttachDecorator.data_base64(
+                mapping=indy_offer,
+                ident="indy-1",
+            ),
+        ],
+    )
+
     async def test_init_type(self):
         """Test initializer and type."""
         assert (
@@ -76,6 +101,11 @@ class TestV20CredOffer(AsyncTestCase):
         assert TestV20CredOffer.CRED_OFFER._type == DIDCommPrefix.qualify_current(
             CRED_20_OFFER
         )
+        assert (
+            TestV20CredOffer.CRED_OFFER_MULTIPLE.attachment_by_id("indy-1")
+            == TestV20CredOffer.indy_offer
+        )
+        assert not TestV20CredOffer.CRED_OFFER_MULTIPLE.attachment_by_id("indy")
 
     async def test_attachment_no_target_format(self):
         """Test attachment behaviour for only unknown formats."""

@@ -60,7 +60,9 @@ class V20CredFormatHandler(ABC):
         """
 
     @abstractmethod
-    def get_format_data(self, message_type: str, data: dict) -> CredFormatAttachment:
+    def get_format_data(
+        self, message_type: str, data: dict, attach_id: str = None
+    ) -> CredFormatAttachment:
         """Get credential format and attachment objects for use in cred ex messages."""
 
     @abstractclassmethod
@@ -81,7 +83,7 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def create_offer(
-        self, cred_proposal_message: V20CredProposal
+        self, cred_proposal_message: V20CredProposal, attach_id: str = None
     ) -> CredFormatAttachment:
         """Create format specific credential offer attachment data."""
 
@@ -93,7 +95,11 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def create_request(
-        self, cred_ex_record: V20CredExRecord, request_data: Mapping = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        request_data: Mapping = None,
+        attach_id: str = None,
+        init_cred_req_flow: bool = False,
     ) -> CredFormatAttachment:
         """Create format specific credential request attachment data."""
 
@@ -105,18 +111,24 @@ class V20CredFormatHandler(ABC):
 
     @abstractmethod
     async def issue_credential(
-        self, cred_ex_record: V20CredExRecord, retries: int = 5
+        self, cred_ex_record: V20CredExRecord, retries: int = 5, attach_id: str = None
     ) -> CredFormatAttachment:
         """Create format specific issue credential attachment data."""
 
     @abstractmethod
     async def receive_credential(
-        self, cred_ex_record: V20CredExRecord, cred_issue_message: V20CredIssue
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_issue_message: V20CredIssue,
+        attach_id: str = None,
     ) -> None:
         """Create format specific issue credential message."""
 
     @abstractmethod
     async def store_credential(
-        self, cred_ex_record: V20CredExRecord, cred_id: str = None
+        self,
+        cred_ex_record: V20CredExRecord,
+        cred_id: str = None,
+        attach_id: str = None,
     ) -> None:
         """Store format specific credential from issue credential message."""
