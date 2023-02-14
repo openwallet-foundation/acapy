@@ -1,4 +1,5 @@
-"""v1.0 credential exchange light weight webhook"""
+"""v1.0 credential exchange light weight webhook."""
+
 
 class LightWeightV10CredentialExchangeWebhook:
     """Class representing a state only credential exchange webhook."""
@@ -33,7 +34,8 @@ class LightWeightV10CredentialExchangeWebhook:
         **kwargs,
     ):
         """
-        Initialize webhook object from V10CredentialExchange
+        Initialize webhook object from V10CredentialExchange.
+
         from a list of accepted attributes.
         """
         [

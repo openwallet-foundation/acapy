@@ -1,4 +1,5 @@
-"""v2.0 credential exchange light weight webhook"""
+"""v2.0 credential exchange light weight webhook."""
+
 
 class LightWeightV20CredExRecordWebhook:
     """Class representing a state only credential exchange webhook."""
@@ -33,7 +34,8 @@ class LightWeightV20CredExRecordWebhook:
         **kwargs,
     ):
         """
-        Initialize webhook object from V20CredExRecord
+        Initialize webhook object from V20CredExRecord.
+
         from a list of accepted attributes.
         """
         [
