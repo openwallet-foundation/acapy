@@ -256,7 +256,11 @@ RUN chmod -R ug+rw $HOME/.aries_cloudagent
 
 COPY --from=acapy-builder /src/dist/aries_cloudagent*.whl .
 
-RUN pip install --no-cache-dir --find-links=. aries_cloudagent${acapy_reqs} && rm aries_cloudagent*.whl
+# Install ACA-py from the wheel.
+RUN aries_cloudagent_package=$(find ./ -name "aries_cloudagent*.whl" | head -n 1) && \
+    echo "Installing ${aries_cloudagent_package} ..." && \
+    pip install --no-cache-dir --find-links=. ${aries_cloudagent_package}${acapy_reqs} && \
+    rm aries_cloudagent*.whl
 
 # Clean-up unneccessary build dependencies and reduce final image size
 # RUN apt-get purge -y --auto-remove build-essential
