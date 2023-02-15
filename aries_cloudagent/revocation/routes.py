@@ -101,7 +101,9 @@ class TxnOrRevRegResultSchema(OpenAPISchema):
     """Result schema for credential definition send request."""
 
     sent = fields.Nested(
-        RevRegResultSchema(), required=False, definition="Content sent"
+        RevRegResultSchema(),
+        required=False,
+        definition="Content sent",
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
@@ -130,7 +132,9 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
             )
 
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier", required=False, **INDY_REV_REG_ID
+        description="Revocation registry identifier",
+        required=False,
+        **INDY_REV_REG_ID,
     )
     cred_rev_id = fields.Str(
         description="Credential revocation identifier",
@@ -138,7 +142,9 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
         **INDY_CRED_REV_ID,
     )
     cred_ex_id = fields.Str(
-        description="Credential exchange identifier", required=False, **UUID4
+        description="Credential exchange identifier",
+        required=False,
+        **UUID4,
     )
 
 
@@ -147,13 +153,18 @@ class RevRegId(OpenAPISchema):
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """Validate schema fields - must have (rr-id and cr-id) xor cx-id."""
+        """Validate schema fields - must have either rr-id or cr-id."""
 
         rev_reg_id = data.get("rev_reg_id")
         cred_def_id = data.get("cred_def_id")
 
+        if not (rev_reg_id or cred_def_id):
+            raise ValidationError("Request must have either rev_reg_id or cred_def_id")
+
     rev_reg_id = fields.Str(
-        description="Revocation registry identifier", required=False, **INDY_REV_REG_ID
+        description="Revocation registry identifier",
+        required=False,
+        **INDY_REV_REG_ID,
     )
     cred_def_id = fields.Str(
         description="Credential definition identifier",
@@ -191,7 +202,8 @@ class RevokeRequestSchema(CredRevRecordQueryStringSchema):
         required=False,
     )
     notify = fields.Boolean(
-        description="Send a notification to the credential recipient", required=False
+        description="Send a notification to the credential recipient",
+        required=False,
     )
     notify_version = fields.String(
         description="Specify which version of the revocation notification should be sent",
@@ -238,7 +250,9 @@ class TxnOrPublishRevocationsResultSchema(OpenAPISchema):
     """Result schema for credential definition send request."""
 
     sent = fields.Nested(
-        PublishRevocationsSchema(), required=False, definition="Content sent"
+        PublishRevocationsSchema(),
+        required=False,
+        definition="Content sent",
     )
     txn = fields.Nested(
         TransactionRecordSchema(),
@@ -280,7 +294,9 @@ class CredRevRecordDetailsResultSchema(OpenAPISchema):
 class CredRevIndyRecordsResultSchema(OpenAPISchema):
     """Result schema for revoc reg delta."""
 
-    rev_reg_delta = fields.Dict(description="Indy revocation registry delta")
+    rev_reg_delta = fields.Dict(
+        description="Indy revocation registry delta",
+    )
 
 
 class RevRegIssuedResultSchema(OpenAPISchema):
@@ -297,19 +313,22 @@ class RevRegUpdateRequestMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking rev reg id."""
 
     apply_ledger_update = fields.Bool(
-        description="Apply updated accumulator transaction to ledger", required=True
+        description="Apply updated accumulator transaction to ledger",
+        required=True,
     )
 
 
 class RevRegWalletUpdatedResultSchema(OpenAPISchema):
     """Number of wallet revocation entries status updated."""
 
-    rev_reg_delta = fields.Dict(description="Indy revocation registry delta")
+    rev_reg_delta = fields.Dict(
+        description="Indy revocation registry delta",
+    )
     accum_calculated = fields.Dict(
-        description="Calculated accumulator for phantom revocations"
+        description="Calculated accumulator for phantom revocations",
     )
     accum_fixed = fields.Dict(
-        description="Applied ledger transaction to fix revocations"
+        description="Applied ledger transaction to fix revocations",
     )
 
 
@@ -375,7 +394,9 @@ class RevRegIdMatchInfoSchema(OpenAPISchema):
     """Path parameters and validators for request taking rev reg id."""
 
     rev_reg_id = fields.Str(
-        description="Revocation Registry identifier", required=True, **INDY_REV_REG_ID
+        description="Revocation Registry identifier",
+        required=True,
+        **INDY_REV_REG_ID,
     )
 
 
@@ -393,7 +414,8 @@ class CreateRevRegTxnForEndorserOptionSchema(OpenAPISchema):
     """Class for user to input whether to create a transaction for endorser or not."""
 
     create_transaction_for_endorser = fields.Boolean(
-        description="Create Transaction For Endorser's signature", required=False
+        description="Create Transaction For Endorser's signature",
+        required=False,
     )
 
 
@@ -405,7 +427,10 @@ class RevRegConnIdMatchInfoSchema(OpenAPISchema):
     )
 
 
-@docs(tags=["revocation"], summary="Revoke an issued credential")
+@docs(
+    tags=["revocation"],
+    summary="Revoke an issued credential",
+)
 @request_schema(RevokeRequestSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def revoke(request: web.BaseRequest):
@@ -477,7 +502,9 @@ async def publish_revocations(request: web.BaseRequest):
     rev_manager = RevocationManager(context.profile)
 
     try:
-        rev_reg_resp = await rev_manager.publish_pending_revocations(rrid2crid)
+        rev_reg_resp = await rev_manager.publish_pending_revocations(
+            rrid2crid,
+        )
     except (RevocationError, StorageError, IndyIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -548,7 +575,9 @@ async def create_rev_reg(request: web.BaseRequest):
     try:
         revoc = IndyRevocation(profile)
         issuer_rev_reg_rec = await revoc.init_issuer_registry(
-            credential_definition_id, max_cred_num=max_cred_num, notify=False
+            credential_definition_id,
+            max_cred_num=max_cred_num,
+            notify=False,
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
@@ -598,7 +627,10 @@ async def rev_regs_created(request: web.BaseRequest):
     )
 
 
-@docs(tags=["revocation"], summary="Get revocation registry by revocation registry id")
+@docs(
+    tags=["revocation"],
+    summary="Get revocation registry by revocation registry id",
+)
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
 async def get_rev_reg(request: web.BaseRequest):
@@ -693,7 +725,10 @@ async def get_rev_reg_issued(request: web.BaseRequest):
     return web.json_response(results)
 
 
-@docs(tags=["revocation"], summary="Get details of revoked credentials from ledger")
+@docs(
+    tags=["revocation"],
+    summary="Get details of revoked credentials from ledger",
+)
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(CredRevIndyRecordsResultSchema(), 200, description="")
 async def get_rev_reg_indy_recs(request: web.BaseRequest):
@@ -714,7 +749,11 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
     revoc = IndyRevocation(context.profile)
     rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
 
-    return web.json_response({"rev_reg_delta": rev_reg_delta})
+    return web.json_response(
+        {
+            "rev_reg_delta": rev_reg_delta,
+        }
+    )
 
 
 @docs(
@@ -805,7 +844,10 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     )
 
 
-@docs(tags=["revocation"], summary="Get credential revocation status")
+@docs(
+    tags=["revocation"],
+    summary="Get credential revocation status",
+)
 @querystring_schema(CredRevRecordQueryStringSchema())
 @response_schema(CredRevRecordResultSchema(), 200, description="")
 async def get_cred_rev_record(request: web.BaseRequest):
@@ -902,7 +944,10 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     return web.FileResponse(path=rev_reg.tails_local_path, status=200)
 
 
-@docs(tags=["revocation"], summary="Upload local tails file to server")
+@docs(
+    tags=["revocation"],
+    summary="Upload local tails file to server",
+)
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(RevocationModuleResponseSchema(), description="")
 async def upload_tails_file(request: web.BaseRequest):
@@ -933,7 +978,10 @@ async def upload_tails_file(request: web.BaseRequest):
     return web.json_response({})
 
 
-@docs(tags=["revocation"], summary="Send revocation registry definition to ledger")
+@docs(
+    tags=["revocation"],
+    summary="Send revocation registry definition to ledger",
+)
 @match_info_schema(RevRegIdMatchInfoSchema())
 @querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
 @querystring_schema(RevRegConnIdMatchInfoSchema())
@@ -1003,7 +1051,9 @@ async def send_rev_reg_def(request: web.BaseRequest):
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
 
         rev_reg_resp = await rev_reg.send_def(
-            profile, write_ledger=write_ledger, endorser_did=endorser_did
+            profile,
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
         )
         LOGGER.debug("published rev reg definition: %s", rev_reg_id)
     except StorageNotFoundError as err:
@@ -1043,7 +1093,10 @@ async def send_rev_reg_def(request: web.BaseRequest):
         return web.json_response({"txn": transaction.serialize()})
 
 
-@docs(tags=["revocation"], summary="Send revocation registry entry to ledger")
+@docs(
+    tags=["revocation"],
+    summary="Send revocation registry entry to ledger",
+)
 @match_info_schema(RevRegIdMatchInfoSchema())
 @querystring_schema(CreateRevRegTxnForEndorserOptionSchema())
 @querystring_schema(RevRegConnIdMatchInfoSchema())
@@ -1111,7 +1164,9 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         revoc = IndyRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         rev_entry_resp = await rev_reg.send_entry(
-            profile, write_ledger=write_ledger, endorser_did=endorser_did
+            profile,
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
         )
         LOGGER.debug("published registry entry: %s", rev_reg_id)
 
@@ -1127,7 +1182,8 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         transaction_mgr = TransactionManager(profile)
         try:
             transaction = await transaction_mgr.create_record(
-                messages_attach=rev_entry_resp["result"], connection_id=connection_id
+                messages_attach=rev_entry_resp["result"],
+                connection_id=connection_id,
             )
         except StorageError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -1268,7 +1324,9 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
         public_uri = tails_base_url.rstrip("/") + f"/{registry_record.revoc_reg_id}"
         await rr_record.set_tails_file_public_uri(profile, public_uri)
         rev_reg_resp = await rr_record.send_def(
-            profile, write_ledger=write_ledger, endorser_did=endorser_did
+            profile,
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
         )
         if write_ledger:
             # Upload the tails file
@@ -1305,7 +1363,8 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
                 responder = profile.inject_or(BaseResponder)
                 if responder:
                     await responder.send(
-                        revo_transaction_request, connection_id=connection.connection_id
+                        revo_transaction_request,
+                        connection_id=connection.connection_id,
                     )
                 else:
                     LOGGER.warning(
@@ -1352,7 +1411,9 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
     async with profile.session() as session:
         registry_record = await IssuerRevRegRecord.retrieve_by_id(session, record_id)
     rev_entry_resp = await registry_record.send_entry(
-        profile, write_ledger=write_ledger, endorser_did=endorser_did
+        profile,
+        write_ledger=write_ledger,
+        endorser_did=endorser_did,
     )
 
     if not write_ledger:
@@ -1384,7 +1445,8 @@ async def on_revocation_entry_event(profile: Profile, event: Event):
             responder = profile.inject_or(BaseResponder)
             if responder:
                 await responder.send(
-                    revo_transaction_request, connection_id=connection.connection_id
+                    revo_transaction_request,
+                    connection_id=connection.connection_id,
                 )
             else:
                 LOGGER.warning(
@@ -1435,6 +1497,7 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
 @querystring_schema(RevRegId())
 @docs(tags=["revocation"], summary="Delete the tail files")
 async def delete_tails(request: web.BaseRequest) -> json:
+    """Delete Tails Files."""
     context: AdminRequestContext = request["context"]
     rev_reg_id = request.query.get("rev_reg_id")
     cred_def_id = request.query.get("cred_def_id")
@@ -1463,7 +1526,8 @@ async def delete_tails(request: web.BaseRequest) -> json:
         try:
             flag = 0
             for i in filenames:
-                if re.search(cred_def_id, i):
+                safe_cred_def_id = re.escape(cred_def_id)
+                if re.search(safe_cred_def_id, i):
                     shutil.rmtree(main_dir_cred + "/" + i)
                     flag = 1
             if flag:
@@ -1482,13 +1546,16 @@ async def register(app: web.Application):
             web.post("/revocation/revoke", revoke),
             web.post("/revocation/publish-revocations", publish_revocations),
             web.post(
-                "/revocation/clear-pending-revocations", clear_pending_revocations
+                "/revocation/clear-pending-revocations",
+                clear_pending_revocations,
             ),
             web.get(
                 "/revocation/credential-record", get_cred_rev_record, allow_head=False
             ),
             web.get(
-                "/revocation/registries/created", rev_regs_created, allow_head=False
+                "/revocation/registries/created",
+                rev_regs_created,
+                allow_head=False,
             ),
             web.get("/revocation/registry/{rev_reg_id}", get_rev_reg, allow_head=False),
             web.get(
@@ -1521,11 +1588,15 @@ async def register(app: web.Application):
                 get_tails_file,
                 allow_head=False,
             ),
-            web.patch("/revocation/registry/{rev_reg_id}/set-state", set_rev_reg_state),
+            web.patch(
+                "/revocation/registry/{rev_reg_id}/set-state",
+                set_rev_reg_state,
+            ),
             web.put(
                 "/revocation/registry/{rev_reg_id}/fix-revocation-entry-state",
                 update_rev_reg_revoked_state,
             ),
+            web.delete("/revocation/registry/delete-tails-file", delete_tails),
         ]
     )
 

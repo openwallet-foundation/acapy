@@ -882,7 +882,6 @@ class TestRevocationRoutes(AsyncTestCase):
                 result = await test_module.set_rev_reg_state(self.request)
             mock_json_response.assert_not_called()
 
-
     async def test_register(self):
         mock_app = async_mock.MagicMock()
         mock_app.add_routes = async_mock.MagicMock()
@@ -909,14 +908,16 @@ class TestRevocationRoutes(AsyncTestCase):
 
         assert "tags" in mock_app._state["swagger_dict"]
 
+
 class TestDeleteTails(unittest.TestCase):
     def setUp(self):
         self.rev_reg_id = "rev_reg_id_123"
         self.cred_def_id = "cred_def_id_456"
 
         self.main_dir_rev = "path/to/main/dir/rev"
-        self.tails_path = os.path.join(self.main_dir_rev, "tails.txt")
-        os.makedirs(self.main_dir_rev)
+        self.tails_path = os.path.join(self.main_dir_rev, "tails")
+        if not (os.path.exists(self.main_dir_rev)):
+            os.makedirs(self.main_dir_rev)
         open(self.tails_path, "w").close()
 
     async def test_delete_tails_by_rev_reg_id(self):
@@ -924,11 +925,13 @@ class TestDeleteTails(unittest.TestCase):
         rev_reg_id = self.rev_reg_id
 
         # Test
-        result = await test_module.delete_tails({"context": None, "query": {"rev_reg_id": rev_reg_id}})
+        result = await test_module.delete_tails(
+            {"context": None, "query": {"rev_reg_id": rev_reg_id}}
+        )
 
         # Assert
         self.assertEqual(result, {"message": "All files deleted successfully"})
-        self.assertFalse(os.path.exists(self.main_dir_rev))
+        self.assertFalse(os.path.exists(self.tails_path))
 
     async def test_delete_tails_by_cred_def_id(self):
         # Setup
@@ -939,7 +942,9 @@ class TestDeleteTails(unittest.TestCase):
         os.makedirs(cred_dir)
 
         # Test
-        result = await test_module.delete_tails({"context": None, "query": {"cred_def_id": cred_def_id}})
+        result = await test_module.delete_tails(
+            {"context": None, "query": {"cred_def_id": cred_def_id}}
+        )
 
         # Assert
         self.assertEqual(result, {"message": "All files deleted successfully"})
@@ -951,7 +956,9 @@ class TestDeleteTails(unittest.TestCase):
         cred_def_id = "invalid_cred_def_id"
 
         # Test
-        result = await test_module.delete_tails({"context": None, "query": {"cred_def_id": cred_def_id}})
+        result = await test_module.delete_tails(
+            {"context": None, "query": {"cred_def_id": cred_def_id}}
+        )
 
         # Assert
         self.assertEqual(result, {"message": "No such file or directory"})
