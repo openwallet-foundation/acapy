@@ -325,7 +325,7 @@ class ConnRecord(BaseRecord):
         """
         tag_filter = {
             "invitation_key": invitation_key,
-            "state": cls.State.INVITATION.rfc160
+            "state": cls.State.INVITATION.rfc160,
         }
         post_filter = {"state": cls.State.INVITATION.rfc160}
 
