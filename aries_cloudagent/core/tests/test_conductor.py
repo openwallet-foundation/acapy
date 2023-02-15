@@ -222,7 +222,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_outbound_mgr, async_mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger:
-
             mock_inbound_mgr.return_value.sessions = ["dummy"]
             mock_outbound_mgr.return_value.outbound_buffer = [
                 async_mock.MagicMock(state=QueuedOutboundMessage.STATE_ENCODE),
@@ -263,7 +262,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         with async_mock.patch.object(
             conductor.dispatcher, "queue_message", autospec=True
         ) as mock_dispatch_q:
-
             message_body = "{}"
             receipt = MessageReceipt(direct_response_mode="snail mail")
             message = InboundMessage(message_body, receipt)

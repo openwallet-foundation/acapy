@@ -1,5 +1,5 @@
-ARG python_version=3.6.13
-FROM python:${python_version}-slim-buster AS build
+ARG python_version=3.9.16
+FROM python:${python_version}-slim-bullseye AS build
 
 WORKDIR /src
 
@@ -8,7 +8,7 @@ ADD . .
 RUN pip install setuptools wheel
 RUN python setup.py sdist bdist_wheel
 
-FROM python:${python_version}-slim-buster AS main
+FROM python:${python_version}-slim-bullseye AS main
 
 ARG uid=1001
 ARG user=aries
@@ -49,7 +49,7 @@ RUN apt-get update -y && \
     curl \
     git \
     less \
-    libffi6 \
+    libffi-dev \
     libgmp10 \
     liblzma5 \
     libncurses5 \
@@ -87,7 +87,11 @@ RUN chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache
 
 COPY --from=build /src/dist/aries_cloudagent*.whl .
 
-RUN pip install --no-cache-dir --find-links=. aries_cloudagent${acapy_reqs} && rm aries_cloudagent*.whl
+# Install ACA-py from the wheel.
+RUN aries_cloudagent_package=$(find ./ -name "aries_cloudagent*.whl" | head -n 1) && \
+    echo "Installing ${aries_cloudagent_package} ..." && \
+    pip install --no-cache-dir --find-links=. ${aries_cloudagent_package}${acapy_reqs} && \
+    rm aries_cloudagent*.whl
 
 # Clean-up unneccessary build dependencies and reduce final image size
 RUN apt-get purge -y --auto-remove build-essential

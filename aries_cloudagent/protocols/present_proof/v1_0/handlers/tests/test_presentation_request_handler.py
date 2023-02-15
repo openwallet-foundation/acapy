@@ -102,7 +102,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-
             mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
             )
@@ -163,7 +162,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-
             mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
             )
@@ -335,7 +333,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-
             mock_pres_ex_cls.return_value = mock_px_rec
             mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=mock_px_rec
@@ -415,7 +412,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -491,7 +487,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -565,7 +560,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -646,7 +640,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -778,7 +771,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance
@@ -892,7 +884,6 @@ class TestPresentationRequestHandler(AsyncTestCase):
         ) as mock_pres_mgr, async_mock.patch.object(
             test_module, "V10PresentationExchange", autospec=True
         ) as mock_pres_ex_cls:
-
             mock_pres_ex_cls.return_value = px_rec_instance
             mock_pres_ex_cls.retrieve_by_tag_filter = async_mock.CoroutineMock(
                 return_value=px_rec_instance

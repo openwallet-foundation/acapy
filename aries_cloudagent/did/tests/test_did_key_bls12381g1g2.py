@@ -26,6 +26,7 @@ TEST_BLS12381G1G2_PREFIX_BYTES = b"".join(
     [b"\xee\x01", b58_to_bytes(TEST_BLS12381G1G2_BASE58_KEY)]
 )
 
+
 # The tests here are a bit quirky because g1g2 is a concatenation of g1 and g2 public key bytes
 # but it works with the already existing did key implementation.
 class TestDIDKey(TestCase):
