@@ -64,10 +64,14 @@ class PresentationHandler(BaseHandler):
         )
 
         # Automatically move to next state if flag is set
-        if presentation_exchange_record and presentation_exchange_record.auto_verify:
+        if (
+            presentation_exchange_record
+            and presentation_exchange_record.auto_verify
+            or context.settings.get("debug.auto_verify_presentation")
+        ):
             try:
                 await presentation_manager.verify_presentation(
-                    presentation_exchange_record
+                    presentation_exchange_record, responder
                 )
             except (BaseModelError, LedgerError, StorageError) as err:
                 self._logger.exception(err)
