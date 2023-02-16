@@ -20,6 +20,10 @@ on:
         required: true
         default: linux/amd64
         type: string
+      ref:
+        description: 'Optional - The branch, tag or SHA to checkout.'
+        required: false
+        type: string
 
 # Note:
 # - ACA-Py with Indy SDK image builds do not include support for the linux/arm64 platform.
@@ -48,6 +52,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref || '' }}
 
       - name: Gather image info
         id: info

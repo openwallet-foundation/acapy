@@ -15,6 +15,10 @@ on:
         required: true
         default: linux/amd64
         type: string
+      ref:
+        description: 'Optional - The branch, tag or SHA to checkout.'
+        required: false
+        type: string
 
 env:
   # linux/386 platform support has been disabled pending a permanent fix for https://github.com/hyperledger/aries-cloudagent-python/issues/2124
@@ -33,6 +37,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref || '' }}
 
       - name: Gather image info
         id: info
