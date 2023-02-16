@@ -10,6 +10,16 @@ on:
         description: 'Image tag'
         required: true
         type: string
+      platforms:
+        description: 'Platforms - Comma separated list of the platforms to support.'
+        required: true
+        default: linux/amd64
+        type: string
+
+env:
+  # linux/386 platform support has been disabled pending a permanent fix for https://github.com/hyperledger/aries-cloudagent-python/issues/2124
+  # PLATFORMS: ${{ inputs.platforms || 'linux/amd64,linux/arm64,linux/386' }}
+  PLATFORMS: ${{ inputs.platforms || 'linux/amd64' }}
 
 jobs:
   publish-image:
@@ -70,7 +80,7 @@ jobs:
             acapy_version=${{ inputs.tag || github.event.release.tag_name }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-          platforms: linux/amd64,linux/arm64,linux/386
+          platforms: ${{ env.PLATFORMS }}
 
       # Temp fix
       # https://github.com/docker/build-push-action/issues/252
