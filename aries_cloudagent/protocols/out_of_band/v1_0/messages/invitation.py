@@ -3,7 +3,7 @@
 from collections import namedtuple
 from enum import Enum
 from re import sub
-from typing import Sequence, Text, Union
+from typing import Optional, Sequence, Text, Union
 from urllib.parse import parse_qs, urljoin, urlparse
 
 from marshmallow import (
@@ -26,7 +26,7 @@ from ....didcomm_prefix import DIDCommPrefix
 from ....didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDX_PROTO
 from ....connections.v1_0.message_types import ARIES_PROTOCOL as CONN_PROTO
 
-from ..message_types import INVITATION
+from ..message_types import INVITATION, DEFAULT_VERSION
 
 from .service import Service
 
@@ -96,13 +96,17 @@ class ServiceOrDIDField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, dict):
             return Service.deserialize(value)
+        elif isinstance(value, Service):
+            return value
         elif isinstance(value, str):
-            if bool(DIDValidation.PATTERN.match(value)):
-                return value
-            else:
+            if not DIDValidation.PATTERN.match(value):
                 raise ValidationError(
                     "Service item must be a valid decentralized identifier (DID)"
                 )
+            return value
+        raise ValidationError(
+            "Service item must be a valid decentralized identifier (DID) or object"
+        )
 
 
 class InvitationMessage(AgentMessage):
@@ -120,9 +124,13 @@ class InvitationMessage(AgentMessage):
         *,
         comment: str = None,
         label: str = None,
+        image_url: str = None,
         handshake_protocols: Sequence[Text] = None,
         requests_attach: Sequence[AttachDecorator] = None,
         services: Sequence[Union[Service, Text]] = None,
+        accept: Optional[Sequence[Text]] = None,
+        version: str = DEFAULT_VERSION,
+        msg_type: Optional[Text] = None,
         **kwargs,
     ):
         """
@@ -133,13 +141,15 @@ class InvitationMessage(AgentMessage):
 
         """
         # super().__init__(_id=_id, **kwargs)
-        super().__init__(**kwargs)
+        super().__init__(_type=msg_type, _version=version, **kwargs)
         self.label = label
+        self.image_url = image_url
         self.handshake_protocols = (
             list(handshake_protocols) if handshake_protocols else []
         )
         self.requests_attach = list(requests_attach) if requests_attach else []
         self.services = services
+        self.accept = accept
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
@@ -197,15 +207,31 @@ class InvitationMessageSchema(AgentMessageSchema):
         model_class = InvitationMessage
         unknown = EXCLUDE
 
+    _type = fields.Str(
+        data_key="@type",
+        required=False,
+        description="Message type",
+        example="https://didcomm.org/my-family/1.0/my-message-type",
+    )
     label = fields.Str(required=False, description="Optional label", example="Bob")
+    image_url = fields.URL(
+        data_key="imageUrl",
+        required=False,
+        allow_none=True,
+        description="Optional image URL for out-of-band invitation",
+        example="http://192.168.56.101/img/logo.jpg",
+    )
     handshake_protocols = fields.List(
         fields.Str(
             description="Handshake protocol",
             example=DIDCommPrefix.qualify_current(HSProto.RFC23.name),
-            validate=lambda hsp: (
-                DIDCommPrefix.unqualify(hsp) in [p.name for p in HSProto]
-            ),
         ),
+        required=False,
+    )
+    accept = fields.List(
+        fields.Str(),
+        example=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+        description=("List of mime type in order of preference"),
         required=False,
     )
     requests_attach = fields.Nested(
@@ -251,13 +277,10 @@ class InvitationMessageSchema(AgentMessageSchema):
         """
         handshake_protocols = data.get("handshake_protocols")
         requests_attach = data.get("requests_attach")
-        if not (
-            (handshake_protocols and len(handshake_protocols) > 0)
-            or (requests_attach and len(requests_attach) > 0)
-        ):
+        if not handshake_protocols and not requests_attach:
             raise ValidationError(
                 "Model must include non-empty "
-                "handshake_protocols or requests_attach or both"
+                "handshake_protocols or requests~attach or both"
             )
 
         # services = data.get("services")

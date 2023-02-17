@@ -57,6 +57,49 @@ class TestOutOfBandRoutes(AsyncTestCase):
                 metadata=body["metadata"],
                 alias=None,
                 mediation_id=None,
+                service_accept=None,
+                protocol_version=None,
+            )
+            mock_json_response.assert_called_once_with({"abc": "123"})
+
+    async def test_invitation_create_with_accept(self):
+        self.request.query = {
+            "multi_use": "true",
+            "auto_accept": "true",
+        }
+        body = {
+            "attachments": async_mock.MagicMock(),
+            "handshake_protocols": [test_module.HSProto.RFC23.name],
+            "accept": ["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+            "use_public_did": True,
+            "metadata": {"hello": "world"},
+        }
+        self.request.json = async_mock.CoroutineMock(return_value=body)
+
+        with async_mock.patch.object(
+            test_module, "OutOfBandManager", autospec=True
+        ) as mock_oob_mgr, async_mock.patch.object(
+            test_module.web, "json_response", async_mock.Mock()
+        ) as mock_json_response:
+            mock_oob_mgr.return_value.create_invitation = async_mock.CoroutineMock(
+                return_value=async_mock.MagicMock(
+                    serialize=async_mock.MagicMock(return_value={"abc": "123"})
+                )
+            )
+
+            await test_module.invitation_create(self.request)
+            mock_oob_mgr.return_value.create_invitation.assert_called_once_with(
+                my_label=None,
+                auto_accept=True,
+                public=True,
+                multi_use=True,
+                hs_protos=[test_module.HSProto.RFC23],
+                attachments=body["attachments"],
+                metadata=body["metadata"],
+                alias=None,
+                mediation_id=None,
+                service_accept=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
+                protocol_version=None,
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
 

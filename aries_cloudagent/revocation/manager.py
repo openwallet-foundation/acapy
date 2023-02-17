@@ -157,6 +157,29 @@ class RevocationManager:
                 await issuer_rr_rec.mark_pending(txn, cred_rev_id)
                 await txn.commit()
 
+    async def update_rev_reg_revoked_state(
+        self,
+        apply_ledger_update: bool,
+        rev_reg_record: IssuerRevRegRecord,
+        genesis_transactions: dict,
+    ) -> (dict, dict, dict):
+        """
+        Request handler to fix ledger entry of credentials revoked against registry.
+
+        Args:
+            rev_reg_id: revocation registry id
+            apply_ledger_update: whether to apply an update to the ledger
+
+        Returns:
+            Number of credentials posted to ledger
+
+        """
+        return await rev_reg_record.fix_ledger_entry(
+            self._profile,
+            apply_ledger_update,
+            genesis_transactions,
+        )
+
     async def publish_pending_revocations(
         self,
         rrid2crid: Mapping[Text, Sequence[Text]] = None,
@@ -297,6 +320,7 @@ class RevocationManager:
                         txn, rev_reg_id, cred_rev_id, for_update=True
                     )
                     cred_ex_id = rev_rec.cred_ex_id
+                    cred_ex_version = rev_rec.cred_ex_version
                     rev_rec.state = IssuerCredRevRecord.STATE_REVOKED
                     await rev_rec.save(txn, reason="revoke credential")
                     await txn.commit()
@@ -304,25 +328,33 @@ class RevocationManager:
                 continue
 
             async with self._profile.transaction() as txn:
-                try:
-                    cred_ex_record = await V10CredentialExchange.retrieve_by_id(
-                        txn, cred_ex_id, for_update=True
-                    )
-                    cred_ex_record.state = (
-                        V10CredentialExchange.STATE_CREDENTIAL_REVOKED
-                    )
-                    await cred_ex_record.save(txn, reason="revoke credential")
-                    await txn.commit()
-                    continue  # skip 2.0 record check
-                except StorageNotFoundError:
-                    pass
+                if (
+                    not cred_ex_version
+                    or cred_ex_version == IssuerCredRevRecord.VERSION_1
+                ):
+                    try:
+                        cred_ex_record = await V10CredentialExchange.retrieve_by_id(
+                            txn, cred_ex_id, for_update=True
+                        )
+                        cred_ex_record.state = (
+                            V10CredentialExchange.STATE_CREDENTIAL_REVOKED
+                        )
+                        await cred_ex_record.save(txn, reason="revoke credential")
+                        await txn.commit()
+                        continue  # skip 2.0 record check
+                    except StorageNotFoundError:
+                        pass
 
-                try:
-                    cred_ex_record = await V20CredExRecord.retrieve_by_id(
-                        txn, cred_ex_id, for_update=True
-                    )
-                    cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_REVOKED
-                    await cred_ex_record.save(txn, reason="revoke credential")
-                    await txn.commit()
-                except StorageNotFoundError:
-                    pass
+                if (
+                    not cred_ex_version
+                    or cred_ex_version == IssuerCredRevRecord.VERSION_2
+                ):
+                    try:
+                        cred_ex_record = await V20CredExRecord.retrieve_by_id(
+                            txn, cred_ex_id, for_update=True
+                        )
+                        cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_REVOKED
+                        await cred_ex_record.save(txn, reason="revoke credential")
+                        await txn.commit()
+                    except StorageNotFoundError:
+                        pass

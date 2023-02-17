@@ -1,16 +1,17 @@
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from .. import routes as test_module
 from .....admin.request_context import AdminRequestContext
 from .....storage.error import StorageNotFoundError
-
-from .. import routes as test_module
+from ....coordinate_mediation.v1_0.route_manager import RouteManager
 
 
 class TestDIDExchangeConnRoutes(AsyncTestCase):
     async def setUp(self):
         self.session_inject = {}
         self.context = AdminRequestContext.test_context(self.session_inject)
+        self.profile = self.context.profile
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -20,6 +21,9 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
             match_info={},
             query={},
             __getitem__=lambda _, k: self.request_dict[k],
+        )
+        self.profile.context.injector.bind_instance(
+            RouteManager, async_mock.MagicMock()
         )
 
     async def test_didx_accept_invitation(self):
@@ -39,7 +43,6 @@ class TestDIDExchangeConnRoutes(AsyncTestCase):
         ) as mock_didx_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_rec_class.retrieve_by_id.return_value = mock_conn_rec
             mock_didx_mgr.return_value.create_request = async_mock.CoroutineMock()
 

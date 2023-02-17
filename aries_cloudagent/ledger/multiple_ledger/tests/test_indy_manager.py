@@ -11,6 +11,7 @@ from collections import OrderedDict
 from ....cache.base import BaseCache
 from ....cache.in_memory import InMemoryCache
 from ....core.in_memory import InMemoryProfile
+from ....ledger.base import BaseLedger
 from ....messaging.responder import BaseResponder
 
 from ...error import LedgerError
@@ -36,6 +37,7 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
             IndySdkLedgerPool("test_prod_1", checked=True), self.profile
         )
         test_write_ledger = ("test_prod_1", test_prod_ledger)
+        self.context.injector.bind_instance(BaseLedger, test_prod_ledger)
         self.production_ledger["test_prod_1"] = test_prod_ledger
         self.production_ledger["test_prod_2"] = IndySdkLedger(
             IndySdkLedgerPool("test_prod_2", checked=True), self.profile
@@ -385,13 +387,16 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
 
     async def test_lookup_did_in_configured_ledgers_cached_prod_ledger(self):
         cache = InMemoryCache()
-        await cache.set("did_ledger_id_resolver::Av63wJYM7xYR4AiygYq4c3", "test_prod_1")
+        await cache.set("did_ledger_id_resolver::Av63wJYM7xYR4AiygYq4c3", "test_prod_2")
         self.profile.context.injector.bind_instance(BaseCache, cache)
-        (ledger_id, ledger_inst,) = await self.manager.lookup_did_in_configured_ledgers(
+        (
+            ledger_id,
+            ledger_inst,
+        ) = await self.manager.lookup_did_in_configured_ledgers(
             "Av63wJYM7xYR4AiygYq4c3", cache_did=True
         )
-        assert ledger_id == "test_prod_1"
-        assert ledger_inst.pool.name == "test_prod_1"
+        assert ledger_id == "test_prod_2"
+        assert ledger_inst.pool.name == "test_prod_2"
 
     async def test_lookup_did_in_configured_ledgers_cached_non_prod_ledger(self):
         cache = InMemoryCache()
@@ -399,7 +404,10 @@ class TestMultiIndyLedgerManager(AsyncTestCase):
             "did_ledger_id_resolver::Av63wJYM7xYR4AiygYq4c3", "test_non_prod_2", None
         )
         self.profile.context.injector.bind_instance(BaseCache, cache)
-        (ledger_id, ledger_inst,) = await self.manager.lookup_did_in_configured_ledgers(
+        (
+            ledger_id,
+            ledger_inst,
+        ) = await self.manager.lookup_did_in_configured_ledgers(
             "Av63wJYM7xYR4AiygYq4c3", cache_did=True
         )
         assert ledger_id == "test_non_prod_2"

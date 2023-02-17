@@ -7,13 +7,12 @@ from ..core.error import ProfileNotFoundError
 from ..core.profile import Profile, ProfileManager, ProfileSession
 from ..storage.base import BaseStorage
 from ..storage.error import StorageNotFoundError
-from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
+from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ..wallet.base import BaseWallet
-from ..wallet.did_info import DIDInfo
 from ..wallet.crypto import seed_to_did
-from ..wallet.key_type import KeyType
-from ..wallet.did_method import DIDMethod
-
+from ..wallet.did_info import DIDInfo
+from ..wallet.did_method import SOV
+from ..wallet.key_type import ED25519
 from .base import ConfigError
 from .injection_context import InjectionContext
 
@@ -80,7 +79,7 @@ async def wallet_config(
         if wallet_seed and seed_to_did(wallet_seed) != public_did:
             if context.settings.get("wallet.replace_public_did"):
                 replace_did_info = await wallet.create_local_did(
-                    method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=wallet_seed
+                    method=SOV, key_type=ED25519, seed=wallet_seed
                 )
                 public_did = replace_did_info.did
                 await wallet.set_public_did(public_did)
@@ -100,8 +99,8 @@ async def wallet_config(
             metadata = {"endpoint": endpoint} if endpoint else None
 
             local_did_info = await wallet.create_local_did(
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
                 seed=wallet_seed,
                 metadata=metadata,
             )
@@ -111,7 +110,7 @@ async def wallet_config(
                 print(f"Verkey: {local_did_info.verkey}")
         else:
             public_did_info = await wallet.create_public_did(
-                method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=wallet_seed
+                method=SOV, key_type=ED25519, seed=wallet_seed
             )
             public_did = public_did_info.did
             if provision:
@@ -129,8 +128,8 @@ async def wallet_config(
             test_seed = "testseed000000000000000000000001"
     if test_seed:
         await wallet.create_local_did(
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
             seed=test_seed,
             metadata={"endpoint": "1.2.3.4:8021"},
         )

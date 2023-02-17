@@ -4,7 +4,7 @@ import asyncio
 from hmac import compare_digest
 import logging
 import re
-from typing import Callable, Coroutine
+from typing import Callable, Coroutine, Optional, Pattern, Sequence, cast
 import uuid
 import warnings
 import weakref
@@ -53,6 +53,7 @@ EVENT_WEBHOOK_MAPPING = {
     "acapy::actionmenu::received": "actionmenu",
     "acapy::actionmenu::get-active-menu": "get-active-menu",
     "acapy::actionmenu::perform-menu-action": "perform-menu-action",
+    "acapy::keylist::updated": "keylist",
 }
 
 
@@ -260,8 +261,31 @@ class AdminServer(BaseAdminServer):
         self.websocket_queues = {}
         self.site = None
         self.multitenant_manager = context.inject_or(BaseMultitenantManager)
+        self._additional_route_pattern: Optional[Pattern] = None
 
         self.server_paths = []
+
+    @property
+    def additional_routes_pattern(self) -> Optional[Pattern]:
+        """Pattern for configured addtional routes to permit base wallet to access."""
+        if self._additional_route_pattern:
+            return self._additional_route_pattern
+
+        base_wallet_routes = self.context.settings.get("multitenant.base_wallet_routes")
+        base_wallet_routes = cast(Sequence[str], base_wallet_routes)
+        if base_wallet_routes:
+            self._additional_route_pattern = re.compile(
+                "^(?:" + "|".join(base_wallet_routes) + ")"
+            )
+        return None
+
+    def _matches_additional_routes(self, path: str) -> bool:
+        """Path matches additional_routes_pattern."""
+        pattern = self.additional_routes_pattern
+        if pattern:
+            return bool(pattern.match(path))
+
+        return False
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -335,6 +359,7 @@ class AdminServer(BaseAdminServer):
                         path,
                     )
                     or path.startswith("/mediation/default-mediator")
+                    or self._matches_additional_routes(path)
                 )
 
                 # base wallet is not allowed to perform ssi related actions.
@@ -345,6 +370,7 @@ class AdminServer(BaseAdminServer):
                     and not is_server_path
                     and not is_unprotected_path(path)
                     and not base_limited_access_path
+                    and not (request.method == "OPTIONS")  # CORS fix
                 ):
                     raise web.HTTPUnauthorized()
 
@@ -407,7 +433,7 @@ class AdminServer(BaseAdminServer):
         )
 
         server_routes = [
-            web.get("/", self.redirect_handler, allow_head=False),
+            web.get("/", self.redirect_handler, allow_head=True),
             web.get("/plugins", self.plugins_handler, allow_head=False),
             web.get("/status", self.status_handler, allow_head=False),
             web.get("/status/config", self.config_handler, allow_head=False),
@@ -465,7 +491,7 @@ class AdminServer(BaseAdminServer):
 
         def sort_dict(raw: dict) -> dict:
             """Order (JSON, string keys) dict asciibetically by key, recursively."""
-            for (k, v) in raw.items():
+            for k, v in raw.items():
                 if isinstance(v, dict):
                     raw[k] = sort_dict(v)
             return dict(sorted([item for item in raw.items()], key=lambda x: x[0]))

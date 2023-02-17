@@ -62,6 +62,7 @@ class V20PresExRecord(BaseExchangeRecord):
         pres_request: Union[V20PresRequest, Mapping] = None,  # aries message
         pres: Union[V20Pres, Mapping] = None,  # aries message
         verified: str = None,
+        verified_msgs: list = None,
         auto_present: bool = False,
         auto_verify: bool = False,
         error_msg: str = None,
@@ -80,6 +81,7 @@ class V20PresExRecord(BaseExchangeRecord):
         self._pres_request = V20PresRequest.serde(pres_request)
         self._pres = V20Pres.serde(pres)
         self.verified = verified
+        self.verified_msgs = verified_msgs
         self.auto_present = auto_present
         self.auto_verify = auto_verify
         self.error_msg = error_msg
@@ -191,6 +193,7 @@ class V20PresExRecord(BaseExchangeRecord):
                     "role",
                     "state",
                     "verified",
+                    "verified_msgs",
                     "auto_present",
                     "auto_verify",
                     "error_msg",
@@ -241,11 +244,7 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         description="Present-proof exchange initiator: self or external",
         example=V20PresExRecord.INITIATOR_SELF,
         validate=validate.OneOf(
-            [
-                getattr(V20PresExRecord, m)
-                for m in vars(V20PresExRecord)
-                if m.startswith("INITIATOR_")
-            ]
+            V20PresExRecord.get_attributes_by_prefix("INITIATOR_", walk_mro=False)
         ),
     )
     role = fields.Str(
@@ -253,22 +252,14 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         description="Present-proof exchange role: prover or verifier",
         example=V20PresExRecord.ROLE_PROVER,
         validate=validate.OneOf(
-            [
-                getattr(V20PresExRecord, m)
-                for m in vars(V20PresExRecord)
-                if m.startswith("ROLE_")
-            ]
+            V20PresExRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
         ),
     )
     state = fields.Str(
         required=False,
         description="Present-proof exchange state",
         validate=validate.OneOf(
-            [
-                getattr(V20PresExRecord, m)
-                for m in vars(V20PresExRecord)
-                if m.startswith("STATE_")
-            ]
+            V20PresExRecord.get_attributes_by_prefix("STATE_", walk_mro=True)
         ),
     )
     pres_proposal = fields.Nested(
@@ -306,6 +297,13 @@ class V20PresExRecordSchema(BaseExchangeSchema):
         description="Whether presentation is verified: 'true' or 'false'",
         example="true",
         validate=validate.OneOf(["true", "false"]),
+    )
+    verified_msgs = fields.List(
+        fields.Str(
+            required=False,
+            description="Proof verification warning or error information",
+        ),
+        required=False,
     )
     auto_present = fields.Bool(
         required=False,

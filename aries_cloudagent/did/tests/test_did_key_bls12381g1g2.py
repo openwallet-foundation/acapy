@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ...wallet.key_type import KeyType
+from ...wallet.key_type import BLS12381G1, BLS12381G1G2, BLS12381G2
 from ...wallet.util import b58_to_bytes
 from ..did_key import DIDKey, DID_KEY_RESOLVERS
 from .test_dids import (
@@ -26,19 +26,18 @@ TEST_BLS12381G1G2_PREFIX_BYTES = b"".join(
     [b"\xee\x01", b58_to_bytes(TEST_BLS12381G1G2_BASE58_KEY)]
 )
 
+
 # The tests here are a bit quirky because g1g2 is a concatenation of g1 and g2 public key bytes
 # but it works with the already existing did key implementation.
 class TestDIDKey(TestCase):
     def test_bls12381g1g2_from_public_key(self):
         key_bytes = b58_to_bytes(TEST_BLS12381G1G2_BASE58_KEY)
-        did_key = DIDKey.from_public_key(key_bytes, KeyType.BLS12381G1G2)
+        did_key = DIDKey.from_public_key(key_bytes, BLS12381G1G2)
 
         assert did_key.did == TEST_BLS12381G1G2_DID
 
     def test_bls12381g1g2_from_public_key_b58(self):
-        did_key = DIDKey.from_public_key_b58(
-            TEST_BLS12381G1G2_BASE58_KEY, KeyType.BLS12381G1G2
-        )
+        did_key = DIDKey.from_public_key_b58(TEST_BLS12381G1G2_BASE58_KEY, BLS12381G1G2)
 
         assert did_key.did == TEST_BLS12381G1G2_DID
 
@@ -60,13 +59,13 @@ class TestDIDKey(TestCase):
         assert did_key.did == TEST_BLS12381G1G2_DID
         assert did_key.public_key_b58 == TEST_BLS12381G1G2_BASE58_KEY
         assert did_key.public_key == b58_to_bytes(TEST_BLS12381G1G2_BASE58_KEY)
-        assert did_key.key_type == KeyType.BLS12381G1G2
+        assert did_key.key_type == BLS12381G1G2
         assert did_key.prefixed_public_key == TEST_BLS12381G1G2_PREFIX_BYTES
 
     def test_bls12381g1g2_diddoc(self):
         did_key = DIDKey.from_did(TEST_BLS12381G1G2_DID)
 
-        resolver = DID_KEY_RESOLVERS[KeyType.BLS12381G1G2]
+        resolver = DID_KEY_RESOLVERS[BLS12381G1G2]
 
         assert resolver(did_key) == did_key.did_doc
 
@@ -74,7 +73,7 @@ class TestDIDKey(TestCase):
         did_key = DIDKey.from_did(
             "did:key:z5TcESXuYUE9aZWYwSdrUEGK1HNQFHyTt4aVpaCTVZcDXQmUheFwfNZmRksaAbBneNm5KyE52SdJeRCN1g6PJmF31GsHWwFiqUDujvasK3wTiDr3vvkYwEJHt7H5RGEKYEp1ErtQtcEBgsgY2DA9JZkHj1J9HZ8MRDTguAhoFtR4aTBQhgnkP4SwVbxDYMEZoF2TMYn3s"
         )
-        resolver = DID_KEY_RESOLVERS[KeyType.BLS12381G1G2]
+        resolver = DID_KEY_RESOLVERS[BLS12381G1G2]
         did_doc = resolver(did_key)
 
         assert (
@@ -88,13 +87,13 @@ class TestDIDKey(TestCase):
         # TODO: add easier method to go form g1 <- g1g2 -> g2
         # First 48 bytes is g1 key
         g1_public_key = g1g2_did.public_key[:48]
-        g1_did = DIDKey.from_public_key(g1_public_key, KeyType.BLS12381G1)
+        g1_did = DIDKey.from_public_key(g1_public_key, BLS12381G1)
 
         assert g1_did.fingerprint == TEST_BLS12381G1_FINGERPRINT
         assert g1_did.did == TEST_BLS12381G1_DID
         assert g1_did.public_key_b58 == TEST_BLS12381G1_BASE58_KEY
         assert g1_did.public_key == b58_to_bytes(TEST_BLS12381G1_BASE58_KEY)
-        assert g1_did.key_type == KeyType.BLS12381G1
+        assert g1_did.key_type == BLS12381G1
 
     def test_bls12381g1g1_to_g2(self):
         g1g2_did = DIDKey.from_did(TEST_BLS12381G1G2_DID)
@@ -102,10 +101,10 @@ class TestDIDKey(TestCase):
         # TODO: add easier method to go form g1 <- g1g2 -> g2
         # From 48 bytes is g2 key
         g2_public_key = g1g2_did.public_key[48:]
-        g2_did = DIDKey.from_public_key(g2_public_key, KeyType.BLS12381G2)
+        g2_did = DIDKey.from_public_key(g2_public_key, BLS12381G2)
 
         assert g2_did.fingerprint == TEST_BLS12381G2_FINGERPRINT
         assert g2_did.did == TEST_BLS12381G2_DID
         assert g2_did.public_key_b58 == TEST_BLS12381G2_BASE58_KEY
         assert g2_did.public_key == b58_to_bytes(TEST_BLS12381G2_BASE58_KEY)
-        assert g2_did.key_type == KeyType.BLS12381G2
+        assert g2_did.key_type == BLS12381G2

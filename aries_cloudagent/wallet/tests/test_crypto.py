@@ -3,7 +3,7 @@ import json
 
 from unittest import mock, TestCase
 
-from ..key_type import KeyType
+from ..key_type import BLS12381G1, ED25519
 from ..error import WalletError
 from ...utils.jwe import JweRecipient
 from ..util import str_to_b64
@@ -32,9 +32,7 @@ class TestCrypto(TestCase):
     def test_seeds_keys(self):
         assert len(test_module.seed_to_did(SEED)) in (22, 23)
 
-        (public_key, secret_key) = test_module.create_keypair(
-            test_module.KeyType.ED25519
-        )
+        (public_key, secret_key) = test_module.create_keypair(test_module.ED25519)
         assert public_key
         assert secret_key
 
@@ -156,28 +154,24 @@ class TestCrypto(TestCase):
 
     def test_sign_ed25519_x_multiple_messages(self):
         with self.assertRaises(WalletError) as context:
-            test_module.sign_message(
-                [b"message1", b"message2"], b"secret", KeyType.ED25519
-            )
+            test_module.sign_message([b"message1", b"message2"], b"secret", ED25519)
         assert "ed25519 can only sign a single message" in str(context.exception)
 
     def test_sign_x_unsupported_key_type(self):
         with self.assertRaises(WalletError) as context:
-            test_module.sign_message(
-                [b"message1", b"message2"], b"secret", KeyType.BLS12381G1
-            )
+            test_module.sign_message([b"message1", b"message2"], b"secret", BLS12381G1)
         assert "Unsupported key type: bls12381g1" in str(context.exception)
 
     def test_verify_ed25519_x_multiple_messages(self):
         with self.assertRaises(WalletError) as context:
             test_module.verify_signed_message(
-                [b"message1", b"message2"], b"signature", b"verkey", KeyType.ED25519
+                [b"message1", b"message2"], b"signature", b"verkey", ED25519
             )
         assert "ed25519 can only verify a single message" in str(context.exception)
 
     def test_verify_x_unsupported_key_type(self):
         with self.assertRaises(WalletError) as context:
             test_module.verify_signed_message(
-                [b"message1", b"message2"], b"signature", b"verkey", KeyType.BLS12381G1
+                [b"message1", b"message2"], b"signature", b"verkey", BLS12381G1
             )
         assert "Unsupported key type: bls12381g1" in str(context.exception)

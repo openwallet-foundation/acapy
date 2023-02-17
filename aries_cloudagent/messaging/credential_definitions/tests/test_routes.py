@@ -11,7 +11,6 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 from ....storage.base import BaseStorage
-from ....tails.base import BaseTailsServer
 
 from .. import routes as test_module
 from ....connections.models.conn_record import ConnRecord
@@ -159,7 +158,6 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         ) as mock_conn_rec_retrieve, async_mock.patch.object(
             test_module, "TransactionManager", async_mock.MagicMock()
         ) as mock_txn_mgr:
-
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
                     return_value={

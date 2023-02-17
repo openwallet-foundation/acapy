@@ -1,22 +1,23 @@
 import asyncio
+from copy import deepcopy
 from datetime import datetime
+from typing import Sequence
+from uuid import uuid4
+
+import mock as async_mock
 import pytest
 
-from asynctest import mock as async_mock
-from copy import deepcopy
-from uuid import uuid4
+from aries_cloudagent.wallet.key_type import BLS12381G2, ED25519
 
 from .....core.in_memory import InMemoryProfile
 from .....did.did_key import DIDKey
-from .....resolver.did_resolver_registry import DIDResolverRegistry
 from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
 from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.crypto import KeyType
-from .....wallet.did_method import DIDMethod
+from .....wallet.did_method import SOV, KEY, DIDMethods
 from .....wallet.error import WalletNotFoundError
 from .....vc.ld_proofs import (
-    BbsBlsSignatureProof2020,
     BbsBlsSignature2020,
 )
 from .....vc.ld_proofs.document_loader import DocumentLoader
@@ -25,7 +26,6 @@ from .....vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .....vc.tests.document_loader import custom_document_loader
 from .....vc.tests.data import (
     BBS_SIGNED_VC_MATTR,
-    BBS_NESTED_VC_REVEAL_DOCUMENT_MATTR,
 )
 
 from .. import pres_exch_handler as test_module
@@ -60,7 +60,7 @@ from .test_data import (
 )
 
 
-@pytest.yield_fixture(scope="class")
+@pytest.fixture(scope="class")
 def event_loop(request):
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
@@ -69,11 +69,9 @@ def event_loop(request):
 
 @pytest.fixture(scope="class")
 def profile():
-    profile = InMemoryProfile.test_profile()
+    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
     context = profile.context
-    did_resolver_registry = DIDResolverRegistry()
-    context.injector.bind_instance(DIDResolverRegistry, did_resolver_registry)
-    context.injector.bind_instance(DIDResolver, DIDResolver(did_resolver_registry))
+    context.injector.bind_instance(DIDResolver, DIDResolver([]))
     context.injector.bind_instance(DocumentLoader, custom_document_loader)
     context.settings["debug.auto_respond_presentation_request"] = True
     return profile
@@ -84,11 +82,11 @@ async def setup_tuple(profile):
     async with profile.session() as session:
         wallet = session.inject_or(BaseWallet)
         await wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519, did="WgWxqztrNooG92RXvxSTWv"
+            method=SOV, key_type=ED25519, did="WgWxqztrNooG92RXvxSTWv"
         )
         await wallet.create_local_did(
-            method=DIDMethod.KEY,
-            key_type=KeyType.BLS12381G2,
+            method=KEY,
+            key_type=BLS12381G2,
         )
         creds, pds = get_test_data()
         return creds, pds
@@ -108,7 +106,17 @@ class TestPresExchHandler:
                 pd=tmp_pd[0],
                 challenge="1f44d55f-f161-4938-a659-f8026467f126",
             )
-            assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
+
+            if isinstance(tmp_vp, Sequence):
+                cred_count_list = []
+                for tmp_vp_single in tmp_vp:
+                    cred_count_list.append(
+                        len(tmp_vp_single.get("verifiableCredential"))
+                    )
+
+                assert min(cred_count_list) == tmp_pd[1]
+            else:
+                assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -125,7 +133,17 @@ class TestPresExchHandler:
                 pd=tmp_pd[0],
                 challenge="1f44d55f-f161-4938-a659-f8026467f126",
             )
-            assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
+
+            if isinstance(tmp_vp, Sequence):
+                cred_count_list = []
+                for tmp_vp_single in tmp_vp:
+                    cred_count_list.append(
+                        len(tmp_vp_single.get("verifiableCredential"))
+                    )
+
+                assert min(cred_count_list) == tmp_pd[1]
+            else:
+                assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
 
     @pytest.mark.asyncio
     async def test_to_requirement_catch_errors(self, profile):
@@ -1670,7 +1688,6 @@ class TestPresExchHandler:
         tmp_cred.issuer_id = "19b823fb-55ef-49f4-8caf-2a26b8b9286f"
         assert dif_pres_exch_handler.subject_is_issuer(tmp_cred) is False
 
-    @pytest.mark.asyncio
     def test_is_numeric(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         with pytest.raises(DIFPresExchError):
@@ -1682,7 +1699,6 @@ class TestPresExchHandler:
         with pytest.raises(DIFPresExchError):
             dif_pres_exch_handler.is_numeric(2 + 3j)
 
-    @pytest.mark.asyncio
     def test_filter_no_match(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         tmp_filter_excl_min = Filter(exclusive_min=7)
@@ -1700,7 +1716,6 @@ class TestPresExchHandler:
         tmp_filter_max = Filter(maximum=10)
         assert dif_pres_exch_handler.maximum_check("test", tmp_filter_max) is False
 
-    @pytest.mark.asyncio
     def test_filter_valueerror(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         tmp_filter_excl_min = Filter(exclusive_min=7, fmt="date")
@@ -1718,7 +1733,6 @@ class TestPresExchHandler:
         tmp_filter_max = Filter(maximum=10, fmt="date")
         assert dif_pres_exch_handler.maximum_check("test", tmp_filter_max) is False
 
-    @pytest.mark.asyncio
     def test_filter_length_check(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         tmp_filter_both = Filter(min_length=7, max_length=10)
@@ -1729,7 +1743,6 @@ class TestPresExchHandler:
         assert dif_pres_exch_handler.length_check("test", tmp_filter_max) is True
         assert dif_pres_exch_handler.length_check("test12", tmp_filter_min) is False
 
-    @pytest.mark.asyncio
     def test_filter_pattern_check(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         tmp_filter = Filter(pattern="test1|test2")
@@ -1737,7 +1750,6 @@ class TestPresExchHandler:
         tmp_filter = Filter(const="test3")
         assert dif_pres_exch_handler.pattern_check("test3", tmp_filter) is False
 
-    @pytest.mark.asyncio
     def test_is_len_applicable(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         tmp_req_a = Requirement(count=1)
@@ -1748,7 +1760,6 @@ class TestPresExchHandler:
         assert dif_pres_exch_handler.is_len_applicable(tmp_req_b, 2) is False
         assert dif_pres_exch_handler.is_len_applicable(tmp_req_c, 6) is False
 
-    @pytest.mark.asyncio
     def test_create_vcrecord(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         test_cred_dict = {
@@ -2037,14 +2048,14 @@ class TestPresExchHandler:
         with async_mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:sov:LjgpST2rjsoxYegQDRm7EL",
                 verkey="verkey",
                 metadata={},
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             mock_did_info.return_value = did_info
             (
@@ -2102,14 +2113,14 @@ class TestPresExchHandler:
         with async_mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:sov:LjgpST2rjsoxYegQDRm7EL",
                 verkey="verkey",
                 metadata={},
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             mock_did_info.return_value = did_info
             with pytest.raises(DIFPresExchError):
@@ -2170,14 +2181,14 @@ class TestPresExchHandler:
         with async_mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_did_info:
             did_info = DIDInfo(
                 did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                 verkey="verkey",
                 metadata={},
-                method=DIDMethod.KEY,
-                key_type=KeyType.BLS12381G2,
+                method=KEY,
+                key_type=BLS12381G2,
             )
             mock_did_info.return_value = did_info
             (
@@ -2240,23 +2251,23 @@ class TestPresExchHandler:
         with async_mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_did_info, async_mock.patch.object(
             DIFPresExchHandler,
             "make_requirement",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_make_req, async_mock.patch.object(
             DIFPresExchHandler,
             "apply_requirements",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_apply_req, async_mock.patch.object(
             DIFPresExchHandler,
             "merge",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_merge, async_mock.patch.object(
             test_module,
             "create_presentation",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_create_vp:
             mock_make_req.return_value = async_mock.MagicMock()
             mock_apply_req.return_value = async_mock.MagicMock()
@@ -2267,8 +2278,8 @@ class TestPresExchHandler:
                 did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                 verkey="verkey",
                 metadata={},
-                method=DIDMethod.KEY,
-                key_type=KeyType.BLS12381G2,
+                method=KEY,
+                key_type=BLS12381G2,
             )
             mock_did_info.return_value = did_info
             vp = await dif_pres_exch_handler.create_vp(
@@ -2276,11 +2287,12 @@ class TestPresExchHandler:
                 pd=pd_list[0][0],
                 challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
             )
-            assert vp["test"] == "1"
-            assert (
-                vp["presentation_submission"]["definition_id"]
-                == "32f54163-7166-48f1-93d8-ff217bdb0653"
-            )
+            for vp_single in vp:
+                assert vp_single["test"] == "1"
+                assert (
+                    vp_single["presentation_submission"]["definition_id"]
+                    == "32f54163-7166-48f1-93d8-ff217bdb0653"
+                )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -2292,27 +2304,27 @@ class TestPresExchHandler:
         with async_mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_did_info, async_mock.patch.object(
             DIFPresExchHandler,
             "make_requirement",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_make_req, async_mock.patch.object(
             DIFPresExchHandler,
             "apply_requirements",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_apply_req, async_mock.patch.object(
             DIFPresExchHandler,
             "merge",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_merge, async_mock.patch.object(
             test_module,
             "create_presentation",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_create_vp, async_mock.patch.object(
             test_module,
             "sign_presentation",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_sign_vp:
             mock_make_req.return_value = async_mock.MagicMock()
             mock_apply_req.return_value = async_mock.MagicMock()
@@ -2327,8 +2339,8 @@ class TestPresExchHandler:
                 did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                 verkey="verkey",
                 metadata={},
-                method=DIDMethod.KEY,
-                key_type=KeyType.BLS12381G2,
+                method=KEY,
+                key_type=BLS12381G2,
             )
             mock_did_info.return_value = did_info
             vp = await dif_pres_exch_handler.create_vp(
@@ -2336,8 +2348,9 @@ class TestPresExchHandler:
                 pd=pd_list[0][0],
                 challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
             )
-            assert vp["test"] == "1"
-            assert SECURITY_CONTEXT_BBS_URL in vp["@context"]
+            for vp_single in vp:
+                assert vp_single["test"] == "1"
+                assert SECURITY_CONTEXT_BBS_URL in vp_single["@context"]
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -2349,27 +2362,27 @@ class TestPresExchHandler:
         with async_mock.patch.object(
             DIFPresExchHandler,
             "_did_info_for_did",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_did_info, async_mock.patch.object(
             DIFPresExchHandler,
             "make_requirement",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_make_req, async_mock.patch.object(
             DIFPresExchHandler,
             "apply_requirements",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_apply_req, async_mock.patch.object(
             DIFPresExchHandler,
             "merge",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_merge, async_mock.patch.object(
             test_module,
             "create_presentation",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_create_vp, async_mock.patch.object(
             DIFPresExchHandler,
             "get_sign_key_credential_subject_id",
-            async_mock.CoroutineMock(),
+            async_mock.AsyncMock(),
         ) as mock_sign_key_cred_subject:
             mock_make_req.return_value = async_mock.MagicMock()
             mock_apply_req.return_value = async_mock.MagicMock()
@@ -2381,8 +2394,8 @@ class TestPresExchHandler:
                 did="did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
                 verkey="verkey",
                 metadata={},
-                method=DIDMethod.KEY,
-                key_type=KeyType.BLS12381G2,
+                method=KEY,
+                key_type=BLS12381G2,
             )
             mock_did_info.return_value = did_info
             vp = await dif_pres_exch_handler.create_vp(
@@ -2390,8 +2403,10 @@ class TestPresExchHandler:
                 pd=pd_list[0][0],
                 challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
             )
-            assert vp["test"] == "1"
-            assert SECURITY_CONTEXT_BBS_URL in vp["@context"]
+            # 2 sub_reqs, vp is a sequence
+            for vp_single in vp:
+                assert vp_single["test"] == "1"
+                assert SECURITY_CONTEXT_BBS_URL in vp_single["@context"]
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -2993,6 +3008,7 @@ class TestPresExchHandler:
         assert filtered_cred_list[1].record_id in record_id_list
 
     @pytest.mark.asyncio
+    @pytest.mark.ursa_bbs_signatures
     async def test_create_vp_record_ids(self, profile):
         dif_pres_exch_handler = DIFPresExchHandler(profile)
         test_pd_filter_with_only_num_type = """
@@ -3066,6 +3082,8 @@ class TestPresExchHandler:
             pd=tmp_pd[0],
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
+        # only 1 sub_req
+        assert isinstance(tmp_vp, dict)
         assert len(tmp_vp["verifiableCredential"]) == 2
         assert (
             tmp_vp.get("verifiableCredential")[0]
@@ -3086,19 +3104,22 @@ class TestPresExchHandler:
             pd=tmp_pd[0],
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
-        assert len(tmp_vp["verifiableCredential"]) == 2
-        assert (
-            tmp_vp.get("verifiableCredential")[0]
-            .get("credentialSubject")
-            .get("givenName")
-            == "TEST"
-        )
-        assert (
-            tmp_vp.get("verifiableCredential")[1]
-            .get("credentialSubject")
-            .get("givenName")
-            == "TEST"
-        )
+        assert isinstance(tmp_vp, Sequence)
+        # 1 for each submission requirement group
+        assert len(tmp_vp) == 3
+        for tmp_vp_single in tmp_vp:
+            assert (
+                tmp_vp_single.get("verifiableCredential")[0]
+                .get("credentialSubject")
+                .get("givenName")
+                == "TEST"
+            )
+            assert (
+                tmp_vp_single.get("verifiableCredential")[1]
+                .get("credentialSubject")
+                .get("givenName")
+                == "TEST"
+            )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures

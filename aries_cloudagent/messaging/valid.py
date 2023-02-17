@@ -23,60 +23,41 @@ EXAMPLE_TIMESTAMP = 1640995199  # 2021-12-31 23:59:59Z
 class StrOrDictField(Field):
     """URI or Dict field for Marshmallow."""
 
-    def _serialize(self, value, attr, obj, **kwargs):
-        return value
-
     def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, (str, dict)):
-            return value
-        else:
+        if not isinstance(value, (str, dict)):
             raise ValidationError("Field should be str or dict")
+        return super()._deserialize(value, attr, data, **kwargs)
 
 
 class StrOrNumberField(Field):
     """String or Number field for Marshmallow."""
 
-    def _serialize(self, value, attr, obj, **kwargs):
-        return value
-
     def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, (str, float, int)):
-            return value
-        else:
+        if not isinstance(value, (str, float, int)):
             raise ValidationError("Field should be str or int or float")
+        return super()._deserialize(value, attr, data, **kwargs)
 
 
 class DictOrDictListField(Field):
     """Dict or Dict List field for Marshmallow."""
 
-    def _serialize(self, value, attr, obj, **kwargs):
-        return value
-
     def _deserialize(self, value, attr, data, **kwargs):
-        # dict
-        if isinstance(value, dict):
-            return value
-        # list of dicts
-        elif isinstance(value, list) and all(isinstance(item, dict) for item in value):
-            return value
-        else:
-            raise ValidationError("Field should be dict or list of dicts")
+        if not isinstance(value, dict):
+            if not isinstance(value, list) or not all(
+                isinstance(item, dict) for item in value
+            ):
+                raise ValidationError("Field should be dict or list of dicts")
+        return super()._deserialize(value, attr, data, **kwargs)
 
 
 class UriOrDictField(StrOrDictField):
     """URI or Dict field for Marshmallow."""
 
-    def __init__(self, *args, **kwargs):
-        """Initialize new UriOrDictField instance."""
-        super().__init__(*args, **kwargs)
-
-        # Insert validation into self.validators so that multiple errors can be stored.
-        self.validators.insert(0, self._uri_validator)
-
-    def _uri_validator(self, value):
-        # Check if URI when
+    def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, str):
-            return Uri()(value)
+            # Check regex
+            Uri()(value)
+        return super()._deserialize(value, attr, data, **kwargs)
 
 
 class IntEpoch(Range):
@@ -346,6 +327,29 @@ class IndyRawPublicKey(Regexp):
         super().__init__(
             IndyRawPublicKey.PATTERN,
             error="Value {input} is not a raw Ed25519VerificationKey2018 key",
+        )
+
+
+class RoutingKey(Regexp):
+    """
+    Validate between indy or did key.
+
+    Validate value against indy (Ed25519VerificationKey2018)
+    raw public key or DID key specification.
+    """
+
+    EXAMPLE = DIDKey.EXAMPLE
+    PATTERN = re.compile(DIDKey.PATTERN.pattern + "|" + IndyRawPublicKey.PATTERN)
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            RoutingKey.PATTERN,
+            error=(
+                "Value {input} is not in W3C did:key"
+                " or Ed25519VerificationKey2018 key format"
+            ),
         )
 
 
@@ -752,7 +756,7 @@ class CredentialSubject(Validator):
                 except ValidationError:
                     raise ValidationError(
                         f"credential subject id {value[0]} must be URI"
-                    )
+                    ) from None
 
         return value
 
@@ -788,6 +792,7 @@ JWS_HEADER_KID = {"validate": JWSHeaderKid(), "example": JWSHeaderKid.EXAMPLE}
 JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
 DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
+ROUTING_KEY = {"validate": RoutingKey(), "example": RoutingKey.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
 GENERIC_DID = {"validate": MaybeIndyDID(), "example": MaybeIndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {

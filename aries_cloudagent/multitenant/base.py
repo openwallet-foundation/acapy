@@ -1,31 +1,26 @@
 """Manager for multitenancy."""
 
+from abc import ABC, abstractmethod
 from datetime import datetime
 import logging
-from abc import abstractmethod, ABC
-
-import jwt
 from typing import Iterable, List, Optional, cast
 
-from ..core.profile import (
-    Profile,
-    ProfileSession,
-)
-from ..messaging.responder import BaseResponder
+import jwt
+
 from ..config.injection_context import InjectionContext
-from ..wallet.models.wallet_record import WalletRecord
-from ..wallet.base import BaseWallet
 from ..core.error import BaseError
-from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
-from ..protocols.routing.v1_0.models.route_record import RouteRecord
-from ..transport.wire_format import BaseWireFormat
-from ..storage.base import BaseStorage
-from ..storage.error import StorageNotFoundError
+from ..core.profile import Profile, ProfileSession
 from ..protocols.coordinate_mediation.v1_0.manager import (
     MediationManager,
     MediationRecord,
 )
-
+from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ..protocols.routing.v1_0.manager import RouteNotFoundError, RoutingManager
+from ..protocols.routing.v1_0.models.route_record import RouteRecord
+from ..storage.base import BaseStorage
+from ..transport.wire_format import BaseWireFormat
+from ..wallet.base import BaseWallet
+from ..wallet.models.wallet_record import WalletRecord
 from .error import WalletKeyMissingError
 
 LOGGER = logging.getLogger(__name__)
@@ -204,8 +199,8 @@ class BaseMultitenantManager(ABC):
                 public_did_info = await wallet.get_public_did()
 
             if public_did_info:
-                await self.add_key(
-                    wallet_record.wallet_id, public_did_info.verkey, skip_if_exists=True
+                await profile.inject(RouteManager).route_public_did(
+                    profile, public_did_info.verkey
                 )
         except Exception:
             await wallet_record.delete_record(session)
@@ -284,49 +279,6 @@ class BaseMultitenantManager(ABC):
             profile: The wallet profile instance
 
         """
-
-    async def add_key(
-        self, wallet_id: str, recipient_key: str, *, skip_if_exists: bool = False
-    ):
-        """
-        Add a wallet key to map incoming messages to specific subwallets.
-
-        Args:
-            wallet_id: The wallet id the key corresponds to
-            recipient_key: The recipient key belonging to the wallet
-            skip_if_exists: Whether to skip the action if the key is already registered
-                            for relaying / mediation
-        """
-
-        LOGGER.info(
-            f"Add route record for recipient {recipient_key} to wallet {wallet_id}"
-        )
-        routing_mgr = RoutingManager(self._profile)
-        mediation_mgr = MediationManager(self._profile)
-        mediation_record = await mediation_mgr.get_default_mediator()
-
-        if skip_if_exists:
-            try:
-                async with self._profile.session() as session:
-                    await RouteRecord.retrieve_by_recipient_key(session, recipient_key)
-
-                # If no error is thrown, it means there is already a record
-                return
-            except (StorageNotFoundError):
-                pass
-
-        await routing_mgr.create_route_record(
-            recipient_key=recipient_key, internal_wallet_id=wallet_id
-        )
-
-        # External mediation
-        if mediation_record:
-            keylist_updates = await mediation_mgr.add_key(recipient_key)
-
-            responder = self._profile.inject(BaseResponder)
-            await responder.send(
-                keylist_updates, connection_id=mediation_record.connection_id
-            )
 
     async def create_auth_token(
         self, wallet_record: WalletRecord, wallet_key: str = None
@@ -426,8 +378,21 @@ class BaseMultitenantManager(ABC):
                 )
 
             return wallet
-        except (RouteNotFoundError):
+        except RouteNotFoundError:
             pass
+
+    async def get_profile_for_key(
+        self, context: InjectionContext, recipient_key: str
+    ) -> Optional[Profile]:
+        """Retrieve a wallet profile by recipient key."""
+        wallet = await self._get_wallet_by_key(recipient_key)
+        if not wallet:
+            return None
+
+        if wallet.requires_external_key:
+            raise WalletKeyMissingError()
+
+        return await self.get_wallet_profile(context, wallet)
 
     async def get_wallets_by_message(
         self, message_body, wire_format: BaseWireFormat = None

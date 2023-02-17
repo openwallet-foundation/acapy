@@ -38,7 +38,9 @@ class TestIndyTailsServer(AsyncTestCase):
                 "/tmp/dummy/path",
             )
             assert ok
-            assert text == "tails-hash"
+            assert (
+                text == context.settings["tails_server_upload_url"] + "/" + REV_REG_ID
+            )
 
     async def test_upload_indy_sdk(self):
         profile = InMemoryProfile.test_profile()
@@ -68,7 +70,9 @@ class TestIndyTailsServer(AsyncTestCase):
                 "/tmp/dummy/path",
             )
             assert ok
-            assert text == "tails-hash"
+            assert (
+                text == profile.settings["tails_server_upload_url"] + "/" + REV_REG_ID
+            )
 
     async def test_upload_indy_vdr(self):
         profile = InMemoryProfile.test_profile()
@@ -98,7 +102,9 @@ class TestIndyTailsServer(AsyncTestCase):
                 "/tmp/dummy/path",
             )
             assert ok
-            assert text == "tails-hash"
+            assert (
+                text == profile.settings["tails_server_upload_url"] + "/" + REV_REG_ID
+            )
 
     async def test_upload_x(self):
         context = InjectionContext(

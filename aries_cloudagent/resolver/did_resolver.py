@@ -8,10 +8,11 @@ retrieving did's from different sources provided by the method type.
 from datetime import datetime
 from itertools import chain
 import logging
-from typing import Sequence, Tuple, Type, TypeVar, Union
+from typing import List, Optional, Sequence, Text, Tuple, Union
 
-from pydid import DID, DIDError, DIDUrl, Resource, NonconformantDocument
-from pydid.doc.doc import IDNotFoundError
+from pydid import DID, DIDError, DIDUrl, Resource
+import pydid
+from pydid.doc.doc import BaseDIDDocument, IDNotFoundError
 
 from ..core.profile import Profile
 from .base import (
@@ -22,23 +23,26 @@ from .base import (
     ResolutionResult,
     ResolverError,
 )
-from .did_resolver_registry import DIDResolverRegistry
 
 LOGGER = logging.getLogger(__name__)
-
-
-ResourceType = TypeVar("ResourceType", bound=Resource)
 
 
 class DIDResolver:
     """did resolver singleton."""
 
-    def __init__(self, registry: DIDResolverRegistry):
+    def __init__(self, resolvers: List[BaseDIDResolver] = None):
         """Create DID Resolver."""
-        self.did_resolver_registry = registry
+        self.resolvers = resolvers or []
+
+    def register_resolver(self, resolver: BaseDIDResolver):
+        """Register a new resolver."""
+        self.resolvers.append(resolver)
 
     async def _resolve(
-        self, profile: Profile, did: Union[str, DID]
+        self,
+        profile: Profile,
+        did: Union[str, DID],
+        service_accept: Optional[Sequence[Text]] = None,
     ) -> Tuple[BaseDIDResolver, dict]:
         """Retrieve doc and return with resolver."""
         # TODO Cache results
@@ -52,6 +56,7 @@ class DIDResolver:
                 document = await resolver.resolve(
                     profile,
                     did,
+                    service_accept,
                 )
                 return resolver, document
             except DIDNotFound:
@@ -59,9 +64,14 @@ class DIDResolver:
 
         raise DIDNotFound(f"DID {did} could not be resolved")
 
-    async def resolve(self, profile: Profile, did: Union[str, DID]) -> dict:
+    async def resolve(
+        self,
+        profile: Profile,
+        did: Union[str, DID],
+        service_accept: Optional[Sequence[Text]] = None,
+    ) -> dict:
         """Resolve a DID."""
-        _, doc = await self._resolve(profile, did)
+        _, doc = await self._resolve(profile, did, service_accept)
         return doc
 
     async def resolve_with_metadata(
@@ -90,7 +100,7 @@ class DIDResolver:
         """
         valid_resolvers = [
             resolver
-            for resolver in self.did_resolver_registry.resolvers
+            for resolver in self.resolvers
             if await resolver.supports(profile, did)
         ]
         native_resolvers = filter(lambda resolver: resolver.native, valid_resolvers)
@@ -103,8 +113,12 @@ class DIDResolver:
         return resolvers
 
     async def dereference(
-        self, profile: Profile, did_url: str, *, cls: Type[ResourceType] = Resource
-    ) -> ResourceType:
+        self,
+        profile: Profile,
+        did_url: str,
+        *,
+        document: Optional[BaseDIDDocument] = None,
+    ) -> Resource:
         """Dereference a DID URL to its corresponding DID Doc object."""
         # TODO Use cached DID Docs when possible
         try:
@@ -116,12 +130,15 @@ class DIDResolver:
                 "Failed to parse DID URL from {}".format(did_url)
             ) from err
 
-        doc_dict = await self.resolve(profile, parsed.did)
-        # Use non-conformant doc as the "least common denominator"
+        if document and parsed.did != document.id:
+            document = None
+
+        if not document:
+            doc_dict = await self.resolve(profile, parsed.did)
+            document = pydid.deserialize_document(doc_dict)
+
         try:
-            return NonconformantDocument.deserialize(doc_dict).dereference_as(
-                cls, parsed
-            )
+            return document.dereference(parsed)
         except IDNotFoundError as error:
             raise ResolverError(
                 "Failed to dereference DID URL: {}".format(error)

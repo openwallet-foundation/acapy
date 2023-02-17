@@ -2,21 +2,13 @@ from unittest import mock
 
 from asynctest import TestCase as AsyncTestCase
 
-from ......connections.models.diddoc import (
-    DIDDoc,
-    PublicKey,
-    PublicKeyType,
-    Service,
-)
-from ......wallet.did_method import DIDMethod
-from ......wallet.key_type import KeyType
+from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
-
+from ......wallet.did_method import SOV, DIDMethods
+from ......wallet.key_type import ED25519
 from .....didcomm_prefix import DIDCommPrefix
-
 from ...message_types import DIDX_RESPONSE
-
 from ..response import DIDXResponse
 
 
@@ -56,10 +48,13 @@ class TestConfig:
 
 class TestDIDXResponse(AsyncTestCase, TestConfig):
     async def setUp(self):
-        self.wallet = InMemoryProfile.test_session().wallet
+        self.session = InMemoryProfile.test_session()
+        self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        self.wallet = self.session.wallet
+
         self.did_info = await self.wallet.create_local_did(
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())
@@ -110,10 +105,13 @@ class TestDIDXResponseSchema(AsyncTestCase, TestConfig):
     """Test response schema."""
 
     async def setUp(self):
-        self.wallet = InMemoryProfile.test_session().wallet
+        self.session = InMemoryProfile.test_session()
+        self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        self.wallet = self.session.wallet
+
         self.did_info = await self.wallet.create_local_did(
-            method=DIDMethod.SOV,
-            key_type=KeyType.ED25519,
+            method=SOV,
+            key_type=ED25519,
         )
 
         did_doc_attach = AttachDecorator.data_base64(self.make_did_doc().serialize())

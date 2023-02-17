@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+
+jobs:
+  tests:
+    name: Test Python ${{ inputs.python-version }}
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: 'pip'
+          cache-dependency-path: 'requirements*.txt'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip3 install --no-cache-dir \
+            -r requirements.txt \
+            -r requirements.askar.txt \
+            -r requirements.bbs.txt \
+            -r requirements.dev.txt
+      - name: Tests
+        run: |
+          pytest

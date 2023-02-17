@@ -363,7 +363,7 @@ class TestPresExchSchemas(TestCase):
                 "descriptor_map": [
                     {
                         "id": "citizenship_input_1",
-                        "format": "ldp_vp",
+                        "format": "ldp_vc",
                         "path": "$.verifiableCredential[0]",
                     }
                 ],
@@ -395,6 +395,10 @@ class TestPresExchSchemas(TestCase):
         deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
             test_schemas_filter
         )
+        ser_schema_filter = deser_schema_filter.serialize()
+        deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
+            ser_schema_filter
+        )
         assert deser_schema_filter.oneof_filter
         assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0][0].get(
             "uri"
@@ -418,6 +422,10 @@ class TestPresExchSchemas(TestCase):
         deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
             test_schemas_filter
         )
+        ser_schema_filter = deser_schema_filter.serialize()
+        deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
+            ser_schema_filter
+        )
         assert deser_schema_filter.oneof_filter
         assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0].get(
             "uri"
@@ -428,6 +436,10 @@ class TestPresExchSchemas(TestCase):
         assert isinstance(deser_schema_filter, SchemasInputDescriptorFilter)
 
         deser_schema_filter = SchemasInputDescriptorFilter.deserialize(test_schema_list)
+        ser_schema_filter = deser_schema_filter.serialize()
+        deser_schema_filter = SchemasInputDescriptorFilter.deserialize(
+            ser_schema_filter
+        )
         assert not deser_schema_filter.oneof_filter
         assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0].get(
             "uri"

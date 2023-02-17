@@ -18,15 +18,6 @@ from .models.discovery_record import (
 )
 
 
-class V10DiscoveryExchangeResultSchema(OpenAPISchema):
-    """Result schema for Discover Features v1.0 exchange record."""
-
-    results = fields.Nested(
-        V10DiscoveryRecordSchema,
-        description="Discover Features v1.0 exchange record",
-    )
-
-
 class V10DiscoveryExchangeListResultSchema(OpenAPISchema):
     """Result schema for Discover Features v1.0 exchange records."""
 
@@ -70,7 +61,7 @@ class QueryDiscoveryExchRecordsSchema(OpenAPISchema):
     summary="Query supported features",
 )
 @querystring_schema(QueryFeaturesQueryStringSchema())
-@response_schema(V10DiscoveryExchangeResultSchema(), 200, description="")
+@response_schema(V10DiscoveryRecordSchema(), 200, description="")
 async def query_features(request: web.BaseRequest):
     """
     Request handler for creating and sending feature query.

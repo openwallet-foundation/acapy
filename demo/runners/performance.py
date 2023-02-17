@@ -275,7 +275,6 @@ async def main(
     wallet_type: str = None,
     arg_file: str = None,
 ):
-
     if multi_ledger:
         genesis = None
         multi_ledger_config_path = "./demo/multi_ledger_config.yml"

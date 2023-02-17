@@ -1,27 +1,24 @@
+import os
+import shutil
+import unittest
+
 from aiohttp.web import HTTPBadRequest, HTTPNotFound
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from aries_cloudagent.core.in_memory import InMemoryProfile
+from aries_cloudagent.revocation.error import RevocationError
 
-from ...admin.request_context import AdminRequestContext
 from ...storage.in_memory import InMemoryStorage
-from ...tails.base import BaseTailsServer
 
 from .. import routes as test_module
 
 
 class TestRevocationRoutes(AsyncTestCase):
     def setUp(self):
-        TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
-        self.tails_server = TailsServer()
-        self.tails_server.upload_tails_file = async_mock.CoroutineMock(
-            return_value=(True, None)
-        )
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
         setattr(self.context, "profile", self.profile)
-        self.context.injector.bind_instance(BaseTailsServer, self.tails_server)
         self.request_dict = {
             "context": self.context,
             "outbound_message_router": async_mock.CoroutineMock(),
@@ -94,7 +91,6 @@ class TestRevocationRoutes(AsyncTestCase):
         ) as mock_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock()
 
             await test_module.revoke(self.request)
@@ -114,7 +110,6 @@ class TestRevocationRoutes(AsyncTestCase):
         ) as mock_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock()
 
             await test_module.revoke(self.request)
@@ -135,7 +130,6 @@ class TestRevocationRoutes(AsyncTestCase):
         ) as mock_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
             )
@@ -289,7 +283,6 @@ class TestRevocationRoutes(AsyncTestCase):
 
     async def test_rev_regs_created(self):
         CRED_DEF_ID = f"{self.test_did}:3:CL:1234:default"
-        STATE = "active"
         self.request.query = {
             "cred_def_id": CRED_DEF_ID,
             "state": test_module.IssuerRevRegRecord.STATE_ACTIVE,
@@ -539,33 +532,31 @@ class TestRevocationRoutes(AsyncTestCase):
                 result = await test_module.get_tails_file(self.request)
             mock_file_response.assert_not_called()
 
-    async def test_upload_tails_file(self):
+    async def test_upload_tails_file_basic(self):
         REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
             self.test_did, self.test_did
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
-            test_module, "tails_path", async_mock.MagicMock()
-        ) as mock_tails_path, async_mock.patch.object(
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
-            mock_tails_path.return_value = f"/tmp/tails/{REV_REG_ID}"
-
+            mock_upload = async_mock.CoroutineMock()
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        tails_local_path=f"/tmp/tails/{REV_REG_ID}",
+                        has_local_tails_file=True,
+                        upload_tails_file=mock_upload,
+                    )
+                )
+            )
             result = await test_module.upload_tails_file(self.request)
+            mock_upload.assert_awaited_once()
             mock_json_response.assert_called_once_with({})
             assert result is mock_json_response.return_value
-
-    async def test_upload_tails_file_no_tails_server(self):
-        REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
-            self.test_did, self.test_did
-        )
-        self.request.match_info = {"rev_reg_id": REV_REG_ID}
-
-        self.context.injector.clear_binding(BaseTailsServer)
-
-        with self.assertRaises(test_module.web.HTTPForbidden):
-            await test_module.upload_tails_file(self.request)
 
     async def test_upload_tails_file_no_local_tails_file(self):
         REV_REG_ID = "{}:4:{}:3:CL:1234:default:CL_ACCUM:default".format(
@@ -574,9 +565,16 @@ class TestRevocationRoutes(AsyncTestCase):
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
         with async_mock.patch.object(
-            test_module, "tails_path", async_mock.MagicMock()
-        ) as mock_tails_path:
-            mock_tails_path.return_value = None
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc:
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        tails_local_path=f"/tmp/tails/{REV_REG_ID}",
+                        has_local_tails_file=False,
+                    )
+                )
+            )
 
             with self.assertRaises(test_module.web.HTTPNotFound):
                 await test_module.upload_tails_file(self.request)
@@ -587,17 +585,20 @@ class TestRevocationRoutes(AsyncTestCase):
         )
         self.request.match_info = {"rev_reg_id": REV_REG_ID}
 
-        TailsServer = async_mock.MagicMock(BaseTailsServer, autospec=True)
-        self.tails_server = TailsServer()
-        self.tails_server.upload_tails_file = async_mock.CoroutineMock(
-            return_value=(False, "Internal Server Error")
-        )
-        self.context.injector.clear_binding(BaseTailsServer)
-        self.context.injector.bind_instance(BaseTailsServer, self.tails_server)
-
         with async_mock.patch.object(
-            test_module, "tails_path", async_mock.MagicMock()
-        ) as mock_tails_path:
+            test_module, "IndyRevocation", autospec=True
+        ) as mock_indy_revoc:
+            mock_upload = async_mock.CoroutineMock(side_effect=RevocationError("test"))
+            mock_indy_revoc.return_value = async_mock.MagicMock(
+                get_issuer_rev_reg_record=async_mock.CoroutineMock(
+                    return_value=async_mock.MagicMock(
+                        tails_local_path=f"/tmp/tails/{REV_REG_ID}",
+                        has_local_tails_file=True,
+                        upload_tails_file=mock_upload,
+                    )
+                )
+            )
+
             with self.assertRaises(test_module.web.HTTPInternalServerError):
                 await test_module.upload_tails_file(self.request)
 
@@ -906,3 +907,63 @@ class TestRevocationRoutes(AsyncTestCase):
         ]["get"]["responses"]["200"]["schema"] == {"type": "string", "format": "binary"}
 
         assert "tags" in mock_app._state["swagger_dict"]
+
+
+class TestDeleteTails(unittest.TestCase):
+    def setUp(self):
+        self.rev_reg_id = "rev_reg_id_123"
+        self.cred_def_id = "cred_def_id_456"
+
+        self.main_dir_rev = "path/to/main/dir/rev"
+        self.tails_path = os.path.join(self.main_dir_rev, "tails")
+        if not (os.path.exists(self.main_dir_rev)):
+            os.makedirs(self.main_dir_rev)
+        open(self.tails_path, "w").close()
+
+    async def test_delete_tails_by_rev_reg_id(self):
+        # Setup
+        rev_reg_id = self.rev_reg_id
+
+        # Test
+        result = await test_module.delete_tails(
+            {"context": None, "query": {"rev_reg_id": rev_reg_id}}
+        )
+
+        # Assert
+        self.assertEqual(result, {"message": "All files deleted successfully"})
+        self.assertFalse(os.path.exists(self.tails_path))
+
+    async def test_delete_tails_by_cred_def_id(self):
+        # Setup
+        cred_def_id = self.cred_def_id
+        main_dir_cred = "path/to/main/dir/cred"
+        os.makedirs(main_dir_cred)
+        cred_dir = os.path.join(main_dir_cred, cred_def_id)
+        os.makedirs(cred_dir)
+
+        # Test
+        result = await test_module.delete_tails(
+            {"context": None, "query": {"cred_def_id": cred_def_id}}
+        )
+
+        # Assert
+        self.assertEqual(result, {"message": "All files deleted successfully"})
+        self.assertFalse(os.path.exists(cred_dir))
+        self.assertTrue(os.path.exists(main_dir_cred))
+
+    async def test_delete_tails_not_found(self):
+        # Setup
+        cred_def_id = "invalid_cred_def_id"
+
+        # Test
+        result = await test_module.delete_tails(
+            {"context": None, "query": {"cred_def_id": cred_def_id}}
+        )
+
+        # Assert
+        self.assertEqual(result, {"message": "No such file or directory"})
+        self.assertTrue(os.path.exists(self.main_dir_rev))
+
+    async def tearDown(self):
+        if os.path.exists(self.main_dir_rev):
+            shutil.rmtree(self.main_dir_rev)

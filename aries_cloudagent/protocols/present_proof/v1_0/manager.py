@@ -354,7 +354,7 @@ class PresentationManager:
             presentation_preview = exchange_pres_proposal.presentation_proposal
 
             proof_req = presentation_exchange_record._presentation_request.ser
-            for (reft, attr_spec) in presentation["requested_proof"][
+            for reft, attr_spec in presentation["requested_proof"][
                 "revealed_attrs"
             ].items():
                 name = proof_req["requested_attributes"][reft]["name"]
@@ -393,7 +393,9 @@ class PresentationManager:
         return presentation_exchange_record
 
     async def verify_presentation(
-        self, presentation_exchange_record: V10PresentationExchange
+        self,
+        presentation_exchange_record: V10PresentationExchange,
+        responder: Optional[BaseResponder] = None,
     ):
         """
         Verify a presentation.
@@ -417,18 +419,18 @@ class PresentationManager:
         ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
 
         verifier = self._profile.inject(IndyVerifier)
-        presentation_exchange_record.verified = json.dumps(  # tag: needs string value
-            await verifier.verify_presentation(
-                dict(
-                    indy_proof_request
-                ),  # copy to avoid changing the proof req in the stored pres exch
-                indy_proof,
-                schemas,
-                cred_defs,
-                rev_reg_defs,
-                rev_reg_entries,
-            )
+        (verified_bool, verified_msgs) = await verifier.verify_presentation(
+            dict(
+                indy_proof_request
+            ),  # copy to avoid changing the proof req in the stored pres exch
+            indy_proof,
+            schemas,
+            cred_defs,
+            rev_reg_defs,
+            rev_reg_entries,
         )
+        presentation_exchange_record.verified = json.dumps(verified_bool)
+        presentation_exchange_record.verified_msgs = list(set(verified_msgs))
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED
 
         async with self._profile.session() as session:
@@ -436,11 +438,13 @@ class PresentationManager:
                 session, reason="verify presentation"
             )
 
-        await self.send_presentation_ack(presentation_exchange_record)
+        await self.send_presentation_ack(presentation_exchange_record, responder)
         return presentation_exchange_record
 
     async def send_presentation_ack(
-        self, presentation_exchange_record: V10PresentationExchange
+        self,
+        presentation_exchange_record: V10PresentationExchange,
+        responder: Optional[BaseResponder] = None,
     ):
         """
         Send acknowledgement of presentation receipt.
@@ -449,7 +453,7 @@ class PresentationManager:
             presentation_exchange_record: presentation exchange record with thread id
 
         """
-        responder = self._profile.inject_or(BaseResponder)
+        responder = responder or self._profile.inject_or(BaseResponder)
 
         if not presentation_exchange_record.connection_id:
             # Find associated oob record. If this presentation exchange is created
@@ -540,12 +544,10 @@ class PresentationManager:
         """
         # FIXME use transaction, fetch for_update
         async with self._profile.session() as session:
-            pres_ex_record = await (
-                V10PresentationExchange.retrieve_by_tag_filter(
-                    session,
-                    {"thread_id": message._thread_id},
-                    {"connection_id": connection_id},
-                )
+            pres_ex_record = await V10PresentationExchange.retrieve_by_tag_filter(
+                session,
+                {"thread_id": message._thread_id},
+                {"connection_id": connection_id},
             )
 
             pres_ex_record.state = V10PresentationExchange.STATE_ABANDONED

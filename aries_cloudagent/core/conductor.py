@@ -11,30 +11,31 @@ wallet.
 import hashlib
 import json
 import logging
+
 from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
 from ..admin.server import AdminResponder, AdminServer
 from ..config.default_context import ContextBuilder
 from ..config.injection_context import InjectionContext
-from ..config.provider import ClassProvider
 from ..config.ledger import (
     get_genesis_transactions,
     ledger_config,
     load_multiple_genesis_transactions_from_config,
 )
 from ..config.logging import LoggingConfigurator
+from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
-from ..ledger.base import BaseLedger
+
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
     BaseMultipleLedgerManager,
     MultipleLedgerManagerError,
 )
-from ..ledger.multiple_ledger.manager_provider import MultiIndyLedgerManagerProvider
 from ..ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
+from ..ledger.multiple_ledger.manager_provider import MultiIndyLedgerManagerProvider
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager
 from ..multitenant.manager_provider import MultitenantManagerProvider
@@ -45,8 +46,12 @@ from ..protocols.connections.v1_0.manager import (
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
-from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
 from ..protocols.coordinate_mediation.mediation_invite_store import MediationInviteStore
+from ..protocols.coordinate_mediation.v1_0.manager import MediationManager
+from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ..protocols.coordinate_mediation.v1_0.route_manager_provider import (
+    RouteManagerProvider,
+)
 from ..protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ..protocols.out_of_band.v1_0.messages.invitation import HSProto, InvitationMessage
 from ..storage.base import BaseStorage
@@ -61,12 +66,11 @@ from ..transport.wire_format import BaseWireFormat
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
-from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
+from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
 from ..wallet.did_info import DIDInfo
-from .oob_processor import OobMessageProcessor
-
 from .dispatcher import Dispatcher
-from .util import STARTUP_EVENT_TOPIC, SHUTDOWN_EVENT_TOPIC
+from .oob_processor import OobMessageProcessor
+from .util import SHUTDOWN_EVENT_TOPIC, STARTUP_EVENT_TOPIC
 
 LOGGER = logging.getLogger(__name__)
 
@@ -140,7 +144,6 @@ class Conductor:
                     self.root_profile.BACKEND_NAME == "askar"
                     and ledger.BACKEND_NAME == "indy-vdr"
                 ):
-                    context.injector.bind_instance(BaseLedger, ledger)
                     context.injector.bind_provider(
                         IndyVerifier,
                         ClassProvider(
@@ -152,7 +155,6 @@ class Conductor:
                     self.root_profile.BACKEND_NAME == "indy"
                     and ledger.BACKEND_NAME == "indy"
                 ):
-                    context.injector.bind_instance(BaseLedger, ledger)
                     context.injector.bind_provider(
                         IndyVerifier,
                         ClassProvider(
@@ -203,6 +205,11 @@ class Conductor:
             context.injector.bind_provider(
                 BaseMultitenantManager, MultitenantManagerProvider(self.root_profile)
             )
+
+        # Bind route manager provider
+        context.injector.bind_provider(
+            RouteManager, RouteManagerProvider(self.root_profile)
+        )
 
         # Bind oob message processor to be able to receive and process un-encrypted
         # messages
@@ -441,24 +448,21 @@ class Conductor:
                         if mediation_connections_invite
                         else OutOfBandManager(self.root_profile)
                     )
-
-                    conn_record = await mgr.receive_invitation(
+                    record = await mgr.receive_invitation(
                         invitation=invitation_handler.from_url(
                             mediation_invite_record.invite
                         ),
                         auto_accept=True,
                     )
                     async with self.root_profile.session() as session:
-                        await (
-                            MediationInviteStore(
-                                session.context.inject(BaseStorage)
-                            ).mark_default_invite_as_used()
-                        )
+                        await MediationInviteStore(
+                            session.context.inject(BaseStorage)
+                        ).mark_default_invite_as_used()
 
-                        await conn_record.metadata_set(
+                        await record.metadata_set(
                             session, MediationManager.SEND_REQ_AFTER_CONNECTION, True
                         )
-                        await conn_record.metadata_set(
+                        await record.metadata_set(
                             session, MediationManager.SET_TO_DEFAULT_ON_GRANTED, True
                         )
 
@@ -473,7 +477,8 @@ class Conductor:
     async def stop(self, timeout=1.0):
         """Stop the agent."""
         # notify protcols that we are shutting down
-        await self.root_profile.notify(SHUTDOWN_EVENT_TOPIC, {})
+        if self.root_profile:
+            await self.root_profile.notify(SHUTDOWN_EVENT_TOPIC, {})
 
         shutdown = TaskQueue()
         if self.dispatcher:
@@ -485,13 +490,13 @@ class Conductor:
         if self.outbound_transport_manager:
             shutdown.run(self.outbound_transport_manager.stop())
 
-        # close multitenant profiles
-        multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            for profile in multitenant_mgr.open_profiles:
-                shutdown.run(profile.close())
-
         if self.root_profile:
+            # close multitenant profiles
+            multitenant_mgr = self.context.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                for profile in multitenant_mgr.open_profiles:
+                    shutdown.run(profile.close())
+
             shutdown.run(self.root_profile.close())
 
         await shutdown.complete(timeout)

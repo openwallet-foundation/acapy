@@ -6,7 +6,8 @@ Represents single item in keylist-update-response.updated list.
 from marshmallow import EXCLUDE, fields
 
 from ......messaging.models.base import BaseModel, BaseModelSchema
-from ......messaging.valid import INDY_RAW_PUBLIC_KEY
+from ......messaging.valid import DID_KEY
+from ...normalization import normalize_from_public_key
 
 
 class KeylistUpdated(BaseModel):
@@ -40,7 +41,7 @@ class KeylistUpdated(BaseModel):
 
         """
         super().__init__(**kwargs)
-        self.recipient_key = recipient_key
+        self.recipient_key = normalize_from_public_key(recipient_key)
         self.action = action
         self.result = result
 
@@ -54,6 +55,6 @@ class KeylistUpdatedSchema(BaseModelSchema):
         model_class = KeylistUpdated
         unknown = EXCLUDE
 
-    recipient_key = fields.Str(required=True, **INDY_RAW_PUBLIC_KEY)
+    recipient_key = fields.Str(required=True, **DID_KEY)
     action = fields.Str(required=True)
     result = fields.Str(required=True)

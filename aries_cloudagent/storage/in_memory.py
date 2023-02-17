@@ -70,8 +70,7 @@ class InMemoryStorage(BaseStorage, BaseStorageSearch):
         row = self.profile.records.get(record_id)
         if row and row.type == record_type:
             return row
-        if not row:
-            raise StorageNotFoundError("Record not found: {}".format(record_id))
+        raise StorageNotFoundError("Record not found: {}".format(record_id))
 
     async def update_record(self, record: StorageRecord, value: str, tags: Mapping):
         """

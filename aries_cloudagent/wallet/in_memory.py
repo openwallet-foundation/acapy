@@ -3,8 +3,8 @@
 import asyncio
 from typing import List, Sequence, Tuple, Union
 
+from .did_parameters_validation import DIDParametersValidation
 from ..core.in_memory import InMemoryProfile
-from ..did.did_key import DIDKey
 
 from .base import BaseWallet
 from .crypto import (
@@ -17,7 +17,7 @@ from .crypto import (
 )
 from .did_info import KeyInfo, DIDInfo
 from .did_posture import DIDPosture
-from .did_method import DIDMethod
+from .did_method import SOV, DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58, random_seed
@@ -132,8 +132,8 @@ class InMemoryWallet(BaseWallet):
         local_did = self.profile.local_dids.get(did)
         if not local_did:
             raise WalletNotFoundError("Wallet owns no such DID: {}".format(did))
-
-        did_method = DIDMethod.from_did(did)
+        did_methods: DIDMethods = self.profile.context.inject(DIDMethods)
+        did_method: DIDMethod = did_methods.from_did(did)
         if not did_method.supports_rotation:
             raise WalletError(
                 f"DID method '{did_method.method_name}' does not support key rotation."
@@ -212,27 +212,15 @@ class InMemoryWallet(BaseWallet):
         """
         seed = validate_seed(seed) or random_seed()
 
-        # validate key_type
-        if not method.supports_key_type(key_type):
-            raise WalletError(
-                f"Invalid key type {key_type.key_type} for method {method.method_name}"
-            )
+        did_methods: DIDMethods = self.profile.context.inject(DIDMethods)
+        did_validation = DIDParametersValidation(did_methods)
+
+        did_validation.validate_key_type(method, key_type)
 
         verkey, secret = create_keypair(key_type, seed)
         verkey_enc = bytes_to_b58(verkey)
 
-        # We need some did method specific handling. If more did methods
-        # are added it is probably better create a did method specific handler
-        if method == DIDMethod.KEY:
-            if did:
-                raise WalletError("Not allowed to set DID for DID method 'key'")
-
-            did = DIDKey.from_public_key(verkey, key_type).did
-        elif method == DIDMethod.SOV:
-            if not did:
-                did = bytes_to_b58(verkey[:16])
-        else:
-            raise WalletError(f"Unsupported DID method: {method.method_name}")
+        did = did_validation.validate_or_derive_did(method, key_type, verkey, did)
 
         if (
             did in self.profile.local_dids
@@ -395,7 +383,7 @@ class InMemoryWallet(BaseWallet):
             info = did
             did = info.did
 
-        if info.method != DIDMethod.SOV:
+        if info.method != SOV:
             raise WalletError("Setting public DID is only allowed for did:sov DIDs")
 
         public = await self.get_public_did()

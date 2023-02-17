@@ -1,19 +1,18 @@
 import json
-
 from base64 import b64encode
 
-from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from asynctest import TestCase as AsyncTestCase
+from asynctest import mock as async_mock
 
 from ...core.in_memory import InMemoryProfile
-from ...protocols.routing.v1_0.message_types import FORWARD
 from ...protocols.didcomm_prefix import DIDCommPrefix
+from ...protocols.routing.v1_0.message_types import FORWARD
 from ...wallet.base import BaseWallet
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.error import WalletError
-from ...wallet.key_type import KeyType
-from ...wallet.did_method import DIDMethod
-
+from ...wallet.key_type import ED25519
 from .. import pack_format as test_module
-from ..error import WireFormatEncodeError, WireFormatParseError, RecipientKeysError
+from ..error import RecipientKeysError, WireFormatEncodeError, WireFormatParseError
 from ..pack_format import PackWireFormat
 
 
@@ -34,6 +33,7 @@ class TestPackWireFormat(AsyncTestCase):
 
     def setUp(self):
         self.session = InMemoryProfile.test_session()
+        self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.wallet = self.session.inject(BaseWallet)
 
     async def test_errors(self):
@@ -140,7 +140,7 @@ class TestPackWireFormat(AsyncTestCase):
 
     async def test_encode_decode(self):
         local_did = await self.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=self.test_seed
+            method=SOV, key_type=ED25519, seed=self.test_seed
         )
         serializer = PackWireFormat()
         recipient_keys = (local_did.verkey,)
@@ -174,10 +174,10 @@ class TestPackWireFormat(AsyncTestCase):
 
     async def test_forward(self):
         local_did = await self.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=self.test_seed
+            method=SOV, key_type=ED25519, seed=self.test_seed
         )
         router_did = await self.wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519, seed=self.test_routing_seed
+            method=SOV, key_type=ED25519, seed=self.test_routing_seed
         )
         serializer = PackWireFormat()
         recipient_keys = (local_did.verkey,)

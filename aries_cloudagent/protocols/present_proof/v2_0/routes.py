@@ -273,9 +273,10 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
             ValidationError: if data does not have exactly one format.
 
         """
-        if len(data.keys() & {f.api for f in V20PresFormat.Format}) != 1:
+        if len(data.keys() & {f.api for f in V20PresFormat.Format}) < 1:
             raise ValidationError(
-                "V20PresSpecByFormatRequestSchema must specify one presentation format"
+                "V20PresSpecByFormatRequestSchema must specify "
+                "at least one presentation format"
             )
 
 
@@ -330,7 +331,7 @@ async def _add_nonce(indy_proof_request: Mapping) -> Mapping:
 def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
     """Break out formats and proposals/requests/presentations for v2.0 messages."""
     attach = []
-    for (fmt_api, item_by_fmt) in by_format.items():
+    for fmt_api, item_by_fmt in by_format.items():
         if fmt_api == V20PresFormat.Format.INDY.api:
             attach.append(
                 AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
@@ -1057,11 +1058,8 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     outbound_handler = request["outbound_message_router"]
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
-    if "dif" in body:
-        fmt = V20PresFormat.Format.get("dif").api
-    elif "indy" in body:
-        fmt = V20PresFormat.Format.get("indy").api
-    else:
+    supported_formats = ["dif", "indy"]
+    if not any(x in body for x in supported_formats):
         raise web.HTTPBadRequest(
             reason=(
                 "No presentation format specification provided, "
@@ -1092,7 +1090,6 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     if pres_ex_record.connection_id:
         try:
             async with profile.session() as session:
-
                 conn_record = await ConnRecord.retrieve_by_id(
                     session, pres_ex_record.connection_id
                 )
@@ -1106,10 +1103,9 @@ async def present_proof_send_presentation(request: web.BaseRequest):
 
     pres_manager = V20PresManager(profile)
     try:
-        request_data = {fmt: body.get(fmt)}
         pres_ex_record, pres_message = await pres_manager.create_pres(
             pres_ex_record,
-            request_data=request_data,
+            request_data=body,
             comment=comment,
         )
         result = pres_ex_record.serialize()

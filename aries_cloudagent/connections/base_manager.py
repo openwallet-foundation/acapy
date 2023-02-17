@@ -5,7 +5,7 @@ For Connection, DIDExchange and OutOfBand Manager.
 """
 
 import logging
-from typing import List, Sequence, Tuple
+from typing import Optional, List, Sequence, Tuple, Text
 
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
@@ -23,6 +23,9 @@ from ..protocols.connections.v1_0.messages.connection_invitation import (
 )
 from ..protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
+)
+from ..protocols.coordinate_mediation.v1_0.route_manager import (
+    RouteManager,
 )
 from ..resolver.base import ResolverError
 from ..resolver.did_resolver import DIDResolver
@@ -56,6 +59,7 @@ class BaseConnectionManager:
         """
         self._logger = logging.getLogger(__name__)
         self._profile = profile
+        self._route_manager = profile.inject(RouteManager)
 
     async def create_did_document(
         self,
@@ -146,7 +150,7 @@ class BaseConnectionManager:
                 routing_keys = [*routing_keys, *mediator_routing_keys]
                 svc_endpoints = [mediation_record.endpoint]
 
-        for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
+        for endpoint_index, svc_endpoint in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
             service = Service(
                 did_info.did,
@@ -223,7 +227,9 @@ class BaseConnectionManager:
             storage: BaseStorage = session.inject(BaseStorage)
             await storage.delete_all_records(self.RECORD_TYPE_DID_KEY, {"did": did})
 
-    async def resolve_invitation(self, did: str):
+    async def resolve_invitation(
+        self, did: str, service_accept: Optional[Sequence[Text]] = None
+    ):
         """
         Resolve invitation with the DID Resolver.
 
@@ -237,7 +243,7 @@ class BaseConnectionManager:
 
         resolver = self._profile.inject(DIDResolver)
         try:
-            doc_dict: dict = await resolver.resolve(self._profile, did)
+            doc_dict: dict = await resolver.resolve(self._profile, did, service_accept)
             doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
         except ResolverError as error:
             raise BaseConnectionManagerError(
@@ -263,16 +269,18 @@ class BaseConnectionManager:
 
         endpoint = first_didcomm_service.service_endpoint
         recipient_keys: List[VerificationMethod] = [
-            doc.dereference(url) for url in first_didcomm_service.recipient_keys
+            await resolver.dereference(self._profile, url, document=doc)
+            for url in first_didcomm_service.recipient_keys
         ]
         routing_keys: List[VerificationMethod] = [
-            doc.dereference(url) for url in first_didcomm_service.routing_keys
+            await resolver.dereference(self._profile, url, document=doc)
+            for url in first_didcomm_service.routing_keys
         ]
 
         for key in [*recipient_keys, *routing_keys]:
             if not isinstance(key, self.SUPPORTED_KEY_TYPES):
                 raise BaseConnectionManagerError(
-                    f"Key type {key.type} is not supported"
+                    f"Key type {type(key).__name__} is not supported"
                 )
 
         return (

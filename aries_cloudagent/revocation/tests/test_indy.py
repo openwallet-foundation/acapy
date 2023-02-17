@@ -20,7 +20,6 @@ from ..models.issuer_rev_reg_record import DEFAULT_REGISTRY_SIZE, IssuerRevRegRe
 from ..models.revocation_registry import RevocationRegistry
 
 
-@pytest.mark.indy
 class TestIndyRevocation(AsyncTestCase):
     def setUp(self):
         self.profile = InMemoryProfile.test_profile()

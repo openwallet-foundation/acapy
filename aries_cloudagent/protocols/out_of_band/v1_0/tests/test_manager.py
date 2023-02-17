@@ -13,6 +13,7 @@ from .....connections.models.connection_target import ConnectionTarget
 from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from .....core.event_bus import EventBus
 from .....core.in_memory import InMemoryProfile
+from .....core.util import get_version_from_message
 from .....core.oob_processor import OobMessageProcessor
 from .....did.did_key import DIDKey
 from .....messaging.decorators.attach_decorator import AttachDecorator
@@ -22,6 +23,7 @@ from .....messaging.util import datetime_now, datetime_to_str, str_to_epoch
 from .....multitenant.base import BaseMultitenantManager
 from .....multitenant.manager import MultitenantManager
 from .....protocols.coordinate_mediation.v1_0.manager import MediationManager
+from .....protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from .....protocols.coordinate_mediation.v1_0.models.mediation_record import (
     MediationRecord,
 )
@@ -64,9 +66,9 @@ from .....protocols.present_proof.v2_0.messages.pres_request import V20PresReque
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo, KeyInfo
-from .....wallet.did_method import DIDMethod
+from .....wallet.did_method import SOV
 from .....wallet.in_memory import InMemoryWallet
-from .....wallet.key_type import KeyType
+from .....wallet.key_type import ED25519
 from ....connections.v1_0.messages.connection_invitation import ConnectionInvitation
 from ....didcomm_prefix import DIDCommPrefix
 from ....issue_credential.v1_0.message_types import CREDENTIAL_OFFER
@@ -89,7 +91,6 @@ from ..models.oob_record import OobRecord
 
 
 class TestConfig:
-
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_endpoint = "http://localhost"
@@ -101,6 +102,7 @@ class TestConfig:
         service_endpoint=test_endpoint,
     )
     NOW_8601 = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(" ", "seconds")
+    TEST_INVI_MESSAGE_TYPE = "out-of-band/1.1/invitation"
     NOW_EPOCH = str_to_epoch(NOW_8601)
     CD_ID = "GMm4vMw8LLrLJjp81kRRLp:3:CL:12:tag"
     INDY_PROOF_REQ = json.loads(
@@ -312,6 +314,17 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         self.responder = MockResponder()
         self.responder.send = async_mock.CoroutineMock()
 
+        self.test_mediator_routing_keys = [
+            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
+        ]
+        self.test_mediator_conn_id = "mediator-conn-id"
+        self.test_mediator_endpoint = "http://mediator.example.com"
+
+        self.route_manager = async_mock.MagicMock(RouteManager)
+        self.route_manager.routing_info = async_mock.CoroutineMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
+
         self.profile = InMemoryProfile.test_profile(
             {
                 "default_endpoint": TestConfig.test_endpoint,
@@ -319,7 +332,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 "additional_endpoints": ["http://aries.ca/another-endpoint"],
                 "debug.auto_accept_invites": True,
                 "debug.auto_accept_requests": True,
-            }
+            },
+            bind={
+                RouteManager: self.route_manager,
+            },
         )
 
         self.profile.context.injector.bind_instance(BaseResponder, self.responder)
@@ -353,12 +369,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             save=async_mock.CoroutineMock(),
         )
 
-        self.test_mediator_routing_keys = [
-            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
-        ]
-        self.test_mediator_conn_id = "mediator-conn-id"
-        self.test_mediator_endpoint = "http://mediator.example.com"
-
     async def test_create_invitation_handshake_succeeds(self):
         self.profile.context.update_settings({"public_invites": True})
 
@@ -369,8 +379,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             invi_rec = await self.manager.create_invitation(
                 my_endpoint=TestConfig.test_endpoint,
@@ -379,7 +389,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             assert invi_rec.invitation._type == DIDCommPrefix.qualify_current(
-                INVITATION
+                self.TEST_INVI_MESSAGE_TYPE
             )
             assert not invi_rec.invitation.requests_attach
             assert (
@@ -387,6 +397,58 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 in invi_rec.invitation.handshake_protocols
             )
             assert invi_rec.invitation.services == [f"did:sov:{TestConfig.test_did}"]
+
+    async def test_create_invitation_multitenant_local(self):
+        self.profile.context.update_settings(
+            {
+                "multitenant.enabled": True,
+                "wallet.id": "test_wallet",
+            }
+        )
+
+        with async_mock.patch.object(
+            InMemoryWallet, "create_signing_key", autospec=True
+        ) as mock_wallet_create_signing_key, async_mock.patch.object(
+            self.multitenant_mgr, "get_default_mediator"
+        ) as mock_get_default_mediator:
+            mock_wallet_create_signing_key.return_value = KeyInfo(
+                TestConfig.test_verkey, None, ED25519
+            )
+            mock_get_default_mediator.return_value = MediationRecord()
+            await self.manager.create_invitation(
+                my_endpoint=TestConfig.test_endpoint,
+                hs_protos=[HSProto.RFC23],
+                multi_use=False,
+            )
+
+            self.route_manager.route_invitation.assert_called_once()
+
+    async def test_create_invitation_multitenant_public(self):
+        self.profile.context.update_settings(
+            {
+                "multitenant.enabled": True,
+                "wallet.id": "test_wallet",
+                "public_invites": True,
+            }
+        )
+
+        with async_mock.patch.object(
+            InMemoryWallet, "get_public_did", autospec=True
+        ) as mock_wallet_get_public_did:
+            mock_wallet_get_public_did.return_value = DIDInfo(
+                self.test_did,
+                self.test_verkey,
+                None,
+                method=SOV,
+                key_type=ED25519,
+            )
+            await self.manager.create_invitation(
+                hs_protos=[HSProto.RFC23],
+                public=True,
+                multi_use=False,
+            )
+
+            self.route_manager.route_invitation.assert_called_once()
 
     async def test_create_invitation_mediation_overwrites_routing_and_endpoint(self):
         async with self.profile.session() as session:
@@ -414,70 +476,20 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 )
                 assert isinstance(invite, InvitationRecord)
                 assert invite.invitation._type == DIDCommPrefix.qualify_current(
-                    INVITATION
+                    self.TEST_INVI_MESSAGE_TYPE
                 )
                 assert invite.invitation.label == "test123"
+                assert (
+                    DIDKey.from_did(
+                        invite.invitation.services[0].routing_keys[0]
+                    ).public_key_b58
+                    == self.test_mediator_routing_keys[0]
+                )
+                assert (
+                    invite.invitation.services[0].service_endpoint
+                    == self.test_mediator_endpoint
+                )
                 mock_get_default_mediator.assert_not_called()
-
-    async def test_create_invitation_multitenant_local(self):
-        self.profile.context.update_settings(
-            {
-                "multitenant.enabled": True,
-                "wallet.id": "test_wallet",
-            }
-        )
-
-        self.multitenant_mgr.add_key = async_mock.CoroutineMock()
-
-        with async_mock.patch.object(
-            InMemoryWallet, "create_signing_key", autospec=True
-        ) as mock_wallet_create_signing_key, async_mock.patch.object(
-            self.multitenant_mgr, "get_default_mediator"
-        ) as mock_get_default_mediator:
-            mock_wallet_create_signing_key.return_value = KeyInfo(
-                TestConfig.test_verkey, None, KeyType.ED25519
-            )
-            mock_get_default_mediator.return_value = MediationRecord()
-            await self.manager.create_invitation(
-                my_endpoint=TestConfig.test_endpoint,
-                hs_protos=[HSProto.RFC23],
-                multi_use=False,
-            )
-
-            self.multitenant_mgr.add_key.assert_called_once_with(
-                "test_wallet", TestConfig.test_verkey
-            )
-
-    async def test_create_invitation_multitenant_public(self):
-        self.profile.context.update_settings(
-            {
-                "multitenant.enabled": True,
-                "wallet.id": "test_wallet",
-                "public_invites": True,
-            }
-        )
-
-        self.multitenant_mgr.add_key = async_mock.CoroutineMock()
-
-        with async_mock.patch.object(
-            InMemoryWallet, "get_public_did", autospec=True
-        ) as mock_wallet_get_public_did:
-            mock_wallet_get_public_did.return_value = DIDInfo(
-                self.test_did,
-                self.test_verkey,
-                None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
-            )
-            await self.manager.create_invitation(
-                hs_protos=[HSProto.RFC23],
-                public=True,
-                multi_use=False,
-            )
-
-            self.multitenant_mgr.add_key.assert_called_once_with(
-                "test_wallet", TestConfig.test_verkey, skip_if_exists=True
-            )
 
     async def test_create_invitation_no_handshake_no_attachments_x(self):
         with self.assertRaises(OutOfBandManagerError) as context:
@@ -502,8 +514,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
                 credential_offer_dict=self.CRED_OFFER_V1
@@ -536,8 +548,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             mock_retrieve_cxid.return_value = async_mock.MagicMock(
                 credential_offer_dict=self.CRED_OFFER_V1
@@ -574,8 +586,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             mock_retrieve_cxid_v1.side_effect = test_module.StorageNotFoundError()
             mock_retrieve_cxid_v2.return_value = async_mock.MagicMock(
@@ -612,8 +624,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             mock_retrieve_pxid.return_value = async_mock.MagicMock(
                 presentation_request_dict=self.PRES_REQ_V1
@@ -651,8 +663,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             mock_retrieve_pxid_1.side_effect = StorageNotFoundError()
             mock_retrieve_pxid_2.return_value = async_mock.MagicMock(
@@ -699,7 +711,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         assert "Cannot create public invitation with" in str(context.exception)
 
     async def test_create_invitation_requests_attach_x_multi_use(self):
-
         with self.assertRaises(OutOfBandManagerError) as context:
             await self.manager.create_invitation(
                 public=False,
@@ -739,8 +750,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
@@ -778,11 +789,12 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                     public=False,
                     hs_protos=[test_module.HSProto.RFC23],
                     multi_use=False,
+                    service_accept=["didcomm/aip1", "didcomm/aip2;env=rfc19"],
                 )
 
                 assert invi_rec._invitation.ser[
                     "@type"
-                ] == DIDCommPrefix.qualify_current(INVITATION)
+                ] == DIDCommPrefix.qualify_current(self.TEST_INVI_MESSAGE_TYPE)
                 assert not invi_rec._invitation.ser.get("requests~attach")
                 assert invi_rec.invitation.label == "That guy"
                 assert (
@@ -796,7 +808,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 assert (
                     service["routingKeys"][0]
                     == DIDKey.from_public_key_b58(
-                        self.test_mediator_routing_keys[0], KeyType.ED25519
+                        self.test_mediator_routing_keys[0], ED25519
                     ).did
                 )
                 assert service["serviceEndpoint"] == self.test_mediator_endpoint
@@ -823,8 +835,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 TestConfig.test_did,
                 TestConfig.test_verkey,
                 None,
-                method=DIDMethod.SOV,
-                key_type=KeyType.ED25519,
+                method=SOV,
+                key_type=ED25519,
             )
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager.create_invitation(
@@ -880,7 +892,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             oob_record = await self.manager._create_handshake_reuse_message(
-                oob_record, self.test_conn_rec
+                oob_record, self.test_conn_rec, get_version_from_message(invitation)
             )
 
             _, kwargs = self.responder.send.call_args
@@ -889,7 +901,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert oob_record.state == OobRecord.STATE_AWAIT_RESPONSE
 
             # Assert responder has been called with the reuse message
-            assert reuse_message._type == DIDCommPrefix.qualify_current(MESSAGE_REUSE)
+            assert reuse_message._type == DIDCommPrefix.qualify_current(
+                "out-of-band/1.1/handshake-reuse"
+            )
             assert oob_record.reuse_msg_id == reuse_message._id
 
     async def test_create_handshake_reuse_msg_catch_exception(self):
@@ -902,7 +916,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             oob_mgr_fetch_conn.side_effect = StorageNotFoundError()
             with self.assertRaises(OutOfBandManagerError) as context:
                 await self.manager._create_handshake_reuse_message(
-                    async_mock.MagicMock(), self.test_conn_rec
+                    async_mock.MagicMock(), self.test_conn_rec, "1.0"
                 )
             assert "Error on creating and sending a handshake reuse message" in str(
                 context.exception
@@ -973,7 +987,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             recipient_did_public=False,
         )
 
-        reuse_msg = HandshakeReuse()
+        reuse_msg = HandshakeReuse(version="1.0")
         reuse_msg.assign_thread_id(thid="the-thread-id", pthid="the-pthid")
 
         self.test_conn_rec.invitation_msg_id = "test_123"
@@ -1078,7 +1092,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_retrieve_oob.side_effect = (StorageNotFoundError,)
 
             with self.assertRaises(test_module.OutOfBandManagerError) as err:
-
                 await self.manager.receive_reuse_accepted_message(
                     reuse_msg_accepted, receipt, self.test_conn_rec
                 )
@@ -1214,6 +1227,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             mock_didx_recv_invi.return_value = mock_conn
             mock_retrieve_conn_by_id.return_value = mock_conn
             invi_msg = invite.invitation
+            self.route_manager.mediation_record_if_id = async_mock.CoroutineMock(
+                side_effect=StorageNotFoundError
+            )
             await self.manager.receive_invitation(
                 invi_msg,
                 mediation_id="test-mediation-id",
@@ -1280,7 +1296,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                         recipient_keys=[
                             DIDKey.from_public_key_b58(
                                 "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC",
-                                KeyType.ED25519,
+                                ED25519,
                             ).did
                         ],
                         routing_keys=[],
@@ -1307,7 +1323,8 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             ]
             assert not invitation.routing_keys
 
-            assert oob_record.state == OobRecord.STATE_DONE
+            assert oob_record.state == "deleted"
+            assert oob_record._previous_state == OobRecord.STATE_DONE
 
     async def test_receive_invitation_services_with_neither_service_blocks_nor_dids(
         self,
@@ -1425,7 +1442,9 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             )
 
             perform_handshake.assert_not_called()
-            handle_handshake_reuse.assert_called_once_with(ANY, test_exist_conn)
+            handle_handshake_reuse.assert_called_once_with(
+                ANY, test_exist_conn, get_version_from_message(oob_invitation)
+            )
 
             assert result.state == OobRecord.STATE_ACCEPTED
 
@@ -1457,8 +1476,6 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             ConnRecord,
             "retrieve_by_id",
             async_mock.CoroutineMock(return_value=test_exist_conn),
-        ), async_mock.patch.object(
-            test_module, "mediation_record_if_id", async_mock.CoroutineMock()
         ):
             oob_invitation = InvitationMessage(
                 handshake_protocols=[
@@ -1486,12 +1503,15 @@ class TestOOBManager(AsyncTestCase, TestConfig):
                 mediation_id="mediation_id",
             )
 
-            handle_handshake_reuse.assert_called_once_with(ANY, test_exist_conn)
+            handle_handshake_reuse.assert_called_once_with(
+                ANY, test_exist_conn, get_version_from_message(oob_invitation)
+            )
             perform_handshake.assert_called_once_with(
                 oob_record=ANY,
                 alias="alias",
                 auto_accept=True,
                 mediation_id="mediation_id",
+                service_accept=None,
             )
 
             assert mock_oob.state == OobRecord.STATE_DONE
@@ -1551,7 +1571,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             async_mock.CoroutineMock(),
         ) as mock_service_decorator_from_service:
             mock_create_signing_key.return_value = KeyInfo(
-                verkey="a-verkey", metadata={}, key_type=KeyType.ED25519
+                verkey="a-verkey", metadata={}, key_type=ED25519
             )
             mock_service_decorator_from_service.return_value = mock_service_decorator
             oob_invitation = InvitationMessage(
@@ -1568,7 +1588,7 @@ class TestOOBManager(AsyncTestCase, TestConfig):
             assert oob_record.our_service
             assert oob_record.state == OobRecord.STATE_PREPARE_RESPONSE
 
-            mock_create_signing_key.assert_called_once_with(KeyType.ED25519)
+            mock_create_signing_key.assert_called_once_with(ED25519)
             mock_oob_processor.handle_message.assert_called_once_with(
                 self.profile,
                 [attachment.content for attachment in requests_attach],
@@ -1684,10 +1704,10 @@ class TestOOBManager(AsyncTestCase, TestConfig):
         oob_service = OobService(
             service_endpoint=TestConfig.test_endpoint,
             recipient_keys=[
-                DIDKey.from_public_key_b58(TestConfig.test_verkey, KeyType.ED25519).did
+                DIDKey.from_public_key_b58(TestConfig.test_verkey, ED25519).did
             ],
             routing_keys=[
-                DIDKey.from_public_key_b58(verkey, KeyType.ED25519).did
+                DIDKey.from_public_key_b58(verkey, ED25519).did
                 for verkey in self.test_mediator_routing_keys
             ],
         )

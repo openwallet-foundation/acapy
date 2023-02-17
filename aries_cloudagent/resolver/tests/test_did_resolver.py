@@ -7,7 +7,7 @@ import re
 import pytest
 
 from asynctest import mock as async_mock
-from pydid import DID, DIDDocument, VerificationMethod
+from pydid import DID, DIDDocument, VerificationMethod, BasicDIDDocument
 
 from ..base import (
     BaseDIDResolver,
@@ -18,7 +18,6 @@ from ..base import (
     ResolverType,
 )
 from ..did_resolver import DIDResolver
-from ..did_resolver_registry import DIDResolverRegistry
 
 from . import DOC
 
@@ -80,7 +79,7 @@ class MockResolver(BaseDIDResolver):
     async def setup(self, context):
         pass
 
-    async def _resolve(self, profile, did):
+    async def _resolve(self, profile, did, accept):
         if isinstance(self.resolved, Exception):
             raise self.resolved
         return self.resolved.serialize()
@@ -88,10 +87,10 @@ class MockResolver(BaseDIDResolver):
 
 @pytest.fixture
 def resolver():
-    did_resolver_registry = DIDResolverRegistry()
+    did_resolver_registry = []
     for method in TEST_DID_METHODS:
         resolver = MockResolver([method], DIDDocument.deserialize(DOC))
-        did_resolver_registry.register(resolver)
+        did_resolver_registry.append(resolver)
     return DIDResolver(did_resolver_registry)
 
 
@@ -101,7 +100,7 @@ def profile():
 
 
 def test_create_resolver(resolver):
-    assert len(resolver.did_resolver_registry.resolvers) == len(TEST_DID_METHODS)
+    assert len(resolver.resolvers) == len(TEST_DID_METHODS)
 
 
 @pytest.mark.asyncio
@@ -121,11 +120,9 @@ async def test_match_did_to_resolver_x_not_supported(resolver):
 
 @pytest.mark.asyncio
 async def test_match_did_to_resolver_native_priority(profile):
-    registry = DIDResolverRegistry()
     native = MockResolver(["sov"], native=True)
     non_native = MockResolver(["sov"], native=False)
-    registry.register(non_native)
-    registry.register(native)
+    registry = [non_native, native]
     resolver = DIDResolver(registry)
     assert [native, non_native] == await resolver._match_did_to_resolver(
         profile, TEST_DID0
@@ -134,15 +131,11 @@ async def test_match_did_to_resolver_native_priority(profile):
 
 @pytest.mark.asyncio
 async def test_match_did_to_resolver_registration_order(profile):
-    registry = DIDResolverRegistry()
     native1 = MockResolver(["sov"], native=True)
-    registry.register(native1)
     native2 = MockResolver(["sov"], native=True)
-    registry.register(native2)
     non_native3 = MockResolver(["sov"], native=False)
-    registry.register(non_native3)
     native4 = MockResolver(["sov"], native=True)
-    registry.register(native4)
+    registry = [native1, native2, non_native3, native4]
     resolver = DIDResolver(registry)
     assert [
         native1,
@@ -158,6 +151,17 @@ async def test_dereference(resolver, profile):
     expected: dict = DOC["verificationMethod"][0]
     actual: VerificationMethod = await resolver.dereference(profile, url)
     assert expected == actual.serialize()
+
+
+@pytest.mark.asyncio
+async def test_dereference_diddoc(resolver, profile):
+    url = "did:example:1234abcd#4"
+    doc = BasicDIDDocument(
+        id="did:example:z6Mkmpe2DyE4NsDiAb58d75hpi1BjqbH6wYMschUkjWDEEuR"
+    )
+    result = await resolver.dereference(profile, url, document=doc)
+    assert isinstance(result, VerificationMethod)
+    assert result.id == url
 
 
 @pytest.mark.asyncio
@@ -200,8 +204,6 @@ async def test_resolve_did_x_not_supported(resolver, profile):
 async def test_resolve_did_x_not_found(profile):
     py_did = DID("did:cowsay:EiDahaOGH-liLLdDtTxEAdc8i-cfCz-WUcQdRJheMVNn3A")
     cowsay_resolver_not_found = MockResolver(["cowsay"], resolved=DIDNotFound())
-    registry = DIDResolverRegistry()
-    registry.register(cowsay_resolver_not_found)
-    resolver = DIDResolver(registry)
+    resolver = DIDResolver([cowsay_resolver_not_found])
     with pytest.raises(DIDNotFound):
         await resolver.resolve(profile, py_did)

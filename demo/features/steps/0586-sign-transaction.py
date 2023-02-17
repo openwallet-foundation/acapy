@@ -34,11 +34,18 @@ def step_impl(context, agent_name, did_role):
     )
 
     # make the new did the wallet's public did
-    created_did = agent_container_POST(
+    published_did = agent_container_POST(
         agent["agent"],
         "/wallet/did/public",
         params={"did": created_did["result"]["did"]},
     )
+    if "result" in published_did:
+        # published right away!
+        pass
+    elif "txn" in published_did:
+        # we are an author and need to go through the endorser process
+        # assume everything works!
+        async_sleep(3.0)
 
     if not "public_dids" in context:
         context.public_dids = {}
@@ -366,8 +373,20 @@ def step_impl(context, agent_name):
 def step_impl(context, agent_name):
     agent = context.active_agents[agent_name]
 
-    # TODO not sure what to check here, let's just do a short pause
-    async_sleep(2.0)
+    # a registry is promoted to active when its initial entry is sent
+    i = 5
+    while i > 0:
+        async_sleep(1.0)
+        reg_info = agent_container_GET(
+            agent["agent"],
+            f"/revocation/registry/{context.rev_reg_id}",
+        )
+        state = reg_info["result"]["state"]
+        if state == "active":
+            return
+        i = i - 1
+
+    assert False
 
 
 @when(

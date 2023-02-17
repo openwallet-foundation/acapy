@@ -1,28 +1,27 @@
 """Classes for configuring the default injection context."""
 
-from .base_context import ContextBuilder
-from .injection_context import InjectionContext
-from .provider import CachedProvider, ClassProvider
-
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
 from ..core.event_bus import EventBus
+from ..core.goal_code_registry import GoalCodeRegistry
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import ProfileManager, ProfileManagerProvider
 from ..core.protocol_registry import ProtocolRegistry
-from ..core.goal_code_registry import GoalCodeRegistry
-from ..resolver.did_resolver import DIDResolver
-from ..resolver.did_resolver_registry import DIDResolverRegistry
-from ..tails.base import BaseTailsServer
-
 from ..protocols.actionmenu.v1_0.base_service import BaseMenuService
 from ..protocols.actionmenu.v1_0.driver_service import DriverMenuService
 from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..protocols.introduction.v0_1.base_service import BaseIntroductionService
 from ..protocols.introduction.v0_1.demo_service import DemoIntroductionService
+from ..resolver.did_resolver import DIDResolver
+from ..tails.base import BaseTailsServer
 from ..transport.wire_format import BaseWireFormat
-from ..utils.stats import Collector
 from ..utils.dependencies import is_indy_sdk_module_installed
+from ..utils.stats import Collector
+from ..wallet.did_method import DIDMethods
+from ..wallet.key_type import KeyTypes
+from .base_context import ContextBuilder
+from .injection_context import InjectionContext
+from .provider import CachedProvider, ClassProvider
 
 
 class DefaultContextBuilder(ContextBuilder):
@@ -50,12 +49,10 @@ class DefaultContextBuilder(ContextBuilder):
         # Global event bus
         context.injector.bind_instance(EventBus, EventBus())
 
-        # Global did resolver registry
-        did_resolver_registry = DIDResolverRegistry()
-        context.injector.bind_instance(DIDResolverRegistry, did_resolver_registry)
-
         # Global did resolver
-        context.injector.bind_instance(DIDResolver, DIDResolver(did_resolver_registry))
+        context.injector.bind_instance(DIDResolver, DIDResolver([]))
+        context.injector.bind_instance(DIDMethods, DIDMethods())
+        context.injector.bind_instance(KeyTypes, KeyTypes())
 
         await self.bind_providers(context)
         await self.load_plugins(context)

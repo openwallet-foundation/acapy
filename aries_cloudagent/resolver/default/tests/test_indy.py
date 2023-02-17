@@ -3,6 +3,7 @@
 import pytest
 
 from asynctest import mock as async_mock
+from pydid.verification_method import VerificationMethod
 
 from ....core.in_memory import InMemoryProfile
 from ....core.profile import Profile
@@ -16,8 +17,7 @@ from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 
 from ...base import DIDNotFound, ResolverError
-from .. import indy as test_module
-from ..indy import IndyDIDResolver
+from ..indy import IndyDIDResolver, _routing_keys_as_did_key_urls
 
 # pylint: disable=W0621
 TEST_DID0 = "did:sov:WgWxqztrNooG92RXvxSTWv"
@@ -33,8 +33,11 @@ def resolver():
 def ledger():
     """Ledger fixture."""
     ledger = async_mock.MagicMock(spec=BaseLedger)
-    ledger.get_endpoint_for_did = async_mock.CoroutineMock(
-        return_value="https://github.com/"
+    ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
+        return_value={
+            "endpoint": "https://github.com/",
+            "profile": "https://example.com/profile",
+        }
     )
     ledger.get_key_for_did = async_mock.CoroutineMock(return_value="key")
     yield ledger
@@ -66,6 +69,15 @@ class TestIndyResolver:
     async def test_resolve(self, profile: Profile, resolver: IndyDIDResolver):
         """Test resolve method."""
         assert await resolver.resolve(profile, TEST_DID0)
+
+    @pytest.mark.asyncio
+    async def test_resolve_with_accept(
+        self, profile: Profile, resolver: IndyDIDResolver
+    ):
+        """Test resolve method."""
+        assert await resolver.resolve(
+            profile, TEST_DID0, ["didcomm/aip1", "didcomm/aip2;env=rfc19"]
+        )
 
     @pytest.mark.asyncio
     async def test_resolve_multitenant(
@@ -107,3 +119,76 @@ class TestIndyResolver:
         ledger.get_key_for_did.side_effect = LedgerError
         with pytest.raises(DIDNotFound):
             await resolver.resolve(profile, TEST_DID0)
+
+    @pytest.mark.asyncio
+    async def test_supports_updated_did_sov_rules(
+        self, resolver: IndyDIDResolver, ledger: BaseLedger, profile: Profile
+    ):
+        """Test that new attrib structure is supported."""
+        example = {
+            "endpoint": "https://example.com/endpoint",
+            "routingKeys": ["HQhjaj4mcaS3Xci27a9QhnBrNpS91VNFUU4TDrtMxa9j"],
+            "types": ["DIDComm", "did-communication", "endpoint"],
+            "profile": "https://example.com",
+            "linked_domains": "https://example.com",
+        }
+
+        ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
+            return_value=example
+        )
+        assert await resolver.resolve(profile, TEST_DID0)
+
+    @pytest.mark.asyncio
+    async def test_supports_updated_did_sov_rules_no_endpoint_url(
+        self, resolver: IndyDIDResolver, ledger: BaseLedger, profile: Profile
+    ):
+        """Test that new attrib structure is supported."""
+        example = {
+            "routingKeys": ["a-routing-key"],
+            "types": ["DIDComm", "did-communication", "endpoint"],
+        }
+
+        ledger.get_all_endpoints_for_did = async_mock.CoroutineMock(
+            return_value=example
+        )
+        result = await resolver.resolve(profile, TEST_DID0)
+        assert "service" not in result
+
+    @pytest.mark.parametrize(
+        "types, result",
+        [
+            (
+                [],
+                ["endpoint", "did-communication"],
+            ),
+            (
+                ["did-communication"],
+                ["did-communication"],
+            ),
+            (
+                ["endpoint", "did-communication", "DIDComm", "other-endpoint-type"],
+                ["endpoint", "did-communication"],
+            ),
+            (
+                ["endpoint", "did-communication", "DIDComm"],
+                ["endpoint", "did-communication", "DIDComm"],
+            ),
+        ],
+    )
+    def test_process_endpoint_types(self, resolver: IndyDIDResolver, types, result):
+        assert resolver.process_endpoint_types(types) == result
+
+    @pytest.mark.parametrize(
+        "keys",
+        [
+            ["3YJCx3TqotDWFGv7JMR5erEvrmgu5y4FDqjR7sKWxgXn"],
+            ["did:key:z6MkgzZFYHiH9RhyMmkoyvNvVwnvgLxkVrJbureLx9HXsuKA"],
+            [
+                "did:key:z6MkgzZFYHiH9RhyMmkoyvNvVwnvgLxkVrJbureLx9HXsuKA#z6MkgzZFYHiH9RhyMmkoyvNvVwnvgLxkVrJbureLx9HXsuKA"
+            ],
+        ],
+    )
+    def test_routing_keys_as_did_key_urls(self, keys):
+        for key in _routing_keys_as_did_key_urls(keys):
+            assert key.startswith("did:key:")
+            assert "#" in key

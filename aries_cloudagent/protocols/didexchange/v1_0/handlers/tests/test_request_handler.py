@@ -8,15 +8,12 @@ from ......connections.models.diddoc import (
     PublicKeyType,
     Service,
 )
-from ......core.profile import ProfileSession
 from ......core.in_memory import InMemoryProfile
-from ......wallet.key_type import KeyType
-from ......wallet.did_method import DIDMethod
+from ......wallet.did_method import SOV, DIDMethods
+from ......wallet.key_type import ED25519
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
-from ......storage.base import BaseStorage
-from ......storage.error import StorageNotFoundError
 from ......transport.inbound.receipt import MessageReceipt
 
 from .....problem_report.v1_0.message import ProblemReport
@@ -79,6 +76,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
                 "debug.auto_accept_requests_public": True,
             }
         )
+        self.session.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
 
         self.conn_rec = conn_record.ConnRecord(
             my_did="55GkHamhTU1ZbTbV2ab9DE",
@@ -90,9 +88,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
         await self.conn_rec.save(self.session)
 
         wallet = self.session.wallet
-        self.did_info = await wallet.create_local_did(
-            method=DIDMethod.SOV, key_type=KeyType.ED25519
-        )
+        self.did_info = await wallet.create_local_did(method=SOV, key_type=ED25519)
 
         self.did_doc_attach = AttachDecorator.data_base64(self.did_doc().serialize())
         await self.did_doc_attach.data.sign(self.did_info.verkey, wallet)
@@ -102,47 +98,6 @@ class TestDIDXRequestHandler(AsyncTestCase):
             did=TEST_DID,
             did_doc_attach=self.did_doc_attach,
         )
-
-    async def test_connection_record_with_mediation_metadata(self):
-        test_exist_conn = conn_record.ConnRecord(
-            my_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
-            their_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
-            their_public_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
-            invitation_msg_id="12345678-1234-5678-1234-567812345678",
-            their_role=conn_record.ConnRecord.Role.REQUESTER,
-        )
-        await test_exist_conn.save(self.session)
-        await test_exist_conn.metadata_set(
-            self.session, "mediation", {"id": "mediation-test-id"}
-        )
-        test_ctx = RequestContext.test_context()
-        test_ctx.message = DIDXRequest()
-        test_ctx.message_receipt = MessageReceipt()
-        test_ctx.connection_record = test_exist_conn
-        responder = MockResponder()
-        handler_inst = test_module.DIDXRequestHandler()
-        await handler_inst.handle(test_ctx, responder)
-        mediation_metadata = await test_ctx.connection_record.metadata_get(
-            self.session, "mediation", {}
-        )
-        assert mediation_metadata.get("id") == "mediation-test-id"
-        assert not responder.messages
-
-    @async_mock.patch.object(test_module, "DIDXManager")
-    async def test_connection_record_without_mediation_metadata(self, mock_didx_mgr):
-        mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock()
-        self.ctx.message = DIDXRequest()
-        self.ctx.connection_record = None
-        handler_inst = test_module.DIDXRequestHandler()
-        responder = MockResponder()
-        await handler_inst.handle(self.ctx, responder)
-        mock_didx_mgr.return_value.receive_request.assert_called_once_with(
-            request=self.ctx.message,
-            recipient_did=self.ctx.message_receipt.recipient_did,
-            recipient_verkey=None,
-            mediation_id=None,
-        )
-        assert not responder.messages
 
     @async_mock.patch.object(test_module, "DIDXManager")
     async def test_called(self, mock_didx_mgr):
@@ -156,7 +111,6 @@ class TestDIDXRequestHandler(AsyncTestCase):
             request=self.ctx.message,
             recipient_did=self.ctx.message_receipt.recipient_did,
             recipient_verkey=None,
-            mediation_id=None,
         )
         assert not responder.messages
 
@@ -178,7 +132,41 @@ class TestDIDXRequestHandler(AsyncTestCase):
             request=self.ctx.message,
             recipient_did=self.ctx.message_receipt.recipient_did,
             recipient_verkey=None,
-            mediation_id=None,
+        )
+        mock_didx_mgr.return_value.create_response.assert_called_once_with(
+            mock_conn_rec, mediation_id=None
+        )
+        assert responder.messages
+
+    @async_mock.patch.object(test_module, "DIDXManager")
+    async def test_connection_record_with_mediation_metadata_auto_response(
+        self, mock_didx_mgr
+    ):
+        test_exist_conn = conn_record.ConnRecord(
+            my_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
+            their_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
+            their_public_did="did:sov:LjgpST2rjsoxYegQDRm7EL",
+            invitation_msg_id="12345678-1234-5678-1234-567812345678",
+            their_role=conn_record.ConnRecord.Role.REQUESTER,
+        )
+        test_exist_conn.metadata_get = async_mock.CoroutineMock(
+            return_value={"id": "mediation-test-id"}
+        )
+        test_exist_conn.accept = conn_record.ConnRecord.ACCEPT_AUTO
+        test_exist_conn.save = async_mock.CoroutineMock()
+        mock_didx_mgr.return_value.receive_request = async_mock.CoroutineMock(
+            return_value=test_exist_conn
+        )
+        mock_didx_mgr.return_value.create_response = async_mock.CoroutineMock()
+        test_ctx = RequestContext.test_context()
+        test_ctx.message = DIDXRequest()
+        test_ctx.message_receipt = MessageReceipt()
+        test_ctx.connection_record = test_exist_conn
+        responder = MockResponder()
+        handler_inst = test_module.DIDXRequestHandler()
+        await handler_inst.handle(test_ctx, responder)
+        mock_didx_mgr.return_value.create_response.assert_called_once_with(
+            test_exist_conn, mediation_id="mediation-test-id"
         )
         assert responder.messages
 
