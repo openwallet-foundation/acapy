@@ -268,7 +268,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         )
 
         did_info = await self._did_info_for_did(issuer_id)
-        verification_method = self._get_verification_method(issuer_id)
+        verification_method = (
+            detail.options.verification_method
+            or self._get_verification_method(issuer_id)
+        )
 
         suite = await self._get_suite(
             proof_type=proof_type,

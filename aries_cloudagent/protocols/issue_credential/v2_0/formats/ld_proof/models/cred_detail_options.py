@@ -23,6 +23,7 @@ class LDProofVCDetailOptions(BaseModel):
         domain: Optional[str] = None,
         challenge: Optional[str] = None,
         credential_status: Optional[dict] = None,
+        verification_method: Optional[str] = None,
     ) -> None:
         """Initialize the LDProofVCDetailOptions instance."""
 
@@ -32,6 +33,7 @@ class LDProofVCDetailOptions(BaseModel):
         self.domain = domain
         self.challenge = challenge
         self.credential_status = credential_status
+        self.verification_method = verification_method
 
     def __eq__(self, o: object) -> bool:
         """Check equalness."""
@@ -43,6 +45,7 @@ class LDProofVCDetailOptions(BaseModel):
                 and self.domain == o.domain
                 and self.challenge == o.challenge
                 and self.credential_status == o.credential_status
+                and self.verification_method == o.verification_method
             )
 
         return False
@@ -128,4 +131,11 @@ class LDProofVCDetailOptionsSchema(BaseModelSchema):
             " Omitting the property indicates the issued credential"
             " will not include a credential status"
         ),
+    )
+
+    verification_method = fields.Str(
+        required=False,
+        default=None,
+        allow_none=True,
+        description="Verification method used to sign, as identified in the DIDDocument",
     )
