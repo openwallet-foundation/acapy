@@ -55,6 +55,7 @@ class V20CredManager:
         self,
         connection_id: str,
         cred_proposal: V20CredProposal,
+        verification_method: Optional[str] = None,
         auto_remove: bool = None,
     ) -> Tuple[V20CredExRecord, V20CredOffer]:
         """
@@ -63,6 +64,7 @@ class V20CredManager:
         Args:
             connection_id: connection for which to create offer
             cred_proposal: credential proposal with preview
+            verification_method: an optional verification method to be used when issuing
             auto_remove: flag to remove the record automatically on completion
 
         Returns:
@@ -73,6 +75,7 @@ class V20CredManager:
             auto_remove = not self._profile.settings.get("preserve_exchange_records")
         cred_ex_record = V20CredExRecord(
             connection_id=connection_id,
+            verification_method=verification_method,
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_ISSUER,
             cred_proposal=cred_proposal,
@@ -80,12 +83,11 @@ class V20CredManager:
             auto_remove=auto_remove,
             trace=(cred_proposal._trace is not None),
         )
-        (cred_ex_record, cred_offer) = await self.create_offer(
+        return await self.create_offer(
             cred_ex_record=cred_ex_record,
             counter_proposal=None,
             comment="create automated v2.0 credential exchange record",
         )
-        return (cred_ex_record, cred_offer)
 
     async def create_proposal(
         self,

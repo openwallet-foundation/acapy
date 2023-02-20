@@ -588,7 +588,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
             detail = LDProofVCDetail.deserialize(LD_PROOF_VC_DETAIL)
 
-            mock_get_suite.assert_called_once_with(detail)
+            mock_get_suite.assert_called_once_with(detail, None)
             mock_issue.assert_called_once_with(
                 credential=LD_PROOF_VC_DETAIL["credential"],
                 suite=mock_get_suite.return_value,
