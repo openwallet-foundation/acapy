@@ -1494,7 +1494,14 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
         )
 
 
+class TailsDeleteResponseSchema(OpenAPISchema):
+    """Return schema for tails failes deletion."""
+
+    message = fields.Str()
+
+
 @querystring_schema(RevRegId())
+@response_schema(TailsDeleteResponseSchema())
 @docs(tags=["revocation"], summary="Delete the tail files")
 async def delete_tails(request: web.BaseRequest) -> json:
     """Delete Tails Files."""
