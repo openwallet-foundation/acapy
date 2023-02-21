@@ -17,6 +17,7 @@ from ..messages.cred_proposal import V20CredProposal, V20CredProposalSchema
 from ..messages.cred_offer import V20CredOffer, V20CredOfferSchema
 from ..messages.cred_request import V20CredRequest, V20CredRequestSchema
 from ..messages.inner.cred_preview import V20CredPreviewSchema
+from ..messages.cred_ex_record_webhook import LightWeightV20CredExRecordWebhook
 
 from . import UNENCRYPTED_TAGS
 
@@ -181,6 +182,33 @@ class V20CredExRecord(BaseExchangeRecord):
         except StorageError as err:
             LOGGER.exception(err)
 
+    # Override
+    async def emit_event(self, session: ProfileSession, payload: Any = None):
+        """
+        Emit an event.
+
+        Args:
+            session: The profile session to use
+            payload: The event payload
+        """
+
+        if not self.RECORD_TOPIC:
+            return
+
+        if self.state:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}::{self.state}"
+        else:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
+
+        if not payload:
+            payload = self.serialize()
+
+        if session.profile.settings.get("transport.light_weight_webhook"):
+            payload = LightWeightV20CredExRecordWebhook(**self.__dict__)
+            payload = payload.__dict__
+
+        await session.profile.notify(topic, payload)
+
     @property
     def record_value(self) -> Mapping:
         """Accessor for the JSON record value generated for this credential exchange."""
@@ -296,11 +324,7 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         description="Issue-credential exchange initiator: self or external",
         example=V20CredExRecord.INITIATOR_SELF,
         validate=validate.OneOf(
-            [
-                getattr(V20CredExRecord, m)
-                for m in vars(V20CredExRecord)
-                if m.startswith("INITIATOR_")
-            ]
+            V20CredExRecord.get_attributes_by_prefix("INITIATOR_", walk_mro=False)
         ),
     )
     role = fields.Str(
@@ -308,11 +332,7 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         description="Issue-credential exchange role: holder or issuer",
         example=V20CredExRecord.ROLE_ISSUER,
         validate=validate.OneOf(
-            [
-                getattr(V20CredExRecord, m)
-                for m in vars(V20CredExRecord)
-                if m.startswith("ROLE_")
-            ]
+            V20CredExRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
         ),
     )
     state = fields.Str(
@@ -320,11 +340,7 @@ class V20CredExRecordSchema(BaseExchangeSchema):
         description="Issue-credential exchange state",
         example=V20CredExRecord.STATE_DONE,
         validate=validate.OneOf(
-            [
-                getattr(V20CredExRecord, m)
-                for m in vars(V20CredExRecord)
-                if m.startswith("STATE_")
-            ]
+            V20CredExRecord.get_attributes_by_prefix("STATE_", walk_mro=True)
         ),
     )
     cred_preview = fields.Nested(

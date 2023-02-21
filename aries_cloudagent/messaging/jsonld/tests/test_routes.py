@@ -14,7 +14,7 @@ from ....resolver.base import DIDMethodNotSupported, DIDNotFound, ResolverError
 from ....resolver.did_resolver import DIDResolver
 from ....vc.ld_proofs.document_loader import DocumentLoader
 from ....wallet.base import BaseWallet
-from ....wallet.did_method import SOV
+from ....wallet.did_method import SOV, DIDMethods
 from ....wallet.error import WalletError
 from ....wallet.key_type import ED25519
 from ..error import (
@@ -234,22 +234,22 @@ async def test_verify_bad_ver_meth_deref_req_error(
     assert "error" in mock_response.call_args[0][0]
 
 
-@pytest.mark.asyncio
-async def test_verify_bad_ver_meth_not_ver_meth(
-    mock_resolver, mock_verify_request, mock_response, request_body
-):
-    request_body["doc"]["proof"][
-        "verificationMethod"
-    ] = "did:example:1234abcd#did-communication"
-    await test_module.verify(mock_verify_request(request_body))
-    assert "error" in mock_response.call_args[0][0]
-
-
+@pytest.mark.parametrize(
+    "vmethod",
+    [
+        "did:example:1234abcd#key-2",
+        "did:example:1234abcd#did-communication",
+    ],
+)
 @pytest.mark.asyncio
 async def test_verify_bad_vmethod_unsupported(
-    mock_resolver, mock_verify_request, mock_response, request_body
+    mock_resolver,
+    mock_verify_request,
+    mock_response,
+    request_body,
+    vmethod,
 ):
-    request_body["doc"]["proof"]["verificationMethod"] = "did:example:1234abcd#key-2"
+    request_body["doc"]["proof"]["verificationMethod"] = vmethod
     with pytest.raises(web.HTTPBadRequest):
         await test_module.verify(mock_verify_request(request_body))
 
@@ -274,6 +274,7 @@ class TestJSONLDRoutes(AsyncTestCase):
         self.context.profile.context.injector.bind_instance(
             DocumentLoader, custom_document_loader
         )
+        self.context.profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         self.did_info = await (await self.context.session()).wallet.create_local_did(
             SOV, ED25519
         )

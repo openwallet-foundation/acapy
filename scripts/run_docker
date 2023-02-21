@@ -27,12 +27,13 @@ for arg in "$@"; do
     echo "Backing up database before running aca-py upgrade is highly recommended. Do you wish to proceed"
     select yn in "Yes" "No"; do
       case $yn in
-      Yes) break ;;
-      No) exit ;;
+        Yes) break ;;
+        No) exit ;;
       esac
     done
   fi
 done
+
 if [ -n "${ENABLE_PTVSD}" ]; then
   ARGS="${ARGS} -e ENABLE_PTVSD=\"${ENABLE_PTVSD}\" -p $PTVSD_PORT:$PTVSD_PORT"
 fi
@@ -47,6 +48,45 @@ if [ "$OSTYPE" == "msys" ]; then
   CONTAINER_RUNTIME="winpty docker"
 fi
 
-RAND_NAME=$(env LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1)
-$CONTAINER_RUNTIME run --rm -ti --name "aries-cloudagent-runner_${RAND_NAME}" \
-    $ARGS aries-cloudagent-run "$@"
+if [ -n "${CONTAINER_NAME}" ]; then
+  ARGS="${ARGS} --name ${CONTAINER_NAME}"
+else
+  RAND_NAME=$(env LC_ALL=C tr -dc 'a-zA-Z0-9' </dev/urandom | fold -w 16 | head -n 1)
+  CONTAINER_NAME="aries-cloudagent-runner_${RAND_NAME}"
+  ARGS="${ARGS} --name ${CONTAINER_NAME}"
+fi
+echo ""
+echo "Container name: ${CONTAINER_NAME}"
+
+# Create new Docker network if it does not exist.
+if [ -n "${NETWORK_NAME}" ]; then
+  if [ -z "$("$CONTAINER_RUNTIME" network ls --filter name=^"${NETWORK_NAME}"$ --format="{{ .Name }}")" ]; then
+    echo "Creating new Docker network: ${NETWORK_NAME}"
+    "$CONTAINER_RUNTIME" network create "${NETWORK_NAME}"
+  else
+    echo "Attaching to existing Docker network: ${NETWORK_NAME}"
+  fi
+  ARGS="${ARGS} --network ${NETWORK_NAME}"
+else
+  echo "No Docker network specified."
+fi
+
+if [ -n "${ARG_FILE}" ]; then
+  if [ -f "${ARG_FILE}" ]; then
+    ARG_FILE_IN_DOCKER="/home/indy/arg-file.yml"
+    ARGS="${ARGS} -v ${ARG_FILE}:${ARG_FILE_IN_DOCKER}"
+    echo ""
+    echo "Using acapy config file: ${ARG_FILE}"
+  else
+    echo "Config file not found: ${ARG_FILE}" || exit 1
+  fi
+fi
+
+ACAPY_ARGUMENTS=("$@")
+if [ -n "${ARG_FILE_IN_DOCKER}" ]; then
+  ACAPY_ARGUMENTS=("${ACAPY_ARGUMENTS[@]}" "--arg-file" "${ARG_FILE_IN_DOCKER}")
+fi
+
+echo ""
+# shellcheck disable=SC2086,SC2090
+$CONTAINER_RUNTIME run --rm -ti $ARGS aries-cloudagent-run "${ACAPY_ARGUMENTS[@]}"

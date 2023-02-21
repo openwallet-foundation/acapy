@@ -24,7 +24,7 @@ from .....resolver.tests import DOC
 from .....storage.error import StorageNotFoundError
 from .....transport.inbound.receipt import MessageReceipt
 from .....wallet.did_info import DIDInfo
-from .....wallet.did_method import SOV
+from .....wallet.did_method import SOV, DIDMethods
 from .....wallet.error import WalletError
 from .....wallet.in_memory import InMemoryWallet
 from .....wallet.key_type import ED25519
@@ -41,7 +41,6 @@ from ..manager import DIDXManager, DIDXManagerError
 
 
 class TestConfig:
-
     test_seed = "testseed000000000000000000000001"
     test_did = "55GkHamhTU1ZbTbV2ab9DE"
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
@@ -102,6 +101,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
                 BaseCache: InMemoryCache(),
                 OobMessageProcessor: self.oob_mock,
                 RouteManager: self.route_manager,
+                DIDMethods: DIDMethods(),
             },
         )
         self.context = self.profile.context
@@ -963,6 +963,151 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
             messages = self.responder.messages
             assert not messages
+
+    async def test_receive_request_implicit_public_did_not_enabled(self):
+        async with self.profile.session() as session:
+            mock_request = async_mock.MagicMock(
+                did=TestConfig.test_did,
+                did_doc_attach=async_mock.MagicMock(
+                    data=async_mock.MagicMock(
+                        verify=async_mock.CoroutineMock(return_value=True),
+                        signed=async_mock.MagicMock(
+                            decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        ),
+                    )
+                ),
+                _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
+            )
+            mediation_record = MediationRecord(
+                role=MediationRecord.ROLE_CLIENT,
+                state=MediationRecord.STATE_GRANTED,
+                connection_id=self.test_mediator_conn_id,
+                routing_keys=self.test_mediator_routing_keys,
+                endpoint=self.test_mediator_endpoint,
+            )
+            await mediation_record.save(session)
+
+            await session.wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+                seed=None,
+                did=TestConfig.test_did,
+            )
+
+            self.profile.context.update_settings({"public_invites": True})
+
+            with async_mock.patch.object(
+                test_module, "ConnRecord", async_mock.MagicMock()
+            ) as mock_conn_rec_cls, async_mock.patch.object(
+                test_module, "DIDDoc", autospec=True
+            ) as mock_did_doc, async_mock.patch.object(
+                test_module, "DIDPosture", autospec=True
+            ) as mock_did_posture, async_mock.patch.object(
+                self.manager,
+                "verify_diddoc",
+                async_mock.CoroutineMock(return_value=DIDDoc(TestConfig.test_did)),
+            ):
+                mock_did_posture.get = async_mock.MagicMock(
+                    return_value=test_module.DIDPosture.PUBLIC
+                )
+                mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
+                    side_effect=StorageNotFoundError()
+                )
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = (
+                    async_mock.CoroutineMock(return_value=None)
+                )
+
+                with self.assertRaises(DIDXManagerError) as context:
+                    await self.manager.receive_request(
+                        request=mock_request,
+                        recipient_did=TestConfig.test_did,
+                        my_endpoint=None,
+                        alias=None,
+                        auto_accept_implicit=None,
+                    )
+                assert "Unsolicited connection requests" in str(context.exception)
+
+    async def test_receive_request_implicit_public_did(self):
+        async with self.profile.session() as session:
+            mock_request = async_mock.MagicMock(
+                did=TestConfig.test_did,
+                did_doc_attach=async_mock.MagicMock(
+                    data=async_mock.MagicMock(
+                        verify=async_mock.CoroutineMock(return_value=True),
+                        signed=async_mock.MagicMock(
+                            decode=async_mock.MagicMock(return_value="dummy-did-doc")
+                        ),
+                    )
+                ),
+                _thread=async_mock.MagicMock(pthid="did:sov:publicdid0000000000000"),
+            )
+            mediation_record = MediationRecord(
+                role=MediationRecord.ROLE_CLIENT,
+                state=MediationRecord.STATE_GRANTED,
+                connection_id=self.test_mediator_conn_id,
+                routing_keys=self.test_mediator_routing_keys,
+                endpoint=self.test_mediator_endpoint,
+            )
+            await mediation_record.save(session)
+
+            await session.wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+                seed=None,
+                did=TestConfig.test_did,
+            )
+
+            self.profile.context.update_settings({"public_invites": True})
+            self.profile.context.update_settings({"requests_through_public_did": True})
+            ACCEPT_AUTO = ConnRecord.ACCEPT_AUTO
+            STATE_REQUEST = ConnRecord.State.REQUEST
+
+            with async_mock.patch.object(
+                test_module, "ConnRecord", async_mock.MagicMock()
+            ) as mock_conn_rec_cls, async_mock.patch.object(
+                test_module, "DIDDoc", autospec=True
+            ) as mock_did_doc, async_mock.patch.object(
+                test_module, "DIDPosture", autospec=True
+            ) as mock_did_posture, async_mock.patch.object(
+                self.manager,
+                "verify_diddoc",
+                async_mock.CoroutineMock(return_value=DIDDoc(TestConfig.test_did)),
+            ):
+                mock_did_posture.get = async_mock.MagicMock(
+                    return_value=test_module.DIDPosture.PUBLIC
+                )
+                mock_conn_rec_cls.retrieve_by_invitation_key = async_mock.CoroutineMock(
+                    side_effect=StorageNotFoundError()
+                )
+                mock_conn_rec_cls.retrieve_by_invitation_msg_id = (
+                    async_mock.CoroutineMock(return_value=None)
+                )
+
+                mock_conn_record = async_mock.MagicMock(
+                    accept=ACCEPT_AUTO,
+                    my_did=None,
+                    state=STATE_REQUEST.rfc23,
+                    attach_request=async_mock.CoroutineMock(),
+                    retrieve_request=async_mock.CoroutineMock(),
+                    metadata_get_all=async_mock.CoroutineMock(return_value={}),
+                    metadata_get=async_mock.CoroutineMock(return_value=True),
+                    save=async_mock.CoroutineMock(),
+                )
+
+                mock_conn_rec_cls.return_value = mock_conn_record
+
+                conn_rec = await self.manager.receive_request(
+                    request=mock_request,
+                    recipient_did=TestConfig.test_did,
+                    recipient_verkey=None,
+                    my_endpoint=None,
+                    alias=None,
+                    auto_accept_implicit=None,
+                )
+                assert conn_rec
+                self.oob_mock.clean_finished_oob_record.assert_called_once_with(
+                    self.profile, mock_request
+                )
 
     async def test_receive_request_peer_did(self):
         async with self.profile.session() as session:

@@ -23,8 +23,8 @@ from ..messaging.valid import (
     ENDPOINT,
     ENDPOINT_TYPE,
     INDY_DID,
-    INDY_OR_KEY_DID,
     INDY_RAW_PUBLIC_KEY,
+    GENERIC_DID,
 )
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
 from ..protocols.endorse_transaction.v1_0.manager import (
@@ -38,7 +38,7 @@ from ..protocols.endorse_transaction.v1_0.util import (
 from ..storage.error import StorageError, StorageNotFoundError
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import SOV, KEY, DIDMethod, DIDMethods
+from .did_method import SOV, KEY, DIDMethod, DIDMethods, HolderDefinedDid
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyTypes
@@ -54,7 +54,7 @@ class WalletModuleResponseSchema(OpenAPISchema):
 class DIDSchema(OpenAPISchema):
     """Result schema for a DID."""
 
-    did = fields.Str(description="DID of interest", **INDY_OR_KEY_DID)
+    did = fields.Str(description="DID of interest", **GENERIC_DID)
     verkey = fields.Str(description="Public verification key", **INDY_RAW_PUBLIC_KEY)
     posture = fields.Str(
         description=(
@@ -65,11 +65,7 @@ class DIDSchema(OpenAPISchema):
         **DID_POSTURE,
     )
     method = fields.Str(
-        description="Did method associated with the DID",
-        example=SOV.method_name,
-        validate=validate.OneOf(
-            [method.method_name for method in [SOV, KEY]]
-        ),  # TODO: support more methods
+        description="Did method associated with the DID", example=SOV.method_name
     )
     key_type = fields.Str(
         description="Key type associated with the DID",
@@ -119,7 +115,7 @@ class DIDEndpointSchema(OpenAPISchema):
 class DIDListQueryStringSchema(OpenAPISchema):
     """Parameters and validators for DID list request query string."""
 
-    did = fields.Str(description="DID of interest", required=False, **INDY_OR_KEY_DID)
+    did = fields.Str(description="DID of interest", required=False, **GENERIC_DID)
     verkey = fields.Str(
         description="Verification key of interest",
         required=False,
@@ -160,7 +156,16 @@ class DIDCreateOptionsSchema(OpenAPISchema):
     key_type = fields.Str(
         required=True,
         example=ED25519.key_type,
+        description="Key type to use for the DID keypair. "
+        + "Validated with the chosen DID method's supported key types.",
         validate=validate.OneOf([ED25519.key_type, BLS12381G2.key_type]),
+    )
+
+    did = fields.Str(
+        required=False,
+        description="Specify final value of the did (including did:<method>: prefix)"
+        + "if the method supports or requires so.",
+        **GENERIC_DID,
     )
 
 
@@ -171,13 +176,14 @@ class DIDCreateSchema(OpenAPISchema):
         required=False,
         default=SOV.method_name,
         example=SOV.method_name,
-        validate=validate.OneOf([KEY.method_name, SOV.method_name]),
+        description="Method for the requested DID."
+        + "Supported methods are 'key', 'sov', and any other registered method.",
     )
 
     options = fields.Nested(
         DIDCreateOptionsSchema,
         required=False,
-        description="To define a key type for a did:key",
+        description="To define a key type and/or a did depending on chosen DID method.",
     )
 
     seed = fields.Str(
@@ -374,14 +380,26 @@ async def wallet_create_did(request: web.BaseRequest):
                     f" support key type {key_type.key_type}"
                 )
             )
+
+        did = body.get("options", {}).get("did")
+        if method.holder_defined_did() == HolderDefinedDid.NO and did:
+            raise web.HTTPForbidden(
+                reason=(
+                    f"method {method.method_name} does not"
+                    f" support user-defined DIDs"
+                )
+            )
+        elif method.holder_defined_did() == HolderDefinedDid.REQUIRED and not did:
+            raise web.HTTPBadRequest(
+                reason=f"method {method.method_name} requires a user-defined DIDs"
+            )
+
         wallet = session.inject_or(BaseWallet)
         if not wallet:
             raise web.HTTPForbidden(reason="No wallet available")
         try:
             info = await wallet.create_local_did(
-                method=method,
-                key_type=key_type,
-                seed=seed,
+                method=method, key_type=key_type, seed=seed, did=did
             )
 
         except WalletError as err:

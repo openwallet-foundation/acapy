@@ -1,4 +1,5 @@
 import mock as async_mock
+import pytest
 from aiohttp.web import HTTPForbidden
 from async_case import IsolatedAsyncioTestCase
 
@@ -6,7 +7,7 @@ from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
-from ...wallet.did_method import SOV, DIDMethods
+from ...wallet.did_method import SOV, DIDMethods, DIDMethod, HolderDefinedDid
 from ...wallet.key_type import ED25519, KeyTypes
 from .. import routes as test_module
 from ..base import BaseWallet
@@ -38,7 +39,8 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.test_verkey = "verkey"
         self.test_posted_did = "posted-did"
         self.test_posted_verkey = "posted-verkey"
-        self.context.injector.bind_instance(DIDMethods, DIDMethods())
+        self.did_methods = DIDMethods()
+        self.context.injector.bind_instance(DIDMethods, self.did_methods)
 
     async def test_missing_wallet(self):
         self.session_inject[BaseWallet] = None
@@ -131,6 +133,48 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.request.json = async_mock.AsyncMock(
             return_value={"method": "sov", "options": {"key_type": "bls12381g2"}}
         )
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.wallet_create_did(self.request)
+
+    async def test_create_did_method_requires_user_defined_did(self):
+        # given
+        did_custom = DIDMethod(
+            name="custom",
+            key_types=[ED25519],
+            rotation=True,
+            holder_defined_did=HolderDefinedDid.REQUIRED,
+        )
+        self.did_methods.register(did_custom)
+
+        self.request.json = async_mock.AsyncMock(
+            return_value={"method": "custom", "options": {"key_type": "ed25519"}}
+        )
+
+        # when - then
+        with self.assertRaises(test_module.web.HTTPBadRequest):
+            await test_module.wallet_create_did(self.request)
+
+    async def test_create_did_method_doesnt_support_user_defined_did(self):
+        did_custom = DIDMethod(
+            name="custom",
+            key_types=[ED25519],
+            rotation=True,
+            holder_defined_did=HolderDefinedDid.NO,
+        )
+        self.did_methods.register(did_custom)
+
+        # when
+        self.request.json = async_mock.AsyncMock(
+            return_value={
+                "method": "custom",
+                "options": {
+                    "key_type": ED25519.key_type,
+                    "did": "did:custom:aCustomUserDefinedDID",
+                },
+            }
+        )
+
+        # then
         with self.assertRaises(test_module.web.HTTPForbidden):
             await test_module.wallet_create_did(self.request)
 
@@ -420,7 +464,6 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             await test_module.wallet_set_public_did(self.request)
 
     async def test_set_public_did_no_ledger(self):
-
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
         mock_route_manager.__aenter__ = async_mock.AsyncMock(

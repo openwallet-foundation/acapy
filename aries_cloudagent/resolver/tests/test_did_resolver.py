@@ -7,7 +7,7 @@ import re
 import pytest
 
 from asynctest import mock as async_mock
-from pydid import DID, DIDDocument, VerificationMethod
+from pydid import DID, DIDDocument, VerificationMethod, BasicDIDDocument
 
 from ..base import (
     BaseDIDResolver,
@@ -151,6 +151,17 @@ async def test_dereference(resolver, profile):
     expected: dict = DOC["verificationMethod"][0]
     actual: VerificationMethod = await resolver.dereference(profile, url)
     assert expected == actual.serialize()
+
+
+@pytest.mark.asyncio
+async def test_dereference_diddoc(resolver, profile):
+    url = "did:example:1234abcd#4"
+    doc = BasicDIDDocument(
+        id="did:example:z6Mkmpe2DyE4NsDiAb58d75hpi1BjqbH6wYMschUkjWDEEuR"
+    )
+    result = await resolver.dereference(profile, url, document=doc)
+    assert isinstance(result, VerificationMethod)
+    assert result.id == url
 
 
 @pytest.mark.asyncio

@@ -36,7 +36,7 @@ from ...transport.wire_format import BaseWireFormat
 from ...utils.stats import Collector
 from ...version import __version__
 from ...wallet.base import BaseWallet
-from ...wallet.did_method import SOV
+from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.key_type import ED25519
 from .. import conductor as test_module
 
@@ -87,6 +87,7 @@ class StubContextBuilder(ContextBuilder):
         context.injector.bind_instance(ProfileManager, InMemoryProfileManager())
         context.injector.bind_instance(ProtocolRegistry, ProtocolRegistry())
         context.injector.bind_instance(BaseWireFormat, self.wire_format)
+        context.injector.bind_instance(DIDMethods, DIDMethods())
         context.injector.bind_instance(DIDResolver, DIDResolver([]))
         context.injector.bind_instance(EventBus, MockEventBus())
         return context
@@ -221,7 +222,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         ) as mock_outbound_mgr, async_mock.patch.object(
             test_module, "LoggingConfigurator", autospec=True
         ) as mock_logger:
-
             mock_inbound_mgr.return_value.sessions = ["dummy"]
             mock_outbound_mgr.return_value.outbound_buffer = [
                 async_mock.MagicMock(state=QueuedOutboundMessage.STATE_ENCODE),
@@ -262,7 +262,6 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
         with async_mock.patch.object(
             conductor.dispatcher, "queue_message", autospec=True
         ) as mock_dispatch_q:
-
             message_body = "{}"
             receipt = MessageReceipt(direct_response_mode="snail mail")
             message = InboundMessage(message_body, receipt)

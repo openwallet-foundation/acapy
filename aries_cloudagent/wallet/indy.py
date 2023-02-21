@@ -199,9 +199,9 @@ class IndySdkWallet(BaseWallet):
                 metadata=key_pair["metadata"],
                 key_type=key_types.from_key_type(key_pair["key_type"]) or BLS12381G2,
             )
-        except (StorageNotFoundError):
+        except StorageNotFoundError:
             raise WalletNotFoundError(f"Unknown key: {verkey}")
-        except (StorageDuplicateError):
+        except StorageDuplicateError:
             raise WalletDuplicateError(f"Multiple keys exist for verkey: {verkey}")
 
     async def get_signing_key(self, verkey: str) -> KeyInfo:

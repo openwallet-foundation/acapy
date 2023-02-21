@@ -370,6 +370,7 @@ class AdminServer(BaseAdminServer):
                     and not is_server_path
                     and not is_unprotected_path(path)
                     and not base_limited_access_path
+                    and not (request.method == "OPTIONS")  # CORS fix
                 ):
                     raise web.HTTPUnauthorized()
 
@@ -432,7 +433,7 @@ class AdminServer(BaseAdminServer):
         )
 
         server_routes = [
-            web.get("/", self.redirect_handler, allow_head=False),
+            web.get("/", self.redirect_handler, allow_head=True),
             web.get("/plugins", self.plugins_handler, allow_head=False),
             web.get("/status", self.status_handler, allow_head=False),
             web.get("/status/config", self.config_handler, allow_head=False),
@@ -490,7 +491,7 @@ class AdminServer(BaseAdminServer):
 
         def sort_dict(raw: dict) -> dict:
             """Order (JSON, string keys) dict asciibetically by key, recursively."""
-            for (k, v) in raw.items():
+            for k, v in raw.items():
                 if isinstance(v, dict):
                     raw[k] = sort_dict(v)
             return dict(sorted([item for item in raw.items()], key=lambda x: x[0]))

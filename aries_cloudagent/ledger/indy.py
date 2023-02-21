@@ -389,6 +389,8 @@ class IndySdkLedger(BaseLedger):
             if taa_accept:
                 acceptance = await self.get_latest_txn_author_acceptance()
                 if acceptance:
+                    # flake8 and black 23.1.0 check collision fix
+                    # fmt: off
                     request_json = await (
                         indy.ledger.append_txn_author_agreement_acceptance_to_request(
                             request_json,
@@ -399,6 +401,7 @@ class IndySdkLedger(BaseLedger):
                             acceptance["time"],
                         )
                     )
+                    # fmt: on
             if write_ledger:
                 submit_op = indy.ledger.sign_and_submit_request(
                     self.pool.handle,

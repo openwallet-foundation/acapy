@@ -39,7 +39,6 @@ class TestQuery(TestCase):
 
 
 class TestQuerySchema(TestCase):
-
     query = Query(query="*", comment="comment")
 
     def test_make_model(self):

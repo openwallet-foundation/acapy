@@ -17,8 +17,8 @@ class TestActionMenuService(AsyncTestCase):
         mock_event_bus = MockEventBus()
         self.context.profile.context.injector.bind_instance(EventBus, mock_event_bus)
 
-        self.menu_service = await (
-            test_module.DriverMenuService.service_handler()(self.context)
+        self.menu_service = await test_module.DriverMenuService.service_handler()(
+            self.context
         )
 
         connection = async_mock.MagicMock()
@@ -41,8 +41,8 @@ class TestActionMenuService(AsyncTestCase):
         mock_event_bus = MockEventBus()
         self.context.profile.context.injector.bind_instance(EventBus, mock_event_bus)
 
-        self.menu_service = await (
-            test_module.DriverMenuService.service_handler()(self.context)
+        self.menu_service = await test_module.DriverMenuService.service_handler()(
+            self.context
         )
 
         action_name = "action"

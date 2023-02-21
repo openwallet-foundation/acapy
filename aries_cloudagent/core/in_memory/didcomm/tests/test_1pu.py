@@ -6,7 +6,6 @@ from ..derive_1pu import *
 
 
 def test_1pu_hex_example():
-
     # Previously randomly generated 3 sets of keys
     aliceSecretKey = "23832cbef38641b8754a35f1f79bbcbc248e09ac93b01c2eaf12474f2ac406b6"
     alicePublicKey = "04fd4ca9eb7954a03517ac8249e6070aa3112e582f596b10f0d45d757b56d5dc0395a7d207d06503a4d6ad6e2ad3a1fd8cc233c072c0dc0f32213deb712c32cbdf"
@@ -41,7 +40,6 @@ def test_1pu_hex_example():
 
 # Example key exchange in https://tools.ietf.org/id/draft-madden-jose-ecdh-1pu-03.html#rfc.appendix.A
 def test_1pu_appendix_example():
-
     # Convert the three JWK keys into hex encoded byte format
 
     # Alice Key
@@ -106,7 +104,6 @@ def test_1pu_appendix_example():
 
 
 def main():
-
     test_1pu_hex_example()
     test_1pu_appendix_example()
 

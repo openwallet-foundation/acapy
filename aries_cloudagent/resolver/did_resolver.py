@@ -8,10 +8,11 @@ retrieving did's from different sources provided by the method type.
 from datetime import datetime
 from itertools import chain
 import logging
-from typing import Optional, List, Sequence, Tuple, Text, Type, TypeVar, Union
+from typing import List, Optional, Sequence, Text, Tuple, Union
 
-from pydid import DID, DIDError, DIDUrl, Resource, NonconformantDocument
-from pydid.doc.doc import IDNotFoundError
+from pydid import DID, DIDError, DIDUrl, Resource
+import pydid
+from pydid.doc.doc import BaseDIDDocument, IDNotFoundError
 
 from ..core.profile import Profile
 from .base import (
@@ -24,9 +25,6 @@ from .base import (
 )
 
 LOGGER = logging.getLogger(__name__)
-
-
-ResourceType = TypeVar("ResourceType", bound=Resource)
 
 
 class DIDResolver:
@@ -115,8 +113,12 @@ class DIDResolver:
         return resolvers
 
     async def dereference(
-        self, profile: Profile, did_url: str, *, cls: Type[ResourceType] = Resource
-    ) -> ResourceType:
+        self,
+        profile: Profile,
+        did_url: str,
+        *,
+        document: Optional[BaseDIDDocument] = None,
+    ) -> Resource:
         """Dereference a DID URL to its corresponding DID Doc object."""
         # TODO Use cached DID Docs when possible
         try:
@@ -128,12 +130,15 @@ class DIDResolver:
                 "Failed to parse DID URL from {}".format(did_url)
             ) from err
 
-        doc_dict = await self.resolve(profile, parsed.did)
-        # Use non-conformant doc as the "least common denominator"
+        if document and parsed.did != document.id:
+            document = None
+
+        if not document:
+            doc_dict = await self.resolve(profile, parsed.did)
+            document = pydid.deserialize_document(doc_dict)
+
         try:
-            return NonconformantDocument.deserialize(doc_dict).dereference_as(
-                cls, parsed
-            )
+            return document.dereference(parsed)
         except IDNotFoundError as error:
             raise ResolverError(
                 "Failed to dereference DID URL: {}".format(error)

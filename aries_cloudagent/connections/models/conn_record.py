@@ -174,6 +174,7 @@ class ConnRecord(BaseRecord):
         "invitation_key",
         "their_public_did",
         "invitation_msg_id",
+        "state",
         "their_role",
     }
 
@@ -322,11 +323,15 @@ class ConnRecord(BaseRecord):
             invitation_key: The key on the originating invitation
             initiator: Filter by the initiator value
         """
-        tag_filter = {"invitation_key": invitation_key}
+        tag_filter = {
+            "invitation_key": invitation_key,
+            "state": cls.State.INVITATION.rfc160,
+        }
         post_filter = {"state": cls.State.INVITATION.rfc160}
 
         if their_role:
             post_filter["their_role"] = cls.Role.get(their_role).rfc160
+            tag_filter["their_role"] = cls.Role.get(their_role).rfc160
 
         return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
 
@@ -677,11 +682,7 @@ class ConnRecordSchema(BaseRecordSchema):
         required=False,
         description="Routing state of connection",
         validate=validate.OneOf(
-            [
-                getattr(ConnRecord, m)
-                for m in vars(ConnRecord)
-                if m.startswith("ROUTING_STATE_")
-            ]
+            ConnRecord.get_attributes_by_prefix("ROUTING_STATE_", walk_mro=False)
         ),
         example=ConnRecord.ROUTING_STATE_ACTIVE,
     )
@@ -690,11 +691,7 @@ class ConnRecordSchema(BaseRecordSchema):
         description="Connection acceptance: manual or auto",
         example=ConnRecord.ACCEPT_AUTO,
         validate=validate.OneOf(
-            [
-                getattr(ConnRecord, a)
-                for a in vars(ConnRecord)
-                if a.startswith("ACCEPT_")
-            ]
+            ConnRecord.get_attributes_by_prefix("ACCEPT_", walk_mro=False)
         ),
     )
     error_msg = fields.Str(
@@ -707,11 +704,7 @@ class ConnRecordSchema(BaseRecordSchema):
         description="Invitation mode",
         example=ConnRecord.INVITATION_MODE_ONCE,
         validate=validate.OneOf(
-            [
-                getattr(ConnRecord, i)
-                for i in vars(ConnRecord)
-                if i.startswith("INVITATION_MODE_")
-            ]
+            ConnRecord.get_attributes_by_prefix("INVITATION_MODE_", walk_mro=False)
         ),
     )
     alias = fields.Str(

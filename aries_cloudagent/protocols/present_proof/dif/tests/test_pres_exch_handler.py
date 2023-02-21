@@ -1,6 +1,7 @@
 import asyncio
 from copy import deepcopy
 from datetime import datetime
+from typing import Sequence
 from uuid import uuid4
 
 import mock as async_mock
@@ -14,7 +15,7 @@ from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
 from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.crypto import KeyType
-from .....wallet.did_method import SOV, KEY
+from .....wallet.did_method import SOV, KEY, DIDMethods
 from .....wallet.error import WalletNotFoundError
 from .....vc.ld_proofs import (
     BbsBlsSignature2020,
@@ -68,7 +69,7 @@ def event_loop(request):
 
 @pytest.fixture(scope="class")
 def profile():
-    profile = InMemoryProfile.test_profile()
+    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
     context = profile.context
     context.injector.bind_instance(DIDResolver, DIDResolver([]))
     context.injector.bind_instance(DocumentLoader, custom_document_loader)
@@ -105,7 +106,17 @@ class TestPresExchHandler:
                 pd=tmp_pd[0],
                 challenge="1f44d55f-f161-4938-a659-f8026467f126",
             )
-            assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
+
+            if isinstance(tmp_vp, Sequence):
+                cred_count_list = []
+                for tmp_vp_single in tmp_vp:
+                    cred_count_list.append(
+                        len(tmp_vp_single.get("verifiableCredential"))
+                    )
+
+                assert min(cred_count_list) == tmp_pd[1]
+            else:
+                assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -122,7 +133,17 @@ class TestPresExchHandler:
                 pd=tmp_pd[0],
                 challenge="1f44d55f-f161-4938-a659-f8026467f126",
             )
-            assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
+
+            if isinstance(tmp_vp, Sequence):
+                cred_count_list = []
+                for tmp_vp_single in tmp_vp:
+                    cred_count_list.append(
+                        len(tmp_vp_single.get("verifiableCredential"))
+                    )
+
+                assert min(cred_count_list) == tmp_pd[1]
+            else:
+                assert len(tmp_vp.get("verifiableCredential")) == tmp_pd[1]
 
     @pytest.mark.asyncio
     async def test_to_requirement_catch_errors(self, profile):
@@ -2266,11 +2287,12 @@ class TestPresExchHandler:
                 pd=pd_list[0][0],
                 challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
             )
-            assert vp["test"] == "1"
-            assert (
-                vp["presentation_submission"]["definition_id"]
-                == "32f54163-7166-48f1-93d8-ff217bdb0653"
-            )
+            for vp_single in vp:
+                assert vp_single["test"] == "1"
+                assert (
+                    vp_single["presentation_submission"]["definition_id"]
+                    == "32f54163-7166-48f1-93d8-ff217bdb0653"
+                )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -2326,8 +2348,9 @@ class TestPresExchHandler:
                 pd=pd_list[0][0],
                 challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
             )
-            assert vp["test"] == "1"
-            assert SECURITY_CONTEXT_BBS_URL in vp["@context"]
+            for vp_single in vp:
+                assert vp_single["test"] == "1"
+                assert SECURITY_CONTEXT_BBS_URL in vp_single["@context"]
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -2380,8 +2403,10 @@ class TestPresExchHandler:
                 pd=pd_list[0][0],
                 challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
             )
-            assert vp["test"] == "1"
-            assert SECURITY_CONTEXT_BBS_URL in vp["@context"]
+            # 2 sub_reqs, vp is a sequence
+            for vp_single in vp:
+                assert vp_single["test"] == "1"
+                assert SECURITY_CONTEXT_BBS_URL in vp_single["@context"]
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
@@ -3057,6 +3082,8 @@ class TestPresExchHandler:
             pd=tmp_pd[0],
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
+        # only 1 sub_req
+        assert isinstance(tmp_vp, dict)
         assert len(tmp_vp["verifiableCredential"]) == 2
         assert (
             tmp_vp.get("verifiableCredential")[0]
@@ -3077,19 +3104,22 @@ class TestPresExchHandler:
             pd=tmp_pd[0],
             challenge="1f44d55f-f161-4938-a659-f8026467f126",
         )
-        assert len(tmp_vp["verifiableCredential"]) == 2
-        assert (
-            tmp_vp.get("verifiableCredential")[0]
-            .get("credentialSubject")
-            .get("givenName")
-            == "TEST"
-        )
-        assert (
-            tmp_vp.get("verifiableCredential")[1]
-            .get("credentialSubject")
-            .get("givenName")
-            == "TEST"
-        )
+        assert isinstance(tmp_vp, Sequence)
+        # 1 for each submission requirement group
+        assert len(tmp_vp) == 3
+        for tmp_vp_single in tmp_vp:
+            assert (
+                tmp_vp_single.get("verifiableCredential")[0]
+                .get("credentialSubject")
+                .get("givenName")
+                == "TEST"
+            )
+            assert (
+                tmp_vp_single.get("verifiableCredential")[1]
+                .get("credentialSubject")
+                .get("givenName")
+                == "TEST"
+            )
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures

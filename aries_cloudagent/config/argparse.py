@@ -74,7 +74,8 @@ def create_argument_parser(*, prog: str = None):
 
 
 def load_argument_groups(parser: ArgumentParser, *groups: Type[ArgumentGroup]):
-    """Log a set of argument groups into a parser.
+    """
+    Log a set of argument groups into a parser.
 
     Returns:
         A callable to convert loaded arguments into a settings dictionary
@@ -642,6 +643,14 @@ class GeneralGroup(ArgumentGroup):
                 "resolver instance."
             ),
         )
+        parser.add_argument(
+            "--universal-resolver-bearer-token",
+            type=str,
+            nargs="?",
+            metavar="<universal_resolver_token>",
+            env_var="ACAPY_UNIVERSAL_RESOLVER_BEARER_TOKEN",
+            help="Bearer token if universal resolver instance requires authentication.",
+        ),
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -687,11 +696,20 @@ class GeneralGroup(ArgumentGroup):
                 "--universal-resolver-regex cannot be used without --universal-resolver"
             )
 
+        if args.universal_resolver_bearer_token and not args.universal_resolver:
+            raise ArgsParseError(
+                "--universal-resolver-bearer-token "
+                + "cannot be used without --universal-resolver"
+            )
+
         if args.universal_resolver:
             settings["resolver.universal"] = args.universal_resolver
 
         if args.universal_resolver_regex:
             settings["resolver.universal.supported"] = args.universal_resolver_regex
+
+        if args.universal_resolver_bearer_token:
+            settings["resolver.universal.token"] = args.universal_resolver_bearer_token
 
         return settings
 
@@ -872,32 +890,56 @@ class LedgerGroup(ArgumentGroup):
         if args.no_ledger:
             settings["ledger.disabled"] = True
         else:
-            configured = False
+            single_configured = False
+            multi_configured = False
+            update_pool_name = False
             if args.genesis_url:
                 settings["ledger.genesis_url"] = args.genesis_url
-                configured = True
+                single_configured = True
             elif args.genesis_file:
                 settings["ledger.genesis_file"] = args.genesis_file
-                configured = True
+                single_configured = True
             elif args.genesis_transactions:
                 settings["ledger.genesis_transactions"] = args.genesis_transactions
-                configured = True
+                single_configured = True
             if args.genesis_transactions_list:
                 with open(args.genesis_transactions_list, "r") as stream:
                     txn_config_list = yaml.safe_load(stream)
                     ledger_config_list = []
                     for txn_config in txn_config_list:
                         ledger_config_list.append(txn_config)
+                        if "is_write" in txn_config and txn_config["is_write"]:
+                            if "genesis_url" in txn_config:
+                                settings["ledger.genesis_url"] = txn_config[
+                                    "genesis_url"
+                                ]
+                            elif "genesis_file" in txn_config:
+                                settings["ledger.genesis_file"] = txn_config[
+                                    "genesis_file"
+                                ]
+                            elif "genesis_transactions" in txn_config:
+                                settings["ledger.genesis_transactions"] = txn_config[
+                                    "genesis_transactions"
+                                ]
+                            else:
+                                raise ArgsParseError(
+                                    "No genesis information provided for write ledger"
+                                )
+                            if "id" in txn_config:
+                                settings["ledger.pool_name"] = txn_config["id"]
+                                update_pool_name = True
                     settings["ledger.ledger_config_list"] = ledger_config_list
-                    configured = True
-            if not configured:
+                    multi_configured = True
+            if not (single_configured or multi_configured):
                 raise ArgsParseError(
                     "One of --genesis-url --genesis-file, --genesis-transactions "
                     "or --genesis-transactions-list must be specified (unless "
                     "--no-ledger is specified to explicitly configure aca-py to"
                     " run with no ledger)."
                 )
-            if args.ledger_pool_name:
+            if single_configured and multi_configured:
+                raise ArgsParseError("Cannot configure both single- and multi-ledger.")
+            if args.ledger_pool_name and not update_pool_name:
                 settings["ledger.pool_name"] = args.ledger_pool_name
             if args.ledger_keepalive:
                 settings["ledger.keepalive"] = args.ledger_keepalive
@@ -1014,7 +1056,17 @@ class ProtocolGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_PUBLIC_INVITES",
             help=(
-                "Send invitations out, and receive connection requests, "
+                "Send invitations out using the public DID for the agent, "
+                "and receive connection requests solicited by invitations "
+                "which use the public DID. Default: false."
+            ),
+        )
+        parser.add_argument(
+            "--requests-through-public-did",
+            action="store_true",
+            env_var="ACAPY_REQUESTS_THROUGH_PUBLIC_DID",
+            help=(
+                "Allow agent to receive unsolicited connection requests, "
                 "using the public DID for the agent. Default: false."
             ),
         )
@@ -1109,6 +1161,13 @@ class ProtocolGroup(ArgumentGroup):
             settings["monitor_forward"] = args.monitor_forward
         if args.public_invites:
             settings["public_invites"] = True
+        if args.requests_through_public_did:
+            if not args.public_invites:
+                raise ArgsParseError(
+                    "--public-invites is required to use "
+                    "--requests-through-public-did"
+                )
+            settings["requests_through_public_did"] = True
         if args.timing:
             settings["timing.enabled"] = True
         if args.timing_log:
@@ -1251,6 +1310,12 @@ class TransportGroup(ArgumentGroup):
             help="Set the maximum size in bytes for inbound agent messages.",
         )
         parser.add_argument(
+            "--light-weight-webhook",
+            action="store_true",
+            env_var="ACAPY_LIGHT_WEIGHT_WEBHOOK",
+            help="omitted client's info from issue-credential related webhook",
+        )
+        parser.add_argument(
             "--enable-undelivered-queue",
             action="store_true",
             env_var="ACAPY_ENABLE_UNDELIVERED_QUEUE",
@@ -1313,6 +1378,8 @@ class TransportGroup(ArgumentGroup):
             settings["image_url"] = args.image_url
         if args.max_message_size:
             settings["transport.max_message_size"] = args.max_message_size
+        if args.light_weight_webhook:
+            settings["transport.light_weight_webhook"] = True
         if args.max_outbound_retry:
             settings["transport.max_outbound_retry"] = args.max_outbound_retry
         if args.ws_heartbeat_interval:

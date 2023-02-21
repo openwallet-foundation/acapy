@@ -150,7 +150,7 @@ class BaseConnectionManager:
                 routing_keys = [*routing_keys, *mediator_routing_keys]
                 svc_endpoints = [mediation_record.endpoint]
 
-        for (endpoint_index, svc_endpoint) in enumerate(svc_endpoints or []):
+        for endpoint_index, svc_endpoint in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
             service = Service(
                 did_info.did,
@@ -269,16 +269,18 @@ class BaseConnectionManager:
 
         endpoint = first_didcomm_service.service_endpoint
         recipient_keys: List[VerificationMethod] = [
-            doc.dereference(url) for url in first_didcomm_service.recipient_keys
+            await resolver.dereference(self._profile, url, document=doc)
+            for url in first_didcomm_service.recipient_keys
         ]
         routing_keys: List[VerificationMethod] = [
-            doc.dereference(url) for url in first_didcomm_service.routing_keys
+            await resolver.dereference(self._profile, url, document=doc)
+            for url in first_didcomm_service.routing_keys
         ]
 
         for key in [*recipient_keys, *routing_keys]:
             if not isinstance(key, self.SUPPORTED_KEY_TYPES):
                 raise BaseConnectionManagerError(
-                    f"Key type {key.type} is not supported"
+                    f"Key type {type(key).__name__} is not supported"
                 )
 
         return (

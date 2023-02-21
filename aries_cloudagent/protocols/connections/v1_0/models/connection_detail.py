@@ -23,7 +23,7 @@ class DIDDocWrapper(fields.Field):
         """
         return value.serialize()
 
-    def _deserialize(self, value, attr, data, **kwargs):
+    def _deserialize(self, value, attr=None, data=None, **kwargs):
         """
         Deserialize a value into a DIDDoc.
 

@@ -1,7 +1,8 @@
 """Test MediationManager."""
 import logging
-from typing import AsyncIterable, Iterable
+from typing import AsyncGenerator, AsyncIterable, Iterable
 
+from functools import partial
 from asynctest import mock as async_mock
 import pytest
 
@@ -25,6 +26,7 @@ from ..messages.mediate_deny import MediationDeny
 from ..messages.mediate_grant import MediationGrant
 from ..messages.mediate_request import MediationRequest
 from ..models.mediation_record import MediationRecord
+from .....wallet.did_method import DIDMethods
 
 TEST_CONN_ID = "conn-id"
 TEST_THREAD_ID = "thread-id"
@@ -41,7 +43,9 @@ pytestmark = pytest.mark.asyncio
 def profile() -> Iterable[Profile]:
     """Fixture for profile used in tests."""
     # pylint: disable=W0621
-    yield InMemoryProfile.test_profile(bind={EventBus: MockEventBus()})
+    yield InMemoryProfile.test_profile(
+        bind={EventBus: MockEventBus(), DIDMethods: DIDMethods()}
+    )
 
 
 @pytest.fixture
@@ -477,34 +481,6 @@ class TestMediationManager:  # pylint: disable=R0904,W0621
         assert "client_error" in caplog.text
         assert "server_error" in caplog.text
         print(caplog.text)
-
-    async def test_notify_keylist_updated(
-        self, manager: MediationManager, mock_event_bus: MockEventBus
-    ):
-        """test notify_keylist_updated."""
-        response = KeylistUpdateResponse(
-            updated=[
-                KeylistUpdated(
-                    recipient_key=TEST_ROUTE_VERKEY,
-                    action=KeylistUpdateRule.RULE_ADD,
-                    result=KeylistUpdated.RESULT_SUCCESS,
-                ),
-                KeylistUpdated(
-                    recipient_key=TEST_VERKEY,
-                    action=KeylistUpdateRule.RULE_REMOVE,
-                    result=KeylistUpdated.RESULT_SUCCESS,
-                ),
-            ],
-        )
-        response.assign_thread_id(TEST_THREAD_ID)
-        await manager.notify_keylist_updated(TEST_CONN_ID, response)
-        assert mock_event_bus.events
-        assert mock_event_bus.events[0][1].topic == manager.KEYLIST_UPDATED_EVENT
-        assert mock_event_bus.events[0][1].payload == {
-            "connection_id": TEST_CONN_ID,
-            "thread_id": TEST_THREAD_ID,
-            "updated": [result.serialize() for result in response.updated],
-        }
 
     async def test_get_my_keylist(self, session, manager):
         """test_get_my_keylist."""

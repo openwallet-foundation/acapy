@@ -5,7 +5,6 @@ from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import INCLUDE, Schema, fields
 from pydid.verification_method import (
     Ed25519VerificationKey2018,
-    KnownVerificationMethods,
 )
 
 from ...admin.request_context import AdminRequestContext
@@ -85,7 +84,7 @@ async def sign(request: web.BaseRequest):
                 session, doc.get("credential"), doc.get("options"), body.get("verkey")
             )
             response["signed_doc"] = doc_with_proof
-    except (BaseJSONLDMessagingError) as err:
+    except BaseJSONLDMessagingError as err:
         response["error"] = str(err)
     except (WalletError, InjectionError):
         raise web.HTTPForbidden(reason="No wallet available")
@@ -148,7 +147,6 @@ async def verify(request: web.BaseRequest):
                 vmethod = await resolver.dereference(
                     profile,
                     doc["proof"]["verificationMethod"],
-                    cls=KnownVerificationMethods,
                 )
 
                 if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):
