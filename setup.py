@@ -39,6 +39,7 @@ if __name__ == "__main__":
             "askar": parse_requirements("requirements.askar.txt"),
             "indy": parse_requirements("requirements.indy.txt"),
             "bbs": parse_requirements("requirements.bbs.txt"),
+            "anoncreds": parse_requirements("requirements.anoncreds.txt"),
             "uvloop": {"uvloop": "^=0.14.0"},
         },
         python_requires=">=3.6.3",
