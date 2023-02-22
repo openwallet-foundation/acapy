@@ -5,27 +5,36 @@
 Plug-ins are loaded on Aca-Py startup based on the following parameters:
 
 * `--plug-in` - identifies the plug-in library to load
-* `--block-plugin` - identifies plug-ins (includign built-ins) that are *not* to be loaded
+* `--block-plugin` - identifies plug-ins (including built-ins) that are *not* to be loaded
 * `--plugin-config` - identify a configuration parameter for a plug-in
 * `--plugin-config-value` - identify a *value* for a plug-in configuration
 
 
 The `--plug-in` parameter specifies a package that is loaded by Aca-Py at runtime, and extends Aca-Py by adding support for additional protocols and message types, and/or extending the Admin API with additional endpoints.
 
-The original plug-in design (which we will call the "old" model) explicitely indluded `message_types.py` `routes.py` (to add Admin API's).  But functionality was added later (we'll call this the "new" model) to allow the plug-in to include a generic `setup` package that could perform arbitrary initialization.  The "new" model also includes support for a `definition.py` file that can specify plug-in version information  (major/minor plug-in version, as well as the minimum supported version (if another agent is running an older version of the plug-in)).
+The original plug-in design (which we will call the "old" model) explicitly indluded `message_types.py` `routes.py` (to add Admin API's).  But functionality was added later (we'll call this the "new" model) to allow the plug-in to include a generic `setup` package that could perform arbitrary initialization.  The "new" model also includes support for a `definition.py` file that can specify plug-in version information  (major/minor plug-in version, as well as the minimum supported version (if another agent is running an older version of the plug-in)).
 
-### setup.py
+You can discover which plug-ins are installed in an aca-py instance by calling (in the "server" section) the `GET /plugins` endpoint.  (Note that this will return all loaded protocols, including the built-ins.  You can call the `GET /status/config` to inspect the Aca-Py configuration, which will include the configuration for the *external* plug-ins.)
 
-If a setup method is provided, it will be called.  If not, the `message_types.py` and `routes.py` will be explicitely loaded.
+### setup method
 
-TODO I couldn't find an implementation of a custom `setup` in any of the existing plug-ins, so I'm not completly sure what are the best practices for this option.
+If a setup method is provided, it will be called.  If not, the `message_types.py` and `routes.py` will be explicitly loaded.
+
+This would be in the `package/module __init__.py`:
+
+```
+async def setup(context: InjectionContext):
+    pass
+```
+
+TODO I couldn't find an implementation of a custom `setup` in any of the existing plug-ins, so I'm not completely sure what are the best practices for this option.
 
 ### message_types.py
 
 When loading a plug-in, if there is a `message_types.py` available, Aca-Py will check the following attributes to initialize the protocol(s):
 
 - `MESSAGE_TYPES` - identifies message types supported by the protocol
-- `CONTRROLLERS` - identifies protocol controllers
+- `CONTROLLERS` - identifies protocol controllers
 
 ### routes.py
 
