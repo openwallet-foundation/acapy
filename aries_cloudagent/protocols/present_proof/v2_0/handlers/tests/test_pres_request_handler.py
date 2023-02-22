@@ -2,7 +2,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from copy import deepcopy
 
 from ......core.oob_processor import OobMessageProcessor
-from ......indy.holder import IndyHolder
+from ......anoncreds.holder import AnonCredsHolder
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
@@ -339,7 +339,7 @@ class TestPresRequestHandler(AsyncTestCase):
                 )
             )
         )
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
         request_context.injector.bind_instance(OobMessageProcessor, mock_oob_processor)
 
         with async_mock.patch.object(
@@ -356,7 +356,7 @@ class TestPresRequestHandler(AsyncTestCase):
             )
 
             mock_pres_mgr.return_value.create_pres = async_mock.CoroutineMock(
-                side_effect=test_module.IndyHolderError()
+                side_effect=test_module.AnonCredsHolderError()
             )
 
             request_context.connection_ready = True
@@ -409,7 +409,7 @@ class TestPresRequestHandler(AsyncTestCase):
                 )
             )
         )
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
@@ -553,7 +553,7 @@ class TestPresRequestHandler(AsyncTestCase):
                 )
             )
         )
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
@@ -627,7 +627,7 @@ class TestPresRequestHandler(AsyncTestCase):
                 async_mock.CoroutineMock(return_value=[])
             )
         )
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
@@ -691,7 +691,7 @@ class TestPresRequestHandler(AsyncTestCase):
                 )
             )
         )
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
@@ -762,7 +762,7 @@ class TestPresRequestHandler(AsyncTestCase):
                 )
             )
         )
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         with async_mock.patch.object(
             test_module, "V20PresManager", autospec=True
@@ -874,7 +874,7 @@ class TestPresRequestHandler(AsyncTestCase):
                 )
             )
         )
-        request_context.injector.bind_instance(IndyHolder, mock_holder)
+        request_context.injector.bind_instance(AnonCredsHolder, mock_holder)
 
         px_rec_instance = test_module.V20PresExRecord(
             pres_proposal=pres_proposal.serialize(),

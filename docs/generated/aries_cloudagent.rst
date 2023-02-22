@@ -21,7 +21,7 @@ Subpackages
    aries_cloudagent.core
    aries_cloudagent.did
    aries_cloudagent.holder
-   aries_cloudagent.indy
+   aries_cloudagent.anoncreds
    aries_cloudagent.ledger
    aries_cloudagent.messaging
    aries_cloudagent.multitenant

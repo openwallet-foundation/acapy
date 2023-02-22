@@ -8,7 +8,7 @@ from ...out_of_band.v1_0.models.oob_record import OobRecord
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....indy.verifier import IndyVerifier
+from ....anoncreds.verifier import AnonCredsVerifier
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError
@@ -418,7 +418,7 @@ class PresentationManager:
             rev_reg_entries,
         ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
 
-        verifier = self._profile.inject(IndyVerifier)
+        verifier = self._profile.inject(AnonCredsVerifier)
         (verified_bool, verified_msgs) = await verifier.verify_presentation(
             dict(
                 indy_proof_request

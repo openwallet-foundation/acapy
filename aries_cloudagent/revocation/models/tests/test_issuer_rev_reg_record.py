@@ -5,9 +5,9 @@ from os.path import join
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....core.in_memory import InMemoryProfile
-from ....indy.issuer import IndyIssuer, IndyIssuerError
-from ....indy.models.revocation import IndyRevRegDef
-from ....indy.util import indy_client_dir
+from ....anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ....anoncreds.models.revocation import IndyRevRegDef
+from ....anoncreds.util import indy_client_dir
 from ....ledger.base import BaseLedger
 from ....tails.base import BaseTailsServer
 
@@ -85,13 +85,13 @@ class TestIssuerRevRegRecord(AsyncTestCase):
             cred_def_id=CRED_DEF_ID,
             revoc_reg_id=REV_REG_ID,
         )
-        issuer = async_mock.MagicMock(IndyIssuer)
-        self.profile.context.injector.bind_instance(IndyIssuer, issuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
+        self.profile.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
         with async_mock.patch.object(
             issuer, "create_and_store_revocation_registry", async_mock.CoroutineMock()
         ) as mock_create_store_rr:
-            mock_create_store_rr.side_effect = IndyIssuerError("Not this time")
+            mock_create_store_rr.side_effect = AnonCredsIssuerError("Not this time")
 
             with self.assertRaises(RevocationError):
                 await rec.generate_registry(self.profile)

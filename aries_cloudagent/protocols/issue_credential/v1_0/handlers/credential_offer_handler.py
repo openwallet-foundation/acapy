@@ -3,7 +3,7 @@
 
 from .....wallet.util import default_did_from_verkey
 from .....core.oob_processor import OobMessageProcessor
-from .....indy.holder import IndyHolderError
+from .....anoncreds.holder import AnonCredsHolderError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -95,7 +95,7 @@ class CredentialOfferHandler(BaseHandler):
             except (
                 BaseModelError,
                 CredentialManagerError,
-                IndyHolderError,
+                AnonCredsHolderError,
                 LedgerError,
                 StorageError,
             ) as err:

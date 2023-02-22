@@ -14,12 +14,12 @@ from marshmallow import fields, validate
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
-from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.models.cred_precis import IndyCredPrecisSchema
-from ....indy.models.proof import IndyPresSpecSchema
-from ....indy.models.proof_request import IndyProofRequestSchema
-from ....indy.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
-from ....indy.util import generate_pr_nonce
+from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....anoncreds.models.cred_precis import IndyCredPrecisSchema
+from ....anoncreds.models.proof import IndyPresSpecSchema
+from ....anoncreds.models.proof_request import IndyProofRequestSchema
+from ....anoncreds.models.pres_preview import IndyPresPreview, IndyPresPreviewSchema
+from ....anoncreds.util import generate_pr_nonce
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
@@ -340,7 +340,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    holder = profile.inject(IndyHolder)
+    holder = profile.inject(AnonCredsHolder)
     try:
         credentials = await holder.get_credentials_for_presentation_request_by_referent(
             pres_ex_record._presentation_request.ser,
@@ -349,7 +349,7 @@ async def presentation_exchange_credentials_list(request: web.BaseRequest):
             count,
             extra_query,
         )
-    except IndyHolderError as err:
+    except AnonCredsHolderError as err:
         if pres_ex_record:
             async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
@@ -782,7 +782,7 @@ async def presentation_exchange_send_presentation(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (
         BaseModelError,
-        IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         StorageError,
         WalletNotFoundError,

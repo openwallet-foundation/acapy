@@ -106,7 +106,7 @@ class TestCredentialOfferHandler(AsyncTestCase):
                 )
             )
             mock_cred_mgr.return_value.create_request = async_mock.CoroutineMock(
-                side_effect=test_module.IndyHolderError()
+                side_effect=test_module.AnonCredsHolderError()
             )
 
             request_context.message = CredentialOffer()

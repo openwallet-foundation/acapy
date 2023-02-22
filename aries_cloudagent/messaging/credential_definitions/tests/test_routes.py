@@ -3,7 +3,7 @@ from asynctest import mock as async_mock
 
 from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
-from ....indy.issuer import IndyIssuer
+from ....anoncreds.issuer import AnonCredsIssuer
 from ....ledger.base import BaseLedger
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
@@ -40,8 +40,8 @@ class TestCredentialDefinitionRoutes(AsyncTestCase):
         )
         self.profile_injector.bind_instance(BaseLedger, self.ledger)
 
-        self.issuer = async_mock.create_autospec(IndyIssuer)
-        self.profile_injector.bind_instance(IndyIssuer, self.issuer)
+        self.issuer = async_mock.create_autospec(AnonCredsIssuer)
+        self.profile_injector.bind_instance(AnonCredsIssuer, self.issuer)
 
         self.storage = async_mock.create_autospec(BaseStorage)
         self.storage.find_all_records = async_mock.CoroutineMock(

@@ -1,7 +1,7 @@
 """Credential request message handler."""
 
 from .....core.oob_processor import OobMessageProcessor
-from .....indy.issuer import IndyIssuerError
+from .....anoncreds.issuer import AnonCredsIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -84,7 +84,7 @@ class CredentialRequestHandler(BaseHandler):
                 except (
                     BaseModelError,
                     CredentialManagerError,
-                    IndyIssuerError,
+                    AnonCredsIssuerError,
                     LedgerError,
                     StorageError,
                 ) as err:

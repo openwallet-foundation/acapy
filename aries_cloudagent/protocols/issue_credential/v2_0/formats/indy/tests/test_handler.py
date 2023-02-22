@@ -16,14 +16,14 @@ from .......ledger.multiple_ledger.ledger_requests_executor import (
 )
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
-from .......indy.issuer import IndyIssuer
+from .......anoncreds.issuer import AnonCredsIssuer
 from .......cache.in_memory import InMemoryCache
 from .......cache.base import BaseCache
 from .......storage.record import StorageRecord
 from .......storage.error import StorageNotFoundError
 from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .......messaging.decorators.attach_decorator import AttachDecorator
-from .......indy.holder import IndyHolder
+from .......anoncreds.holder import AnonCredsHolder
 from ....models.detail.indy import V20CredExRecordIndy
 from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_format import V20CredFormat
@@ -233,12 +233,12 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         self.context.injector.bind_instance(BaseCache, self.cache)
 
         # Issuer
-        self.issuer = async_mock.MagicMock(IndyIssuer, autospec=True)
-        self.context.injector.bind_instance(IndyIssuer, self.issuer)
+        self.issuer = async_mock.MagicMock(AnonCredsIssuer, autospec=True)
+        self.context.injector.bind_instance(AnonCredsIssuer, self.issuer)
 
         # Holder
-        self.holder = async_mock.MagicMock(IndyHolder, autospec=True)
-        self.context.injector.bind_instance(IndyHolder, self.holder)
+        self.holder = async_mock.MagicMock(AnonCredsHolder, autospec=True)
+        self.context.injector.bind_instance(AnonCredsHolder, self.holder)
 
         self.handler = IndyCredFormatHandler(self.profile)
         assert self.handler.profile
@@ -1044,7 +1044,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         self.issuer.create_credential = async_mock.CoroutineMock(
-            side_effect=test_module.IndyIssuerRevocationRegistryFullError("Nope")
+            side_effect=test_module.AnonCredsIssuerRevocationRegistryFullError("Nope")
         )
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True
@@ -1263,7 +1263,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
 
         cred_id = "cred-id"
         self.holder.store_credential = async_mock.CoroutineMock(
-            side_effect=test_module.IndyHolderError("Problem", {"message": "Nope"})
+            side_effect=test_module.AnonCredsHolderError("Problem", {"message": "Nope"})
         )
 
         with async_mock.patch.object(
@@ -1278,6 +1278,6 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
             mock_rev_reg.return_value = async_mock.MagicMock(
                 get_or_fetch_local_tails_path=async_mock.CoroutineMock()
             )
-            with self.assertRaises(test_module.IndyHolderError) as context:
+            with self.assertRaises(test_module.AnonCredsHolderError) as context:
                 await self.handler.store_credential(stored_cx_rec, cred_id)
             assert "Nope" in str(context.exception)

@@ -7,8 +7,8 @@ from typing import Any, Mapping, Optional, Union
 from marshmallow import fields, validate
 
 from .....core.profile import ProfileSession
-from .....indy.models.proof import IndyProof, IndyProofSchema
-from .....indy.models.proof_request import IndyProofRequest, IndyProofRequestSchema
+from .....anoncreds.models.proof import IndyProof, IndyProofSchema
+from .....anoncreds.models.proof_request import IndyProofRequest, IndyProofRequestSchema
 from .....messaging.models.base_record import BaseExchangeRecord, BaseExchangeSchema
 from .....messaging.valid import UUIDFour
 from .....storage.base import StorageError

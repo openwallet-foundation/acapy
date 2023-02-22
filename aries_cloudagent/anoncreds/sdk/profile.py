@@ -18,7 +18,7 @@ from ...wallet.base import BaseWallet
 from ...wallet.indy import IndySdkWallet
 
 from ..holder import AnonCredsHolder
-from ..issuer import IndyIssuer
+from ..issuer import AnonCredsIssuer
 from ..verifier import AnonCredsVerifier
 
 from .wallet_setup import IndyWalletConfig, IndyOpenWallet
@@ -75,12 +75,14 @@ class IndySdkProfile(Profile):
         injector.bind_provider(
             AnonCredsHolder,
             ClassProvider(
-                "aries_cloudagent.indy.sdk.holder.IndySdkHolder", self.opened
+                "aries_cloudagent.anoncreds.sdk.holder.IndySdkHolder", self.opened
             ),
         )
         injector.bind_provider(
-            IndyIssuer,
-            ClassProvider("aries_cloudagent.indy.sdk.issuer.IndySdkIssuer", ref(self)),
+            AnonCredsIssuer,
+            ClassProvider(
+                "aries_cloudagent.anoncreds.sdk.issuer.IndySdkIssuer", ref(self)
+            ),
         )
 
         injector.bind_provider(
@@ -98,7 +100,7 @@ class IndySdkProfile(Profile):
             injector.bind_provider(
                 AnonCredsVerifier,
                 ClassProvider(
-                    "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                    "aries_cloudagent.anoncreds.sdk.verifier.IndySdkVerifier",
                     ref(self),
                 ),
             )

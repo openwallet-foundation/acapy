@@ -13,14 +13,14 @@ from urllib.parse import urlparse
 from marshmallow import fields, validate
 
 from ...core.profile import Profile, ProfileSession
-from ...indy.issuer import IndyIssuer, IndyIssuerError
-from ...indy.models.revocation import (
+from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ...anoncreds.models.revocation import (
     IndyRevRegDef,
     IndyRevRegDefSchema,
     IndyRevRegEntry,
     IndyRevRegEntrySchema,
 )
-from ...indy.util import indy_client_dir
+from ...anoncreds.util import indy_client_dir
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError, LedgerTransactionError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
@@ -181,7 +181,7 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        issuer = profile.inject(IndyIssuer)
+        issuer = profile.inject(AnonCredsIssuer)
         tails_hopper_dir = indy_client_dir(join("tails", ".hopper"), create=True)
 
         LOGGER.debug("Creating revocation registry with size: %d", self.max_cred_num)
@@ -199,7 +199,7 @@ class IssuerRevRegRecord(BaseRecord):
                 self.max_cred_num,
                 tails_hopper_dir,
             )
-        except IndyIssuerError as err:
+        except AnonCredsIssuerError as err:
             raise RevocationError() from err
 
         if self.revoc_reg_id and revoc_reg_id != self.revoc_reg_id:

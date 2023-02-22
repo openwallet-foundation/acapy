@@ -6,7 +6,7 @@ from unittest import TestCase
 
 import pytest
 
-from ....indy.sdk.wallet_setup import IndyWalletConfig
+from ....anoncreds.sdk.wallet_setup import IndyWalletConfig
 from ....messaging.models.base import BaseModelError
 from ....wallet.did_method import SOV
 from ....wallet.indy import IndySdkWallet

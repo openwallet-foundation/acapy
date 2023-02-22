@@ -16,8 +16,8 @@ from ....wallet.util import default_did_from_verkey
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
-from ....indy.holder import IndyHolderError
-from ....indy.issuer import IndyIssuerError
+from ....anoncreds.holder import AnonCredsHolderError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import CRED_DEF_TAGS
 from ....messaging.models.base import BaseModelError
@@ -741,7 +741,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     except (
         BaseModelError,
         CredentialManagerError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
     ) as err:
@@ -923,7 +923,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     except (
         BaseModelError,
         CredentialManagerError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
     ) as err:
@@ -1025,7 +1025,7 @@ async def credential_exchange_send_request(request: web.BaseRequest):
     except (
         BaseModelError,
         CredentialManagerError,
-        IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         StorageError,
     ) as err:
@@ -1121,7 +1121,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     except (
         BaseModelError,
         CredentialManagerError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
     ) as err:
@@ -1216,7 +1216,7 @@ async def credential_exchange_store(request: web.BaseRequest):
 
     except (
         CredentialManagerError,
-        IndyHolderError,
+        AnonCredsHolderError,
         StorageError,
     ) as err:  # treat failure to store as mangled on receipt hence protocol error
         if cred_ex_record:

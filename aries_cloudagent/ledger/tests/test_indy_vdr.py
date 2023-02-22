@@ -7,7 +7,7 @@ from asynctest import mock as async_mock
 import indy_vdr
 
 from ...core.in_memory import InMemoryProfile
-from ...indy.issuer import IndyIssuer
+from ...anoncreds.issuer import AnonCredsIssuer
 from ...wallet.base import BaseWallet
 from ...wallet.key_type import KeyType, ED25519
 from ...wallet.did_method import SOV, DIDMethods
@@ -202,7 +202,7 @@ class TestIndyVdrLedger:
     ):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
             r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
@@ -249,7 +249,7 @@ class TestIndyVdrLedger:
         self,
         ledger: IndyVdrLedger,
     ):
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
         async with ledger:
             with pytest.raises(BadLedgerRequestError):
                 schema_id, schema_def = await ledger.create_and_send_schema(
@@ -263,7 +263,7 @@ class TestIndyVdrLedger:
     ):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
             r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
@@ -293,7 +293,7 @@ class TestIndyVdrLedger:
     ):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
             r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
@@ -322,7 +322,7 @@ class TestIndyVdrLedger:
     ):
         wallet = (await ledger.profile.session()).wallet
         test_did = await wallet.create_public_did(SOV, ED25519)
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
         issuer.create_schema.return_value = (
             "schema_issuer_did:schema_name:9.1",
             r'{"ver": "1.0", "id": "schema_issuer_did:schema_name:9.1", "name": "schema_name", "version": "9.1", "attrNames": ["a", "b"]}',
@@ -401,7 +401,7 @@ class TestIndyVdrLedger:
                 }
             },
         }
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
         issuer.make_credential_definition_id.return_value = cred_def_id
         issuer.credential_definition_in_wallet.return_value = False
         issuer.create_and_store_credential_definition.return_value = (
@@ -438,7 +438,7 @@ class TestIndyVdrLedger:
         self,
         ledger: IndyVdrLedger,
     ):
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
         async with ledger:
             with pytest.raises(BadLedgerRequestError):
                 await ledger.create_and_send_credential_definition(
@@ -449,7 +449,7 @@ class TestIndyVdrLedger:
     async def test_send_credential_definition_no_such_schema(
         self, ledger: IndyVdrLedger
     ):
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
         async with ledger:
             ledger.pool_handle.submit_request.return_value = {}
             with pytest.raises(BadLedgerRequestError):
@@ -459,7 +459,7 @@ class TestIndyVdrLedger:
 
     @pytest.mark.asyncio
     async def test_send_credential_definition_read_only(self, ledger: IndyVdrLedger):
-        issuer = async_mock.MagicMock(IndyIssuer)
+        issuer = async_mock.MagicMock(AnonCredsIssuer)
         async with ledger:
             ledger.pool.read_only = True
             with pytest.raises(LedgerError):

@@ -147,7 +147,7 @@ class Conductor:
                     context.injector.bind_provider(
                         AnonCredsVerifier,
                         ClassProvider(
-                            "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                            "aries_cloudagent.anoncreds.credx.verifier.IndyCredxVerifier",
                             self.root_profile,
                         ),
                     )
@@ -158,7 +158,7 @@ class Conductor:
                     context.injector.bind_provider(
                         AnonCredsVerifier,
                         ClassProvider(
-                            "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                            "aries_cloudagent.anoncreds.sdk.verifier.IndySdkVerifier",
                             self.root_profile,
                         ),
                     )

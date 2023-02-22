@@ -8,11 +8,14 @@ from typing import Mapping, Tuple
 import asyncio
 
 from ......cache.base import BaseCache
-from ......indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
-from ......indy.holder import IndyHolder, IndyHolderError
-from ......indy.models.cred import IndyCredentialSchema
-from ......indy.models.cred_request import IndyCredRequestSchema
-from ......indy.models.cred_abstract import IndyCredAbstractSchema
+from ......anoncreds.issuer import (
+    AnonCredsIssuer,
+    AnonCredsIssuerRevocationRegistryFullError,
+)
+from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ......anoncreds.models.cred import IndyCredentialSchema
+from ......anoncreds.models.cred_request import IndyCredRequestSchema
+from ......anoncreds.models.cred_abstract import IndyCredAbstractSchema
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
@@ -188,7 +191,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
 
-        issuer = self.profile.inject(IndyIssuer)
+        issuer = self.profile.inject(AnonCredsIssuer)
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
@@ -279,7 +282,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             async with ledger:
                 cred_def = await ledger.get_credential_definition(cred_def_id)
 
-            holder = self.profile.inject(IndyHolder)
+            holder = self.profile.inject(AnonCredsHolder)
             request_json, metadata_json = await holder.create_credential_request(
                 cred_offer, cred_def, holder_did
             )
@@ -337,7 +340,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
 
-        issuer = self.profile.inject(IndyIssuer)
+        issuer = self.profile.inject(AnonCredsIssuer)
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
@@ -385,7 +388,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     rev_reg_id,
                     tails_path,
                 )
-            except IndyIssuerRevocationRegistryFullError:
+            except AnonCredsIssuerRevocationRegistryFullError:
                 # unlucky, another instance filled the registry first
                 continue
 
@@ -460,7 +463,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             if cred.get("rev_reg_id"):
                 rev_reg_def = await ledger.get_revoc_reg_def(cred["rev_reg_id"])
 
-        holder = self.profile.inject(IndyHolder)
+        holder = self.profile.inject(AnonCredsHolder)
         cred_offer_message = cred_ex_record.cred_offer
         mime_types = None
         if cred_offer_message and cred_offer_message.credential_preview:
@@ -494,6 +497,6 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 await detail_record.save(
                     session, reason="store credential v2.0", event=True
                 )
-        except IndyHolderError as e:
+        except AnonCredsHolderError as e:
             LOGGER.error(f"Error storing credential: {e.error_code} - {e.message}")
             raise e

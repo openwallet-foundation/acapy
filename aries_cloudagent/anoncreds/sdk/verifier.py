@@ -18,7 +18,7 @@ class IndySdkVerifier(AnonCredsVerifier):
 
     def __init__(self, profile: Profile):
         """
-        Initialize an IndyVerifier instance.
+        Initialize an AnonCredsVerifier instance.
 
         Args:
             profile: Active Profile instance

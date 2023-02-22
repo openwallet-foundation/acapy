@@ -10,8 +10,11 @@ from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.issuer import IndyIssuer, IndyIssuerRevocationRegistryFullError
+from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....anoncreds.issuer import (
+    AnonCredsIssuer,
+    AnonCredsIssuerRevocationRegistryFullError,
+)
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     GET_SCHEMA,
@@ -245,7 +248,7 @@ class CredentialManager:
         """
 
         async def _create(cred_def_id):
-            issuer = self._profile.inject(IndyIssuer)
+            issuer = self._profile.inject(AnonCredsIssuer)
             offer_json = await issuer.create_credential_offer(cred_def_id)
             return json.loads(offer_json)
 
@@ -356,15 +359,13 @@ class CredentialManager:
             # Get credential exchange record (holder sent proposal first)
             # or create it (issuer sent offer first)
             try:
-                cred_ex_record = (
-                    await (
-                        V10CredentialExchange.retrieve_by_connection_and_thread(
-                            txn,
-                            connection_id,
-                            message._thread_id,
-                            role=V10CredentialExchange.ROLE_HOLDER,
-                            for_update=True,
-                        )
+                cred_ex_record = await (
+                    V10CredentialExchange.retrieve_by_connection_and_thread(
+                        txn,
+                        connection_id,
+                        message._thread_id,
+                        role=V10CredentialExchange.ROLE_HOLDER,
+                        for_update=True,
                     )
                 )
             except StorageNotFoundError:  # issuer sent this offer free of any proposal
@@ -435,7 +436,7 @@ class CredentialManager:
                     credential_definition_id
                 )
 
-            holder = self._profile.inject(IndyHolder)
+            holder = self._profile.inject(AnonCredsHolder)
             request_json, metadata_json = await holder.create_credential_request(
                 cred_offer_ser,
                 credential_definition,
@@ -534,15 +535,13 @@ class CredentialManager:
 
         async with self._profile.transaction() as txn:
             try:
-                cred_ex_record = (
-                    await (
-                        V10CredentialExchange.retrieve_by_connection_and_thread(
-                            txn,
-                            connection_id,
-                            message._thread_id,
-                            role=V10CredentialExchange.ROLE_ISSUER,
-                            for_update=True,
-                        )
+                cred_ex_record = await (
+                    V10CredentialExchange.retrieve_by_connection_and_thread(
+                        txn,
+                        connection_id,
+                        message._thread_id,
+                        role=V10CredentialExchange.ROLE_ISSUER,
+                        for_update=True,
                     )
                 )
             except StorageNotFoundError:
@@ -614,7 +613,7 @@ class CredentialManager:
             schema_id = cred_ex_record.schema_id
             cred_def_id = cred_ex_record.credential_definition_id
 
-            issuer = self.profile.inject(IndyIssuer)
+            issuer = self.profile.inject(AnonCredsIssuer)
             multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
                 ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
@@ -666,7 +665,7 @@ class CredentialManager:
                         rev_reg_id,
                         tails_path,
                     )
-                except IndyIssuerRevocationRegistryFullError:
+                except AnonCredsIssuerRevocationRegistryFullError:
                     # unlucky, another instance filled the registry first
                     continue
 
@@ -745,15 +744,13 @@ class CredentialManager:
 
         async with self._profile.transaction() as txn:
             try:
-                cred_ex_record = (
-                    await (
-                        V10CredentialExchange.retrieve_by_connection_and_thread(
-                            txn,
-                            connection_id,
-                            message._thread_id,
-                            role=V10CredentialExchange.ROLE_HOLDER,
-                            for_update=True,
-                        )
+                cred_ex_record = await (
+                    V10CredentialExchange.retrieve_by_connection_and_thread(
+                        txn,
+                        connection_id,
+                        message._thread_id,
+                        role=V10CredentialExchange.ROLE_HOLDER,
+                        for_update=True,
                     )
                 )
             except StorageNotFoundError:
@@ -818,7 +815,7 @@ class CredentialManager:
                     raw_cred_serde.de.rev_reg_id
                 )
 
-        holder = self._profile.inject(IndyHolder)
+        holder = self._profile.inject(AnonCredsHolder)
         if (
             cred_ex_record.credential_proposal_dict
             and cred_ex_record.credential_proposal_dict.credential_proposal
@@ -841,7 +838,7 @@ class CredentialManager:
                 credential_id=credential_id,
                 rev_reg_def=revoc_reg_def,
             )
-        except IndyHolderError as e:
+        except AnonCredsHolderError as e:
             LOGGER.error("Error storing credential: %s: %s", e.error_code, e.message)
             raise e
 
@@ -953,15 +950,13 @@ class CredentialManager:
         """
         async with self._profile.transaction() as txn:
             try:
-                cred_ex_record = (
-                    await (
-                        V10CredentialExchange.retrieve_by_connection_and_thread(
-                            txn,
-                            connection_id,
-                            message._thread_id,
-                            role=V10CredentialExchange.ROLE_ISSUER,
-                            for_update=True,
-                        )
+                cred_ex_record = await (
+                    V10CredentialExchange.retrieve_by_connection_and_thread(
+                        txn,
+                        connection_id,
+                        message._thread_id,
+                        role=V10CredentialExchange.ROLE_ISSUER,
+                        for_update=True,
                     )
                 )
             except StorageNotFoundError:
@@ -995,11 +990,9 @@ class CredentialManager:
         """
         async with self._profile.transaction() as txn:
             try:
-                cred_ex_record = (
-                    await (
-                        V10CredentialExchange.retrieve_by_connection_and_thread(
-                            txn, connection_id, message._thread_id, for_update=True
-                        )
+                cred_ex_record = await (
+                    V10CredentialExchange.retrieve_by_connection_and_thread(
+                        txn, connection_id, message._thread_id, for_update=True
                     )
                 )
             except StorageNotFoundError:

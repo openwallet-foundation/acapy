@@ -11,8 +11,8 @@ from indy.error import (
 )
 
 from ....config.injection_context import InjectionContext
-from ....indy.sdk.profile import IndySdkProfile
-from ....indy.sdk.wallet_setup import IndyWalletConfig
+from ....anoncreds.sdk.profile import IndySdkProfile
+from ....anoncreds.sdk.wallet_setup import IndyWalletConfig
 from ....wallet.indy import IndySdkWallet
 from ....ledger.indy import IndySdkLedgerPool
 

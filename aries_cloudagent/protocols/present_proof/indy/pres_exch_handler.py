@@ -7,8 +7,8 @@ from typing import Union, Tuple
 
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.models.xform import indy_proof_req2non_revoc_intervals
+from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....anoncreds.models.xform import indy_proof_req2non_revoc_intervals
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     GET_SCHEMA,
     GET_REVOC_REG_DELTA,
@@ -46,7 +46,7 @@ class IndyPresExchHandler:
     ) -> dict:
         """Return Indy proof request as dict."""
         # Get all credentials for this presentation
-        holder = self._profile.inject(IndyHolder)
+        holder = self._profile.inject(AnonCredsHolder)
         credentials = {}
 
         # extract credential ids and non_revoked
@@ -189,7 +189,7 @@ class IndyPresExchHandler:
                         tails_local_path,
                     )
                 )
-            except IndyHolderError as e:
+            except AnonCredsHolderError as e:
                 LOGGER.error(
                     f"Failed to create revocation state: {e.error_code}, {e.message}"
                 )

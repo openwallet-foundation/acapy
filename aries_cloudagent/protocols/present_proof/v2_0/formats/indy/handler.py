@@ -6,13 +6,13 @@ import logging
 from marshmallow import RAISE
 from typing import Mapping, Tuple
 
-from ......indy.holder import IndyHolder
-from ......indy.models.predicate import Predicate
-from ......indy.models.proof import IndyProofSchema
-from ......indy.models.proof_request import IndyProofRequestSchema
-from ......indy.models.xform import indy_proof_req_preview2indy_requested_creds
-from ......indy.util import generate_pr_nonce
-from ......indy.verifier import IndyVerifier
+from ......anoncreds.holder import AnonCredsHolder
+from ......anoncreds.models.predicate import Predicate
+from ......anoncreds.models.proof import IndyProofSchema
+from ......anoncreds.models.proof_request import IndyProofRequestSchema
+from ......anoncreds.models.xform import indy_proof_req_preview2indy_requested_creds
+from ......anoncreds.util import generate_pr_nonce
+from ......anoncreds.verifier import AnonCredsVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
 
@@ -143,7 +143,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                     await indy_proof_req_preview2indy_requested_creds(
                         indy_proof_request,
                         preview=None,
-                        holder=self._profile.inject(IndyHolder),
+                        holder=self._profile.inject(AnonCredsHolder),
                     )
                 )
             except ValueError as err:
@@ -328,7 +328,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             rev_reg_entries,
         ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
 
-        verifier = self._profile.inject(IndyVerifier)
+        verifier = self._profile.inject(AnonCredsVerifier)
         (verified, verified_msgs) = await verifier.verify_presentation(
             indy_proof_request,
             indy_proof,

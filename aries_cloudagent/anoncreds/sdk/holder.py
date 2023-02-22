@@ -10,7 +10,7 @@ from typing import Sequence, Tuple, Union
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
 
-from ...indy.sdk.wallet_setup import IndyOpenWallet
+from ...anoncreds.sdk.wallet_setup import IndyOpenWallet
 from ...ledger.base import BaseLedger
 from ...storage.indy import IndySdkStorage
 from ...storage.error import StorageError, StorageNotFoundError
@@ -30,7 +30,7 @@ class IndySdkHolder(AnonCredsHolder):
 
     def __init__(self, wallet: IndyOpenWallet):
         """
-        Initialize an IndyHolder instance.
+        Initialize an AnonCredsHolder instance.
 
         Args:
             wallet: IndyOpenWallet instance

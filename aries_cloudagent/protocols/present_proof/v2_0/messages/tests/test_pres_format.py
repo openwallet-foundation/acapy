@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from marshmallow import ValidationError
 
-from ......indy.models.pres_preview import (
+from ......anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,

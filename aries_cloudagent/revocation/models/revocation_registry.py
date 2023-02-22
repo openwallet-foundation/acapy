@@ -10,7 +10,7 @@ from pathlib import Path
 from requests import Session
 from requests.exceptions import RequestException
 
-from ...indy.util import indy_client_dir
+from ...anoncreds.util import indy_client_dir
 
 from ..error import RevocationError
 import hashlib

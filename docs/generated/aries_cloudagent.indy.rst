@@ -1,7 +1,7 @@
 aries\_cloudagent.indy package
 ==============================
 
-.. automodule:: aries_cloudagent.indy
+.. automodule:: aries_cloudagent.anoncreds
    :members:
    :undoc-members:
    :show-inheritance:
@@ -12,9 +12,9 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   aries_cloudagent.indy.credx
-   aries_cloudagent.indy.models
-   aries_cloudagent.indy.sdk
+   aries_cloudagent.anoncreds.credx
+   aries_cloudagent.anoncreds.models
+   aries_cloudagent.anoncreds.sdk
 
 Submodules
 ----------
@@ -22,7 +22,7 @@ Submodules
 aries\_cloudagent.indy.holder module
 ------------------------------------
 
-.. automodule:: aries_cloudagent.indy.holder
+.. automodule:: aries_cloudagent.anoncreds.holder
    :members:
    :undoc-members:
    :show-inheritance:
@@ -30,7 +30,7 @@ aries\_cloudagent.indy.holder module
 aries\_cloudagent.indy.issuer module
 ------------------------------------
 
-.. automodule:: aries_cloudagent.indy.issuer
+.. automodule:: aries_cloudagent.anoncreds.issuer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -38,7 +38,7 @@ aries\_cloudagent.indy.issuer module
 aries\_cloudagent.indy.util module
 ----------------------------------
 
-.. automodule:: aries_cloudagent.indy.util
+.. automodule:: aries_cloudagent.anoncreds.util
    :members:
    :undoc-members:
    :show-inheritance:
@@ -46,7 +46,7 @@ aries\_cloudagent.indy.util module
 aries\_cloudagent.indy.verifier module
 --------------------------------------
 
-.. automodule:: aries_cloudagent.indy.verifier
+.. automodule:: aries_cloudagent.anoncreds.verifier
    :members:
    :undoc-members:
    :show-inheritance:

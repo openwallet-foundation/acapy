@@ -1,6 +1,6 @@
 """Utilities to deal with indy."""
 
-from ...indy.holder import IndyHolder
+from ...anoncreds.holder import AnonCredsHolder
 
 from .pres_preview import IndyPresPreview
 
@@ -9,7 +9,7 @@ async def indy_proof_req_preview2indy_requested_creds(
     indy_proof_req: dict,
     preview: IndyPresPreview = None,
     *,
-    holder: IndyHolder,
+    holder: AnonCredsHolder,
 ):
     """
     Build indy requested-credentials structure.

@@ -9,7 +9,7 @@ from shutil import rmtree
 
 import base58
 
-from ....indy.util import indy_client_dir
+from ....anoncreds.util import indy_client_dir
 
 from ...error import RevocationError
 

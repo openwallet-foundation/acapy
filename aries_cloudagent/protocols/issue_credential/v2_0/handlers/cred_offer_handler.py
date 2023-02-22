@@ -2,7 +2,7 @@
 
 from .....wallet.util import default_did_from_verkey
 from .....core.oob_processor import OobMessageProcessor
-from .....indy.holder import IndyHolderError
+from .....anoncreds.holder import AnonCredsHolderError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
@@ -89,7 +89,7 @@ class V20CredOfferHandler(BaseHandler):
                 await responder.send_reply(cred_request_message)
             except (
                 BaseModelError,
-                IndyHolderError,
+                AnonCredsHolderError,
                 LedgerError,
                 StorageError,
                 V20CredManagerError,

@@ -306,7 +306,7 @@ class ProfileManagerProvider(BaseProvider):
     MANAGER_TYPES = {
         "askar": "aries_cloudagent.askar.profile.AskarProfileManager",
         "in_memory": "aries_cloudagent.core.in_memory.InMemoryProfileManager",
-        "indy": "aries_cloudagent.indy.sdk.profile.IndySdkProfileManager",
+        "indy": "aries_cloudagent.anoncreds.sdk.profile.IndySdkProfileManager",
     }
 
     def __init__(self):

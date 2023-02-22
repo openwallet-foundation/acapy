@@ -18,7 +18,7 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
 from ....core.util import STARTUP_EVENT_PATTERN, SHUTDOWN_EVENT_PATTERN
-from ....indy.issuer import IndyIssuerError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -355,7 +355,7 @@ async def endorse_transaction_response(request: web.BaseRequest):
             state=TransactionRecord.STATE_TRANSACTION_ENDORSED,
             use_endorser_did=endorser_did,
         )
-    except (IndyIssuerError, LedgerError) as err:
+    except (AnonCredsIssuerError, LedgerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     except (StorageError, TransactionManagerError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

@@ -8,14 +8,14 @@ import indy.anoncreds
 import indy.blob_storage
 from indy.error import AnoncredsRevocationRegistryFullError, IndyError, ErrorCode
 
-from ...indy.sdk.profile import IndySdkProfile
+from ...anoncreds.sdk.profile import IndySdkProfile
 from ...messaging.util import encode
 from ...storage.error import StorageError
 
 from ..issuer import (
     AnonCredsIssuer,
     AnonCredsIssuerError,
-    IndyIssuerRevocationRegistryFullError,
+    AnonCredsIssuerRevocationRegistryFullError,
     DEFAULT_CRED_DEF_TAG,
     DEFAULT_SIGNATURE_TYPE,
 )
@@ -31,7 +31,7 @@ class IndySdkIssuer(AnonCredsIssuer):
 
     def __init__(self, profile: IndySdkProfile):
         """
-        Initialize an IndyIssuer instance.
+        Initialize an AnonCredsIssuer instance.
 
         Args:
             profile: IndySdkProfile instance
@@ -221,7 +221,7 @@ class IndySdkIssuer(AnonCredsIssuer):
                 "Revocation registry %s is full: cannot create credential",
                 rev_reg_id,
             )
-            raise IndyIssuerRevocationRegistryFullError(
+            raise AnonCredsIssuerRevocationRegistryFullError(
                 f"Revocation registry {rev_reg_id} is full"
             )
         except IndyError as err:

@@ -20,8 +20,8 @@ from marshmallow import fields
 from ...admin.request_context import AdminRequestContext
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
-from ...indy.issuer import IndyIssuer, IndyIssuerError
-from ...indy.models.cred_def import CredentialDefinitionSchema
+from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ...anoncreds.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...ledger.multiple_ledger.ledger_requests_executor import (
@@ -248,7 +248,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer = context.inject(IndyIssuer)
+    issuer = context.inject(AnonCredsIssuer)
     try:  # even if in wallet, send it and raise if erroneously so
         async with ledger:
             (cred_def_id, cred_def, novel) = await shield(
@@ -263,7 +263,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
                 )
             )
 
-    except (IndyIssuerError, LedgerError) as e:
+    except (AnonCredsIssuerError, LedgerError) as e:
         raise web.HTTPBadRequest(reason=e.message) from e
 
     issuer_did = cred_def_id.split(":")[0]

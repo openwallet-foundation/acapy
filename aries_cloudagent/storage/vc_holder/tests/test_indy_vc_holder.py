@@ -3,7 +3,7 @@ from asynctest import mock as async_mock
 
 
 from ....config.injection_context import InjectionContext
-from ....indy.sdk.profile import IndySdkProfileManager, IndySdkProfile
+from ....anoncreds.sdk.profile import IndySdkProfileManager, IndySdkProfile
 from ....ledger.indy import IndySdkLedgerPool
 from ....wallet.indy import IndySdkWallet
 
