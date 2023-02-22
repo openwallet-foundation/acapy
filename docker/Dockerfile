@@ -33,7 +33,7 @@ LABEL summary="$SUMMARY" \
     io.k8s.description="$DESCRIPTION" \
     io.k8s.display-name="aries-cloudagent $acapy_version" \
     name="aries-cloudagent" \
-    version="$acapy_version" \
+    acapy.version="$acapy_version" \
     maintainer=""
 
 # Add aries user
@@ -81,19 +81,22 @@ RUN mkdir -p \
     $HOME/ledger/sandbox/data \
     $HOME/log
 
-# The root group needs access the directories under $HOME for the container to function in OpenShift.
-# Also ensure the permissions on the python 'site-packages' folder are set correctly.
-RUN chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache
+# The root group needs access the directories under $HOME/.aries_cloudagent for the container to function in OpenShift.
+RUN chown -R $user:root $HOME/.aries_cloudagent && \
+    chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache
 
+# Install ACA-py from the wheel as $user,
+# and ensure the permissions on the python 'site-packages' and $HOME/.local folders are set correctly.
+USER $user
 COPY --from=build /src/dist/aries_cloudagent*.whl .
-
-# Install ACA-py from the wheel.
 RUN aries_cloudagent_package=$(find ./ -name "aries_cloudagent*.whl" | head -n 1) && \
     echo "Installing ${aries_cloudagent_package} ..." && \
     pip install --no-cache-dir --find-links=. ${aries_cloudagent_package}${acapy_reqs} && \
-    rm aries_cloudagent*.whl
+    rm aries_cloudagent*.whl && \
+    chmod +rx $(python -m site --user-site) $HOME/.local
 
 # Clean-up unneccessary build dependencies and reduce final image size
+USER root
 RUN apt-get purge -y --auto-remove build-essential
 
 USER $user
