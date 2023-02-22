@@ -4,7 +4,7 @@
 
 Plug-ins are loaded on Aca-Py startup based on the following parameters:
 
-* `--plug-in` - identifies the plug-in library to load
+* `--plugin` - identifies the plug-in library to load
 * `--block-plugin` - identifies plug-ins (including built-ins) that are *not* to be loaded
 * `--plugin-config` - identify a configuration parameter for a plug-in
 * `--plugin-config-value` - identify a *value* for a plug-in configuration
