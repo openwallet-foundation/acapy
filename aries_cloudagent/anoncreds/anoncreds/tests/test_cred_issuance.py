@@ -41,7 +41,7 @@ PRES_REQ_REV = {
 
 
 @pytest.mark.askar
-@pytest.mark.indy_credx
+@pytest.mark.anoncreds
 class TestIndyCredxIssuance(AsyncTestCase):
     async def setUp(self):
         context = InjectionContext(enforce_typing=False)

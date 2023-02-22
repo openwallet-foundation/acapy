@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from indy_credx import CredxError, Presentation
+from anoncreds import AnoncredsError, Presentation
 
 from ...core.profile import Profile
 
@@ -73,7 +73,7 @@ class IndyCredxVerifier(AnonCredsVerifier):
                 rev_reg_defs.values(),
                 rev_reg_entries,
             )
-        except CredxError as err:
+        except AnoncredsError as err:
             s = str(err)
             msgs.append(f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{s}")
             LOGGER.exception(

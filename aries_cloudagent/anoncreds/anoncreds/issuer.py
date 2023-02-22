@@ -7,12 +7,12 @@ from typing import Sequence, Tuple
 
 from aries_askar import AskarError
 
-from indy_credx import (
+from anoncreds import (
     Credential,
     CredentialDefinition,
     CredentialOffer,
     CredentialRevocationConfig,
-    CredxError,
+    AnoncredsError,
     RevocationRegistry,
     RevocationRegistryDefinition,
     RevocationRegistryDelta,
@@ -88,7 +88,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
             schema_json = schema.to_json()
             async with self._profile.session() as session:
                 await session.handle.insert(CATEGORY_SCHEMA, schema_id, schema_json)
-        except CredxError as err:
+        except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating schema") from err
         except AskarError as err:
             raise AnonCredsIssuerError("Error storing schema") from err
@@ -154,7 +154,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
             )
             cred_def_id = cred_def.id
             cred_def_json = cred_def.to_json()
-        except CredxError as err:
+        except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating credential definition") from err
         try:
             async with self._profile.transaction() as txn:
@@ -216,7 +216,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                 cred_def,
                 key_proof.raw_value,
             )
-        except CredxError as err:
+        except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating credential offer") from err
 
         return credential_offer.to_json()
@@ -316,7 +316,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                         rev_reg_def = RevocationRegistryDefinition.load(
                             rev_reg_def.raw_value
                         )
-                    except CredxError as err:
+                    except AnoncredsError as err:
                         raise AnonCredsIssuerError(
                             "Error loading revocation registry definition"
                         ) from err
@@ -363,7 +363,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                 None,
                 revoc,
             )
-        except CredxError as err:
+        except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating credential") from err
 
         return credential.to_json(), credential_revocation_id
@@ -422,7 +422,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
 
             try:
                 rev_reg_def = RevocationRegistryDefinition.load(rev_reg_def.raw_value)
-            except CredxError as err:
+            except AnoncredsError as err:
                 raise AnonCredsIssuerError(
                     "Error loading revocation registry definition"
                 ) from err
@@ -467,7 +467,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
 
             try:
                 rev_reg = RevocationRegistry.load(rev_reg.raw_value)
-            except CredxError as err:
+            except AnoncredsError as err:
                 raise AnonCredsIssuerError("Error loading revocation registry") from err
 
             try:
@@ -480,7 +480,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                         tails_file_path,
                     ),
                 )
-            except CredxError as err:
+            except AnoncredsError as err:
                 raise AnonCredsIssuerError(
                     "Error updating revocation registry"
                 ) from err
@@ -542,7 +542,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                 delta = RevocationRegistryDelta.load(d1)
                 delta.update_with(d2)
                 return delta.to_json()
-            except CredxError as err:
+            except AnoncredsError as err:
                 raise AnonCredsIssuerError(
                     "Error merging revocation registry deltas"
                 ) from err
@@ -605,7 +605,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                     tails_dir_path=tails_base_path,
                 ),
             )
-        except CredxError as err:
+        except AnonCredsError as err:
             raise AnonCredsIssuerError("Error creating revocation registry") from err
 
         rev_reg_def_id = rev_reg_def.id
