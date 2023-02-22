@@ -104,7 +104,7 @@ LABEL summary="$SUMMARY" \
     io.k8s.description="$DESCRIPTION" \
     io.k8s.display-name="indy-python $indy_version" \
     name="indy-python" \
-    version="$indy_version" \
+    indy-sdk.version="$indy_version" \
     maintainer=""
 
 # Add indy user
@@ -159,18 +159,17 @@ RUN usermod -a -G 0 $user
 # Create standard directories to allow volume mounting and set permissions
 # Note: PIP_NO_CACHE_DIR environment variable should be cleared to allow caching
 RUN mkdir -p \
+    $HOME/.aries_cloudagent \
     $HOME/.cache/pip/http \
-    $HOME/.indy-cli/networks \
     $HOME/.indy_client/wallet \
     $HOME/.indy_client/pool \
     $HOME/.indy_client/ledger-cache \
     $HOME/ledger/sandbox/data \
     $HOME/log
 
-# The root group needs access the directories under $HOME/.indy_client for the container to function in OpenShift.
-# Also ensure the permissions on the python 'site-packages' folder are set correctly.
-RUN chown -R $user:root $HOME/.indy_client \
-    && chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.cache $HOME/.indy_client
+# The root group needs access the directories under $HOME/.indy_client and $HOME/.aries_cloudagent for the container to function in OpenShift.
+RUN chown -R $user:root $HOME/.indy_client $HOME/.aries_cloudagent && \
+    chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache $HOME/.indy_client
 
 USER $user
 
@@ -193,10 +192,10 @@ ADD requirements*.txt ./
 
 USER root
 RUN pip3 install --no-cache-dir \
-	-r requirements.txt \
-	-r requirements.askar.txt \
-	-r requirements.bbs.txt \
-	-r requirements.dev.txt
+    -r requirements.txt \
+    -r requirements.askar.txt \
+    -r requirements.bbs.txt \
+    -r requirements.dev.txt
 
 ADD --chown=indy:root . .
 USER indy
@@ -243,26 +242,22 @@ LABEL summary="$SUMMARY" \
     io.k8s.description="$DESCRIPTION" \
     io.k8s.display-name="aries-cloudagent $acapy_version" \
     name="aries-cloudagent" \
-    version="$acapy_version" \
+    acapy.version="$acapy_version" \
     maintainer=""
 
-# Create standard directories to allow volume mounting and set permissions
-# Note: PIP_NO_CACHE_DIR environment variable should be cleared to allow caching
-RUN mkdir -p $HOME/.aries_cloudagent
-
-# The root group needs access the directories under $HOME/.indy_client for the container to function in OpenShift.
-# Also ensure the permissions on the python 'site-packages' folder are set correctly.
-RUN chmod -R ug+rw $HOME/.aries_cloudagent
-
+# Install ACA-py from the wheel as $user,
+# and ensure the permissions on the python 'site-packages' folder are set correctly.
 COPY --from=acapy-builder /src/dist/aries_cloudagent*.whl .
-
-# Install ACA-py from the wheel.
 RUN aries_cloudagent_package=$(find ./ -name "aries_cloudagent*.whl" | head -n 1) && \
     echo "Installing ${aries_cloudagent_package} ..." && \
     pip install --no-cache-dir --find-links=. ${aries_cloudagent_package}${acapy_reqs} && \
-    rm aries_cloudagent*.whl
+    rm aries_cloudagent*.whl && \
+    chmod +rx $(python -m site --user-site)
 
 # Clean-up unneccessary build dependencies and reduce final image size
-# RUN apt-get purge -y --auto-remove build-essential
+USER root
+RUN apt-get purge -y --auto-remove build-essential
+
+USER $user
 
 ENTRYPOINT ["aca-py"]
