@@ -16,9 +16,9 @@ from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..core.error import ProfileError
 from ..core.profile import Profile, ProfileManager, ProfileSession
-from ..indy.holder import IndyHolder
-from ..indy.issuer import IndyIssuer
-from ..indy.verifier import IndyVerifier
+from ..anoncreds.holder import IndyHolder
+from ..anoncreds.issuer import IndyIssuer
+from ..anoncreds.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ..storage.base import BaseStorage, BaseStorageSearch

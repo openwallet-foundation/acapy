@@ -13,8 +13,8 @@ import indy.wallet
 from indy.error import IndyError, ErrorCode
 
 from ..did.did_key import DIDKey
-from ..indy.sdk.error import IndyErrorHandler
-from ..indy.sdk.wallet_setup import IndyOpenWallet
+from ..anoncreds.sdk.error import IndyErrorHandler
+from ..anoncreds.sdk.wallet_setup import IndyOpenWallet
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError

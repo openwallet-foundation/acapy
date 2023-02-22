@@ -13,8 +13,8 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
-from ..indy.holder import IndyHolder, IndyHolderError
-from ..indy.models.cred_precis import IndyCredInfoSchema
+from ..anoncreds.holder import IndyHolder, IndyHolderError
+from ..anoncreds.models.cred_precis import IndyCredInfoSchema
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..messaging.models.openapi import OpenAPISchema

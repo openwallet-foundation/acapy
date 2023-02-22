@@ -27,7 +27,7 @@ from ..config.logging import LoggingConfigurator
 from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
-from ..indy.verifier import IndyVerifier
+from ..anoncreds.verifier import IndyVerifier
 
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (

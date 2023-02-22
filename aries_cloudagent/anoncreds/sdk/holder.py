@@ -226,13 +226,11 @@ class IndySdkHolder(IndyHolder):
         with IndyErrorHandler(
             "Error when constructing wallet credential query", IndyHolderError
         ):
-            search_handle = (
-                await (
-                    indy.anoncreds.prover_search_credentials_for_proof_req(
-                        self.wallet.handle,
-                        json.dumps(presentation_request),
-                        json.dumps(extra_query),
-                    )
+            search_handle = await (
+                indy.anoncreds.prover_search_credentials_for_proof_req(
+                    self.wallet.handle,
+                    json.dumps(presentation_request),
+                    json.dumps(extra_query),
                 )
             )
 

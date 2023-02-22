@@ -16,7 +16,7 @@ from indy.error import ErrorCode, IndyError
 
 from ..cache.base import BaseCache
 from ..config.base import BaseInjector, BaseProvider, BaseSettings
-from ..indy.sdk.error import IndyErrorHandler
+from ..anoncreds.sdk.error import IndyErrorHandler
 from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
 from ..utils import sentinel
@@ -37,7 +37,7 @@ from .error import (
 from .util import TAA_ACCEPTED_RECORD_TYPE
 
 if TYPE_CHECKING:
-    from ..indy.sdk.profile import IndySdkProfile
+    from ..anoncreds.sdk.profile import IndySdkProfile
 
 LOGGER = logging.getLogger(__name__)
 

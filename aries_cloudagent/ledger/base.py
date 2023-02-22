@@ -9,7 +9,7 @@ from enum import Enum
 from hashlib import sha256
 from typing import List, Sequence, Tuple, Union
 
-from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
+from ..anoncreds.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
 
