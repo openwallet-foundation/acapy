@@ -13,7 +13,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
-from ..anoncreds.holder import IndyHolder, IndyHolderError
+from ..anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ..anoncreds.models.cred_precis import IndyCredInfoSchema
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
@@ -175,7 +175,7 @@ async def credentials_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    holder = context.profile.inject(IndyHolder)
+    holder = context.profile.inject(AnonCredsHolder)
     try:
         credential = await holder.get_credential(credential_id)
     except WalletNotFoundError as err:
@@ -215,7 +215,7 @@ async def credentials_revoked(request: web.BaseRequest):
 
         async with ledger:
             try:
-                holder = session.inject(IndyHolder)
+                holder = session.inject(AnonCredsHolder)
                 revoked = await holder.credential_revoked(
                     ledger,
                     credential_id,
@@ -248,7 +248,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
     credential_id = request.match_info["credential_id"]
 
     async with context.profile.session() as session:
-        holder = session.inject(IndyHolder)
+        holder = session.inject(AnonCredsHolder)
         mime_types = await holder.get_mime_type(credential_id)
     return web.json_response({"results": mime_types})
 
@@ -272,7 +272,7 @@ async def credentials_remove(request: web.BaseRequest):
 
     try:
         async with context.profile.session() as session:
-            holder = session.inject(IndyHolder)
+            holder = session.inject(AnonCredsHolder)
             await holder.delete_credential(credential_id)
         topic = "acapy::record::credential::delete"
         await context.profile.notify(topic, {"id": credential_id, "state": "deleted"})
@@ -312,10 +312,10 @@ async def credentials_list(request: web.BaseRequest):
     count = int(count) if isinstance(count, str) else 10
 
     async with context.profile.session() as session:
-        holder = session.inject(IndyHolder)
+        holder = session.inject(AnonCredsHolder)
         try:
             credentials = await holder.get_credentials(start, count, wql)
-        except IndyHolderError as err:
+        except AnonCredsHolderError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response({"results": credentials})

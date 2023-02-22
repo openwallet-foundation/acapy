@@ -32,7 +32,7 @@ class PresVerifyMsg(str, Enum):
     PRES_VERIFY_ERROR = "VERIFY_ERROR"
 
 
-class IndyVerifier(ABC, metaclass=ABCMeta):
+class AnonCredsVerifier(ABC, metaclass=ABCMeta):
     """Base class for Indy Verifier."""
 
     def __repr__(self) -> str:

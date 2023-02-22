@@ -9,7 +9,11 @@ from enum import Enum
 from hashlib import sha256
 from typing import List, Sequence, Tuple, Union
 
-from ..anoncreds.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
+from ..anoncreds.issuer import (
+    DEFAULT_CRED_DEF_TAG,
+    AnonCredsIssuer,
+    AnonCredsIssuerError,
+)
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
 
@@ -273,7 +277,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     async def create_and_send_schema(
         self,
-        issuer: IndyIssuer,
+        issuer: AnonCredsIssuer,
         schema_name: str,
         schema_version: str,
         attribute_names: Sequence[str],
@@ -314,7 +318,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                     schema_version,
                     attribute_names,
                 )
-            except IndyIssuerError as err:
+            except AnonCredsIssuerError as err:
                 raise LedgerError(err.message) from err
             schema_def = json.loads(schema_json)
 
@@ -405,7 +409,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     async def create_and_send_credential_definition(
         self,
-        issuer: IndyIssuer,
+        issuer: AnonCredsIssuer,
         schema_id: str,
         signature_type: str = None,
         tag: str = None,
@@ -463,7 +467,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                             f"ledger {self.pool_name} but not in wallet "
                             f"{self.profile.name}"
                         )
-                except IndyIssuerError as err:
+                except AnonCredsIssuerError as err:
                     raise LedgerError(err.message) from err
 
                 credential_definition_json = json.dumps(ledger_cred_def)
@@ -478,7 +482,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                             f"wallet {self.profile.name} but not on ledger "
                             f"{self.pool.name}"
                         )
-                except IndyIssuerError as err:
+                except AnonCredsIssuerError as err:
                     raise LedgerError(err.message) from err
 
             # Cred def is neither on ledger nor in wallet: create and send it
@@ -494,7 +498,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                     tag,
                     support_revocation,
                 )
-            except IndyIssuerError as err:
+            except AnonCredsIssuerError as err:
                 raise LedgerError(err.message) from err
 
             if await self.is_ledger_read_only():

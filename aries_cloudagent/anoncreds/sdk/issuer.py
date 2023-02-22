@@ -13,8 +13,8 @@ from ...messaging.util import encode
 from ...storage.error import StorageError
 
 from ..issuer import (
-    IndyIssuer,
-    IndyIssuerError,
+    AnonCredsIssuer,
+    AnonCredsIssuerError,
     IndyIssuerRevocationRegistryFullError,
     DEFAULT_CRED_DEF_TAG,
     DEFAULT_SIGNATURE_TYPE,
@@ -26,7 +26,7 @@ from .util import create_tails_reader, create_tails_writer
 LOGGER = logging.getLogger(__name__)
 
 
-class IndySdkIssuer(IndyIssuer):
+class IndySdkIssuer(AnonCredsIssuer):
     """Indy-SDK issuer implementation."""
 
     def __init__(self, profile: IndySdkProfile):
@@ -60,7 +60,7 @@ class IndySdkIssuer(IndyIssuer):
 
         """
 
-        with IndyErrorHandler("Error when creating schema", IndyIssuerError):
+        with IndyErrorHandler("Error when creating schema", AnonCredsIssuerError):
             schema_id, schema_json = await indy.anoncreds.issuer_create_schema(
                 origin_did,
                 schema_name,
@@ -91,7 +91,7 @@ class IndySdkIssuer(IndyIssuer):
                 raise IndyErrorHandler.wrap_error(
                     err,
                     "Error when checking wallet for credential definition",
-                    IndyIssuerError,
+                    AnonCredsIssuerError,
                 ) from err
             # recognized error signifies no such cred def in wallet: pass
         return False
@@ -120,7 +120,7 @@ class IndySdkIssuer(IndyIssuer):
         """
 
         with IndyErrorHandler(
-            "Error when creating credential definition", IndyIssuerError
+            "Error when creating credential definition", AnonCredsIssuerError
         ):
             (
                 credential_definition_id,
@@ -147,7 +147,7 @@ class IndySdkIssuer(IndyIssuer):
 
         """
         with IndyErrorHandler(
-            "Exception when creating credential offer", IndyIssuerError
+            "Exception when creating credential offer", AnonCredsIssuerError
         ):
             credential_offer_json = await indy.anoncreds.issuer_create_credential_offer(
                 self.profile.wallet.handle, credential_definition_id
@@ -188,7 +188,7 @@ class IndySdkIssuer(IndyIssuer):
             try:
                 credential_value = credential_values[attribute]
             except KeyError:
-                raise IndyIssuerError(
+                raise AnonCredsIssuerError(
                     "Provided credential values are missing a value "
                     + f"for the schema attribute '{attribute}'"
                 )
@@ -226,7 +226,7 @@ class IndySdkIssuer(IndyIssuer):
             )
         except IndyError as err:
             raise IndyErrorHandler.wrap_error(
-                err, "Error when issuing credential", IndyIssuerError
+                err, "Error when issuing credential", AnonCredsIssuerError
             ) from err
         except StorageError as err:
             LOGGER.warning(
@@ -266,7 +266,7 @@ class IndySdkIssuer(IndyIssuer):
         result_json = None
         for cred_rev_id in set(cred_rev_ids):
             with IndyErrorHandler(
-                "Exception when revoking credential", IndyIssuerError
+                "Exception when revoking credential", AnonCredsIssuerError
             ):
                 try:
                     delta_json = await indy.anoncreds.issuer_revoke_credential(
@@ -289,7 +289,7 @@ class IndySdkIssuer(IndyIssuer):
                     else:
                         LOGGER.error(
                             IndyErrorHandler.wrap_error(
-                                err, "Revocation error", IndyIssuerError
+                                err, "Revocation error", AnonCredsIssuerError
                             ).roll_up
                         )
                     failed_crids.add(int(cred_rev_id))
@@ -362,7 +362,7 @@ class IndySdkIssuer(IndyIssuer):
         tails_writer = await create_tails_writer(tails_base_path)
 
         with IndyErrorHandler(
-            "Exception when creating revocation registry", IndyIssuerError
+            "Exception when creating revocation registry", AnonCredsIssuerError
         ):
             (
                 rev_reg_id,

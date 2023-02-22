@@ -7,7 +7,7 @@ import indy.anoncreds
 
 from indy.error import IndyError, ErrorCode
 
-from ...holder import IndyHolder, IndyHolderError
+from ...holder import AnonCredsHolder, AnonCredsHolderError
 
 from .. import holder as test_module
 
@@ -104,7 +104,7 @@ class TestIndySdkHolder(AsyncTestCase):
         cred_id = "credential_id"
         dummy_tags = {"a": "1", "b": "2"}
         dummy_rec = {
-            "type": IndyHolder.RECORD_TYPE_MIME_TYPES,
+            "type": AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
             "id": cred_id,
             "value": "value",
             "tags": dummy_tags,
@@ -116,7 +116,7 @@ class TestIndySdkHolder(AsyncTestCase):
         mock_nonsec_get_wallet_record.assert_called_once_with(
             self.wallet.handle,
             dummy_rec["type"],
-            f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{dummy_rec['id']}",
+            f"{AnonCredsHolder.RECORD_TYPE_MIME_TYPES}::{dummy_rec['id']}",
             json.dumps(
                 {"retrieveType": False, "retrieveValue": True, "retrieveTags": True}
             ),
@@ -129,7 +129,7 @@ class TestIndySdkHolder(AsyncTestCase):
         cred_id = "credential_id"
         dummy_tags = {"a": "1", "b": "2"}
         dummy_rec = {
-            "type": IndyHolder.RECORD_TYPE_MIME_TYPES,
+            "type": AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
             "id": cred_id,
             "value": "value",
             "tags": dummy_tags,
@@ -141,7 +141,7 @@ class TestIndySdkHolder(AsyncTestCase):
         mock_nonsec_get_wallet_record.assert_called_once_with(
             self.wallet.handle,
             dummy_rec["type"],
-            f"{IndyHolder.RECORD_TYPE_MIME_TYPES}::{dummy_rec['id']}",
+            f"{AnonCredsHolder.RECORD_TYPE_MIME_TYPES}::{dummy_rec['id']}",
             json.dumps(
                 {"retrieveType": False, "retrieveValue": True, "retrieveTags": True}
             ),
@@ -154,7 +154,7 @@ class TestIndySdkHolder(AsyncTestCase):
         cred_id = "credential_id"
         dummy_tags = {"a": "1", "b": "2"}
         dummy_rec = {
-            "type": IndyHolder.RECORD_TYPE_MIME_TYPES,
+            "type": AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
             "id": cred_id,
             "value": "value",
             "tags": dummy_tags,
@@ -235,18 +235,18 @@ class TestIndySdkHolder(AsyncTestCase):
                             "rev_reg_id": None if i % 2 else "dummy-rrid",
                         }
                     }
-                    for i in range(test_module.IndyHolder.CHUNK)
+                    for i in range(test_module.AnonCredsHolder.CHUNK)
                 ]
             ),
             json.dumps(
                 [
                     {
                         "cred_info": {
-                            "referent": f"reft-{test_module.IndyHolder.CHUNK + i}",
+                            "referent": f"reft-{test_module.AnonCredsHolder.CHUNK + i}",
                             "rev_reg_id": None,
                         }
                     }
-                    for i in range(SIZE % test_module.IndyHolder.CHUNK)
+                    for i in range(SIZE % test_module.AnonCredsHolder.CHUNK)
                 ]
             ),
         ]
@@ -280,12 +280,12 @@ class TestIndySdkHolder(AsyncTestCase):
         assert all(
             not c["cred_info"]["rev_reg_id"]
             for c in credentials[
-                0 : len(credentials) - (test_module.IndyHolder.CHUNK // 2)
+                0 : len(credentials) - (test_module.AnonCredsHolder.CHUNK // 2)
             ]
         )  # irrevocable first
         assert all(
             c["cred_info"]["rev_reg_id"]
-            for c in credentials[-test_module.IndyHolder.CHUNK // 2 :]
+            for c in credentials[-test_module.AnonCredsHolder.CHUNK // 2 :]
         )  # revocable last
 
     @async_mock.patch("indy.anoncreds.prover_search_credentials_for_proof_req")
@@ -341,7 +341,7 @@ class TestIndySdkHolder(AsyncTestCase):
     async def test_get_credential_x(self, mock_get_cred):
         mock_get_cred.side_effect = IndyError("unexpected failure")
 
-        with self.assertRaises(test_module.IndyHolderError):
+        with self.assertRaises(test_module.AnonCredsHolderError):
             await self.holder.get_credential("credential_id")
 
     async def test_credential_revoked(self):
@@ -455,7 +455,7 @@ class TestIndySdkHolder(AsyncTestCase):
         mock_prover_del_cred.side_effect = IndyError(
             error_code=ErrorCode.CommonInvalidParam1
         )
-        with self.assertRaises(test_module.IndyHolderError):
+        with self.assertRaises(test_module.AnonCredsHolderError):
             await self.holder.delete_credential("credential_id")
         assert mock_prover_del_cred.call_count == 2
 
@@ -562,7 +562,7 @@ class TestIndySdkHolder(AsyncTestCase):
         ]
 
         for proof_req in PROOF_REQS:
-            with self.assertRaises(IndyHolderError):
+            with self.assertRaises(AnonCredsHolderError):
                 await self.holder.create_presentation(
                     proof_req,
                     "requested_credentials",

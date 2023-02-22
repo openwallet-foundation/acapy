@@ -10,15 +10,15 @@ DEFAULT_CRED_DEF_TAG = "default"
 DEFAULT_SIGNATURE_TYPE = "CL"
 
 
-class IndyIssuerError(BaseError):
+class AnonCredsIssuerError(BaseError):
     """Generic issuer error."""
 
 
-class IndyIssuerRevocationRegistryFullError(IndyIssuerError):
+class AnonCredsIssuerRevocationRegistryFullError(AnonCredsIssuerError):
     """Revocation registry is full when issuing a new credential."""
 
 
-class IndyIssuer(ABC, metaclass=ABCMeta):
+class AnonCredsIssuer(ABC, metaclass=ABCMeta):
     """Base class for Indy Issuer."""
 
     def __repr__(self) -> str:

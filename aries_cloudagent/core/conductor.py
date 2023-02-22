@@ -27,7 +27,7 @@ from ..config.logging import LoggingConfigurator
 from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
-from ..anoncreds.verifier import IndyVerifier
+from ..anoncreds.verifier import AnonCredsVerifier
 
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
@@ -145,7 +145,7 @@ class Conductor:
                     and ledger.BACKEND_NAME == "indy-vdr"
                 ):
                     context.injector.bind_provider(
-                        IndyVerifier,
+                        AnonCredsVerifier,
                         ClassProvider(
                             "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
                             self.root_profile,
@@ -156,7 +156,7 @@ class Conductor:
                     and ledger.BACKEND_NAME == "indy"
                 ):
                     context.injector.bind_provider(
-                        IndyVerifier,
+                        AnonCredsVerifier,
                         ClassProvider(
                             "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
                             self.root_profile,

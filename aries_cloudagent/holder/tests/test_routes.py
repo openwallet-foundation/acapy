@@ -214,7 +214,7 @@ class TestHolderRoutes(AsyncTestCase):
             IndyHolder,
             async_mock.MagicMock(
                 get_credentials=async_mock.CoroutineMock(
-                    side_effect=test_module.IndyHolderError()
+                    side_effect=test_module.AnonCredsHolderError()
                 )
             ),
         )

@@ -7,11 +7,11 @@ from ..core.error import BaseError
 from ..ledger.base import BaseLedger
 
 
-class IndyHolderError(BaseError):
+class AnonCredsHolderError(BaseError):
     """Base class for holder exceptions."""
 
 
-class IndyHolder(ABC, metaclass=ABCMeta):
+class AnonCredsHolder(ABC, metaclass=ABCMeta):
     """Base class for holder."""
 
     RECORD_TYPE_MIME_TYPES = "attribute-mime-types"

@@ -9,7 +9,7 @@ from ..protocols.revocation_notification.v1_0.models.rev_notification_record imp
 )
 from ..core.error import BaseError
 from ..core.profile import Profile
-from ..anoncreds.issuer import IndyIssuer
+from ..anoncreds.issuer import AnonCredsIssuer
 from ..storage.error import StorageNotFoundError
 from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
@@ -107,7 +107,7 @@ class RevocationManager:
                 along with any revocations pending against it
 
         """
-        issuer = self._profile.inject(IndyIssuer)
+        issuer = self._profile.inject(AnonCredsIssuer)
 
         revoc = IndyRevocation(self._profile)
         issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
@@ -208,7 +208,7 @@ class RevocationManager:
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
         result = {}
-        issuer = self._profile.inject(IndyIssuer)
+        issuer = self._profile.inject(AnonCredsIssuer)
 
         async with self._profile.session() as session:
             issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)

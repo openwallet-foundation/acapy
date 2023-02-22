@@ -16,9 +16,9 @@ from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..core.error import ProfileError
 from ..core.profile import Profile, ProfileManager, ProfileSession
-from ..anoncreds.holder import IndyHolder
+from ..anoncreds.holder import AnonCredsHolder
 from ..anoncreds.issuer import IndyIssuer
-from ..anoncreds.verifier import IndyVerifier
+from ..anoncreds.verifier import AnonCredsVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ..storage.base import BaseStorage, BaseStorageSearch
@@ -101,7 +101,7 @@ class AskarProfile(Profile):
         )
 
         injector.bind_provider(
-            IndyHolder,
+            AnonCredsHolder,
             ClassProvider(
                 "aries_cloudagent.indy.credx.holder.IndyCredxHolder",
                 ref(self),
@@ -127,7 +127,7 @@ class AskarProfile(Profile):
             )
         if self.ledger_pool or self.settings.get("ledger.ledger_config_list"):
             injector.bind_provider(
-                IndyVerifier,
+                AnonCredsVerifier,
                 ClassProvider(
                     "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
                     ref(self),

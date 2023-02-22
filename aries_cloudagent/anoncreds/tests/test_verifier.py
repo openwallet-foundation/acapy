@@ -14,7 +14,7 @@ from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
 
 from .. import verifier as test_module
-from ..verifier import IndyVerifier
+from ..verifier import AnonCredsVerifier
 
 
 INDY_PROOF_REQ_NAME = {
@@ -293,7 +293,7 @@ REV_REG_DEFS = {
 }
 
 
-class MockVerifier(IndyVerifier):
+class MockVerifier(AnonCredsVerifier):
     async def verify_presentation(
         self,
         pres_req,
