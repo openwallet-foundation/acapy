@@ -140,7 +140,7 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     )
 
     @validates_schema
-    def validate(self, data, **kwargs):
+    def validate_fields(self, data, **kwargs):
         """Validate presentation proposal spec."""
         pres_proposal_dict = data.get("presentation_proposal")
         pres_proposal_attach_ids_handled = []
@@ -166,7 +166,7 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
                     pres_proposal_attach_ids_handled.append(attach_id)
         if len(pres_proposal_attach_ids_handled) == 0:
             raise ValidationError(
-                "V20PresProposalByFormatSchema requires indy, dif, or both"
+                "V20PresProposalRequestSchema requires indy, dif, or both"
             )
 
 
@@ -190,7 +190,7 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     )
 
     @validates_schema
-    def validate(self, data, **kwargs):
+    def validate_fields(self, data, **kwargs):
         """Validate presentation_request."""
         pres_request_dict = data.get("presentation_request")
         pres_request_attach_ids_handled = []
@@ -247,8 +247,38 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
     """Presentation specification schema by format, for send-presentation request."""
 
     request_data = fields.Dict(
-        description="Request data mapping",
-        required=True,
+        description=(
+            "Request data mapping with ability to specify presentation"
+            " spec corresponding to multiple Indy and/or Dif"
+            " attachments by the identifer. Either include "
+            "request_data or indy/dif in the request body."
+        ),
+        required=False,
+        example={
+            "indy-0": {
+                "requested_attributes": {"..."},
+                "requested_predicates": {"..."},
+                "self_attested_attributes": {"..."},
+            },
+            "indy-1": {
+                "requested_attributes": {"..."},
+                "requested_predicates": {"..."},
+                "self_attested_attributes": {"..."},
+            },
+        },
+    )
+    indy = fields.Nested(
+        IndyPresSpecSchema,
+        required=False,
+        description="Presentation specification for indy",
+    )
+    dif = fields.Nested(
+        DIFPresSpecSchema,
+        required=False,
+        description=(
+            "Optional Presentation specification for DIF, "
+            "overrides the PresentionExchange record's PresRequest"
+        ),
     )
 
     @validates_schema
@@ -264,7 +294,14 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
 
         """
         request_data_dict = data.get("request_data")
-        request_data_attach_ids_handled = []
+        if (
+            request_data_dict
+            and len(data.keys() & {f.api for f in V20PresFormat.Format}) >= 1
+        ):
+            raise ValidationError(
+                "V20PresSpecByFormatRequestSchema cannot specify both"
+                " at least one presentation format and request_data"
+            )
         if request_data_dict:
             for attach_id in request_data_dict.keys():
                 if V20PresFormat.Format.INDY.api in attach_id:
@@ -275,7 +312,6 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
                             "IndyPresSpecSchema schema validation "
                             f"failed for {attach_id}"
                         )
-                    request_data_attach_ids_handled.append(attach_id)
                 if V20PresFormat.Format.DIF.api in attach_id:
                     try:
                         DIFPresSpecSchema().load(request_data_dict.get(attach_id))
@@ -284,12 +320,29 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
                             "DIFPresSpecSchema schema validation "
                             f"failed for {attach_id}"
                         )
-                    request_data_attach_ids_handled.append(attach_id)
-        if len(request_data_attach_ids_handled) == 0:
-            raise ValidationError(
-                "V20PresSpecByFormatRequestSchema must specify "
-                "at least one presentation format"
-            )
+        else:
+            if len(data.keys() & {f.api for f in V20PresFormat.Format}) < 1:
+                raise ValidationError(
+                    "V20PresSpecByFormatRequestSchema must specify "
+                    "at least one presentation format or request_data"
+                )
+            else:
+                if V20PresFormat.Format.INDY.api in data.keys():
+                    try:
+                        IndyPresSpecSchema().load(
+                            data.get(V20PresFormat.Format.INDY.api)
+                        )
+                    except ValidationError:
+                        raise ValidationError(
+                            "IndyPresSpecSchema schema validation failed"
+                        )
+                elif V20PresFormat.Format.DIF.api in data.keys():
+                    try:
+                        DIFPresSpecSchema().load(data.get(V20PresFormat.Format.DIF.api))
+                    except ValidationError:
+                        raise ValidationError(
+                            "DIFPresSpecSchema schema validation failed"
+                        )
 
 
 class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
@@ -507,7 +560,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             if indy_pres_request:
                 # flake8 and black 23.1.0 check collision fix
                 # fmt: off
-                indy_credential = await (
+                indy_credentials_from_holder = await (
                     indy_holder.get_credentials_for_presentation_request_by_referent(
                         indy_pres_request,
                         pres_referents,
@@ -517,7 +570,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                     )
                 )
                 # fmt: on
-                indy_credentials.append(indy_credential)
+                for cred in indy_credentials_from_holder:
+                    indy_credentials.append(cred)
     except IndyHolderError as err:
         if pres_ex_record:
             async with profile.session() as session:
@@ -529,7 +583,6 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             pres_ex_record,
             outbound_handler,
         )
-
     dif_holder = profile.inject(VCHolder)
     dif_credentials = []
     dif_cred_value_list = []
@@ -1098,9 +1151,13 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
     supported_formats = ["dif", "indy"]
-    request_data = body.get("request_data")
-    if not any(
-        attach_id.split("-")[0] in supported_formats for attach_id in request_data
+    request_data = body.get("request_data") or body
+    if (
+        request_data
+        and not any(
+            attach_id.split("-")[0] in supported_formats for attach_id in request_data
+        )
+        or not request_data
     ):
         raise web.HTTPBadRequest(
             reason=(

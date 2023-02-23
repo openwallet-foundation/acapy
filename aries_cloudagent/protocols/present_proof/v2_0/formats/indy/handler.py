@@ -5,6 +5,7 @@ import logging
 
 from marshmallow import RAISE
 from typing import Mapping, Tuple
+from uuid import uuid4
 
 from ......indy.holder import IndyHolder
 from ......indy.models.predicate import Predicate
@@ -144,6 +145,10 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
         requested_credentials = {}
+        pres_exists_bv_api_key = bool(
+            pres_ex_record.pres
+            and pres_ex_record.pres.attachment_by_id(IndyPresExchangeHandler.format.api)
+        )
         if not request_data:
             try:
                 proof_request = pres_ex_record.pres_request
@@ -186,6 +191,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             pres_ex_record=pres_ex_record,
             requested_credentials=requested_credentials,
         )
+        if pres_exists_bv_api_key and not attach_id:
+            attach_id = f"{IndyPresExchangeHandler.format.api}-{str(uuid4())}"
         return self.get_format_data(PRES_20, indy_proof, attach_id=attach_id)
 
     async def receive_pres(
@@ -195,11 +202,14 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
         def _check_proof_vs_proposal():
             """Check for bait and switch in presented values vs. proposal request."""
+            attach_id_req_exists = False
             if attach_id:
                 proof_req = pres_ex_record.pres_request.attachment_by_id(
                     attach_id=attach_id
                 )
-            else:
+                if proof_req:
+                    attach_id_req_exists = True
+            if not attach_id_req_exists:
                 proof_req = pres_ex_record.pres_request.attachment(
                     IndyPresExchangeHandler.format
                 )
@@ -352,31 +362,53 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
 
         """
         pres_request_msg = pres_ex_record.pres_request
-        if attach_id:
-            indy_proof_request = pres_request_msg.attachment_by_id(attach_id=attach_id)
-            indy_proof = pres_ex_record.pres.attachment_by_id(attach_id=attach_id)
+        provided_attach_id = attach_id
+        if provided_attach_id:
+            attach_ids_to_check = [provided_attach_id]
         else:
-            indy_proof_request = pres_request_msg.attachment(
-                IndyPresExchangeHandler.format
+            attach_ids_to_check = list(
+                set(pres_ex_record.processed_attach_ids)
+                - set(pres_ex_record.verified_attach_ids)
             )
-            indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
-        indy_handler = IndyPresExchHandler(self._profile)
-        (
-            schemas,
-            cred_defs,
-            rev_reg_defs,
-            rev_reg_entries,
-        ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
+        if len(attach_ids_to_check) == 0:
+            attach_ids_to_check = [IndyPresExchangeHandler.format.api]
+        for attach_id in attach_ids_to_check:
+            attach_id_req_exists = False
+            if attach_id:
+                indy_proof_request = pres_request_msg.attachment_by_id(
+                    attach_id=attach_id
+                )
+                if indy_proof_request:
+                    attach_id_req_exists = True
+                indy_proof = pres_ex_record.pres.attachment_by_id(attach_id=attach_id)
+            else:
+                indy_proof = pres_ex_record.pres.attachment(
+                    IndyPresExchangeHandler.format
+                )
+            if not attach_id_req_exists:
+                indy_proof_request = pres_request_msg.attachment(
+                    IndyPresExchangeHandler.format
+                )
+            indy_handler = IndyPresExchHandler(self._profile)
+            (
+                schemas,
+                cred_defs,
+                rev_reg_defs,
+                rev_reg_entries,
+            ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
 
-        verifier = self._profile.inject(IndyVerifier)
-        (verified, verified_msgs) = await verifier.verify_presentation(
-            indy_proof_request,
-            indy_proof,
-            schemas,
-            cred_defs,
-            rev_reg_defs,
-            rev_reg_entries,
-        )
-        pres_ex_record.verified = json.dumps(verified)
-        pres_ex_record.verified_msgs = list(set(verified_msgs))
+            verifier = self._profile.inject(IndyVerifier)
+            (verified, verified_msgs) = await verifier.verify_presentation(
+                indy_proof_request,
+                indy_proof,
+                schemas,
+                cred_defs,
+                rev_reg_defs,
+                rev_reg_entries,
+            )
+            pres_ex_record.verified = json.dumps(verified)
+            pres_ex_record.verified_msgs = list(set(verified_msgs))
+            pres_ex_record.verify_attach_id(
+                attach_id or IndyPresExchangeHandler.format.api
+            )
         return pres_ex_record

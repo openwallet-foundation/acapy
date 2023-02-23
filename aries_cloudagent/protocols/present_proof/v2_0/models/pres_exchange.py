@@ -163,7 +163,8 @@ class V20PresExRecord(BaseExchangeRecord):
             attach_id: Attachment identifier
 
         """
-        self.processed_attach_ids.append(attach_id)
+        if attach_id not in self.processed_attach_ids:
+            self.processed_attach_ids.append(attach_id)
 
     def verify_attach_id(self, attach_id: str):
         """
@@ -173,7 +174,8 @@ class V20PresExRecord(BaseExchangeRecord):
             attach_id: Attachment identifier
 
         """
-        self.verified_attach_ids.append(attach_id)
+        if attach_id not in self.verified_attach_ids:
+            self.verified_attach_ids.append(attach_id)
 
     async def save_error_state(
         self,

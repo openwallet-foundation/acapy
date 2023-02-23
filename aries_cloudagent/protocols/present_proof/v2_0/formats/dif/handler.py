@@ -182,6 +182,10 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         attach_id: str = None,
     ) -> Tuple[V20PresFormat, AttachDecorator]:
         """Create a presentation."""
+        pres_exists_bv_api_key = bool(
+            pres_ex_record.pres
+            and pres_ex_record.pres.attachment_by_id(DIFPresFormatHandler.format.api)
+        )
         if attach_id:
             proof_request = pres_ex_record.pres_request.attachment_by_id(
                 attach_id=attach_id
@@ -399,6 +403,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 credentials=credentials_list,
                 records_filter=limit_record_ids,
             )
+            if pres_exists_bv_api_key and not attach_id:
+                attach_id = f"{DIFPresFormatHandler.format.api}-{str(uuid4())}"
             return self.get_format_data(PRES_20, pres, attach_id=attach_id)
         except DIFPresExchError as err:
             LOGGER.error(str(err))
@@ -445,13 +451,17 @@ class DIFPresFormatHandler(V20PresFormatHandler):
     ):
         """Receive a presentation, from message in context on manager creation."""
         dif_handler = DIFPresExchHandler(self._profile)
+        attach_id_req_exists = False
         if attach_id:
             dif_proof = message.attachment_by_id(attach_id=attach_id)
             proof_request = pres_ex_record.pres_request.attachment_by_id(
                 attach_id=attach_id
             )
+            if proof_request:
+                attach_id_req_exists = True
         else:
             dif_proof = message.attachment(DIFPresFormatHandler.format)
+        if not attach_id_req_exists:
             proof_request = pres_ex_record.pres_request.attachment(
                 DIFPresFormatHandler.format
             )
@@ -492,39 +502,59 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             presentation exchange record, updated
 
         """
+        provided_attach_id = attach_id
         async with self._profile.session() as session:
             wallet = session.inject(BaseWallet)
-            if attach_id:
-                dif_proof = pres_ex_record.pres.attachment_by_id(attach_id=attach_id)
-                pres_request = pres_ex_record.pres_request.attachment_by_id(
-                    attach_id=attach_id
-                )
+            if provided_attach_id:
+                attach_ids_to_check = [provided_attach_id]
             else:
-                dif_proof = pres_ex_record.pres.attachment(DIFPresFormatHandler.format)
-                pres_request = pres_ex_record.pres_request.attachment(
-                    DIFPresFormatHandler.format
+                attach_ids_to_check = list(
+                    set(pres_ex_record.processed_attach_ids)
+                    - set(pres_ex_record.verified_attach_ids)
                 )
-            challenge = None
-            if "options" in pres_request:
-                challenge = pres_request["options"].get("challenge", str(uuid4()))
-            if not challenge:
-                challenge = str(uuid4())
-            if isinstance(dif_proof, Sequence):
-                for proof in dif_proof:
+            if len(attach_ids_to_check) == 0:
+                attach_ids_to_check = [DIFPresFormatHandler.format.api]
+            for attach_id in attach_ids_to_check:
+                attach_id_req_exists = False
+                if attach_id:
+                    pres_request = pres_ex_record.pres_request.attachment_by_id(
+                        attach_id=attach_id
+                    )
+                    if pres_request:
+                        attach_id_req_exists = True
+                    dif_proof = pres_ex_record.pres.attachment_by_id(
+                        attach_id=attach_id
+                    )
+                else:
+                    dif_proof = pres_ex_record.pres.attachment(
+                        DIFPresFormatHandler.format
+                    )
+                if not attach_id_req_exists:
+                    pres_request = pres_ex_record.pres_request.attachment(
+                        DIFPresFormatHandler.format
+                    )
+                challenge = None
+                if "options" in pres_request:
+                    challenge = pres_request["options"].get("challenge", str(uuid4()))
+                if isinstance(dif_proof, Sequence):
+                    for proof in dif_proof:
+                        pres_ver_result = await verify_presentation(
+                            presentation=proof,
+                            suites=await self._get_all_suites(wallet=wallet),
+                            document_loader=self._profile.inject(DocumentLoader),
+                            challenge=challenge,
+                        )
+                        if not pres_ver_result.verified:
+                            break
+                else:
                     pres_ver_result = await verify_presentation(
-                        presentation=proof,
+                        presentation=dif_proof,
                         suites=await self._get_all_suites(wallet=wallet),
                         document_loader=self._profile.inject(DocumentLoader),
                         challenge=challenge,
                     )
-                    if not pres_ver_result.verified:
-                        break
-            else:
-                pres_ver_result = await verify_presentation(
-                    presentation=dif_proof,
-                    suites=await self._get_all_suites(wallet=wallet),
-                    document_loader=self._profile.inject(DocumentLoader),
-                    challenge=challenge,
+                pres_ex_record.verified = json.dumps(pres_ver_result.verified)
+                pres_ex_record.verify_attach_id(
+                    attach_id or DIFPresFormatHandler.format.api
                 )
-            pres_ex_record.verified = json.dumps(pres_ver_result.verified)
             return pres_ex_record

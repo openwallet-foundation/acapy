@@ -129,6 +129,20 @@ class TestV20PresRequest(TestCase):
             assert pres_req.attachment(V20PresFormat.Format.INDY) == INDY_PROOF_REQ[i]
             assert pres_req._type == DIDCommPrefix.qualify_current(PRES_20_REQUEST)
 
+    def test_attachment_ulities(self):
+        test_pres = PRES_REQ[0]
+        test_pres.add_attachments(
+            V20PresFormat(
+                attach_id="indy-test",
+                format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                    V20PresFormat.Format.INDY.api
+                ],
+            ),
+            AttachDecorator.data_base64(mapping=INDY_PROOF_REQ[0], ident="indy-test"),
+        )
+
+        assert test_pres.attachment_by_id("indy-test") == INDY_PROOF_REQ[0]
+
     def test_attachment_no_target_format(self):
         """Test attachment behaviour for only unknown formats."""
 

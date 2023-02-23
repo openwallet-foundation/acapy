@@ -50,7 +50,9 @@ class V20Pres(AgentMessage):
         self.presentations_attach = (
             list(presentations_attach) if presentations_attach else []
         )
-        self.last_presentation = last_presentation or True
+        self.last_presentation = (
+            last_presentation if last_presentation is not None else True
+        )
 
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
         """

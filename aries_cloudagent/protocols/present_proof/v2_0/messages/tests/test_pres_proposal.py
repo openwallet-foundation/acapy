@@ -165,3 +165,4 @@ class TestV20PresProposal(TestCase):
             ],
         )
         assert x_pres_proposal.attachment() is None
+        assert x_pres_proposal.attachment_by_id("indy") is None

@@ -54,7 +54,9 @@ class V20PresRequest(AgentMessage):
         self.request_presentations_attach = (
             list(request_presentations_attach) if request_presentations_attach else []
         )
-        self.present_multiple = present_multiple or False
+        self.present_multiple = (
+            present_multiple if present_multiple is not None else False
+        )
 
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
         """

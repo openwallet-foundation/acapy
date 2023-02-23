@@ -145,3 +145,10 @@ class TestV20FormatFormat(TestCase):
                 )
                 is None
             )
+            assert (
+                V20PresFormat.Format.DIF.get_attachment_data_by_id(
+                    "dif",
+                    attachments=[AttachDecorator.data_base64(proof_req, ident="indy")],
+                )
+                is None
+            )

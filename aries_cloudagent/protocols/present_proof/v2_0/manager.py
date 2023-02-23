@@ -283,7 +283,7 @@ class V20PresManager:
             else:
                 raise V20PresManagerError(
                     "create_pres() called multiple times for "
-                    f"pres ex record {pres_ex_record.cred_ex_id} "
+                    f"pres ex record {pres_ex_record.pres_ex_id} "
                     "and multiple_presentation flag set as "
                     f"{str(pres_ex_record.multiple_presentations)}"
                 )
@@ -321,6 +321,9 @@ class V20PresManager:
                 )
                 if pres_tuple:
                     pres_formats.append(pres_tuple)
+                    format_incl, _ = pres_tuple
+                    if not attach_id and format_incl.attach_id != pres_exch_format.api:
+                        attach_id = format_incl.attach_id
                     if attach_id:
                         pres_ex_record.process_attach_id(attach_id)
                 else:
@@ -338,7 +341,7 @@ class V20PresManager:
                     f"present_multiple set as {str(present_multiple)}, only "
                     "including the first presentation."
                 )
-                pres_formats = pres_formats[0]
+                pres_formats = [pres_formats[0]]
             else:
                 pres_ex_record.multiple_presentations = True
         pres_message = V20Pres(
@@ -514,8 +517,6 @@ class V20PresManager:
                     pres_ex_record=pres_ex_record,
                     attach_id=attach_id,
                 )
-                if attach_id:
-                    pres_ex_record.verify_attach_id(attach_id)
                 if pres_ex_record.verified == "false":
                     break
 
