@@ -21,32 +21,29 @@ updated, as noted below.
 To test generate and view the RTD documentation locally, you must install [Sphinx](https://www.sphinx-doc.org/en/master/) and the
 [Sphinx RTD theme](https://pypi.org/project/sphinx-rtd-theme/). Both can be installed from PyPi using pip. For example:
 
-``` bash
+```bash
 pip install -U sphinx
 pip install -U sphinx-rtd-theme
-pip install -u sphinx-markdown-builder
 ```
-
-_Note: You only need to install `sphinx-markdown-builder` if you plan to build the docs to `.md` instead of `.html`._
 
 ### Generate Module Files
 
 To rebuild the project and settings from scratch (you'll need to move the generated index file up a level):
 
-``` bash
+```bash
 rm -rf generated
-sphinx-apidoc -f -M -o  ./generated ../../aries_cloudagent/ $(find ../../aries_cloudagent/ -name '*tests*')
+sphinx-apidoc -f -M -o  ./generated ../aries_cloudagent/ $(find ../aries_cloudagent/ -name '*tests*')
 ```
 
 Note that the `find` command that is used to exclude any of the `test` python files from the RTD documentation.
 
-Check the  `git status` in your repo to see if the generator updates, adds or removes any existing RTD modules.
+Check the `git status` in your repo to see if the generator updates, adds or removes any existing RTD modules.
 
 ### Reviewing the files locally
 
 To auto-generate the module documentation locally run:
 
-``` bash
+```bash
 sphinx-build -b html -a -E -c ./ ./ ./_build
 ```
 
@@ -72,8 +69,8 @@ The file [`index.rst`](index.rst) in this folder drive the RTD generation. It sh
 in the source code, starting from the root `../aries_cloudagent` folder. However, some modules
 are not picked up automatically from the root and have to be manually added to `index.rst`. To do that:
 
-* Get a list of all generated modules by running: `ls generated | grep "aries_cloudagent.[a-z]*.rst"`
-* Compare that list with the modules listed in the "Subpackages" section of the left side menu in your browser, including any listed below the "Submodules".
+- Get a list of all generated modules by running: `ls generated | grep "aries_cloudagent.[a-z]*.rst"`
+- Compare that list with the modules listed in the "Subpackages" section of the left side menu in your browser, including any listed below the "Submodules".
 
 If any are missing, you likely need to add them to the `index.rst` file in the `toctree` section of the file.
 You will see there are already several instances of that, notably "connections" and "protocols".

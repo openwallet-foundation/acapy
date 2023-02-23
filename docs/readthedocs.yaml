@@ -9,9 +9,9 @@ build:
 
 # Build from the docs/ directory with Sphinx
 sphinx:
-  configuration: docs/rtd/conf.py
+  configuration: docs/conf.py
 
 # Explicitly set the version of Python and its requirements
 python:
   install:
-    - requirements: docs/rtd/requirements.txt
+    - requirements: docs/requirements.txt
