@@ -112,7 +112,7 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
     "README.md",
-    "developer/*",
+    "GettingStartedAriesDev/*",
     "assets/*",
 ]
 

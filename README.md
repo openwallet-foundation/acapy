@@ -58,7 +58,7 @@ For those new to SSI, Aries and ACA-Py, there are a couple of Linux Foundation e
 
 The latter is the most useful for developers wanting to get a solid basis in using ACA-Py and other Aries Frameworks.
 
-Also included here is a much more concise (but less maintained) [Getting Started Guide](/docs/developer/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services. You’ll run some Indy apps, ACA-Py apps and developer-oriented demos. The guide has a table of contents so you can skip the parts you already know.
+Also included here is a much more concise (but less maintained) [Getting Started Guide](/docs/GettingStartedAriesDev/README.md) that will take you from knowing next to nothing about decentralized identity to developing Aries-based business apps and services. You’ll run some Indy apps, ACA-Py apps and developer-oriented demos. The guide has a table of contents so you can skip the parts you already know.
 
 ### Understanding the Architecture
 
