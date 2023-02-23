@@ -27,6 +27,8 @@ class LightWeightV20CredExRecordWebhook:
         "public_did",
         "cred_id_stored",
         "conn_id",
+        "created_at",
+        "updated_at",
     ]
 
     def __init__(
