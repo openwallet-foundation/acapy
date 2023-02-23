@@ -71,13 +71,13 @@ The Endorser makes use of the [Event Bus](https://github.com/hyperledger/aries-c
 
 The overall architecture can be illustrated as:
 
-![Class Diagram](./assets/endorser-design.png)
+![Class Diagram](./docs/assets/endorser-design.png)
 
 ### Create Credential Definition and Revocation Registry
 
 An example of an Endorser flow is as follows, showing how a credential definition endorsement is received and processed, and optionally kicks off the revocation registry process:
 
-![Sequence Diagram](./assets/endorse-cred-def.png)
+![Sequence Diagram](./docs/assets/endorse-cred-def.png)
 
 You can see that there is a standard endorser flow happening each time there is a ledger write (illustrated in the "Endorser" process).
 
@@ -95,7 +95,7 @@ Using the EventBus decouples the event sequence.  Any functions triggered by an 
 
 ... and an example of creating a DID and promoting it to public (and creating an ATTRIB for the endpoint:
 
-![Sequence Diagram](./assets/endorse-public-did.png)
+![Sequence Diagram](./docs/assets/endorse-public-did.png)
 
 You can see the same endorsement processes in this sequence.
 

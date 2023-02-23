@@ -1,10 +1,10 @@
-# Multi-tenancy in ACA-Py
+# Multi-tenancy in ACA-Py <!-- omit in toc -->
 
 Most deployments of ACA-Py use a single wallet for all operations. This means all connections, credentials, keys, and everything else is stored in the same wallet and shared between all controllers of the agent. Multi-tenancy in ACA-Py allows multiple tenants to use the same ACA-Py instance with a different context. All tenants get their own encrypted wallet that only holds their own data.
 
 This allows ACA-Py to be used for a wider range of use cases. One use case could be a company that creates a wallet for each department. Each department has full control over the actions they perform while having a shared instance for easy maintenance. Another use case could be for a [Issuer-Hosted Custodial Agent](https://github.com/hyperledger/aries-rfcs/blob/master/concepts/0566-issuer-hosted-custodidal-agents/README.md). Sometimes it is required to host the agent on behalf of someone else.
 
-## Table of Contents
+## Table of Contents <!-- omit in toc -->
 
 - [General Concept](#general-concept)
   - [Base and Sub Wallets](#base-and-sub-wallets)
@@ -40,7 +40,7 @@ The wallets used by the different tenants are called **sub wallets**. A sub wall
 
 The **base wallet** however, takes on a different role and has limited functionality. Its main function is to manage the sub wallets, which can be done using the [Multi-tenant Admin API](#multi-tenant-admin-api). It stores all settings and information about the different sub wallets and will route incoming messages to the corresponding sub wallets. See [Message Routing](#message-routing) for more details. All other features are disabled for the base wallet. This means it cannot issue credentials, present proof, or do any of the other actions sub wallets can do. This is to keep a clear hierarchical difference between base and sub wallets
 
-![Multi-tenancy Architecture](./assets/multitenancyDiagram.png)
+![Multi-tenancy Architecture](/docs/assets/multitenancyDiagram.png)
 
 ### Usage
 
@@ -299,7 +299,7 @@ For deterministic JWT creation and verification between restarts and multiple in
 
 When using the SwaggerUI you can click the :lock: icon next to each of the endpoints or the `Authorize` button at the top to set the correct authentication headers. Make sure to also include the `Bearer ` part in the input field. This won't be automatically added.
 
-![](./assets/adminApiAuthentication.png)
+![](/docs/assets/adminApiAuthentication.png)
 
 ## Tenant Management
 

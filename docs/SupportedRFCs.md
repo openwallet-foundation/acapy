@@ -56,7 +56,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 | Credential Type | Supported | Notes |
 | --- | :--: | -- |
 | [Indy AnonCreds](https://hyperledger-indy.readthedocs.io/projects/sdk/en/latest/docs/design/002-anoncreds/README.html) | :white_check_mark: | Includes full issue VC, present proof, and revoke VC support. |
-| [W3C Standard Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) | :white_check_mark: | Supports only JSON-LD Credentials using the `Ed25519Signature2018`, `BbsBlsSignature2020` and `BbsBlsSignatureProof2020` signature suites.<br /><br />Supports the [DIF Presentation Exchange](https://identity.foundation/presentation-exchange/) data format for presentation requests and presentation submissions. |
+| [W3C Standard Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) | :white_check_mark: | Supports only JSON-LD Credentials using the `Ed25519Signature2018`, `BbsBlsSignature2020` and `BbsBlsSignatureProof2020` signature suites.<br><br>Supports the [DIF Presentation Exchange](https://identity.foundation/presentation-exchange/) data format for presentation requests and presentation submissions. |
 
 ## DID Methods
 

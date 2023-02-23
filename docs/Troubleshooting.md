@@ -1,4 +1,4 @@
-# Troubleshooting Aries Cloud Agent Python
+# Troubleshooting Aries Cloud Agent Python <!-- omit in toc -->
 
 This document contains some troubleshooting information that contributors to the
 community think may be helpful. Most of the content here assumes the reader has
@@ -9,7 +9,7 @@ Contributions (via pull request) to this document are welcome. Topics added here
 will mostly come from reported issues that contributors think would be helpful
 to the larger community.
 
-## Table of Contents
+## Table of Contents <!-- omit in toc -->
 
 - [Unable to Connect to Ledger](#unable-to-connect-to-ledger)
   - [Local ledger running?](#local-ledger-running)
@@ -28,7 +28,7 @@ If that is the cause -- have you started your local ledger, and did it startup p
 - Any errors in the startup of von-network?
 - Is the von-network webserver (usually at `https:/localhost:9000`) accessible? If so, can you click on and see the Genesis File?
 - Do you even need a local ledger? If not, you can use a public sandbox ledger,
-  such as the [Dev Greenlight ledger](http://dev.greenlight.bcovrin.vonx.io), likely by just prefacing your ACA-Py
+  such as the [Dev Greenlight ledger](), likely by just prefacing your ACA-Py
   command with `LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io`. For example,
   when running the Alice-Faber demo in the [demo](demo) folder, you can run (for
   example), the Faber agent using the command:

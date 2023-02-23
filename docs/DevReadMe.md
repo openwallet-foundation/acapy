@@ -1,8 +1,8 @@
-# Developer's Read Me for Hyperledger Aries Cloud Agent - Python
+# Developer's Read Me for Hyperledger Aries Cloud Agent - Python <!-- omit in toc -->
 
 See the [README](README.md) for details about this repository and information about how the Aries Cloud Agent - Python fits into the Aries project and relates to Indy.
 
-## Table of Contents
+## Table of Contents <!-- omit in toc -->
 
 - [Introduction](#introduction)
 - [Developer Demos](#developer-demos)

@@ -1,8 +1,8 @@
-# JSON-LD Credentials in ACA-Py
+# JSON-LD Credentials in ACA-Py <!-- omit in toc -->
 
 By design Hyperledger Aries is credential format agnostic. This means you can use it for any credential format, as long as an RFC is defined for the specific credential format. ACA-Py currently supports two types of credentials, Indy and JSON-LD credentials. This document describes how to use the latter by making use of [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) using [Linked Data Proofs](https://w3c-ccg.github.io/ld-proofs).
 
-## Table of Contents
+## Table of Contents <!-- omit in toc -->
 
 - [General Concept](#general-concept)
   - [BBS+](#bbs)
@@ -42,8 +42,7 @@ Contrary to Indy credentials, JSON-LD credentials do not need a schema or creden
 
 It is required that every property key in the document can be mapped to an IRI. This means the property key must either be an IRI by default, or have the shorthand property mapped in the `@context` of the document. If you have properties that are not mapped to IRIs, the Issue Credential API will throw the following error:
 
-<!-- FIXME -->
-<!-- > "\<x> attributes dropped. Provide definitions in context to correct. [\<missing-properties>]" -->
+> "\<x> attributes dropped. Provide definitions in context to correct. [\<missing-properties>]"
 
 For credentials the `https://www.w3.org/2018/credentials/v1` context MUST always be the first context. In addition, when issuing BBS+ credentials the `https://w3id.org/security/bbs/v1` URL MUST be present in the context. For convenience this URL will be automatically added to the `@context` of the credential if not present.
 
