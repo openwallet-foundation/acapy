@@ -214,10 +214,10 @@ class V10PresentationExchange(BaseExchangeRecord):
         else:
             topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
 
-        if not payload:
-            payload = self.serialize()
-
-        if session.profile.settings.get("transport.light_weight_webhook"):
+        if session.profile.settings.get("debug.webhooks"):
+            if not payload:
+                payload = self.serialize()
+        else:
             payload = LightWeightV10PresentationExchangeWebhook(**self.__dict__)
             payload = payload.__dict__
 
