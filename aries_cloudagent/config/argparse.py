@@ -272,6 +272,15 @@ class DebugGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--debug-webhooks",
+            action="store_true",
+            env_var="ACAPY_DEBUG_WEBHOOKS",
+            help=(
+                "Emit protocol state object as webhook. "
+                "Default: false."
+            ),
+        )
+        parser.add_argument(
             "--invite",
             action="store_true",
             env_var="ACAPY_INVITE",
@@ -424,6 +433,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.credentials"] = True
         if args.debug_presentations:
             settings["debug.presentations"] = True
+        if args.debug_webhooks:
+            settings["debug.webhooks"] = True
         if args.debug_seed:
             settings["debug.seed"] = args.debug_seed
         if args.invite:
