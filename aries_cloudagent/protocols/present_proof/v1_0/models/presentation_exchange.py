@@ -21,7 +21,7 @@ from ..messages.presentation_request import (
     PresentationRequest,
     PresentationRequestSchema,
 )
-from ..messages.presentation_webhook import LightWeightV10PresentationExchangeWebhook
+from ..messages.presentation_webhook import V10PresentationExchangeWebhook
 
 from . import UNENCRYPTED_TAGS
 
@@ -218,7 +218,7 @@ class V10PresentationExchange(BaseExchangeRecord):
             if not payload:
                 payload = self.serialize()
         else:
-            payload = LightWeightV10PresentationExchangeWebhook(**self.__dict__)
+            payload = V10PresentationExchangeWebhook(**self.__dict__)
             payload = payload.__dict__
 
         await session.profile.notify(topic, payload)

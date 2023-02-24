@@ -1,7 +1,7 @@
 """v1.0 presentation exchange information webhook."""
 
 
-class LightWeightV10PresentationExchangeWebhook:
+class V10PresentationExchangeWebhook:
     """Class representing a state only presentation exchange webhook."""
 
     __acceptable_keys_list = [

@@ -1,7 +1,7 @@
 """v2.0 Presentation exchange record webhook."""
 
 
-class LightWeightV20PresExRecordWebhook:
+class V20PresExRecordWebhook:
     """Class representing a state only Presentation exchange record webhook."""
 
     __acceptable_keys_list = [

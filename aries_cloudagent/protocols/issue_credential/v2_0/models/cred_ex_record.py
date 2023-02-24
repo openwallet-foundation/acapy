@@ -17,7 +17,7 @@ from ..messages.cred_proposal import V20CredProposal, V20CredProposalSchema
 from ..messages.cred_offer import V20CredOffer, V20CredOfferSchema
 from ..messages.cred_request import V20CredRequest, V20CredRequestSchema
 from ..messages.inner.cred_preview import V20CredPreviewSchema
-from ..messages.cred_ex_record_webhook import LightWeightV20CredExRecordWebhook
+from ..messages.cred_ex_record_webhook import V20CredExRecordWebhook
 
 from . import UNENCRYPTED_TAGS
 
@@ -206,7 +206,7 @@ class V20CredExRecord(BaseExchangeRecord):
             if not payload:
                 payload = self.serialize()
         else:
-            payload = LightWeightV20CredExRecordWebhook(**self.__dict__)
+            payload = V20CredExRecordWebhook(**self.__dict__)
             payload = payload.__dict__
 
         await session.profile.notify(topic, payload)

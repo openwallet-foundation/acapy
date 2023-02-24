@@ -1,7 +1,7 @@
-"""v1.0 credential exchange light weight webhook."""
+"""v1.0 credential exchange webhook."""
 
 
-class LightWeightV10CredentialExchangeWebhook:
+class V10CredentialExchangeWebhook:
     """Class representing a state only credential exchange webhook."""
 
     __acceptable_keys_list = [

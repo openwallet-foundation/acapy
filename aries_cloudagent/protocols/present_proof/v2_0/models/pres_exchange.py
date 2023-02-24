@@ -15,7 +15,7 @@ from ..messages.pres import V20Pres, V20PresSchema
 from ..messages.pres_format import V20PresFormat
 from ..messages.pres_proposal import V20PresProposal, V20PresProposalSchema
 from ..messages.pres_request import V20PresRequest, V20PresRequestSchema
-from ..messages.pres_webhook import LightWeightV20PresExRecordWebhook
+from ..messages.pres_webhook import V20PresExRecordWebhook
 
 from . import UNENCRYPTED_TAGS
 
@@ -204,7 +204,7 @@ class V20PresExRecord(BaseExchangeRecord):
             if not payload:
                 payload = self.serialize()
         else:
-            payload = LightWeightV20PresExRecordWebhook(**self.__dict__)
+            payload = V20PresExRecordWebhook(**self.__dict__)
             payload = payload.__dict__
 
         await session.profile.notify(topic, payload)
