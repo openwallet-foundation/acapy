@@ -127,6 +127,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.revocation")
         plugin_registry.register_plugin("aries_cloudagent.resolver")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
+        plugin_registry.register_plugin("aries_cloudagent.anoncreds.anoncreds")
 
         if context.settings.get("multitenant.admin_enabled"):
             plugin_registry.register_plugin("aries_cloudagent.multitenant.admin")
