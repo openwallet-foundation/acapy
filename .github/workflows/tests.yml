@@ -29,7 +29,8 @@ jobs:
             -r requirements.txt \
             -r requirements.askar.txt \
             -r requirements.bbs.txt \
-            -r requirements.dev.txt
+            -r requirements.dev.txt \
+            -r requirements.anoncreds.txt
       - name: Tests
         run: |
           pytest
