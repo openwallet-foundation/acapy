@@ -82,9 +82,9 @@ class IndyCredxIssuer(AnonCredsIssuer):
         """
         try:
             schema = Schema.create(
-                origin_did, schema_name, schema_version, attribute_names
+                schema_name, schema_version, origin_did, attribute_names
             )
-            schema_id = schema.id
+            schema_id = f"{origin_did}:2:{schema_name}:{schema_version}"
             schema_json = schema.to_json()
             async with self._profile.session() as session:
                 await session.handle.insert(CATEGORY_SCHEMA, schema_id, schema_json)
@@ -145,10 +145,11 @@ class IndyCredxIssuer(AnonCredsIssuer):
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: CredentialDefinition.create(
-                    origin_did,
+                    f"{origin_did}:2:{schema['name']}:{schema['version']}",
                     schema,
-                    signature_type or DEFAULT_SIGNATURE_TYPE,
+                    origin_did,
                     tag or DEFAULT_CRED_DEF_TAG,
+                    signature_type or DEFAULT_SIGNATURE_TYPE,
                     support_revocation=support_revocation,
                 ),
             )
