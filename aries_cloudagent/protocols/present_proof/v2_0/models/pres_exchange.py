@@ -15,6 +15,7 @@ from ..messages.pres import V20Pres, V20PresSchema
 from ..messages.pres_format import V20PresFormat
 from ..messages.pres_proposal import V20PresProposal, V20PresProposalSchema
 from ..messages.pres_request import V20PresRequest, V20PresRequestSchema
+from ..messages.pres_webhook import LightWeightV20PresExRecordWebhook
 
 from . import UNENCRYPTED_TAGS
 
@@ -180,6 +181,33 @@ class V20PresExRecord(BaseExchangeRecord):
             )
         except StorageError as err:
             LOGGER.exception(err)
+
+    # Override
+    async def emit_event(self, session: ProfileSession, payload: Any = None):
+        """
+        Emit an event.
+
+        Args:
+            session: The profile session to use
+            payload: The event payload
+        """
+
+        if not self.RECORD_TOPIC:
+            return
+
+        if self.state:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}::{self.state}"
+        else:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
+
+        if not payload:
+            payload = self.serialize()
+
+        if session.profile.settings.get("transport.light_weight_webhook"):
+            payload = LightWeightV20PresExRecordWebhook(**self.__dict__)
+            payload = payload.__dict__
+
+        await session.profile.notify(topic, payload)
 
     @property
     def record_value(self) -> Mapping:
