@@ -174,6 +174,7 @@ class ConnRecord(BaseRecord):
         "invitation_key",
         "their_public_did",
         "invitation_msg_id",
+        "state",
         "their_role",
     }
 
@@ -322,11 +323,15 @@ class ConnRecord(BaseRecord):
             invitation_key: The key on the originating invitation
             initiator: Filter by the initiator value
         """
-        tag_filter = {"invitation_key": invitation_key}
+        tag_filter = {
+            "invitation_key": invitation_key,
+            "state": cls.State.INVITATION.rfc160,
+        }
         post_filter = {"state": cls.State.INVITATION.rfc160}
 
         if their_role:
             post_filter["their_role"] = cls.Role.get(their_role).rfc160
+            tag_filter["their_role"] = cls.Role.get(their_role).rfc160
 
         return await cls.retrieve_by_tag_filter(session, tag_filter, post_filter)
 

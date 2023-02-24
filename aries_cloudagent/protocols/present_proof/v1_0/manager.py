@@ -393,7 +393,9 @@ class PresentationManager:
         return presentation_exchange_record
 
     async def verify_presentation(
-        self, presentation_exchange_record: V10PresentationExchange
+        self,
+        presentation_exchange_record: V10PresentationExchange,
+        responder: Optional[BaseResponder] = None,
     ):
         """
         Verify a presentation.
@@ -436,11 +438,13 @@ class PresentationManager:
                 session, reason="verify presentation"
             )
 
-        await self.send_presentation_ack(presentation_exchange_record)
+        await self.send_presentation_ack(presentation_exchange_record, responder)
         return presentation_exchange_record
 
     async def send_presentation_ack(
-        self, presentation_exchange_record: V10PresentationExchange
+        self,
+        presentation_exchange_record: V10PresentationExchange,
+        responder: Optional[BaseResponder] = None,
     ):
         """
         Send acknowledgement of presentation receipt.
@@ -449,7 +453,7 @@ class PresentationManager:
             presentation_exchange_record: presentation exchange record with thread id
 
         """
-        responder = self._profile.inject_or(BaseResponder)
+        responder = responder or self._profile.inject_or(BaseResponder)
 
         if not presentation_exchange_record.connection_id:
             # Find associated oob record. If this presentation exchange is created
