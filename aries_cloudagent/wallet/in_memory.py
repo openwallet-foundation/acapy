@@ -17,7 +17,7 @@ from .crypto import (
 )
 from .did_info import KeyInfo, DIDInfo
 from .did_posture import DIDPosture
-from .did_method import SOV, DIDMethod, DIDMethods
+from .did_method import DIDMethod, DIDMethods
 from .error import WalletError, WalletDuplicateError, WalletNotFoundError
 from .key_type import KeyType
 from .util import b58_to_bytes, bytes_to_b58, random_seed
@@ -382,9 +382,6 @@ class InMemoryWallet(BaseWallet):
         else:
             info = did
             did = info.did
-
-        if info.method != SOV:
-            raise WalletError("Setting public DID is only allowed for did:sov DIDs")
 
         public = await self.get_public_did()
         if public and public.did == did:
