@@ -275,10 +275,7 @@ class DebugGroup(ArgumentGroup):
             "--debug-webhooks",
             action="store_true",
             env_var="ACAPY_DEBUG_WEBHOOKS",
-            help=(
-                "Emit protocol state object as webhook. "
-                "Default: false."
-            ),
+            help=("Emit protocol state object as webhook. " "Default: false."),
         )
         parser.add_argument(
             "--invite",
