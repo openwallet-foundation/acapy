@@ -94,6 +94,18 @@ class V20PresFormat(BaseModel):
 
             return None
 
+        def get_attachment_data_by_id(
+            self,
+            attach_id: str,
+            attachments: Sequence[AttachDecorator],
+        ):
+            """Find attachment by attachment identifier."""
+            for atch in attachments:
+                if atch.ident == attach_id:
+                    return atch.content
+
+            return None
+
     def __init__(
         self,
         *,

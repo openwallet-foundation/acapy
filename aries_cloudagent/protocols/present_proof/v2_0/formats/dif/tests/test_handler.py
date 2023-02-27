@@ -491,14 +491,14 @@ class TestDIFFormatHandler(AsyncTestCase):
         dif_pres_proposal = V20PresProposal(
             formats=[
                 V20PresFormat(
-                    attach_id="dif",
+                    attach_id="dif-0",
                     format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
                         V20PresFormat.Format.DIF.api
                     ],
                 )
             ],
             proposals_attach=[
-                AttachDecorator.data_json(dif_proposal_dict, ident="dif")
+                AttachDecorator.data_json(dif_proposal_dict, ident="dif-0")
             ],
         )
         record = V20PresExRecord(
@@ -513,7 +513,9 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        output = await self.handler.create_bound_request(pres_ex_record=record)
+        output = await self.handler.create_bound_request(
+            pres_ex_record=record, attach_id="dif-0"
+        )
         assert isinstance(output[0], V20PresFormat) and isinstance(
             output[1], AttachDecorator
         )
@@ -574,7 +576,7 @@ class TestDIFFormatHandler(AsyncTestCase):
             output[1], AttachDecorator
         )
 
-    async def test_create_pres(self):
+    async def test_create_pres_a(self):
         dif_pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
@@ -608,6 +610,63 @@ class TestDIFFormatHandler(AsyncTestCase):
         ) as mock_create_vp:
             mock_create_vp.return_value = DIF_PRES
             output = await self.handler.create_pres(record, {})
+            assert isinstance(output[0], V20PresFormat) and isinstance(
+                output[1], AttachDecorator
+            )
+            assert output[1].data.json_ == DIF_PRES
+
+    async def test_create_pres_b(self):
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="dif-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif-0"),
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif-1"),
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "create_vp",
+            async_mock.CoroutineMock(),
+        ) as mock_create_vp:
+            mock_create_vp.side_effect = [
+                DIF_PRES,
+                DIF_PRES,
+            ]
+            output = await self.handler.create_pres(record, {}, "dif-0")
+            assert isinstance(output[0], V20PresFormat) and isinstance(
+                output[1], AttachDecorator
+            )
+            assert output[1].data.json_ == DIF_PRES
+
+            output = await self.handler.create_pres(
+                record, {"dif-1": DIF_PRES_REQUEST_B}, "dif-1"
+            )
             assert isinstance(output[0], V20PresFormat) and isinstance(
                 output[1], AttachDecorator
             )
@@ -656,7 +715,7 @@ class TestDIFFormatHandler(AsyncTestCase):
             )
             assert output[1].data.json_ == DIF_PRES
 
-    async def test_create_pres_prover_proof_spec(self):
+    async def test_create_pres_prover_proof_spec_a(self):
         dif_pres_spec = deepcopy(DIF_PRES_REQUEST_A)
         dif_pres_spec["issuer_id"] = "test123"
         dif_pres_request = V20PresRequest(
@@ -697,6 +756,64 @@ class TestDIFFormatHandler(AsyncTestCase):
                 output[1], AttachDecorator
             )
             assert output[1].data.json_ == DIF_PRES
+
+    async def test_create_pres_prover_proof_spec_b(self):
+        dif_pres_spec = deepcopy(DIF_PRES_REQUEST_A)
+        dif_pres_spec["issuer_id"] = "test123"
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            presentations_attach=[AttachDecorator.data_json(DIF_PRES, ident="dif")],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+            pres=dif_pres,
+        )
+        request_data = {}
+        request_data["dif"] = dif_pres_spec
+        with async_mock.patch.object(
+            DIFPresExchHandler,
+            "create_vp",
+            async_mock.CoroutineMock(),
+        ) as mock_create_vp, async_mock.patch.object(
+            test_module, "uuid4", async_mock.MagicMock()
+        ) as mock_uuid:
+            mock_uuid.return_value = "abc123"
+            mock_create_vp.return_value = DIF_PRES
+            output = await self.handler.create_pres(record, request_data)
+            assert isinstance(output[0], V20PresFormat) and isinstance(
+                output[1], AttachDecorator
+            )
+            assert output[1].data.json_ == DIF_PRES
+            assert output[0].attach_id == "dif-abc123"
 
     async def test_create_pres_prover_proof_spec_with_record_ids(self):
         dif_pres_spec = deepcopy(DIF_PRES_REQUEST_A)
@@ -1161,6 +1278,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             verified="false",
             auto_present=True,
             error_msg="error",
+            processed_attach_ids=["dif"],
+            verified_attach_ids=[],
         )
 
         with async_mock.patch.object(
@@ -1183,7 +1302,7 @@ class TestDIFFormatHandler(AsyncTestCase):
             output = await self.handler.verify_pres(record)
             assert output.verified == "false"
 
-    async def test_verify_pres(self):
+    async def test_verify_pres_a(self):
         dif_pres = V20Pres(
             formats=[
                 V20PresFormat(
@@ -1218,6 +1337,8 @@ class TestDIFFormatHandler(AsyncTestCase):
             verified="false",
             auto_present=True,
             error_msg="error",
+            processed_attach_ids=["dif"],
+            verified_attach_ids=[],
         )
 
         with async_mock.patch.object(
@@ -1228,6 +1349,131 @@ class TestDIFFormatHandler(AsyncTestCase):
             ),
         ) as mock_vr:
             output = await self.handler.verify_pres(record)
+            assert output.verified
+
+    async def test_verify_pres_b(self):
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                ),
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES, ident="dif-0"),
+                AttachDecorator.data_json(DIF_PRES, ident="dif"),
+            ],
+        )
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+            processed_attach_ids=["dif", "dif-0"],
+            verified_attach_ids=["dif"],
+        )
+
+        with async_mock.patch.object(
+            test_module,
+            "verify_presentation",
+            async_mock.CoroutineMock(
+                return_value=PresentationVerificationResult(verified=True)
+            ),
+        ) as mock_vr:
+            output = await self.handler.verify_pres(pres_ex_record=record)
+            assert output.verified
+
+    async def test_verify_pres_c(self):
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                ),
+                V20PresFormat(
+                    attach_id="dif-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES, ident="dif-0"),
+                AttachDecorator.data_json(DIF_PRES, ident="dif-1"),
+            ],
+        )
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="dif-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif-0"),
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif-1"),
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+            processed_attach_ids=["dif-0", "dif-1"],
+            verified_attach_ids=[],
+        )
+
+        with async_mock.patch.object(
+            test_module,
+            "verify_presentation",
+            async_mock.CoroutineMock(
+                return_value=PresentationVerificationResult(verified=True)
+            ),
+        ) as mock_vr:
+            output = await self.handler.verify_pres(
+                pres_ex_record=record, attach_id="dif-0"
+            )
+            assert output.verified
+            output = await self.handler.verify_pres(
+                pres_ex_record=record, attach_id="dif-1"
+            )
             assert output.verified
 
     async def test_verify_pres_no_challenge(self):
@@ -1579,14 +1825,14 @@ class TestDIFFormatHandler(AsyncTestCase):
         dif_pres = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="dif",
+                    attach_id="dif-0",
                     format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
                 )
             ],
             presentations_attach=[
                 AttachDecorator.data_json(
                     mapping=dif_proof,
-                    ident="dif",
+                    ident="dif-0",
                 )
             ],
         )
@@ -1621,7 +1867,9 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+        await self.handler.receive_pres(
+            message=dif_pres, pres_ex_record=record, attach_id="dif-0"
+        )
 
     async def test_verify_received_pres_c(self):
         dif_proof = deepcopy(DIF_PRES)
@@ -1634,14 +1882,14 @@ class TestDIFFormatHandler(AsyncTestCase):
         dif_pres = V20Pres(
             formats=[
                 V20PresFormat(
-                    attach_id="dif",
+                    attach_id="dif-0",
                     format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
                 )
             ],
             presentations_attach=[
                 AttachDecorator.data_json(
                     mapping=dif_proof,
-                    ident="dif",
+                    ident="dif-0",
                 )
             ],
         )
@@ -1671,14 +1919,14 @@ class TestDIFFormatHandler(AsyncTestCase):
         dif_pres_request = V20PresRequest(
             formats=[
                 V20PresFormat(
-                    attach_id="dif",
+                    attach_id="dif-0",
                     format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
                         V20PresFormat.Format.DIF.api
                     ],
                 )
             ],
             request_presentations_attach=[
-                AttachDecorator.data_json(dif_proof_req, ident="dif")
+                AttachDecorator.data_json(dif_proof_req, ident="dif-0")
             ],
         )
         record = V20PresExRecord(
@@ -1694,7 +1942,9 @@ class TestDIFFormatHandler(AsyncTestCase):
             auto_present=True,
             error_msg="error",
         )
-        await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+        await self.handler.receive_pres(
+            message=dif_pres, pres_ex_record=record, attach_id="dif-0"
+        )
 
     async def test_verify_received_pres_sequence(self):
         dif_pres = V20Pres(

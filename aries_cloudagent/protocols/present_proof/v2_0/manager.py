@@ -109,6 +109,7 @@ class V20PresManager:
         pres_ex_record: V20PresExRecord,
         request_data: dict = None,
         comment: str = None,
+        present_multiple: bool = False,
     ):
         """
         Create a presentation request bound to a proposal.
@@ -129,21 +130,37 @@ class V20PresManager:
             pres_exch_format = V20PresFormat.Format.get(format.format)
 
             if pres_exch_format:
+                attach_id = (
+                    format.attach_id
+                    if format.attach_id != pres_exch_format.api
+                    else None
+                )
                 request_formats.append(
                     await pres_exch_format.handler(self._profile).create_bound_request(
-                        pres_ex_record,
-                        request_data,
+                        pres_ex_record=pres_ex_record,
+                        request_data=request_data,
+                        attach_id=attach_id,
                     )
                 )
         if len(request_formats) == 0:
             raise V20PresManagerError(
                 "Unable to create presentation request. No supported formats"
             )
+        if len(request_formats) >= 2:
+            if not present_multiple:
+                raise V20PresManagerError(
+                    "Multiple formats included but present_multiple"
+                    f" is set as {str(present_multiple)}"
+                )
+            pres_ex_record.multiple_presentations = True
+        if present_multiple:
+            pres_ex_record.multiple_presentations = True
         pres_request_message = V20PresRequest(
             comment=comment,
             will_confirm=True,
             formats=[format for (format, _) in request_formats],
             request_presentations_attach=[attach for (_, attach) in request_formats],
+            present_multiple=present_multiple,
         )
         pres_request_message._thread = {"thid": pres_ex_record.thread_id}
         pres_request_message.assign_trace_decorator(
@@ -188,6 +205,8 @@ class V20PresManager:
             auto_verify=auto_verify,
             trace=(pres_request_message._trace is not None),
         )
+        if pres_request_message.present_multiple:
+            pres_ex_record.multiple_presentations = True
         async with self._profile.session() as session:
             await pres_ex_record.save(
                 session, reason="create (free) v2.0 presentation request"
@@ -220,6 +239,7 @@ class V20PresManager:
         request_data: dict = {},
         *,
         comment: str = None,
+        last_presentation: bool = True,
     ) -> Tuple[V20PresExRecord, V20Pres]:
         """
         Create a presentation.
@@ -256,25 +276,56 @@ class V20PresManager:
             A tuple (updated presentation exchange record, presentation message)
 
         """
+        pres_exists = False
+        if pres_ex_record.pres:
+            if pres_ex_record.multiple_presentations:
+                pres_exists = True
+            else:
+                raise V20PresManagerError(
+                    "create_pres() called multiple times for "
+                    f"pres ex record {pres_ex_record.pres_ex_id} "
+                    "and multiple_presentation flag set as "
+                    f"{str(pres_ex_record.multiple_presentations)}"
+                )
         proof_request = pres_ex_record.pres_request
+        present_multiple = proof_request.present_multiple
         input_formats = proof_request.formats
         pres_formats = []
+        to_exclude = pres_ex_record.processed_attach_ids
         for format in input_formats:
             pres_exch_format = V20PresFormat.Format.get(format.format)
 
             if pres_exch_format:
+                attach_id = (
+                    format.attach_id
+                    if format.attach_id != pres_exch_format.api
+                    else None
+                )
+                if attach_id and attach_id in to_exclude:
+                    continue
                 if not request_data:
                     request_data_pres_exch = {}
                 else:
-                    request_data_pres_exch = {
-                        pres_exch_format.api: request_data.get(pres_exch_format.api)
-                    }
+                    if attach_id:
+                        request_data_pres_exch = {
+                            attach_id: request_data.get(attach_id)
+                        }
+                    else:
+                        request_data_pres_exch = {
+                            pres_exch_format.api: request_data.get(pres_exch_format.api)
+                        }
                 pres_tuple = await pres_exch_format.handler(self._profile).create_pres(
-                    pres_ex_record,
-                    request_data_pres_exch,
+                    pres_ex_record=pres_ex_record,
+                    request_data=request_data_pres_exch,
+                    attach_id=attach_id,
                 )
                 if pres_tuple:
                     pres_formats.append(pres_tuple)
+                    format_incl, _ = pres_tuple
+                    if not attach_id and format_incl.attach_id != pres_exch_format.api:
+                        attach_id = format_incl.attach_id
+                    if attach_id:
+                        pres_ex_record.process_attach_id(attach_id)
                 else:
                     raise V20PresManagerError(
                         "Unable to create presentation. ProblemReport message sent"
@@ -283,10 +334,21 @@ class V20PresManager:
             raise V20PresManagerError(
                 "Unable to create presentation. No supported formats"
             )
+        if len(pres_formats) >= 2:
+            if not present_multiple:
+                LOGGER.warning(
+                    "Multiple presentation generated but proof request has "
+                    f"present_multiple set as {str(present_multiple)}, only "
+                    "including the first presentation."
+                )
+                pres_formats = [pres_formats[0]]
+            else:
+                pres_ex_record.multiple_presentations = True
         pres_message = V20Pres(
             comment=comment,
             formats=[format for (format, _) in pres_formats],
             presentations_attach=[attach for (_, attach) in pres_formats],
+            last_presentation=last_presentation,
         )
 
         # Assign thid (and optionally pthid) to message
@@ -295,12 +357,26 @@ class V20PresManager:
             self._profile.settings, pres_ex_record.trace
         )
 
-        # save presentation exchange state
-        pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_SENT
-        pres_ex_record.pres = V20Pres(
+        pres_ex_rec_pres = V20Pres(
             formats=[format for (format, _) in pres_formats],
             presentations_attach=[attach for (_, attach) in pres_formats],
+            last_presentation=last_presentation,
         )
+        if last_presentation:
+            pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_SENT
+        else:
+            pres_ex_record.state = V20PresExRecord.STATE_REQUEST_RECEIVED
+        if pres_exists:
+            existing_pres_msg = pres_ex_record.pres
+            for iter in range(len(pres_ex_rec_pres.presentations_attach)):
+                existing_pres_msg.add_attachments(
+                    pres_ex_rec_pres.formats[iter],
+                    pres_ex_rec_pres.presentations_attach[iter],
+                )
+            pres_ex_record.pres = existing_pres_msg
+            pres_ex_record.multiple_presentations = True
+        else:
+            pres_ex_record.pres = pres_ex_rec_pres
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="create v2.0 presentation")
         return pres_ex_record, pres_message
@@ -347,24 +423,61 @@ class V20PresManager:
             pres_ex_record.connection_id = connection_record.connection_id
 
         input_formats = message.formats
-
+        last_presentation = message.last_presentation
+        alrady_processed_attach = pres_ex_record.processed_attach_ids
         for format in input_formats:
             pres_format = V20PresFormat.Format.get(format.format)
 
             if pres_format:
+                attach_id = (
+                    format.attach_id if format.attach_id != pres_format.api else None
+                )
+                if attach_id and attach_id in alrady_processed_attach:
+                    continue
                 receive_pres_return = await pres_format.handler(
                     self._profile
                 ).receive_pres(
-                    message,
-                    pres_ex_record,
+                    message=message,
+                    pres_ex_record=pres_ex_record,
+                    attach_id=attach_id,
                 )
                 if isinstance(receive_pres_return, bool) and not receive_pres_return:
                     raise V20PresManagerError(
                         "Unable to verify received presentation."
                         " ProblemReport message sent"
                     )
-        pres_ex_record.pres = message
-        pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
+                if attach_id:
+                    pres_ex_record.process_attach_id(attach_id=attach_id)
+        if last_presentation:
+            pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
+        else:
+            if pres_ex_record.multiple_presentations:
+                pres_ex_record.state = V20PresExRecord.STATE_REQUEST_SENT
+            else:
+                LOGGER.warning(
+                    "Presentation exchange record has multiple_presentations "
+                    f"set as {str(pres_ex_record.multiple_presentations)} but "
+                    "V20Pres message has last_presentation set as False."
+                )
+                pres_ex_record.state = V20PresExRecord.STATE_PRESENTATION_RECEIVED
+        if pres_ex_record.pres:
+            if not pres_ex_record.multiple_presentations:
+                raise V20PresManagerError(
+                    "Presentation exchange record has V20Pres already existing "
+                    " but multiple_presentations set as "
+                    f"{str(pres_ex_record.multiple_presentations)}"
+                )
+            else:
+                existing_pres_msg = pres_ex_record.pres
+                for iter in range(len(message.presentations_attach)):
+                    existing_pres_msg.add_attachments(
+                        message.formats[iter],
+                        message.presentations_attach[iter],
+                    )
+                pres_ex_record.pres = existing_pres_msg
+                pres_ex_record.multiple_presentations = True
+        else:
+            pres_ex_record.pres = message
         async with self._profile.session() as session:
             await pres_ex_record.save(session, reason="receive v2.0 presentation")
 
@@ -386,14 +499,23 @@ class V20PresManager:
         """
         pres_request_msg = pres_ex_record.pres_request
         input_formats = pres_request_msg.formats
+        to_exclude = pres_ex_record.verified_attach_ids
         for format in input_formats:
             pres_exch_format = V20PresFormat.Format.get(format.format)
 
             if pres_exch_format:
+                attach_id = (
+                    format.attach_id
+                    if format.attach_id != pres_exch_format.api
+                    else None
+                )
+                if attach_id in to_exclude:
+                    continue
                 pres_ex_record = await pres_exch_format.handler(
                     self._profile
                 ).verify_pres(
-                    pres_ex_record,
+                    pres_ex_record=pres_ex_record,
+                    attach_id=attach_id,
                 )
                 if pres_ex_record.verified == "false":
                     break

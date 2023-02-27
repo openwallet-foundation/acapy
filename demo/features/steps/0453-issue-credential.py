@@ -296,7 +296,9 @@ def step_impl(context, holder):
 
     # check the received credential status (up to 10 seconds)
     for i in range(10):
-        if aries_container_receive_credentials(agent["agent"], cred_def_id, creds_attrs):
+        if aries_container_receive_credentials(
+            agent["agent"], cred_def_id, creds_attrs
+        ):
             return
 
     assert False

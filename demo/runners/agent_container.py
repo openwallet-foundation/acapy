@@ -265,7 +265,9 @@ class AriesAgent(DemoAgent):
                     await self.admin_POST(
                         f"/issue-credential-2.0/records/{cred_ex_id}/send-request"
                     )
-                elif message["cred_offer"]["formats"][0]["format"].startswith("aries/ld-proof"):
+                elif message["cred_offer"]["formats"][0]["format"].startswith(
+                    "aries/ld-proof"
+                ):
                     holder_did = await self.admin_POST(
                         "/wallet/did/create",
                         {"method": "key", "options": {"key_type": "bls12381g2"}},

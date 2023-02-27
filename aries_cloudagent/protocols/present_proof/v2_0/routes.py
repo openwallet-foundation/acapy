@@ -112,38 +112,6 @@ class V20PresExRecordListSchema(OpenAPISchema):
     )
 
 
-class V20PresProposalByFormatSchema(OpenAPISchema):
-    """Schema for presentation proposal per format."""
-
-    indy = fields.Nested(
-        IndyProofRequestSchema,
-        required=False,
-        description="Presentation proposal for indy",
-    )
-    dif = fields.Nested(
-        DIFProofProposalSchema,
-        required=False,
-        description="Presentation proposal for DIF",
-    )
-
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields: data must have at least one format.
-
-        Args:
-            data: The data to validate
-
-        Raises:
-            ValidationError: if data has no formats
-
-        """
-        if not any(f.api in data for f in V20PresFormat.Format):
-            raise ValidationError(
-                "V20PresProposalByFormatSchema requires indy, dif, or both"
-            )
-
-
 class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for sending a presentation proposal admin message."""
 
@@ -153,8 +121,8 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
     comment = fields.Str(
         description="Human-readable comment", required=False, allow_none=True
     )
-    presentation_proposal = fields.Nested(
-        V20PresProposalByFormatSchema(),
+    presentation_proposal = fields.Dict(
+        description="Presentation proposal spec",
         required=True,
     )
     auto_present = fields.Boolean(
@@ -171,43 +139,44 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
         example=False,
     )
 
-
-class V20PresRequestByFormatSchema(OpenAPISchema):
-    """Presentation request per format."""
-
-    indy = fields.Nested(
-        IndyProofRequestSchema,
-        required=False,
-        description="Presentation request for indy",
-    )
-    dif = fields.Nested(
-        DIFProofRequestSchema,
-        required=False,
-        description="Presentation request for DIF",
-    )
-
     @validates_schema
     def validate_fields(self, data, **kwargs):
-        """
-        Validate schema fields: data must have at least one format.
-
-        Args:
-            data: The data to validate
-
-        Raises:
-            ValidationError: if data has no formats
-
-        """
-        if not any(f.api in data for f in V20PresFormat.Format):
+        """Validate presentation proposal spec."""
+        pres_proposal_dict = data.get("presentation_proposal")
+        pres_proposal_attach_ids_handled = []
+        if pres_proposal_dict:
+            for attach_id in pres_proposal_dict.keys():
+                if V20PresFormat.Format.INDY.api in attach_id:
+                    try:
+                        IndyProofRequestSchema().load(pres_proposal_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "IndyProofRequestSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    pres_proposal_attach_ids_handled.append(attach_id)
+                if V20PresFormat.Format.DIF.api in attach_id:
+                    try:
+                        DIFProofProposalSchema().load(pres_proposal_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "DIFProofProposalSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    pres_proposal_attach_ids_handled.append(attach_id)
+        if len(pres_proposal_attach_ids_handled) == 0:
             raise ValidationError(
-                "V20PresRequestByFormatSchema requires indy, dif, or both"
+                "V20PresProposalRequestSchema requires indy, dif, or both"
             )
 
 
 class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
     """Request schema for creating a proof request free of any connection."""
 
-    presentation_request = fields.Nested(V20PresRequestByFormatSchema(), required=True)
+    presentation_request = fields.Dict(
+        description="Presentation request spec",
+        required=True,
+    )
     comment = fields.Str(required=False, allow_none=True)
     auto_verify = fields.Bool(
         description="Verifier choice to auto-verify proof presentation",
@@ -219,6 +188,36 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         example=False,
     )
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate presentation_request."""
+        pres_request_dict = data.get("presentation_request")
+        pres_request_attach_ids_handled = []
+        if pres_request_dict:
+            for attach_id in pres_request_dict.keys():
+                if V20PresFormat.Format.INDY.api in attach_id:
+                    try:
+                        IndyProofRequestSchema().load(pres_request_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "IndyProofRequestSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    pres_request_attach_ids_handled.append(attach_id)
+                if V20PresFormat.Format.DIF.api in attach_id:
+                    try:
+                        DIFProofRequestSchema().load(pres_request_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "DIFProofRequestSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                    pres_request_attach_ids_handled.append(attach_id)
+        if len(pres_request_attach_ids_handled) == 0:
+            raise ValidationError(
+                "V20PresCreateRequestRequestSchema requires indy, dif, or both"
+            )
 
 
 class V20PresSendRequestRequestSchema(V20PresCreateRequestRequestSchema):
@@ -247,6 +246,27 @@ class V20PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
 class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
     """Presentation specification schema by format, for send-presentation request."""
 
+    request_data = fields.Dict(
+        description=(
+            "Request data mapping with ability to specify presentation"
+            " spec corresponding to multiple Indy and/or Dif"
+            " attachments by the identifer. Either include "
+            "request_data or indy/dif in the request body."
+        ),
+        required=False,
+        example={
+            "indy-0": {
+                "requested_attributes": {"..."},
+                "requested_predicates": {"..."},
+                "self_attested_attributes": {"..."},
+            },
+            "indy-1": {
+                "requested_attributes": {"..."},
+                "requested_predicates": {"..."},
+                "self_attested_attributes": {"..."},
+            },
+        },
+    )
     indy = fields.Nested(
         IndyPresSpecSchema,
         required=False,
@@ -273,11 +293,56 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
             ValidationError: if data does not have exactly one format.
 
         """
-        if len(data.keys() & {f.api for f in V20PresFormat.Format}) < 1:
+        request_data_dict = data.get("request_data")
+        if (
+            request_data_dict
+            and len(data.keys() & {f.api for f in V20PresFormat.Format}) >= 1
+        ):
             raise ValidationError(
-                "V20PresSpecByFormatRequestSchema must specify "
-                "at least one presentation format"
+                "V20PresSpecByFormatRequestSchema cannot specify both"
+                " at least one presentation format and request_data"
             )
+        if request_data_dict:
+            for attach_id in request_data_dict.keys():
+                if V20PresFormat.Format.INDY.api in attach_id:
+                    try:
+                        IndyPresSpecSchema().load(request_data_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "IndyPresSpecSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+                if V20PresFormat.Format.DIF.api in attach_id:
+                    try:
+                        DIFPresSpecSchema().load(request_data_dict.get(attach_id))
+                    except ValidationError:
+                        raise ValidationError(
+                            "DIFPresSpecSchema schema validation "
+                            f"failed for {attach_id}"
+                        )
+        else:
+            if len(data.keys() & {f.api for f in V20PresFormat.Format}) < 1:
+                raise ValidationError(
+                    "V20PresSpecByFormatRequestSchema must specify "
+                    "at least one presentation format or request_data"
+                )
+            else:
+                if V20PresFormat.Format.INDY.api in data.keys():
+                    try:
+                        IndyPresSpecSchema().load(
+                            data.get(V20PresFormat.Format.INDY.api)
+                        )
+                    except ValidationError:
+                        raise ValidationError(
+                            "IndyPresSpecSchema schema validation failed"
+                        )
+                elif V20PresFormat.Format.DIF.api in data.keys():
+                    try:
+                        DIFPresSpecSchema().load(data.get(V20PresFormat.Format.DIF.api))
+                    except ValidationError:
+                        raise ValidationError(
+                            "DIFPresSpecSchema schema validation failed"
+                        )
 
 
 class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
@@ -331,20 +396,22 @@ async def _add_nonce(indy_proof_request: Mapping) -> Mapping:
 def _formats_attach(by_format: Mapping, msg_type: str, spec: str) -> Mapping:
     """Break out formats and proposals/requests/presentations for v2.0 messages."""
     attach = []
-    for fmt_api, item_by_fmt in by_format.items():
-        if fmt_api == V20PresFormat.Format.INDY.api:
+    for fmt_api_or_ident, item_by_fmt in by_format.items():
+        if fmt_api_or_ident.split("-")[0] == V20PresFormat.Format.INDY.api:
             attach.append(
-                AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api)
+                AttachDecorator.data_base64(mapping=item_by_fmt, ident=fmt_api_or_ident)
             )
-        elif fmt_api == V20PresFormat.Format.DIF.api:
-            attach.append(AttachDecorator.data_json(mapping=item_by_fmt, ident=fmt_api))
+        elif fmt_api_or_ident.split("-")[0] == V20PresFormat.Format.DIF.api:
+            attach.append(
+                AttachDecorator.data_json(mapping=item_by_fmt, ident=fmt_api_or_ident)
+            )
     return {
         "formats": [
             V20PresFormat(
-                attach_id=fmt_api,
-                format_=ATTACHMENT_FORMAT[msg_type][fmt_api],
+                attach_id=fmt_api_or_ident,
+                format_=ATTACHMENT_FORMAT[msg_type][fmt_api_or_ident.split("-")[0]],
             )
-            for fmt_api in by_format
+            for fmt_api_or_ident in by_format
         ],
         f"{spec}_attach": attach,
     }
@@ -483,19 +550,28 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     indy_credentials = []
     # INDY
     try:
-        indy_pres_request = pres_ex_record.by_format["pres_request"].get(
-            V20PresFormat.Format.INDY.api
-        )
-        if indy_pres_request:
-            indy_credentials = (
-                await indy_holder.get_credentials_for_presentation_request_by_referent(
-                    indy_pres_request,
-                    pres_referents,
-                    start,
-                    count,
-                    extra_query,
+        indy_attach_ids = [
+            attach_id
+            for attach_id in pres_ex_record.by_format["pres_request"].keys()
+            if V20PresFormat.Format.INDY.api in attach_id
+        ]
+        for attach_id in indy_attach_ids:
+            indy_pres_request = pres_ex_record.by_format["pres_request"].get(attach_id)
+            if indy_pres_request:
+                # flake8 and black 23.1.0 check collision fix
+                # fmt: off
+                indy_credentials_from_holder = await (
+                    indy_holder.get_credentials_for_presentation_request_by_referent(
+                        indy_pres_request,
+                        pres_referents,
+                        start,
+                        count,
+                        extra_query,
+                    )
                 )
-            )
+                # fmt: on
+                for cred in indy_credentials_from_holder:
+                    indy_credentials.append(cred)
     except IndyHolderError as err:
         if pres_ex_record:
             async with profile.session() as session:
@@ -507,164 +583,174 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             pres_ex_record,
             outbound_handler,
         )
-
     dif_holder = profile.inject(VCHolder)
     dif_credentials = []
     dif_cred_value_list = []
     # DIF
     try:
-        dif_pres_request = pres_ex_record.by_format["pres_request"].get(
-            V20PresFormat.Format.DIF.api
-        )
-        if dif_pres_request:
-            input_descriptors_list = dif_pres_request.get(
-                "presentation_definition", {}
-            ).get("input_descriptors")
-            claim_fmt = dif_pres_request.get("presentation_definition", {}).get(
-                "format"
-            )
-            if claim_fmt and len(claim_fmt.keys()) > 0:
-                claim_fmt = ClaimFormat.deserialize(claim_fmt)
-            input_descriptors = []
-            for input_desc_dict in input_descriptors_list:
-                input_descriptors.append(InputDescriptors.deserialize(input_desc_dict))
-            record_ids = set()
-            for input_descriptor in input_descriptors:
-                proof_type = None
-                limit_disclosure = input_descriptor.constraint.limit_disclosure and (
-                    input_descriptor.constraint.limit_disclosure == "required"
+        dif_attach_ids = [
+            attach_id
+            for attach_id in pres_ex_record.by_format["pres_request"].keys()
+            if V20PresFormat.Format.DIF.api in attach_id
+        ]
+        for attach_id in dif_attach_ids:
+            dif_pres_request = pres_ex_record.by_format["pres_request"].get(attach_id)
+            if dif_pres_request:
+                input_descriptors_list = dif_pres_request.get(
+                    "presentation_definition", {}
+                ).get("input_descriptors")
+                claim_fmt = dif_pres_request.get("presentation_definition", {}).get(
+                    "format"
                 )
-                uri_list = []
-                one_of_uri_groups = []
-                if input_descriptor.schemas:
-                    if input_descriptor.schemas.oneof_filter:
-                        one_of_uri_groups = await retrieve_uri_list_from_schema_filter(
-                            input_descriptor.schemas.uri_groups
-                        )
-                    else:
-                        schema_uris = input_descriptor.schemas.uri_groups[0]
-                        for schema_uri in schema_uris:
-                            if schema_uri.required is None:
-                                required = True
-                            else:
-                                required = schema_uri.required
-                            if required:
-                                uri_list.append(schema_uri.uri)
-                if len(uri_list) == 0:
-                    uri_list = None
-                if len(one_of_uri_groups) == 0:
-                    one_of_uri_groups = None
-                if limit_disclosure:
-                    proof_type = [BbsBlsSignature2020.signature_type]
-                if claim_fmt:
-                    if claim_fmt.ldp_vp:
-                        if "proof_type" in claim_fmt.ldp_vp:
-                            proof_types = claim_fmt.ldp_vp.get("proof_type")
-                            if limit_disclosure and (
-                                BbsBlsSignature2020.signature_type not in proof_types
-                            ):
-                                raise web.HTTPBadRequest(
-                                    reason=(
-                                        "Verifier submitted presentation request with "
-                                        "limit_disclosure [selective disclosure] "
-                                        "option but verifier does not support "
-                                        "BbsBlsSignature2020 format"
-                                    )
-                                )
-                            elif (
-                                len(proof_types) == 1
-                                and (
-                                    BbsBlsSignature2020.signature_type
-                                    not in proof_types
-                                )
-                                and (
-                                    Ed25519Signature2018.signature_type
-                                    not in proof_types
-                                )
-                            ):
-                                raise web.HTTPBadRequest(
-                                    reason=(
-                                        "Only BbsBlsSignature2020 and/or "
-                                        "Ed25519Signature2018 signature types "
-                                        "are supported"
-                                    )
-                                )
-                            elif (
-                                len(proof_types) >= 2
-                                and (
-                                    BbsBlsSignature2020.signature_type
-                                    not in proof_types
-                                )
-                                and (
-                                    Ed25519Signature2018.signature_type
-                                    not in proof_types
-                                )
-                            ):
-                                raise web.HTTPBadRequest(
-                                    reason=(
-                                        "Only BbsBlsSignature2020 and "
-                                        "Ed25519Signature2018 signature types "
-                                        "are supported"
-                                    )
-                                )
-                            else:
-                                for proof_format in proof_types:
-                                    if (
-                                        proof_format
-                                        == Ed25519Signature2018.signature_type
-                                    ):
-                                        proof_type = [
-                                            Ed25519Signature2018.signature_type
-                                        ]
-                                        break
-                                    elif (
-                                        proof_format
-                                        == BbsBlsSignature2020.signature_type
-                                    ):
-                                        proof_type = [
-                                            BbsBlsSignature2020.signature_type
-                                        ]
-                                        break
-                    else:
-                        raise web.HTTPBadRequest(
-                            reason=(
-                                "Currently, only ldp_vp with "
-                                "BbsBlsSignature2020 and Ed25519Signature2018"
-                                " signature types are supported"
-                            )
-                        )
-                if one_of_uri_groups:
-                    records = []
-                    cred_group_record_ids = set()
-                    for uri_group in one_of_uri_groups:
-                        search = dif_holder.search_credentials(
-                            proof_types=proof_type, pd_uri_list=uri_group
-                        )
-                        cred_group = await search.fetch(count)
-                        (
-                            cred_group_vcrecord_list,
-                            cred_group_vcrecord_ids_set,
-                        ) = await process_vcrecords_return_list(
-                            cred_group, cred_group_record_ids
-                        )
-                        cred_group_record_ids = cred_group_vcrecord_ids_set
-                        records = records + cred_group_vcrecord_list
-                else:
-                    search = dif_holder.search_credentials(
-                        proof_types=proof_type,
-                        pd_uri_list=uri_list,
+                if claim_fmt and len(claim_fmt.keys()) > 0:
+                    claim_fmt = ClaimFormat.deserialize(claim_fmt)
+                input_descriptors = []
+                for input_desc_dict in input_descriptors_list:
+                    input_descriptors.append(
+                        InputDescriptors.deserialize(input_desc_dict)
                     )
-                    records = await search.fetch(count)
-                # Avoiding addition of duplicate records
-                vcrecord_list, vcrecord_ids_set = await process_vcrecords_return_list(
-                    records, record_ids
-                )
-                record_ids = vcrecord_ids_set
-                dif_credentials = dif_credentials + vcrecord_list
-            for dif_credential in dif_credentials:
-                cred_value = dif_credential.cred_value
-                cred_value["record_id"] = dif_credential.record_id
-                dif_cred_value_list.append(cred_value)
+                record_ids = set()
+                for input_descriptor in input_descriptors:
+                    proof_type = None
+                    limit_disclosure = (
+                        input_descriptor.constraint.limit_disclosure
+                        and (input_descriptor.constraint.limit_disclosure == "required")
+                    )
+                    uri_list = []
+                    one_of_uri_groups = []
+                    if input_descriptor.schemas:
+                        if input_descriptor.schemas.oneof_filter:
+                            one_of_uri_groups = (
+                                await retrieve_uri_list_from_schema_filter(
+                                    input_descriptor.schemas.uri_groups
+                                )
+                            )
+                        else:
+                            schema_uris = input_descriptor.schemas.uri_groups[0]
+                            for schema_uri in schema_uris:
+                                if schema_uri.required is None:
+                                    required = True
+                                else:
+                                    required = schema_uri.required
+                                if required:
+                                    uri_list.append(schema_uri.uri)
+                    if len(uri_list) == 0:
+                        uri_list = None
+                    if len(one_of_uri_groups) == 0:
+                        one_of_uri_groups = None
+                    if limit_disclosure:
+                        proof_type = [BbsBlsSignature2020.signature_type]
+                    if claim_fmt:
+                        if claim_fmt.ldp_vp:
+                            if "proof_type" in claim_fmt.ldp_vp:
+                                proof_types = claim_fmt.ldp_vp.get("proof_type")
+                                if limit_disclosure and (
+                                    BbsBlsSignature2020.signature_type
+                                    not in proof_types
+                                ):
+                                    raise web.HTTPBadRequest(
+                                        reason=(
+                                            "Verifier submitted presentation request "
+                                            "with limit_disclosure [selective "
+                                            "disclosure] option but verifier does "
+                                            "not support BbsBlsSignature2020 format"
+                                        )
+                                    )
+                                elif (
+                                    len(proof_types) == 1
+                                    and (
+                                        BbsBlsSignature2020.signature_type
+                                        not in proof_types
+                                    )
+                                    and (
+                                        Ed25519Signature2018.signature_type
+                                        not in proof_types
+                                    )
+                                ):
+                                    raise web.HTTPBadRequest(
+                                        reason=(
+                                            "Only BbsBlsSignature2020 and/or "
+                                            "Ed25519Signature2018 signature types "
+                                            "are supported"
+                                        )
+                                    )
+                                elif (
+                                    len(proof_types) >= 2
+                                    and (
+                                        BbsBlsSignature2020.signature_type
+                                        not in proof_types
+                                    )
+                                    and (
+                                        Ed25519Signature2018.signature_type
+                                        not in proof_types
+                                    )
+                                ):
+                                    raise web.HTTPBadRequest(
+                                        reason=(
+                                            "Only BbsBlsSignature2020 and "
+                                            "Ed25519Signature2018 signature types "
+                                            "are supported"
+                                        )
+                                    )
+                                else:
+                                    for proof_format in proof_types:
+                                        if (
+                                            proof_format
+                                            == Ed25519Signature2018.signature_type
+                                        ):
+                                            proof_type = [
+                                                Ed25519Signature2018.signature_type
+                                            ]
+                                            break
+                                        elif (
+                                            proof_format
+                                            == BbsBlsSignature2020.signature_type
+                                        ):
+                                            proof_type = [
+                                                BbsBlsSignature2020.signature_type
+                                            ]
+                                            break
+                        else:
+                            raise web.HTTPBadRequest(
+                                reason=(
+                                    "Currently, only ldp_vp with "
+                                    "BbsBlsSignature2020 and Ed25519Signature2018"
+                                    " signature types are supported"
+                                )
+                            )
+                    if one_of_uri_groups:
+                        records = []
+                        cred_group_record_ids = set()
+                        for uri_group in one_of_uri_groups:
+                            search = dif_holder.search_credentials(
+                                proof_types=proof_type, pd_uri_list=uri_group
+                            )
+                            cred_group = await search.fetch(count)
+                            (
+                                cred_group_vcrecord_list,
+                                cred_group_vcrecord_ids_set,
+                            ) = await process_vcrecords_return_list(
+                                cred_group, cred_group_record_ids
+                            )
+                            cred_group_record_ids = cred_group_vcrecord_ids_set
+                            records = records + cred_group_vcrecord_list
+                    else:
+                        search = dif_holder.search_credentials(
+                            proof_types=proof_type,
+                            pd_uri_list=uri_list,
+                        )
+                        records = await search.fetch(count)
+                    # Avoiding addition of duplicate records
+                    (
+                        vcrecord_list,
+                        vcrecord_ids_set,
+                    ) = await process_vcrecords_return_list(records, record_ids)
+                    record_ids = vcrecord_ids_set
+                    dif_credentials = dif_credentials + vcrecord_list
+                for dif_credential in dif_credentials:
+                    cred_value = dif_credential.cred_value
+                    cred_value["record_id"] = dif_credential.record_id
+                    dif_cred_value_list.append(cred_value)
     except (
         StorageNotFoundError,
         V20PresFormatHandlerError,
@@ -679,7 +765,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
             pres_ex_record,
             outbound_handler,
         )
-    credentials = list(indy_credentials) + dif_cred_value_list
+    credentials = indy_credentials + dif_cred_value_list
     return web.json_response(credentials)
 
 
@@ -817,8 +903,11 @@ async def present_proof_create_request(request: web.BaseRequest):
 
     comment = body.get("comment")
     pres_request_spec = body.get("presentation_request")
-    if pres_request_spec and V20PresFormat.Format.INDY.api in pres_request_spec:
-        await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
+    pres_request_spec_attach_ids = pres_request_spec.keys()
+    if pres_request_spec:
+        for attach_id in pres_request_spec_attach_ids:
+            if V20PresFormat.Format.INDY.api in attach_id:
+                await _add_nonce(pres_request_spec[attach_id])
 
     pres_request_message = V20PresRequest(
         comment=comment,
@@ -899,8 +988,11 @@ async def present_proof_send_free_request(request: web.BaseRequest):
 
     comment = body.get("comment")
     pres_request_spec = body.get("presentation_request")
-    if pres_request_spec and V20PresFormat.Format.INDY.api in pres_request_spec:
-        await _add_nonce(pres_request_spec[V20PresFormat.Format.INDY.api])
+    pres_request_spec_attach_ids = pres_request_spec.keys()
+    if pres_request_spec:
+        for attach_id in pres_request_spec_attach_ids:
+            if V20PresFormat.Format.INDY.api in attach_id:
+                await _add_nonce(pres_request_spec[attach_id])
     pres_request_message = V20PresRequest(
         comment=comment,
         will_confirm=True,
@@ -1059,7 +1151,14 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     pres_ex_id = request.match_info["pres_ex_id"]
     body = await request.json()
     supported_formats = ["dif", "indy"]
-    if not any(x in body for x in supported_formats):
+    request_data = body.get("request_data") or body
+    if (
+        request_data
+        and not any(
+            attach_id.split("-")[0] in supported_formats for attach_id in request_data
+        )
+        or not request_data
+    ):
         raise web.HTTPBadRequest(
             reason=(
                 "No presentation format specification provided, "
@@ -1105,7 +1204,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     try:
         pres_ex_record, pres_message = await pres_manager.create_pres(
             pres_ex_record,
-            request_data=body,
+            request_data=request_data,
             comment=comment,
         )
         result = pres_ex_record.serialize()

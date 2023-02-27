@@ -28,6 +28,7 @@ from ...indy import pres_exch_handler as test_indy_util_module
 
 from .. import manager as test_module
 from ..formats.handler import V20PresFormatHandlerError
+from ..formats.indy.handler import IndyPresExchangeHandler
 from ..formats.dif.handler import DIFPresFormatHandler
 from ..formats.dif.tests.test_handler import (
     DIF_PRES_REQUEST_B as DIF_PRES_REQ,
@@ -620,6 +621,49 @@ class TestV20PresManager(AsyncTestCase):
         assert ret_px_rec is px_rec
         px_rec.save.assert_called_once()
 
+    async def test_create_bound_request_c(self):
+        comment = "comment"
+
+        proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-1"),
+            ],
+        )
+        px_rec = V20PresExRecord(
+            pres_proposal=proposal.serialize(),
+            role=V20PresExRecord.ROLE_VERIFIER,
+        )
+        px_rec.save = async_mock.CoroutineMock()
+        with self.assertRaises(V20PresManagerError) as context:
+            await self.manager.create_bound_request(
+                pres_ex_record=px_rec,
+                comment=comment,
+            )
+            assert "Multiple formats included but present_multiple" in str(
+                context.exception
+            )
+        (ret_px_rec, pres_req_msg) = await self.manager.create_bound_request(
+            pres_ex_record=px_rec,
+            comment=comment,
+            present_multiple=True,
+        )
+        assert ret_px_rec is px_rec
+
     async def test_create_bound_request_no_format(self):
         px_rec = V20PresExRecord(
             pres_proposal=V20PresProposal(
@@ -755,6 +799,34 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec.role == V20PresExRecord.ROLE_VERIFIER
             assert px_rec.state == V20PresExRecord.STATE_REQUEST_SENT
 
+    async def test_create_exchange_for_request_present_multiple(self):
+        pres_req = V20PresRequest(
+            comment="Test",
+            will_confirm=True,
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(mapping=INDY_PROOF_REQ_NAME, ident="indy")
+            ],
+            present_multiple=True,
+        )
+        pres_req.assign_thread_id("dummy")
+
+        with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+            px_rec = await self.manager.create_exchange_for_request(CONN_ID, pres_req)
+            save_ex.assert_called_once()
+
+            assert px_rec.thread_id == pres_req._thread_id
+            assert px_rec.initiator == V20PresExRecord.INITIATOR_SELF
+            assert px_rec.role == V20PresExRecord.ROLE_VERIFIER
+            assert px_rec.state == V20PresExRecord.STATE_REQUEST_SENT
+
     async def test_receive_pres_request(self):
         px_rec_in = V20PresExRecord()
 
@@ -811,6 +883,295 @@ class TestV20PresManager(AsyncTestCase):
             save_ex.assert_called_once()
             assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
 
+    async def test_create_pres_existing_x(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy")
+            ],
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
+            ],
+        )
+        px_rec_in = V20PresExRecord(
+            pres_request=pres_request.serialize(),
+            pres=pres.serialize(),
+        )
+        with self.assertRaises(V20PresManagerError) as context:
+            await self.manager.create_pres(px_rec_in, {})
+            assert "create_pres() called multiple times for pres ex record" in str(
+                context.exception
+            )
+
+    async def test_create_pres_existing_indy_a(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-1"),
+            ],
+        )
+        px_rec_in = V20PresExRecord(
+            pres_request=pres_request.serialize(),
+            multiple_presentations=True,
+        )
+        more_magic_rr = async_mock.MagicMock(
+            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+                return_value="/tmp/sample/tails/path"
+            )
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_indy_handler, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_indy_util_module, "RevocationRegistry", autospec=True
+        ) as mock_rr:
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+
+            (px_rec_out, pres_msg) = await self.manager.create_pres(
+                pres_ex_record=px_rec_in,
+                last_presentation=False,
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == V20PresExRecord.STATE_REQUEST_RECEIVED
+
+    async def test_create_pres_existing_indy_b(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-1"),
+            ],
+            present_multiple=True,
+        )
+        px_rec_in = V20PresExRecord(
+            pres_request=pres_request.serialize(),
+            multiple_presentations=True,
+        )
+        more_magic_rr = async_mock.MagicMock(
+            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+                return_value="/tmp/sample/tails/path"
+            )
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_indy_handler, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_indy_util_module, "RevocationRegistry", autospec=True
+        ) as mock_rr:
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+
+            req_creds = await indy_proof_req_preview2indy_requested_creds(
+                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
+            )
+            request_data = {"indy-0": req_creds, "indy-1": req_creds}
+            assert not req_creds["self_attested_attributes"]
+            assert len(req_creds["requested_attributes"]) == 2
+            assert len(req_creds["requested_predicates"]) == 1
+
+            (px_rec_out, pres_msg) = await self.manager.create_pres(
+                pres_ex_record=px_rec_in,
+                request_data=request_data,
+                last_presentation=False,
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == V20PresExRecord.STATE_REQUEST_RECEIVED
+
+    async def test_create_pres_existing_indy_last_pres(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-1"),
+            ],
+            present_multiple=True,
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-0")
+            ],
+        )
+        px_rec_in = V20PresExRecord(
+            pres_request=pres_request.serialize(),
+            pres=pres.serialize(),
+            multiple_presentations=True,
+            processed_attach_ids=["indy-0"],
+        )
+        more_magic_rr = async_mock.MagicMock(
+            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+                return_value="/tmp/sample/tails/path"
+            )
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_indy_handler, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_indy_util_module, "RevocationRegistry", autospec=True
+        ) as mock_rr:
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+
+            req_creds = await indy_proof_req_preview2indy_requested_creds(
+                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
+            )
+            request_data = {"indy-1": req_creds}
+            assert not req_creds["self_attested_attributes"]
+            assert len(req_creds["requested_attributes"]) == 2
+            assert len(req_creds["requested_predicates"]) == 1
+
+            (px_rec_out, pres_msg) = await self.manager.create_pres(
+                pres_ex_record=px_rec_in,
+                request_data=request_data,
+                last_presentation=True,
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
+
+    async def test_create_pres_multiple_seq_flow(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy"),
+            ],
+            present_multiple=True,
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy")
+            ],
+        )
+        px_rec_in = V20PresExRecord(
+            pres_request=pres_request.serialize(),
+            pres=pres.serialize(),
+            multiple_presentations=True,
+            processed_attach_ids=["indy"],
+        )
+        more_magic_rr = async_mock.MagicMock(
+            get_or_fetch_local_tails_path=async_mock.CoroutineMock(
+                return_value="/tmp/sample/tails/path"
+            )
+        )
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            test_indy_handler, "AttachDecorator", autospec=True
+        ) as mock_attach_decorator, async_mock.patch.object(
+            test_indy_util_module, "RevocationRegistry", autospec=True
+        ) as mock_rr, async_mock.patch.object(
+            test_indy_handler, "uuid4", async_mock.MagicMock()
+        ) as mock_uuid:
+            mock_uuid.return_value = "abc123"
+            mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
+
+            mock_attach_decorator.data_base64 = async_mock.MagicMock(
+                return_value=mock_attach_decorator
+            )
+
+            req_creds = await indy_proof_req_preview2indy_requested_creds(
+                INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
+            )
+            request_data = {"indy": req_creds}
+            assert not req_creds["self_attested_attributes"]
+            assert len(req_creds["requested_attributes"]) == 2
+            assert len(req_creds["requested_predicates"]) == 1
+
+            (px_rec_out, pres_msg) = await self.manager.create_pres(
+                pres_ex_record=px_rec_in,
+                request_data=request_data,
+                last_presentation=True,
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
+            assert pres_msg.formats[0].attach_id != "indy"
+            assert pres_msg.formats[0].attach_id == "indy-abc123"
+
     async def test_create_pres_indy_and_dif(self):
         pres_request = V20PresRequest(
             formats=[
@@ -846,16 +1207,32 @@ class TestV20PresManager(AsyncTestCase):
             test_indy_util_module, "RevocationRegistry", autospec=True
         ) as mock_rr, async_mock.patch.object(
             DIFPresFormatHandler, "create_pres", autospec=True
-        ) as mock_create_pres:
+        ) as mock_create_pres_dif, async_mock.patch.object(
+            IndyPresExchangeHandler, "create_pres", autospec=True
+        ) as mock_create_pres_indy:
             mock_rr.from_definition = async_mock.MagicMock(return_value=more_magic_rr)
 
             mock_attach_decorator_indy.data_base64 = async_mock.MagicMock(
                 return_value=mock_attach_decorator_indy
             )
 
-            mock_create_pres.return_value = (
-                PRES_20,
+            mock_create_pres_dif.return_value = (
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                ),
                 AttachDecorator.data_json(DIF_PRES, ident="dif"),
+            )
+            mock_create_pres_indy.return_value = (
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                AttachDecorator.data_json(INDY_PROOF, ident="INDY"),
             )
 
             req_creds = await indy_proof_req_preview2indy_requested_creds(
@@ -1047,19 +1424,19 @@ class TestV20PresManager(AsyncTestCase):
             req_creds = await indy_proof_req_preview2indy_requested_creds(
                 INDY_PROOF_REQ_NAME, preview=None, holder=self.holder
             )
-            request_data = {
-                "indy": {
-                    "self_attested_attributes": req_creds["self_attested_attributes"],
-                    "requested_attributes": req_creds["requested_attributes"],
-                    "requested_predicates": req_creds["requested_predicates"],
-                }
-            }
+            # request_data = {
+            #     "indy": {
+            #         "self_attested_attributes": req_creds["self_attested_attributes"],
+            #         "requested_attributes": req_creds["requested_attributes"],
+            #         "requested_predicates": req_creds["requested_predicates"],
+            #     }
+            # }
 
-            (px_rec_out, pres_msg) = await self.manager.create_pres(
-                px_rec_in, request_data
-            )
-            save_ex.assert_called_once()
-            assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
+            # (px_rec_out, pres_msg) = await self.manager.create_pres(
+            #     px_rec_in, request_data
+            # )
+            # save_ex.assert_called_once()
+            # assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_SENT
 
             # exercise superfluous timestamp removal
             for pred_reft_spec in req_creds["requested_predicates"].values():
@@ -1071,6 +1448,7 @@ class TestV20PresManager(AsyncTestCase):
                     "requested_predicates": req_creds["requested_predicates"],
                 }
             }
+            px_rec_in.multiple_presentations = True
             await self.manager.create_pres(px_rec_in, request_data)
             mock_log_info.assert_called_once()
 
@@ -1383,6 +1761,361 @@ class TestV20PresManager(AsyncTestCase):
         ) as session:
             retrieve_ex.side_effect = [px_rec_dummy]
             px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": "thread-id"},
+                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
+
+    async def test_receive_pres_multiple_a(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-1"),
+            ],
+        )
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-1"),
+            ],
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-1"),
+            ],
+            last_presentation=True,
+        )
+        pres.assign_thread_id("thread-id")
+
+        px_rec_dummy = V20PresExRecord(
+            pres_proposal=pres_proposal.serialize(),
+            pres_request=pres_request.serialize(),
+        )
+
+        # cover by_format property
+        by_format = px_rec_dummy.by_format
+
+        assert by_format.get("pres_proposal").get("indy-0") == INDY_PROOF_REQ_NAME
+        assert by_format.get("pres_proposal").get("indy-1") == INDY_PROOF_REQ_NAME
+        assert by_format.get("pres_request").get("indy-0") == INDY_PROOF_REQ_NAME
+        assert by_format.get("pres_request").get("indy-1") == INDY_PROOF_REQ_NAME
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.side_effect = [px_rec_dummy]
+            px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": "thread-id"},
+                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
+
+    async def test_receive_pres_multiple_b(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-1"),
+            ],
+        )
+        pres_existing = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-0"),
+            ],
+            last_presentation=False,
+        )
+        pres_existing.assign_thread_id("thread-id")
+
+        px_rec_dummy = V20PresExRecord(
+            pres_request=pres_request.serialize(),
+            pres=pres_existing.serialize(),
+            processed_attach_ids=["indy-0", "indy-1"],
+        )
+        px_rec_dummy_copy = deepcopy(px_rec_dummy)
+        px_rec_dummy.multiple_presentations = True
+        pres_new = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-1"),
+            ],
+            last_presentation=True,
+        )
+        pres_new.assign_thread_id("thread-id")
+
+        # cover by_format property
+        by_format = px_rec_dummy.by_format
+
+        assert by_format.get("pres_request").get("indy-0") == INDY_PROOF_REQ_NAME
+        assert by_format.get("pres_request").get("indy-1") == INDY_PROOF_REQ_NAME
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.side_effect = [px_rec_dummy]
+            px_rec_out = await self.manager.receive_pres(
+                pres_new, connection_record, None
+            )
+            retrieve_ex.assert_called_once_with(
+                session.return_value,
+                {"thread_id": "thread-id"},
+                {"role": V20PresExRecord.ROLE_VERIFIER, "connection_id": CONN_ID},
+            )
+            save_ex.assert_called_once()
+            assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
+
+            px_rec_dummy_copy.processed_attach_ids = ["indy-0"]
+            px_rec_dummy_copy.multiple_presentations = False
+            retrieve_ex.side_effect = [px_rec_dummy_copy]
+            pres_new.last_presentation = False
+            with self.assertRaises(V20PresManagerError) as context:
+                await self.manager.receive_pres(pres_new, connection_record, None)
+            assert "Presentation exchange record has V20Pres already existing" in str(
+                context.exception
+            )
+
+            px_rec_dummy_copy.processed_attach_ids = []
+            px_rec_dummy_copy.multiple_presentations = False
+            px_rec_dummy_copy.pres = None
+            retrieve_ex.side_effect = [px_rec_dummy_copy]
+            pres_new.last_presentation = False
+            px_rec_out = await self.manager.receive_pres(
+                pres_new, connection_record, None
+            )
+            assert px_rec_out.state == V20PresExRecord.STATE_PRESENTATION_RECEIVED
+
+    async def test_receive_pres_multiple_seq_flow(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy"),
+            ],
+            present_multiple=True,
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy"),
+            ],
+            last_presentation=False,
+        )
+        assert not pres.last_presentation
+        pres.assign_thread_id("thread-id")
+
+        px_rec_dummy = V20PresExRecord(
+            pres_request=pres_request.serialize(),
+            multiple_presentations=True,
+        )
+
+        # cover by_format property
+        by_format = px_rec_dummy.by_format
+
+        assert by_format.get("pres_request").get("indy") == INDY_PROOF_REQ_NAME
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.side_effect = [px_rec_dummy]
+            px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
+            assert px_rec_out.state == (V20PresExRecord.STATE_REQUEST_SENT)
+
+            pres = V20Pres(
+                formats=[
+                    V20PresFormat(
+                        attach_id="indy-abc",
+                        format_=ATTACHMENT_FORMAT[PRES_20][
+                            V20PresFormat.Format.INDY.api
+                        ],
+                    )
+                ],
+                presentations_attach=[
+                    AttachDecorator.data_base64(INDY_PROOF, ident="indy-abc"),
+                ],
+                last_presentation=True,
+            )
+            assert pres.last_presentation
+            pres.assign_thread_id("thread-id")
+            retrieve_ex.side_effect = [px_rec_dummy]
+            px_rec_out = await self.manager.receive_pres(pres, connection_record, None)
+            assert px_rec_out.state == (V20PresExRecord.STATE_PRESENTATION_RECEIVED)
+
+    async def test_receive_pres_multiple_existing(self):
+        connection_record = async_mock.MagicMock(connection_id=CONN_ID)
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-1"),
+            ],
+            present_multiple=True,
+        )
+        pres_existing = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-0"),
+            ],
+            last_presentation=True,
+        )
+        pres_new = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-1"),
+            ],
+            last_presentation=True,
+        )
+        pres_new.assign_thread_id("thread-id")
+
+        px_rec_dummy = V20PresExRecord(
+            pres=pres_existing.serialize(),
+            pres_request=pres_request.serialize(),
+            processed_attach_ids=["indy-0"],
+            multiple_presentations=True,
+        )
+
+        # cover by_format property
+        by_format = px_rec_dummy.by_format
+
+        assert by_format.get("pres_request").get("indy-0") == INDY_PROOF_REQ_NAME
+        assert by_format.get("pres_request").get("indy-1") == INDY_PROOF_REQ_NAME
+
+        with async_mock.patch.object(
+            V20PresExRecord, "save", autospec=True
+        ) as save_ex, async_mock.patch.object(
+            V20PresExRecord, "retrieve_by_tag_filter", autospec=True
+        ) as retrieve_ex, async_mock.patch.object(
+            self.profile,
+            "session",
+            async_mock.MagicMock(return_value=self.profile.session()),
+        ) as session:
+            retrieve_ex.side_effect = [px_rec_dummy]
+            px_rec_out = await self.manager.receive_pres(
+                pres_new, connection_record, None
+            )
             retrieve_ex.assert_called_once_with(
                 session.return_value,
                 {"thread_id": "thread-id"},
@@ -2117,6 +2850,116 @@ class TestV20PresManager(AsyncTestCase):
         px_rec_in = V20PresExRecord(
             pres_request=pres_request,
             pres=pres,
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ), async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+            px_rec_out = await self.manager.verify_pres(px_rec_in)
+            save_ex.assert_called_once()
+
+            assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
+
+    async def test_verify_pres_multiple_existing_a(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                ),
+            ],
+            will_confirm=True,
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy-1"),
+            ],
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy-0",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+                V20PresFormat(
+                    attach_id="indy-1",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-0"),
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-1"),
+            ],
+        )
+        px_rec_in = V20PresExRecord(
+            pres_request=pres_request,
+            pres=pres,
+            processed_attach_ids=["indy-0", "indy-1"],
+            verified_attach_ids=["indy-0"],
+        )
+        self.profile.context.injector.bind_instance(
+            BaseMultitenantManager,
+            async_mock.MagicMock(MultitenantManager, autospec=True),
+        )
+        with async_mock.patch.object(
+            IndyLedgerRequestsExecutor,
+            "get_ledger_for_identifier",
+            async_mock.CoroutineMock(return_value=("test_ledger_id", self.ledger)),
+        ), async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
+            px_rec_out = await self.manager.verify_pres(px_rec_in)
+            save_ex.assert_called_once()
+
+            assert px_rec_out.state == (V20PresExRecord.STATE_DONE)
+
+    async def test_verify_pres_multiple_existing_b(self):
+        pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            will_confirm=True,
+            request_presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF_REQ_NAME, ident="indy"),
+            ],
+            present_multiple=True,
+        )
+        pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+                V20PresFormat(
+                    attach_id="indy-abc123",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
+                ),
+            ],
+            presentations_attach=[
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy"),
+                AttachDecorator.data_base64(INDY_PROOF, ident="indy-abc123"),
+            ],
+            last_presentation=True,
+        )
+        px_rec_in = V20PresExRecord(
+            pres_request=pres_request,
+            pres=pres,
+            processed_attach_ids=["indy", "indy-abc123"],
         )
         self.profile.context.injector.bind_instance(
             BaseMultitenantManager,

@@ -186,37 +186,152 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
 
     async def test_validate(self):
-        schema = test_module.V20PresProposalByFormatSchema()
-        schema.validate_fields({"indy": {"attributes": [], "predicates": []}})
-        schema.validate_fields({"dif": {"some_dif_criterion": "..."}})
+        schema = test_module.V20PresProposalRequestSchema()
         schema.validate_fields(
             {
-                "indy": {"attributes": [], "predicates": []},
-                "dif": {"some_dif_criterion": "..."},
+                "presentation_proposal": {
+                    "indy": {"requested_attributes": {}, "requested_predicates": {}}
+                }
+            }
+        )
+        schema.validate_fields(
+            {"presentation_proposal": {"dif": {"some_dif_criterion": "..."}}}
+        )
+        schema.validate_fields(
+            {
+                "presentation_proposal": {
+                    "indy": {"requested_attributes": {}, "requested_predicates": {}},
+                    "dif": {"some_dif_criterion": "..."},
+                }
             }
         )
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"veres-one": {"no": "support"}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"presentation_proposal": {"indy": {}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(
+                {
+                    "presentation_proposal": {
+                        "dif": {"options": 1},
+                    }
+                }
+            )
 
-        schema = test_module.V20PresRequestByFormatSchema()
-        schema.validate_fields({"indy": {"...": "..."}})
-        schema.validate_fields({"dif": {"...": "..."}})
-        schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
+        schema = test_module.V20PresCreateRequestRequestSchema()
+        schema.validate_fields(
+            {
+                "presentation_request": {
+                    "indy": {"requested_attributes": {}, "requested_predicates": {}}
+                }
+            }
+        )
+        schema.validate_fields(
+            {"presentation_request": {"dif": {"presentation_definition": {}}}}
+        )
+        schema.validate_fields(
+            {
+                "presentation_request": {
+                    "indy": {"requested_attributes": {}, "requested_predicates": {}},
+                    "dif": {"presentation_definition": {}},
+                }
+            }
+        )
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"veres-one": {"no": "support"}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"presentation_request": {"indy": {}}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(
+                {
+                    "presentation_request": {
+                        "dif": {"options": 1},
+                    }
+                }
+            )
 
         schema = test_module.V20PresSpecByFormatRequestSchema()
-        schema.validate_fields({"indy": {"...": "..."}})
-        schema.validate_fields({"dif": {"...": "..."}})
-        schema.validate_fields({"indy": {"...": "..."}, "dif": {"...": "..."}})
+        schema.validate_fields(
+            {
+                "request_data": {
+                    "indy": {
+                        "self_attested_attributes": {},
+                        "requested_attributes": {},
+                        "requested_predicates": {},
+                    }
+                }
+            }
+        )
+        schema.validate_fields({"request_data": {"dif": {"...": "..."}}})
+        schema.validate_fields(
+            {
+                "request_data": {
+                    "indy": {
+                        "self_attested_attributes": {},
+                        "requested_attributes": {},
+                        "requested_predicates": {},
+                    },
+                    "dif": {"...": "..."},
+                }
+            }
+        )
         with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({})
         with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(
+                {
+                    "request_data": {
+                        "indy": {
+                            "self_attested_attributes": {},
+                            "requested_attributes": {},
+                            "requested_predicates": {},
+                        },
+                        "dif": {"...": "..."},
+                    },
+                    "indy": {
+                        "self_attested_attributes": {},
+                        "requested_attributes": {},
+                        "requested_predicates": {},
+                    },
+                    "dif": {"...": "..."},
+                }
+            )
+        with self.assertRaises(test_module.ValidationError):
             schema.validate_fields({"veres-one": {"no": "support"}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields({"veres-one": {"no": "support"}})
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(
+                {
+                    "indy": {},
+                }
+            )
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(
+                {
+                    "dif": {"issuer_id": 1},
+                }
+            )
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(
+                {
+                    "request_data": {
+                        "indy": {},
+                    }
+                }
+            )
+        with self.assertRaises(test_module.ValidationError):
+            schema.validate_fields(
+                {
+                    "request_data": {
+                        "dif": {"issuer_id": 1},
+                    }
+                }
+            )
 
     async def test_validate_proof_req_attr_spec(self):
         aspec = IndyProofReqAttrSpecSchema()
@@ -315,7 +430,10 @@ class TestPresentProofRoutes(AsyncTestCase):
                 )
             ),
         )
-        mock_px_rec = async_mock.MagicMock(save_error_state=async_mock.CoroutineMock())
+        mock_px_rec = async_mock.MagicMock(
+            save_error_state=async_mock.CoroutineMock(),
+            by_format={"pres_request": {"indy": " ... "}},
+        )
 
         with async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
@@ -334,7 +452,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         }
         self.request.query = {"extra_query": {}}
 
-        returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
+        returned_credentials = ({"name": "Credential1"}, {"name": "Credential2"})
         self.profile.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
@@ -343,18 +461,42 @@ class TestPresentProofRoutes(AsyncTestCase):
                 )
             ),
         )
-
+        mock_px_rec = async_mock.MagicMock(
+            by_format={
+                "pres_request": {
+                    "indy": {
+                        "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                        "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
+                        "comment": "string",
+                        "formats": [
+                            {
+                                "attach_id": "indy",
+                                "format": "hlindy/proof-req@v2.0",
+                            }
+                        ],
+                        "request_presentations~attach": [
+                            {
+                                "@id": "indy",
+                                "mime-type": "application/json",
+                                "data": {"json": INDY_PROOF_REQ},
+                            }
+                        ],
+                        "will_confirm": True,
+                    }
+                }
+            },
+        )
         with async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
             test_module.web, "json_response", async_mock.MagicMock()
         ) as mock_response:
-            mock_pres_ex_rec_cls.return_value = async_mock.MagicMock(
-                retrieve_by_id=async_mock.CoroutineMock()
+            mock_pres_ex_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_px_rec
             )
 
             await test_module.present_proof_credentials_list(self.request)
-            mock_response.assert_called_once_with(returned_credentials)
+            mock_response.assert_called_once_with(list(returned_credentials))
 
     async def test_present_proof_credentials_list_multiple_referents(self):
         self.request.match_info = {
@@ -363,27 +505,81 @@ class TestPresentProofRoutes(AsyncTestCase):
         }
         self.request.query = {"extra_query": {}}
 
-        returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         self.profile.context.injector.bind_instance(
             IndyHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
-                    async_mock.CoroutineMock(return_value=returned_credentials)
+                    async_mock.CoroutineMock(
+                        side_effect=[
+                            [{"name": "Credential1"}, {"name": "Credential2"}],
+                            [{"name": "Credential3"}, {"name": "Credential4"}],
+                        ]
+                    )
                 )
             ),
         )
-
+        mock_px_rec = async_mock.MagicMock(
+            by_format={
+                "pres_request": {
+                    "indy-0": {
+                        "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                        "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
+                        "comment": "string",
+                        "formats": [
+                            {
+                                "attach_id": "indy",
+                                "format": "hlindy/proof-req@v2.0",
+                            }
+                        ],
+                        "request_presentations~attach": [
+                            {
+                                "@id": "indy",
+                                "mime-type": "application/json",
+                                "data": {"json": INDY_PROOF_REQ},
+                            }
+                        ],
+                        "will_confirm": True,
+                    },
+                    "indy-1": {
+                        "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/present-proof/2.0/request-presentation",
+                        "@id": "6ae00c6c-87fa-495a-b546-5f5953817c92",
+                        "comment": "string",
+                        "formats": [
+                            {
+                                "attach_id": "indy",
+                                "format": "hlindy/proof-req@v2.0",
+                            }
+                        ],
+                        "request_presentations~attach": [
+                            {
+                                "@id": "indy",
+                                "mime-type": "application/json",
+                                "data": {"json": INDY_PROOF_REQ},
+                            }
+                        ],
+                        "will_confirm": True,
+                    },
+                }
+            },
+        )
         with async_mock.patch.object(
             test_module, "V20PresExRecord", autospec=True
         ) as mock_pres_ex_rec_cls, async_mock.patch.object(
             test_module.web, "json_response", async_mock.MagicMock()
         ) as mock_response:
-            mock_pres_ex_rec_cls.return_value = async_mock.MagicMock(
-                retrieve_by_id=async_mock.CoroutineMock()
+            mock_pres_ex_rec_cls.retrieve_by_id = async_mock.CoroutineMock(
+                return_value=mock_px_rec
             )
 
             await test_module.present_proof_credentials_list(self.request)
-            mock_response.assert_called_once_with(returned_credentials)
+            mock_response.assert_called_once_with(
+                [
+                    {"name": "Credential1"},
+                    {"name": "Credential2"},
+                    {"name": "Credential3"},
+                    {"name": "Credential4"},
+                ]
+            )
 
     async def test_present_proof_credentials_list_dif(self):
         self.request.match_info = {
@@ -1732,11 +1928,13 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "indy": {
-                    "comment": "dummy",
-                    "self_attested_attributes": {},
-                    "requested_attributes": {},
-                    "requested_predicates": {},
+                "request_data": {
+                    "indy": {
+                        "comment": "dummy",
+                        "self_attested_attributes": {},
+                        "requested_attributes": {},
+                        "requested_predicates": {},
+                    }
                 }
             }
         )
@@ -1792,7 +1990,9 @@ class TestPresentProofRoutes(AsyncTestCase):
         proof_req["issuer_id"] = "test123"
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "dif": proof_req,
+                "request_data": {
+                    "dif": proof_req,
+                }
             }
         )
         self.request.match_info = {
@@ -1844,7 +2044,11 @@ class TestPresentProofRoutes(AsyncTestCase):
 
     async def test_present_proof_send_presentation_dif_error(self):
         self.request.json = async_mock.CoroutineMock(
-            return_value={"dif": DIF_PROOF_REQ}
+            return_value={
+                "request_data": {
+                    "dif": DIF_PROOF_REQ,
+                }
+            }
         )
         self.request.match_info = {
             "pres_ex_id": "dummy",
@@ -1915,11 +2119,13 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_px_rec_not_found(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "indy": {
-                    "comment": "dummy",
-                    "self_attested_attributes": {},
-                    "requested_attributes": {},
-                    "requested_predicates": {},
+                "request_data": {
+                    "indy": {
+                        "comment": "dummy",
+                        "self_attested_attributes": {},
+                        "requested_attributes": {},
+                        "requested_predicates": {},
+                    }
                 }
             }
         )
@@ -1941,11 +2147,13 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_not_found(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "indy": {
-                    "comment": "dummy",
-                    "self_attested_attributes": {},
-                    "requested_attributes": {},
-                    "requested_predicates": {},
+                "request_data": {
+                    "indy": {
+                        "comment": "dummy",
+                        "self_attested_attributes": {},
+                        "requested_attributes": {},
+                        "requested_predicates": {},
+                    }
                 }
             }
         )
@@ -1986,11 +2194,13 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_not_ready(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "indy": {
-                    "comment": "dummy",
-                    "self_attested_attributes": {},
-                    "requested_attributes": {},
-                    "requested_predicates": {},
+                "request_data": {
+                    "indy": {
+                        "comment": "dummy",
+                        "self_attested_attributes": {},
+                        "requested_attributes": {},
+                        "requested_predicates": {},
+                    }
                 }
             }
         )
@@ -2031,11 +2241,13 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_bad_state(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "indy": {
-                    "comment": "dummy",
-                    "self_attested_attributes": {},
-                    "requested_attributes": {},
-                    "requested_predicates": {},
+                "request_data": {
+                    "indy": {
+                        "comment": "dummy",
+                        "self_attested_attributes": {},
+                        "requested_attributes": {},
+                        "requested_predicates": {},
+                    }
                 }
             }
         )
@@ -2063,11 +2275,13 @@ class TestPresentProofRoutes(AsyncTestCase):
     async def test_present_proof_send_presentation_x(self):
         self.request.json = async_mock.CoroutineMock(
             return_value={
-                "indy": {
-                    "comment": "dummy",
-                    "self_attested_attributes": {},
-                    "requested_attributes": {},
-                    "requested_predicates": {},
+                "request_data": {
+                    "indy": {
+                        "comment": "dummy",
+                        "self_attested_attributes": {},
+                        "requested_attributes": {},
+                        "requested_predicates": {},
+                    }
                 }
             }
         )

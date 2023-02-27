@@ -36,6 +36,7 @@ class V20PresRequest(AgentMessage):
         will_confirm: bool = None,
         formats: Sequence[V20PresFormat] = None,
         request_presentations_attach: Sequence[AttachDecorator] = None,
+        present_multiple: bool = None,
         **kwargs,
     ):
         """
@@ -52,6 +53,9 @@ class V20PresRequest(AgentMessage):
         self.formats = list(formats) if formats else []
         self.request_presentations_attach = (
             list(request_presentations_attach) if request_presentations_attach else []
+        )
+        self.present_multiple = (
+            present_multiple if present_multiple is not None else False
         )
 
     def attachment(self, fmt: V20PresFormat.Format = None) -> dict:
@@ -82,6 +86,42 @@ class V20PresRequest(AgentMessage):
             else None
         )
 
+    def attachment_by_id(self, attach_id: str) -> dict:
+        """
+        Return attached presentation request.
+
+        Args:
+            attach_id: string identifier
+
+        """
+        _format_list = [
+            V20PresFormat.Format.get(f.format)
+            for f in self.formats
+            if f.attach_id == attach_id
+        ]
+        if len(_format_list) == 0:
+            return None
+        target_format = _format_list[0]
+        return (
+            target_format.get_attachment_data_by_id(
+                attach_id, self.request_presentations_attach
+            )
+            if target_format
+            else None
+        )
+
+    def add_attachments(self, fmt: V20PresFormat, atch: AttachDecorator) -> None:
+        """
+        Update attachment format and presentation request attachment.
+
+        Args:
+            fmt: format of attachment
+            atch: attachment
+
+        """
+        self.formats.append(fmt)
+        self.request_presentations_attach.append(atch)
+
 
 class V20PresRequestSchema(AgentMessageSchema):
     """Presentation request schema."""
@@ -108,6 +148,13 @@ class V20PresRequestSchema(AgentMessageSchema):
         required=True,
         description="Attachment per acceptable format on corresponding identifier",
         data_key="request_presentations~attach",
+    )
+    present_multiple = fields.Bool(
+        required=False,
+        description=(
+            "Whether the Verifier would like the Prover to send multiple "
+            "presentations that satisfy the presentation request."
+        ),
     )
 
     @validates_schema
