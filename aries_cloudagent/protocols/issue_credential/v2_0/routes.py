@@ -277,6 +277,13 @@ class V20CredExFreeSchema(V20IssueCredSchemaCore):
         example=UUIDFour.EXAMPLE,  # typically but not necessarily a UUID4
     )
 
+    verification_method = fields.Str(
+        required=False,
+        default=None,
+        allow_none=True,
+        description="For ld-proofs. Verification method for signing.",
+    )
+
 
 class V20CredBoundOfferRequestSchema(OpenAPISchema):
     """Request schema for sending bound credential offer admin message."""
@@ -628,6 +635,8 @@ async def credential_exchange_send(request: web.BaseRequest):
 
     comment = body.get("comment")
     connection_id = body.get("connection_id")
+    verification_method = body.get("verification_method")
+
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
@@ -668,6 +677,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         cred_manager = V20CredManager(profile)
         (cred_ex_record, cred_offer_message) = await cred_manager.prepare_send(
             connection_id,
+            verification_method=verification_method,
             cred_proposal=cred_proposal,
             auto_remove=auto_remove,
         )

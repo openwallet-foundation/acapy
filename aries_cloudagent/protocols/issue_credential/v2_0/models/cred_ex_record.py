@@ -59,6 +59,7 @@ class V20CredExRecord(BaseExchangeRecord):
         *,
         cred_ex_id: str = None,
         connection_id: str = None,
+        verification_method: Optional[str] = None,
         thread_id: str = None,
         parent_thread_id: str = None,
         initiator: str = None,
@@ -82,6 +83,7 @@ class V20CredExRecord(BaseExchangeRecord):
         super().__init__(cred_ex_id, state, trace=trace, **kwargs)
         self._id = cred_ex_id
         self.connection_id = connection_id or conn_id
+        self.verification_method = verification_method
         self.thread_id = thread_id
         self.parent_thread_id = parent_thread_id
         self.initiator = initiator
@@ -217,6 +219,7 @@ class V20CredExRecord(BaseExchangeRecord):
                 prop: getattr(self, prop)
                 for prop in (
                     "connection_id",
+                    "verification_method",
                     "parent_thread_id",
                     "initiator",
                     "role",
