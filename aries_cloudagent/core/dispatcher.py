@@ -7,6 +7,7 @@ lifecycle hook callbacks storing state for message threads, etc.
 
 import asyncio
 import logging
+import json
 import os
 import warnings
 
@@ -14,7 +15,6 @@ from typing import Callable, Coroutine, Optional, Union, Tuple
 import weakref
 
 from aiohttp.web import HTTPException
-
 
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
@@ -377,7 +377,28 @@ class DispatcherResponder(BaseResponder):
 
         return await super().create_outbound(message, **kwargs)
 
-    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
+    async def _get_msg_type_from_enc_payload(
+        self, profile: Profile, parsed_msg: dict
+    ) -> Optional[Tuple[str, str]]:
+        """Get message type and id tuple from enc_payload."""
+        try:
+            if not isinstance(parsed_msg, dict):
+                return None
+            message_type = parsed_msg.get("@type")
+            if not message_type:
+                return None
+            registry: ProtocolRegistry = profile.inject(ProtocolRegistry)
+            message_cls = registry.resolve_message_class(message_type)
+            if not message_cls:
+                return None
+            instance = message_cls.deserialize(parsed_msg)
+            return instance._message_type, instance._id
+        except (ProtocolMinorVersionNotSupported, BaseModelError, AttributeError):
+            return None
+
+    async def send_outbound(
+        self, message: OutboundMessage, **kwargs
+    ) -> OutboundSendStatus:
         """
         Send outbound message.
 
@@ -388,6 +409,30 @@ class DispatcherResponder(BaseResponder):
         if not context:
             raise RuntimeError("weakref to context has expired")
 
+        msg_type = kwargs.get("message_type")
+        msg_id = kwargs.get("message_id")
+        if not msg_type and not msg_id and (message.enc_payload or message.payload):
+            msg_dict = json.loads(message.enc_payload or message.payload)
+            msg_type_id_tuple = await self._get_msg_type_from_enc_payload(
+                context.profile, msg_dict
+            )
+            if msg_type_id_tuple:
+                msg_type, msg_id = msg_type_id_tuple
+
+        if (
+            message.connection_id
+            and msg_type
+            and not await super().conn_rec_active_state_check(
+                profile=context.profile,
+                connection_id=message.connection_id,
+                msg_type=msg_type,
+            )
+        ):
+            raise RuntimeError(
+                f"Connection {message.connection_id} is not ready"
+                " which is required for sending outbound"
+                f" message {msg_id} of type {msg_type}."
+            )
         return await self._send(context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):

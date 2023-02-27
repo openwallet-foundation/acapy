@@ -4,13 +4,19 @@ A message responder.
 The responder is provided to message handlers to enable them to send a new message
 in response to the message being handled.
 """
+import asyncio
+import json
+import re
 
 from abc import ABC, abstractmethod
-import json
-from typing import Sequence, Union
+from typing import Sequence, Union, Optional, Tuple
 
+from ..cache.base import BaseCache
 from ..connections.models.connection_target import ConnectionTarget
+from ..connections.models.conn_record import ConnRecord
 from ..core.error import BaseError
+from ..core.event_bus import EventBus
+from ..core.profile import Profile
 from ..transport.outbound.message import OutboundMessage
 
 from .base_message import BaseMessage
@@ -79,7 +85,14 @@ class BaseResponder(ABC):
     ) -> OutboundSendStatus:
         """Convert a message to an OutboundMessage and send it."""
         outbound = await self.create_outbound(message, **kwargs)
-        return await self.send_outbound(outbound)
+        try:
+            return await self.send_outbound(
+                message=outbound,
+                message_type=message._message_type,
+                message_id=message._id,
+            )
+        except AttributeError:
+            return await self.send_outbound(message=outbound)
 
     async def send_reply(
         self,
@@ -109,10 +122,75 @@ class BaseResponder(ABC):
             target=target,
             target_list=target_list,
         )
-        return await self.send_outbound(outbound)
+        try:
+            return await self.send_outbound(
+                outbound, message_type=message._message_type, message_id=message._id
+            )
+        except AttributeError:
+            return await self.send_outbound(outbound)
+
+    async def conn_rec_active_state_check(
+        self, profile: Profile, connection_id: str, msg_type: str, timeout: int = 7
+    ) -> bool:
+        """Check if the connection record is ready for sending outbound message."""
+        CONNECTION_READY_EVENT = re.compile(
+            "^acapy::record::connections::(active|completed|response)$"
+        )
+        WHITELIST_MSG_TYPE = [
+            "didexchange/1.0/request",
+            "didexchange/1.0/response",
+            "connections/1.0/invitation",
+            "connections/1.0/request",
+            "connections/1.0/response",
+        ]
+        if msg_type in WHITELIST_MSG_TYPE:
+            return True
+
+        async def _wait_for_state() -> Tuple[bool, Optional[str]]:
+            async with profile.session() as session:
+                conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
+                if conn_record.is_ready:
+                    return (True, conn_record.state)
+            event = profile.inject(EventBus)
+            with event.wait_for_event(
+                profile,
+                CONNECTION_READY_EVENT,
+                lambda event: event.payload.get("connection_id") == connection_id,
+            ) as await_event:
+                async with profile.session() as session:
+                    conn_record = await ConnRecord.retrieve_by_id(
+                        session, connection_id
+                    )
+                    if conn_record.is_ready:
+                        return (True, conn_record.state)
+            event = await await_event
+            conn_record = ConnRecord.deserialize(event.payload)
+            return (True, conn_record.state)
+
+        try:
+            cache_key = f"conn_rec_state::{connection_id}"
+            connection_state = None
+            cache = profile.inject_or(BaseCache)
+            if cache:
+                connection_state = await cache.get(cache_key)
+            if connection_state and ConnRecord.State.get(connection_state) in (
+                ConnRecord.State.COMPLETED,
+                ConnRecord.State.RESPONSE,
+            ):
+                return True
+            check_flag, connection_state = await asyncio.wait_for(
+                _wait_for_state(), timeout
+            )
+            if cache and connection_state:
+                await cache.set(cache_key, connection_state)
+            return check_flag
+        except asyncio.TimeoutError:
+            return False
 
     @abstractmethod
-    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
+    async def send_outbound(
+        self, message: OutboundMessage, **kwargs
+    ) -> OutboundSendStatus:
         """
         Send an outbound message.
 
@@ -152,7 +230,9 @@ class MockResponder(BaseResponder):
         self.messages.append((message, kwargs))
         return OutboundSendStatus.QUEUED_FOR_DELIVERY
 
-    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
+    async def send_outbound(
+        self, message: OutboundMessage, **kwargs
+    ) -> OutboundSendStatus:
         """Send an outbound message."""
         self.messages.append((message, None))
         return OutboundSendStatus.QUEUED_FOR_DELIVERY
