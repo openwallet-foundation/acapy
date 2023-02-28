@@ -376,7 +376,7 @@ To request a proof, submit the following (with appropriate `connection_id`) to F
                                     "directive": "required",
                                     "field_id": [
                                         "1f44d55f-f161-4938-a659-f8026467f126"
-                                    ],
+                                    ]
                                 }
                             ],
                             "fields": [
