@@ -4,11 +4,13 @@ import json
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
+from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema, match_info_schema
 from marshmallow import fields, validate
 from marshmallow.exceptions import ValidationError
 
+from . import problem_report_for_record
 from ....admin.request_context import AdminRequestContext
+from ....connections.models.conn_record import ConnRecord
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import UUID4
@@ -40,6 +42,14 @@ class InvitationCreateQueryStringSchema(OpenAPISchema):
     multi_use = fields.Boolean(
         description="Create invitation for multiple use (default false)",
         required=False,
+    )
+
+
+class ConnIdMatchInfoSchema(OpenAPISchema):
+    """Path parameters and validators for request taking credential exchange id."""
+
+    connection_id = fields.Str(
+        description="Credential exchange identifier", required=True, **UUID4
     )
 
 
@@ -249,12 +259,42 @@ async def invitation_receive(request: web.BaseRequest):
     return web.json_response(result.serialize())
 
 
+@docs(tags=["out-of-band"], summary="Send problem report using connection id")
+@match_info_schema(ConnIdMatchInfoSchema())
+async def connection_id_problem_report(request: web.BaseRequest):
+    """
+        Request handler for sending problem report.
+        Args:
+        request: aiohttp request object
+    """
+    context: AdminRequestContext = request["context"]
+    connection_id = request.match_info["connection_id"]
+    outbound_handler = request["outbound_message_router"]
+    body = await request.json()
+    description = body["description"]
+    profile = context.profile
+
+    try:
+        async with profile.session() as session:
+            record = await ConnRecord.retrieve_by_id(session, connection_id)
+            report = problem_report_for_record(record, description)
+
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except BaseModelError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    await outbound_handler(report, connection_id=record.connection_id)
+    return web.json_response({})
+
+
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
         [
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
+            web.post("/out-of-band/{connection_id}/problem-report", connection_id_problem_report),
         ]
     )
 

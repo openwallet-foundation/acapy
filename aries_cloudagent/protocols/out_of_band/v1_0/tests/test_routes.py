@@ -1,10 +1,13 @@
+from unittest.mock import AsyncMock, MagicMock
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
+from ..routes import connection_id_problem_report
 from .....admin.request_context import AdminRequestContext
 from .....connections.models.conn_record import ConnRecord
 
-from .. import routes as test_module
+from .. import routes as test_module, problem_report_for_record
 
 
 class TestOutOfBandRoutes(AsyncTestCase):
@@ -36,7 +39,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(return_value=body)
 
         with async_mock.patch.object(
-            test_module, "OutOfBandManager", autospec=True
+                test_module, "OutOfBandManager", autospec=True
         ) as mock_oob_mgr, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
@@ -77,7 +80,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock(return_value=body)
 
         with async_mock.patch.object(
-            test_module, "OutOfBandManager", autospec=True
+                test_module, "OutOfBandManager", autospec=True
         ) as mock_oob_mgr, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
@@ -114,7 +117,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         )
 
         with async_mock.patch.object(
-            test_module, "OutOfBandManager", autospec=True
+                test_module, "OutOfBandManager", autospec=True
         ) as mock_oob_mgr, async_mock.patch.object(
             test_module.web, "json_response", async_mock.Mock()
         ) as mock_json_response:
@@ -131,7 +134,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         expected_connection_record = ConnRecord(connection_id="some-id")
 
         with async_mock.patch.object(
-            test_module, "OutOfBandManager", autospec=True
+                test_module, "OutOfBandManager", autospec=True
         ) as mock_oob_mgr, async_mock.patch.object(
             test_module.InvitationMessage, "deserialize", async_mock.Mock()
         ), async_mock.patch.object(
@@ -155,7 +158,7 @@ class TestOutOfBandRoutes(AsyncTestCase):
         self.request.json = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
-            test_module, "OutOfBandManager", autospec=True
+                test_module, "OutOfBandManager", autospec=True
         ) as mock_oob_mgr, async_mock.patch.object(
             test_module.InvitationMessage, "deserialize", async_mock.Mock()
         ) as mock_invi_deser, async_mock.patch.object(
@@ -167,6 +170,39 @@ class TestOutOfBandRoutes(AsyncTestCase):
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.invitation_receive(self.request)
+
+    async def test_connection_id_problem_report(self):
+        # Create a mock request object with the required attributes and dependencies
+        request = MagicMock()
+        request["context"].profile.session.return_value._aenter_.return_value = AsyncMock()
+        request.match_info = {"connection_id": "123"}
+        request.json.return_value = {"description": "Test problem report"}
+        request["outbound_message_router"] = AsyncMock()
+
+        # Call the function with the mock request object
+        response = await connection_id_problem_report(request)
+
+        # Verify that the response status code is 200 and the response body is empty
+        assert response.status == 200
+        assert await response.text() == ""
+
+        # Verify that the outbound message handler was called with the correct parameters
+        request["outbound_message_router"].assert_awaited_once_with(
+            problem_report_for_record.return_value,
+            connection_id="123"
+        )
+
+        # Verify that the problem_report_for_record function was called with the correct parameters
+        problem_report_for_record.assert_called_once_with(
+            ConnRecord.retrieve_by_id.return_value,
+            "Test problem report"
+        )
+
+        # Verify that the retrieve_by_id function was called with the correct parameters
+        ConnRecord.retrieve_by_id.assert_awaited_once_with(
+            request["context"].profile.session.return_value._aenter_.return_value,
+            "123"
+        )
 
     async def test_register(self):
         mock_app = async_mock.MagicMock()
