@@ -687,9 +687,6 @@ class IndySdkWallet(BaseWallet):
         else:
             info = did
 
-        if info.method != SOV:
-            raise WalletError("Setting public DID is only allowed for did:sov DIDs")
-
         public = await self.get_public_did()
         if not public or public.did != info.did:
             if not info.metadata.get("posted"):

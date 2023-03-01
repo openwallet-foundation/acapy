@@ -724,7 +724,7 @@ class DemoAgent:
         if self.proc and self.proc.poll() is None:
             self.proc.terminate()
             try:
-                self.proc.wait(timeout=0.5)
+                self.proc.wait(timeout=1.5)
                 self.log(f"Exited with return code {self.proc.returncode}")
             except subprocess.TimeoutExpired:
                 msg = "Process did not terminate in time"
