@@ -347,17 +347,6 @@ class TestInMemoryWallet:
         }
 
     @pytest.mark.asyncio
-    async def test_create_public_did_x_not_sov(self, wallet: InMemoryWallet):
-        with pytest.raises(WalletError) as context:
-            await wallet.create_public_did(
-                KEY,
-                ED25519,
-            )
-        assert "Setting public DID is only allowed for did:sov DIDs" in str(
-            context.value
-        )
-
-    @pytest.mark.asyncio
     async def test_create_public_did_x_unsupported_key_type_method(
         self, wallet: InMemoryWallet
     ):
@@ -399,18 +388,6 @@ class TestInMemoryWallet:
         info_final = await wallet.set_public_did(info_new.did)
         assert info_final.did == info_new.did
         assert info_final.metadata.get("posted")
-
-    @pytest.mark.asyncio
-    async def test_set_public_did_x_not_sov(self, wallet: InMemoryWallet):
-        info = await wallet.create_local_did(
-            KEY,
-            ED25519,
-        )
-        with pytest.raises(WalletError) as context:
-            await wallet.set_public_did(info.did)
-        assert "Setting public DID is only allowed for did:sov DIDs" in str(
-            context.value
-        )
 
     @pytest.mark.asyncio
     async def test_sign_verify(self, wallet: InMemoryWallet):
