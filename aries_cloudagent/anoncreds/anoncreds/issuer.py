@@ -18,6 +18,7 @@ from anoncreds import (
     RevocationRegistryDelta,
     Schema,
 )
+from ..issuer import AnonCredsIssuer
 
 from ...askar.profile import AskarProfile
 
@@ -137,6 +138,12 @@ class IndyCredxIssuer(AnonCredsIssuer):
             A tuple of the credential definition ID and JSON
 
         """
+        schema_id = AnonCredsIssuer.make_schema_id(
+            origin_did, schema["name"], schema["version"]
+        )
+        cred_def_id = AnonCredsIssuer.make_credential_definition_id(
+            origin_did, schema, signature_type, tag
+        )
         try:
             (
                 cred_def,
@@ -145,7 +152,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: CredentialDefinition.create(
-                    f"{origin_did}:2:{schema['name']}:{schema['version']}",
+                    schema_id,
                     schema,
                     origin_did,
                     tag or DEFAULT_CRED_DEF_TAG,
@@ -153,7 +160,6 @@ class IndyCredxIssuer(AnonCredsIssuer):
                     support_revocation=support_revocation,
                 ),
             )
-            cred_def_id = cred_def.id
             cred_def_json = cred_def.to_json()
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating credential definition") from err
@@ -164,7 +170,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                     cred_def_id,
                     cred_def_json,
                     # Note: Indy-SDK uses a separate SchemaId record for this
-                    tags={"schema_id": schema["id"]},
+                    tags={"schema_id": schema_id},
                 )
                 await txn.handle.insert(
                     CATEGORY_CRED_DEF_PRIVATE,
@@ -606,7 +612,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                     tails_dir_path=tails_base_path,
                 ),
             )
-        except AnonCredsError as err:
+        except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating revocation registry") from err
 
         rev_reg_def_id = rev_reg_def.id

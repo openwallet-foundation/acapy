@@ -31,8 +31,9 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
         """
         return "<{}>".format(self.__class__.__name__)
 
+    @staticmethod
     def make_schema_id(
-        self, origin_did: str, schema_name: str, schema_version: str
+        origin_did: str, schema_name: str, schema_version: str
     ) -> str:
         """Derive the ID for a schema."""
         return f"{origin_did}:2:{schema_name}:{schema_version}"
@@ -59,8 +60,9 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
 
         """
 
+    @staticmethod
     def make_credential_definition_id(
-        self, origin_did: str, schema: dict, signature_type: str = None, tag: str = None
+        origin_did: str, schema: dict, signature_type: str = None, tag: str = None
     ) -> str:
         """Derive the ID for a credential definition."""
         signature_type = signature_type or DEFAULT_SIGNATURE_TYPE
