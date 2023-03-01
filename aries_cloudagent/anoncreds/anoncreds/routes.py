@@ -2,37 +2,54 @@
 # import json
 
 from aiohttp import web
-
-# from aiohttp_apispec import (docs, match_info_schema, querystring_schema,
-#                             request_schema, response_schema)
+from aiohttp_apispec import (docs,  # request_schema, response_schema
+                             match_info_schema, querystring_schema)
+from marshmallow import fields
+from ...messaging.valid import ( UUIDFour
+)
+from ...messaging.models.openapi import OpenAPISchema
 
 SPEC_URI = ""
 
+class SchemaIdMatchInfoSchema(OpenAPISchema):
+    """"""
+    schema_id = fields.Str(
+        description="Schema identifier", required=True, example=UUIDFour.EXAMPLE
+    )
+    
 
+@docs(tags=["anoncreds"], summary="")
 async def schemas_post(request: web.BaseRequest):
     raise NotImplementedError()
 
 
+@docs(tags=["anoncreds"], summary="")
+@match_info_schema(HolderCredIdMatchInfoSchema())
 async def schema_get(request: web.BaseRequest):
     raise NotImplementedError()
 
 
+@docs(tags=["anoncreds"], summary="")
 async def schemas_get(request: web.BaseRequest):
     raise NotImplementedError()
 
 
+@docs(tags=["anoncreds"], summary="")
 async def schemas_get_created(request: web.BaseRequest):
     raise NotImplementedError()
 
 
+@docs(tags=["anoncreds"], summary="")
 async def cred_def_post(request: web.BaseRequest):
     raise NotImplementedError()
 
 
+@docs(tags=["anoncreds"], summary="")
 async def cred_def_get(request: web.BaseRequest):
     raise NotImplementedError()
 
 
+@docs(tags=["anoncreds"], summary="")
 async def cred_defs_get(request: web.BaseRequest):
     raise NotImplementedError()
 
