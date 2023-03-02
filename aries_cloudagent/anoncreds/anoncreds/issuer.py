@@ -220,7 +220,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
 
             credential_offer = CredentialOffer.create(
                 schema_id or cred_def.schema_id,
-                cred_def,
+                credential_definition_id,
                 key_proof.raw_value,
             )
         except AnoncredsError as err:
@@ -604,7 +604,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: RevocationRegistryDefinition.create(
-                    origin_did,
+                    cred_def_id,
                     cred_def.raw_value,
                     tag,
                     revoc_def_type,
