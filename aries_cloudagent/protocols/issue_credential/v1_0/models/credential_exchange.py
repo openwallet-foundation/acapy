@@ -18,7 +18,7 @@ from .....storage.base import StorageError
 from ..messages.credential_proposal import CredentialProposal, CredentialProposalSchema
 from ..messages.credential_offer import CredentialOffer, CredentialOfferSchema
 from ..messages.credential_exchange_webhook import (
-    LightWeightV10CredentialExchangeWebhook,
+    V10CredentialExchangeWebhook,
 )
 
 from . import UNENCRYPTED_TAGS
@@ -242,11 +242,11 @@ class V10CredentialExchange(BaseExchangeRecord):
         else:
             topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
 
-        if not payload:
-            payload = self.serialize()
-
-        if session.profile.settings.get("transport.light_weight_webhook"):
-            payload = LightWeightV10CredentialExchangeWebhook(**self.__dict__)
+        if session.profile.settings.get("debug.webhooks"):
+            if not payload:
+                payload = self.serialize()
+        else:
+            payload = V10CredentialExchangeWebhook(**self.__dict__)
             payload = payload.__dict__
 
         await session.profile.notify(topic, payload)
