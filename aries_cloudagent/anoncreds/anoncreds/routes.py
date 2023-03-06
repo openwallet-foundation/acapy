@@ -26,13 +26,13 @@ LOGGER = logging.getLogger(__name__)
 
 SPEC_URI = ""
 
-
+schema_id = fields.Str(
+    data_key="id", description="Schema identifier", **INDY_SCHEMA_ID
+)
 class SchemaIdMatchInfo(OpenAPISchema):
     """"""
 
-    schema_id = fields.Str(
-        description="Schema identifier", required=True, example=UUIDFour.EXAMPLE
-    )
+    schema_id = schema_id
 
 
 class CredIdMatchInfo(OpenAPISchema):
@@ -43,25 +43,31 @@ class CredIdMatchInfo(OpenAPISchema):
     )
 
 
+schemaAttrNames = fields.List(
+    fields.Str(
+        description="Attribute name",
+        example="score",
+    ),
+    description="Schema attribute names",
+    data_key="attrNames",
+)
+schemaName = fields.Str(
+    description="Schema name",
+    example=INDY_SCHEMA_ID["example"].split(":")[2],
+)
+schemaVersion = fields.Str(description="Schema version", **INDY_VERSION)
+issuerId = fields.Str(
+    description="Issuer did", **GENERIC_DID
+)  # TODO: get correct validator
+
+
 class SchemaSchema(OpenAPISchema):
     """Marshmallow schema for indy schema."""
 
-    attrNames = fields.List(
-        fields.Str(
-            description="Attribute name",
-            example="score",
-        ),
-        description="Schema attribute names",
-        data_key="attrNames",
-    )
-    name = fields.Str(
-        description="Schema name",
-        example=INDY_SCHEMA_ID["example"].split(":")[2],
-    )
-    version = fields.Str(description="Schema version", **INDY_VERSION)
-    issuerId = fields.Str(
-        description="Schema issuer did", **GENERIC_DID
-    )  # TODO: get correct validator
+    attrNames = schemaAttrNames
+    name = schemaName
+    version = schemaVersion
+    issuerId = issuerId
 
 
 class SchemaPostQueryStringSchema(OpenAPISchema):
@@ -72,8 +78,47 @@ class SchemaPostQueryStringSchema(OpenAPISchema):
         description="Options ",
         required=False,
     )
+    
+class CredDefSchema(OpenAPISchema):
+    """"""
+    
+    tag = 
+    schemaId = schema_id
+    issuerId = issuerId
+    support_revocation = 
+    revocation_registry_size =
 
+class CredDefPostOptionsSchema(OpenAPISchema):
+    """"""
+    endorser_connection_id =
+    support_revocation = 
+    revocation_registry_size = 
+    
+class CredDefPostQueryStringSchema(OpenAPISchema):
+    """"""
+    
+    credential_definition = fields.Nested(CredDefSchema())
+    options = fields.Nested(CredDefPostOptionsSchema())
 
+class PublicKeysSchema(OpenAPISchema):
+    accumKey = fields.Dict(
+        example = '{ "z": "1 0BB...386"}'
+    )
+class RevRegValueSchema(OpenAPISchema):
+    """"""
+    publicKeys = PublicKeysSchema()
+    maxCredNum =  #666,
+    tailsLocation =  #"https://my.revocations.tails/tailsfile.txt",
+    tailsHash = #"91zvq2cFmBZmHCcLqFyzv7bfehHH5rMhdAG5wTjqy2PE"
+class RevRegPostQueryStringSchema(OpenAPISchema):
+    """"""
+    
+    issuerId = issuerId
+    revocDefType = #  "CL_ACCUM",
+    credDefId = #: "Gs6cQcvrtWoZKsbBhD3dQJ:3:CL:140384:mctc",
+    tag = # "MyCustomCredentialDefinition",
+    value= fields.Nested(RevRegValueSchema())
+        
 class SchemaResponseSchema(OpenAPISchema):
     """"""
 
@@ -82,9 +127,7 @@ class SchemaResponseSchema(OpenAPISchema):
         description="Options ",
         required=False,
     )
-    schema_id = fields.Str(
-        data_key="id", description="Schema identifier", **INDY_SCHEMA_ID
-    )
+    schema_id = schema_id
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()
 
@@ -92,9 +135,9 @@ class SchemaResponseSchema(OpenAPISchema):
 class SchemasQueryStringSchema(OpenAPISchema):
     """"""
 
-    schema_name = SchemaSchema.name
-    schema_version = SchemaSchema.version
-    schema_issuer_did = SchemaSchema.issuerId
+    schemaName = schemaName
+    schemaVersion = schemaVersion
+    schemaIssuerDid = issuerId
 
 
 @docs(tags=["anoncreds"], summary="")
@@ -122,9 +165,9 @@ async def schema_get(request: web.BaseRequest):
 @querystring_schema(SchemasQueryStringSchema())
 async def schemas_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
-    schema_name = request.query.get("schema_name")
-    schema_version = request.query.get("schema_version")
-    schema_issuer_did = request.query.get("schema_issuer_did")
+    schema_name = request.query.get("schemaName")
+    schema_version = request.query.get("schemaVersion")
+    schema_issuer_did = request.query.get("schemaIssuerDid")
     LOGGER.info(
         f"called with schema_name: {schema_name}, schema_version: {schema_version}, schema_issuer_did: {schema_issuer_did}"
     )
@@ -132,17 +175,21 @@ async def schemas_get(request: web.BaseRequest):
 
 
 @docs(tags=["anoncreds"], summary="")
+@request_schema(CredDefPostQueryStringSchema())
 async def cred_def_post(request: web.BaseRequest):
+    context: AdminRequestContext = request["context"]
     raise NotImplementedError()
 
 
 @docs(tags=["anoncreds"], summary="")
 async def cred_def_get(request: web.BaseRequest):
+    context: AdminRequestContext = request["context"]
     raise NotImplementedError()
 
 
 @docs(tags=["anoncreds"], summary="")
 async def cred_defs_get(request: web.BaseRequest):
+    context: AdminRequestContext = request["context"]
     raise NotImplementedError()
 
 
