@@ -267,12 +267,12 @@ class AskarWallet(BaseWallet):
         if not did:
             raise WalletNotFoundError("No identifier provided")
         try:
-            did = await self._session.handle.fetch(CATEGORY_DID, did)
+            did_entry = await self._session.handle.fetch(CATEGORY_DID, did)
         except AskarError as err:
             raise WalletError("Error when fetching local DID") from err
-        if not did:
+        if not did_entry:
             raise WalletNotFoundError("Unknown DID: {}".format(did))
-        return self._load_did_entry(did)
+        return self._load_did_entry(did_entry)
 
     async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
         """
