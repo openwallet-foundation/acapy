@@ -18,7 +18,6 @@ from anoncreds import (
     RevocationRegistryDelta,
     Schema,
 )
-from ..issuer import AnonCredsIssuer
 
 from ...askar.profile import AskarProfile
 
