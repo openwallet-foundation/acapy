@@ -16,9 +16,9 @@ from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import (
     GENERIC_DID,
+    INDY_CRED_DEF_ID,
     INDY_SCHEMA_ID,
     INDY_VERSION,
-    NATURAL_NUM,
     UUIDFour,
 )
 
@@ -26,19 +26,19 @@ LOGGER = logging.getLogger(__name__)
 
 SPEC_URI = ""
 
-schema_id = fields.Str(
-    data_key="id", description="Schema identifier", **INDY_SCHEMA_ID
+schemaId = fields.Str(
+    data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
 )
-class SchemaIdMatchInfo(OpenAPISchema):
-    """"""
 
-    schema_id = schema_id
+
+class SchemaIdMatchInfo(OpenAPISchema):
+    schema_id = schemaId
 
 
 class CredIdMatchInfo(OpenAPISchema):
     """Path parameters and validators for request taking credential id."""
 
-    credential_id = fields.Str(
+    cred_def_id = fields.Str(
         description="Credential identifier", required=True, example=UUIDFour.EXAMPLE
     )
 
@@ -57,7 +57,8 @@ schemaName = fields.Str(
 )
 schemaVersion = fields.Str(description="Schema version", **INDY_VERSION)
 issuerId = fields.Str(
-    description="Issuer did", **GENERIC_DID
+    description="Issuer Identifier of the credential definition or schema",
+    **GENERIC_DID,
 )  # TODO: get correct validator
 
 
@@ -70,55 +71,89 @@ class SchemaSchema(OpenAPISchema):
     issuerId = issuerId
 
 
-class SchemaPostQueryStringSchema(OpenAPISchema):
-    """"""
-
-    schema = fields.Nested(SchemaSchema())
-    options = fields.Dict(
-        description="Options ",
+class SchemaPostOptionSchema(OpenAPISchema):
+    endorser_connection_id = fields.UUID(
+        description="Connection identifier (optional)",
         required=False,
+        example=UUIDFour.EXAMPLE,
     )
-    
+
+
+class SchemaPostQueryStringSchema(OpenAPISchema):
+    schema = fields.Nested(SchemaSchema())
+    options = fields.Nested(SchemaPostOptionSchema())
+
+
+support_revocation = fields.Bool()
+revocation_registry_size = fields.Int()
+
+
 class CredDefSchema(OpenAPISchema):
-    """"""
-    
-    tag = 
-    schemaId = schema_id
+    tag = fields.Str(
+        description="The tag value passed in by the Issuer to an AnonCred's Credential Definition create and store implementation."
+    )
+    schemaId = schemaId
     issuerId = issuerId
-    support_revocation = 
-    revocation_registry_size =
+    supportRevocation = support_revocation
+    revocationRegistrySize = revocation_registry_size
+
 
 class CredDefPostOptionsSchema(OpenAPISchema):
-    """"""
-    endorser_connection_id =
-    support_revocation = 
-    revocation_registry_size = 
-    
+    endorserConnectionId = fields.Str()
+    supportRevocation = support_revocation
+    revocationRegistrySize = revocation_registry_size
+
+
 class CredDefPostQueryStringSchema(OpenAPISchema):
-    """"""
-    
-    credential_definition = fields.Nested(CredDefSchema())
+    credentialDefinition = fields.Nested(CredDefSchema())
     options = fields.Nested(CredDefPostOptionsSchema())
 
-class PublicKeysSchema(OpenAPISchema):
-    accumKey = fields.Dict(
-        example = '{ "z": "1 0BB...386"}'
+
+class CredDefsQueryStringSchema(OpenAPISchema):
+    credentialDefinitionId = fields.Str(
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID,
     )
+    issuerId = issuerId
+    schemaId = schemaId
+    schemaIssuerId = issuerId
+    schemaName = schemaName
+    schemaVersion = schemaVersion
+
+
+# class CredDefResponseSchema(OpenAPISchema):
+
+
+'''
+class PublicKeysSchema(OpenAPISchema):
+    accumKey = fields.Dict(example='{ "z": "1 0BB...386"}')
+
+
 class RevRegValueSchema(OpenAPISchema):
     """"""
+
     publicKeys = PublicKeysSchema()
-    maxCredNum =  #666,
-    tailsLocation =  #"https://my.revocations.tails/tailsfile.txt",
-    tailsHash = #"91zvq2cFmBZmHCcLqFyzv7bfehHH5rMhdAG5wTjqy2PE"
+    maxCredNum = fields.Int(
+        description=" The capacity of the Revocation Registry, a count of the number of credentials that can be issued using the Revocation Registry.",
+        example=777,
+    )
+    tailsLocation = fields.URL(
+        description="The capacity of the Revocation Registry, a count of the number of credentials that can be issued using the Revocation Registry."
+    )
+    tailsHash = fields.Str()  # "91zvq2cFmBZmHCcLqFyzv7bfehHH5rMhdAG5wTjqy2PE"
+
+
 class RevRegPostQueryStringSchema(OpenAPISchema):
     """"""
-    
+
     issuerId = issuerId
-    revocDefType = #  "CL_ACCUM",
-    credDefId = #: "Gs6cQcvrtWoZKsbBhD3dQJ:3:CL:140384:mctc",
-    tag = # "MyCustomCredentialDefinition",
-    value= fields.Nested(RevRegValueSchema())
-        
+    revocDefType = fields.Str()  # always  "CL_ACCUM",
+    credDefId = INDY_CRED_DEF_ID  #: "Gs6cQcvrtWoZKsbBhD3dQJ:3:CL:140384:mctc",
+    tag = fields.Str()
+    value = fields.Nested(RevRegValueSchema())
+'''
+
+
 class SchemaResponseSchema(OpenAPISchema):
     """"""
 
@@ -127,7 +162,7 @@ class SchemaResponseSchema(OpenAPISchema):
         description="Options ",
         required=False,
     )
-    schema_id = schema_id
+    schema_id = schemaId
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()
 
@@ -145,9 +180,8 @@ class SchemasQueryStringSchema(OpenAPISchema):
 async def schemas_post(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     input = await request.json()
-    LOGGER.info(f"request mad with, {input}")
 
-    raise NotImplementedError()
+    return web.json_response({"input": input})
 
 
 @docs(tags=["anoncreds"], summary="")
@@ -155,42 +189,65 @@ async def schemas_post(request: web.BaseRequest):
 @response_schema(SchemaResponseSchema(), 200, description="")
 async def schema_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
-    schema_id = request.match_info["schema_id"]
+    schema_id = request.match_info["schemaId"]
 
-    LOGGER.info(f"called with schema_id: {schema_id}")
-    raise NotImplementedError()
+    return web.json_response({"schema_id": schema_id})
 
 
 @docs(tags=["anoncreds"], summary="")
 @querystring_schema(SchemasQueryStringSchema())
 async def schemas_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
+    schema_issuer_did = request.query.get("schemaIssuerDid")
     schema_name = request.query.get("schemaName")
     schema_version = request.query.get("schemaVersion")
-    schema_issuer_did = request.query.get("schemaIssuerDid")
-    LOGGER.info(
-        f"called with schema_name: {schema_name}, schema_version: {schema_version}, schema_issuer_did: {schema_issuer_did}"
+
+    return web.json_response(
+        {
+            "schema_issuer_did": schema_issuer_did,
+            "schema_name": schema_name,
+            "schema_version": schema_version,
+        }
     )
-    raise NotImplementedError()
 
 
 @docs(tags=["anoncreds"], summary="")
 @request_schema(CredDefPostQueryStringSchema())
 async def cred_def_post(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
-    raise NotImplementedError()
+    input = await request.json()
+    return web.json_response({"input": input})
 
 
 @docs(tags=["anoncreds"], summary="")
+@match_info_schema(CredIdMatchInfo())
 async def cred_def_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
-    raise NotImplementedError()
+    credential_id = request.match_info["cred_def_id"]
+    return web.json_response({"cred_def_id": credential_id})
 
 
 @docs(tags=["anoncreds"], summary="")
+@querystring_schema(CredDefsQueryStringSchema())
 async def cred_defs_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
-    raise NotImplementedError()
+    cred_def_id = request.query.get("credentialDefinitionId")
+    issuer_id = request.query.get("issuerId")
+    schema_id = request.query.get("schemaId")
+    schema_issuer_id = request.query.get("schemaIssuerId")
+    schema_name = request.query.get("schemaName")
+    schema_version = request.query.get("schemaVersion")
+
+    return web.json_response(
+        {
+            "cred_def_id": cred_def_id,
+            "issuer_id": issuer_id,
+            "schema_id": schema_id,
+            "schema_issuer_id": schema_issuer_id,
+            "schema_name": schema_name,
+            "schema_version": schema_version,
+        }
+    )
 
 
 async def register(app: web.Application):
@@ -198,19 +255,17 @@ async def register(app: web.Application):
 
     app.add_routes(
         [
-            web.post("/anoncreds/schema", schemas_post, allow_head=False),
-            web.get("/anoncreds/schema/{schema_id}", schema_get, allow_head=False),
+            web.post("/anoncreds/schema", schemas_post),
+            web.get("/anoncreds/schema/{schemaId}", schema_get, allow_head=False),
             web.get("/anoncreds/schemas", schemas_get, allow_head=False),
-            web.post(
-                "/anoncreds/credential-definition", cred_def_post, allow_head=False
-            ),
+            web.post("/anoncreds/credential-definition", cred_def_post),
             web.get(
-                "/anoncreds/credential-definition/{credential_definition_id}",
+                "/anoncreds/credential-definition/{cred_def_id}",
                 cred_def_get,
                 allow_head=False,
             ),
             web.get(
-                "/anoncreds/credential-definitions/issuer/",
+                "/anoncreds/credential-definitions/",
                 cred_defs_get,
                 allow_head=False,
             ),
