@@ -16,7 +16,8 @@ async def setup(context: InjectionContext):
         return
 
     indy_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.did_indy_registry.v1_0.did_indy_registry.DIDIndyRegistry"
+        "aries_cloudagent.anoncreds.did_indy_registry.v1_0.did_indy_registry."
+        "DIDIndyRegistry"
     ).provide(context.settings, context.injector)
     await indy_registry.setup(context)
     registry.register_registry(indy_registry)

@@ -1,3 +1,4 @@
+"""DID Indy Registry"""
 from ...anoncreds.anoncreds_objects import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
@@ -9,7 +10,9 @@ from ....anoncreds.anoncreds.anoncreds_registry import BaseRegistry
 
 
 class DIDIndyRegistry(BaseRegistry):
+    """DIDIndyRegistry"""
     async def setup(self, context: InjectionContext):
+        """Setup."""
         print("Successfully registered DIDIndyRegistry")
 
     async def get_schema(self, schema_id: str) -> AnonCredsRegistryGetSchema:

@@ -1,3 +1,4 @@
+"""AnonCreds Registry"""
 import logging
 from typing import List
 
@@ -7,6 +8,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class AnonCredsRegistry:
+    """AnonCredsRegistry"""
     def __init__(self, registries: List[BaseRegistry] = None):
         """Create DID Resolver."""
         self.registries = registries or []

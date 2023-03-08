@@ -1,3 +1,4 @@
+"""Base Registry"""
 from abc import abstractmethod
 from ...config.injection_context import InjectionContext
 
@@ -10,9 +11,10 @@ from .anoncreds_objects import (
 
 
 class BaseRegistry:
+    """BaseRegistry"""
     @abstractmethod
     async def setup(self, context: InjectionContext):
-        """Setup method"""
+        """Setup method."""
 
     @abstractmethod
     async def get_schema(self, schema_id: str) -> AnonCredsRegistryGetSchema:

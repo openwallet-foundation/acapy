@@ -1,3 +1,4 @@
+"""AnonCreds Objects"""
 from typing import Any, Dict, List, Optional
 from typing_extensions import Literal
 from dataclasses import dataclass
@@ -5,6 +6,7 @@ from dataclasses import dataclass
 
 @dataclass
 class AnonCredsSchema:
+    """AnonCredsSchema"""
     issuerId: str
     attrNames: List[str]
     name: str
@@ -13,6 +15,7 @@ class AnonCredsSchema:
 
 @dataclass
 class AnonCredsRegistryGetSchema:
+    """AnonCredsRegistryGetSchema"""
     schema: AnonCredsSchema
     schema_id: str
     resolution_metadata: Dict[str, Any]
@@ -22,12 +25,14 @@ class AnonCredsRegistryGetSchema:
 # TODO: determine types for `primary` and `revocation`
 @dataclass
 class AnonCredsCredentialDefinitionValue:
+    """"AnonCredsCredentialDefinitionValue"""
     primary: Any
     revocation: Optional[Any]
 
 
 @dataclass
 class AnonCredsCredentialDefinition:
+    """AnonCredsCredentialDefinition"""
     issuerId: str
     schemaId: str
     type: Literal["CL"]
@@ -37,6 +42,7 @@ class AnonCredsCredentialDefinition:
 
 @dataclass
 class AnonCredsRegistryGetCredentialDefinition:
+    """AnonCredsRegistryGetCredentialDefinition"""
     credential_definition: AnonCredsCredentialDefinition
     credential_definition_id: str
     resolution_metadata: Dict[str, Any]
@@ -45,6 +51,7 @@ class AnonCredsRegistryGetCredentialDefinition:
 
 @dataclass
 class AnonCredsRevocationRegistryDefinition:
+    """AnonCredsRevocationRegistryDefinition"""
     issuerId: str
     type: Literal["CL_ACCUM"]
     credDefId: str
@@ -58,6 +65,7 @@ class AnonCredsRevocationRegistryDefinition:
 
 @dataclass
 class AnonCredsRegistryGetRevocationRegistryDefinition:
+    """AnonCredsRegistryGetRevocationRegistryDefinition"""
     revocation_registry: AnonCredsRevocationRegistryDefinition
     revocation_registry_id: str
     resolution_metadata: Dict[str, Any]
@@ -66,6 +74,7 @@ class AnonCredsRegistryGetRevocationRegistryDefinition:
 
 @dataclass
 class AnonCredsRevocationList:
+    """AnonCredsRevocationList"""
     issuerId: str
     revRegId: str
     revocationList: List[int]
@@ -75,6 +84,7 @@ class AnonCredsRevocationList:
 
 @dataclass
 class AnonCredsRegistryGetRevocationList:
+    """AnonCredsRegistryGetRevocationList"""
     revocation_list: AnonCredsRevocationList
     resolution_metadata: Dict[str, Any]
     revocation_registry_metadata: Dict[str, Any]
