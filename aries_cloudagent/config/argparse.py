@@ -272,6 +272,12 @@ class DebugGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--debug-webhooks",
+            action="store_true",
+            env_var="ACAPY_DEBUG_WEBHOOKS",
+            help=("Emit protocol state object as webhook. " "Default: false."),
+        )
+        parser.add_argument(
             "--invite",
             action="store_true",
             env_var="ACAPY_INVITE",
@@ -424,6 +430,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.credentials"] = True
         if args.debug_presentations:
             settings["debug.presentations"] = True
+        if args.debug_webhooks:
+            settings["debug.webhooks"] = True
         if args.debug_seed:
             settings["debug.seed"] = args.debug_seed
         if args.invite:
@@ -1310,12 +1318,6 @@ class TransportGroup(ArgumentGroup):
             help="Set the maximum size in bytes for inbound agent messages.",
         )
         parser.add_argument(
-            "--light-weight-webhook",
-            action="store_true",
-            env_var="ACAPY_LIGHT_WEIGHT_WEBHOOK",
-            help="omitted client's info from issue-credential related webhook",
-        )
-        parser.add_argument(
             "--enable-undelivered-queue",
             action="store_true",
             env_var="ACAPY_ENABLE_UNDELIVERED_QUEUE",
@@ -1378,8 +1380,6 @@ class TransportGroup(ArgumentGroup):
             settings["image_url"] = args.image_url
         if args.max_message_size:
             settings["transport.max_message_size"] = args.max_message_size
-        if args.light_weight_webhook:
-            settings["transport.light_weight_webhook"] = True
         if args.max_outbound_retry:
             settings["transport.max_outbound_retry"] = args.max_outbound_retry
         if args.ws_heartbeat_interval:

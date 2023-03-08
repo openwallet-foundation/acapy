@@ -1,7 +1,7 @@
-"""v2.0 credential exchange light weight webhook."""
+"""v2.0 credential exchange webhook."""
 
 
-class LightWeightV20CredExRecordWebhook:
+class V20CredExRecordWebhook:
     """Class representing a state only credential exchange webhook."""
 
     __acceptable_keys_list = [
@@ -27,6 +27,8 @@ class LightWeightV20CredExRecordWebhook:
         "public_did",
         "cred_id_stored",
         "conn_id",
+        "created_at",
+        "updated_at",
     ]
 
     def __init__(
