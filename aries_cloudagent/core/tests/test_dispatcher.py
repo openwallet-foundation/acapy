@@ -494,50 +494,6 @@ class TestDispatcher(IsolatedAsyncioTestCase):
                     message_id=message._id,
                 )
 
-    async def test_get_msg_type_from_enc_payload(self):
-        profile = make_profile()
-        context = RequestContext(
-            profile,
-            settings={"timing.enabled": True},
-        )
-        message = StubAgentMessage()
-        responder = test_module.DispatcherResponder(context, message, None)
-        assert not await responder._get_msg_type_from_enc_payload(
-            profile, ["...", "..."]
-        )
-        assert not await responder._get_msg_type_from_enc_payload(
-            profile, {"...": "..."}
-        )
-        msg_dict = message.serialize()
-        not await responder._get_msg_type_from_enc_payload(profile, msg_dict)
-        registry = profile.inject(ProtocolRegistry)
-        registry.register_message_types(
-            {
-                pfx.qualify(StubAgentMessage.Meta.message_type): StubAgentMessage
-                for pfx in DIDCommPrefix
-            }
-        )
-        message = StubAgentMessage()
-        responder = test_module.DispatcherResponder(context, message, None)
-        message._id = "test123"
-        msg_dict = message.serialize()
-        msg_type, msg_id = await responder._get_msg_type_from_enc_payload(
-            profile, msg_dict
-        )
-        assert msg_type == StubAgentMessage.Meta.message_type
-        assert msg_id == "test123"
-
-        msg_dict["@type"] = "proto-name/3.0/message-type"
-        with async_mock.patch.object(
-            registry, "resolve_message_class", async_mock.MagicMock()
-        ) as mock_resolve:
-            mock_resolve.return_value = async_mock.MagicMock(
-                deserialize=async_mock.MagicMock(
-                    side_effect=test_module.ProtocolMinorVersionNotSupported()
-                )
-            )
-            assert not await responder._get_msg_type_from_enc_payload(profile, msg_dict)
-
     async def test_create_send_webhook(self):
         profile = make_profile()
         context = RequestContext(profile)
@@ -552,12 +508,6 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         context = RequestContext(profile)
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
-        check_flag = await responder.conn_rec_active_state_check(
-            profile,
-            "conn-id",
-            "didexchange/1.0/request",
-        )
-        assert check_flag
         with async_mock.patch.object(
             test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
         ) as mock_conn_ret_by_id:
@@ -567,13 +517,11 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             check_flag = await responder.conn_rec_active_state_check(
                 profile,
                 "conn-id",
-                "proto-name/1.1/message-type",
             )
             assert check_flag
             check_flag = await responder.conn_rec_active_state_check(
                 profile,
                 "conn-id",
-                "proto-name/2.1/message-type",
             )
             assert check_flag
 
@@ -597,7 +545,6 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             check_flag = await responder.conn_rec_active_state_check(
                 profile,
                 "conn-id",
-                "proto-name/1.1/message-type",
             )
             assert check_flag
 
@@ -611,8 +558,8 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         ) as mock_send_outbound:
             await responder.send(message)
             assert mock_send_outbound.called_once()
-
-        message = b"abc123xyz7890000"
+        msg_json = json.dumps(StubAgentMessage().serialize())
+        message = msg_json.encode("utf-8")
         with async_mock.patch.object(
             responder, "send_outbound", async_mock.AsyncMock()
         ) as mock_send_outbound:
@@ -625,7 +572,7 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             await responder.send_reply(message)
             assert mock_send_outbound.called_once()
 
-        message = b"abc123xyz7890000"
+        message = json.dumps(StubAgentMessage().serialize())
         with async_mock.patch.object(
             responder, "send_outbound", async_mock.AsyncMock()
         ) as mock_send_outbound:
