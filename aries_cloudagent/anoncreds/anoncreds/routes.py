@@ -109,11 +109,14 @@ class CredDefPostQueryStringSchema(OpenAPISchema):
     options = fields.Nested(CredDefPostOptionsSchema())
 
 
+credentialDefinitionId = fields.Str(
+    description="Credential definition identifier",
+    **INDY_CRED_DEF_ID,
+)
+
+
 class CredDefsQueryStringSchema(OpenAPISchema):
-    credentialDefinitionId = fields.Str(
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
-    )
+    credentialDefinitionId = credentialDefinitionId
     issuerId = issuerId
     schemaId = schemaId
     schemaIssuerId = issuerId
@@ -121,7 +124,65 @@ class CredDefsQueryStringSchema(OpenAPISchema):
     schemaVersion = schemaVersion
 
 
-# class CredDefResponseSchema(OpenAPISchema):
+"""
+"primary": {
+    "n": "779...397",
+    "r": {
+    "link_secret": "521...922",
+    "<key>": "410...200"
+    },
+    "rctxt": "774...977",
+    "s": "750..893",
+    "z": "632...005"
+}
+"""
+
+
+class PrimarySchema(OpenAPISchema):
+    n = fields.Str(example="779...397")
+    r = fields.Dict()
+    rctxt = fields.Str(example="774...977")
+    s = fields.Str(example="750..893")
+    z = fields.Str(example="632...005")
+
+
+class CredDefValueSchema(OpenAPISchema):
+    primary = fields.Nested(PrimarySchema())
+
+
+class CredDefResponseSchema(OpenAPISchema):
+    issuerId = issuerId
+    schemaId = schemaId
+    tag = fields.Str(
+        description="The tag value passed in by the Issuer to an AnonCred's Credential Definition create and store implementation."
+    )
+    value = fields.Nested(CredDefValueSchema())
+    # registration_metadata = support_revocation
+    # revocationRegistrySize = revocation_registry_size
+
+
+class CredDefState(OpenAPISchema):
+    state = fields.Str()  # TODO: create validator for only possible states
+    credential_definition_id = credentialDefinitionId
+    credential_definition = fields.Nested(CredDefResponseSchema())
+
+
+class PostCredDefResponseSchema(OpenAPISchema):
+    job_id = fields.Str()
+    credential_definition_state = fields.Nested(CredDefState())
+    registration_metadata = fields.Dict()
+    credential_definition_metadata = fields.Dict()
+
+
+class GetCredDefResponseSchema(OpenAPISchema):
+    credential_definition_id = credentialDefinitionId
+    credential_definition = fields.Nested(CredDefResponseSchema())
+    resolution_metadata = fields.Dict()
+    credential_definition_metadata = fields.Dict()
+
+
+class GetCredDefsResponseSchema(OpenAPISchema):
+    credential_definition_id = fields.Str()
 
 
 '''
@@ -154,9 +215,22 @@ class RevRegPostQueryStringSchema(OpenAPISchema):
 '''
 
 
-class SchemaResponseSchema(OpenAPISchema):
-    """"""
+class SchemaState(OpenAPISchema):
+    state = fields.Str()  # TODO: create validator for only possible states
+    schema_id = schemaId
+    schema = fields.Nested(SchemaSchema())
 
+
+class PostSchemaResponseSchema(OpenAPISchema):
+    job_id = fields.Str()
+    schema_state = fields.Nested(SchemaState())
+    registration_metadata = (
+        fields.Dict()
+    )  # For indy, schema_metadata will contain the seqNo
+    schema_metadata = fields.Dict()
+
+
+class SchemaResponseSchema(OpenAPISchema):
     schema = fields.Nested(SchemaSchema())
     options = fields.Dict(
         description="Options ",
@@ -167,9 +241,11 @@ class SchemaResponseSchema(OpenAPISchema):
     schema_metadata = fields.Dict()
 
 
-class SchemasQueryStringSchema(OpenAPISchema):
-    """"""
+class SchemasResponseSchema(OpenAPISchema):
+    schema_id = fields.List(schemaId)
 
+
+class SchemasQueryStringSchema(OpenAPISchema):
     schemaName = schemaName
     schemaVersion = schemaVersion
     schemaIssuerDid = issuerId
@@ -177,6 +253,7 @@ class SchemasQueryStringSchema(OpenAPISchema):
 
 @docs(tags=["anoncreds"], summary="")
 @request_schema(SchemaPostQueryStringSchema())
+@response_schema(PostSchemaResponseSchema(), 200, description="")
 async def schemas_post(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     input = await request.json()
@@ -196,6 +273,7 @@ async def schema_get(request: web.BaseRequest):
 
 @docs(tags=["anoncreds"], summary="")
 @querystring_schema(SchemasQueryStringSchema())
+@response_schema(SchemasResponseSchema(), 200, description="")
 async def schemas_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     schema_issuer_did = request.query.get("schemaIssuerDid")
@@ -213,6 +291,7 @@ async def schemas_get(request: web.BaseRequest):
 
 @docs(tags=["anoncreds"], summary="")
 @request_schema(CredDefPostQueryStringSchema())
+@response_schema(PostCredDefResponseSchema(), 200, description="")
 async def cred_def_post(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     input = await request.json()
@@ -221,6 +300,7 @@ async def cred_def_post(request: web.BaseRequest):
 
 @docs(tags=["anoncreds"], summary="")
 @match_info_schema(CredIdMatchInfo())
+@response_schema(GetCredDefResponseSchema(), 200, description="")
 async def cred_def_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["cred_def_id"]
@@ -229,6 +309,7 @@ async def cred_def_get(request: web.BaseRequest):
 
 @docs(tags=["anoncreds"], summary="")
 @querystring_schema(CredDefsQueryStringSchema())
+@response_schema(GetCredDefsResponseSchema(), 200, description="")
 async def cred_defs_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     cred_def_id = request.query.get("credentialDefinitionId")
