@@ -6,7 +6,6 @@ in response to the message being handled.
 """
 import asyncio
 import json
-import re
 
 from abc import ABC, abstractmethod
 from typing import Sequence, Union, Optional, Tuple
@@ -15,12 +14,19 @@ from ..cache.base import BaseCache
 from ..connections.models.connection_target import ConnectionTarget
 from ..connections.models.conn_record import ConnRecord
 from ..core.error import BaseError
-from ..core.event_bus import EventBus
 from ..core.profile import Profile
 from ..transport.outbound.message import OutboundMessage
 
 from .base_message import BaseMessage
 from ..transport.outbound.status import OutboundSendStatus
+
+SKIP_ACTIVE_CONN_CHECK_MSG_TYPES = [
+    "didexchange/1.0/request",
+    "didexchange/1.0/response",
+    "connections/1.0/invitation",
+    "connections/1.0/request",
+    "connections/1.0/response",
+]
 
 
 class ResponderError(BaseError):
@@ -85,14 +91,18 @@ class BaseResponder(ABC):
     ) -> OutboundSendStatus:
         """Convert a message to an OutboundMessage and send it."""
         outbound = await self.create_outbound(message, **kwargs)
-        try:
-            return await self.send_outbound(
-                message=outbound,
-                message_type=message._message_type,
-                message_id=message._id,
-            )
-        except AttributeError:
-            return await self.send_outbound(message=outbound)
+        if isinstance(message, BaseMessage):
+            msg_type = message._message_type
+            msg_id = message._id
+        else:
+            msg_dict = json.loads(message)
+            msg_type = msg_dict.get("@type")
+            msg_id = msg_dict.get("@id")
+        return await self.send_outbound(
+            message=outbound,
+            message_type=msg_type,
+            message_id=msg_id,
+        )
 
     async def send_reply(
         self,
@@ -122,50 +132,34 @@ class BaseResponder(ABC):
             target=target,
             target_list=target_list,
         )
-        try:
-            return await self.send_outbound(
-                outbound, message_type=message._message_type, message_id=message._id
-            )
-        except AttributeError:
-            return await self.send_outbound(outbound)
+        if isinstance(message, BaseMessage):
+            msg_type = message._message_type
+            msg_id = message._id
+        else:
+            msg_dict = json.loads(message)
+            msg_type = msg_dict.get("@type")
+            msg_id = msg_dict.get("@id")
+        return await self.send_outbound(
+            message=outbound, message_type=msg_type, message_id=msg_id
+        )
 
     async def conn_rec_active_state_check(
-        self, profile: Profile, connection_id: str, msg_type: str, timeout: int = 7
+        self, profile: Profile, connection_id: str, timeout: int = 7
     ) -> bool:
         """Check if the connection record is ready for sending outbound message."""
-        CONNECTION_READY_EVENT = re.compile(
-            "^acapy::record::connections::(active|completed|response)$"
-        )
-        WHITELIST_MSG_TYPE = [
-            "didexchange/1.0/request",
-            "didexchange/1.0/response",
-            "connections/1.0/invitation",
-            "connections/1.0/request",
-            "connections/1.0/response",
-        ]
-        if msg_type in WHITELIST_MSG_TYPE:
-            return True
 
         async def _wait_for_state() -> Tuple[bool, Optional[str]]:
-            async with profile.session() as session:
-                conn_record = await ConnRecord.retrieve_by_id(session, connection_id)
-                if conn_record.is_ready:
-                    return (True, conn_record.state)
-            event = profile.inject(EventBus)
-            with event.wait_for_event(
-                profile,
-                CONNECTION_READY_EVENT,
-                lambda event: event.payload.get("connection_id") == connection_id,
-            ) as await_event:
+            while True:
                 async with profile.session() as session:
                     conn_record = await ConnRecord.retrieve_by_id(
                         session, connection_id
                     )
                     if conn_record.is_ready:
+                        # if ConnRecord.State.get(conn_record.state) in (
+                        #     ConnRecord.State.COMPLETED,
+                        # ):
                         return (True, conn_record.state)
-            event = await await_event
-            conn_record = ConnRecord.deserialize(event.payload)
-            return (True, conn_record.state)
+                    await asyncio.sleep(1)
 
         try:
             cache_key = f"conn_rec_state::{connection_id}"
