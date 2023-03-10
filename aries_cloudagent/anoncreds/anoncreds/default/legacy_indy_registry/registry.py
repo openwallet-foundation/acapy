@@ -1,12 +1,12 @@
 """Legacy Indy Registry"""
-from ..anoncreds.models import (
+from ...models import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
     AnonCredsRegistryGetSchema,
 )
-from ...config.injection_context import InjectionContext
-from ..anoncreds.anoncreds_registry import BaseRegistry
+from .....config.injection_context import InjectionContext
+from ...anoncreds_registry import BaseRegistry
 
 
 class LegacyIndyRegistry(BaseRegistry):

@@ -1,19 +1,19 @@
-"""DID Indy Registry"""
-from ..anoncreds.models import (
+"""DID Web Registry"""
+from ...models import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
     AnonCredsRegistryGetSchema,
 )
-from ...config.injection_context import InjectionContext
-from ..anoncreds.anoncreds_registry import BaseRegistry
+from .....config.injection_context import InjectionContext
+from ...anoncreds_registry import BaseRegistry
 
 
-class DIDIndyRegistry(BaseRegistry):
-    """DIDIndyRegistry"""
+class DIDWebRegistry(BaseRegistry):
+    """DIDWebRegistry"""
     async def setup(self, context: InjectionContext):
         """Setup."""
-        print("Successfully registered DIDIndyRegistry")
+        print("Successfully registered DIDWebRegistry")
 
     async def get_schema(self, schema_id: str) -> AnonCredsRegistryGetSchema:
         """Get a schema from the registry."""
