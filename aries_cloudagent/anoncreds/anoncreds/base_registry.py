@@ -2,7 +2,7 @@
 from abc import abstractmethod
 from ...config.injection_context import InjectionContext
 
-from .anoncreds_objects import (
+from .models import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,

@@ -12,18 +12,17 @@ async def setup(context: InjectionContext):
     """Set up default resolvers."""
     registry = context.inject_or(AnonCredsRegistry)
     if not registry:
-        LOGGER.warning("No DID Resolver instance found in context")
+        LOGGER.warning("No AnonCredsRegistry instance found in context")
         return
 
     indy_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.did_indy_registry.v1_0.did_indy_registry."
-        "DIDIndyRegistry"
+        "aries_cloudagent.anoncreds.did_indy_registry.registry.DIDIndyRegistry"
     ).provide(context.settings, context.injector)
     await indy_registry.setup(context)
     registry.register_registry(indy_registry)
 
     web_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.did_web_registry.v1_0.did_web_registry.DIDWebRegistry"
+        "aries_cloudagent.anoncreds.did_web_registry.registry.DIDWebRegistry"
     ).provide(context.settings, context.injector)
     await web_registry.setup(context)
     registry.register_registry(web_registry)
