@@ -132,6 +132,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.anoncreds.anoncreds")
         plugin_registry.register_plugin("aries_cloudagent.anoncreds.did_indy_registry")
         plugin_registry.register_plugin("aries_cloudagent.anoncreds.did_web_registry")
+        plugin_registry.register_plugin("aries_cloudagent.anoncreds.legacy_indy_registry")
 
         if context.settings.get("multitenant.admin_enabled"):
             plugin_registry.register_plugin("aries_cloudagent.multitenant.admin")

@@ -27,4 +27,10 @@ async def setup(context: InjectionContext):
     await web_registry.setup(context)
     registry.register_registry(web_registry)
 
+    legacy_indy_registry = ClassProvider(
+        "aries_cloudagent.anoncreds.legacy_indy_registry.registry.LegacyIndyRegistry", supported_identifiers=[], method_name="",
+    ).provide(context.settings, context.injector)
+    await legacy_indy_registry.setup(context)
+    registry.register_registry(legacy_indy_registry)
+
     # TODO: add context.settings
