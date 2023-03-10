@@ -23,17 +23,15 @@ from ...messaging.valid import (
 
 LOGGER = logging.getLogger(__name__)
 
-SPEC_URI = ""
-
-schemaId = fields.Str(
-    data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
-)
+SPEC_URI = "https://hyperledger.github.io/anoncreds-spec"
 
 
 class SchemaIdMatchInfo(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""
 
-    schema_id = schemaId
+    schema_id = fields.Str(
+        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+    )
 
 
 class CredIdMatchInfo(OpenAPISchema):
@@ -44,32 +42,26 @@ class CredIdMatchInfo(OpenAPISchema):
     )
 
 
-schemaAttrNames = fields.List(
-    fields.Str(
-        description="Attribute name",
-        example="score",
-    ),
-    description="Schema attribute names",
-    data_key="attrNames",
-)
-schemaName = fields.Str(
-    description="Schema name",
-    example=INDY_SCHEMA_ID["example"].split(":")[2],
-)
-schemaVersion = fields.Str(description="Schema version", **INDY_VERSION)
-issuerId = fields.Str(
-    description="Issuer Identifier of the credential definition or schema",
-    **GENERIC_DID,
-)  # TODO: get correct validator
-
-
 class SchemaSchema(OpenAPISchema):
     """Marshmallow schema for indy schema."""
 
-    attrNames = schemaAttrNames
-    name = schemaName
-    version = schemaVersion
-    issuerId = issuerId
+    attrNames = fields.List(
+        fields.Str(
+            description="Attribute name",
+            example="score",
+        ),
+        description="Schema attribute names",
+        data_key="attrNames",
+    )
+    name = fields.Str(
+        description="Schema name",
+        example=INDY_SCHEMA_ID["example"].split(":")[2],
+    )
+    version = fields.Str(description="Schema version", **INDY_VERSION)
+    issuerId = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+    )  # TODO: get correct validator
 
 
 class SchemaPostOptionSchema(OpenAPISchema):
@@ -89,10 +81,6 @@ class SchemaPostQueryStringSchema(OpenAPISchema):
     options = fields.Nested(SchemaPostOptionSchema())
 
 
-support_revocation = fields.Bool()
-revocation_registry_size = fields.Int()
-
-
 class CredDefSchema(OpenAPISchema):
     """Parameters and validators for credential definition."""
 
@@ -100,18 +88,23 @@ class CredDefSchema(OpenAPISchema):
         description="""The tag value passed in by the Issuer to
          an AnonCred's Credential Definition create and store implementation."""
     )
-    schemaId = schemaId
-    issuerId = issuerId
-    supportRevocation = support_revocation
-    revocationRegistrySize = revocation_registry_size
+    schemaId = fields.Str(
+        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+    )
+    issuerId = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+    )  # TODO: get correct validator
+    supportRevocation = fields.Bool()
+    revocationRegistrySize = fields.Int()
 
 
 class CredDefPostOptionsSchema(OpenAPISchema):
     """Parameters and validators for credential definition options."""
 
     endorserConnectionId = fields.Str()
-    supportRevocation = support_revocation
-    revocationRegistrySize = revocation_registry_size
+    supportRevocation = fields.Bool()
+    revocationRegistrySize = fields.Int()
 
 
 class CredDefPostQueryStringSchema(OpenAPISchema):
@@ -121,21 +114,29 @@ class CredDefPostQueryStringSchema(OpenAPISchema):
     options = fields.Nested(CredDefPostOptionsSchema())
 
 
-credentialDefinitionId = fields.Str(
-    description="Credential definition identifier",
-    **INDY_CRED_DEF_ID,
-)
-
-
 class CredDefsQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential definition list query."""
 
-    credentialDefinitionId = credentialDefinitionId
-    issuerId = issuerId
-    schemaId = schemaId
-    schemaIssuerId = issuerId
-    schemaName = schemaName
-    schemaVersion = schemaVersion
+    credentialDefinitionId = fields.Str(
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID,
+    )
+    issuerId = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+    )  # TODO: get correct validator
+    schemaId = fields.Str(
+        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+    )
+    schemaIssuerId = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+    )  # TODO: get correct validator
+    schemaName = fields.Str(
+        description="Schema name",
+        example=INDY_SCHEMA_ID["example"].split(":")[2],
+    )
+    schemaVersion = fields.Str(description="Schema version", **INDY_VERSION)
 
 
 class PrimarySchema(OpenAPISchema):
@@ -157,22 +158,30 @@ class CredDefValueSchema(OpenAPISchema):
 class CredDefResponseSchema(OpenAPISchema):
     """Parameters and validators for credential definition response."""
 
-    issuerId = issuerId
-    schemaId = schemaId
+    issuerId = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+    )  # TODO: get correct validator
+    schemaId = fields.Str(
+        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+    )
     tag = fields.Str(
         description="The tag value passed in by the Issuer to an\
             AnonCred's Credential Definition create and store implementation."
     )
     value = fields.Nested(CredDefValueSchema())
-    # registration_metadata = support_revocation
-    # revocationRegistrySize = revocation_registry_size
+    # registration_metadata = fields.Bool()
+    # revocationRegistrySize = fields.Int()
 
 
 class CredDefState(OpenAPISchema):
     """Parameters and validators for credential definition state."""
 
     state = fields.Str()  # TODO: create validator for only possible states
-    credential_definition_id = credentialDefinitionId
+    credential_definition_id = fields.Str(
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID,
+    )
     credential_definition = fields.Nested(CredDefResponseSchema())
 
 
@@ -188,7 +197,10 @@ class PostCredDefResponseSchema(OpenAPISchema):
 class GetCredDefResponseSchema(OpenAPISchema):
     """Parameters and validators for credential definition list response."""
 
-    credential_definition_id = credentialDefinitionId
+    credential_definition_id = fields.Str(
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID,
+    )
     credential_definition = fields.Nested(CredDefResponseSchema())
     resolution_metadata = fields.Dict()
     credential_definition_metadata = fields.Dict()
@@ -204,7 +216,9 @@ class SchemaState(OpenAPISchema):
     """Parameters and validators for schema state."""
 
     state = fields.Str()  # TODO: create validator for only possible states
-    schema_id = schemaId
+    schema_id = fields.Str(
+        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+    )
     schema = fields.Nested(SchemaSchema())
 
 
@@ -226,7 +240,9 @@ class SchemaResponseSchema(OpenAPISchema):
         description="Options ",
         required=False,
     )
-    schema_id = schemaId
+    schema_id = fields.Str(
+        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+    )
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()
 
@@ -234,15 +250,25 @@ class SchemaResponseSchema(OpenAPISchema):
 class SchemasResponseSchema(OpenAPISchema):
     """Parameters and validators for schema list all response."""
 
-    schema_id = fields.List(schemaId)
+    schema_id = fields.List(
+        fields.Str(
+            data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+        )
+    )
 
 
 class SchemasQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in schemas list query."""
 
-    schemaName = schemaName
-    schemaVersion = schemaVersion
-    schemaIssuerDid = issuerId
+    schemaName = fields.Str(
+        description="Schema name",
+        example=INDY_SCHEMA_ID["example"].split(":")[2],
+    )
+    schemaVersion = fields.Str(description="Schema version", **INDY_VERSION)
+    schemaIssuerDid = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+    )  # TODO: get correct validator
 
 
 @docs(tags=["anoncreds"], summary="")
