@@ -133,10 +133,6 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.anoncreds.did_indy_registry")
         plugin_registry.register_plugin("aries_cloudagent.anoncreds.did_web_registry")
 
-        # TODO: add anoncreds_plugins to argparse settings
-        for plugin_path in self.settings.get("anoncreds_plugins", []):
-            plugin_registry.register_plugin(plugin_path)
-
         if context.settings.get("multitenant.admin_enabled"):
             plugin_registry.register_plugin("aries_cloudagent.multitenant.admin")
 

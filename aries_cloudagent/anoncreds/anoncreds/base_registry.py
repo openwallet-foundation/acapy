@@ -1,5 +1,6 @@
 """Base Registry"""
-from abc import abstractmethod
+from abc import ABC, abstractmethod
+from typing import List
 from ...config.injection_context import InjectionContext
 
 from .models import (
@@ -10,8 +11,12 @@ from .models import (
 )
 
 
-class BaseRegistry:
+class BaseRegistry(ABC):
     """BaseRegistry"""
+
+    def __init__(self, supported_identifiers: List[str], method_name: str):
+        """Initialize Base Registry."""
+
     @abstractmethod
     async def setup(self, context: InjectionContext):
         """Setup method."""

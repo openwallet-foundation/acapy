@@ -16,13 +16,13 @@ async def setup(context: InjectionContext):
         return
 
     indy_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.did_indy_registry.registry.DIDIndyRegistry"
+        "aries_cloudagent.anoncreds.did_indy_registry.registry.DIDIndyRegistry", supported_identifiers=[], method_name="did:indy",
     ).provide(context.settings, context.injector)
     await indy_registry.setup(context)
     registry.register_registry(indy_registry)
 
     web_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.did_web_registry.registry.DIDWebRegistry"
+        "aries_cloudagent.anoncreds.did_web_registry.registry.DIDWebRegistry", supported_identifiers=[], method_name="did:web",
     ).provide(context.settings, context.injector)
     await web_registry.setup(context)
     registry.register_registry(web_registry)
