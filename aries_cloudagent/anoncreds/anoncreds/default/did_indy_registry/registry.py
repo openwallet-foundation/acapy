@@ -11,6 +11,7 @@ from ...anoncreds_registry import BaseRegistry
 
 class DIDIndyRegistry(BaseRegistry):
     """DIDIndyRegistry"""
+
     async def setup(self, context: InjectionContext):
         """Setup."""
         print("Successfully registered DIDIndyRegistry")

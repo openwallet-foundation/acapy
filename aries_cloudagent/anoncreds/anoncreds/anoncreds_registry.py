@@ -3,7 +3,12 @@ import logging
 from typing import List
 
 from .base_registry import BaseRegistry
-from .models import AnonCredsRegistryGetCredentialDefinition, AnonCredsRegistryGetRevocationList, AnonCredsRegistryGetRevocationRegistryDefinition, AnonCredsRegistryGetSchema
+from .models import (
+    AnonCredsRegistryGetCredentialDefinition,
+    AnonCredsRegistryGetRevocationList,
+    AnonCredsRegistryGetRevocationRegistryDefinition,
+    AnonCredsRegistryGetSchema,
+)
 from ...config.injection_context import InjectionContext
 
 
@@ -12,6 +17,7 @@ LOGGER = logging.getLogger(__name__)
 
 class AnonCredsRegistry(BaseRegistry):
     """AnonCredsRegistry"""
+
     def __init__(self, registries: List[BaseRegistry] = None):
         """Create DID Resolver."""
         super().__init__(supported_identifiers=[], method_name="")

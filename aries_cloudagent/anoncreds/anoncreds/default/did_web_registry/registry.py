@@ -11,6 +11,7 @@ from ...anoncreds_registry import BaseRegistry
 
 class DIDWebRegistry(BaseRegistry):
     """DIDWebRegistry"""
+
     async def setup(self, context: InjectionContext):
         """Setup."""
         print("Successfully registered DIDWebRegistry")

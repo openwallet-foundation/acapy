@@ -16,19 +16,28 @@ async def setup(context: InjectionContext):
         return
 
     indy_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.anoncreds.default.did_indy_registry.registry.DIDIndyRegistry", supported_identifiers=[], method_name="did:indy",
+        "aries_cloudagent.anoncreds.anoncreds.default.did_indy_registry.registry"
+        ".DIDIndyRegistry",
+        supported_identifiers=[],
+        method_name="did:indy",
     ).provide(context.settings, context.injector)
     await indy_registry.setup(context)
     registry.register_registry(indy_registry)
 
     web_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.anoncreds.default.did_web_registry.registry.DIDWebRegistry", supported_identifiers=[], method_name="did:web",
+        "aries_cloudagent.anoncreds.anoncreds.default.did_web_registry.registry"
+        ".DIDWebRegistry",
+        supported_identifiers=[],
+        method_name="did:web",
     ).provide(context.settings, context.injector)
     await web_registry.setup(context)
     registry.register_registry(web_registry)
 
     legacy_indy_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.anoncreds.default.legacy_indy_registry.registry.LegacyIndyRegistry", supported_identifiers=[], method_name="",
+        "aries_cloudagent.anoncreds.anoncreds.default.legacy_indy_registry.registry"
+        ".LegacyIndyRegistry",
+        supported_identifiers=[],
+        method_name="",
     ).provide(context.settings, context.injector)
     await legacy_indy_registry.setup(context)
     registry.register_registry(legacy_indy_registry)
