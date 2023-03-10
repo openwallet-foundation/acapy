@@ -82,9 +82,9 @@ class IndyCredxIssuer(AnonCredsIssuer):
         """
         try:
             schema = Schema.create(
-                origin_did, schema_name, schema_version, attribute_names
+                schema_name, schema_version, origin_did, attribute_names
             )
-            schema_id = schema.id
+            schema_id = f"{origin_did}:2:{schema_name}:{schema_version}"
             schema_json = schema.to_json()
             async with self._profile.session() as session:
                 await session.handle.insert(CATEGORY_SCHEMA, schema_id, schema_json)
@@ -137,6 +137,12 @@ class IndyCredxIssuer(AnonCredsIssuer):
             A tuple of the credential definition ID and JSON
 
         """
+        schema_id = AnonCredsIssuer.make_schema_id(
+            origin_did, schema["name"], schema["version"]
+        )
+        cred_def_id = AnonCredsIssuer.make_credential_definition_id(
+            origin_did, schema, signature_type, tag
+        )
         try:
             (
                 cred_def,
@@ -145,14 +151,14 @@ class IndyCredxIssuer(AnonCredsIssuer):
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: CredentialDefinition.create(
-                    origin_did,
+                    schema_id,
                     schema,
-                    signature_type or DEFAULT_SIGNATURE_TYPE,
+                    origin_did,
                     tag or DEFAULT_CRED_DEF_TAG,
+                    signature_type or DEFAULT_SIGNATURE_TYPE,
                     support_revocation=support_revocation,
                 ),
             )
-            cred_def_id = cred_def.id
             cred_def_json = cred_def.to_json()
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating credential definition") from err
@@ -163,7 +169,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                     cred_def_id,
                     cred_def_json,
                     # Note: Indy-SDK uses a separate SchemaId record for this
-                    tags={"schema_id": schema["id"]},
+                    tags={"schema_id": schema_id},
                 )
                 await txn.handle.insert(
                     CATEGORY_CRED_DEF_PRIVATE,
@@ -213,7 +219,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
 
             credential_offer = CredentialOffer.create(
                 schema_id or cred_def.schema_id,
-                cred_def,
+                credential_definition_id,
                 key_proof.raw_value,
             )
         except AnoncredsError as err:
@@ -597,7 +603,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: RevocationRegistryDefinition.create(
-                    origin_did,
+                    cred_def_id,
                     cred_def.raw_value,
                     tag,
                     revoc_def_type,
@@ -605,7 +611,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                     tails_dir_path=tails_base_path,
                 ),
             )
-        except AnonCredsError as err:
+        except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating revocation registry") from err
 
         rev_reg_def_id = rev_reg_def.id
