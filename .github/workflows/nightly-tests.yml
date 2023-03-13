@@ -2,17 +2,14 @@ name: Nightly Tests
 
 on:
   schedule:
-    - cron: '17 19 * * *'
+    - cron: '19 19 * * *'
   push:
     branches:
       - main
-      
-
-#if: github.event.repository.default_branch == github.ref
 
 jobs:
-  if: [github.repository_owner == 'anwalker293']
   tests:
+    if: github.repository_owner == 'anwalker293'
     name: Tests
     strategy:
       fail-fast: false
@@ -28,6 +25,7 @@ jobs:
       os: ${{ matrix.os }}
 
   tests-indy:
+    if: github.repository_owner == 'anwalker293'
     name: Tests (Indy)
     strategy:
       fail-fast: false
@@ -37,7 +35,6 @@ jobs:
         include:
           - os: "ubuntu-20.04"
             python-version: "3.6"
-
     uses: ./.github/workflows/tests-indy.yml
     with:
       python-version: ${{ matrix.python-version }}
