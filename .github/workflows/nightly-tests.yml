@@ -2,12 +2,13 @@ name: Nightly Tests
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '08 19 * * *'
   push:
     branches:
       - main
-
-if: github.event.repository.default_branch == github.ref
+      
+if: github.repository_owner == 'anwalker293'
+#if: github.event.repository.default_branch == github.ref
 
 jobs:
   tests:
