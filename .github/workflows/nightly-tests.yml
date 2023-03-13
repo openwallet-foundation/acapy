@@ -10,8 +10,8 @@ on:
 
 #if: github.event.repository.default_branch == github.ref
 
-if: github.repository_owner == 'anwalker293'
 jobs:
+  if: [github.repository_owner == 'anwalker293']
   tests:
     name: Tests
     strategy:
