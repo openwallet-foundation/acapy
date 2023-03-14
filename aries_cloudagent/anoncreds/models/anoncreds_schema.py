@@ -10,7 +10,7 @@ from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import GENERIC_DID, INDY_SCHEMA_ID, INDY_VERSION, UUIDFour
 
 
-class AnonCreds(BaseModel):
+class AnonCredsSchema(BaseModel):
     """AnonCredsSchema"""
 
     class Meta:
@@ -18,10 +18,14 @@ class AnonCreds(BaseModel):
 
         schema_class = "AnonCredsSchemaSchema"
 
-    issuerId: str
-    attrNames: List[str]
-    name: str
-    version: str
+    def __init__(
+        self, issuer_id: str, attr_names: List[str], name: str, version: str, **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.issuer_id = issuer_id
+        self.attr_names = attr_names
+        self.name = name
+        self.version = version
 
 
 class AnonCredsSchemaSchema(BaseModelSchema):
@@ -30,15 +34,14 @@ class AnonCredsSchemaSchema(BaseModelSchema):
     class Meta:
         """AnonCredsSchemaSchema metadata."""
 
-        model_class = AnonCreds
+        model_class = AnonCredsSchema
         unknown = EXCLUDE
 
-    issuerId = fields.Str(
+    issuer_id = fields.Str(
         description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
-    )  # TODO: get correct validator
-
-    attrNames = fields.List(
+        data_key="issuerId",
+    )
+    attr_names = fields.List(
         fields.Str(
             description="Attribute name",
             example="score",
@@ -61,10 +64,36 @@ class AnonCredsRegistryGetSchema(BaseModel):
 
         schema_class = "IndyCredInfoSchema"
 
-    schema: AnonCreds
-    schema_id: str
-    resolution_metadata: Dict[str, Any]
-    schema_metadata: Dict[str, Any]
+    def __init__(
+        self,
+        schema: AnonCredsSchema,
+        schema_id: str,
+        resolution_metadata: Dict[str, Any],
+        schema_metadata: Dict[str, Any],
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.schema_ = schema
+        self.schema_id = schema_id
+        self.resolution_metadata = resolution_metadata
+        self.schema_metadata = schema_metadata
+
+
+class AnonCredsRegistryGetSchemaSchema(BaseModelSchema):
+    """Parameters and validators for schema create query."""
+
+    class Meta:
+        """AnonCredsRegistryGetSchemaSchema metadata."""
+
+        model_class = AnonCredsRegistryGetSchema
+        unknown = EXCLUDE
+
+    schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
+    schema_id = fields.Str(
+        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+    )
+    resolution_metadata = fields.Dict()
+    schema_metadata = fields.Dict()
 
 
 class SchemaState(OpenAPISchema):
@@ -74,7 +103,7 @@ class SchemaState(OpenAPISchema):
     schema_id = fields.Str(
         data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
     )
-    schema = fields.Nested(AnonCredsSchemaSchema())
+    schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
 
 
 class SchemasResponseSchema(OpenAPISchema):
@@ -95,7 +124,6 @@ class PostSchemaResponseSchema(OpenAPISchema):
     # For indy, schema_metadata will contain the seqNo
     registration_metadata = fields.Dict()
     schema_metadata = fields.Dict()
-    # TODO: no schema options?
 
 
 class SchemaResponseSchema(OpenAPISchema):
@@ -107,15 +135,10 @@ class SchemaResponseSchema(OpenAPISchema):
         model_class = AnonCredsRegistryGetSchema
         unknown = EXCLUDE
 
-    schema = fields.Nested(AnonCredsSchemaSchema())
+    schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
     schema_id = fields.Str(
         data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
     )
-    # TODO: update docs to not have options
-    # options = fields.Dict(
-    #    description="Options ",
-    #    required=False,
-    # )
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()
 
