@@ -4,17 +4,29 @@ A message responder.
 The responder is provided to message handlers to enable them to send a new message
 in response to the message being handled.
 """
+import asyncio
+import json
 
 from abc import ABC, abstractmethod
-import json
-from typing import Sequence, Union
+from typing import Sequence, Union, Optional, Tuple
 
+from ..cache.base import BaseCache
 from ..connections.models.connection_target import ConnectionTarget
+from ..connections.models.conn_record import ConnRecord
 from ..core.error import BaseError
+from ..core.profile import Profile
 from ..transport.outbound.message import OutboundMessage
 
 from .base_message import BaseMessage
 from ..transport.outbound.status import OutboundSendStatus
+
+SKIP_ACTIVE_CONN_CHECK_MSG_TYPES = [
+    "didexchange/1.0/request",
+    "didexchange/1.0/response",
+    "connections/1.0/invitation",
+    "connections/1.0/request",
+    "connections/1.0/response",
+]
 
 
 class ResponderError(BaseError):
@@ -79,7 +91,18 @@ class BaseResponder(ABC):
     ) -> OutboundSendStatus:
         """Convert a message to an OutboundMessage and send it."""
         outbound = await self.create_outbound(message, **kwargs)
-        return await self.send_outbound(outbound)
+        if isinstance(message, BaseMessage):
+            msg_type = message._message_type
+            msg_id = message._id
+        else:
+            msg_dict = json.loads(message)
+            msg_type = msg_dict.get("@type")
+            msg_id = msg_dict.get("@id")
+        return await self.send_outbound(
+            message=outbound,
+            message_type=msg_type,
+            message_id=msg_id,
+        )
 
     async def send_reply(
         self,
@@ -109,10 +132,59 @@ class BaseResponder(ABC):
             target=target,
             target_list=target_list,
         )
-        return await self.send_outbound(outbound)
+        if isinstance(message, BaseMessage):
+            msg_type = message._message_type
+            msg_id = message._id
+        else:
+            msg_dict = json.loads(message)
+            msg_type = msg_dict.get("@type")
+            msg_id = msg_dict.get("@id")
+        return await self.send_outbound(
+            message=outbound, message_type=msg_type, message_id=msg_id
+        )
+
+    async def conn_rec_active_state_check(
+        self, profile: Profile, connection_id: str, timeout: int = 7
+    ) -> bool:
+        """Check if the connection record is ready for sending outbound message."""
+
+        async def _wait_for_state() -> Tuple[bool, Optional[str]]:
+            while True:
+                async with profile.session() as session:
+                    conn_record = await ConnRecord.retrieve_by_id(
+                        session, connection_id
+                    )
+                    if conn_record.is_ready:
+                        # if ConnRecord.State.get(conn_record.state) in (
+                        #     ConnRecord.State.COMPLETED,
+                        # ):
+                        return (True, conn_record.state)
+                    await asyncio.sleep(1)
+
+        try:
+            cache_key = f"conn_rec_state::{connection_id}"
+            connection_state = None
+            cache = profile.inject_or(BaseCache)
+            if cache:
+                connection_state = await cache.get(cache_key)
+            if connection_state and ConnRecord.State.get(connection_state) in (
+                ConnRecord.State.COMPLETED,
+                ConnRecord.State.RESPONSE,
+            ):
+                return True
+            check_flag, connection_state = await asyncio.wait_for(
+                _wait_for_state(), timeout
+            )
+            if cache and connection_state:
+                await cache.set(cache_key, connection_state)
+            return check_flag
+        except asyncio.TimeoutError:
+            return False
 
     @abstractmethod
-    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
+    async def send_outbound(
+        self, message: OutboundMessage, **kwargs
+    ) -> OutboundSendStatus:
         """
         Send an outbound message.
 
@@ -152,7 +224,9 @@ class MockResponder(BaseResponder):
         self.messages.append((message, kwargs))
         return OutboundSendStatus.QUEUED_FOR_DELIVERY
 
-    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
+    async def send_outbound(
+        self, message: OutboundMessage, **kwargs
+    ) -> OutboundSendStatus:
         """Send an outbound message."""
         self.messages.append((message, None))
         return OutboundSendStatus.QUEUED_FOR_DELIVERY

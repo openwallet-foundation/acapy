@@ -15,7 +15,6 @@ import weakref
 
 from aiohttp.web import HTTPException
 
-
 from ..connections.models.conn_record import ConnRecord
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
@@ -23,7 +22,7 @@ from ..messaging.base_message import BaseMessage
 from ..messaging.error import MessageParseError
 from ..messaging.models.base import BaseModelError
 from ..messaging.request_context import RequestContext
-from ..messaging.responder import BaseResponder
+from ..messaging.responder import BaseResponder, SKIP_ACTIVE_CONN_CHECK_MSG_TYPES
 from ..messaging.util import datetime_now
 from ..protocols.connections.v1_0.manager import ConnectionManager
 from ..protocols.problem_report.v1_0.message import ProblemReport
@@ -377,7 +376,9 @@ class DispatcherResponder(BaseResponder):
 
         return await super().create_outbound(message, **kwargs)
 
-    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
+    async def send_outbound(
+        self, message: OutboundMessage, **kwargs
+    ) -> OutboundSendStatus:
         """
         Send outbound message.
 
@@ -388,6 +389,23 @@ class DispatcherResponder(BaseResponder):
         if not context:
             raise RuntimeError("weakref to context has expired")
 
+        msg_type = kwargs.get("message_type")
+        msg_id = kwargs.get("message_id")
+
+        if (
+            message.connection_id
+            and msg_type
+            and msg_type not in SKIP_ACTIVE_CONN_CHECK_MSG_TYPES
+            and not await super().conn_rec_active_state_check(
+                profile=context.profile,
+                connection_id=message.connection_id,
+            )
+        ):
+            raise RuntimeError(
+                f"Connection {message.connection_id} is not ready"
+                " which is required for sending outbound"
+                f" message {msg_id} of type {msg_type}."
+            )
         return await self._send(context.profile, message, self._inbound_message)
 
     async def send_webhook(self, topic: str, payload: dict):

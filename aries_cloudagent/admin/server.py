@@ -124,7 +124,9 @@ class AdminResponder(BaseResponder):
         self._profile = weakref.ref(profile)
         self._send = send
 
-    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
+    async def send_outbound(
+        self, message: OutboundMessage, **kwargs
+    ) -> OutboundSendStatus:
         """
         Send outbound message.
 
