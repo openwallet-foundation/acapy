@@ -235,6 +235,7 @@ message as the default, and adds a new parameter to use the old behavior.
     - Redis Plugins \[redis\_cache & redis\_queue\] related updates [\#1937](https://github.com/hyperledger/aries-cloudagent-python/pull/1937) ([shaangill025](https://github.com/shaangill025))
 
 - Release management pull requests
+  - 0.8.0 release [\#2169](https://github.com/hyperledger/aries-cloudagent-python/pull/2169) ([swcurran](https://github.com/swcurran))
   - 0.8.0-rc0 release updates [\#2115](https://github.com/hyperledger/aries-cloudagent-python/pull/2115) ([swcurran](https://github.com/swcurran))
   - Previously flagged in release 1.0.0-rc1
     - Release 1.0.0-rc0 [\#1904](https://github.com/hyperledger/aries-cloudagent-python/pull/1904) ([swcurran](https://github.com/swcurran))
