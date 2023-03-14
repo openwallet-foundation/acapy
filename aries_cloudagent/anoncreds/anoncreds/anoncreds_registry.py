@@ -7,8 +7,9 @@ from .models import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
-    AnonCredsRegistryGetSchema,
 )
+from ..models.anoncreds_schema import AnonCredsRegistryGetSchema
+
 from ...config.injection_context import InjectionContext
 
 

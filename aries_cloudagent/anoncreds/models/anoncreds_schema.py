@@ -1,0 +1,151 @@
+"""Anoncreds Schema OpenAPI validators"""
+
+from typing import List, Dict, Any
+from marshmallow import EXCLUDE, fields
+from pydantic import BaseModel
+
+from aries_cloudagent.messaging.models.base import BaseModelSchema
+
+from ...messaging.models.openapi import OpenAPISchema
+from ...messaging.valid import GENERIC_DID, INDY_SCHEMA_ID, INDY_VERSION, UUIDFour
+
+
+class AnonCreds(BaseModel):
+    """AnonCredsSchema"""
+
+    class Meta:
+        """AnonCredsSchema metadata."""
+
+        schema_class = "AnonCredsSchemaSchema"
+
+    issuerId: str
+    attrNames: List[str]
+    name: str
+    version: str
+
+
+class AnonCredsSchemaSchema(BaseModelSchema):
+    """Marshmallow schema for indy schema."""
+
+    class Meta:
+        """AnonCredsSchemaSchema metadata."""
+
+        model_class = AnonCreds
+        unknown = EXCLUDE
+
+    issuerId = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+    )  # TODO: get correct validator
+
+    attrNames = fields.List(
+        fields.Str(
+            description="Attribute name",
+            example="score",
+        ),
+        description="Schema attribute names",
+        data_key="attrNames",
+    )
+    name = fields.Str(
+        description="Schema name",
+        example=INDY_SCHEMA_ID["example"].split(":")[2],
+    )
+    version = fields.Str(description="Schema version", **INDY_VERSION)
+
+
+class AnonCredsRegistryGetSchema(BaseModel):
+    """AnonCredsRegistryGetSchema"""
+
+    class Meta:
+        """IndyCredInfo metadata."""
+
+        schema_class = "IndyCredInfoSchema"
+
+    schema: AnonCreds
+    schema_id: str
+    resolution_metadata: Dict[str, Any]
+    schema_metadata: Dict[str, Any]
+
+
+class SchemaState(OpenAPISchema):
+    """Parameters and validators for schema state."""
+
+    state = fields.Str()  # TODO: create validator for only possible states
+    schema_id = fields.Str(
+        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+    )
+    schema = fields.Nested(AnonCredsSchemaSchema())
+
+
+class SchemasResponseSchema(OpenAPISchema):
+    """Parameters and validators for schema list all response."""
+
+    schema_id = fields.List(
+        fields.Str(
+            data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+        )
+    )
+
+
+class PostSchemaResponseSchema(OpenAPISchema):
+    """Parameters and validators for schema state."""
+
+    job_id = fields.Str()
+    schema_state = fields.Nested(SchemaState())
+    # For indy, schema_metadata will contain the seqNo
+    registration_metadata = fields.Dict()
+    schema_metadata = fields.Dict()
+    # TODO: no schema options?
+
+
+class SchemaResponseSchema(OpenAPISchema):
+    """Parameters and validators for schema create query."""
+
+    class Meta:
+        """SchemaResponseSchema metadata."""
+
+        model_class = AnonCredsRegistryGetSchema
+        unknown = EXCLUDE
+
+    schema = fields.Nested(AnonCredsSchemaSchema())
+    schema_id = fields.Str(
+        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+    )
+    # TODO: update docs to not have options
+    # options = fields.Dict(
+    #    description="Options ",
+    #    required=False,
+    # )
+    resolution_metadata = fields.Dict()
+    schema_metadata = fields.Dict()
+
+
+class SchemasQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for query string in schemas list query."""
+
+    schemaName = fields.Str(
+        description="Schema name",
+        example=INDY_SCHEMA_ID["example"].split(":")[2],
+    )
+    schemaVersion = fields.Str(description="Schema version", **INDY_VERSION)
+    schemaIssuerDid = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+    )  # TODO: get correct validator
+
+
+class SchemaPostOptionSchema(OpenAPISchema):
+    """Parameters and validators for schema options."""
+
+    endorser_connection_id = fields.UUID(
+        description="Connection identifier (optional)",
+        required=False,
+        example=UUIDFour.EXAMPLE,
+    )
+
+
+class SchemaPostQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for query string in create schema."""
+
+    schema = fields.Nested(AnonCredsSchemaSchema())
+    options = fields.Nested(SchemaPostOptionSchema())

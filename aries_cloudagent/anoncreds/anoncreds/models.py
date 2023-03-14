@@ -4,26 +4,6 @@ from typing_extensions import Literal
 from dataclasses import dataclass
 
 
-@dataclass
-class AnonCredsSchema:
-    """AnonCredsSchema"""
-
-    issuerId: str
-    attrNames: List[str]
-    name: str
-    version: str
-
-
-@dataclass
-class AnonCredsRegistryGetSchema:
-    """AnonCredsRegistryGetSchema"""
-
-    schema: AnonCredsSchema
-    schema_id: str
-    resolution_metadata: Dict[str, Any]
-    schema_metadata: Dict[str, Any]
-
-
 # TODO: determine types for `primary` and `revocation`
 @dataclass
 class AnonCredsCredentialDefinitionValue:

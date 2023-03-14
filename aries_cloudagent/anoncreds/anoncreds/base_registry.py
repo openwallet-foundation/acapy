@@ -7,8 +7,8 @@ from .models import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
-    AnonCredsRegistryGetSchema,
 )
+from ..models.anoncreds_schema import AnonCredsRegistryGetSchema
 
 
 class BaseRegistry(ABC):
