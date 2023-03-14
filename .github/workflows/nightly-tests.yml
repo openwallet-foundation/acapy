@@ -2,7 +2,7 @@ name: Nightly Tests
 
 on:
   schedule:
-    - cron: '39 18 * * *'
+    - cron: '0 0 * * *'
   push:
     branches:
       - main
