@@ -53,17 +53,18 @@ s/^/- /
   release (using in the GitHub UI a filter such as `is:pr is:merged sort:updated
   merged:>2022-04-07`) and for each page, highlight, and copy the text
   of only the list of PRs on the page to use in the following step.
-- For each page, run the command `sed -e :a -e '$!N;s/\n#/ #/;ta' -e 'P;D' <<EOF
-  | sed -f changelog.sed`, paste in the copied text and then type `EOF`.
+- For each page, run the command
+  `sed -e :a -e '$!N;s/\n#/ #/;ta' -e 'P;D' <<EOF | sed -f changelog.sed`, 
+  paste in the copied text and then type `EOF`.
   Redirect the output to a file, appending each page of output to the file.
   - The first `sed` command in the pipeline merges the PR title and PR number
     plus author lines onto a single line. The commands in the `changelog.sed`
     file just clean up the data, removing unwanted lines, etc.
 - At the end of that process, you should have a list of all of the PRs in a form you can
   use in the CHANGELOG.md file.
-- To verify you have right contents, you can do a `wc` of the file and there
+- To verify you have right number of PRs, you can do a `wc` of the file and there
   should be one line per PR. You should scan the file as well, looking for
-  anomalies. It's a pretty ugly process.
+  anomalies, such as missing `\`s before `#` characters. It's a pretty ugly process.
   - Using a `curl` command and the GitHub API is probably a much better and more
   robust way to do this, but this was quick and dirty...
 
@@ -96,9 +97,11 @@ Once you have the list of PRs:
    please update this document to note where the tag can be found.
 
 7. Double check all of these steps above, and then submit a PR from the branch.
+   Add this new PR to CHANGELOG.md so that all the PRs are included.
    If there are still further changes to be merged, mark the PR as "Draft",
    repeat **ALL** of the steps again, and then mark this PR as ready and then
-   wait until it is merged.
+   wait until it is merged. It's embarrassing when you have to do a whole new
+   release just becaused you missed something silly...I know!
 
 8. Immediately after it is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
