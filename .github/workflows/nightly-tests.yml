@@ -2,14 +2,14 @@ name: Nightly Tests
 
 on:
   schedule:
-    - cron: '34 18 * * *'
+    - cron: '39 18 * * *'
   push:
     branches:
       - main
 
 jobs:
   tests:
-    if: github.event.repository.owner.id == github.event.sender.id && github.event.ref == 'refs/heads/main'
+    if: github.event.ref == 'refs/heads/main'
     name: Tests
     strategy:
       fail-fast: false
@@ -25,7 +25,7 @@ jobs:
       os: ${{ matrix.os }}
 
   tests-indy:
-    if: github.event.repository.owner.id == github.event.sender.id && github.event.ref == 'refs/heads/main'
+    if: github.event.ref == 'refs/heads/main'
     name: Tests (Indy)
     strategy:
       fail-fast: false
