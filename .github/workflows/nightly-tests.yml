@@ -2,7 +2,7 @@ name: Nightly Tests
 
 on:
   schedule:
-    - cron: '00 18 * * *'
+    - cron: '13 18 * * *'
   push:
     branches:
       - main
@@ -13,8 +13,7 @@ env:
 
 jobs:
   tests:
-    if: env.RUN_NIGHTLY_TESTS == "true"
-    if: github.repository_owner == 'anwalker293'
+    if: env.RUN_NIGHTLY_TESTS == "true" && github.repository_owner == "anwalker293"
     name: Tests
     strategy:
       fail-fast: false
@@ -30,8 +29,7 @@ jobs:
       os: ${{ matrix.os }}
 
   tests-indy:
-    if: env.RUN_NIGHTLY_TESTS == "true"
-    if: github.repository_owner == 'anwalker293'
+    if: env.RUN_NIGHTLY_TESTS == "true" && github.repository_owner == "anwalker293"
     name: Tests (Indy)
     strategy:
       fail-fast: false
