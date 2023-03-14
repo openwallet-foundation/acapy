@@ -2,9 +2,9 @@ aries\_cloudagent.protocols.revocation\_notification.v1\_0.messages package
 ===========================================================================
 
 .. automodule:: aries_cloudagent.protocols.revocation_notification.v1_0.messages
-   :members:
-   :undoc-members:
-   :show-inheritance:
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 ----------
@@ -13,6 +13,8 @@ aries\_cloudagent.protocols.revocation\_notification.v1\_0.messages.revoke modul
 ---------------------------------------------------------------------------------
 
 .. automodule:: aries_cloudagent.protocols.revocation_notification.v1_0.messages.revoke
-   :members:
-   :undoc-members:
-   :show-inheritance:
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
