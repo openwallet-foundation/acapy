@@ -1,13 +1,16 @@
 """Anoncreds Schema OpenAPI validators"""
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from marshmallow import EXCLUDE, fields
 from pydantic import BaseModel
 
+from aries_cloudagent.anoncreds.models.anoncreds_valid import (
+    ANONCREDS_SCHEMA_ID, ANONCREDS_VERSION)
 from aries_cloudagent.messaging.models.base import BaseModelSchema
 
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import GENERIC_DID, INDY_SCHEMA_ID, INDY_VERSION, UUIDFour
+from ...messaging.valid import GENERIC_DID, UUIDFour
 
 
 class AnonCredsSchema(BaseModel):
@@ -51,9 +54,9 @@ class AnonCredsSchemaSchema(BaseModelSchema):
     )
     name = fields.Str(
         description="Schema name",
-        example=INDY_SCHEMA_ID["example"].split(":")[2],
+        example=ANONCREDS_SCHEMA_ID["example"].split(":")[2],
     )
-    version = fields.Str(description="Schema version", **INDY_VERSION)
+    version = fields.Str(description="Schema version", **ANONCREDS_VERSION)
 
 
 class AnonCredsRegistryGetSchema(BaseModel):
@@ -90,7 +93,7 @@ class AnonCredsRegistryGetSchemaSchema(BaseModelSchema):
 
     schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
     schema_id = fields.Str(
-        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+        data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
     )
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()

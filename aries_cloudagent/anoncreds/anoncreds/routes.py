@@ -11,7 +11,7 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 from aries_cloudagent.anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
-from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDefValueSchema
+from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDefPostQueryStringSchema, CredDefValueSchema, CredDefsQueryStringSchema, GetCredDefResponseSchema, GetCredDefsResponseSchema, PostCredDefResponseSchema
 
 from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     PostSchemaResponseSchema,
@@ -53,120 +53,6 @@ class CredIdMatchInfo(OpenAPISchema):
 
 
 
-
-class CredDefSchema(OpenAPISchema):
-    """Parameters and validators for credential definition."""
-
-    tag = fields.Str(
-        description="""The tag value passed in by the Issuer to
-         an AnonCred's Credential Definition create and store implementation."""
-    )
-    schemaId = fields.Str(
-        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
-    )
-    issuerId = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
-    )  # TODO: get correct validator
-    supportRevocation = fields.Bool()
-    revocationRegistrySize = fields.Int()
-
-
-class CredDefPostOptionsSchema(OpenAPISchema):
-    """Parameters and validators for credential definition options."""
-
-    endorserConnectionId = fields.Str()
-    supportRevocation = fields.Bool()
-    revocationRegistrySize = fields.Int()
-
-
-class CredDefPostQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for query string in create credential definition."""
-
-    credentialDefinition = fields.Nested(CredDefSchema())
-    options = fields.Nested(CredDefPostOptionsSchema())
-
-
-class CredDefsQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for credential definition list query."""
-
-    credentialDefinitionId = fields.Str(
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
-    )
-    issuerId = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
-    )  # TODO: get correct validator
-    schemaId = fields.Str(
-        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
-    )
-    schemaIssuerId = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
-    )  # TODO: get correct validator
-    schemaName = fields.Str(
-        description="Schema name",
-        example=INDY_SCHEMA_ID["example"].split(":")[2],
-    )
-    schemaVersion = fields.Str(description="Schema version", **INDY_VERSION)
-
-
-class CredDefResponseSchema(OpenAPISchema):
-    """Parameters and validators for credential definition response."""
-
-    issuerId = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
-    )  # TODO: get correct validator
-    schemaId = fields.Str(
-        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
-    )
-    tag = fields.Str(
-        description="The tag value passed in by the Issuer to an\
-            AnonCred's Credential Definition create and store implementation."
-    )
-    value = fields.Nested(CredDefValueSchema())
-    # registration_metadata = fields.Bool()
-    # revocationRegistrySize = fields.Int()
-
-
-class CredDefState(OpenAPISchema):
-    """Parameters and validators for credential definition state."""
-
-    state = fields.Str()  # TODO: create validator for only possible states
-    credential_definition_id = fields.Str(
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
-    )
-    credential_definition = fields.Nested(CredDefResponseSchema())
-
-
-class PostCredDefResponseSchema(OpenAPISchema):
-    """Parameters and validators for credential definition create response."""
-
-    job_id = fields.Str()
-    credential_definition_state = fields.Nested(CredDefState())
-    registration_metadata = fields.Dict()
-    credential_definition_metadata = fields.Dict()
-
-
-class GetCredDefResponseSchema(OpenAPISchema):
-    """Parameters and validators for credential definition list response."""
-
-    credential_definition_id = fields.Str(
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
-    )
-    credential_definition = fields.Nested(CredDefResponseSchema())
-    resolution_metadata = fields.Dict()
-    credential_definition_metadata = fields.Dict()
-
-
-class GetCredDefsResponseSchema(OpenAPISchema):
-    """Parameters and validators for credential definition list all response."""
-
-    credential_definition_id = fields.Str()
 
 
 @docs(tags=["anoncreds"], summary="")
