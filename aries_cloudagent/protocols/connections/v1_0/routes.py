@@ -15,6 +15,7 @@ from marshmallow import fields, validate, validates_schema
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord, ConnRecordSchema
+from ....cache.base import BaseCache
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
 from ....messaging.valid import (
@@ -739,6 +740,9 @@ async def connections_remove(request: web.BaseRequest):
         async with profile.session() as session:
             connection = await ConnRecord.retrieve_by_id(session, connection_id)
             await connection.delete_record(session)
+            cache = session.inject_or(BaseCache)
+            if cache:
+                await cache.clear(f"conn_rec_state::{connection_id}")
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except StorageError as err:
