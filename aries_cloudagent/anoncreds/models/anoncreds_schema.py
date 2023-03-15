@@ -3,11 +3,10 @@
 from typing import Any, Dict, List
 
 from marshmallow import EXCLUDE, fields
-from pydantic import BaseModel
 
 from aries_cloudagent.anoncreds.models.anoncreds_valid import (
     ANONCREDS_SCHEMA_ID, ANONCREDS_VERSION)
-from aries_cloudagent.messaging.models.base import BaseModelSchema
+from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
 
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import GENERIC_DID, UUIDFour
@@ -104,7 +103,7 @@ class SchemaState(OpenAPISchema):
 
     state = fields.Str()  # TODO: create validator for only possible states
     schema_id = fields.Str(
-        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+        data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
     )
     schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
 
@@ -114,7 +113,7 @@ class SchemasResponseSchema(OpenAPISchema):
 
     schema_id = fields.List(
         fields.Str(
-            data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
+            data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
         )
     )
 
@@ -134,9 +133,9 @@ class SchemasQueryStringSchema(OpenAPISchema):
 
     schemaName = fields.Str(
         description="Schema name",
-        example=INDY_SCHEMA_ID["example"].split(":")[2],
+        example=ANONCREDS_SCHEMA_ID["example"].split(":")[2],
     )
-    schemaVersion = fields.Str(description="Schema version", **INDY_VERSION)
+    schemaVersion = fields.Str(description="Schema version", **ANONCREDS_VERSION)
     schemaIssuerDid = fields.Str(
         description="Issuer Identifier of the credential definition or schema",
         **GENERIC_DID,
