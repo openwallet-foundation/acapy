@@ -15,7 +15,7 @@ from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDefValueSch
 from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     PostSchemaResponseSchema,
     SchemaPostQueryStringSchema,
-    SchemaResponseSchema,
+    AnonCredsRegistryGetSchemaSchema,
     SchemasQueryStringSchema,
     SchemasResponseSchema,
 )
@@ -214,7 +214,7 @@ async def schemas_post(request: web.BaseRequest):
 
 @docs(tags=["anoncreds"], summary="")
 @match_info_schema(SchemaIdMatchInfo())
-@response_schema(SchemaResponseSchema(), 200, description="")
+@response_schema(AnonCredsRegistryGetSchemaSchema(), 200, description="")
 async def schema_get(request: web.BaseRequest):
     """Request handler for getting a schema.
 

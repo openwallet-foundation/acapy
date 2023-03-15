@@ -126,23 +126,6 @@ class PostSchemaResponseSchema(OpenAPISchema):
     schema_metadata = fields.Dict()
 
 
-class SchemaResponseSchema(OpenAPISchema):
-    """Parameters and validators for schema create query."""
-
-    class Meta:
-        """SchemaResponseSchema metadata."""
-
-        model_class = AnonCredsRegistryGetSchema
-        unknown = EXCLUDE
-
-    schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
-    schema_id = fields.Str(
-        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
-    )
-    resolution_metadata = fields.Dict()
-    schema_metadata = fields.Dict()
-
-
 class SchemasQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in schemas list query."""
 
