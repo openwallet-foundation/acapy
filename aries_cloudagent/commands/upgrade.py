@@ -137,7 +137,7 @@ async def upgrade(settings: dict):
                         "the config."
                     )
         if upgrade_from_version == upgrade_to_version:
-            print(
+            raise UpgradeError(
                 f"Version {upgrade_from_version} to upgrade from and "
                 f"current version to upgrade to {upgrade_to_version} "
                 "are same."
