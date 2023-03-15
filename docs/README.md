@@ -19,12 +19,8 @@ updated, as noted below.
 ### Before you start
 
 To test generate and view the RTD documentation locally, you must install [Sphinx](https://www.sphinx-doc.org/en/master/) and the
-[Sphinx RTD theme](https://pypi.org/project/sphinx-rtd-theme/). Both can be installed from PyPi using pip. For example:
-
-``` bash
-pip install -U sphinx
-pip install -U sphinx-rtd-theme
-```
+[Sphinx RTD theme](https://pypi.org/project/sphinx-rtd-theme/). Follow the instructions on the respective pages to install
+and verify the installation on your system.
 
 ### Generate Module Files
 
@@ -54,6 +50,8 @@ Once generated, go into the `_build` folder and open `index.html` in a browser. 
 
 This is the hard part; looking for errors in docstrings added by devs. Some tips:
 
+- missing imports (`No module named 'async_timeout'`) can be solved by adding the module to the
+list of `autodoc_mock_imports` in the [conf.py](./conf.py) file.
 - Ignore any errors in .md files
 - Ignore the warnings about including `docs/README.md`
 - Ignore an dist-package errors

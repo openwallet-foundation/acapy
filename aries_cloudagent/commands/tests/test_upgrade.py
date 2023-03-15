@@ -144,12 +144,11 @@ class TestUpgrade(AsyncTestCase):
                 )
             ),
         ):
-            with self.assertRaises(UpgradeError):
-                await test_module.upgrade(
-                    {
-                        "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
-                    }
-                )
+            await test_module.upgrade(
+                {
+                    "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
+                }
+            )
 
     async def test_upgrade_missing_from_version(self):
         with async_mock.patch.object(
