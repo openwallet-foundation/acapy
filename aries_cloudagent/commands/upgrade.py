@@ -160,27 +160,27 @@ async def upgrade(settings: dict):
                     resave_record_paths = upgrade_config.get("resave_records")
                     for record_path in resave_record_paths:
                         try:
-                            record_type = ClassLoader.load_class(record_path)
+                            rec_type = ClassLoader.load_class(record_path)
                         except ClassNotFoundError as err:
                             raise UpgradeError(
                                 f"Unknown Record type {record_path}"
                             ) from err
-                        if not issubclass(record_type, BaseRecord):
+                        if not issubclass(rec_type, BaseRecord):
                             raise UpgradeError(
-                                f"Only BaseRecord can be resaved, found: {str(record_type)}"
+                                f"Only BaseRecord can be resaved, found: {str(rec_type)}"
                             )
                         async with root_profile.session() as session:
-                            all_records = await record_type.query(session)
+                            all_records = await rec_type.query(session)
                             for record in all_records:
                                 await record.save(
                                     session,
-                                    reason="re-saving record during ACA-Py upgrade process",
+                                    reason="re-saving record during the upgrade process",
                                 )
                             if len(all_records) == 0:
-                                print(f"No records of {str(record_type)} found")
+                                print(f"No records of {str(rec_type)} found")
                             else:
                                 print(
-                                    f"All records of {str(record_type)} successfully re-saved"
+                                    f"All recs of {str(rec_type)} successfully re-saved"
                                 )
                 # Step 2 Update existing records, if required
                 if (
