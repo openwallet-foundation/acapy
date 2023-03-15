@@ -137,66 +137,68 @@ async def upgrade(settings: dict):
                         "the config."
                     )
         if upgrade_from_version == upgrade_to_version:
-            raise UpgradeError(
+            print(
                 f"Version {upgrade_from_version} to upgrade from and "
                 f"current version to upgrade to {upgrade_to_version} "
                 "are same."
             )
-        if upgrade_from_version not in sorted_versions_found_in_config:
-            raise UpgradeError(
-                f"No upgrade configuration found for {upgrade_from_version}"
-            )
-        upgrade_from_version_index = sorted_versions_found_in_config.index(
-            upgrade_from_version
-        )
-        for config_from_version in sorted_versions_found_in_config[
-            upgrade_from_version_index:
-        ]:
-            print(f"Running upgrade process for {config_from_version}")
-            upgrade_config = upgrade_configs.get(config_from_version)
-            # Step 1 re-saving all BaseRecord and BaseExchangeRecord
-            if "resave_records" in upgrade_config:
-                resave_record_paths = upgrade_config.get("resave_records")
-                for record_path in resave_record_paths:
-                    try:
-                        record_type = ClassLoader.load_class(record_path)
-                    except ClassNotFoundError as err:
-                        raise UpgradeError(
-                            f"Unknown Record type {record_path}"
-                        ) from err
-                    if not issubclass(record_type, BaseRecord):
-                        raise UpgradeError(
-                            f"Only BaseRecord can be resaved, found: {str(record_type)}"
-                        )
-                    async with root_profile.session() as session:
-                        all_records = await record_type.query(session)
-                        for record in all_records:
-                            await record.save(
-                                session,
-                                reason="re-saving record during ACA-Py upgrade process",
-                            )
-                        if len(all_records) == 0:
-                            print(f"No records of {str(record_type)} found")
-                        else:
-                            print(
-                                f"All records of {str(record_type)} successfully re-saved"
-                            )
-            # Step 2 Update existing records, if required
-            if (
-                "update_existing_records" in upgrade_config
-                and upgrade_config.get("update_existing_records") is True
-            ):
-                update_existing_recs_callable = (
-                    version_upgrade_config_inst.get_update_existing_func(
-                        config_from_version
-                    )
+        else:
+            if upgrade_from_version not in sorted_versions_found_in_config:
+                raise UpgradeError(
+                    f"No upgrade configuration found for {upgrade_from_version}"
                 )
-                if not update_existing_recs_callable:
-                    raise UpgradeError(
-                        "No update_existing_records function "
-                        f"specified for {config_from_version}"
+            upgrade_from_version_index = sorted_versions_found_in_config.index(
+                upgrade_from_version
+            )
+            for config_from_version in sorted_versions_found_in_config[
+                upgrade_from_version_index:
+            ]:
+                print(f"Running upgrade process for {config_from_version}")
+                upgrade_config = upgrade_configs.get(config_from_version)
+                # Step 1 re-saving all BaseRecord and BaseExchangeRecord
+                if "resave_records" in upgrade_config:
+                    resave_record_paths = upgrade_config.get("resave_records")
+                    for record_path in resave_record_paths:
+                        try:
+                            rec_type = ClassLoader.load_class(record_path)
+                        except ClassNotFoundError as err:
+                            raise UpgradeError(
+                                f"Unknown Record type {record_path}"
+                            ) from err
+                        if not issubclass(rec_type, BaseRecord):
+                            raise UpgradeError(
+                                f"Only BaseRecord can be resaved, found: {str(rec_type)}"
+                            )
+                        async with root_profile.session() as session:
+                            all_records = await rec_type.query(session)
+                            for record in all_records:
+                                await record.save(
+                                    session,
+                                    reason="re-saving record during the upgrade process",
+                                )
+                            if len(all_records) == 0:
+                                print(f"No records of {str(rec_type)} found")
+                            else:
+                                print(
+                                    f"All recs of {str(rec_type)} successfully re-saved"
+                                )
+                # Step 2 Update existing records, if required
+                if (
+                    "update_existing_records" in upgrade_config
+                    and upgrade_config.get("update_existing_records") is True
+                ):
+                    update_existing_recs_callable = (
+                        version_upgrade_config_inst.get_update_existing_func(
+                            config_from_version
+                        )
                     )
-                await update_existing_recs_callable(root_profile)
+                    if not update_existing_recs_callable:
+                        raise UpgradeError(
+                            "No update_existing_records function "
+                            f"specified for {config_from_version}"
+                        )
+                    await update_existing_recs_callable(root_profile)
+
         # Update storage version
         async with root_profile.session() as session:
             storage = session.inject(BaseStorage)
