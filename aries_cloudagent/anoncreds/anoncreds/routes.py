@@ -10,6 +10,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import fields
+from aries_cloudagent.anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
 from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDefValueSchema
 
 from aries_cloudagent.anoncreds.models.anoncreds_schema import (
@@ -20,7 +21,7 @@ from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     SchemasResponseSchema,
 )
 
-# from ...admin.request_context import AdminRequestContext
+from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import (
     GENERIC_DID,
@@ -225,10 +226,12 @@ async def schema_get(request: web.BaseRequest):
         json object: schema
 
     """
-    # context: AdminRequestContext = request["context"]
+    context: AdminRequestContext = request["context"]
+    anon_creds_registry = context.inject(AnonCredsRegistry)
     schema_id = request.match_info["schemaId"]
+    result = await anon_creds_registry.get_schema(schema_id)
 
-    return web.json_response({"schema_id": schema_id})
+    return web.json_response(result)
 
 
 @docs(tags=["anoncreds"], summary="")

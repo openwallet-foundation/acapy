@@ -62,7 +62,7 @@ class AnonCredsRegistryGetSchema(BaseModel):
     class Meta:
         """IndyCredInfo metadata."""
 
-        schema_class = "IndyCredInfoSchema"
+        schema_class = "AnonCredsRegistryGetSchemaSchema"
 
     def __init__(
         self,
