@@ -62,7 +62,7 @@ aries-cloudagent-python].
 [publish-indy.yml]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/.github/workflows/publish-indy.yml
 [Container Images and Github Actions]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/ContainerImagesAndGithubActions.md
 
-## Breaking Changes
+## Breaking Changes and Upgrades
 
 ### PR [\#2034](https://github.com/hyperledger/aries-cloudagent-python/pull/2034) -- Implicit connections
 
@@ -95,6 +95,20 @@ result in a number of copies of the photo in the protocol state object and
 hence, very large webhooks. This change reduces the size of the webhook message
 by eliminating redundant data in the protocol state of the "Issue Credential"
 message as the default, and adds a new parameter to use the old behavior.
+
+### UPGRADE PR [\#2116](https://github.com/hyperledger/aries-cloudagent-python/pull/2116) - UPGRADE: Fix multi-use invitation performance
+
+The way that multiuse invitations in previous versions of ACA-Py caused
+performance to degrade over time. An update was made to add state into the tag
+names that eliminated the need to scan the tags when querying storage for the
+invitation.
+
+If you are using multiuse invitations in your existing (pre-`0.8.0` deployment
+of ACA-Py, you can run an `upgrade` to apply this change. To run upgrade from
+previous versions, use the following command using the `0.8.0` version of
+ACA-Py, adding you wallet settings:
+
+`aca-py upgrade <other wallet config settings> --from-version=v0.7.5 --upgrade-config-path ./upgrade.yml`
 
 ### Categorized List of Pull Requests
 
