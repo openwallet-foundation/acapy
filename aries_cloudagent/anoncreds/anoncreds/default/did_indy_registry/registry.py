@@ -6,10 +6,10 @@ from ....models.anoncreds_cred_def import (
 )
 from ....models.anoncreds_schema import AnonCredsRegistryGetSchema
 from .....config.injection_context import InjectionContext
-from ...anoncreds_registry import BaseRegistry
+from ...base_registry import BaseAnonCredsResolver, BaseAnonCredsRegistrar
 
 
-class DIDIndyRegistry(BaseRegistry):
+class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """DIDIndyRegistry"""
 
     async def setup(self, context: InjectionContext):
