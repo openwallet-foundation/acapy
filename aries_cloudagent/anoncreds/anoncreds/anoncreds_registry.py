@@ -26,7 +26,12 @@ class AnonCredsRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         if registries:
             for registry in registries:
                 self.register(registry)
-
+    
+    @property
+    def supported_identifiers_regex(self):
+        """Return supported identifiers."""
+        return "" #TODO: implement me
+    
     def register(self, registry: BaseAnonCredsHandler):
         """Register a new registry."""
         if isinstance(registry, BaseAnonCredsResolver):
