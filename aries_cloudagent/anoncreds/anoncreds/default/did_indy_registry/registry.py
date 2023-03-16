@@ -3,7 +3,6 @@ import logging
 from asyncio import shield
 
 from .....config.injection_context import InjectionContext
-from .....connections.models.conn_record import ConnRecord
 from .....core.profile import Profile
 from .....ledger.base import BaseLedger
 from .....ledger.error import LedgerError
@@ -11,24 +10,20 @@ from .....ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF, GET_SCHEMA, IndyLedgerRequestsExecutor)
 from .....messaging.credential_definitions.util import (
     CRED_DEF_SENT_RECORD_TYPE, notify_cred_def_event)
-from .....messaging.models.base import BaseModelError
 from .....messaging.schemas.util import (SCHEMA_SENT_RECORD_TYPE,
                                          notify_schema_event)
 from .....multitenant.base import BaseMultitenantManager
-from .....protocols.endorse_transaction.v1_0.manager import (
-    TransactionManager, TransactionManagerError)
-from .....protocols.endorse_transaction.v1_0.util import (
-    get_endorser_connection_id, is_author_role)
 from .....revocation.error import RevocationError
 from .....revocation.indy import IndyRevocation
 from .....storage.base import BaseStorage
-from .....storage.error import StorageError, StorageNotFoundError
-from ....anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
-from ...anoncreds_registry import BaseRegistry
-from ...models import (AnonCredsRegistryGetCredentialDefinition,
-                       AnonCredsRegistryGetRevocationList,
-                       AnonCredsRegistryGetRevocationRegistryDefinition,
-                       AnonCredsRegistryGetSchema)
+from .....storage.error import StorageNotFoundError
+from ....issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ....models.anoncreds_cred_def import (
+    AnonCredsRegistryGetCredentialDefinition,
+    AnonCredsRegistryGetRevocationList,
+    AnonCredsRegistryGetRevocationRegistryDefinition)
+from ....models.anoncreds_schema import AnonCredsRegistryGetSchema
+from ...base_registry import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 
 LOGGER = logging.getLogger(__name__)
 
