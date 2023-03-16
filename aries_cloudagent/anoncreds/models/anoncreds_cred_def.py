@@ -1,5 +1,6 @@
 """Anoncreds cred def OpenAPI validators"""
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
+from typing_extensions import Literal
 
 from marshmallow import EXCLUDE, Schema, fields
 
