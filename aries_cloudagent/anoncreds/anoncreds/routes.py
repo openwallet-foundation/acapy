@@ -18,6 +18,7 @@ from aries_cloudagent.anoncreds.models.anoncreds_cred_def import (
 )
 
 from aries_cloudagent.anoncreds.models.anoncreds_schema import (
+    AnonCredsSchema,
     PostSchemaResponseSchema,
     SchemaPostQueryStringSchema,
     AnonCredsRegistryGetSchemaSchema,
@@ -188,10 +189,20 @@ async def schemas_post(request: web.BaseRequest):
             schema_metadata : This fields contains metadata about the schema.
 
     """
-    # context: AdminRequestContext = request["context"]
-    parameters = await request.json()
+    context: AdminRequestContext = request["context"]
+    anon_creds_registry = context.inject(AnonCredsRegistry)
+    request_data = await request.json()
+    options = request_data.get("option")
+    schema_data = request_data.get("schema")
 
-    return web.json_response({"input": parameters})
+    schema: AnonCredsSchema = AnonCredsSchema(
+        issuer_id=schema_data.get("issuerId"),
+        attr_names=schema_data.get("attrNames"),
+        name=schema_data.get("name"),
+        version=schema_data.get("version"),
+    )
+    result = anon_creds_registry.register_schema(options,schema)
+    return web.json_response(result)
 
 
 @docs(tags=["anoncreds"], summary="")
