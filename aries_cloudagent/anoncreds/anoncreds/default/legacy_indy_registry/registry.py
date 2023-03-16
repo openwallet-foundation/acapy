@@ -6,10 +6,10 @@ from ...models import (
     AnonCredsRegistryGetSchema,
 )
 from .....config.injection_context import InjectionContext
-from ...anoncreds_registry import BaseRegistry
+from ...base_registry import BaseAnonCredsResolver, BaseAnonCredsRegistrar
 
 
-class LegacyIndyRegistry(BaseRegistry):
+class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """LegacyIndyRegistry"""
 
     async def setup(self, context: InjectionContext):
