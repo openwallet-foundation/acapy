@@ -3,21 +3,15 @@ import logging
 from typing import List, Optional
 
 from ...config.injection_context import InjectionContext
-from .base_registry import (
-    AnonCredsObjectNotFound,
-    AnonCredsRegistrationFailed,
-    BaseAnonCredsError,
-    BaseAnonCredsHandler,
-    BaseAnonCredsRegistrar,
-    BaseAnonCredsResolver,
-)
-from .models import (
+from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
-    AnonCredsRegistryGetRevocationRegistryDefinition,
-    AnonCredsRegistryGetSchema,
-)
-
+    AnonCredsRegistryGetRevocationRegistryDefinition)
+from ..models.anoncreds_schema import AnonCredsRegistryGetSchema
+from .base_registry import (AnonCredsObjectNotFound,
+                            AnonCredsRegistrationFailed, BaseAnonCredsError,
+                            BaseAnonCredsHandler, BaseAnonCredsRegistrar,
+                            BaseAnonCredsResolver)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +26,12 @@ class AnonCredsRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         if registries:
             for registry in registries:
                 self.register(registry)
-
+    
+    @property
+    def supported_identifiers_regex(self):
+        """Return supported identifiers."""
+        return "" #TODO: implement me
+    
     def register(self, registry: BaseAnonCredsHandler):
         """Register a new registry."""
         if isinstance(registry, BaseAnonCredsResolver):

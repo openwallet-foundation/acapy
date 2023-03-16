@@ -1,16 +1,20 @@
 """Legacy Indy Registry"""
-from ...models import (
+from ....models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
-    AnonCredsRegistryGetSchema,
 )
+from ....models.anoncreds_schema import AnonCredsRegistryGetSchema
 from .....config.injection_context import InjectionContext
 from ...base_registry import BaseAnonCredsResolver, BaseAnonCredsRegistrar
 
 
 class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """LegacyIndyRegistry"""
+
+    @property
+    def supported_identifiers_regex(self):
+        return ""  # TODO: implement me
 
     async def setup(self, context: InjectionContext):
         """Setup."""

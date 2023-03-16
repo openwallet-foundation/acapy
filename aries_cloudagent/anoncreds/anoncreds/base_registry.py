@@ -1,14 +1,14 @@
 """Base Registry"""
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import Pattern
 
 from ...config.injection_context import InjectionContext
-from .models import (
+from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
-    AnonCredsRegistryGetSchema,
 )
+from ..models.anoncreds_schema import AnonCredsRegistryGetSchema
 
 
 class BaseAnonCredsError(Exception):
@@ -24,10 +24,10 @@ class AnonCredsRegistrationFailed(BaseAnonCredsError):
 
 
 class BaseAnonCredsHandler(ABC):
-    @abstractproperty
+    @property
+    @abstractmethod
     def supported_identifiers_regex(self) -> Pattern:
         """Regex to match supported identifiers."""
-        ...
 
     async def supports(self, identifier: str) -> bool:
         """Determine whether this registry supports the given identifier."""
