@@ -12,6 +12,10 @@ from ...base_registry import BaseAnonCredsResolver, BaseAnonCredsRegistrar
 class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """LegacyIndyRegistry"""
 
+    @property
+    def supported_identifiers_regex(self):
+        return ""  # TODO: implement me
+
     async def setup(self, context: InjectionContext):
         """Setup."""
         print("Successfully registered LegacyIndyRegistry")
