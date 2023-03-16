@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List
 from ...config.injection_context import InjectionContext
 
-from .models import (
+from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,

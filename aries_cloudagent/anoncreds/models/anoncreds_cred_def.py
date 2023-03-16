@@ -79,6 +79,12 @@ class AnonCredsCredentialDefinitionValue(BaseModel):
 class AnonCredsCredentialDefinitionValueSchema(BaseModelSchema):
     """Parameters and validators for credential definition value."""
 
+    class Meta:
+        """AnonCredsCredentialDefinitionValueSchema metadata."""
+
+        model_class = AnonCredsCredentialDefinitionValue
+        unknown = EXCLUDE
+
     primary = fields.Nested(PrimarySchemaSchema())
 
 
@@ -213,6 +219,24 @@ class AnonCredsRevocationRegistryDefinitionSchema(BaseModelSchema):
         model_class = AnonCredsRevocationRegistryDefinition
         unknown = EXCLUDE
 
+    issuer_id = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+        data_key="issuerId",
+    )  # TODO: get correct validator
+    type = fields.Str()
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        **INDY_CRED_DEF_ID,
+        data_key="credDefId",
+    )
+    tag = fields.Str(description="""""")
+    # TODO: type for public key
+    public_keys = fields.Str(data_key="publicKeys")
+    max_cred_num = fields.Int(data_key="maxCredNum")
+    tails_location = fields.Str(data_key="tailsLocation")
+    tails_hash = fields.Str(data_key="tailsHash")
+
 
 class AnonCredsRegistryGetRevocationRegistryDefinition(BaseModel):
     """AnonCredsRegistryGetRevocationRegistryDefinition"""
@@ -222,13 +246,19 @@ class AnonCredsRegistryGetRevocationRegistryDefinition(BaseModel):
 
         schema_class = "AnonCredsRegistryGetRevocationRegistryDefinitionSchema"
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        revocation_registry: AnonCredsRevocationRegistryDefinition,
+        revocation_registry_id: str,
+        resolution_metadata: Dict[str, Any],
+        revocation_registry_metadata: Dict[str, Any],
+        **kwargs
+    ):
         super().__init__(**kwargs)
-
-    revocation_registry: AnonCredsRevocationRegistryDefinition
-    revocation_registry_id: str
-    resolution_metadata: Dict[str, Any]
-    revocation_registry_metadata: Dict[str, Any]
+        self.revocation_registry = revocation_registry
+        self.revocation_registry_id = revocation_registry_id
+        self.resolution_metadata = resolution_metadata
+        self.revocation_registry_metadata = revocation_registry_metadata
 
 
 class AnonCredsRegistryGetRevocationRegistryDefinitionSchema(BaseModelSchema):
@@ -237,3 +267,94 @@ class AnonCredsRegistryGetRevocationRegistryDefinitionSchema(BaseModelSchema):
 
         model_class = AnonCredsRegistryGetRevocationRegistryDefinition
         unknown = EXCLUDE
+
+    revocation_registry = fields.Nested(AnonCredsRevocationRegistryDefinitionSchema())
+    revocation_registry_id = fields.Str()
+    resolution_metadata = fields.Dict()
+    revocation_registry_metadata = fields.Dict()
+
+
+class AnonCredsRevocationList(BaseModel):
+    """AnonCredsRevocationList"""
+
+    class Meta:
+        """AnonCredsRevocationList metadata."""
+
+        schema_class = "AnonCredsRevocationListSchema"
+
+    def __init__(
+        self,
+        issuer_id: str,
+        rev_reg_id: str,
+        revocation_list: List[int],
+        current_accumulator: str,
+        timestamp: int,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.issuer_id = issuer_id
+        self.rev_reg_id = rev_reg_id
+        self.revocation_list = revocation_list
+        self.current_accumulator = current_accumulator
+        self.timestamp = timestamp
+
+
+class AnonCredsRevocationListSchema(BaseModelSchema):
+    """AnonCredsRevocationListSchema"""
+
+    class Meta:
+        """AnonCredsRevocationListSchema metadata."""
+
+        model_class = AnonCredsRevocationList
+        unknown = EXCLUDE
+
+    issuer_id = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        **GENERIC_DID,
+        data_key="issuerId",
+    )  # TODO: get correct validator
+    rev_reg_id = fields.Str(
+        description="",
+        **GENERIC_DID,
+        data_key="revRegId",
+    )  # TODO: get correct validator
+    revocation_list = fields.List(
+        fields.Str(description=""), description="", data_key="revocationList"
+    )
+    current_accumulator = fields.Str(data_key="currentAccumulator")
+    timestamp = fields.Int()
+
+
+class AnonCredsRegistryGetRevocationList(BaseModel):
+    """AnonCredsRegistryGetRevocationList"""
+
+    class Meta:
+        """AnonCredsRegistryGetRevocationList metadata."""
+
+        schema_class = "AnonCredsRegistryGetRevocationListSchema"
+
+    def __init__(
+        self,
+        revocation_list: AnonCredsRevocationList,
+        resolution_metadata: Dict[str, Any],
+        revocation_registry_metadata: Dict[str, Any],
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.revocation_list = revocation_list
+        self.resolution_metadata = resolution_metadata
+        self.revocation_registry_metadata = revocation_registry_metadata
+
+
+class AnonCredsRegistryGetRevocationListSchema(BaseModelSchema):
+    """AnonCredsRegistryGetRevocationListSchema"""
+
+    class Meta:
+        """AnonCredsRegistryGetRevocationListSchema metadata."""
+
+        model_class = AnonCredsRegistryGetRevocationList
+        unknown = EXCLUDE
+
+    revocation_list = fields.Nested(AnonCredsRevocationListSchema)
+    resolution_metadata = fields.Str()
+    revocation_registry_metadata = fields.Dict()

@@ -12,12 +12,9 @@ from aiohttp_apispec import (
 from marshmallow import fields
 from aries_cloudagent.anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
 from aries_cloudagent.anoncreds.models.anoncreds_cred_def import (
-    CredDefPostQueryStringSchema,
     AnonCredsCredentialDefinitionValueSchema,
-    CredDefsQueryStringSchema,
     AnonCredsRegistryGetCredentialDefinitionSchema,
-    GetCredDefsResponseSchema,
-    PostCredDefResponseSchema,
+    AnonCredsCredentialDefinitionSchema,
 )
 
 from aries_cloudagent.anoncreds.models.anoncreds_schema import (
@@ -26,6 +23,10 @@ from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     AnonCredsRegistryGetSchemaSchema,
     SchemasQueryStringSchema,
     SchemasResponseSchema,
+)
+from aries_cloudagent.anoncreds.models.anoncreds_valid import (
+    ANONCREDS_SCHEMA_ID,
+    ANONCREDS_VERSION,
 )
 
 from ...admin.request_context import AdminRequestContext
@@ -143,13 +144,11 @@ class PostCredDefResponseSchema(OpenAPISchema):
     credential_definition_metadata = fields.Dict()
 
 
-
-
-
 class GetCredDefsResponseSchema(OpenAPISchema):
     """Parameters and validators for credential definition list all response."""
 
     credential_definition_id = fields.Str()
+
 
 @docs(tags=["anoncreds"], summary="")
 @request_schema(SchemaPostQueryStringSchema())

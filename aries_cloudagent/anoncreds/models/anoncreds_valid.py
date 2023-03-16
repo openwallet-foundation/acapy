@@ -3,6 +3,7 @@ from marshmallow.validate import OneOf, Range, Regexp, Validator
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
+
 class AnonCredsSchemaId(Regexp):
     """Validate value against indy schema identifier specification."""
 
@@ -16,6 +17,7 @@ class AnonCredsSchemaId(Regexp):
             AnonCredsSchemaId.PATTERN,
             error="Value {input} is not an indy schema identifier",
         )
+
 
 class AnonCredsVersion(Regexp):
     """Validate value against indy version specification."""
@@ -31,5 +33,12 @@ class AnonCredsVersion(Regexp):
             error="Value {input} is not an indy version (use only digits and '.')",
         )
 
-ANONCREDS_SCHEMA_ID = {"validate": AnonCredsSchemaId(), "example": AnonCredsSchemaId.EXAMPLE}
-ANONCREDS_VERSION = {"validate": AnonCredsVersion(), "example": AnonCredsVersion.EXAMPLE}
+
+ANONCREDS_SCHEMA_ID = {
+    "validate": AnonCredsSchemaId(),
+    "example": AnonCredsSchemaId.EXAMPLE,
+}
+ANONCREDS_VERSION = {
+    "validate": AnonCredsVersion(),
+    "example": AnonCredsVersion.EXAMPLE,
+}

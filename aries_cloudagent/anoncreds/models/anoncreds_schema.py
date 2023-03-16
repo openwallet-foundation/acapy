@@ -5,7 +5,9 @@ from typing import Any, Dict, List
 from marshmallow import EXCLUDE, fields
 
 from aries_cloudagent.anoncreds.models.anoncreds_valid import (
-    ANONCREDS_SCHEMA_ID, ANONCREDS_VERSION)
+    ANONCREDS_SCHEMA_ID,
+    ANONCREDS_VERSION,
+)
 from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
 
 from ...messaging.models.openapi import OpenAPISchema

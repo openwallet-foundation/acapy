@@ -3,7 +3,7 @@ import logging
 from typing import List
 
 from .base_registry import BaseRegistry
-from .models import (
+from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,

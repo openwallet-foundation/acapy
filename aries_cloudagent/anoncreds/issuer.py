@@ -32,9 +32,7 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
         return "<{}>".format(self.__class__.__name__)
 
     @staticmethod
-    def make_schema_id(
-        origin_did: str, schema_name: str, schema_version: str
-    ) -> str:
+    def make_schema_id(origin_did: str, schema_name: str, schema_version: str) -> str:
         """Derive the ID for a schema."""
         return f"{origin_did}:2:{schema_name}:{schema_version}"
 

@@ -1,5 +1,5 @@
 """DID Indy Registry"""
-from ...models import (
+from ....models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
