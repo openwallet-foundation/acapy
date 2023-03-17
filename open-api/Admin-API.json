@@ -4,17 +4,20 @@
         "title": "AcaPy Admin API",
         "version": "1.0"
     },
-    "description": "Login URL: https://test-apim-cgiditi-23022023.azure-api.net/auth/login",
     "host": "test-apim-cgiditi-23022023.azure-api.net",
     "basePath": "/admin",
     "schemes": [
         "https"
     ],
     "securityDefinitions": {
-        "Authorization": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
+        "OAuth2-Login": {
+            "type": "oauth2",
+            "scopes": {
+                "api://36fce1db-fadc-492a-aa71-73fbc5f775bf/User.Read": ""
+            },
+            "flow": "implicit",
+            "authorizationUrl": "https://login.microsoftonline.com/cddc1229-ac2a-4b97-b78a-0e5cacb5865c/oauth2/v2.0/authorize",
+            "tokenUrl": "https://login.microsoftonline.com/cddc1229-ac2a-4b97-b78a-0e5cacb5865c/oauth2/v2.0/token"
         },
         "apiKeyHeader": {
             "type": "apiKey",
@@ -30,26 +33,14 @@
             "type": "apiKey",
             "name": "user",
             "in": "header"
-        },
-        "oauth2test-apim-auth": {
-            "type": "oauth2",
-            "scopes": {
-                "api://36fce1db-fadc-492a-aa71-73fbc5f775bf/User.Read": ""
-            },
-            "flow": "implicit",
-            "authorizationUrl": "https://login.microsoftonline.com/cddc1229-ac2a-4b97-b78a-0e5cacb5865c/oauth2/v2.0/authorize",
-            "tokenUrl": "https://login.microsoftonline.com/cddc1229-ac2a-4b97-b78a-0e5cacb5865c/oauth2/v2.0/token"
         }
     },
     "security": [
         {
-            "Authorization": [
-                "https://test-apim-cgiditi-23022023.azure-api.net/auth/login?subscription-key=40b1a6574ab34d5baf0aaacb9d773136"
-            ],
             "apiKeyHeader": [],
             "Wallet-Token": [],
             "user": [],
-            "oauth2test-apim-auth": [
+            "OAuth2-Login": [
                 "api://36fce1db-fadc-492a-aa71-73fbc5f775bf/User.Read"
             ]
         }
