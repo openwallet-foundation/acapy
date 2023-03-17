@@ -10,15 +10,21 @@
         "https"
     ],
     "securityDefinitions": {
+        "Authorization": {
+            "type": "Bearer Token",
+            "name": "Authorization",
+            "in": "header",
+            "authorizationUrl": "https://test-apim-cgiditi-23022023.azure-api.net/auth/login?subscription-key=40b1a6574ab34d5baf0aaacb9d773136"
+        },
         "apiKeyHeader": {
             "type": "apiKey",
             "name": "Ocp-Apim-Subscription-Key",
             "in": "header"
         },
-        "apiKeyQuery": {
-            "type": "apiKey",
-            "name": "subscription-key",
-            "in": "query"
+        "Wallet-Token": {
+            "type": "Bearer Token",
+            "name": "Wallet-Token",
+            "in": "header"
         },
         "oauth2test-apim-auth": {
             "type": "oauth2",
