@@ -138,16 +138,25 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         # Notify event
         await notify_schema_event(profile, schema_id, meta_data)
-        return (  # TODO: check
-            {
-                "sent": {"schema_id": schema_id, "schema": schema_def},
+
+        return {
+            "job_id": None,
+            "schema_state": {
+                "state": "finished",
                 "schema_id": schema_id,
-                "schema": schema_def,
+                "schema": {
+                "attrNames": schema_def["attrNames"],
+                "name": schema_def["name"],
+                "version": schema_def["ver"],
+                "issuerId": schema.issuer_id
+                }
+            },
+            "registration_metadata": {},
+            # For indy, schema_metadata will contain the seqNo
+            "schema_metadata": {
+                "seqNo": schema_def["seqNo"]
             }
-        )
-
-    # TODO: job_id?
-
+        }
 
     async def get_credential_definition(
         self, profile: Profile, cred_def_id: str
