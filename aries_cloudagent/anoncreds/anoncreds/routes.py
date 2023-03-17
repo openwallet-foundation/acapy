@@ -64,10 +64,10 @@ class CredIdMatchInfo(OpenAPISchema):
 class CredDefSchema(OpenAPISchema):
     """Parameters and validators for credential definition."""
 
-    tag = fields.Str(
-        description="""The tag value passed in by the Issuer to
-         an AnonCred's Credential Definition create and store implementation."""
-    )
+    # tag = fields.Str(
+    #    description="""The tag value passed in by the Issuer to
+    #     an AnonCred's Credential Definition create and store implementation."""
+    # )
     schemaId = fields.Str(
         data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
     )
@@ -201,7 +201,7 @@ async def schemas_post(request: web.BaseRequest):
         name=schema_data.get("name"),
         version=schema_data.get("version"),
     )
-    result = anon_creds_registry.register_schema(options,schema)
+    result = anon_creds_registry.register_schema(options, schema)
     return web.json_response(result)
 
 
@@ -237,18 +237,18 @@ async def schemas_get(request: web.BaseRequest):
     Returns:
 
     """
-    # context: AdminRequestContext = request["context"]
+    context: AdminRequestContext = request["context"]
+    anon_creds_registry = context.inject(AnonCredsRegistry)
     schema_issuer_did = request.query.get("schemaIssuerDid")
     schema_name = request.query.get("schemaName")
     schema_version = request.query.get("schemaVersion")
-
-    return web.json_response(
-        {
-            "schema_issuer_did": schema_issuer_did,
-            "schema_name": schema_name,
-            "schema_version": schema_version,
-        }
-    )
+    filter = {
+        "issuerId": schema_issuer_did,
+        "name": schema_name,
+        "version": schema_version,
+    }
+    schema_ids = anon_creds_registry.get_schemas(filter)
+    return web.json_response(schema_ids)
 
 
 @docs(tags=["anoncreds"], summary="")
@@ -262,9 +262,22 @@ async def cred_def_post(request: web.BaseRequest):
     Returns:
 
     """
-    # context: AdminRequestContext = request["context"]
+    context: AdminRequestContext = request["context"]
+    anon_creds_registry = context.inject(AnonCredsRegistry)
+    request_data = await request.json()
+    options = request_data.get("option")
+    data = request_data.get("credentialDefinition")
+
+    cred_def = {
+        "issuer_id": data.get("issuerId"),
+        "schema_id": data.get("schemaId"),
+        # "tag":data.get("tag"),
+        "support_revocation": data.get("supportRevocation"),
+        "revocation_registrySize": data.get("revocationRegistrySize"),
+    }
+    result = anon_creds_registry.register_credential_definition(options, cred_def)
     parameters = await request.json()
-    return web.json_response({"input": parameters})
+    return web.json_response(result)
 
 
 @docs(tags=["anoncreds"], summary="")
@@ -278,9 +291,11 @@ async def cred_def_get(request: web.BaseRequest):
     Returns:
 
     """
-    # context: AdminRequestContext = request["context"]
+    context: AdminRequestContext = request["context"]
+    anon_creds_registry = context.inject(AnonCredsRegistry)
     credential_id = request.match_info["cred_def_id"]
-    return web.json_response({"cred_def_id": credential_id})
+    result = await anon_creds_registry.get_credential_definition(credential_id)
+    return web.json_response(result)
 
 
 @docs(tags=["anoncreds"], summary="")
@@ -294,24 +309,20 @@ async def cred_defs_get(request: web.BaseRequest):
     Returns:
 
     """
-    # context: AdminRequestContext = request["context"]
-    cred_def_id = request.query.get("credential_definition_id")
-    issuer_id = request.query.get("issuer_id")
-    schema_id = request.query.get("schema_id")
-    schema_issuer_id = request.query.get("schema_issuer_id")
-    schema_name = request.query.get("schema_name")
-    schema_version = request.query.get("schema_version")
+    context: AdminRequestContext = request["context"]
+    anon_creds_registry = context.inject(AnonCredsRegistry)
+    query = request.query
 
-    return web.json_response(
-        {
-            "cred_def_id": cred_def_id,
-            "issuer_id": issuer_id,
-            "schema_id": schema_id,
-            "schema_issuer_id": schema_issuer_id,
-            "schema_name": schema_name,
-            "schema_version": schema_version,
-        }
-    )
+    filter = {
+        "cred_def_id": query.get("credentialDefinitionId"),
+        "issuer_id": query.get("issuerId"),
+        "schema_id": query.get("schemaId"),
+        "schema_issuer_id": query.get("schemaIssuerId"),
+        "schema_name": query.get("schemaName"),
+        "schema_version": query.get("schemaVersion"),
+    }
+    cred_def_ids = anon_creds_registry.get_credential_definitions(filter)
+    return web.json_response(cred_def_ids)
 
 
 async def register(app: web.Application):
