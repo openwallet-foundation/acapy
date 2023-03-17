@@ -1,14 +1,15 @@
 """DID Web Registry"""
 import re
 from typing import Pattern
+
+from .....config.injection_context import InjectionContext
+from .....core.profile import Profile
 from ....models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
-    AnonCredsRegistryGetRevocationRegistryDefinition,
-)
+    AnonCredsRegistryGetRevocationRegistryDefinition)
 from ....models.anoncreds_schema import AnonCredsRegistryGetSchema
-from .....config.injection_context import InjectionContext
-from ...base_registry import BaseAnonCredsResolver, BaseAnonCredsRegistrar
+from ...base_registry import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 
 
 class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
@@ -30,7 +31,12 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Get a schema from the registry."""
 
     # TODO: determine keyword arguments
-    async def register_schema(self):
+    async def register_schema(
+        self,
+        profile: Profile,
+        options: dict,
+        schema,
+    ):
         """Register a schema on the registry."""
 
     async def get_credential_definition(
