@@ -28,13 +28,15 @@
         },
         "user": {
             "type": "apiKey",
-            "name": "Wallet-Token",
+            "name": "user",
             "in": "header"
         }
     },
     "security": [
         {
-            "Authorization": [],
+            "Authorization": [
+                "https://test-apim-cgiditi-23022023.azure-api.net/auth/login?subscription-key=40b1a6574ab34d5baf0aaacb9d773136"
+            ],
             "apiKeyHeader": [],
             "Wallet-Token": [],
             "user": [],
