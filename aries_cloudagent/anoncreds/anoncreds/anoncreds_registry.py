@@ -67,7 +67,7 @@ class AnonCredsRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         raise AnonCredsObjectNotFound(f"{schema_id} could not be resolved")
 
     # TODO: determine keyword arguments
-    async def register_schema(self):
+    async def register_schema(self, options, schema):
         """Register a schema on the registry."""
         for registrar in await self._registrars_for_identifiers("something"):
             try:
