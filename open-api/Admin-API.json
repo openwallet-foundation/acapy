@@ -2,7 +2,7 @@
     "swagger": "2.0",
     "info": {
         "title": "ODS DITI Issuer Admin API",
-        "description":"This is the admin URL for Issuers. Use this Client ID: 36fce1db-fadc-492a-aa71-73fbc5f775bf to login with your Azure AD credentials. The login will work only if you have the right permissions. Enter user as 'wallet' for doing wallet operations and enter the 'Wallet-Token' in Bearer <TOKEN> format",
+        "description":"This is the admin URL for Issuers. Use this Client ID: 36fce1db-fadc-492a-aa71-73fbc5f775bf to login with your Azure AD credentials. The login will work only if you have the right permissions. Enter user as 'wallet' for performing wallet operations and enter the 'Wallet-Token' in Bearer <TOKEN> format",
         "version": "1.0"
     },
     "host": "test-apim-cgiditi-23022023.azure-api.net",
