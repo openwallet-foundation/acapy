@@ -11,7 +11,7 @@
     ],
     "securityDefinitions": {
         "Authorization": {
-            "type": "Bearer Token",
+            "type": "apiKey",
             "name": "Authorization",
             "in": "header",
             "authorizationUrl": "https://test-apim-cgiditi-23022023.azure-api.net/auth/login?subscription-key=40b1a6574ab34d5baf0aaacb9d773136"
@@ -22,7 +22,7 @@
             "in": "header"
         },
         "Wallet-Token": {
-            "type": "Bearer Token",
+            "type": "apiKey",
             "name": "Wallet-Token",
             "in": "header"
         },
