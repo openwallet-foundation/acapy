@@ -1,4 +1,6 @@
 """DID Web Registry"""
+import re
+from typing import Pattern
 from ....models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
@@ -12,9 +14,13 @@ from ...base_registry import BaseAnonCredsResolver, BaseAnonCredsRegistrar
 class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """DIDWebRegistry"""
 
+    def __init__(self):
+        self._supported_identifiers_regex = re.compile(r"^did:web:.*$")
+
     @property
-    def supported_identifiers_regex(self):
-        return ""  # TODO: implement me
+    def supported_identifiers_regex(self) -> Pattern:
+        return self._supported_identifiers_regex
+        # TODO: fix regex (too general)
 
     async def setup(self, context: InjectionContext):
         """Setup."""

@@ -195,19 +195,9 @@ async def schemas_post(request: web.BaseRequest):
     options = request_data.get("option")
     schema_data = request_data.get("schema")
 
-<<<<<<< HEAD
     schema: AnonCredsSchema = AnonCredsSchema.deserialize(schema_data)
     #TODO: serialize return stuff.
     result = anon_creds_registry.register_schema(options, schema)
-=======
-    schema: AnonCredsSchema = AnonCredsSchema(
-        issuer_id=schema_data.get("issuerId"),
-        attr_names=schema_data.get("attrNames"),
-        name=schema_data.get("name"),
-        version=schema_data.get("version"),
-    )
-    result = await anon_creds_registry.register_schema(options,schema)
->>>>>>> fix: pass options, schema to AnonCredsRegistry.register_schema
     return web.json_response(result)
 
 

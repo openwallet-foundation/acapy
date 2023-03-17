@@ -1,6 +1,8 @@
 """DID Indy Registry"""
 import logging
 from asyncio import shield
+import re
+from typing import Pattern
 
 from .....config.injection_context import InjectionContext
 from .....core.profile import Profile
@@ -30,17 +32,21 @@ LOGGER = logging.getLogger(__name__)
 class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """DIDIndyRegistry"""
 
+    def __init__(self):
+        self._supported_identifiers_regex = re.compile(r"^did:indy:.*$")
+
     @property
-    def supported_identifiers_regex(self):
-        return ""  # TODO: implement me
+    def supported_identifiers_regex(self) -> Pattern:
+        return self._supported_identifiers_regex
+        # TODO: fix regex (too general)
 
     async def setup(self, context: InjectionContext):
         """Setup."""
         print("Successfully registered DIDIndyRegistry")
 
-    async def get_schema(self, profile: Profile, schema_id: str) -> AnonCredsRegistryGetSchema:
+    async def get_schema(self, profile: Profile, options, schema, issuer_id) -> AnonCredsRegistryGetSchema:
         """Get a schema from the registry."""
-
+        schema_id = schema.schema_id
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
@@ -73,18 +79,15 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     async def register_schema(
         self,
         profile: Profile,
-        schema_name: str,
-        schema_version: str,
-        attributes: dict,
-        issuer_id: str,
-        outbound_handler,
+        options: dict,
+        schema,
         ):
         """Register a schema on the registry."""
         # TODO: need issuer_id to
         # issuer_id needs to sign the transaction too
 
         # Check that schema doesn't already exist
-        tag_query = {"schema_name": schema_name, "schema_version": schema_version}
+        tag_query = {"schema_name": schema.name, "schema_version": schema.version}
         async with profile.session() as session:
             storage = session.inject(BaseStorage)
             found = await storage.find_all_records(
@@ -112,11 +115,11 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 schema_id, schema_def = await shield(
                     ledger.create_and_send_schema(
                         issuer,
-                        schema_name,
-                        schema_version,
-                        attributes,
+                        schema.name,
+                        schema.version,
+                        schema.attr_names,
                         write_ledger=True,  # TODO: check
-                        endorser_did=issuer_id,
+                        endorser_did=schema.issuer_id,
                     )
                 )
             except (AnonCredsIssuerError, LedgerError) as err:
@@ -126,9 +129,9 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         meta_data = {
             "context": {
                 "schema_id": schema_id,
-                "schema_name": schema_name,
-                "schema_version": schema_version,
-                "attributes": attributes,
+                "schema_name": schema.name,
+                "schema_version": schema.version,
+                "attributes": schema.attr_names,
             },
             "processing": {},
         }
