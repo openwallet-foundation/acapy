@@ -16,7 +16,7 @@ from .base_registry import (AnonCredsObjectNotFound,
 LOGGER = logging.getLogger(__name__)
 
 
-class AnonCredsRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
+class AnonCredsRegistry():
     """AnonCredsRegistry"""
 
     def __init__(self, registries: Optional[List[BaseAnonCredsHandler]] = None):
@@ -26,11 +26,6 @@ class AnonCredsRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         if registries:
             for registry in registries:
                 self.register(registry)
-    
-    @property
-    def supported_identifiers_regex(self):
-        """Return supported identifiers."""
-        return "" #TODO: implement me
     
     def register(self, registry: BaseAnonCredsHandler):
         """Register a new registry."""
@@ -67,11 +62,11 @@ class AnonCredsRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         raise AnonCredsObjectNotFound(f"{schema_id} could not be resolved")
 
     # TODO: determine keyword arguments
-    async def register_schema(self):
+    async def register_schema(self, profile, options, schema):
         """Register a schema on the registry."""
-        for registrar in await self._registrars_for_identifiers("something"):
+        for registrar in await self._registrars_for_identifiers(schema.issuer_id):
             try:
-                return await registrar.register_schema()
+                return await registrar.register_schema(profile, options, schema)
             except BaseAnonCredsError:
                 LOGGER.exception("Error registering schema with registrar")
 
