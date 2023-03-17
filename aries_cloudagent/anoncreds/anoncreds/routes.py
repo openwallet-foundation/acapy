@@ -197,7 +197,7 @@ async def schemas_post(request: web.BaseRequest):
 
     schema: AnonCredsSchema = AnonCredsSchema.deserialize(schema_data)
     #TODO: serialize return stuff.
-    result = anon_creds_registry.register_schema(options, schema)
+    result = await anon_creds_registry.register_schema(context.profile, options, schema)
     return web.json_response(result)
 
 
