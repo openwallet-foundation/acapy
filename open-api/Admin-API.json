@@ -13,7 +13,6 @@
     "securityDefinitions": {
         "OAuth2-Login": {
             "type": "oauth2",
-            "client_id" : "36fce1db-fadc-492a-aa71-73fbc5f775bf",
             "scopes": {
                 "api://36fce1db-fadc-492a-aa71-73fbc5f775bf/User.Read": ""
             },
