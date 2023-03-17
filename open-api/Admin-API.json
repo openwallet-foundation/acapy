@@ -26,25 +26,18 @@
             "name": "Wallet-Token",
             "in": "header"
         },
-        "oauth2test-apim-auth": {
-            "type": "oauth2",
-            "scopes": {
-                "api://36fce1db-fadc-492a-aa71-73fbc5f775bf/User.Read": ""
-            },
-            "flow": "accessCode",
-            "authorizationUrl": "https://login.microsoftonline.com/cddc1229-ac2a-4b97-b78a-0e5cacb5865c/oauth2/v2.0/authorize",
-            "tokenUrl": "https://login.microsoftonline.com/cddc1229-ac2a-4b97-b78a-0e5cacb5865c/oauth2/v2.0/token"
+        "user": {
+            "type": "apiKey",
+            "name": "Wallet-Token",
+            "in": "header"
         }
     },
     "security": [
         {
+            "Authorization": [],
             "apiKeyHeader": [],
-            "oauth2test-apim-auth": [
-                "api://36fce1db-fadc-492a-aa71-73fbc5f775bf/User.Read"
-            ]
-        },
-        {
-            "apiKeyQuery": [],
+            "Wallet-Token": [],
+            "user": [],
             "oauth2test-apim-auth": [
                 "api://36fce1db-fadc-492a-aa71-73fbc5f775bf/User.Read"
             ]
