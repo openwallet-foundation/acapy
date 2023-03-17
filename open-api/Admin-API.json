@@ -4,6 +4,7 @@
         "title": "AcaPy Admin API",
         "version": "1.0"
     },
+    "description": "Login URL: https://test-apim-cgiditi-23022023.azure-api.net/auth/login",
     "host": "test-apim-cgiditi-23022023.azure-api.net",
     "basePath": "/admin",
     "schemes": [
