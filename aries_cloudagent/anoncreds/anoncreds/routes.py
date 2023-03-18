@@ -218,7 +218,7 @@ async def schema_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     anon_creds_registry = context.inject(AnonCredsRegistry)
     schema_id = request.match_info["schemaId"]
-    result = await anon_creds_registry.get_schema(schema_id)
+    result = await anon_creds_registry.get_schema(context.profile, schema_id)
 
     return web.json_response(result)
 

@@ -44,9 +44,8 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Setup."""
         print("Successfully registered DIDIndyRegistry")
 
-    async def get_schema(self, profile: Profile, options, schema, issuer_id) -> AnonCredsRegistryGetSchema:
+    async def get_schema(self, profile: Profile, schema_id) -> AnonCredsRegistryGetSchema:
         """Get a schema from the registry."""
-        schema_id = schema.schema_id
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(profile)

@@ -4,6 +4,7 @@ import logging
 from typing import List, Optional
 
 from ...config.injection_context import InjectionContext
+from ...core.profile import Profile
 from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
@@ -52,11 +53,11 @@ class AnonCredsRegistry():
     async def setup(self, context: InjectionContext):
         """Setup method."""
 
-    async def get_schema(self, schema_id: str) -> AnonCredsRegistryGetSchema:
+    async def get_schema(self, profile: Profile, schema_id: str) -> AnonCredsRegistryGetSchema:
         """Get a schema from the registry."""
         for resolver in await self._resolvers_for_identifier(schema_id):
             try:
-                return await resolver.get_schema(schema_id)
+                return await resolver.get_schema(profile, schema_id)
             except BaseAnonCredsError:
                 LOGGER.exception("Error getting schema from resolver")
 
@@ -72,7 +73,7 @@ class AnonCredsRegistry():
         
 
     # TODO: determine keyword arguments
-    async def register_schema(self, profile, options, schema):
+    async def register_schema(self, profile: Profile, options, schema):
         """Register a schema on the registry."""
         for registrar in await self._registrars_for_identifiers(schema.issuer_id):
             try:
