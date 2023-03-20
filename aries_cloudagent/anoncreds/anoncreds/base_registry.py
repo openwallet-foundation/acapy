@@ -7,8 +7,10 @@ from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
+    AnonCredsRegistryGetCredentialDefinitions,
+    AnonCredsRegistryGetRevocationRegistryDefinitions,
 )
-from ..models.anoncreds_schema import AnonCredsRegistryGetSchema
+from ..models.anoncreds_schema import AnonCredsRegistryGetSchema, AnonCredsRegistryGetSchemas
 
 
 class BaseAnonCredsError(Exception):
@@ -42,24 +44,41 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
     @abstractmethod
     async def get_schema(self, schema_id: str) -> AnonCredsRegistryGetSchema:
         """Get a schema from the registry."""
+    
+    @abstractmethod
+    async def get_schemas(self, filter: dict) -> AnonCredsRegistryGetSchemas:
+        """Get a schema ids from the registry."""
 
     @abstractmethod
     async def get_credential_definition(
         self, credential_definition_id: str
     ) -> AnonCredsRegistryGetCredentialDefinition:
         """Get a credential definition from the registry."""
+    
+    @abstractmethod
+    async def get_credential_definitions(
+        self, filter: dict
+    ) -> AnonCredsRegistryGetCredentialDefinitions:
+        """Get a credential definition ids from the registry."""
 
     @abstractmethod
     async def get_revocation_registry_definition(
         self, revocation_registry_id: str
     ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
         """Get a revocation registry definition from the registry."""
+    
+    @abstractmethod
+    async def get_revocation_registry_definitions(
+        self,  filter: dict
+    ) -> AnonCredsRegistryGetRevocationRegistryDefinitions:
+        """Get a revocation registry definition ids from the registry."""
 
     @abstractmethod
     async def get_revocation_list(
         self, revocation_registry_id: str, timestamp: str
     ) -> AnonCredsRegistryGetRevocationList:
         """Get a revocation list from the registry."""
+
 
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):

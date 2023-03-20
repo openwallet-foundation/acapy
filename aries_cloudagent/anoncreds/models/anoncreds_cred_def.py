@@ -161,6 +161,37 @@ class AnonCredsRegistryGetCredentialDefinition(BaseModel):
         self.credential_definition_metadata = credential_definition_metadata
 
 
+class AnonCredsRegistryGetCredentialDefinitions(BaseModel):
+    """AnonCredsRegistryGetCredentialDefinitions"""
+
+    class Meta:
+        """AnonCredsRegistryGetCredentialDefinitions metadata."""
+
+        schema_class = "AnonCredsRegistryGetCredentialDefinitionsSchema"
+
+    def __init__(self, credential_definition_ids: list, **kwargs):
+        super().__init__(**kwargs)
+        self.credential_definition_ids = credential_definition_ids
+
+
+class AnonCredsRegistryGetCredentialDefinitionsSchema(BaseModelSchema):
+    """AnonCredsRegistryGetCredentialDefinitionsSchema"""
+
+    class Meta:
+        """AnonCredsRegistryGetCredentialDefinitionsSchema metadata"""
+
+        model_class = AnonCredsRegistryGetCredentialDefinitions
+        unknown = EXCLUDE
+
+    credential_definition_ids = fields.List(
+        fields.Str(
+            data_key="credentialDefinitionIds",
+            description="credential definition identifiers",
+            **INDY_CRED_DEF_ID,
+        )
+    )
+
+
 class AnonCredsRegistryGetCredentialDefinitionSchema(BaseModelSchema):
     """Parameters and validators for credential definition list response."""
 
@@ -274,6 +305,35 @@ class AnonCredsRegistryGetRevocationRegistryDefinitionSchema(BaseModelSchema):
     resolution_metadata = fields.Dict()
     revocation_registry_metadata = fields.Dict()
 
+
+class AnonCredsRegistryGetRevocationRegistryDefinitions(BaseModel):
+    """AnonCredsRegistryGetRevocationRegistryDefinitions"""
+
+    class Meta:
+        """AnonCredsRegistryGetRevocationRegistryDefinitions metadata."""
+
+        schema_class = "AnonCredsRegistryGetRevocationRegistryDefinitionsSchema"
+
+    def __init__(self, revocation_definition_ids: list, **kwargs):
+        super().__init__(**kwargs)
+        self.revocation_definition_ids = revocation_definition_ids
+
+class AnonCredsRegistryGetRevocationRegistryDefinitionsSchema(BaseModelSchema):
+    """AnonCredsRegistryGetRevocationRegistryDefinitionsSchema"""
+
+    class Meta:
+        """AnonCredsRegistryGetRevocationRegistryDefinitionsSchema metadata"""
+
+        model_class = AnonCredsRegistryGetRevocationRegistryDefinitions
+        unknown = EXCLUDE
+
+    revocation_definition_ids = fields.List(
+        fields.Str(
+            data_key="revocation_definition_ids",
+            description="credential definition identifiers",
+            **INDY_CRED_DEF_ID,
+        )
+    )
 
 class AnonCredsRevocationList(BaseModel):
     """AnonCredsRevocationList"""

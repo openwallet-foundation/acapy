@@ -1,4 +1,5 @@
 """AnonCreds Registry"""
+import itertools
 import logging
 from typing import List, Optional
 
@@ -61,6 +62,15 @@ class AnonCredsRegistry():
 
         raise AnonCredsObjectNotFound(f"{schema_id} could not be resolved")
 
+    async def get_schemas(self,filter : dict):
+        """Get schema id's from the registry."""
+        results = [
+            resolver.get_schemas(filter)
+            for resolver in self.resolvers
+        ]
+        return itertools.chain.from_iterable(results)
+        
+
     # TODO: determine keyword arguments
     async def register_schema(self, profile, options, schema):
         """Register a schema on the registry."""
@@ -87,6 +97,16 @@ class AnonCredsRegistry():
         raise AnonCredsObjectNotFound(
             f"{credential_definition_id} could not be resolved"
         )
+    
+    async def get_credential_definitions(
+        self, filter : dict
+    ):
+        """Get credential definitions id's from the registry."""
+        results = [
+            resolver.get(filter)
+            for resolver in self.resolvers
+        ]
+        return itertools.chain.from_iterable(results)
 
     # TODO: determine keyword arguments
     async def register_credential_definition(self):
