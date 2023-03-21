@@ -103,7 +103,7 @@ class AnonCredsRegistry():
     ):
         """Get credential definitions id's from the registry."""
         results = [
-            resolver.get(filter)
+            resolver.get_credential_definitions(filter)
             for resolver in self.resolvers
         ]
         return itertools.chain.from_iterable(results)
