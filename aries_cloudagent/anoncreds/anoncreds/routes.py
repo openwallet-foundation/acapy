@@ -2,21 +2,16 @@
 import logging
 
 from aiohttp import web
-from aiohttp_apispec import (
-    docs,
-    match_info_schema,
-    querystring_schema,
-    request_schema,
-    response_schema,
-)
+from aiohttp_apispec import (docs, match_info_schema, querystring_schema,
+                             request_schema, response_schema)
 from marshmallow import fields
-from aries_cloudagent.anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
-from aries_cloudagent.anoncreds.models.anoncreds_cred_def import (
-    AnonCredsCredentialDefinitionValueSchema,
-    AnonCredsRegistryGetCredentialDefinitionSchema,
-    AnonCredsCredentialDefinitionSchema,
-)
 
+from aries_cloudagent.anoncreds.anoncreds.anoncreds_registry import \
+    AnonCredsRegistry
+from aries_cloudagent.anoncreds.models.anoncreds_cred_def import (
+    AnonCredsCredentialDefinitionSchema,
+    AnonCredsCredentialDefinitionValueSchema,
+    AnonCredsRegistryGetCredentialDefinitionSchema)
 from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     AnonCredsRegistryGetSchemasSchema,
     AnonCredsSchema,
@@ -24,22 +19,14 @@ from aries_cloudagent.anoncreds.models.anoncreds_schema import (
     SchemaPostQueryStringSchema,
     AnonCredsRegistryGetSchemaSchema,
     SchemasQueryStringSchema,
-    AnonCredsRegistryGetSchemas,
 )
 from aries_cloudagent.anoncreds.models.anoncreds_valid import (
-    ANONCREDS_SCHEMA_ID,
-    ANONCREDS_VERSION,
-)
+    ANONCREDS_SCHEMA_ID, ANONCREDS_VERSION)
 
 from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import (
-    GENERIC_DID,
-    INDY_CRED_DEF_ID,
-    INDY_SCHEMA_ID,
-    INDY_VERSION,
-    UUIDFour,
-)
+from ...messaging.valid import (GENERIC_DID, INDY_CRED_DEF_ID, INDY_SCHEMA_ID,
+                                INDY_VERSION, UUIDFour)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -273,7 +260,14 @@ async def cred_def_post(request: web.BaseRequest):
         "support_revocation": data.get("supportRevocation"),
         "revocation_registrySize": data.get("revocationRegistrySize"),
     }
-    result = anon_creds_registry.register_credential_definition(options, cred_def)
+    result = await anon_creds_registry.register_credential_definition(
+        profile=context.profile,
+        schema_id=data["schemaId"],
+        support_revocation=data["supportRevocation"],
+        tag=None,
+        rev_reg_size=data["revocationRegistrySize"],
+        issuer_id=data["issuerId"],
+    )
     parameters = await request.json()
     return web.json_response(result)
 
@@ -292,7 +286,7 @@ async def cred_def_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     anon_creds_registry = context.inject(AnonCredsRegistry)
     credential_id = request.match_info["cred_def_id"]
-    result = await anon_creds_registry.get_credential_definition(credential_id)
+    result = await anon_creds_registry.get_credential_definition(context.profile, credential_id)
     return web.json_response(result)
 
 
