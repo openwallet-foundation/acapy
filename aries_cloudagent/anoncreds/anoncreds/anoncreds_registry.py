@@ -84,13 +84,14 @@ class AnonCredsRegistry():
         raise AnonCredsRegistrationFailed("Failed to register schema")
 
     async def get_credential_definition(
-        self, credential_definition_id: str
+        self, profile: Profile, credential_definition_id: str
     ) -> AnonCredsRegistryGetCredentialDefinition:
         """Get a credential definition from the registry."""
         for resolver in await self._resolvers_for_identifier(credential_definition_id):
             try:
                 return await resolver.get_credential_definition(
-                    credential_definition_id
+                    profile,
+                    credential_definition_id,
                 )
             except BaseAnonCredsError:
                 LOGGER.exception("Error getting credential definition from resolver")
@@ -110,11 +111,26 @@ class AnonCredsRegistry():
         return itertools.chain.from_iterable(results)
 
     # TODO: determine keyword arguments
-    async def register_credential_definition(self):
+    async def register_credential_definition(
+        self,
+        profile: Profile,
+        schema_id: str,
+        support_revocation: bool,
+        tag: str,
+        rev_reg_size: int,
+        issuer_id: str,
+    ):
         """Register a credential definition on the registry."""
         for registrar in await self._registrars_for_identifiers("something"):
             try:
-                return await registrar.register_credential_definition()
+                return await registrar.register_credential_definition(
+                    profile,
+                    schema_id,
+                    support_revocation,
+                    tag,
+                    rev_reg_size,
+                    issuer_id,
+                )
             except BaseAnonCredsError:
                 LOGGER.exception("Error registering schema with registrar")
 
