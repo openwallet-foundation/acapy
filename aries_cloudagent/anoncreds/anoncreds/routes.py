@@ -18,12 +18,13 @@ from aries_cloudagent.anoncreds.models.anoncreds_cred_def import (
 )
 
 from aries_cloudagent.anoncreds.models.anoncreds_schema import (
+    AnonCredsRegistryGetSchemasSchema,
     AnonCredsSchema,
     PostSchemaResponseSchema,
     SchemaPostQueryStringSchema,
     AnonCredsRegistryGetSchemaSchema,
     SchemasQueryStringSchema,
-    SchemasResponseSchema,
+    AnonCredsRegistryGetSchemas,
 )
 from aries_cloudagent.anoncreds.models.anoncreds_valid import (
     ANONCREDS_SCHEMA_ID,
@@ -196,7 +197,7 @@ async def schemas_post(request: web.BaseRequest):
     schema_data = request_data.get("schema")
 
     schema: AnonCredsSchema = AnonCredsSchema.deserialize(schema_data)
-    #TODO: serialize return stuff.
+    # TODO: serialize return stuff.
     result = await anon_creds_registry.register_schema(context.profile, options, schema)
     return web.json_response(result)
 
@@ -224,7 +225,7 @@ async def schema_get(request: web.BaseRequest):
 
 @docs(tags=["anoncreds"], summary="")
 @querystring_schema(SchemasQueryStringSchema())
-@response_schema(SchemasResponseSchema(), 200, description="")
+@response_schema(AnonCredsRegistryGetSchemasSchema(), 200, description="")
 async def schemas_get(request: web.BaseRequest):
     """Request handler for getting all schemas.
 

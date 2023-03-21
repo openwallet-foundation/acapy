@@ -186,6 +186,8 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     
         # job_id
 
+    async def get_credential_definitions(self, profile: Profile, filter: str):
+        """Get credential definition ids filtered by filter"""
 
     # TODO: determine keyword arguments
     async def register_credential_definition(
@@ -306,6 +308,9 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             raise # Anoncreds error web.HTTPNotFound(reason=err.roll_up) from err
         except RevocationError as err:
             raise # Anoncreds error web.HTTPBadRequest(reason=err.roll_up) from err
+
+    async def get_revocation_registry_definitions(self, profile: Profile, filter: str):
+        """Get credential definition ids filtered by filter"""
 
     async def get_revocation_list(
         self, revocation_registry_id: str, timestamp: str

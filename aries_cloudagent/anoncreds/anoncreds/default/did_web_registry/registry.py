@@ -30,6 +30,9 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     async def get_schema(self, schema_id: str) -> AnonCredsRegistryGetSchema:
         """Get a schema from the registry."""
 
+    async def get_schemas(self, profile: Profile, filter: str):
+        """Get schema ids filtered by filter"""
+
     # TODO: determine keyword arguments
     async def register_schema(
         self,
@@ -44,6 +47,9 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     ) -> AnonCredsRegistryGetCredentialDefinition:
         """Get a credential definition from the registry."""
 
+    async def get_credential_definitions(self, profile: Profile, filter: str):
+        """Get credential definition ids filtered by filter"""
+
     # TODO: determine keyword arguments
     async def register_credential_definition(self):
         """Register a credential definition on the registry."""
@@ -56,6 +62,9 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     # TODO: determine keyword arguments
     async def register_revocation_registry_definition(self):
         """Register a revocation registry definition on the registry."""
+
+    async def get_revocation_registry_definitions(self, profile: Profile, filter: str):
+        """Get credential definition ids filtered by filter"""
 
     async def get_revocation_list(
         self, revocation_registry_id: str, timestamp: str
