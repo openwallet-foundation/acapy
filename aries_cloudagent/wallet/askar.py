@@ -145,6 +145,14 @@ class AskarWallet(BaseWallet):
             verkey, metadata=json.dumps(metadata or {}), tags=key.tags
         )
 
+    # async def create_peer_did(
+    #     self,
+    #     did: str,
+    #     verkey: str,
+    #     key_type: KeyType,
+    #     metadata: dict,
+    # ):
+
     async def create_local_did(
         self,
         method: DIDMethod,

@@ -43,6 +43,11 @@ class PublicKeyType(Enum):
         "Secp256k1SignatureAuthenticationKey2018",
         "publicKeyHex",
     )
+    X25519_SIG_2019 = LinkedDataKeySpec(
+        "X25519KeyAgreementKey2019",
+        "Ed25519SignatureAuthentication2018",
+        "publicKeyBase58",
+    )
 
     @staticmethod
     def get(val: str) -> "PublicKeyType":
@@ -103,9 +108,9 @@ class PublicKey:
 
     def __init__(
         self,
-        did: str,
         ident: str,
         value: str,
+        did: str = None,
         pk_type: PublicKeyType = None,
         controller: str = None,
         authn: bool = False,
@@ -114,9 +119,9 @@ class PublicKey:
         Retain key specification particulars.
 
         Args:
-            did: DID of DID document embedding public key
             ident: identifier for public key
             value: key content, encoded as key specification requires
+            did: DID of DID document embedding public key
             pk_type: public key type (enum), default ED25519_SIG_2018
             controller: controller DID (default DID of DID document)
             authn: whether key as has DID authentication privilege (default False)
@@ -126,7 +131,7 @@ class PublicKey:
 
         """
 
-        self._did = canon_did(did)
+        self._did = canon_did(did) if did else None
         self._id = canon_ref(self._did, ident)
         self._value = value
         self._type = pk_type or PublicKeyType.ED25519_SIG_2018

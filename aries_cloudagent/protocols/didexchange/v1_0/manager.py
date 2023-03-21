@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import pydid
 from pydid import BaseDIDDocument as ResolvedDocument
@@ -10,7 +10,7 @@ from pydid import DIDCommService
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.diddoc import DIDDoc
+from ....connections.models.diddoc import DIDDoc, DIDPeerDoc
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
@@ -268,26 +268,26 @@ class DIDXManager(BaseConnectionManager):
         # Multitenancy setup
         multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
         wallet_id = self.profile.settings.get("wallet.id")
-
+        use_unqual_did_flag = self.profile.settings.get("wallet.use_legacy_did")
         base_mediation_record = None
         if multitenant_mgr and wallet_id:
             base_mediation_record = await multitenant_mgr.get_default_mediator()
 
         my_info = None
-
-        if conn_rec.my_did:
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(conn_rec.my_did)
-        else:
-            # Create new DID for connection
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(
-                    method=SOV,
-                    key_type=ED25519,
-                )
-            conn_rec.my_did = my_info.did
+        if use_unqual_did_flag:
+            if conn_rec.my_did:
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    my_info = await wallet.get_local_did(conn_rec.my_did)
+            else:
+                # Create new DID for connection
+                async with self.profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    my_info = await wallet.create_local_did(
+                        method=SOV,
+                        key_type=ED25519,
+                    )
+                conn_rec.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
@@ -304,14 +304,23 @@ class DIDXManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        did_doc = await self.create_did_document(
-            my_info,
-            conn_rec.inbound_connection_id,
-            my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
-        )
+        if use_unqual_did_flag:
+            did_doc = await self.create_did_document(
+                my_info,
+                conn_rec.inbound_connection_id,
+                my_endpoints,
+                mediation_records=list(
+                    filter(None, [base_mediation_record, mediation_record])
+                ),
+            )
+        else:
+            did_doc = await self.create_did_peer_document(
+                conn_rec.inbound_connection_id,
+                my_endpoints,
+                mediation_records=list(
+                    filter(None, [base_mediation_record, mediation_record])
+                ),
+            )
         if conn_rec.their_public_did is not None:
             qualified_did = conn_rec.their_public_did
             did_document = await self.get_resolved_did_document(qualified_did)
@@ -835,24 +844,32 @@ class DIDXManager(BaseConnectionManager):
         wallet: BaseWallet,
         attached: AttachDecorator,
         invi_key: str = None,
-    ) -> DIDDoc:
+    ) -> Union[DIDDoc, DIDPeerDoc]:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
         if not signed_diddoc_bytes:
             raise DIDXManagerError("DID doc attachment is not signed.")
         if not await attached.data.verify(wallet, invi_key):
             raise DIDXManagerError("DID doc attachment signature failed verification")
+        did_doc_dict = json.loads(signed_diddoc_bytes.decode())
+        if did_doc_dict.get("id") and did_doc_dict.get("id").startswith("did:peer:1"):
+            return DIDPeerDoc.deserialize(did_doc_dict)
+        else:
+            return DIDDoc.deserialize(did_doc_dict)
 
-        return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
-
-    async def get_resolved_did_document(self, qualified_did: str) -> ResolvedDocument:
+    async def get_resolved_did_document(
+        self, qualified_did: str
+    ) -> Union[ResolvedDocument, DIDPeerDoc]:
         """Return resolved DID document."""
         resolver = self._profile.inject(DIDResolver)
         if not qualified_did.startswith("did:"):
             qualified_did = f"did:sov:{qualified_did}"
         try:
-            doc_dict: dict = await resolver.resolve(self._profile, qualified_did)
-            doc = pydid.deserialize_document(doc_dict, strict=True)
+            if qualified_did.startswith("did:peer:1"):
+                doc = await self.fetch_did_document(qualified_did)
+            else:
+                doc_dict: dict = await resolver.resolve(self._profile, qualified_did)
+                doc = pydid.deserialize_document(doc_dict, strict=True)
             return doc
         except ResolverError as error:
             raise DIDXManagerError(
@@ -860,7 +877,7 @@ class DIDXManager(BaseConnectionManager):
             ) from error
 
     async def get_first_applicable_didcomm_service(
-        self, did_doc: ResolvedDocument
+        self, did_doc: Union[ResolvedDocument, DIDPeerDoc]
     ) -> str:
         """Return first applicable DIDComm service url with highest priority."""
         if not did_doc.service:

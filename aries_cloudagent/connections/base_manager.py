@@ -5,7 +5,8 @@ For Connection, DIDExchange and OutOfBand Manager.
 """
 
 import logging
-from typing import Optional, List, Sequence, Tuple, Text
+import json
+from typing import Optional, List, Sequence, Tuple, Text, Union
 
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
@@ -18,6 +19,7 @@ from pydid.verification_method import Ed25519VerificationKey2018
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
+from ..did.did_peer import get_did_from_did_doc
 from ..protocols.connections.v1_0.messages.connection_invitation import (
     ConnectionInvitation,
 )
@@ -34,9 +36,11 @@ from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
+from ..wallet.key_type import ED25519, X25519
+from ..wallet.util import bytes_to_b58, b58_to_bytes, convertPublicKeyToX25519
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from .models.diddoc import DIDDoc, DIDPeerDoc, PublicKey, PublicKeyType, Service
 
 
 class BaseConnectionManagerError(BaseError):
@@ -60,6 +64,99 @@ class BaseConnectionManager:
         self._logger = logging.getLogger(__name__)
         self._profile = profile
         self._route_manager = profile.inject(RouteManager)
+
+    async def create_did_peer_document(
+        self,
+        inbound_connection_id: str = None,
+        svc_endpoints: Sequence[str] = None,
+        mediation_records: List[MediationRecord] = None,
+    ) -> Tuple[DIDPeerDoc, str]:
+        did_peer_doc = DIDPeerDoc()
+        pk_b58 = None
+        async with self._profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            key_info = await wallet.create_signing_key(key_type=ED25519)
+            pk_b58 = key_info.verkey
+        pk = PublicKey(
+            ident="1",
+            value=pk_b58,
+            pk_type=PublicKeyType.ED25519_SIG_2018,
+            authn=True,
+        )
+        x_pk = PublicKey(
+            ident="1",
+            value=bytes_to_b58(convertPublicKeyToX25519(b58_to_bytes(pk_b58))),
+            pk_type=PublicKeyType.X25519_SIG_2019,
+            authn=False,
+        )
+        # Authentication
+        did_peer_doc.set(pk)
+        # Key Agreement
+        did_peer_doc.set(x_pk)
+        router_id = inbound_connection_id
+        routing_keys = []
+        while router_id:
+            # look up routing connection information
+            async with self._profile.session() as session:
+                router = await ConnRecord.retrieve_by_id(session, router_id)
+            if ConnRecord.State.get(router.state) != ConnRecord.State.COMPLETED:
+                raise BaseConnectionManagerError(
+                    f"Router connection not completed: {router_id}"
+                )
+            routing_doc, _ = await self.fetch_did_document(router.their_did)
+            if not routing_doc.service:
+                raise BaseConnectionManagerError(
+                    f"No services defined by routing DIDDoc: {router_id}"
+                )
+            for service in routing_doc.service.values():
+                if not service.endpoint:
+                    raise BaseConnectionManagerError(
+                        "Routing DIDDoc service has no service endpoint"
+                    )
+                if not service.recip_keys:
+                    raise BaseConnectionManagerError(
+                        "Routing DIDDoc service has no recipient key(s)"
+                    )
+                did_key = DIDKey.from_public_key_b58(
+                    service.recip_keys[0].value, ED25519
+                )
+                routing_keys.append(f"{did_key.did}#{did_key.fingerprint}")
+                svc_endpoints = [service.endpoint]
+                break
+            router_id = router.inbound_connection_id
+
+        if mediation_records:
+            for mediation_record in mediation_records:
+                mediator_routing_keys = []
+                did_keys = [
+                    DIDKey.from_public_key_b58(key, ED25519)
+                    for idx, key in enumerate(mediation_record.routing_keys)
+                ]
+                for did_key in did_keys:
+                    mediator_routing_keys.append(f"{did_key.did}#{did_key.fingerprint}")
+                routing_keys = [*routing_keys, *mediator_routing_keys]
+                svc_endpoints = [mediation_record.endpoint]
+        services = []
+        for endpoint_index, svc_endpoint in enumerate(svc_endpoints or []):
+            endpoint_ident = f"#inline-{endpoint_index}"
+            # Use current Service object with placeholder DID, as peer
+            # DID is not available at this time.
+            service = Service(
+                ident=endpoint_ident,
+                typ="did-communication",
+                recip_keys=[pk],
+                routing_keys=routing_keys,
+                endpoint=svc_endpoint,
+            )
+            services.append(service)
+        for service in services:
+            did_peer_doc.set(service)
+        peer_did = get_did_from_did_doc(did_peer_doc)
+        for service in services:
+            service.did = peer_did
+            did_peer_doc.set(service)
+        did_peer_doc.add_controller_to_pk(peer_did)
+        return did_peer_doc, peer_did
 
     async def create_did_document(
         self,
@@ -86,12 +183,12 @@ class BaseConnectionManager:
         did_controller = did_info.did
         did_key = did_info.verkey
         pk = PublicKey(
-            did_info.did,
-            "1",
-            did_key,
-            PublicKeyType.ED25519_SIG_2018,
-            did_controller,
-            True,
+            did=did_info.did,
+            ident="1",
+            value=did_key,
+            pk_type=PublicKeyType.ED25519_SIG_2018,
+            controller=did_controller,
+            authn=True,
         )
         did_doc.set(pk)
 
@@ -121,12 +218,12 @@ class BaseConnectionManager:
                         "Routing DIDDoc service has no recipient key(s)"
                     )
                 rk = PublicKey(
-                    did_info.did,
-                    f"routing-{router_idx}",
-                    service.recip_keys[0].value,
-                    PublicKeyType.ED25519_SIG_2018,
-                    did_controller,
-                    True,
+                    did=did_info.did,
+                    ident=f"routing-{router_idx}",
+                    value=service.recip_keys[0].value,
+                    pk_type=PublicKeyType.ED25519_SIG_2018,
+                    controller=did_controller,
+                    authn=True,
                 )
                 routing_keys.append(rk)
                 svc_endpoints = [service.endpoint]
@@ -137,12 +234,12 @@ class BaseConnectionManager:
             for mediation_record in mediation_records:
                 mediator_routing_keys = [
                     PublicKey(
-                        did_info.did,
-                        f"routing-{idx}",
-                        key,
-                        PublicKeyType.ED25519_SIG_2018,
-                        did_controller,  # TODO: get correct controller did_info
-                        True,  # TODO: should this be true?
+                        did=did_info.did,
+                        ident=f"routing-{idx}",
+                        value=key,
+                        pk_type=PublicKeyType.ED25519_SIG_2018,
+                        controller=did_controller,
+                        authn=True,
                     )
                     for idx, key in enumerate(mediation_record.routing_keys)
                 ]
@@ -153,18 +250,18 @@ class BaseConnectionManager:
         for endpoint_index, svc_endpoint in enumerate(svc_endpoints or []):
             endpoint_ident = "indy" if endpoint_index == 0 else f"indy{endpoint_index}"
             service = Service(
-                did_info.did,
-                endpoint_ident,
-                "IndyAgent",
-                [pk],
-                routing_keys,
-                svc_endpoint,
+                did=did_info.did,
+                ident=endpoint_ident,
+                typ="IndyAgent",
+                recip_keys=[pk],
+                routing_keys=routing_keys,
+                endpoint=svc_endpoint,
             )
             did_doc.set(service)
 
         return did_doc
 
-    async def store_did_document(self, did_doc: DIDDoc):
+    async def store_did_document(self, did_doc: Union[DIDDoc, DIDPeerDoc]):
         """Store a DID document.
 
         Args:
@@ -243,8 +340,15 @@ class BaseConnectionManager:
 
         resolver = self._profile.inject(DIDResolver)
         try:
-            doc_dict: dict = await resolver.resolve(self._profile, did, service_accept)
-            doc: ResolvedDocument = pydid.deserialize_document(doc_dict, strict=True)
+            if did.startswith("did:peer:1"):
+                doc = await self.fetch_did_document(did)
+            else:
+                doc_dict: dict = await resolver.resolve(
+                    self._profile, did, service_accept
+                )
+                doc: ResolvedDocument = pydid.deserialize_document(
+                    doc_dict, strict=True
+                )
         except ResolverError as error:
             raise BaseConnectionManagerError(
                 "Failed to resolve public DID in invitation"
@@ -381,18 +485,28 @@ class BaseConnectionManager:
 
             did_doc, _ = await self.fetch_did_document(connection.their_did)
 
-            async with self._profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                my_info = await wallet.get_local_did(connection.my_did)
-
-            results = self.diddoc_connection_targets(
-                did_doc, my_info.verkey, connection.their_label
-            )
+            if isinstance(did_doc, DIDPeerDoc):
+                async with self._profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    key_info = await wallet.create_signing_key(ED25519)
+                results = self.diddoc_connection_targets(
+                    did_doc, key_info.verkey, connection.their_label
+                )
+            else:
+                async with self._profile.session() as session:
+                    wallet = session.inject(BaseWallet)
+                    my_info = await wallet.get_local_did(connection.my_did)
+                results = self.diddoc_connection_targets(
+                    did_doc, my_info.verkey, connection.their_label
+                )
 
         return results
 
     def diddoc_connection_targets(
-        self, doc: DIDDoc, sender_verkey: str, their_label: str = None
+        self,
+        doc: Union[DIDDoc, DIDPeerDoc],
+        sender_verkey: str,
+        their_label: str = None,
     ) -> Sequence[ConnectionTarget]:
         """Get a list of connection targets from a DID Document.
 
@@ -428,7 +542,9 @@ class BaseConnectionManager:
                 )
         return targets
 
-    async def fetch_did_document(self, did: str) -> Tuple[DIDDoc, StorageRecord]:
+    async def fetch_did_document(
+        self, did: str
+    ) -> Tuple[Union[DIDDoc, DIDPeerDoc], StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
@@ -437,4 +553,11 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        return DIDDoc.from_json(record.value), record
+        did_doc_json = record.value
+        did_doc_id = (json.loads(did_doc_json)).get("id")
+        did_doc = (
+            DIDPeerDoc.from_json(did_doc_json)
+            if did_doc_id.startswith("did:peer:1")
+            else DIDDoc.from_json(did_doc_json)
+        )
+        return did_doc, record

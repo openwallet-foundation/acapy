@@ -1638,6 +1638,15 @@ class WalletGroup(ArgumentGroup):
                 "recreate it during provisioning."
             ),
         )
+        parser.add_argument(
+            "--use-legacy-did",
+            action="store_true",
+            env_var="ACAPY_USE_LEGACY_DID",
+            help=(
+                "Use unqualified/legacy DID instead of Peer DID method 1 in "
+                "DIDExchange protocol exchange."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract wallet settings."""
@@ -1666,6 +1675,8 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.storage_creds"] = args.wallet_storage_creds
         if args.replace_public_did:
             settings["wallet.replace_public_did"] = True
+        if args.use_legacy_did:
+            settings["wallet.use_legacy_did"] = True
         if args.recreate_wallet:
             settings["wallet.recreate"] = True
         # check required settings for 'indy' wallets

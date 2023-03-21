@@ -277,6 +277,24 @@ class IndyDID(Regexp):
         )
 
 
+class PeerDID(Regexp):
+    """Validate value against indy DID."""
+
+    EXAMPLE = "did:peer:1zQmZMygzYqNwU6Uhmewx5Xepf2VLp5S4HLSwwgf2aiKZuwa"
+    PATTERN = re.compile(
+        rf"^did:peer:(([01](z)([1-9a-km-zA-HJ-NP-Z]{5,200}))|(2((.[AEVID](z)"
+        rf"([1-9a-km-zA-HJ-NP-Z]{5,200}))+(.(S)[0-9a-zA-Z=]*)?)))$"
+    )
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            IndyDID.PATTERN,
+            error="Value {input} is not an peer decentralized identifier (DID)",
+        )
+
+
 class DIDValidation(Regexp):
     """Validate value against any valid DID spec."""
 

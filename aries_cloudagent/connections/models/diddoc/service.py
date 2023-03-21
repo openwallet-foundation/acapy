@@ -34,13 +34,13 @@ class Service:
 
     def __init__(
         self,
-        did: str,
         ident: str,
         typ: str,
         recip_keys: Union[Sequence, PublicKey],
         routing_keys: Union[Sequence, PublicKey],
         endpoint: str,
         priority: int = 0,
+        did: str = None,
     ):
         """
         Initialize the Service instance.
@@ -61,9 +61,12 @@ class Service:
             ValueError: on bad input controller DID
 
         """
-
-        self._did = canon_did(did)
-        self._id = canon_ref(self._did, ident, ";")
+        if did:
+            self._did = canon_did(did)
+        if self._did is not None:
+            self._id = canon_ref(self._did, ident, ";")
+        else:
+            self._id = ident
         self._type = typ
         self._recip_keys = (
             [recip_keys]
@@ -88,11 +91,27 @@ class Service:
 
         return self._did
 
+    @did.setter
+    def did(self, did: str):
+        """Setter for DID value."""
+        if not did.startswith("did:peer:1"):
+            self._did = canon_did(did)
+        else:
+            self._did = did
+
     @property
     def id(self) -> str:
         """Accessor for the service identifier."""
 
         return self._id
+
+    @id.setter
+    def id(self, ident: str):
+        """Setter for Id value."""
+        if not self._did.startswith("did:peer:1"):
+            self._id = canon_ref(self._did, ident, ";")
+        else:
+            self._id = ident
 
     @property
     def type(self) -> str:
@@ -131,7 +150,9 @@ class Service:
         if self.recip_keys:
             rv["recipientKeys"] = [k.value for k in self.recip_keys]
         if self.routing_keys:
-            rv["routingKeys"] = [k.value for k in self.routing_keys]
+            rv["routingKeys"] = [
+                k.value if isinstance(k, PublicKey) else k for k in self.routing_keys
+            ]
         rv["serviceEndpoint"] = self.endpoint
 
         return rv

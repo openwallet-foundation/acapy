@@ -21,6 +21,8 @@ limitations under the License.
 from base58 import b58decode
 from urllib.parse import urlparse
 
+from .diddoc import DIDDoc, DIDPeerDoc
+
 
 def resource(ref: str, delimiter: str = None) -> str:
     """
@@ -112,3 +114,7 @@ def ok_did(token: str) -> bool:
         return len(b58decode(token)) == 16 if token else False
     except ValueError:
         return False
+
+
+def convert_did_doc_to_peer_did_doc(did_doc: DIDDoc) -> DIDPeerDoc:
+    pass

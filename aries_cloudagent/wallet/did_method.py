@@ -70,6 +70,11 @@ KEY = DIDMethod(
     key_types=[ED25519, BLS12381G2],
     rotation=False,
 )
+PEER = DIDMethod(
+    name="peer",
+    key_types=[ED25519],
+    rotation=False,
+)
 
 
 class DIDMethods:
