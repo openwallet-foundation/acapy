@@ -13,7 +13,7 @@ from pydid import (
     VerificationMethod,
 )
 import pydid
-from pydid.verification_method import Ed25519VerificationKey2018
+from pydid.verification_method import Ed25519VerificationKey2018, JsonWebKey2020
 
 from ..core.error import BaseError
 from ..core.profile import Profile
@@ -37,6 +37,7 @@ from ..wallet.did_info import DIDInfo
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
 from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ..wallet.util import bytes_to_b58, b64_to_bytes
 
 
 class BaseConnectionManagerError(BaseError):
@@ -48,7 +49,6 @@ class BaseConnectionManager:
 
     RECORD_TYPE_DID_DOC = "did_doc"
     RECORD_TYPE_DID_KEY = "did_key"
-    SUPPORTED_KEY_TYPES = (Ed25519VerificationKey2018,)
 
     def __init__(self, profile: Profile):
         """
@@ -277,17 +277,27 @@ class BaseConnectionManager:
             for url in first_didcomm_service.routing_keys
         ]
 
-        for key in [*recipient_keys, *routing_keys]:
-            if not isinstance(key, self.SUPPORTED_KEY_TYPES):
-                raise BaseConnectionManagerError(
-                    f"Key type {type(key).__name__} is not supported"
-                )
-
         return (
             endpoint,
-            [key.material for key in recipient_keys],
-            [key.material for key in routing_keys],
+            [self._extract_key_material_in_base58_format(key) for key in recipient_keys],
+            [self._extract_key_material_in_base58_format(key) for key in routing_keys],
         )
+
+    @staticmethod
+    def _extract_key_material_in_base58_format(method: VerificationMethod) -> str:
+        if isinstance(method, Ed25519VerificationKey2018):
+            return method.material
+        elif isinstance(method, JsonWebKey2020):
+            if method.public_key_jwk.get('kty') == 'OKP':
+                return bytes_to_b58(b64_to_bytes(method.public_key_jwk.get("x"), True))
+            else:
+                raise BaseConnectionManagerError(
+                    f"Key type {type(method).__name__} with kty {method.public_key_jwk.get('kty')} is not supported"
+                )
+        else:
+            raise BaseConnectionManagerError(
+                f"Key type {type(method).__name__} is not supported"
+            )
 
     async def fetch_connection_targets(
         self, connection: ConnRecord
