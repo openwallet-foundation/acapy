@@ -241,7 +241,7 @@ async def schemas_get(request: web.BaseRequest):
         "name": schema_name,
         "version": schema_version,
     }
-    schema_ids = anon_creds_registry.get_schemas(filter)
+    schema_ids = await anon_creds_registry.get_schemas(context.profile, filter)
     return web.json_response(schema_ids)
 
 
@@ -325,7 +325,9 @@ async def cred_defs_get(request: web.BaseRequest):
         "schema_name": query.get("schemaName"),
         "schema_version": query.get("schemaVersion"),
     }
-    cred_def_ids = anon_creds_registry.get_credential_definitions(filter)
+    cred_def_ids = await anon_creds_registry.get_credential_definitions(
+        context.profile, filter
+    )
     return web.json_response(cred_def_ids)
 
 

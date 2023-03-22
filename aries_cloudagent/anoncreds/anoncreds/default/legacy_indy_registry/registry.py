@@ -93,8 +93,26 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 raise AnonCredsResolutionFailed(err)
         return anoncreds_registry_get_schema
 
-    async def get_schemas(self, profile: Profile, filter: str):
+    async def get_schemas(self, profile: Profile, filter: dict):
         """Get schema ids filtered by filter"""
+
+        tag_query = {}
+        schema_issuer_did = filter.get("issuerId")
+        schema_name = filter.get("name")
+        schema_version = filter.get("version")
+
+        if schema_issuer_did:
+            tag_query["schema_issuer_did"] = schema_issuer_did
+        if schema_name:
+            tag_query["schema_name"] = schema_name
+        if schema_version:
+            tag_query["schema_version"] = schema_version
+
+        session = await profile.session()
+        storage = session.inject(BaseStorage)
+        return await storage.find_all_records(
+            type_filter=SCHEMA_SENT_RECORD_TYPE, tag_query=tag_query
+        )
 
     async def register_schema(
         self,
@@ -213,6 +231,33 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def get_credential_definitions(self, profile: Profile, filter: str):
         """Get credential definition ids filtered by filter"""
+
+        tag_query = {}
+        cred_def_id = filter.get("cred_def_id")
+        issuer_id = filter.get("issuer_id")
+        schema_id = filter.get("schema_id")
+        schema_issuer_id = filter.get("schema_issuer_id")
+        schema_name = filter.get("schema_name")
+        schema_version = filter.get("schema_version")
+
+        if cred_def_id:
+            tag_query["cred_def_id"] = cred_def_id
+        if issuer_id:
+            tag_query["issuer_id"] = issuer_id
+        if schema_id:
+            tag_query["schema_id"] = schema_id
+        if schema_issuer_id:
+            tag_query["schema_issuer_id"] = schema_issuer_id
+        if schema_name:
+            tag_query["schema_name"] = schema_name
+        if schema_version:
+            tag_query["schema_version"] = schema_version
+
+        session = await profile.session()
+        storage = session.inject(BaseStorage)
+        return await storage.find_all_records(
+            type_filter=SCHEMA_SENT_RECORD_TYPE, tag_query=tag_query
+        )
 
     async def register_credential_definition(
         self,

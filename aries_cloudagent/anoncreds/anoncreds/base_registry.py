@@ -3,11 +3,12 @@ from abc import ABC, abstractmethod
 from typing import Pattern
 
 from ...config.injection_context import InjectionContext
+from ...core.profile import Profile
 from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
+    AnonCredsRegistryGetCredentialDefinitions,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
-    AnonCredsRegistryGetCredentialDefinitions,
     AnonCredsRegistryGetRevocationRegistryDefinitions,
 )
 from ..models.anoncreds_schema import (
@@ -53,7 +54,9 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
         """Get a schema from the registry."""
 
     @abstractmethod
-    async def get_schemas(self, filter: dict) -> AnonCredsRegistryGetSchemas:
+    async def get_schemas(
+        self, profile: Profile, filter: dict
+    ) -> AnonCredsRegistryGetSchemas:
         """Get a schema ids from the registry."""
 
     @abstractmethod
@@ -64,7 +67,7 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
 
     @abstractmethod
     async def get_credential_definitions(
-        self, filter: dict
+        self, profile: Profile, filter: dict
     ) -> AnonCredsRegistryGetCredentialDefinitions:
         """Get a credential definition ids from the registry."""
 
