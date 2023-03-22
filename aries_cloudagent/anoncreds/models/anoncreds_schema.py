@@ -109,22 +109,23 @@ class SchemaState(OpenAPISchema):
     )
     schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
 
+
 class AnonCredsRegistryGetSchemas(BaseModel):
     """SchemasResponAnonCredsRegistryGetSchemasseSchema"""
+
     class Meta:
         """IndyCredInfo metadata."""
 
         schema_class = "AnonCredsRegistryGetSchemasSchema"
 
-    def __init__(
-        self,
-        schema_ids: list,
-        **kwargs
-    ):
+    def __init__(self, schema_ids: list, **kwargs):
         super().__init__(**kwargs)
         self.schema_ids = schema_ids
+
+
 class AnonCredsRegistryGetSchemasSchema(BaseModelSchema):
     """Parameters and validators for schema list all response."""
+
     class Meta:
         """AnonCredsRegistryGetSchemasSchema metadata."""
 

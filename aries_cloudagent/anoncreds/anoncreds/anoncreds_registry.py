@@ -7,17 +7,22 @@ from ...config.injection_context import InjectionContext
 from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
-    AnonCredsRegistryGetRevocationRegistryDefinition)
+    AnonCredsRegistryGetRevocationRegistryDefinition,
+)
 from ..models.anoncreds_schema import AnonCredsRegistryGetSchema
-from .base_registry import (AnonCredsObjectNotFound,
-                            AnonCredsRegistrationFailed, BaseAnonCredsError,
-                            BaseAnonCredsHandler, BaseAnonCredsRegistrar,
-                            BaseAnonCredsResolver)
+from .base_registry import (
+    AnonCredsObjectNotFound,
+    AnonCredsRegistrationFailed,
+    BaseAnonCredsError,
+    BaseAnonCredsHandler,
+    BaseAnonCredsRegistrar,
+    BaseAnonCredsResolver,
+)
 
 LOGGER = logging.getLogger(__name__)
 
 
-class AnonCredsRegistry():
+class AnonCredsRegistry:
     """AnonCredsRegistry"""
 
     def __init__(self, registries: Optional[List[BaseAnonCredsHandler]] = None):
@@ -27,7 +32,7 @@ class AnonCredsRegistry():
         if registries:
             for registry in registries:
                 self.register(registry)
-    
+
     def register(self, registry: BaseAnonCredsHandler):
         """Register a new registry."""
         if isinstance(registry, BaseAnonCredsResolver):
@@ -62,14 +67,10 @@ class AnonCredsRegistry():
 
         raise AnonCredsObjectNotFound(f"{schema_id} could not be resolved")
 
-    async def get_schemas(self,filter : dict):
+    async def get_schemas(self, filter: dict):
         """Get schema id's from the registry."""
-        results = [
-            resolver.get_schemas(filter)
-            for resolver in self.resolvers
-        ]
+        results = [resolver.get_schemas(filter) for resolver in self.resolvers]
         return itertools.chain.from_iterable(results)
-        
 
     # TODO: determine keyword arguments
     async def register_schema(self, profile, options, schema):
@@ -97,14 +98,11 @@ class AnonCredsRegistry():
         raise AnonCredsObjectNotFound(
             f"{credential_definition_id} could not be resolved"
         )
-    
-    async def get_credential_definitions(
-        self, filter : dict
-    ):
+
+    async def get_credential_definitions(self, filter: dict):
         """Get credential definitions id's from the registry."""
         results = [
-            resolver.get_credential_definitions(filter)
-            for resolver in self.resolvers
+            resolver.get_credential_definitions(filter) for resolver in self.resolvers
         ]
         return itertools.chain.from_iterable(results)
 

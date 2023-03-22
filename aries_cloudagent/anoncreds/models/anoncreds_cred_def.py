@@ -318,6 +318,7 @@ class AnonCredsRegistryGetRevocationRegistryDefinitions(BaseModel):
         super().__init__(**kwargs)
         self.revocation_definition_ids = revocation_definition_ids
 
+
 class AnonCredsRegistryGetRevocationRegistryDefinitionsSchema(BaseModelSchema):
     """AnonCredsRegistryGetRevocationRegistryDefinitionsSchema"""
 
@@ -334,6 +335,7 @@ class AnonCredsRegistryGetRevocationRegistryDefinitionsSchema(BaseModelSchema):
             **INDY_CRED_DEF_ID,
         )
     )
+
 
 class AnonCredsRevocationList(BaseModel):
     """AnonCredsRevocationList"""

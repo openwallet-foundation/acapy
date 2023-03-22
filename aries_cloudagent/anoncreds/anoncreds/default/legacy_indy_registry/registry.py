@@ -7,7 +7,8 @@ from .....core.profile import Profile
 from ....models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
-    AnonCredsRegistryGetRevocationRegistryDefinition)
+    AnonCredsRegistryGetRevocationRegistryDefinition,
+)
 from ....models.anoncreds_schema import AnonCredsRegistryGetSchema
 from ...base_registry import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 
