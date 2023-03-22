@@ -10,7 +10,10 @@ from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinitions,
     AnonCredsRegistryGetRevocationRegistryDefinitions,
 )
-from ..models.anoncreds_schema import AnonCredsRegistryGetSchema, AnonCredsRegistryGetSchemas
+from ..models.anoncreds_schema import (
+    AnonCredsRegistryGetSchema,
+    AnonCredsRegistryGetSchemas,
+)
 
 
 class BaseAnonCredsError(Exception):
@@ -23,6 +26,10 @@ class AnonCredsObjectNotFound(BaseAnonCredsError):
 
 class AnonCredsRegistrationFailed(BaseAnonCredsError):
     """Raised when registering an AnonCreds object fails."""
+
+
+class AnonCredsResolutionFailed(BaseAnonCredsError):
+    """Raised when resolving an AnonCreds object fails."""
 
 
 class BaseAnonCredsHandler(ABC):
@@ -44,7 +51,7 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
     @abstractmethod
     async def get_schema(self, schema_id: str) -> AnonCredsRegistryGetSchema:
         """Get a schema from the registry."""
-    
+
     @abstractmethod
     async def get_schemas(self, filter: dict) -> AnonCredsRegistryGetSchemas:
         """Get a schema ids from the registry."""
@@ -54,7 +61,7 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
         self, credential_definition_id: str
     ) -> AnonCredsRegistryGetCredentialDefinition:
         """Get a credential definition from the registry."""
-    
+
     @abstractmethod
     async def get_credential_definitions(
         self, filter: dict
@@ -66,10 +73,10 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
         self, revocation_registry_id: str
     ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
         """Get a revocation registry definition from the registry."""
-    
+
     @abstractmethod
     async def get_revocation_registry_definitions(
-        self,  filter: dict
+        self, filter: dict
     ) -> AnonCredsRegistryGetRevocationRegistryDefinitions:
         """Get a revocation registry definition ids from the registry."""
 
@@ -78,7 +85,6 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
         self, revocation_registry_id: str, timestamp: str
     ) -> AnonCredsRegistryGetRevocationList:
         """Get a revocation list from the registry."""
-
 
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):

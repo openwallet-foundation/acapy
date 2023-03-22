@@ -10,11 +10,11 @@ from .....ledger.base import BaseLedger
 from .....ledger.error import LedgerError
 from .....ledger.merkel_validation.constants import GET_SCHEMA
 from .....ledger.multiple_ledger.ledger_requests_executor import (
-    GET_CRED_DEF, IndyLedgerRequestsExecutor)
-from .....messaging.credential_definitions.util import (
-    CRED_DEF_SENT_RECORD_TYPE, notify_cred_def_event)
-from .....messaging.schemas.util import (SCHEMA_SENT_RECORD_TYPE,
-                                         notify_schema_event)
+    GET_CRED_DEF,
+    IndyLedgerRequestsExecutor,
+)
+from .....messaging.credential_definitions.util import notify_cred_def_event
+from .....messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE, notify_schema_event
 from .....multitenant.base import BaseMultitenantManager
 from .....revocation.error import RevocationError
 from .....revocation.indy import IndyRevocation
@@ -26,9 +26,15 @@ from ....models.anoncreds_cred_def import (
     AnonCredsCredentialDefinitionValue,
     AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
-    AnonCredsRegistryGetRevocationRegistryDefinition)
+    AnonCredsRegistryGetRevocationRegistryDefinition,
+)
 from ....models.anoncreds_schema import AnonCredsRegistryGetSchema, AnonCredsSchema
-from ...base_registry import BaseAnonCredsRegistrar, BaseAnonCredsResolver
+from ...base_registry import (
+    AnonCredsRegistrationFailed,
+    AnonCredsResolutionFailed,
+    BaseAnonCredsRegistrar,
+    BaseAnonCredsResolver,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,7 +54,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Setup."""
         print("Successfully registered LegacyIndyRegistry")
 
-    async def get_schema(self, profile: Profile, schema_id: str) -> AnonCredsRegistryGetSchema:
+    async def get_schema(
+        self, profile: Profile, schema_id: str
+    ) -> AnonCredsRegistryGetSchema:
         """Get a schema from the registry."""
 
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
@@ -64,7 +72,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             reason = "No ledger available"
             if not profile.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
-            raise # TODO: AnonCreds error
+            raise AnonCredsResolutionFailed(reason)
 
         async with ledger:
             try:
@@ -73,16 +81,16 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     issuer_id=schema["id"].split(":")[0],
                     attr_names=schema["attrNames"],
                     name=schema["name"],
-                    version=schema["ver"]
+                    version=schema["ver"],
                 )
                 anoncreds_registry_get_schema = AnonCredsRegistryGetSchema(
                     schema=anonscreds_schema,
                     schema_id=schema["id"],
                     resolution_metadata={"ledger_id": ledger_id},
-                    schema_metadata={"seqNo": schema["seqNo"]}
+                    schema_metadata={"seqNo": schema["seqNo"]},
                 )
             except LedgerError as err:
-                raise # TODO: AnonCreds error
+                raise AnonCredsResolutionFailed(err)
         return anoncreds_registry_get_schema
 
     async def get_schemas(self, profile: Profile, filter: str):
@@ -104,7 +112,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 tag_query=tag_query,
             )
             if 0 < len(found):
-                raise # TODO: Anoncreds error: f"Schema {schema_name} {schema_version} already exists"
+                raise AnonCredsRegistrationFailed(
+                    f"Schema {schema.name} {schema.version} already exists."
+                )
 
         # Assume endorser role on the network, no option for 3rd-party endorser
         ledger = profile.inject_or(BaseLedger)
@@ -112,7 +122,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             reason = "No ledger available"
             if not profile.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
-            raise # TODO: Anoncreds error
+            raise AnonCredsRegistrationFailed(reason)
 
         issuer = profile.inject(AnonCredsIssuer)
         async with ledger:
@@ -128,9 +138,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     )
                 )
             except (AnonCredsIssuerError, LedgerError) as err:
-                raise # TODO: Anoncreds error
-        
-        # TODO: use AnonCredsSchema object?
+                raise AnonCredsRegistrationFailed(err)
+
         meta_data = {
             "context": {
                 "schema_id": schema_id,
@@ -140,7 +149,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             },
             "processing": {},
         }
-
         # Notify event
         await notify_schema_event(profile, schema_id, meta_data)
 
@@ -150,16 +158,14 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 "state": "finished",
                 "schema_id": schema_id,
                 "schema": {
-                "attrNames": schema_def["attrNames"],
-                "name": schema_def["name"],
-                "version": schema_def["ver"],
-                "issuerId": schema.issuer_id
-                }
+                    "attrNames": schema_def["attrNames"],
+                    "name": schema_def["name"],
+                    "version": schema_def["ver"],
+                    "issuerId": schema.issuer_id,
+                },
             },
             "registration_metadata": {},
-            "schema_metadata": {
-                "seqNo": schema_def["seqNo"]
-            }
+            "schema_metadata": {"seqNo": schema_def["seqNo"]},
         }
 
     async def get_credential_definition(
@@ -181,7 +187,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             reason = "No ledger available"
             if not profile.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
-            raise # Anoncreds error | web.HTTPForbidden(reason=reason)
+            raise AnonCredsResolutionFailed(reason)
 
         async with ledger:
             cred_def = await ledger.get_credential_definition(cred_def_id)
@@ -195,20 +201,19 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 tag=cred_def["tag"],
                 value=anoncreds_credential_definition_value,
             )
-            anoncreds_registry_get_credential_definition = AnonCredsRegistryGetCredentialDefinition(
-                credential_definition=anoncreds_credential_definition,
-                credential_definition_id=cred_def["id"],
-                resolution_metadata={},
-                credential_definition_metadata={},
+            anoncreds_registry_get_credential_definition = (
+                AnonCredsRegistryGetCredentialDefinition(
+                    credential_definition=anoncreds_credential_definition,
+                    credential_definition_id=cred_def["id"],
+                    resolution_metadata={},
+                    credential_definition_metadata={},
+                )
             )
-        return cred_def
-
-        # job_id
+        return anoncreds_registry_get_credential_definition
 
     async def get_credential_definitions(self, profile: Profile, filter: str):
         """Get credential definition ids filtered by filter"""
 
-    # TODO: determine keyword arguments
     async def register_credential_definition(
         self,
         profile: Profile,
@@ -225,7 +230,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             reason = "No ledger available"
             if not profile.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
-            raise # Anoncreds error web.HTTPForbidden(reason=reason)
+            raise AnonCredsRegistrationFailed(reason)
 
         issuer = profile.inject(AnonCredsIssuer)
         try:  # even if in wallet, send it and raise if erroneously so
@@ -237,13 +242,13 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                         signature_type=None,
                         tag=tag,
                         support_revocation=support_revocation,
-                        write_ledger=True,          # TODO: check
+                        write_ledger=True,
                         endorser_did=issuer_id,
                     )
                 )
 
         except (AnonCredsIssuerError, LedgerError) as e:
-            raise # Anoncreds error web.HTTPBadRequest(reason=e.message) from e
+            raise AnonCredsRegistrationFailed(e)
 
         issuer_did = cred_def_id.split(":")[0]
         meta_data = {
@@ -281,13 +286,13 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                             "r": cred_def["value"]["primary"]["r"],
                             "rctxt": cred_def["value"]["primary"]["rctxt"],
                             "s": cred_def["value"]["primary"]["s"],
-                            "z": cred_def["value"]["primary"]["z"]
+                            "z": cred_def["value"]["primary"]["z"],
                         }
-                    }
-                }
+                    },
+                },
             },
             "registration_metadata": {},
-            "credential_definition_metadata": {}
+            "credential_definition_metadata": {},
         }
 
     async def get_revocation_registry_definition(
@@ -299,7 +304,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             revoc = IndyRevocation(profile)
             rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         except StorageNotFoundError as err:
-            raise # Anoncreds error web.HTTPNotFound(reason=err.roll_up) from err
+            raise AnonCredsResolutionFailed(err)
 
         return rev_reg.serialize
         # use AnonCredsRevocationRegistryDefinition object
@@ -320,16 +325,16 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             revoc = IndyRevocation(profile)
             rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
 
-            rev_reg_resp = await rev_reg.send_def(
+            await rev_reg.send_def(
                 profile,
                 write_ledger=True,
                 endorser_did=issuer_id,
             )
             LOGGER.debug("published rev reg definition: %s", rev_reg_id)
         except StorageNotFoundError as err:
-            raise # Anoncreds error web.HTTPNotFound(reason=err.roll_up) from err
+            raise AnonCredsRegistrationFailed(err)
         except RevocationError as err:
-            raise # Anoncreds error web.HTTPBadRequest(reason=err.roll_up) from err
+            raise AnonCredsRegistrationFailed(err)
 
     async def get_revocation_list(
         self, revocation_registry_id: str, timestamp: str
