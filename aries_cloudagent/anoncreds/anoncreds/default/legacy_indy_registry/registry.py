@@ -167,10 +167,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     ) -> AnonCredsRegistryGetCredentialDefinition:
         """Get a credential definition from the registry."""
 
-<<<<<<< HEAD
-    async def get_credential_definitions(self, profile: Profile, filter: str):
-        """Get credential definition ids filtered by filter"""
-=======
         async with profile.session() as session:
             multitenant_mgr = session.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
@@ -209,7 +205,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         # job_id
 
->>>>>>> feat: legacy indy schema, cred def logic
+    async def get_credential_definitions(self, profile: Profile, filter: str):
+        """Get credential definition ids filtered by filter"""
 
     # TODO: determine keyword arguments
     async def register_credential_definition(
@@ -298,10 +295,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
         """Get a revocation registry definition from the registry."""
 
-<<<<<<< HEAD
-    async def get_revocation_registry_definitions(self, profile: Profile, filter: str):
-        """Get credential definition ids filtered by filter"""
-=======
         try:
             revoc = IndyRevocation(profile)
             rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
@@ -310,7 +303,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         return rev_reg.serialize
         # use AnonCredsRevocationRegistryDefinition object
->>>>>>> feat: legacy indy schema, cred def logic
+
+    async def get_revocation_registry_definitions(self, profile: Profile, filter: str):
+        """Get credential definition ids filtered by filter"""
 
     # TODO: determine keyword arguments
     async def register_revocation_registry_definition(
