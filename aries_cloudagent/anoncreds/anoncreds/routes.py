@@ -207,7 +207,7 @@ async def schema_get(request: web.BaseRequest):
     schema_id = request.match_info["schemaId"]
     result = await anon_creds_registry.get_schema(context.profile, schema_id)
 
-    return web.json_response(result)
+    return web.json_response(result.serialize())
 
 
 @docs(tags=["anoncreds"], summary="")
