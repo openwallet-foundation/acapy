@@ -222,6 +222,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         tag: str,
         rev_reg_size: int,
         issuer_id: str,
+        options,  # TODO: handle options
     ):
         """Register a credential definition on the registry."""
 
