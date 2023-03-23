@@ -1,4 +1,5 @@
 include aries_cloudagent/config/default_logging_config.ini
+include aries_cloudagent/commands/default_version_upgrade_config.yml
 include requirements.txt
 include requirements.dev.txt
 include requirements.indy.txt
