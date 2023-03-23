@@ -1,7 +1,7 @@
 """Base Indy Holder class."""
 
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 from ..core.error import BaseError
 from ..ledger.base import BaseLedger
@@ -72,6 +72,39 @@ class AnonCredsHolder(ABC, metaclass=ABCMeta):
 
         Returns: Attribute MIME type or dict mapping attribute names to MIME types
             attr_meta_json = all_meta.tags.get(attr)
+
+        """
+
+    @abstractmethod
+    async def get_credentials(self, start: int, count: int, wql: dict):
+        """
+        Get credentials stored in the wallet.
+
+        Args:
+            start: Starting index
+            count: Number of records to return
+            wql: wql query dict
+
+        """
+
+    @abstractmethod
+    async def get_credentials_for_presentation_request_by_referent(
+        self,
+        presentation_request: dict,
+        referents: Sequence[str],
+        start: int,
+        count: int,
+        extra_query: Optional[dict] = None,
+    ):
+        """
+        Get credentials stored in the wallet.
+
+        Args:
+            presentation_request: Valid presentation request from issuer
+            referents: Presentation request referents to use to search for creds
+            start: Starting index
+            count: Maximum number of records to return
+            extra_query: wql query dict
 
         """
 

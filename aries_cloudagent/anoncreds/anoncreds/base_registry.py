@@ -13,6 +13,7 @@ from ..models.anoncreds_cred_def import (
 from ..models.anoncreds_schema import (
     AnonCredsRegistryGetSchema,
     AnonCredsRegistryGetSchemas,
+    SchemaResult,
 )
 
 
@@ -86,7 +87,7 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
     # TODO: determine keyword arguments
     @abstractmethod
-    async def register_schema(self):
+    async def register_schema(self) -> SchemaResult:
         """Register a schema on the registry."""
 
     # TODO: determine keyword arguments

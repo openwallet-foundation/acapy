@@ -47,7 +47,7 @@ class AnonCredsRegistry:
             if await resolver.supports(identifier)
         ]
 
-    async def _registrars_for_identifiers(self, identifier: str):
+    async def _registrars_for_identifier(self, identifier: str):
         return [
             registrar
             for registrar in self.registrars
@@ -75,7 +75,7 @@ class AnonCredsRegistry:
     # TODO: determine keyword arguments
     async def register_schema(self, profile, options, schema):
         """Register a schema on the registry."""
-        for registrar in await self._registrars_for_identifiers(schema.issuer_id):
+        for registrar in await self._registrars_for_identifier(schema.issuer_id):
             try:
                 return await registrar.register_schema(profile, options, schema)
             except BaseAnonCredsError:
@@ -109,7 +109,7 @@ class AnonCredsRegistry:
     # TODO: determine keyword arguments
     async def register_credential_definition(self):
         """Register a credential definition on the registry."""
-        for registrar in await self._registrars_for_identifiers("something"):
+        for registrar in await self._registrars_for_identifier("something"):
             try:
                 return await registrar.register_credential_definition()
             except BaseAnonCredsError:
@@ -136,7 +136,7 @@ class AnonCredsRegistry:
     # TODO: determine keyword arguments
     async def register_revocation_registry_definition(self):
         """Register a revocation registry definition on the registry."""
-        for registrar in await self._registrars_for_identifiers("something"):
+        for registrar in await self._registrars_for_identifier("something"):
             try:
                 return await registrar.register_revocation_registry_definition()
             except BaseAnonCredsError:
@@ -163,7 +163,7 @@ class AnonCredsRegistry:
     # TODO: determine keyword arguments
     async def register_revocation_list(self):
         """Register a revocation list on the registry."""
-        for registrar in await self._registrars_for_identifiers("something"):
+        for registrar in await self._registrars_for_identifier("something"):
             try:
                 return await registrar.register_revocation_registry_definition()
             except BaseAnonCredsError:
