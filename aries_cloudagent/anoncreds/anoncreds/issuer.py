@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 
 from typing import Sequence, Tuple
 
@@ -16,8 +17,11 @@ from anoncreds import (
     RevocationRegistry,
     RevocationRegistryDefinition,
     RevocationRegistryDelta,
+    RevocationStatusList,
     Schema,
 )
+
+from aries_cloudagent.anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
 
 from ...askar.profile import AskarProfile
 
@@ -35,14 +39,14 @@ CATEGORY_CRED_DEF = "credential_def"
 CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
 CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
 CATEGORY_SCHEMA = "schema"
-CATEGORY_REV_REG = "revocation_reg"
+CATEGORY_REV_STATUS_LIST = "revocation_status_list"
 CATEGORY_REV_REG_INFO = "revocation_reg_info"
 CATEGORY_REV_REG_DEF = "revocation_reg_def"
 CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
 CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
 
 
-class IndyCredxIssuer(AnonCredsIssuer):
+class AnonCredsRsIssuer(AnonCredsIssuer):
     """Indy-Credx issuer class."""
 
     def __init__(self, profile: AskarProfile):
@@ -85,14 +89,29 @@ class IndyCredxIssuer(AnonCredsIssuer):
                 schema_name, schema_version, origin_did, attribute_names
             )
             schema_id = f"{origin_did}:2:{schema_name}:{schema_version}"
-            schema_json = schema.to_json()
-            async with self._profile.session() as session:
-                await session.handle.insert(CATEGORY_SCHEMA, schema_id, schema_json)
+            anoncreds_registry = self._profile.inject(AnonCredsRegistry)
+
+            schema_result = await anoncreds_registry.register_schema(
+                origin_did, schema_name, schema_version, attribute_names
+            )
+            if schema_result.schema_state.state == "finished":
+                await self.store_schema(schema_id, schema_result.schema_state.schema)
+
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating schema") from err
         except AskarError as err:
             raise AnonCredsIssuerError("Error storing schema") from err
         return (schema_id, schema_json)
+
+    async def store_schema(
+        self,
+        schema_id: str,
+        schema: Schema,
+    ):
+        """Store schema after reaching finished state."""
+        schema_json = schema.to_json()
+        async with self._profile.session() as session:
+            await session.handle.insert(CATEGORY_SCHEMA, schema_id, schema_json)
 
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
@@ -287,7 +306,9 @@ class IndyCredxIssuer(AnonCredsIssuer):
         if revoc_reg_id:
             try:
                 async with self._profile.transaction() as txn:
-                    rev_reg = await txn.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
+                    rev_status_list = await txn.handle.fetch(
+                        CATEGORY_REV_STATUS_LIST, revoc_reg_id
+                    )
                     rev_reg_info = await txn.handle.fetch(
                         CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                     )
@@ -297,7 +318,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                     rev_key = await txn.handle.fetch(
                         CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
                     )
-                    if not rev_reg:
+                    if not rev_status_list:
                         raise AnonCredsIssuerError("Revocation registry not found")
                     if not rev_reg_info:
                         raise AnonCredsIssuerError(
@@ -343,9 +364,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
             revoc = CredentialRevocationConfig(
                 rev_reg_def,
                 rev_key.raw_value,
-                rev_reg.raw_value,
                 rev_reg_index,
-                rev_info.get("used_ids") or [],
                 tails_file_path,
             )
             credential_revocation_id = str(rev_reg_index)
@@ -354,20 +373,19 @@ class IndyCredxIssuer(AnonCredsIssuer):
             credential_revocation_id = None
 
         try:
-            (
-                credential,
-                _upd_rev_reg,
-                _delta,
-            ) = await asyncio.get_event_loop().run_in_executor(
+            credential = await asyncio.get_event_loop().run_in_executor(
                 None,
-                Credential.create,
-                cred_def.raw_value,
-                cred_def_private.raw_value,
-                credential_offer,
-                credential_request,
-                raw_values,
-                None,
-                revoc,
+                lambda: Credential.create(
+                    cred_def.raw_value,
+                    cred_def_private.raw_value,
+                    credential_offer,
+                    credential_request,
+                    raw_values,
+                    None,
+                    revoc_reg_id,
+                    rev_status_list,
+                    revoc,
+                ),
             )
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating credential") from err
@@ -409,7 +427,9 @@ class IndyCredxIssuer(AnonCredsIssuer):
                     rev_reg_def = await session.handle.fetch(
                         CATEGORY_REV_REG_DEF, revoc_reg_id
                     )
-                    rev_reg = await session.handle.fetch(CATEGORY_REV_REG, revoc_reg_id)
+                    rev_status_list = await session.handle.fetch(
+                        CATEGORY_REV_STATUS_LIST, revoc_reg_id
+                    )
                     rev_reg_info = await session.handle.fetch(
                         CATEGORY_REV_REG_INFO, revoc_reg_id
                     )
@@ -417,7 +437,7 @@ class IndyCredxIssuer(AnonCredsIssuer):
                     raise AnonCredsIssuerError(
                         "Revocation registry definition not found"
                     )
-                if not rev_reg:
+                if not rev_status_list:
                     raise AnonCredsIssuerError("Revocation registry not found")
                 if not rev_reg_info:
                     raise AnonCredsIssuerError("Revocation registry metadata not found")
@@ -472,18 +492,18 @@ class IndyCredxIssuer(AnonCredsIssuer):
                 break
 
             try:
-                rev_reg = RevocationRegistry.load(rev_reg.raw_value)
+                rev_status_list = RevocationStatusList.load(rev_status_list.raw_value)
             except AnoncredsError as err:
                 raise AnonCredsIssuerError("Error loading revocation registry") from err
 
             try:
                 delta = await asyncio.get_event_loop().run_in_executor(
                     None,
-                    lambda: rev_reg.update(
-                        rev_reg_def,
+                    lambda: rev_status_list.update(
+                        int(time.time()),
                         None,  # issued
                         list(rev_crids),  # revoked
-                        tails_file_path,
+                        rev_reg_def,
                     ),
                 )
             except AnoncredsError as err:
@@ -493,13 +513,13 @@ class IndyCredxIssuer(AnonCredsIssuer):
 
             try:
                 async with self._profile.transaction() as txn:
-                    rev_reg_upd = await txn.handle.fetch(
-                        CATEGORY_REV_REG, revoc_reg_id, for_update=True
+                    rev_status_list_upd = await txn.handle.fetch(
+                        CATEGORY_REV_STATUS_LIST, revoc_reg_id, for_update=True
                     )
                     rev_info_upd = await txn.handle.fetch(
                         CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                     )
-                    if not rev_reg_upd or not rev_reg_info:
+                    if not rev_status_list_upd or not rev_reg_info:
                         LOGGER.warn(
                             "Revocation registry missing, skipping update: {}",
                             revoc_reg_id,
@@ -511,7 +531,9 @@ class IndyCredxIssuer(AnonCredsIssuer):
                         # handle concurrent update to the registry by retrying
                         continue
                     await txn.handle.replace(
-                        CATEGORY_REV_REG, revoc_reg_id, rev_reg.to_json_buffer()
+                        CATEGORY_REV_STATUS_LIST,
+                        revoc_reg_id,
+                        rev_status_list.to_json_buffer(),
                     )
                     used_ids.update(rev_crids)
                     rev_info_upd["used_ids"] = sorted(used_ids)
@@ -582,6 +604,8 @@ class IndyCredxIssuer(AnonCredsIssuer):
             A tuple of the revocation registry ID, JSON, and entry JSON
 
         """
+        # TODO Passed in by caller?
+        rev_reg_def_id = f"{origin_did}:4:{cred_def_id}:CL_ACCUM:{tag}"
         try:
             async with self._profile.session() as session:
                 cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
@@ -598,29 +622,33 @@ class IndyCredxIssuer(AnonCredsIssuer):
             (
                 rev_reg_def,
                 rev_reg_def_private,
-                rev_reg,
-                _rev_reg_delta,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
                 lambda: RevocationRegistryDefinition.create(
                     cred_def_id,
                     cred_def.raw_value,
+                    origin_did,
                     tag,
                     revoc_def_type,
                     max_cred_num,
                     tails_dir_path=tails_base_path,
                 ),
             )
+
+            rev_status_list = RevocationStatusList.create(
+                rev_reg_def_id, rev_reg_def, origin_did, int(time.time())
+            )
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating revocation registry") from err
 
-        rev_reg_def_id = rev_reg_def.id
         rev_reg_def_json = rev_reg_def.to_json()
-        rev_reg_json = rev_reg.to_json()
+        rev_status_list_json = rev_status_list.to_json()
 
         try:
             async with self._profile.transaction() as txn:
-                await txn.handle.insert(CATEGORY_REV_REG, rev_reg_def_id, rev_reg_json)
+                await txn.handle.insert(
+                    CATEGORY_REV_STATUS_LIST, rev_reg_def_id, rev_status_list_json
+                )
                 await txn.handle.insert(
                     CATEGORY_REV_REG_INFO,
                     rev_reg_def_id,
@@ -641,5 +669,5 @@ class IndyCredxIssuer(AnonCredsIssuer):
         return (
             rev_reg_def_id,
             rev_reg_def_json,
-            rev_reg_json,
+            rev_status_list_json,
         )

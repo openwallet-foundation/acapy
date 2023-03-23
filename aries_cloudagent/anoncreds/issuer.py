@@ -3,6 +3,8 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Sequence, Tuple
 
+from anoncreds import Schema
+
 from ..core.error import BaseError
 
 
@@ -57,6 +59,14 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
             A tuple of the schema ID and JSON
 
         """
+
+    @abstractmethod
+    async def store_schema(
+        self,
+        schema_id: str,
+        schema: Schema,
+    ) -> Tuple[str, str]:
+        """Store a schema in the wallet."""
 
     @staticmethod
     def make_credential_definition_id(

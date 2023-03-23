@@ -92,7 +92,6 @@ class TestIndyCredxIssuance(AsyncTestCase):
         assert "IndyCredxIssuer" in str(self.issuer)
         assert "IndyCredxVerifier" in str(self.verifier)
 
-    @pytest.mark.skip(reason="skipped due to anoncreds-rs issue pending resolution")
     async def test_issue_store_non_rev(self):
         assert (
             self.issuer.make_schema_id(TEST_DID, SCHEMA_NAME, SCHEMA_VERSION)
@@ -194,7 +193,6 @@ class TestIndyCredxIssuance(AsyncTestCase):
 
         await self.holder.delete_credential(cred_id)
 
-    @pytest.mark.skip(reason="skipped due to anoncreds-rs issue pending resolution")
     async def test_issue_store_rev(self):
         assert (
             self.issuer.make_schema_id(TEST_DID, SCHEMA_NAME, SCHEMA_VERSION)

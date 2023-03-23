@@ -1,8 +1,9 @@
 """Anoncreds Schema OpenAPI validators"""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from marshmallow import EXCLUDE, fields
+from marshmallow.validate import OneOf
 
 from aries_cloudagent.anoncreds.models.anoncreds_valid import (
     ANONCREDS_SCHEMA_ID,
@@ -15,7 +16,7 @@ from ...messaging.valid import GENERIC_DID, UUIDFour
 
 
 class AnonCredsSchema(BaseModel):
-    """AnonCredsSchema"""
+    """An AnonCreds Schema object."""
 
     class Meta:
         """AnonCredsSchema metadata."""
@@ -33,7 +34,7 @@ class AnonCredsSchema(BaseModel):
 
 
 class AnonCredsSchemaSchema(BaseModelSchema):
-    """Marshmallow schema for indy schema."""
+    """Marshmallow schema for anoncreds schema."""
 
     class Meta:
         """AnonCredsSchemaSchema metadata."""
@@ -61,10 +62,10 @@ class AnonCredsSchemaSchema(BaseModelSchema):
 
 
 class AnonCredsRegistryGetSchema(BaseModel):
-    """AnonCredsRegistryGetSchema"""
+    """Result of resolving a schema."""
 
     class Meta:
-        """IndyCredInfo metadata."""
+        """AnonCredsRegistryGetSchema metadata."""
 
         schema_class = "AnonCredsRegistryGetSchemaSchema"
 
@@ -100,31 +101,22 @@ class AnonCredsRegistryGetSchemaSchema(BaseModelSchema):
     schema_metadata = fields.Dict()
 
 
-class SchemaState(OpenAPISchema):
-    """Parameters and validators for schema state."""
-
-    state = fields.Str()  # TODO: create validator for only possible states
-    schema_id = fields.Str(
-        data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
-    )
-    schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
-
 class AnonCredsRegistryGetSchemas(BaseModel):
-    """SchemasResponAnonCredsRegistryGetSchemasseSchema"""
+    """Result of retrieving created schemas."""
+
     class Meta:
         """IndyCredInfo metadata."""
 
         schema_class = "AnonCredsRegistryGetSchemasSchema"
 
-    def __init__(
-        self,
-        schema_ids: list,
-        **kwargs
-    ):
+    def __init__(self, schema_ids: list, **kwargs):
         super().__init__(**kwargs)
         self.schema_ids = schema_ids
+
+
 class AnonCredsRegistryGetSchemasSchema(BaseModelSchema):
     """Parameters and validators for schema list all response."""
+
     class Meta:
         """AnonCredsRegistryGetSchemasSchema metadata."""
 
@@ -138,13 +130,62 @@ class AnonCredsRegistryGetSchemasSchema(BaseModelSchema):
     )
 
 
-class PostSchemaResponseSchema(OpenAPISchema):
+class SchemaState(BaseModel):
+    """Model representing the state of a schema after beginning registration."""
+
+    class Meta:
+        """SchemaState metadata."""
+
+        schema_class = "SchemaStateSchema"
+
+    def __init__(self, state: str, schema_id: str, schema: AnonCredsSchema, **kwargs):
+        """Initialize a new SchemaState."""
+        super().__init__(**kwargs)
+        self.state = state
+        self.schema_id = schema_id
+        self.schema = schema
+
+
+class SchemaStateSchema(BaseModelSchema):
+    """Parameters and validators for schema state."""
+
+    state = fields.Str(validate=OneOf(["finished", "failed", "action", "wait"]))
+    schema_id = fields.Str(
+        data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
+    )
+    schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
+
+
+class SchemaResult(BaseModel):
+    """Result of registering a schema."""
+
+    class Meta:
+        """SchemaResult metadata."""
+
+        schema_class = "SchemaResultSchema"
+
+    def __init__(
+        self,
+        job_id: Optional[str],
+        schema_state: SchemaState,
+        registration_metadata: Optional[dict] = None,
+        schema_metadata: Optional[dict] = None,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.job_id = job_id
+        self.schema_state = schema_state
+        self.registration_metadata = registration_metadata
+        self.schema_metadata = schema_metadata
+
+
+class SchemaResultSchema(BaseModelSchema):
     """Parameters and validators for schema state."""
 
     job_id = fields.Str()
-    schema_state = fields.Nested(SchemaState())
-    # For indy, schema_metadata will contain the seqNo
+    schema_state = fields.Nested(SchemaStateSchema())
     registration_metadata = fields.Dict()
+    # For indy, schema_metadata will contain the seqNo
     schema_metadata = fields.Dict()
 
 

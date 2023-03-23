@@ -6,7 +6,7 @@ import logging
 import re
 import uuid
 
-from typing import Dict, Sequence, Tuple, Union
+from typing import Dict, Optional, Sequence, Tuple, Union
 
 from aries_askar import AskarError, AskarErrorCode
 from anoncreds import (
@@ -286,7 +286,7 @@ class IndyCredxHolder(AnonCredsHolder):
         referents: Sequence[str],
         start: int,
         count: int,
-        extra_query: dict = {},
+        extra_query: Optional[dict] = None,
     ):
         """
         Get credentials stored in the wallet.

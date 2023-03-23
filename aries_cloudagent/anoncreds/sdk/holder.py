@@ -5,7 +5,7 @@ import logging
 import re
 
 from collections import OrderedDict
-from typing import Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
 
 import indy.anoncreds
 from indy.error import ErrorCode, IndyError
@@ -189,7 +189,7 @@ class IndySdkHolder(AnonCredsHolder):
         referents: Sequence[str],
         start: int,
         count: int,
-        extra_query: dict = {},
+        extra_query: Optional[dict] = None,
     ):
         """
         Get credentials stored in the wallet.
@@ -226,13 +226,11 @@ class IndySdkHolder(AnonCredsHolder):
         with IndyErrorHandler(
             "Error when constructing wallet credential query", AnonCredsHolderError
         ):
-            search_handle = (
-                await (
-                    indy.anoncreds.prover_search_credentials_for_proof_req(
-                        self.wallet.handle,
-                        json.dumps(presentation_request),
-                        json.dumps(extra_query),
-                    )
+            search_handle = await (
+                indy.anoncreds.prover_search_credentials_for_proof_req(
+                    self.wallet.handle,
+                    json.dumps(presentation_request),
+                    json.dumps(extra_query if extra_query else {}),
                 )
             )
 
