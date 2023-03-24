@@ -1,6 +1,8 @@
 """Base Registry"""
 from abc import ABC, abstractmethod
-from typing import Pattern
+from typing import Generic, Optional, Pattern, Sequence, Tuple, TypeVar
+
+from aries_cloudagent.core.error import BaseError
 
 from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
@@ -18,7 +20,10 @@ from ..models.anoncreds_schema import (
 )
 
 
-class BaseAnonCredsError(Exception):
+T = TypeVar("T")
+
+
+class BaseAnonCredsError(BaseError):
     """Base error class for AnonCreds."""
 
 
@@ -26,11 +31,40 @@ class AnonCredsObjectNotFound(BaseAnonCredsError):
     """Raised when object is not found in resolver."""
 
 
-class AnonCredsRegistrationFailed(BaseAnonCredsError):
+class AnonCredsRegistrationError(BaseAnonCredsError):
     """Raised when registering an AnonCreds object fails."""
 
 
-class AnonCredsResolutionFailed(BaseAnonCredsError):
+class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
+    """Raised when an AnonCreds object already exists."""
+
+    def __init__(
+        self, message: Optional[str] = None, obj: Optional[T] = None, *args, **kwargs
+    ):
+        super().__init__(message, obj, *args, **kwargs)
+        self.obj = obj
+
+    @property
+    def message(self):
+        if self.args[0] and self.args[1]:
+            return f"{self.args[0]}: {self.args[1]}"
+        else:
+            return super().message
+
+
+class AnonCredsSchemaAlreadyExists(AnonCredsObjectAlreadyExists[Tuple[str, dict]]):
+    """Raised when a schema already exists."""
+
+    @property
+    def schema_id(self):
+        return self.obj[0]
+
+    @property
+    def schema(self):
+        return self.obj[1]
+
+
+class AnonCredsResolutionError(BaseAnonCredsError):
     """Raised when resolving an AnonCreds object fails."""
 
 
@@ -92,9 +126,16 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
 
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
-    # TODO: determine keyword arguments
     @abstractmethod
-    async def register_schema(self) -> SchemaResult:
+    async def register_schema(
+        self,
+        profile: Profile,
+        issuer_id: str,
+        name: str,
+        version: str,
+        attr_names: Sequence[str],
+        options: Optional[dict] = None,
+    ) -> SchemaResult:
         """Register a schema on the registry."""
 
     # TODO: determine keyword arguments

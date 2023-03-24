@@ -1,9 +1,11 @@
 """Base Indy Issuer class."""
 
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 from anoncreds import Schema
+
+from .models.anoncreds_schema import SchemaResult
 
 from ..core.error import BaseError
 
@@ -41,11 +43,12 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def create_schema(
         self,
-        origin_did: str,
+        issuer_id: str,
         schema_name: str,
         schema_version: str,
         attribute_names: Sequence[str],
-    ) -> Tuple[str, str]:
+        options: Optional[dict] = None,
+    ) -> SchemaResult:
         """
         Create a new credential schema and store it in the wallet.
 
@@ -67,6 +70,15 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
         schema: Schema,
     ) -> Tuple[str, str]:
         """Store a schema in the wallet."""
+
+    @abstractmethod
+    async def get_created_schemas(
+        self,
+        name: Optional[str] = None,
+        version: Optional[str] = None,
+        issuer_id: Optional[str] = None,
+    ) -> Sequence[str]:
+        """Retrieve stored schemas from the wallet."""
 
     @staticmethod
     def make_credential_definition_id(

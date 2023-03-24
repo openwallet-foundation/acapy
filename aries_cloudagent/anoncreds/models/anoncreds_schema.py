@@ -7,12 +7,11 @@ from marshmallow.validate import OneOf
 
 from aries_cloudagent.anoncreds.models.anoncreds_valid import (
     ANONCREDS_SCHEMA_ID,
-    ANONCREDS_VERSION,
 )
 from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
 
 from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import GENERIC_DID, UUIDFour
+from ...messaging.valid import UUIDFour
 
 
 class AnonCredsSchema(BaseModel):
@@ -58,14 +57,14 @@ class AnonCredsSchemaSchema(BaseModelSchema):
         description="Schema name",
         example=ANONCREDS_SCHEMA_ID["example"].split(":")[2],
     )
-    version = fields.Str(description="Schema version", **ANONCREDS_VERSION)
+    version = fields.Str(description="Schema version")
 
 
-class AnonCredsRegistryGetSchema(BaseModel):
+class GetSchemaResult(BaseModel):
     """Result of resolving a schema."""
 
     class Meta:
-        """AnonCredsRegistryGetSchema metadata."""
+        """GetSchemaResult metadata."""
 
         schema_class = "AnonCredsRegistryGetSchemaSchema"
 
@@ -84,13 +83,13 @@ class AnonCredsRegistryGetSchema(BaseModel):
         self.schema_metadata = schema_metadata
 
 
-class AnonCredsRegistryGetSchemaSchema(BaseModelSchema):
+class GetSchemaResultSchema(BaseModelSchema):
     """Parameters and validators for schema create query."""
 
     class Meta:
         """AnonCredsRegistryGetSchemaSchema metadata."""
 
-        model_class = AnonCredsRegistryGetSchema
+        model_class = GetSchemaResult
         unknown = EXCLUDE
 
     schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
@@ -133,6 +132,11 @@ class AnonCredsRegistryGetSchemasSchema(BaseModelSchema):
 class SchemaState(BaseModel):
     """Model representing the state of a schema after beginning registration."""
 
+    STATE_FINISHED = "finished"
+    STATE_FAILED = "failed"
+    STATE_ACTION = "action"
+    STATE_WAIT = "wait"
+
     class Meta:
         """SchemaState metadata."""
 
@@ -149,7 +153,16 @@ class SchemaState(BaseModel):
 class SchemaStateSchema(BaseModelSchema):
     """Parameters and validators for schema state."""
 
-    state = fields.Str(validate=OneOf(["finished", "failed", "action", "wait"]))
+    state = fields.Str(
+        validate=OneOf(
+            [
+                SchemaState.STATE_FINISHED,
+                SchemaState.STATE_FAILED,
+                SchemaState.STATE_ACTION,
+                SchemaState.STATE_WAIT,
+            ]
+        )
+    )
     schema_id = fields.Str(
         data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
     )
@@ -192,28 +205,27 @@ class SchemaResultSchema(BaseModelSchema):
 class SchemasQueryStringSchema(OpenAPISchema):
     """Parameters and validators for query string in schemas list query."""
 
-    schemaName = fields.Str(
+    schema_name = fields.Str(
         description="Schema name",
-        example=ANONCREDS_SCHEMA_ID["example"].split(":")[2],
+        example="example-schema",
     )
-    schemaVersion = fields.Str(description="Schema version", **ANONCREDS_VERSION)
-    schemaIssuerDid = fields.Str(
+    schema_version = fields.Str(description="Schema version")
+    schema_issuer_id = fields.Str(
         description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
-    )  # TODO: get correct validator
+    )
 
 
 class SchemaPostOptionSchema(OpenAPISchema):
     """Parameters and validators for schema options."""
 
     endorser_connection_id = fields.UUID(
-        description="Connection identifier (optional)",
+        description="Connection identifier (optional) (this is an example)",
         required=False,
         example=UUIDFour.EXAMPLE,
     )
 
 
-class SchemaPostQueryStringSchema(OpenAPISchema):
+class SchemaPostRequestSchema(OpenAPISchema):
     """Parameters and validators for query string in create schema."""
 
     schema = fields.Nested(AnonCredsSchemaSchema())

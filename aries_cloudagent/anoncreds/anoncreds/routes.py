@@ -11,17 +11,18 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
-from aries_cloudagent.anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
-from aries_cloudagent.anoncreds.models.anoncreds_cred_def import (
+from .anoncreds_registry import AnonCredsRegistry
+from ..issuer import AnonCredsIssuer
+from ..models.anoncreds_cred_def import (
     AnonCredsCredentialDefinitionSchema,
     AnonCredsRegistryGetCredentialDefinitionSchema,
 )
-from aries_cloudagent.anoncreds.models.anoncreds_schema import (
+from ..models.anoncreds_schema import (
     AnonCredsRegistryGetSchemasSchema,
     AnonCredsSchema,
-    PostSchemaResponseSchema,
-    SchemaPostQueryStringSchema,
-    AnonCredsRegistryGetSchemaSchema,
+    SchemaResultSchema,
+    SchemaPostRequestSchema,
+    GetSchemaResultSchema,
     SchemasQueryStringSchema,
 )
 from aries_cloudagent.anoncreds.models.anoncreds_valid import (
@@ -150,8 +151,8 @@ class GetCredDefsResponseSchema(OpenAPISchema):
 
 
 @docs(tags=["anoncreds"], summary="")
-@request_schema(SchemaPostQueryStringSchema())
-@response_schema(PostSchemaResponseSchema(), 200, description="")
+@request_schema(SchemaPostRequestSchema())
+@response_schema(SchemaResultSchema(), 200, description="")
 async def schemas_post(request: web.BaseRequest):
     """Request handler for creating a schema.
 
@@ -188,20 +189,19 @@ async def schemas_post(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    anon_creds_registry = context.inject(AnonCredsRegistry)
+
     request_data = await request.json()
     options = request_data.get("option")
     schema_data = request_data.get("schema")
 
-    schema: AnonCredsSchema = AnonCredsSchema.deserialize(schema_data)
-    # TODO: serialize return stuff.
-    result = await anon_creds_registry.register_schema(context.profile, options, schema)
-    return web.json_response(result)
+    issuer = context.inject(AnonCredsIssuer)
+    result = await issuer.create_schema(**schema_data, options=options)
+    return web.json_response(result.serialize())
 
 
 @docs(tags=["anoncreds"], summary="")
 @match_info_schema(SchemaIdMatchInfo())
-@response_schema(AnonCredsRegistryGetSchemaSchema(), 200, description="")
+@response_schema(GetSchemaResultSchema(), 200, description="")
 async def schema_get(request: web.BaseRequest):
     """Request handler for getting a schema.
 
@@ -213,9 +213,9 @@ async def schema_get(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    anon_creds_registry = context.inject(AnonCredsRegistry)
+    anoncreds_registry = context.inject(AnonCredsRegistry)
     schema_id = request.match_info["schemaId"]
-    result = await anon_creds_registry.get_schema(context.profile, schema_id)
+    result = await anoncreds_registry.get_schema(context.profile, schema_id)
 
     return web.json_response(result.serialize())
 
@@ -232,17 +232,16 @@ async def schemas_get(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    anon_creds_registry = context.inject(AnonCredsRegistry)
-    schema_issuer_did = request.query.get("schemaIssuerDid")
-    schema_name = request.query.get("schemaName")
-    schema_version = request.query.get("schemaVersion")
-    filter = {
-        "issuerId": schema_issuer_did,
-        "name": schema_name,
-        "version": schema_version,
-    }
-    schema_ids = await anon_creds_registry.get_schemas(context.profile, filter)
-    return web.json_response(schema_ids)
+
+    schema_issuer_id = request.query.get("schema_issuer_id")
+    schema_name = request.query.get("schema_name")
+    schema_version = request.query.get("schema_version")
+
+    issuer = context.inject(AnonCredsIssuer)
+    schema_ids = await issuer.get_created_schemas(
+        schema_name, schema_version, schema_issuer_id
+    )
+    return web.json_response({"schema_ids": schema_ids})
 
 
 @docs(tags=["anoncreds"], summary="")

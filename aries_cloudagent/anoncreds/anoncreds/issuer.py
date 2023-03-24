@@ -4,7 +4,7 @@ import asyncio
 import logging
 import time
 
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 from aries_askar import AskarError
 
@@ -14,14 +14,14 @@ from anoncreds import (
     CredentialOffer,
     CredentialRevocationConfig,
     AnoncredsError,
-    RevocationRegistry,
     RevocationRegistryDefinition,
     RevocationRegistryDelta,
     RevocationStatusList,
-    Schema,
 )
 
-from aries_cloudagent.anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
+from .anoncreds_registry import AnonCredsRegistry
+from .base_registry import AnonCredsSchemaAlreadyExists
+from ..models.anoncreds_schema import SchemaResult, SchemaState
 
 from ...askar.profile import AskarProfile
 
@@ -66,16 +66,17 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
 
     async def create_schema(
         self,
-        origin_did: str,
+        issuer_id: str,
         schema_name: str,
         schema_version: str,
         attribute_names: Sequence[str],
-    ) -> Tuple[str, str]:
+        options: Optional[dict] = None,
+    ) -> SchemaResult:
         """
         Create a new credential schema and store it in the wallet.
 
         Args:
-            origin_did: the DID issuing the credential definition
+            issuer_id: the DID issuing the credential definition
             schema_name: the schema name
             schema_version: the schema version
             attribute_names: a sequence of schema attribute names
@@ -84,34 +85,97 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
             A tuple of the schema ID and JSON
 
         """
-        try:
-            schema = Schema.create(
-                schema_name, schema_version, origin_did, attribute_names
+        # Check if record of a similar schema already exists in our records
+        async with self._profile.session() as session:
+            # TODO scan?
+            schemas = await session.handle.fetch_all(
+                CATEGORY_SCHEMA,
+                {
+                    "name": schema_name,
+                    "version": schema_version,
+                    "issuer_id": issuer_id,
+                },
+                limit=1,
             )
-            schema_id = f"{origin_did}:2:{schema_name}:{schema_version}"
+            if schemas:
+                raise AnonCredsSchemaAlreadyExists(
+                    f"Schema with {schema_name}: {schema_version} already exists for {issuer_id}"
+                )
+
+        try:
             anoncreds_registry = self._profile.inject(AnonCredsRegistry)
 
             schema_result = await anoncreds_registry.register_schema(
-                origin_did, schema_name, schema_version, attribute_names
+                self.profile,
+                issuer_id,
+                schema_name,
+                schema_version,
+                attribute_names,
+                options,
             )
-            if schema_result.schema_state.state == "finished":
-                await self.store_schema(schema_id, schema_result.schema_state.schema)
 
+            if schema_result.schema_state.state == SchemaState.STATE_FINISHED:
+                await self.store_schema(
+                    schema_result.schema_state.schema_id,
+                    schema_result.schema_state.schema.serialize(),
+                )
+
+            return schema_result
+
+        except AnonCredsSchemaAlreadyExists as err:
+            # If we find that we've previously written a schema that looks like
+            # this one before but that schema is not in our wallet, add it to
+            # the wallet so we can return from our get schema calls
+            await self.store_schema(err.schema_id, err.schema)
+            raise AnonCredsIssuerError(
+                "Schema already exists but was not in wallet; stored in wallet"
+            ) from err
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating schema") from err
         except AskarError as err:
             raise AnonCredsIssuerError("Error storing schema") from err
-        return (schema_id, schema_json)
 
     async def store_schema(
         self,
         schema_id: str,
-        schema: Schema,
+        schema: dict,
     ):
         """Store schema after reaching finished state."""
-        schema_json = schema.to_json()
         async with self._profile.session() as session:
-            await session.handle.insert(CATEGORY_SCHEMA, schema_id, schema_json)
+            await session.handle.insert(
+                CATEGORY_SCHEMA,
+                schema_id,
+                json.dumps(schema),
+                {
+                    "name": schema["name"],
+                    "version": schema["version"],
+                    "issuer_id": schema["issuerId"],
+                },
+            )
+
+    async def get_created_schemas(
+        self,
+        name: Optional[str] = None,
+        version: Optional[str] = None,
+        issuer_id: Optional[str] = None,
+    ) -> Sequence[str]:
+        """Retrieve IDs of schemas previously created."""
+        async with self._profile.session() as session:
+            # TODO limit? scan?
+            schemas = await session.handle.fetch_all(
+                CATEGORY_SCHEMA,
+                {
+                    key: value
+                    for key, value in {
+                        "name": name,
+                        "version": version,
+                        "issuer_id": issuer_id,
+                    }
+                    if value is not None
+                },
+            )
+        # schema is an Entry; Entry.name was stored as the schema's ID
+        return [schema.name for schema in schemas]
 
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
