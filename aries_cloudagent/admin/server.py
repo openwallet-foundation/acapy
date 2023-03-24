@@ -643,6 +643,7 @@ class AdminServer(BaseAdminServer):
                 "",
                 config["admin.webhook_urls"][index],
             )
+        config["version"] = __version__
 
         return web.json_response({"config": config})
 

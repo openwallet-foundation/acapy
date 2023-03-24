@@ -103,6 +103,7 @@ async def upgrade(settings: dict):
         version_upgrade_config_inst = VersionUpgradeConfig(
             settings.get("upgrade.config_path")
         )
+        force_upgrade = settings.get("upgrade.force_upgrade")
         upgrade_configs = version_upgrade_config_inst.upgrade_configs
         root_profile, public_did = await wallet_config(context)
         version_storage_record = None
@@ -137,16 +138,34 @@ async def upgrade(settings: dict):
                         "the config."
                     )
         if upgrade_from_version == upgrade_to_version:
-            print(
-                f"Version {upgrade_from_version} to upgrade from and "
-                f"current version to upgrade to {upgrade_to_version} "
-                "are same."
-            )
+            if force_upgrade:
+                upgrade_from_version = sorted_versions_found_in_config[-1]
+                print(
+                    "'force_upgrade' requested. Selecting "
+                    f"{upgrade_from_version} as --from-version from "
+                    "the config."
+                )
+            else:
+                print(
+                    f"Version {upgrade_from_version} to upgrade from and "
+                    f"current version to upgrade to {upgrade_to_version} "
+                    "are same."
+                )
         else:
             if upgrade_from_version not in sorted_versions_found_in_config:
-                raise UpgradeError(
-                    f"No upgrade configuration found for {upgrade_from_version}"
-                )
+                if force_upgrade:
+                    req_upgrade_from_version = upgrade_from_version
+                    upgrade_from_version = sorted_versions_found_in_config[-1]
+                    print(
+                        f"No upgrade configuration found for {req_upgrade_from_version} "
+                        "and 'force_upgrade' requested. Selecting "
+                        f"{upgrade_from_version} as --from-version from "
+                        "the config."
+                    )
+                else:
+                    raise UpgradeError(
+                        f"No upgrade configuration found for {upgrade_from_version}"
+                    )
             upgrade_from_version_index = sorted_versions_found_in_config.index(
                 upgrade_from_version
             )

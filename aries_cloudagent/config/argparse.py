@@ -2053,6 +2053,13 @@ class UpgradeGroup(ArgumentGroup):
             ),
         )
 
+        parser.add_argument(
+            "--force-upgrade",
+            action="store_true",
+            env_var="ACAPY_FORCE_UPGRADE",
+            help="Force the upgrade to run, irrespective of any version checks.",
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
@@ -2060,4 +2067,6 @@ class UpgradeGroup(ArgumentGroup):
             settings["upgrade.config_path"] = args.upgrade_config_path
         if args.from_version:
             settings["upgrade.from_version"] = args.from_version
+        if args.force_upgrade:
+            settings["upgrade.force_upgrade"] = True
         return settings
