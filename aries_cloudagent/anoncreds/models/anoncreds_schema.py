@@ -1,6 +1,6 @@
 """Anoncreds Schema OpenAPI validators"""
 
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
@@ -152,6 +152,11 @@ class SchemaState(BaseModel):
 
 class SchemaStateSchema(BaseModelSchema):
     """Parameters and validators for schema state."""
+
+    class Meta:
+        """SchemaStateSchema metadata."""
+
+        model_class = SchemaState
 
     state = fields.Str(
         validate=OneOf(

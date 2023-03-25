@@ -10,12 +10,10 @@ from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )
-from ..models.anoncreds_schema import AnonCredsRegistryGetSchema, SchemaResult
+from ..models.anoncreds_schema import GetSchemaResult, SchemaResult
 from .base_registry import (
-    AnonCredsObjectNotFound,
     AnonCredsRegistrationError,
     AnonCredsResolutionError,
-    BaseAnonCredsError,
     BaseAnonCredsHandler,
     BaseAnonCredsRegistrar,
     BaseAnonCredsResolver,
@@ -69,9 +67,7 @@ class AnonCredsRegistry:
     async def setup(self, context: InjectionContext):
         """Setup method."""
 
-    async def get_schema(
-        self, profile: Profile, schema_id: str
-    ) -> AnonCredsRegistryGetSchema:
+    async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
         resolver = await self._resolver_for_identifier(schema_id)
         return await resolver.get_schema(profile, schema_id)

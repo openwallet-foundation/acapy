@@ -8,14 +8,12 @@ from ...config.injection_context import InjectionContext
 from ...core.profile import Profile
 from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinition,
-    AnonCredsRegistryGetCredentialDefinitions,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
     AnonCredsRegistryGetRevocationRegistryDefinitions,
 )
 from ..models.anoncreds_schema import (
-    AnonCredsRegistryGetSchema,
-    AnonCredsRegistryGetSchemas,
+    GetSchemaResult,
     SchemaResult,
 )
 
@@ -85,26 +83,14 @@ class BaseAnonCredsHandler(ABC):
 
 class BaseAnonCredsResolver(BaseAnonCredsHandler):
     @abstractmethod
-    async def get_schema(self, schema_id: str) -> AnonCredsRegistryGetSchema:
+    async def get_schema(self, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
-
-    @abstractmethod
-    async def get_schemas(
-        self, profile: Profile, filter: dict
-    ) -> AnonCredsRegistryGetSchemas:
-        """Get a schema ids from the registry."""
 
     @abstractmethod
     async def get_credential_definition(
         self, credential_definition_id: str
     ) -> AnonCredsRegistryGetCredentialDefinition:
         """Get a credential definition from the registry."""
-
-    @abstractmethod
-    async def get_credential_definitions(
-        self, profile: Profile, filter: dict
-    ) -> AnonCredsRegistryGetCredentialDefinitions:
-        """Get a credential definition ids from the registry."""
 
     @abstractmethod
     async def get_revocation_registry_definition(

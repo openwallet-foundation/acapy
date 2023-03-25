@@ -1,6 +1,7 @@
 """Indy issuer implementation."""
 
 import asyncio
+import json
 import logging
 import time
 
@@ -99,7 +100,8 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
             )
             if schemas:
                 raise AnonCredsSchemaAlreadyExists(
-                    f"Schema with {schema_name}: {schema_version} already exists for {issuer_id}"
+                    f"Schema with {schema_name}: {schema_version} "
+                    f"already exists for {issuer_id}"
                 )
 
         try:
@@ -174,8 +176,8 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
                     if value is not None
                 },
             )
-        # schema is an Entry; Entry.name was stored as the schema's ID
-        return [schema.name for schema in schemas]
+        # entry.name was stored as the schema's ID
+        return [entry.name for entry in schemas]
 
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
