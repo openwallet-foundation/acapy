@@ -1,9 +1,8 @@
 """Credential schema admin routes."""
 
+from asyncio import shield
 import json
 from time import time
-
-from asyncio import shield
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -13,15 +12,14 @@ from aiohttp_apispec import (
     request_schema,
     response_schema,
 )
-
 from marshmallow import fields
 from marshmallow.validate import Regexp
 
 from ...admin.request_context import AdminRequestContext
+from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
-from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
-from ...anoncreds.models.schema import SchemaSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...ledger.multiple_ledger.ledger_requests_executor import (
@@ -37,28 +35,43 @@ from ...protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 from ...protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
-
+from ...storage.error import StorageNotFoundError
+from ..models.base import BaseModelError
 from ..models.openapi import OpenAPISchema
-from ..valid import B58, INDY_SCHEMA_ID, INDY_VERSION
-
+from ..valid import B58, INDY_SCHEMA_ID, INDY_VERSION, NATURAL_NUM, UUIDFour
 from .util import (
-    SchemaQueryStringSchema,
+    EVENT_LISTENER_PATTERN,
     SCHEMA_SENT_RECORD_TYPE,
     SCHEMA_TAGS,
-    EVENT_LISTENER_PATTERN,
+    SchemaQueryStringSchema,
     notify_schema_event,
 )
 
 
-from ..valid import UUIDFour
-from ...connections.models.conn_record import ConnRecord
-from ...storage.error import StorageNotFoundError
-from ..models.base import BaseModelError
+class SchemaSchema(OpenAPISchema):
+    """Marshmallow schema for indy schema."""
+
+    ver = fields.Str(description="Node protocol version", **INDY_VERSION)
+    ident = fields.Str(data_key="id", description="Schema identifier", **INDY_SCHEMA_ID)
+    name = fields.Str(
+        description="Schema name",
+        example=INDY_SCHEMA_ID["example"].split(":")[2],
+    )
+    version = fields.Str(description="Schema version", **INDY_VERSION)
+    attr_names = fields.List(
+        fields.Str(
+            description="Attribute name",
+            example="score",
+        ),
+        description="Schema attribute names",
+        data_key="attrNames",
+    )
+    seqNo = fields.Int(description="Schema sequence number", strict=True, **NATURAL_NUM)
 
 
 class SchemaSendRequestSchema(OpenAPISchema):

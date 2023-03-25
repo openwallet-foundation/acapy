@@ -18,12 +18,9 @@ from ..models.anoncreds_cred_def import (
     AnonCredsRegistryGetCredentialDefinitionSchema,
 )
 from ..models.anoncreds_schema import (
-    AnonCredsRegistryGetSchemasSchema,
-    AnonCredsSchema,
+    AnonCredsSchemaSchema,
     SchemaResultSchema,
-    SchemaPostRequestSchema,
     GetSchemaResultSchema,
-    SchemasQueryStringSchema,
 )
 from aries_cloudagent.anoncreds.models.anoncreds_valid import (
     ANONCREDS_SCHEMA_ID,
@@ -150,6 +147,23 @@ class GetCredDefsResponseSchema(OpenAPISchema):
     credential_definition_id = fields.Str()
 
 
+class SchemaPostOptionSchema(OpenAPISchema):
+    """Parameters and validators for schema options."""
+
+    endorser_connection_id = fields.UUID(
+        description="Connection identifier (optional) (this is an example)",
+        required=False,
+        example=UUIDFour.EXAMPLE,
+    )
+
+
+class SchemaPostRequestSchema(OpenAPISchema):
+    """Parameters and validators for query string in create schema."""
+
+    schema = fields.Nested(AnonCredsSchemaSchema())
+    options = fields.Nested(SchemaPostOptionSchema())
+
+
 @docs(tags=["anoncreds"], summary="")
 @request_schema(SchemaPostRequestSchema())
 @response_schema(SchemaResultSchema(), 200, description="")
@@ -220,9 +234,33 @@ async def schema_get(request: web.BaseRequest):
     return web.json_response(result.serialize())
 
 
+class SchemasQueryStringSchema(OpenAPISchema):
+    """Parameters and validators for query string in schemas list query."""
+
+    schema_name = fields.Str(
+        description="Schema name",
+        example="example-schema",
+    )
+    schema_version = fields.Str(description="Schema version")
+    schema_issuer_id = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+    )
+
+
+class GetSchemasResponseSchema(OpenAPISchema):
+    """Parameters and validators for schema list all response."""
+
+    schema_ids = fields.List(
+        fields.Str(
+            data_key="schemaIds",
+            description="Schema identifier",
+        )
+    )
+
+
 @docs(tags=["anoncreds"], summary="")
 @querystring_schema(SchemasQueryStringSchema())
-@response_schema(AnonCredsRegistryGetSchemasSchema(), 200, description="")
+@response_schema(GetSchemasResponseSchema(), 200, description="")
 async def schemas_get(request: web.BaseRequest):
     """Request handler for getting all schemas.
 

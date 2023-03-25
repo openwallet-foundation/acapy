@@ -5,13 +5,7 @@ from typing import Any, Dict, List, Optional
 from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 
-from aries_cloudagent.anoncreds.models.anoncreds_valid import (
-    ANONCREDS_SCHEMA_ID,
-)
-from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
-
-from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import UUIDFour
+from ...messaging.models.base import BaseModel, BaseModelSchema
 
 
 class AnonCredsSchema(BaseModel):
@@ -55,7 +49,6 @@ class AnonCredsSchemaSchema(BaseModelSchema):
     )
     name = fields.Str(
         description="Schema name",
-        example=ANONCREDS_SCHEMA_ID["example"].split(":")[2],
     )
     version = fields.Str(description="Schema version")
 
@@ -93,40 +86,9 @@ class GetSchemaResultSchema(BaseModelSchema):
         unknown = EXCLUDE
 
     schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
-    schema_id = fields.Str(
-        data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
-    )
+    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()
-
-
-class AnonCredsRegistryGetSchemas(BaseModel):
-    """Result of retrieving created schemas."""
-
-    class Meta:
-        """IndyCredInfo metadata."""
-
-        schema_class = "AnonCredsRegistryGetSchemasSchema"
-
-    def __init__(self, schema_ids: list, **kwargs):
-        super().__init__(**kwargs)
-        self.schema_ids = schema_ids
-
-
-class AnonCredsRegistryGetSchemasSchema(BaseModelSchema):
-    """Parameters and validators for schema list all response."""
-
-    class Meta:
-        """AnonCredsRegistryGetSchemasSchema metadata."""
-
-        model_class = AnonCredsRegistryGetSchemas
-        unknown = EXCLUDE
-
-    schema_ids = fields.List(
-        fields.Str(
-            data_key="schemaIds", description="Schema identifier", **ANONCREDS_SCHEMA_ID
-        )
-    )
 
 
 class SchemaState(BaseModel):
@@ -168,9 +130,7 @@ class SchemaStateSchema(BaseModelSchema):
             ]
         )
     )
-    schema_id = fields.Str(
-        data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
-    )
+    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
     schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
 
 
@@ -205,33 +165,3 @@ class SchemaResultSchema(BaseModelSchema):
     registration_metadata = fields.Dict()
     # For indy, schema_metadata will contain the seqNo
     schema_metadata = fields.Dict()
-
-
-class SchemasQueryStringSchema(OpenAPISchema):
-    """Parameters and validators for query string in schemas list query."""
-
-    schema_name = fields.Str(
-        description="Schema name",
-        example="example-schema",
-    )
-    schema_version = fields.Str(description="Schema version")
-    schema_issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
-    )
-
-
-class SchemaPostOptionSchema(OpenAPISchema):
-    """Parameters and validators for schema options."""
-
-    endorser_connection_id = fields.UUID(
-        description="Connection identifier (optional) (this is an example)",
-        required=False,
-        example=UUIDFour.EXAMPLE,
-    )
-
-
-class SchemaPostRequestSchema(OpenAPISchema):
-    """Parameters and validators for query string in create schema."""
-
-    schema = fields.Nested(AnonCredsSchemaSchema())
-    options = fields.Nested(SchemaPostOptionSchema())
