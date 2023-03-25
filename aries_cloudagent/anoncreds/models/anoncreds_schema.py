@@ -59,7 +59,7 @@ class GetSchemaResult(BaseModel):
     class Meta:
         """GetSchemaResult metadata."""
 
-        schema_class = "AnonCredsRegistryGetSchemaSchema"
+        schema_class = "GetSchemaResultSchema"
 
     def __init__(
         self,
@@ -80,7 +80,7 @@ class GetSchemaResultSchema(BaseModelSchema):
     """Parameters and validators for schema create query."""
 
     class Meta:
-        """AnonCredsRegistryGetSchemaSchema metadata."""
+        """GetSchemaResultSchema metadata."""
 
         model_class = GetSchemaResult
         unknown = EXCLUDE
@@ -104,12 +104,14 @@ class SchemaState(BaseModel):
 
         schema_class = "SchemaStateSchema"
 
-    def __init__(self, state: str, schema_id: str, schema: AnonCredsSchema, **kwargs):
+    def __init__(
+        self, state: str, schema_id: str, schema_def: AnonCredsSchema, **kwargs
+    ):
         """Initialize a new SchemaState."""
         super().__init__(**kwargs)
         self.state = state
         self.schema_id = schema_id
-        self.schema = schema
+        self.schema_def = schema_def
 
 
 class SchemaStateSchema(BaseModelSchema):
@@ -130,8 +132,8 @@ class SchemaStateSchema(BaseModelSchema):
             ]
         )
     )
-    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
-    schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
+    schema_id = fields.Str(description="Schema identifier")
+    schema_def = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
 
 
 class SchemaResult(BaseModel):

@@ -119,7 +119,7 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
             if schema_result.schema_state.state == SchemaState.STATE_FINISHED:
                 await self.store_schema(
                     schema_result.schema_state.schema_id,
-                    schema_result.schema_state.schema.serialize(),
+                    schema_result.schema_state.schema_def.serialize(),
                 )
 
             return schema_result
@@ -172,7 +172,7 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
                         "name": name,
                         "version": version,
                         "issuer_id": issuer_id,
-                    }
+                    }.items()
                     if value is not None
                 },
             )

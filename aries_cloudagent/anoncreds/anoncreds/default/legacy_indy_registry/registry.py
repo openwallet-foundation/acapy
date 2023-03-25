@@ -72,6 +72,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             schema_id,
             txn_record_type=GET_SCHEMA,
         )
+
         if not ledger:
             reason = "No ledger available"
             if not profile.settings.get_value("wallet.type"):
@@ -87,15 +88,16 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     name=schema["name"],
                     version=schema["ver"],
                 )
-                anoncreds_registry_get_schema = GetSchemaResult(
+                result = GetSchemaResult(
                     schema=anonscreds_schema,
                     schema_id=schema["id"],
                     resolution_metadata={"ledger_id": ledger_id},
                     schema_metadata={"seqNo": schema["seqNo"]},
                 )
             except LedgerError as err:
-                raise AnonCredsResolutionError(err)
-        return anoncreds_registry_get_schema
+                raise AnonCredsResolutionError("Failed to retrieve schema") from err
+
+        return result
 
     async def register_schema(
         self,
@@ -146,7 +148,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             schema_state=SchemaState(
                 state=SchemaState.STATE_FINISHED,
                 schema_id=schema_id,
-                schema=AnonCredsSchema.deserialize(schema.to_dict()),
+                schema_def=AnonCredsSchema.deserialize(anoncreds_schema),
             ),
             registration_metadata={},
             schema_metadata={"seqNo": seq_no},
