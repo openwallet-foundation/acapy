@@ -9,7 +9,7 @@ from ....models.anoncreds_cred_def import (
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )
-from ....models.anoncreds_schema import AnonCredsRegistryGetSchema
+from ....models.anoncreds_schema import GetSchemaResult
 from ...base_registry import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 
 
@@ -28,7 +28,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Setup."""
         print("Successfully registered DIDWebRegistry")
 
-    async def get_schema(self, profile, schema_id: str) -> AnonCredsRegistryGetSchema:
+    async def get_schema(self, profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
 
     async def get_schemas(self, profile: Profile, filter: str):

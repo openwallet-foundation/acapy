@@ -160,6 +160,11 @@ class SchemaResult(BaseModel):
 class SchemaResultSchema(BaseModelSchema):
     """Parameters and validators for schema state."""
 
+    class Meta:
+        """SchemaResultSchema metadata."""
+
+        model_class = SchemaResult
+
     job_id = fields.Str()
     schema_state = fields.Nested(SchemaStateSchema())
     registration_metadata = fields.Dict()
