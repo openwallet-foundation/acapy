@@ -208,8 +208,15 @@ async def schemas_post(request: web.BaseRequest):
     options = request_data.get("option")
     schema_data = request_data.get("schema")
 
+    issuer_id = schema_data.get("issuerId")
+    attr_names = schema_data.get("attrNames")
+    name = schema_data.get("name")
+    version = schema_data.get("version")
+
     issuer = context.inject(AnonCredsIssuer)
-    result = await issuer.create_schema(**schema_data, options=options)
+    result = await issuer.create_schema(
+        issuer_id, name, version, attr_names, options=options
+    )
     return web.json_response(result.serialize())
 
 

@@ -108,7 +108,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     ) -> SchemaResult:
         """Register a schema on the registry."""
 
-        schema = Schema.create(issuer_id, name, version, attr_names)
+        schema = Schema.create(name, version, issuer_id, attr_names)
         schema_id = f"{issuer_id}:2:{name}:{version}"
 
         # Assume endorser role on the network, no option for 3rd-party endorser
@@ -120,9 +120,22 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 reason += ": missing wallet-type?"
             raise AnonCredsRegistrationError(reason)
 
+        # Translate schema into format expected by Indy
+        LOGGER.debug("Registering schema: %s", schema_id)
+        anoncreds_schema = schema.to_dict()
+        indy_schema = {
+            "ver": "1.0",
+            "id": schema_id,
+            "name": anoncreds_schema["name"],
+            "version": anoncreds_schema["version"],
+            "attrNames": anoncreds_schema["attrNames"],
+            "seqNo": None,
+        }
+        LOGGER.debug("schema value: %s", indy_schema)
+
         async with ledger:
             try:
-                seq_no = await shield(ledger.send_schema(schema_id, schema.to_dict()))
+                seq_no = await shield(ledger.send_schema(schema_id, indy_schema))
             except LedgerObjectAlreadyExistsError as err:
                 raise AnonCredsSchemaAlreadyExists(err.message, err.obj)
             except (AnonCredsIssuerError, LedgerError) as err:
