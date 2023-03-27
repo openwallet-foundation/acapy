@@ -3,7 +3,7 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Optional, Sequence, Tuple
 
-from anoncreds import Schema
+from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDefResult
 
 from .models.anoncreds_schema import SchemaResult
 
@@ -41,12 +41,12 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
         return f"{origin_did}:2:{schema_name}:{schema_version}"
 
     @abstractmethod
-    async def create_schema(
+    async def create_and_register_schema(
         self,
         issuer_id: str,
-        schema_name: str,
-        schema_version: str,
-        attribute_names: Sequence[str],
+        name: str,
+        version: str,
+        attr_names: Sequence[str],
         options: Optional[dict] = None,
     ) -> SchemaResult:
         """
@@ -64,12 +64,8 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def store_schema(
-        self,
-        schema_id: str,
-        schema: Schema,
-    ) -> Tuple[str, str]:
-        """Store a schema in the wallet."""
+    async def finish_schema(self, schema_id: str):
+        """Mark a schema as finished in the wallet."""
 
     @abstractmethod
     async def get_created_schemas(
@@ -103,12 +99,12 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
     @abstractmethod
     async def create_and_store_credential_definition(
         self,
-        origin_did: str,
-        schema: dict,
-        signature_type: str = None,
-        tag: str = None,
-        support_revocation: bool = False,
-    ) -> Tuple[str, str]:
+        issuer_id: str,
+        schema_id: str,
+        tag: Optional[str] = None,
+        signature_type: Optional[str] = None,
+        options: Optional[dict] = None,
+    ) -> CredDefResult:
         """
         Create a new credential definition and store it in the wallet.
 
@@ -123,6 +119,17 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
             A tuple of the credential definition ID and JSON
 
         """
+
+    @abstractmethod
+    async def get_created_credential_definitions(
+        self,
+        issuer_id: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_name: Optional[str] = None,
+        schema_version: Optional[str] = None,
+        state: Optional[str] = None,
+    ) -> Sequence[str]:
+        """Get created credential definitions."""
 
     @abstractmethod
     async def create_credential_offer(self, credential_definition_id) -> str:

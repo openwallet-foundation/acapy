@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional
 from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 
+from anoncreds import Schema
+
 from ...messaging.models.base import BaseModel, BaseModelSchema
 
 
@@ -24,6 +26,15 @@ class AnonCredsSchema(BaseModel):
         self.attr_names = attr_names
         self.name = name
         self.version = version
+
+    @classmethod
+    def from_native(cls, schema: Schema) -> "AnonCredsSchema":
+        """Convert from native object."""
+        return cls.deserialize(schema.to_dict())
+
+    def to_native(self):
+        """Convert to native object."""
+        return Schema.load(self.serialize())
 
 
 class AnonCredsSchemaSchema(BaseModelSchema):
@@ -70,10 +81,18 @@ class GetSchemaResult(BaseModel):
         **kwargs
     ):
         super().__init__(**kwargs)
-        self.schema_ = schema
+        self.schema_value = schema
         self.schema_id = schema_id
         self.resolution_metadata = resolution_metadata
         self.schema_metadata = schema_metadata
+
+    @property
+    def schema(self) -> AnonCredsSchema:
+        """Alias for schema_value.
+
+        `schema` can't be used directly due to a limitation of marshmallow.
+        """
+        return self.schema_value
 
 
 class GetSchemaResultSchema(BaseModelSchema):
@@ -85,7 +104,7 @@ class GetSchemaResultSchema(BaseModelSchema):
         model_class = GetSchemaResult
         unknown = EXCLUDE
 
-    schema_ = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
+    schema_value = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
     schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
     resolution_metadata = fields.Dict()
     schema_metadata = fields.Dict()
@@ -104,14 +123,20 @@ class SchemaState(BaseModel):
 
         schema_class = "SchemaStateSchema"
 
-    def __init__(
-        self, state: str, schema_id: str, schema_def: AnonCredsSchema, **kwargs
-    ):
+    def __init__(self, state: str, schema_id: str, schema: AnonCredsSchema, **kwargs):
         """Initialize a new SchemaState."""
         super().__init__(**kwargs)
         self.state = state
         self.schema_id = schema_id
-        self.schema_def = schema_def
+        self.schema_value = schema
+
+    @property
+    def schema(self) -> AnonCredsSchema:
+        """Alias to schema_value.
+
+        `schema` can't be used directly due to limitations of marshmallow.
+        """
+        return self.schema_value
 
 
 class SchemaStateSchema(BaseModelSchema):
@@ -133,7 +158,7 @@ class SchemaStateSchema(BaseModelSchema):
         )
     )
     schema_id = fields.Str(description="Schema identifier")
-    schema_def = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
+    schema_value = fields.Nested(AnonCredsSchemaSchema(), data_key="schema")
 
 
 class SchemaResult(BaseModel):

@@ -2,9 +2,7 @@
 import logging
 import re
 from asyncio import shield
-from typing import Optional, Pattern, Sequence
-
-from anoncreds import Schema
+from typing import Optional, Pattern
 
 from .....config.injection_context import InjectionContext
 from .....core.profile import Profile
@@ -15,16 +13,17 @@ from .....ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
 )
-from .....messaging.credential_definitions.util import notify_cred_def_event
 from .....multitenant.base import BaseMultitenantManager
 from .....revocation.error import RevocationError
 from .....revocation.indy import IndyRevocation
 from .....storage.error import StorageNotFoundError
 from ....issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ....models.anoncreds_cred_def import (
-    AnonCredsCredentialDefinition,
-    AnonCredsCredentialDefinitionValue,
-    AnonCredsRegistryGetCredentialDefinition,
+    CredDef,
+    CredDefState,
+    CredDefValue,
+    CredDefResult,
+    GetCredDefResult,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )
@@ -35,6 +34,8 @@ from ....models.anoncreds_schema import (
     SchemaState,
 )
 from ...base_registry import (
+    AnonCredsObjectAlreadyExists,
+    AnonCredsObjectNotFound,
     AnonCredsRegistrationError,
     AnonCredsResolutionError,
     AnonCredsSchemaAlreadyExists,
@@ -43,6 +44,9 @@ from ...base_registry import (
 )
 
 LOGGER = logging.getLogger(__name__)
+
+DEFAULT_CRED_DEF_TAG = "default"
+DEFAULT_SIGNATURE_TYPE = "CL"
 
 
 class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
@@ -59,6 +63,29 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     async def setup(self, context: InjectionContext):
         """Setup."""
         print("Successfully registered LegacyIndyRegistry")
+
+    @staticmethod
+    def make_schema_id(schema: AnonCredsSchema) -> str:
+        """Derive the ID for a schema."""
+        return f"{schema.issuer_id}:2:{schema.name}:{schema.version}"
+
+    @staticmethod
+    def make_cred_def_id(
+        schema: GetSchemaResult,
+        cred_def: CredDef,
+    ) -> str:
+        """Derive the ID for a credential definition."""
+        signature_type = cred_def.type or DEFAULT_SIGNATURE_TYPE
+        tag = cred_def.tag or DEFAULT_CRED_DEF_TAG
+
+        try:
+            seq_no = str(schema.schema_metadata["seqNo"])
+        except KeyError as err:
+            raise AnonCredsRegistrationError(
+                "Legacy Indy only supports schemas from Legacy Indy"
+            ) from err
+
+        return f"{cred_def.issuer_id}:3:{signature_type}:{seq_no}:{tag}"
 
     async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
@@ -82,6 +109,12 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         async with ledger:
             try:
                 schema = await ledger.get_schema(schema_id)
+                if schema is None:
+                    raise AnonCredsObjectNotFound(
+                        f"Credential definition not found: {schema_id}",
+                        {"ledger_id": ledger_id},
+                    )
+
                 anonscreds_schema = AnonCredsSchema(
                     issuer_id=schema["id"].split(":")[0],
                     attr_names=schema["attrNames"],
@@ -102,16 +135,12 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     async def register_schema(
         self,
         profile: Profile,
-        issuer_id: str,
-        name: str,
-        version: str,
-        attr_names: Sequence[str],
+        schema: AnonCredsSchema,
         options: Optional[dict] = None,
     ) -> SchemaResult:
         """Register a schema on the registry."""
 
-        schema = Schema.create(name, version, issuer_id, attr_names)
-        schema_id = f"{issuer_id}:2:{name}:{version}"
+        schema_id = self.make_schema_id(schema)
 
         # Assume endorser role on the network, no option for 3rd-party endorser
         ledger = profile.inject_or(BaseLedger)
@@ -124,13 +153,12 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         # Translate schema into format expected by Indy
         LOGGER.debug("Registering schema: %s", schema_id)
-        anoncreds_schema = schema.to_dict()
         indy_schema = {
             "ver": "1.0",
             "id": schema_id,
-            "name": anoncreds_schema["name"],
-            "version": anoncreds_schema["version"],
-            "attrNames": anoncreds_schema["attrNames"],
+            "name": schema.name,
+            "version": schema.version,
+            "attrNames": schema.attr_names,
             "seqNo": None,
         }
         LOGGER.debug("schema value: %s", indy_schema)
@@ -139,7 +167,14 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             try:
                 seq_no = await shield(ledger.send_schema(schema_id, indy_schema))
             except LedgerObjectAlreadyExistsError as err:
-                raise AnonCredsSchemaAlreadyExists(err.message, err.obj)
+                indy_schema = err.obj[1]
+                schema = AnonCredsSchema(
+                    name=indy_schema["name"],
+                    version=indy_schema["version"],
+                    attr_names=indy_schema["attrNames"],
+                    issuer_id=indy_schema["id"].split(":")[0],
+                )
+                raise AnonCredsSchemaAlreadyExists(err.message, (err.obj[0], schema))
             except (AnonCredsIssuerError, LedgerError) as err:
                 raise AnonCredsRegistrationError("Failed to register schema") from err
 
@@ -148,7 +183,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             schema_state=SchemaState(
                 state=SchemaState.STATE_FINISHED,
                 schema_id=schema_id,
-                schema_def=AnonCredsSchema.deserialize(anoncreds_schema),
+                schema=schema,
             ),
             registration_metadata={},
             schema_metadata={"seqNo": seq_no},
@@ -156,7 +191,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def get_credential_definition(
         self, profile: Profile, cred_def_id: str
-    ) -> AnonCredsRegistryGetCredentialDefinition:
+    ) -> GetCredDefResult:
         """Get a credential definition from the registry."""
 
         async with profile.session() as session:
@@ -165,6 +200,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
             else:
                 ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+
         ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
             cred_def_id,
             txn_record_type=GET_CRED_DEF,
@@ -177,37 +213,39 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         async with ledger:
             cred_def = await ledger.get_credential_definition(cred_def_id)
-            anoncreds_credential_definition_value = AnonCredsCredentialDefinitionValue(
-                primary=cred_def["value"]
-            )
-            anoncreds_credential_definition = AnonCredsCredentialDefinition(
+
+            if cred_def is None:
+                raise AnonCredsObjectNotFound(
+                    f"Credential definition not found: {cred_def_id}",
+                    {"ledger_id": ledger_id},
+                )
+
+            cred_def_value = CredDefValue.deserialize(cred_def["value"])
+            anoncreds_credential_definition = CredDef(
                 issuer_id=cred_def["id"].split(":")[0],
                 schema_id=cred_def["schemaId"],
                 type=cred_def["type"],
                 tag=cred_def["tag"],
-                value=anoncreds_credential_definition_value,
+                value=cred_def_value,
             )
-            anoncreds_registry_get_credential_definition = (
-                AnonCredsRegistryGetCredentialDefinition(
-                    credential_definition=anoncreds_credential_definition,
-                    credential_definition_id=cred_def["id"],
-                    resolution_metadata={},
-                    credential_definition_metadata={},
-                )
+            anoncreds_registry_get_credential_definition = GetCredDefResult(
+                credential_definition=anoncreds_credential_definition,
+                credential_definition_id=cred_def["id"],
+                resolution_metadata={},
+                credential_definition_metadata={},
             )
         return anoncreds_registry_get_credential_definition
 
     async def register_credential_definition(
         self,
         profile: Profile,
-        schema_id: str,
-        support_revocation: bool,
-        tag: str,
-        rev_reg_size: int,
-        issuer_id: str,
-        options,  # TODO: handle options
-    ):
+        schema: GetSchemaResult,
+        credential_definition: CredDef,
+        options: Optional[dict] = None,
+    ) -> CredDefResult:
         """Register a credential definition on the registry."""
+
+        cred_def_id = self.make_cred_def_id(schema, credential_definition)
 
         ledger = profile.inject_or(BaseLedger)
         if not ledger:
@@ -216,68 +254,54 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 reason += ": missing wallet-type?"
             raise AnonCredsRegistrationError(reason)
 
+        # Check if in wallet but not on ledger
         issuer = profile.inject(AnonCredsIssuer)
-        try:  # even if in wallet, send it and raise if erroneously so
+        if await issuer.credential_definition_in_wallet(cred_def_id):
+            try:
+                await self.get_credential_definition(profile, cred_def_id)
+            except AnonCredsObjectNotFound as err:
+                raise AnonCredsRegistrationError(
+                    f"Credential definition with id {cred_def_id} already "
+                    "exists in wallet but not on the ledger"
+                ) from err
+
+        try:
             async with ledger:
-                (cred_def_id, cred_def, novel) = await shield(
-                    ledger.create_and_send_credential_definition(
-                        issuer,
-                        schema_id,
-                        signature_type=None,
-                        tag=tag,
-                        support_revocation=support_revocation,
+                seq_no = await shield(
+                    ledger.send_credential_definition(
+                        credential_definition.schema_id,
+                        cred_def_id,
+                        credential_definition.serialize(),
                         write_ledger=True,
-                        endorser_did=issuer_id,
+                        endorser_did=credential_definition.issuer_id,
                     )
                 )
+        except LedgerObjectAlreadyExistsError as err:
+            if await issuer.credential_definition_in_wallet(cred_def_id):
+                raise AnonCredsObjectAlreadyExists(
+                    f"Credential definition with id {cred_def_id} "
+                    "already exists in wallet and on ledger.",
+                ) from err
+            else:
+                raise AnonCredsObjectAlreadyExists(
+                    f"Credential definition {cred_def_id} is on "
+                    f"ledger but not in wallet {profile.name}"
+                ) from err
+        except (AnonCredsIssuerError, LedgerError) as err:
+            raise AnonCredsRegistrationError(
+                "Failed to register credential definition"
+            ) from err
 
-        except (AnonCredsIssuerError, LedgerError) as e:
-            raise AnonCredsRegistrationError(e)
-
-        issuer_did = cred_def_id.split(":")[0]
-        meta_data = {
-            "context": {
-                "schema_id": schema_id,
-                "cred_def_id": cred_def_id,
-                "issuer_did": issuer_did,
-                "support_revocation": support_revocation,
-                "novel": novel,
-                "tag": tag,
-                "rev_reg_size": rev_reg_size,
-            },
-            "processing": {
-                "create_pending_rev_reg": True,
-            },
-        }
-
-        # Notify event
-        meta_data["processing"]["auto_create_rev_reg"] = True
-        await notify_cred_def_event(profile, cred_def_id, meta_data)
-
-        return {
-            "job_id": None,
-            "credential_definition_state": {
-                "state": "finished",
-                "credential_definition_id": cred_def_id,
-                "credential_definition": {
-                    "issuerId": issuer_did,
-                    "schemaId": schema_id,
-                    "type": "CL",
-                    "tag": tag,
-                    "value": {
-                        "primary": {
-                            "n": cred_def["value"]["primary"]["n"],
-                            "r": cred_def["value"]["primary"]["r"],
-                            "rctxt": cred_def["value"]["primary"]["rctxt"],
-                            "s": cred_def["value"]["primary"]["s"],
-                            "z": cred_def["value"]["primary"]["z"],
-                        }
-                    },
-                },
-            },
-            "registration_metadata": {},
-            "credential_definition_metadata": {},
-        }
+        return CredDefResult(
+            job_id=None,
+            credential_definition_state=CredDefState(
+                state=CredDefState.STATE_FINISHED,
+                credential_definition_id=cred_def_id,
+                credential_definition=credential_definition,
+            ),
+            registration_metadata={},
+            credential_definition_metadata={"seqNo": seq_no, **(options or {})},
+        )
 
     async def get_revocation_registry_definition(
         self, profile: Profile, rev_reg_id: str

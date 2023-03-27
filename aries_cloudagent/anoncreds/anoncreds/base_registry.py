@@ -1,21 +1,18 @@
 """Base Registry"""
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, Pattern, Sequence, Tuple, TypeVar
-
-from aries_cloudagent.core.error import BaseError
+from typing import Generic, Optional, Pattern, Tuple, TypeVar
 
 from ...config.injection_context import InjectionContext
+from ...core.error import BaseError
 from ...core.profile import Profile
 from ..models.anoncreds_cred_def import (
-    AnonCredsRegistryGetCredentialDefinition,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
-    AnonCredsRegistryGetRevocationRegistryDefinitions,
+    CredDef,
+    CredDefResult,
+    GetCredDefResult,
 )
-from ..models.anoncreds_schema import (
-    GetSchemaResult,
-    SchemaResult,
-)
+from ..models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 
 
 T = TypeVar("T")
@@ -27,6 +24,12 @@ class BaseAnonCredsError(BaseError):
 
 class AnonCredsObjectNotFound(BaseAnonCredsError):
     """Raised when object is not found in resolver."""
+
+    def __init__(
+        self, message: Optional[str] = None, resolution_metadata: Optional[dict] = None
+    ):
+        super().__init__(message, resolution_metadata)
+        self.resolution_metadata = resolution_metadata
 
 
 class AnonCredsRegistrationError(BaseAnonCredsError):
@@ -50,16 +53,18 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
             return super().message
 
 
-class AnonCredsSchemaAlreadyExists(AnonCredsObjectAlreadyExists[Tuple[str, dict]]):
+class AnonCredsSchemaAlreadyExists(
+    AnonCredsObjectAlreadyExists[Tuple[str, AnonCredsSchema]]
+):
     """Raised when a schema already exists."""
 
     @property
     def schema_id(self):
-        return self.obj[0]
+        return self.obj[0] if self.obj else None
 
     @property
     def schema(self):
-        return self.obj[1]
+        return self.obj[1] if self.obj else None
 
 
 class AnonCredsResolutionError(BaseAnonCredsError):
@@ -83,30 +88,24 @@ class BaseAnonCredsHandler(ABC):
 
 class BaseAnonCredsResolver(BaseAnonCredsHandler):
     @abstractmethod
-    async def get_schema(self, schema_id: str) -> GetSchemaResult:
+    async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
 
     @abstractmethod
     async def get_credential_definition(
-        self, credential_definition_id: str
-    ) -> AnonCredsRegistryGetCredentialDefinition:
+        self, profile: Profile, credential_definition_id: str
+    ) -> GetCredDefResult:
         """Get a credential definition from the registry."""
 
     @abstractmethod
     async def get_revocation_registry_definition(
-        self, revocation_registry_id: str
+        self, profile: Profile, revocation_registry_id: str
     ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
         """Get a revocation registry definition from the registry."""
 
     @abstractmethod
-    async def get_revocation_registry_definitions(
-        self, filter: dict
-    ) -> AnonCredsRegistryGetRevocationRegistryDefinitions:
-        """Get a revocation registry definition ids from the registry."""
-
-    @abstractmethod
     async def get_revocation_list(
-        self, revocation_registry_id: str, timestamp: str
+        self, profile: Profile, revocation_registry_id: str, timestamp: str
     ) -> AnonCredsRegistryGetRevocationList:
         """Get a revocation list from the registry."""
 
@@ -116,17 +115,19 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
     async def register_schema(
         self,
         profile: Profile,
-        issuer_id: str,
-        name: str,
-        version: str,
-        attr_names: Sequence[str],
+        schema: AnonCredsSchema,
         options: Optional[dict] = None,
     ) -> SchemaResult:
         """Register a schema on the registry."""
 
-    # TODO: determine keyword arguments
     @abstractmethod
-    async def register_credential_definition(self):
+    async def register_credential_definition(
+        self,
+        profile: Profile,
+        schema: GetSchemaResult,
+        credential_definition: CredDef,
+        options: Optional[dict] = None,
+    ) -> CredDefResult:
         """Register a credential definition on the registry."""
 
     # TODO: determine keyword arguments

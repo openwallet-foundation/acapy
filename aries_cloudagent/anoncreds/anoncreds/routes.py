@@ -14,25 +14,18 @@ from marshmallow import fields
 from .anoncreds_registry import AnonCredsRegistry
 from ..issuer import AnonCredsIssuer
 from ..models.anoncreds_cred_def import (
-    AnonCredsCredentialDefinitionSchema,
-    AnonCredsRegistryGetCredentialDefinitionSchema,
+    CredDefSchema,
+    GetCredDefResultSchema,
 )
 from ..models.anoncreds_schema import (
     AnonCredsSchemaSchema,
     SchemaResultSchema,
     GetSchemaResultSchema,
 )
-from aries_cloudagent.anoncreds.models.anoncreds_valid import (
-    ANONCREDS_SCHEMA_ID,
-    ANONCREDS_VERSION,
-)
 
 from ...admin.request_context import AdminRequestContext
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.valid import (
-    GENERIC_DID,
-    INDY_CRED_DEF_ID,
-    INDY_SCHEMA_ID,
     UUIDFour,
 )
 
@@ -44,9 +37,7 @@ SPEC_URI = "https://hyperledger.github.io/anoncreds-spec"
 class SchemaIdMatchInfo(OpenAPISchema):
     """Path parameters and validators for request taking schema id."""
 
-    schema_id = fields.Str(
-        data_key="schemaId", description="Schema identifier", **INDY_SCHEMA_ID
-    )
+    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
 
 
 class CredIdMatchInfo(OpenAPISchema):
@@ -57,67 +48,44 @@ class CredIdMatchInfo(OpenAPISchema):
     )
 
 
-class CredDefSchema(OpenAPISchema):
+class InnerCredDefSchema(OpenAPISchema):
     """Parameters and validators for credential definition."""
 
-    # tag = fields.Str(
-    #    description="""The tag value passed in by the Issuer to
-    #     an AnonCred's Credential Definition create and store implementation."""
-    # )
-    schemaId = fields.Str(
-        data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
-    )
+    tag = fields.Str(description="Credential definition tag")
+    schemaId = fields.Str(data_key="schemaId", description="Schema identifier")
     issuerId = fields.Str(
         description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
-    )  # TODO: get correct validator
-    supportRevocation = fields.Bool()
-    revocationRegistrySize = fields.Int()
+    )
 
 
 class CredDefPostOptionsSchema(OpenAPISchema):
     """Parameters and validators for credential definition options."""
 
-    endorserConnectionId = fields.Str()
-    supportRevocation = fields.Bool()
-    revocationRegistrySize = fields.Int()
+    endorser_connection_id = fields.Str(required=False)
+    support_revocation = fields.Bool(required=False)
+    revocation_registry_size = fields.Int(required=False)
 
 
-class CredDefPostQueryStringSchema(OpenAPISchema):
+class CredDefPostRequestSchema(OpenAPISchema):
     """Parameters and validators for query string in create credential definition."""
 
-    credentialDefinition = fields.Nested(CredDefSchema())
+    credential_definition = fields.Nested(InnerCredDefSchema())
     options = fields.Nested(CredDefPostOptionsSchema())
 
 
 class CredDefsQueryStringSchema(OpenAPISchema):
     """Parameters and validators for credential definition list query."""
 
-    credentialDefinitionId = fields.Str(
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
-        data_key="credentialDefinitionId",
-    )
     issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
-        data_key="issuerId",
-    )  # TODO: get correct validator
-    schema_id = fields.Str(
-        data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
+        description="Issuer Identifier of the credential definition",
     )
-    schema_issuer_id = fields.Str(
-        description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
-        data_key="schemaIssuerId",
-    )  # TODO: get correct validator
+    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
     schema_name = fields.Str(
         description="Schema name",
-        example=ANONCREDS_SCHEMA_ID["example"].split(":")[2],
-        data_key="schemaName",
     )
-    schema_version = fields.Str(
-        description="Schema version", **ANONCREDS_VERSION, data_key="schemaVersion"
+    schema_version = fields.Str(description="Schema version")
+    state = fields.Str(
+        description="Credential definition state",
     )
 
 
@@ -127,9 +95,8 @@ class CredDefState(OpenAPISchema):
     state = fields.Str()  # TODO: create validator for only possible states
     credential_definition_id = fields.Str(
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
     )
-    credential_definition = fields.Nested(AnonCredsCredentialDefinitionSchema())
+    credential_definition = fields.Nested(CredDefSchema())
 
 
 class PostCredDefResponseSchema(OpenAPISchema):
@@ -139,12 +106,6 @@ class PostCredDefResponseSchema(OpenAPISchema):
     credential_definition_state = fields.Nested(CredDefState())
     registration_metadata = fields.Dict()
     credential_definition_metadata = fields.Dict()
-
-
-class GetCredDefsResponseSchema(OpenAPISchema):
-    """Parameters and validators for credential definition list all response."""
-
-    credential_definition_id = fields.Str()
 
 
 class SchemaPostOptionSchema(OpenAPISchema):
@@ -204,9 +165,9 @@ async def schemas_post(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
-    request_data = await request.json()
-    options = request_data.get("option")
-    schema_data = request_data.get("schema")
+    body = await request.json()
+    options = body.get("option")
+    schema_data = body.get("schema")
 
     issuer_id = schema_data.get("issuerId")
     attr_names = schema_data.get("attrNames")
@@ -214,7 +175,7 @@ async def schemas_post(request: web.BaseRequest):
     version = schema_data.get("version")
 
     issuer = context.inject(AnonCredsIssuer)
-    result = await issuer.create_schema(
+    result = await issuer.create_and_register_schema(
         issuer_id, name, version, attr_names, options=options
     )
     return web.json_response(result.serialize())
@@ -290,7 +251,7 @@ async def schemas_get(request: web.BaseRequest):
 
 
 @docs(tags=["anoncreds"], summary="")
-@request_schema(CredDefPostQueryStringSchema())
+@request_schema(CredDefPostRequestSchema())
 @response_schema(PostCredDefResponseSchema(), 200, description="")
 async def cred_def_post(request: web.BaseRequest):
     """Request handler for creating .
@@ -301,34 +262,27 @@ async def cred_def_post(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    anon_creds_registry = context.inject(AnonCredsRegistry)
-    request_data = await request.json()
-    options = request_data.get("option")
-    data = request_data.get("credentialDefinition")
+    body = await request.json()
+    options = body.get("options")
+    cred_def = body.get("credential_definition")
+    issuer_id = cred_def.get("issuerId")
+    schema_id = cred_def.get("schemaId")
+    tag = cred_def.get("tag")
 
-    # TODO: find out if we need a model for this input.
-    # cred_def = {
-    #     "issuer_id": data.get("issuerId"),
-    #     "schema_id": data.get("schemaId"),
-    #     # "tag":data.get("tag"),
-    #     "support_revocation": data.get("supportRevocation"),
-    #     "revocation_registrySize": data.get("revocationRegistrySize"),
-    # }
-    result = await anon_creds_registry.register_credential_definition(
-        profile=context.profile,
-        schema_id=data["schemaId"],
-        support_revocation=data["supportRevocation"],
-        tag=None,
-        rev_reg_size=data["revocationRegistrySize"],
-        issuer_id=data["issuerId"],
+    issuer = context.inject(AnonCredsIssuer)
+    result = await issuer.create_and_store_credential_definition(
+        issuer_id,
+        schema_id,
+        tag,
         options=options,
     )
-    return web.json_response(result)
+
+    return web.json_response(result.serialize())
 
 
 @docs(tags=["anoncreds"], summary="")
 @match_info_schema(CredIdMatchInfo())
-@response_schema(AnonCredsRegistryGetCredentialDefinitionSchema(), 200, description="")
+@response_schema(GetCredDefResultSchema(), 200, description="")
 async def cred_def_get(request: web.BaseRequest):
     """Request handler for getting credential definition.
 
@@ -346,6 +300,16 @@ async def cred_def_get(request: web.BaseRequest):
     return web.json_response(result.serialize())
 
 
+class GetCredDefsResponseSchema(OpenAPISchema):
+    """AnonCredsRegistryGetCredDefsSchema"""
+
+    credential_definition_ids = fields.List(
+        fields.Str(
+            description="credential definition identifiers",
+        )
+    )
+
+
 @docs(tags=["anoncreds"], summary="")
 @querystring_schema(CredDefsQueryStringSchema())
 @response_schema(GetCredDefsResponseSchema(), 200, description="")
@@ -358,19 +322,14 @@ async def cred_defs_get(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    anon_creds_registry = context.inject(AnonCredsRegistry)
-    query = request.query
+    issuer = context.inject(AnonCredsIssuer)
 
-    filter = {
-        "cred_def_id": query.get("credentialDefinitionId"),
-        "issuer_id": query.get("issuerId"),
-        "schema_id": query.get("schemaId"),
-        "schema_issuer_id": query.get("schemaIssuerId"),
-        "schema_name": query.get("schemaName"),
-        "schema_version": query.get("schemaVersion"),
-    }
-    cred_def_ids = await anon_creds_registry.get_credential_definitions(
-        context.profile, filter
+    cred_def_ids = await issuer.get_created_credential_definitions(
+        issuer_id=request.query.get("issuer_id"),
+        schema_id=request.query.get("schema_id"),
+        schema_name=request.query.get("schema_name"),
+        schema_version=request.query.get("schema_version"),
+        state=request.query.get("state"),
     )
     return web.json_response(cred_def_ids)
 

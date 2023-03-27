@@ -1,13 +1,11 @@
 """Anoncreds cred def OpenAPI validators"""
 from typing import Any, Dict, List, Optional
 from typing_extensions import Literal
+from anoncreds import CredentialDefinition
 
-from marshmallow import EXCLUDE, Schema, fields
+from marshmallow import EXCLUDE, fields
+from marshmallow.validate import OneOf
 
-from aries_cloudagent.anoncreds.models.anoncreds_valid import (
-    ANONCREDS_SCHEMA_ID,
-    ANONCREDS_VERSION,
-)
 from aries_cloudagent.messaging.models.base import BaseModel, BaseModelSchema
 from aries_cloudagent.messaging.valid import (
     GENERIC_DID,
@@ -15,17 +13,14 @@ from aries_cloudagent.messaging.valid import (
     NUM_STR_WHOLE,
 )
 
-from ...messaging.models.openapi import OpenAPISchema
-from .anoncreds_schema import AnonCredsSchema
 
-
-class PrimarySchema(BaseModel):
+class CredDefValuePrimary(BaseModel):
     """PrimarySchema"""
 
     class Meta:
         """PrimarySchema metadata."""
 
-        schema_class = "PrimarySchemaSchema"
+        schema_class = "CredDefValuePrimarySchema"
 
     def __init__(self, n: str, s: str, r: dict, rctxt: str, z: str, **kwargs):
         super().__init__(**kwargs)
@@ -36,66 +31,120 @@ class PrimarySchema(BaseModel):
         self.z = z
 
 
-class PrimarySchemaSchema(BaseModelSchema):
-    """Parameters and validators for credential definition primary."""
+class CredDefValuePrimarySchema(BaseModelSchema):
+    """Cred def value primary schema."""
 
     class Meta:
-        """PrimarySchema metadata."""
+        """CredDefValuePrimarySchema metadata."""
 
-        model_class = AnonCredsSchema
+        model_class = CredDefValuePrimary
         unknown = EXCLUDE
 
     n = fields.Str(**NUM_STR_WHOLE)
     s = fields.Str(**NUM_STR_WHOLE)
-    r = fields.Nested(
-        Schema.from_dict(
-            {
-                "master_secret": fields.Str(**NUM_STR_WHOLE),
-                "number": fields.Str(**NUM_STR_WHOLE),
-                "remainder": fields.Str(**NUM_STR_WHOLE),
-            }
-        ),
-        name="CredDefValuePrimaryRSchema",
-    )
+    r = fields.Dict()
     rctxt = fields.Str(**NUM_STR_WHOLE)
     z = fields.Str(**NUM_STR_WHOLE)
 
 
-# TODO: determine types for `primary` and `revocation`
-class AnonCredsCredentialDefinitionValue(BaseModel):
-    """AnonCredsCredentialDefinitionValue"""
+class CredDefValueRevocation(BaseModel):
+    """Cred def value revocation."""
 
     class Meta:
-        """AnonCredsCredentialDefinitionValue metadata."""
+        """CredDefValueRevocation metadata."""
 
-        schema_class = "AnonCredsCredentialDefinitionValueSchema"
+        schema_class = "CredDefValueRevocationSchema"
 
-    def __init__(self, primary: PrimarySchema, **kwargs):
-        super().__init__(**kwargs)
-        self.primary = primary
+    def __init__(
+        self,
+        g: str,
+        g_dash: str,
+        h: str,
+        h0: str,
+        h1: str,
+        h2: str,
+        htilde: str,
+        h_cap: str,
+        u: str,
+        pk: str,
+        y: str,
+    ):
+        self.g = g
+        self.g_dash = g_dash
+        self.h = h
+        self.h0 = h0
+        self.h1 = h1
+        self.h2 = h2
+        self.htilde = htilde
+        self.h_cap = h_cap
+        self.u = u
+        self.pk = pk
+        self.y = y
 
-    # revocation: Optional[Any]
 
-
-class AnonCredsCredentialDefinitionValueSchema(BaseModelSchema):
-    """Parameters and validators for credential definition value."""
+class CredDefValueRevocationSchema(BaseModelSchema):
+    """Cred def value revocation schema."""
 
     class Meta:
-        """AnonCredsCredentialDefinitionValueSchema metadata."""
-
-        model_class = AnonCredsCredentialDefinitionValue
+        model_class = CredDefValueRevocation
         unknown = EXCLUDE
 
-    primary = fields.Nested(PrimarySchemaSchema())
+    g = fields.Str(example="1 1F14F&ECB578F 2 095E45DDF417D")
+    g_dash = fields.Str(example="1 1D64716fCDC00C 1 0C781960FA66E3D3 2 095E45DDF417D")
+    h = fields.Str(example="1 16675DAE54BFAE8 2 095E45DD417D")
+    h0 = fields.Str(example="1 21E5EF9476EAF18 2 095E45DDF417D")
+    h1 = fields.Str(example="1 236D1D99236090 2 095E45DDF417D")
+    h2 = fields.Str(example="1 1C3AE8D1F1E277 2 095E45DDF417D")
+    htilde = fields.Str(example="1 1D8549E8C0F8 2 095E45DDF417D")
+    h_cap = fields.Str(example="1 1B2A32CF3167 1 2490FEBF6EE55 1 0000000000000000")
+    u = fields.Str(example="1 0C430AAB2B4710 1 1CB3A0932EE7E 1 0000000000000000")
+    pk = fields.Str(example="1 142CD5E5A7DC 1 153885BD903312 2 095E45DDF417D")
+    y = fields.Str(example="1 153558BD903312 2 095E45DDF417D 1 0000000000000000")
 
 
-class AnonCredsCredentialDefinition(BaseModel):
-    """AnonCredsCredentialDefinition"""
+class CredDefValue(BaseModel):
+    """Cred def value."""
 
     class Meta:
-        """AnonCredsCredentialDefinition metadata."""
+        """CredDefValue metadata."""
 
-        schema_class = "AnonCredsCredentialDefinitionSchema"
+        schema_class = "CredDefValueSchema"
+
+    def __init__(
+        self, primary: CredDefValuePrimary, revocation: CredDefValueRevocation, **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.primary = primary
+        self.revocation = revocation
+
+
+class CredDefValueSchema(BaseModelSchema):
+    """Cred def value schema."""
+
+    class Meta:
+        """CredDefValueSchema metadata."""
+
+        model_class = CredDefValue
+        unknown = EXCLUDE
+
+    primary = fields.Nested(
+        CredDefValuePrimarySchema(),
+        description="Primary value for credential definition",
+    )
+    revocation = fields.Nested(
+        CredDefValueRevocationSchema(),
+        description="Revocation value for credential definition",
+        required=False,
+    )
+
+
+class CredDef(BaseModel):
+    """AnonCredsCredDef"""
+
+    class Meta:
+        """AnonCredsCredDef metadata."""
+
+        schema_class = "CredDefSchema"
 
     def __init__(
         self,
@@ -103,111 +152,171 @@ class AnonCredsCredentialDefinition(BaseModel):
         schema_id: str,
         type: Literal["CL"],
         tag: str,
-        value: AnonCredsCredentialDefinitionValue,
-        **kwargs
+        value: CredDefValue,
+        **kwargs,
     ):
+        super().__init__(**kwargs)
         self.issuer_id = issuer_id
         self.schema_id = schema_id
         self.type = type
         self.tag = tag
         self.value = value
 
+    @classmethod
+    def from_native(cls, cred_def: CredentialDefinition):
+        """Convert a native credential definition to a CredDef object."""
+        return cls.deserialize(cred_def.to_json())
 
-class AnonCredsCredentialDefinitionSchema(BaseModelSchema):
-    """AnonCredsCredentialDefinitionSchema"""
+    def to_native(self):
+        """Convert to native anoncreds credential definition."""
+        return CredentialDefinition.load(self.serialize())
+
+
+class CredDefSchema(BaseModelSchema):
+    """CredDefSchema."""
 
     class Meta:
-        """AnonCredsCredentialDefinitionSchema metadata."""
+        """CredDefSchema metadata."""
 
-        model_class = AnonCredsCredentialDefinition
+        model_class = CredDef
         unknown = EXCLUDE
 
     issuer_id = fields.Str(
         description="Issuer Identifier of the credential definition or schema",
-        **GENERIC_DID,
         data_key="issuerId",
-    )  # TODO: get correct validator
-    schema_id = fields.Str(
-        data_key="schemaId", description="Schema identifier", **ANONCREDS_SCHEMA_ID
     )
-    type = fields.Str()
+    schema_id = fields.Str(data_key="schemaId", description="Schema identifier")
+    type = fields.Str(validate=OneOf(["CL"]))
     tag = fields.Str(
         description="""The tag value passed in by the Issuer to
          an AnonCred's Credential Definition create and store implementation."""
     )
-    value = fields.Nested(AnonCredsCredentialDefinitionValueSchema())
+    value = fields.Nested(CredDefValueSchema())
 
 
-class AnonCredsRegistryGetCredentialDefinition(BaseModel):
-    """AnonCredsRegistryGetCredentialDefinition"""
+class CredDefState(BaseModel):
+    """CredDefState."""
+
+    STATE_FINISHED = "finished"
+    STATE_FAILED = "failed"
+    STATE_ACTION = "action"
+    STATE_WAIT = "wait"
 
     class Meta:
-        """AnonCredsRegistryGetCredentialDefinition metadata."""
+        """CredDefState metadata."""
 
-        schema_class = "AnonCredsRegistryGetCredentialDefinitionSchema"
+        schema_class = "CredDefStateSchema"
+
+    def __init__(
+        self, state: str, credential_definition_id: str, credential_definition: CredDef
+    ):
+        self.state = state
+        self.credential_definition_id = credential_definition_id
+        self.credential_definition = credential_definition
+
+
+class CredDefStateSchema(BaseModelSchema):
+    """CredDefStateSchema."""
+
+    class Meta:
+        """CredDefStateSchema metadata."""
+
+        model_class = CredDefState
+        unknown = EXCLUDE
+
+    state = fields.Str(
+        validate=OneOf(
+            [
+                CredDefState.STATE_FINISHED,
+                CredDefState.STATE_FAILED,
+                CredDefState.STATE_ACTION,
+                CredDefState.STATE_WAIT,
+            ]
+        )
+    )
+    credential_definition_id = fields.Str(description="credential definition id")
+    credential_definition = fields.Nested(
+        CredDefSchema(), description="credential definition"
+    )
+
+
+class CredDefResult(BaseModel):
+    """Cred def result."""
+
+    class Meta:
+        """CredDefResult metadata."""
+
+        schema_class = "CredDefResultSchema"
 
     def __init__(
         self,
-        credential_definition: AnonCredsCredentialDefinition,
-        credential_definition_id: str,
-        resolution_metadata: dict,
+        job_id: Optional[str],
+        credential_definition_state: CredDefState,
+        registration_metadata: dict,
         credential_definition_metadata: dict,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
-        self.credential_definition = credential_definition
+        self.job_id = job_id
+        self.credential_definition_state = credential_definition_state
+        self.registration_metadata = registration_metadata
+        self.credential_definition_metadata = credential_definition_metadata
+
+
+class CredDefResultSchema(BaseModelSchema):
+    """Cred def result schema."""
+
+    class Meta:
+        """CredDefResultSchema metadata."""
+
+        model_class = CredDefResult
+        unknown = EXCLUDE
+
+    job_id = fields.Str()
+    credential_definition_state = fields.Nested(CredDefStateSchema())
+    registration_metadata = fields.Dict()
+    # For indy, credential_definition_metadata will contain the seqNo
+    credential_definition_metadata = fields.Dict()
+
+
+class GetCredDefResult(BaseModel):
+    """Get cred def result."""
+
+    class Meta:
+        """AnonCredsRegistryGetCredDef metadata."""
+
+        schema_class = "GetCredDefResultSchema"
+
+    def __init__(
+        self,
+        credential_definition_id: str,
+        credential_definition: CredDef,
+        resolution_metadata: dict,
+        credential_definition_metadata: dict,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
         self.credential_definition_id = credential_definition_id
+        self.credential_definition = credential_definition
         self.resolution_metadata = resolution_metadata
         self.credential_definition_metadata = credential_definition_metadata
 
 
-class AnonCredsRegistryGetCredentialDefinitions(BaseModel):
-    """AnonCredsRegistryGetCredentialDefinitions"""
+class GetCredDefResultSchema(BaseModelSchema):
+    """GetCredDefResultSchema."""
 
     class Meta:
-        """AnonCredsRegistryGetCredentialDefinitions metadata."""
+        """GetCredDefResultSchema metadata."""
 
-        schema_class = "AnonCredsRegistryGetCredentialDefinitionsSchema"
-
-    def __init__(self, credential_definition_ids: list, **kwargs):
-        super().__init__(**kwargs)
-        self.credential_definition_ids = credential_definition_ids
-
-
-class AnonCredsRegistryGetCredentialDefinitionsSchema(BaseModelSchema):
-    """AnonCredsRegistryGetCredentialDefinitionsSchema"""
-
-    class Meta:
-        """AnonCredsRegistryGetCredentialDefinitionsSchema metadata"""
-
-        model_class = AnonCredsRegistryGetCredentialDefinitions
+        model_class = GetCredDefResult
         unknown = EXCLUDE
 
-    credential_definition_ids = fields.List(
-        fields.Str(
-            data_key="credentialDefinitionIds",
-            description="credential definition identifiers",
-            **INDY_CRED_DEF_ID,
-        )
+    credential_definition_id = fields.Str(description="credential definition id")
+    credential_definition = fields.Nested(
+        CredDefSchema(), description="credential definition"
     )
-
-
-class AnonCredsRegistryGetCredentialDefinitionSchema(BaseModelSchema):
-    """Parameters and validators for credential definition list response."""
-
-    class Meta:
-        """AnonCredsRegistryGetCredentialDefinitionSchema metadata."""
-
-        model_class = AnonCredsRegistryGetCredentialDefinition
-        unknown = EXCLUDE
-
-    credential_definition_id = fields.Str(
-        description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
-    )
-    credential_definition = fields.Nested(AnonCredsCredentialDefinitionSchema())
     resolution_metadata = fields.Dict()
-    credential_definition_metadata = fields.Dict()
+    credential_definitions_metadata = fields.Dict()
 
 
 class AnonCredsRevocationRegistryDefinition(BaseModel):
@@ -229,7 +338,7 @@ class AnonCredsRevocationRegistryDefinition(BaseModel):
         max_cred_num: int,
         tails_Location: str,
         tails_hash: str,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -284,7 +393,7 @@ class AnonCredsRegistryGetRevocationRegistryDefinition(BaseModel):
         revocation_registry_id: str,
         resolution_metadata: Dict[str, Any],
         revocation_registry_metadata: Dict[str, Any],
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.revocation_registry = revocation_registry
@@ -352,7 +461,7 @@ class AnonCredsRevocationList(BaseModel):
         revocation_list: List[int],
         current_accumulator: str,
         timestamp: int,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -401,7 +510,7 @@ class AnonCredsRegistryGetRevocationList(BaseModel):
         revocation_list: AnonCredsRevocationList,
         resolution_metadata: Dict[str, Any],
         revocation_registry_metadata: Dict[str, Any],
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.revocation_list = revocation_list

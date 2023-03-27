@@ -5,7 +5,7 @@ from typing import Pattern
 from .....config.injection_context import InjectionContext
 from .....core.profile import Profile
 from ....models.anoncreds_cred_def import (
-    AnonCredsRegistryGetCredentialDefinition,
+    GetCredDefResult,
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )
@@ -45,7 +45,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def get_credential_definition(
         self, profile, credential_definition_id: str
-    ) -> AnonCredsRegistryGetCredentialDefinition:
+    ) -> GetCredDefResult:
         """Get a credential definition from the registry."""
 
     async def get_credential_definitions(self, profile: Profile, filter: str):

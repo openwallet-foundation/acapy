@@ -502,6 +502,71 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         return (credential_definition_id, json.loads(credential_definition_json), novel)
 
+    async def send_credential_definition(
+        self,
+        schema_id: str,
+        cred_def_id: str,
+        cred_def: dict,
+        write_ledger: bool = True,
+        endorser_did: str = None,
+    ) -> int:
+        """
+        Send credential definition to ledger and store relevant key matter in wallet.
+
+        Args:
+            issuer: The issuer instance to use for credential definition creation
+            schema_id: The schema id of the schema to create cred def for
+            signature_type: The signature type to use on the credential definition
+            tag: Optional tag to distinguish multiple credential definitions
+            support_revocation: Optional flag to enable revocation for this cred def
+
+        Returns:
+            Tuple with cred def id, cred def structure, and whether it's novel
+
+        """
+        public_info = await self.get_wallet_public_did()
+        if not public_info:
+            raise BadLedgerRequestError(
+                "Cannot publish credential definition without a public DID"
+            )
+
+        schema = await self.get_schema(schema_id)
+        if not schema:
+            raise LedgerError(f"Ledger {self.pool.name} has no schema {schema_id}")
+
+        # check if cred def is on ledger already
+        ledger_cred_def = await self.fetch_credential_definition(cred_def_id)
+        if ledger_cred_def:
+            credential_definition_json = json.dumps(ledger_cred_def)
+            raise LedgerObjectAlreadyExistsError(
+                f"Credential definition with id {cred_def_id} "
+                "already exists in wallet and on ledger.",
+                credential_definition_json,
+            )
+
+        if await self.is_ledger_read_only():
+            raise LedgerError(
+                "Error cannot write cred def when ledger is in read only mode"
+            )
+
+        cred_def_req = await self._create_credential_definition_request(
+            public_info,
+            json.dumps(cred_def),
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
+        )
+
+        resp = await self.txn_submit(
+            cred_def_req, True, sign_did=public_info, write_ledger=write_ledger
+        )
+
+        # TODO Clean up
+        # if not write_ledger:
+        #     return (credential_definition_id, {"signed_txn": resp}, novel)
+
+        seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
+        return seq_no
+
     @abstractmethod
     async def _create_credential_definition_request(
         self,
