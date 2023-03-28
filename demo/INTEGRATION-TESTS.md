@@ -2,6 +2,11 @@
 
 Integration tests for aca-py are implemented using Behave functional tests to drive aca-py agents based on the alice/faber demo framework.
 
+If you are new to the ACA-Py integration test suite, this [video](https://youtu.be/AbuPg4J8Pd4) from ACA-Py Maintainer @ianco describes
+the Integration Tests in ACA-Py, how to run them and how to add more tests.
+
+## Getting Started
+
 To run the aca-py Behave tests, open a bash shell run the following:
 
 ```bash
