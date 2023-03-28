@@ -3,11 +3,9 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Optional, Sequence, Tuple
 
-from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDefResult
-
-from .models.anoncreds_schema import SchemaResult
-
 from ..core.error import BaseError
+from .models.anoncreds_cred_def import CredDefResult
+from .models.anoncreds_schema import SchemaResult
 
 
 DEFAULT_CRED_DEF_TAG = "default"

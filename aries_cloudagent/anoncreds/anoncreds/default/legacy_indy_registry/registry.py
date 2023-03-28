@@ -265,13 +265,25 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     "exists in wallet but not on the ledger"
                 ) from err
 
+        # Translate anoncreds object to indy object
+        LOGGER.debug("Registering credential definition: %s", cred_def_id)
+        indy_cred_def = {
+            "id": cred_def_id,
+            "schemaId": str(schema.schema_metadata["seqNo"]),
+            "tag": credential_definition.tag,
+            "type": credential_definition.type,
+            "value": credential_definition.value.serialize(),
+            "ver": "1.0",
+        }
+        LOGGER.debug("Cred def value: %s", indy_cred_def)
+
         try:
             async with ledger:
                 seq_no = await shield(
                     ledger.send_credential_definition(
                         credential_definition.schema_id,
                         cred_def_id,
-                        credential_definition.serialize(),
+                        indy_cred_def,
                         write_ledger=True,
                         endorser_did=credential_definition.issuer_id,
                     )

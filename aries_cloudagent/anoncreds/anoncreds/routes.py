@@ -349,7 +349,7 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.get(
-                "/anoncreds/credential-definitions/",
+                "/anoncreds/credential-definitions",
                 cred_defs_get,
                 allow_head=False,
             ),

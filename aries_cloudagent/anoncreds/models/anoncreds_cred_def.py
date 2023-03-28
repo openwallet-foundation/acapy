@@ -111,7 +111,10 @@ class CredDefValue(BaseModel):
         schema_class = "CredDefValueSchema"
 
     def __init__(
-        self, primary: CredDefValuePrimary, revocation: CredDefValueRevocation, **kwargs
+        self,
+        primary: CredDefValuePrimary,
+        revocation: Optional[CredDefValueRevocation] = None,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.primary = primary
