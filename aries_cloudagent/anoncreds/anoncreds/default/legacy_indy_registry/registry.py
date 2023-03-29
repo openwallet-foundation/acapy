@@ -24,6 +24,8 @@ from ....models.anoncreds_cred_def import (
     CredDefValue,
     CredDefResult,
     GetCredDefResult,
+)
+from ..models.anoncreds_revocation import (
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )

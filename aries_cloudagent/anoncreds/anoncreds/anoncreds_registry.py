@@ -5,11 +5,13 @@ from typing import List, Optional
 
 from ...core.profile import Profile
 from ..models.anoncreds_cred_def import (
-    AnonCredsRegistryGetRevocationList,
-    AnonCredsRegistryGetRevocationRegistryDefinition,
     CredDef,
     CredDefResult,
     GetCredDefResult,
+)
+from ..models.anoncreds_revocation import (
+    AnonCredsRegistryGetRevocationList,
+    AnonCredsRegistryGetRevocationRegistryDefinition,
     RevRegDef,
     RevRegDefResult,
     RevStatusList,

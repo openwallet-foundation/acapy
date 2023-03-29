@@ -6,6 +6,8 @@ from .....config.injection_context import InjectionContext
 from .....core.profile import Profile
 from ....models.anoncreds_cred_def import (
     GetCredDefResult,
+)
+from ..models.anoncreds_revocation import (
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )

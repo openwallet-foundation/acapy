@@ -27,6 +27,8 @@ from ..models.anoncreds_cred_def import (
     CredDef,
     CredDefResult,
     CredDefState,
+)
+from ..models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefResult,
     RevRegDefState,
