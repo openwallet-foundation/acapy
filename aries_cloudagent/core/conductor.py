@@ -323,7 +323,7 @@ class Conductor:
                 )
                 from_version = record.value
             except StorageNotFoundError:
-                LOGGER.exception(("Wallet version storage record not found."))
+                LOGGER.warning(("Wallet version storage record not found."))
         from_version = from_version or self.root_profile.settings.get(
             "upgrade.config_path"
         )
@@ -338,15 +338,17 @@ class Conductor:
             ):
                 await upgrade(self.root_profile.settings)
         else:
-            LOGGER.exception(
+            LOGGER.warning(
                 (
-                    "Wallet storage version not found. "
-                    "Run aca-py upgrade command with "
-                    "--from-version to fix this."
+                    "No upgrade from version was found from wallet or via"
+                    " --from-version startup argument. "
+                    f"{RECORD_TYPE_ACAPY_VERSION} storage record will be "
+                    f"set to {agent_version}. You can run run the upgrade "
+                    "command with --from-version and --force-upgrade to "
+                    "upgrade later."
                 )
             )
-            raise
-        await add_version_record(self.root_profile, agent_version)
+            await add_version_record(self.root_profile, agent_version)
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):

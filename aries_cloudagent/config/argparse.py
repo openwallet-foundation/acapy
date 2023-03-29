@@ -2057,7 +2057,10 @@ class UpgradeGroup(ArgumentGroup):
             "--force-upgrade",
             action="store_true",
             env_var="ACAPY_UPGRADE_FORCE_UPGRADE",
-            help="Brute force the upgrade process.",
+            help=(
+                "Forces the '—from-version' argument to override the version retrieved from "
+                "secure storage when calculating upgrades to be run."
+            ),
         )
 
     def get_settings(self, args: Namespace) -> dict:

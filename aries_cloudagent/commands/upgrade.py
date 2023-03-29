@@ -1,6 +1,7 @@
 """Upgrade command for handling breaking changes when updating ACA-PY versions."""
 
 import asyncio
+import logging
 import yaml
 
 from configargparse import ArgumentParser
@@ -25,6 +26,7 @@ from . import PROG
 DEFAULT_UPGRADE_CONFIG_PATH = (
     "./aries_cloudagent/commands/default_version_upgrade_config.yml"
 )
+LOGGER = logging.getLogger(__name__)
 
 
 class UpgradeError(BaseError):
@@ -125,6 +127,7 @@ async def add_version_record(profile: Profile, version: str):
             )
         else:
             await storage.update_record(version_storage_record, version, {})
+    LOGGER.info(f"{RECORD_TYPE_ACAPY_VERSION} storage record set to {version}")
 
 
 async def upgrade(settings: dict):
@@ -143,47 +146,68 @@ async def upgrade(settings: dict):
         sorted_versions_found_in_config = sorted(
             versions_found_in_config, key=lambda x: package_version.parse(x)
         )
+        upgrade_from_version_config = None
+        upgrade_from_version_setting = None
+        upgrade_from_version = None
         async with root_profile.session() as session:
             storage = session.inject(BaseStorage)
             try:
                 version_storage_record = await storage.find_record(
                     type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
                 )
-                upgrade_from_version = version_storage_record.value
-                if "upgrade.from_version" in settings:
-                    print(
-                        (
-                            f"version {upgrade_from_version} found in storage"
-                            ", --from-version will be ignored."
-                        )
-                    )
+                upgrade_from_version_config = version_storage_record.value
             except StorageNotFoundError:
-                if "upgrade.from_version" in settings:
-                    upgrade_from_version = settings.get("upgrade.from_version")
-                else:
-                    upgrade_from_version = sorted_versions_found_in_config[-1]
-                    print(
-                        "No ACA-Py version found in wallet storage and "
-                        "no --from-version specified. Selecting "
-                        f"{upgrade_from_version} as --from-version from "
-                        "the config."
+                LOGGER.info("No ACA-Py version found in wallet storage.")
+
+            if "upgrade.from_version" in settings:
+                upgrade_from_version_setting = settings.get("upgrade.from_version")
+                LOGGER.info(
+                    (
+                        f"Selecting {upgrade_from_version_setting} as "
+                        "--from-version from the config."
                     )
+                )
+
+        force_upgrade_flag = root_profile.settings.get("upgrade.force_upgrade") or False
+        if upgrade_from_version_config and upgrade_from_version_setting:
+            if (
+                package_version.parse(upgrade_from_version_config)
+                > package_version.parse(upgrade_from_version_setting)
+            ) and force_upgrade_flag:
+                upgrade_from_version = upgrade_from_version_setting
+            else:
+                upgrade_from_version = upgrade_from_version_config
+        if (
+            not upgrade_from_version
+            and not upgrade_from_version_config
+            and upgrade_from_version_setting
+        ):
+            upgrade_from_version = upgrade_from_version_setting
+        if (
+            not upgrade_from_version
+            and upgrade_from_version_config
+            and not upgrade_from_version_setting
+        ):
+            upgrade_from_version = upgrade_from_version_config
+
         upgrade_version_in_config = get_upgrade_version_list(
             sorted_versions_found_in_config, upgrade_from_version
         )
-        force_upgrade_flag = root_profile.settings.get("upgrade.force_upgrade") or False
-        if upgrade_from_version == upgrade_to_version and not force_upgrade_flag:
-            print(
-                f"Version {upgrade_from_version} to upgrade from and "
-                f"current version to upgrade to {upgrade_to_version} "
-                "are same. If you still wish to run upgrade then plese "
-                " run ACA-Py with --force-upgrade argument."
+        to_update_flag = False
+        if upgrade_from_version == upgrade_to_version:
+            LOGGER.info(
+                (
+                    f"Version {upgrade_from_version} to upgrade from and "
+                    f"current version to upgrade to {upgrade_to_version} "
+                    "are same. If you still wish to run upgrade then please "
+                    " run ACA-Py with --force-upgrade argument."
+                )
             )
         else:
             resave_record_path_sets = set()
-            executables_called = set()
+            executables_call_set = set()
             for config_from_version in upgrade_version_in_config:
-                print(f"Running upgrade process for {config_from_version}")
+                LOGGER.info(f"Running upgrade process for {config_from_version}")
                 upgrade_config = upgrade_configs.get(config_from_version)
                 # Step 1 re-saving all BaseRecord and BaseExchangeRecord
                 if "resave_records" in upgrade_config:
@@ -194,18 +218,13 @@ async def upgrade(settings: dict):
                 # Step 2 Update existing records, if required
                 config_key_set = set(upgrade_config.keys())
                 config_key_set.remove("resave_records")
-                for executable in list(config_key_set):
-                    if (
-                        upgrade_config.get(executable) is False
-                        or executable in executables_called
-                    ):
+                for callable_name in list(config_key_set):
+                    if upgrade_config.get(callable_name) is False:
                         continue
+                    executables_call_set.add(callable_name)
 
-                    _callable = version_upgrade_config_inst.get_callable(executable)
-                    if not _callable:
-                        raise UpgradeError(f"No function specified for {executable}")
-                    executables_called.add(executable)
-                    await _callable(root_profile)
+            if len(resave_record_path_sets) >= 1 or len(executables_call_set) >= 1:
+                to_update_flag = True
             for record_path in resave_record_path_sets:
                 try:
                     rec_type = ClassLoader.load_class(record_path)
@@ -223,23 +242,34 @@ async def upgrade(settings: dict):
                             reason="re-saving record during the upgrade process",
                         )
                     if len(all_records) == 0:
-                        print(f"No records of {str(rec_type)} found")
+                        LOGGER.info(f"No records of {str(rec_type)} found")
                     else:
-                        print(f"All recs of {str(rec_type)} successfully re-saved")
+                        LOGGER.info(
+                            f"All recs of {str(rec_type)} successfully re-saved"
+                        )
+            for callable_name in executables_call_set:
+                _callable = version_upgrade_config_inst.get_callable(callable_name)
+                if not _callable:
+                    raise UpgradeError(f"No function specified for {callable_name}")
+                await _callable(root_profile)
 
         # Update storage version
-        async with root_profile.session() as session:
-            storage = session.inject(BaseStorage)
-            if not version_storage_record:
-                await storage.add_record(
-                    StorageRecord(
-                        RECORD_TYPE_ACAPY_VERSION,
-                        upgrade_to_version,
+        if to_update_flag:
+            async with root_profile.session() as session:
+                storage = session.inject(BaseStorage)
+                if not version_storage_record:
+                    await storage.add_record(
+                        StorageRecord(
+                            RECORD_TYPE_ACAPY_VERSION,
+                            upgrade_to_version,
+                        )
                     )
-                )
-            else:
-                await storage.update_record(
-                    version_storage_record, upgrade_to_version, {}
+                else:
+                    await storage.update_record(
+                        version_storage_record, upgrade_to_version, {}
+                    )
+                LOGGER.info(
+                    f"{RECORD_TYPE_ACAPY_VERSION} storage record set to {upgrade_to_version}"
                 )
         await root_profile.close()
     except BaseError as e:
