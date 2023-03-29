@@ -3,6 +3,8 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Optional, Sequence, Tuple
 
+from aries_cloudagent.anoncreds.models.anoncreds_revocation import RevRegDefResult
+
 from ..core.error import BaseError
 from .models.anoncreds_cred_def import CredDefResult
 from .models.anoncreds_schema import SchemaResult
@@ -189,15 +191,16 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def create_and_store_revocation_registry(
+    async def create_and_register_revocation_registry_definition(
         self,
-        origin_did: str,
+        issuer_id: str,
         cred_def_id: str,
-        revoc_def_type: str,
+        registry_type: str,
         tag: str,
         max_cred_num: int,
         tails_base_path: str,
-    ) -> Tuple[str, str, str]:
+        options: Optional[dict] = None,
+    ) -> RevRegDefResult:
         """
         Create a new revocation registry and store it in the wallet.
 

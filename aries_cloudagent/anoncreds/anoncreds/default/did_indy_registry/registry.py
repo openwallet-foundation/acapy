@@ -8,7 +8,7 @@ from .....core.profile import Profile
 from ....models.anoncreds_cred_def import (
     GetCredDefResult,
 )
-from ..models.anoncreds_revocation import (
+from ....models.anoncreds_revocation import (
     AnonCredsRegistryGetRevocationList,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )
@@ -91,5 +91,5 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Get a revocation list from the registry."""
 
     # TODO: determine keyword arguments
-    async def register_revocation_list(self):
+    async def register_revocation_status_list(self):
         """Register a revocation list on the registry."""
