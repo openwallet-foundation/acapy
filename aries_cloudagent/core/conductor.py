@@ -26,6 +26,7 @@ from ..config.ledger import (
 from ..config.logging import LoggingConfigurator
 from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
+from ..commands.upgrade import get_upgrade_version_list, add_version_record, upgrade
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
 
@@ -311,26 +312,41 @@ class Conductor:
         )
 
         # record ACA-Py version in Wallet, if needed
+        from_version = None
+        agent_version = f"v{__version__}"
         async with self.root_profile.session() as session:
             storage: BaseStorage = session.context.inject(BaseStorage)
-            agent_version = f"v{__version__}"
             try:
                 record = await storage.find_record(
                     type_filter=RECORD_TYPE_ACAPY_VERSION,
                     tag_query={},
                 )
-                if record.value != agent_version:
-                    LOGGER.exception(
-                        (
-                            f"Wallet storage version {record.value} "
-                            "does not match this ACA-Py agent "
-                            f"version {agent_version}. Run aca-py "
-                            "upgrade command to fix this."
-                        )
-                    )
-                    raise
+                from_version = record.value
             except StorageNotFoundError:
-                pass
+                LOGGER.exception(("Wallet version storage record not found."))
+        from_version = from_version or self.root_profile.settings.get(
+            "upgrade.config_path"
+        )
+        if from_version:
+            config_available_list = get_upgrade_version_list(
+                config_path=self.root_profile.settings.get("upgrade.config_path"),
+                from_version=from_version,
+            )
+            if len(config_available_list) >= 1 and (
+                from_version != agent_version
+                or self.root_profile.settings.get("upgrade.force_upgrade")
+            ):
+                await upgrade(self.root_profile.settings)
+        else:
+            LOGGER.exception(
+                (
+                    "Wallet storage version not found. "
+                    "Run aca-py upgrade command with "
+                    "--from-version to fix this."
+                )
+            )
+            raise
+        await add_version_record(self.root_profile, agent_version)
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
