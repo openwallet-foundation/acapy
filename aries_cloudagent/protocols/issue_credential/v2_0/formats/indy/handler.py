@@ -1,21 +1,22 @@
 """V2.0 issue-credential indy credential format handler."""
 
+import asyncio
+import json
 import logging
+from typing import Mapping, Tuple
 
 from marshmallow import RAISE
-import json
-from typing import Mapping, Tuple
-import asyncio
 
-from ......cache.base import BaseCache
+from ......anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
+from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import (
     AnonCredsIssuer,
     AnonCredsIssuerRevocationRegistryFullError,
 )
-from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.models.cred import IndyCredentialSchema
-from ......anoncreds.models.cred_request import IndyCredRequestSchema
 from ......anoncreds.models.cred_abstract import IndyCredAbstractSchema
+from ......anoncreds.models.cred_request import IndyCredRequestSchema
+from ......cache.base import BaseCache
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
@@ -31,7 +32,6 @@ from ......revocation.indy import IndyRevocation
 from ......revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......revocation.models.revocation_registry import RevocationRegistry
 from ......storage.base import BaseStorage
-
 from ...message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -40,13 +40,12 @@ from ...message_types import (
     CRED_20_REQUEST,
 )
 from ...messages.cred_format import V20CredFormat
-from ...messages.cred_proposal import V20CredProposal
-from ...messages.cred_offer import V20CredOffer
-from ...messages.cred_request import V20CredRequest
 from ...messages.cred_issue import V20CredIssue
+from ...messages.cred_offer import V20CredOffer
+from ...messages.cred_proposal import V20CredProposal
+from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
 from ...models.detail.indy import V20CredExRecordIndy
-
 from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 
 LOGGER = logging.getLogger(__name__)
@@ -267,23 +266,15 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_def_id = cred_offer["cred_def_id"]
 
         async def _create():
-            multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-            if multitenant_mgr:
-                ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
-            else:
-                ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
-            ledger = (
-                await ledger_exec_inst.get_ledger_for_identifier(
-                    cred_def_id,
-                    txn_record_type=GET_CRED_DEF,
-                )
-            )[1]
-            async with ledger:
-                cred_def = await ledger.get_credential_definition(cred_def_id)
+            anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+
+            cred_def_result = await anoncreds_registry.get_credential_definition(
+                self.profile, cred_def_id
+            )
 
             holder = self.profile.inject(AnonCredsHolder)
             request_json, metadata_json = await holder.create_credential_request(
-                cred_offer, cred_def, holder_did
+                cred_offer, cred_def_result.credential_definition, holder_did
             )
 
             return {
@@ -433,21 +424,17 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred = cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
 
         rev_reg_def = None
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
-        else:
-            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
-        ledger = (
-            await ledger_exec_inst.get_ledger_for_identifier(
-                cred["cred_def_id"],
-                txn_record_type=GET_CRED_DEF,
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        cred_def_result = await anoncreds_registry.get_credential_definition(
+            self.profile, cred["cred_def_id"]
+        )
+        if cred.get("rev_reg_id"):
+            rev_reg_def_result = (
+                await anoncreds_registry.get_revocation_registry_definition(
+                    self.profile, cred["rev_reg_id"]
+                )
             )
-        )[1]
-        async with ledger:
-            cred_def = await ledger.get_credential_definition(cred["cred_def_id"])
-            if cred.get("rev_reg_id"):
-                rev_reg_def = await ledger.get_revoc_reg_def(cred["rev_reg_id"])
+            rev_reg_def = rev_reg_def_result.revocation_registry.serialize()
 
         holder = self.profile.inject(AnonCredsHolder)
         cred_offer_message = cred_ex_record.cred_offer
@@ -466,7 +453,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     f"detail record found for cred ex id {cred_ex_record.cred_ex_id}"
                 )
             cred_id_stored = await holder.store_credential(
-                cred_def,
+                cred_def_result.credential_definition.serialize(),
                 cred,
                 detail_record.cred_request_metadata,
                 mime_types,

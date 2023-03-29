@@ -19,6 +19,8 @@ from anoncreds import (
     PresentCredentials,
 )
 
+from ..models.anoncreds_cred_def import CredDef
+
 from ...askar.profile import AskarProfile
 from ...ledger.base import BaseLedger
 from ...wallet.error import WalletNotFoundError
@@ -48,14 +50,14 @@ def _normalize_attr_name(name: str) -> str:
     return name.replace(" ", "")
 
 
-class IndyCredxHolder(AnonCredsHolder):
-    """Indy-credx holder class."""
+class AnonCredsRsHolder(AnonCredsHolder):
+    """AnonCreds holder class."""
 
     MASTER_SECRET_ID = "default"
 
     def __init__(self, profile: AskarProfile):
         """
-        Initialize an IndyCredxHolder instance.
+        Initialize an AnonCredsRsHolder instance.
 
         Args:
             profile: The active profile instance
@@ -75,7 +77,7 @@ class IndyCredxHolder(AnonCredsHolder):
             async with self._profile.session() as session:
                 try:
                     record = await session.handle.fetch(
-                        CATEGORY_MASTER_SECRET, IndyCredxHolder.MASTER_SECRET_ID
+                        CATEGORY_MASTER_SECRET, AnonCredsRsHolder.MASTER_SECRET_ID
                     )
                 except AskarError as err:
                     raise AnonCredsHolderError("Error fetching master secret") from err
@@ -97,7 +99,7 @@ class IndyCredxHolder(AnonCredsHolder):
                     try:
                         await session.handle.insert(
                             CATEGORY_MASTER_SECRET,
-                            IndyCredxHolder.MASTER_SECRET_ID,
+                            AnonCredsRsHolder.MASTER_SECRET_ID,
                             secret.to_json_buffer(),
                         )
                     except AskarError as err:
@@ -111,7 +113,7 @@ class IndyCredxHolder(AnonCredsHolder):
         return secret
 
     async def create_credential_request(
-        self, credential_offer: dict, credential_definition: dict, holder_did: str
+        self, credential_offer: dict, credential_definition: CredDef, holder_did: str
     ) -> Tuple[str, str]:
         """
         Create a credential request for the given credential offer.
@@ -133,10 +135,11 @@ class IndyCredxHolder(AnonCredsHolder):
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
                 CredentialRequest.create,
+                None,
                 holder_did,
-                credential_definition,
+                credential_definition.to_native(),
                 secret,
-                IndyCredxHolder.MASTER_SECRET_ID,
+                AnonCredsRsHolder.MASTER_SECRET_ID,
                 credential_offer,
             )
         except AnoncredsError as err:
@@ -543,8 +546,8 @@ class IndyCredxHolder(AnonCredsHolder):
                 present_creds,
                 self_attest,
                 secret,
-                schemas.values(),
-                credential_definitions.values(),
+                schemas,
+                credential_definitions,
             )
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error creating presentation") from err
@@ -555,8 +558,7 @@ class IndyCredxHolder(AnonCredsHolder):
         self,
         cred_rev_id: str,
         rev_reg_def: dict,
-        rev_reg_delta: dict,
-        timestamp: int,
+        rev_status_list: dict,
         tails_file_path: str,
     ) -> str:
         """
@@ -578,9 +580,8 @@ class IndyCredxHolder(AnonCredsHolder):
                 None,
                 CredentialRevocationState.create,
                 rev_reg_def,
-                rev_reg_delta,
+                rev_status_list,
                 int(cred_rev_id),
-                timestamp,
                 tails_file_path,
             )
         except AnoncredsError as err:

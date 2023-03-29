@@ -4,16 +4,11 @@ import logging
 import time
 from typing import Union
 
+from ....anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.xform import indy_proof_req2non_revoc_intervals
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....ledger.multiple_ledger.ledger_requests_executor import (
-    GET_REVOC_REG_DELTA,
-    GET_SCHEMA,
-    IndyLedgerRequestsExecutor,
-)
-from ....multitenant.base import BaseMultitenantManager
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
@@ -80,7 +75,7 @@ class IndyPresExchHandler:
         return requested_referents
 
     async def _get_credentials(self, requested_referents: dict):
-        # extract mapping of presentation referents to credential ids
+        """Extract mapping of presentation referents to credential ids"""
         credentials = {}
         for reft in requested_referents:
             credential_id = requested_referents[reft]["cred_id"]
@@ -91,7 +86,7 @@ class IndyPresExchHandler:
         return credentials
 
     def _remove_superfluous_timestamps(self, requested_credentials, credentials):
-        # remove any timestamps that cannot correspond to non-revoc intervals
+        """Remove any timestamps that cannot correspond to non-revoc intervals."""
         for r in ("requested_attributes", "requested_predicates"):
             for reft, req_item in requested_credentials.get(r, {}).items():
                 if not credentials[req_item["cred_id"]].get(
@@ -103,52 +98,50 @@ class IndyPresExchHandler:
                     )
 
     async def _get_ledger_objects(self, credentials: dict):
-        # Get all schemas, credential definitions, and revocation registries in use
+        """Get all schemas, credential definitions, and revocation registries in use"""
         schemas = {}
         cred_defs = {}
         revocation_registries = {}
 
         for credential in credentials.values():
             schema_id = credential["schema_id"]
-            multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
-            if multitenant_mgr:
-                ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
-            else:
-                ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger = (
-                await ledger_exec_inst.get_ledger_for_identifier(
-                    schema_id,
-                    txn_record_type=GET_SCHEMA,
-                )
-            )[1]
-            async with ledger:
-                if schema_id not in schemas:
-                    schemas[schema_id] = await ledger.get_schema(schema_id)
-                cred_def_id = credential["cred_def_id"]
-                if cred_def_id not in cred_defs:
-                    cred_defs[cred_def_id] = await ledger.get_credential_definition(
-                        cred_def_id
+            anoncreds_registry = self._profile.inject(AnonCredsRegistry)
+            if schema_id not in schemas:
+                schemas[schema_id] = (
+                    await anoncreds_registry.get_schema(self._profile, schema_id)
+                ).schema.serialize()
+            cred_def_id = credential["cred_def_id"]
+            if cred_def_id not in cred_defs:
+                cred_defs[cred_def_id] = (
+                    await anoncreds_registry.get_credential_definition(
+                        self._profile, cred_def_id
                     )
-                if credential.get("rev_reg_id"):
-                    revocation_registry_id = credential["rev_reg_id"]
-                    if revocation_registry_id not in revocation_registries:
-                        revocation_registries[
-                            revocation_registry_id
-                        ] = RevocationRegistry.from_definition(
-                            await ledger.get_revoc_reg_def(revocation_registry_id), True
-                        )
+                ).credential_definition.serialize()
+            if credential.get("rev_reg_id"):
+                revocation_registry_id = credential["rev_reg_id"]
+                if revocation_registry_id not in revocation_registries:
+                    revocation_registries[
+                        revocation_registry_id
+                    ] = RevocationRegistry.from_definition(
+                        (
+                            await anoncreds_registry.get_revocation_registry_definition(
+                                self._profile, revocation_registry_id
+                            )
+                        ).revocation_registry.serialize(),
+                        True,
+                    )
         return schemas, cred_defs, revocation_registries
 
-    async def _get_revocation_registries_deltas(
+    async def _get_revocation_status_lists(
         self, requested_referents: dict, credentials: dict
     ):
-        """Get deltas.
+        """Get revocation status lists.
 
-        Get delta with non-revocation interval defined in "non_revoked"
-        of the presentation request or attributes
+        Get revocation status lists with non-revocation interval defined in
+        "non_revoked" of the presentation request or attributes
         """
         epoch_now = int(time.time())
-        revoc_reg_deltas = {}
+        rev_status_lists = {}
         for precis in requested_referents.values():  # cred_id, non-revoc interval
             credential_id = precis["cred_id"]
             if not credentials[credential_id].get("rev_reg_id"):
@@ -156,66 +149,56 @@ class IndyPresExchHandler:
             if "timestamp" in precis:
                 continue
             rev_reg_id = credentials[credential_id]["rev_reg_id"]
-            multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
-            if multitenant_mgr:
-                ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
-            else:
-                ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger = (
-                await ledger_exec_inst.get_ledger_for_identifier(
-                    rev_reg_id,
-                    txn_record_type=GET_REVOC_REG_DELTA,
-                )
-            )[1]
-            async with ledger:
-                reft_non_revoc_interval = precis.get("non_revoked")
-                if reft_non_revoc_interval:
-                    key = (
-                        f"{rev_reg_id}_"
-                        f"{reft_non_revoc_interval.get('from', 0)}_"
-                        f"{reft_non_revoc_interval.get('to', epoch_now)}"
-                    )
-                    if key not in revoc_reg_deltas:
-                        (delta, delta_timestamp) = await ledger.get_revoc_reg_delta(
-                            rev_reg_id,
-                            reft_non_revoc_interval.get("from", 0),
-                            reft_non_revoc_interval.get("to", epoch_now),
-                        )
-                        revoc_reg_deltas[key] = (
-                            rev_reg_id,
-                            credential_id,
-                            delta,
-                            delta_timestamp,
-                        )
-                    for stamp_me in requested_referents.values():
-                        # often one cred satisfies many requested attrs/preds
-                        if stamp_me["cred_id"] == credential_id:
-                            stamp_me["timestamp"] = revoc_reg_deltas[key][3]
 
-        return revoc_reg_deltas
+            anoncreds_registry = self._profile.inject(AnonCredsRegistry)
+            reft_non_revoc_interval = precis.get("non_revoked")
+            if reft_non_revoc_interval:
+                key = (
+                    f"{rev_reg_id}_"
+                    f"{reft_non_revoc_interval.get('from', 0)}_"
+                    f"{reft_non_revoc_interval.get('to', epoch_now)}"
+                )
+                if key not in rev_status_lists:
+                    result = await anoncreds_registry.get_revocation_status_list(
+                        self._profile,
+                        rev_reg_id,
+                        reft_non_revoc_interval.get("to", epoch_now),
+                    )
+
+                    rev_status_lists[key] = (
+                        rev_reg_id,
+                        credential_id,
+                        result.revocation_list.serialize(),
+                        result.revocation_list.timestamp,
+                    )
+                for stamp_me in requested_referents.values():
+                    # often one cred satisfies many requested attrs/preds
+                    if stamp_me["cred_id"] == credential_id:
+                        stamp_me["timestamp"] = rev_status_lists[key][3]
+
+        return rev_status_lists
 
     async def _get_revocation_states(
-        self, revocation_registries: dict, credentials: dict, revoc_reg_deltas: dict
+        self, revocation_registries: dict, credentials: dict, rev_status_lists: dict
     ):
         """Get revocation states to prove non-revoked."""
         revocation_states = {}
         for (
             rev_reg_id,
             credential_id,
-            delta,
-            delta_timestamp,
-        ) in revoc_reg_deltas.values():
+            rev_status_list,
+            timestamp,
+        ) in rev_status_lists.values():
             if rev_reg_id not in revocation_states:
                 revocation_states[rev_reg_id] = {}
             rev_reg = revocation_registries[rev_reg_id]
             tails_local_path = await rev_reg.get_or_fetch_local_tails_path()
             try:
-                revocation_states[rev_reg_id][delta_timestamp] = json.loads(
+                revocation_states[rev_reg_id][timestamp] = json.loads(
                     await self.holder.create_revocation_state(
                         credentials[credential_id]["cred_rev_id"],
                         rev_reg.reg_def,
-                        delta,
-                        delta_timestamp,
+                        rev_status_list,
                         tails_local_path,
                     )
                 )
@@ -259,12 +242,12 @@ class IndyPresExchHandler:
             credentials
         )
 
-        revoc_reg_deltas = await self._get_revocation_registries_deltas(
+        rev_status_lists = await self._get_revocation_status_lists(
             requested_referents, credentials
         )
 
         revocation_states = await self._get_revocation_states(
-            revocation_registries, credentials, revoc_reg_deltas
+            revocation_registries, credentials, rev_status_lists
         )
 
         self._set_timestamps(requested_credentials, requested_referents)

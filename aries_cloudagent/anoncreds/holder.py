@@ -3,6 +3,8 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Optional, Sequence, Tuple, Union
 
+from .models.anoncreds_cred_def import CredDef
+
 from ..core.error import BaseError
 from ..ledger.base import BaseLedger
 
@@ -130,7 +132,7 @@ class AnonCredsHolder(ABC, metaclass=ABCMeta):
 
     @abstractmethod
     async def create_credential_request(
-        self, credential_offer: dict, credential_definition: dict, holder_did: str
+        self, credential_offer: dict, credential_definition: CredDef, holder_did: str
     ) -> Tuple[str, str]:
         """
         Create a credential request for the given credential offer.
@@ -178,8 +180,7 @@ class AnonCredsHolder(ABC, metaclass=ABCMeta):
         self,
         cred_rev_id: str,
         rev_reg_def: dict,
-        rev_reg_delta: dict,
-        timestamp: int,
+        rev_status_list: dict,
         tails_file_path: str,
     ) -> str:
         """

@@ -103,7 +103,7 @@ class AskarProfile(Profile):
         injector.bind_provider(
             AnonCredsHolder,
             ClassProvider(
-                "aries_cloudagent.anoncreds.credx.holder.IndyCredxHolder",
+                "aries_cloudagent.anoncreds.anoncreds.holder.AnonCredsRsHolder",
                 ref(self),
             ),
         )
