@@ -1,0 +1,8 @@
+FROM python:3.9-slim
+WORKDIR /usr/src/app
+
+RUN apt-get update && apt-get install -y git
+RUN pip install git+https://github.com/Indicio-tech/acapy-minimal-example.git
+
+ADD anoncreds_test.py .
+CMD ["python", "anoncreds_test.py"]

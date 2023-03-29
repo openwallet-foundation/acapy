@@ -1,0 +1,67 @@
+version: '3'
+services:
+  alice:
+    image: acapy-run
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.run
+    ports:
+      - 3001:3001
+    volumes:
+      - ./aries_cloudagent:/usr/src/app/aries_cloudagent:z
+    command: >
+      start
+        -it http 0.0.0.0 3000 -ot http -e http://alice:3000
+        --admin 0.0.0.0 3001 --admin-insecure-mode
+        --wallet-type askar
+        --wallet-name default
+        --wallet-key test
+        --auto-provision
+        --genesis-url https://raw.githubusercontent.com/Indicio-tech/indicio-network/main/genesis_files/pool_transactions_testnet_genesis
+        --log-level debug
+    healthcheck:
+      test: ["CMD-SHELL", "python", "healthcheck.py", "http://localhost:3001/status/live"]
+      start_period: 10s
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+  bob:
+    image: acapy-run
+    ports:
+      - 3005:3005
+    volumes:
+      - ./aries_cloudagent:/usr/src/app/aries_cloudagent:z
+    command: >
+      start
+        -it http 0.0.0.0 3004 -ot http -e http://bob:3004
+        --admin 0.0.0.0 3005 --admin-insecure-mode
+        --wallet-type askar
+        --wallet-name default
+        --wallet-key test
+        --auto-provision
+        --genesis-url https://raw.githubusercontent.com/Indicio-tech/indicio-network/main/genesis_files/pool_transactions_testnet_genesis
+        --log-level debug
+    healthcheck:
+      test: ["CMD-SHELL", "python", "healthcheck.py", "http://localhost:3005/status/live"]
+      start_period: 10s
+      interval: 3s
+      timeout: 5s
+      retries: 5
+
+
+  tests:
+    image: anoncreds-test
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.anoncreds-test
+    environment:
+      ALICE: "http://alice:3001"
+      BOB: "http://bob:3005"
+    volumes:
+      - ./anoncreds_test.py:/usr/src/app/anoncreds_test.py:z
+    depends_on:
+      alice:
+        condition: service_healthy
+      bob:
+        condition: service_healthy

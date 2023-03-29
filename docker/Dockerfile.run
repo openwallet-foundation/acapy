@@ -24,6 +24,7 @@ ADD aries_cloudagent/version.py aries_cloudagent/version.py
 ADD bin ./bin
 ADD README.md ./
 ADD setup.py ./
+ADD healthcheck.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
