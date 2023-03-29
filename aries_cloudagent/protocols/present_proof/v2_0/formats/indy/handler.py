@@ -320,13 +320,13 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         pres_request_msg = pres_ex_record.pres_request
         indy_proof_request = pres_request_msg.attachment(IndyPresExchangeHandler.format)
         indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
-        indy_handler = IndyPresExchHandler(self._profile)
+        verifier = self._profile.inject(AnonCredsVerifier)
         (
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_reg_entries,
-        ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
+            rev_status_lists,
+        ) = await verifier.process_pres_identifiers(indy_proof["identifiers"])
 
         verifier = self._profile.inject(AnonCredsVerifier)
         (verified, verified_msgs) = await verifier.verify_presentation(
@@ -335,7 +335,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_reg_entries,
+            rev_status_lists,
         )
         pres_ex_record.verified = json.dumps(verified)
         pres_ex_record.verified_msgs = list(set(verified_msgs))

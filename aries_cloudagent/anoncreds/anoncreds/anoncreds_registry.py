@@ -10,7 +10,7 @@ from ..models.anoncreds_cred_def import (
     GetCredDefResult,
 )
 from ..models.anoncreds_revocation import (
-    AnonCredsRegistryGetRevocationList,
+    GetRevStatusListResult,
     AnonCredsRegistryGetRevocationRegistryDefinition,
     RevRegDef,
     RevRegDefResult,
@@ -118,11 +118,13 @@ class AnonCredsRegistry:
         )
 
     async def get_revocation_registry_definition(
-        self, revocation_registry_id: str
+        self, profile: Profile, revocation_registry_id: str
     ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
         """Get a revocation registry definition from the registry."""
         resolver = await self._resolver_for_identifier(revocation_registry_id)
-        return await resolver.get_revocation_registry_definition(revocation_registry_id)
+        return await resolver.get_revocation_registry_definition(
+            profile, revocation_registry_id
+        )
 
     async def register_revocation_registry_definition(
         self,
@@ -138,12 +140,14 @@ class AnonCredsRegistry:
             profile, revocation_registry_definition, options
         )
 
-    async def get_revocation_list(
-        self, revocation_registry_id: str, timestamp: str
-    ) -> AnonCredsRegistryGetRevocationList:
+    async def get_revocation_status_list(
+        self, profile: Profile, revocation_registry_id: str, timestamp: str
+    ) -> GetRevStatusListResult:
         """Get a revocation list from the registry."""
         resolver = await self._resolver_for_identifier(revocation_registry_id)
-        return await resolver.get_revocation_list(revocation_registry_id, timestamp)
+        return await resolver.get_revocation_status_list(
+            profile, revocation_registry_id, timestamp
+        )
 
     async def register_revocation_status_list(
         self,

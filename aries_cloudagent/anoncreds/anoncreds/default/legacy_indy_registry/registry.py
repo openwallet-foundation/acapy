@@ -26,7 +26,7 @@ from ....models.anoncreds_cred_def import (
     GetCredDefResult,
 )
 from ....models.anoncreds_revocation import (
-    AnonCredsRegistryGetRevocationList,
+    GetRevStatusListResult,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )
 from ....models.anoncreds_schema import (
@@ -358,9 +358,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         except RevocationError as err:
             raise AnonCredsRegistrationError(err)
 
-    async def get_revocation_list(
-        self, revocation_registry_id: str, timestamp: str
-    ) -> AnonCredsRegistryGetRevocationList:
+    async def get_revocation_status_list(
+        self, profile: Profile, revocation_registry_id: str, timestamp: str
+    ) -> GetRevStatusListResult:
         """Get a revocation list from the registry."""
 
     # TODO: determine keyword arguments

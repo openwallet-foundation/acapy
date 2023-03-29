@@ -130,7 +130,7 @@ class AskarProfile(Profile):
             injector.bind_provider(
                 AnonCredsVerifier,
                 ClassProvider(
-                    "aries_cloudagent.anoncreds.credx.verifier.IndyCredxVerifier",
+                    "aries_cloudagent.anoncreds.anoncreds.verifier.AnonCredsRsVerifier",
                     ref(self),
                 ),
             )

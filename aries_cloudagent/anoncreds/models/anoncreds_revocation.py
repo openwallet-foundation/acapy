@@ -392,13 +392,13 @@ class RevStatusListResultSchema(BaseModelSchema):
     revocation_status_list_metadata = fields.Dict()
 
 
-class AnonCredsRegistryGetRevocationList(BaseModel):
-    """AnonCredsRegistryGetRevocationList"""
+class GetRevStatusListResult(BaseModel):
+    """GetRevStatusListResult"""
 
     class Meta:
-        """AnonCredsRegistryGetRevocationList metadata."""
+        """GetRevStatusListResult metadata."""
 
-        schema_class = "AnonCredsRegistryGetRevocationListSchema"
+        schema_class = "GetRevStatusListResultSchema"
 
     def __init__(
         self,
@@ -413,13 +413,13 @@ class AnonCredsRegistryGetRevocationList(BaseModel):
         self.revocation_registry_metadata = revocation_registry_metadata
 
 
-class AnonCredsRegistryGetRevocationListSchema(BaseModelSchema):
-    """AnonCredsRegistryGetRevocationListSchema"""
+class GetRevStatusListResultSchema(BaseModelSchema):
+    """GetRevStatusListResultSchema"""
 
     class Meta:
-        """AnonCredsRegistryGetRevocationListSchema metadata."""
+        """GetRevStatusListResultSchema metadata."""
 
-        model_class = AnonCredsRegistryGetRevocationList
+        model_class = GetRevStatusListResult
         unknown = EXCLUDE
 
     revocation_list = fields.Nested(RevStatusListSchema)

@@ -2,21 +2,19 @@
 import json
 import logging
 import time
+from typing import Union
 
-from typing import Union, Tuple
-
-from ....core.error import BaseError
-from ....core.profile import Profile
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.xform import indy_proof_req2non_revoc_intervals
+from ....core.error import BaseError
+from ....core.profile import Profile
 from ....ledger.multiple_ledger.ledger_requests_executor import (
-    GET_SCHEMA,
     GET_REVOC_REG_DELTA,
+    GET_SCHEMA,
     IndyLedgerRequestsExecutor,
 )
 from ....multitenant.base import BaseMultitenantManager
 from ....revocation.models.revocation_registry import RevocationRegistry
-
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
 from ..v2_0.models.pres_exchange import V20PresExRecord
@@ -214,73 +212,3 @@ class IndyPresExchHandler:
         )
         indy_proof = json.loads(indy_proof_json)
         return indy_proof
-
-    async def process_pres_identifiers(
-        self,
-        identifiers: list,
-    ) -> Tuple[dict, dict, dict, dict]:
-        """Return schemas, cred_defs, rev_reg_defs, rev_reg_entries."""
-        schema_ids = []
-        cred_def_ids = []
-
-        schemas = {}
-        cred_defs = {}
-        rev_reg_defs = {}
-        rev_reg_entries = {}
-
-        for identifier in identifiers:
-            schema_ids.append(identifier["schema_id"])
-            cred_def_ids.append(identifier["cred_def_id"])
-            multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
-            if multitenant_mgr:
-                ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
-            else:
-                ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-            ledger = (
-                await ledger_exec_inst.get_ledger_for_identifier(
-                    identifier["schema_id"],
-                    txn_record_type=GET_SCHEMA,
-                )
-            )[1]
-            async with ledger:
-                # Build schemas for anoncreds
-                if identifier["schema_id"] not in schemas:
-                    schemas[identifier["schema_id"]] = await ledger.get_schema(
-                        identifier["schema_id"]
-                    )
-
-                if identifier["cred_def_id"] not in cred_defs:
-                    cred_defs[
-                        identifier["cred_def_id"]
-                    ] = await ledger.get_credential_definition(
-                        identifier["cred_def_id"]
-                    )
-
-                if identifier.get("rev_reg_id"):
-                    if identifier["rev_reg_id"] not in rev_reg_defs:
-                        rev_reg_defs[
-                            identifier["rev_reg_id"]
-                        ] = await ledger.get_revoc_reg_def(identifier["rev_reg_id"])
-
-                    if identifier.get("timestamp"):
-                        rev_reg_entries.setdefault(identifier["rev_reg_id"], {})
-
-                        if (
-                            identifier["timestamp"]
-                            not in rev_reg_entries[identifier["rev_reg_id"]]
-                        ):
-                            (
-                                found_rev_reg_entry,
-                                _found_timestamp,
-                            ) = await ledger.get_revoc_reg_entry(
-                                identifier["rev_reg_id"], identifier["timestamp"]
-                            )
-                            rev_reg_entries[identifier["rev_reg_id"]][
-                                identifier["timestamp"]
-                            ] = found_rev_reg_entry
-        return (
-            schemas,
-            cred_defs,
-            rev_reg_defs,
-            rev_reg_entries,
-        )

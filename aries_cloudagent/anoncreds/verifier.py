@@ -1,20 +1,15 @@
 """Base Indy Verifier class."""
 
-import logging
-
 from abc import ABC, ABCMeta, abstractmethod
 from enum import Enum
+import logging
 from time import time
-from typing import Mapping
+from typing import List, Mapping, Tuple
 
 from ..core.profile import Profile
-from ..ledger.multiple_ledger.ledger_requests_executor import (
-    GET_CRED_DEF,
-    IndyLedgerRequestsExecutor,
-)
 from ..messaging.util import canon, encode
-from ..multitenant.base import BaseMultitenantManager
-
+from .anoncreds.anoncreds_registry import AnonCredsRegistry
+from .models.anoncreds_cred_def import GetCredDefResult
 from .models.xform import indy_proof_req2non_revoc_intervals
 
 
@@ -121,7 +116,7 @@ class AnonCredsVerifier(ABC, metaclass=ABCMeta):
         superfluous or missing.
 
         Args:
-            ledger: the base ledger for retrieving revocation registry definitions
+            profile: relevant profile
             pres_req: indy proof request
             pres: indy proof request
             rev_reg_defs: rev reg defs by rev reg id, augmented with transaction times
@@ -130,27 +125,19 @@ class AnonCredsVerifier(ABC, metaclass=ABCMeta):
         now = int(time())
         non_revoc_intervals = indy_proof_req2non_revoc_intervals(pres_req)
         LOGGER.debug(f">>> got non-revoc intervals: {non_revoc_intervals}")
+
         # timestamp for irrevocable credential
-        cred_defs = []
+        cred_defs: List[GetCredDefResult] = []
         for index, ident in enumerate(pres["identifiers"]):
             LOGGER.debug(f">>> got (index, ident): ({index},{ident})")
             cred_def_id = ident["cred_def_id"]
-            multitenant_mgr = profile.inject_or(BaseMultitenantManager)
-            if multitenant_mgr:
-                ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
-            else:
-                ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-            ledger = (
-                await ledger_exec_inst.get_ledger_for_identifier(
-                    cred_def_id,
-                    txn_record_type=GET_CRED_DEF,
-                )
-            )[1]
-            async with ledger:
-                cred_def = await ledger.get_credential_definition(cred_def_id)
-            cred_defs.append(cred_def)
+            anoncreds_registry = profile.inject(AnonCredsRegistry)
+            cred_def_result = await anoncreds_registry.get_credential_definition(
+                profile, cred_def_id
+            )
+            cred_defs.append(cred_def_result)
             if ident.get("timestamp"):
-                if not cred_def["value"].get("revocation"):
+                if not cred_def_result.credential_definition.value.revocation:
                     raise ValueError(
                         f"Timestamp in presentation identifier #{index} "
                         f"for irrevocable cred def id {cred_def_id}"
@@ -188,7 +175,7 @@ class AnonCredsVerifier(ABC, metaclass=ABCMeta):
             if "name" in req_attr:
                 if uuid in revealed_attrs:
                     index = revealed_attrs[uuid]["sub_proof_index"]
-                    if cred_defs[index]["value"].get("revocation"):
+                    if cred_defs[index].credential_definition.value.revocation:
                         timestamp = pres["identifiers"][index].get("timestamp")
                         if (timestamp is not None) ^ bool(
                             non_revoc_intervals.get(uuid)
@@ -235,7 +222,7 @@ class AnonCredsVerifier(ABC, metaclass=ABCMeta):
                 ):
                     raise ValueError(f"Missing requested attribute group {uuid}")
                 index = group_spec["sub_proof_index"]
-                if cred_defs[index]["value"].get("revocation"):
+                if cred_defs[index].credential_definition.value.revocation:
                     timestamp = pres["identifiers"][index].get("timestamp")
                     if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
                         raise ValueError(
@@ -265,7 +252,7 @@ class AnonCredsVerifier(ABC, metaclass=ABCMeta):
                     f"Presentation predicates mismatch requested predicate {uuid}"
                 )
             index = pred_spec["sub_proof_index"]
-            if cred_defs[index]["value"].get("revocation"):
+            if cred_defs[index].credential_definition.value.revocation:
                 timestamp = pres["identifiers"][index].get("timestamp")
                 if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
                     raise ValueError(
@@ -389,15 +376,22 @@ class AnonCredsVerifier(ABC, metaclass=ABCMeta):
         return msgs
 
     @abstractmethod
-    def verify_presentation(
+    async def process_pres_identifiers(
+        self,
+        identifiers: list,
+    ) -> Tuple[dict, dict, dict, dict]:
+        """Return schemas, cred_defs, rev_reg_defs, rev_status_lists."""
+
+    @abstractmethod
+    async def verify_presentation(
         self,
         presentation_request,
         presentation,
         schemas,
         credential_definitions,
         rev_reg_defs,
-        rev_reg_entries,
-    ) -> (bool, list):
+        rev_status_lists,
+    ) -> Tuple[bool, list]:
         """
         Verify a presentation.
 

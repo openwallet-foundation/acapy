@@ -11,7 +11,7 @@ from ..models.anoncreds_cred_def import (
     GetCredDefResult,
 )
 from ..models.anoncreds_revocation import (
-    AnonCredsRegistryGetRevocationList,
+    GetRevStatusListResult,
     AnonCredsRegistryGetRevocationRegistryDefinition,
     RevRegDef,
     RevRegDefResult,
@@ -110,9 +110,9 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
         """Get a revocation registry definition from the registry."""
 
     @abstractmethod
-    async def get_revocation_list(
+    async def get_revocation_status_list(
         self, profile: Profile, revocation_registry_id: str, timestamp: str
-    ) -> AnonCredsRegistryGetRevocationList:
+    ) -> GetRevStatusListResult:
         """Get a revocation list from the registry."""
 
 
