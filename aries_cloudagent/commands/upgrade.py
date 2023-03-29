@@ -199,8 +199,10 @@ async def upgrade(settings: dict):
                 (
                     f"Version {upgrade_from_version} to upgrade from and "
                     f"current version to upgrade to {upgrade_to_version} "
-                    "are same. If you still wish to run upgrade then please "
-                    " run ACA-Py with --force-upgrade argument."
+                    "are same. You can apply upgrade from a lower "
+                    "version by running the upgrade command with "
+                    f"--from-version [< {upgrade_to_version}] and "
+                    "--force-upgrade"
                 )
             )
         else:
