@@ -65,8 +65,11 @@ class VersionUpgradeConfig:
                             "resave_records"
                         ).get("base_exch_record_path")
                 version_config_dict[version]["resave_records"] = recs_list
-                config_key_set = set(version_config_dict.get(version).keys())
-                config_key_set.remove("resave_records")
+                config_key_set = set(provided_config.keys())
+                try:
+                    config_key_set.remove("resave_records")
+                except KeyError:
+                    pass
                 for executable in config_key_set:
                     version_config_dict[version][executable] = (
                         provided_config.get(executable) or False
@@ -93,10 +96,6 @@ def get_upgrade_version_list(
     sorted_version_list: Optional[List] = None,
     config_path: Optional[str] = None,
 ) -> List:
-    if not sorted_version_list and not config_path:
-        raise UpgradeError(
-            f"No sorted version list from config or path to config provided."
-        )
     if not sorted_version_list:
         version_upgrade_config_inst = VersionUpgradeConfig(config_path)
         upgrade_configs = version_upgrade_config_inst.upgrade_configs
@@ -189,9 +188,13 @@ async def upgrade(settings: dict):
             and not upgrade_from_version_setting
         ):
             upgrade_from_version = upgrade_from_version_config
-
+        if not upgrade_from_version:
+            raise UpgradeError(
+                "No upgrade from version found in wallet or settings [--from-version]"
+            )
         upgrade_version_in_config = get_upgrade_version_list(
-            sorted_versions_found_in_config, upgrade_from_version
+            sorted_version_list=sorted_versions_found_in_config,
+            from_version=upgrade_from_version,
         )
         to_update_flag = False
         if upgrade_from_version == upgrade_to_version:
@@ -219,7 +222,10 @@ async def upgrade(settings: dict):
 
                 # Step 2 Update existing records, if required
                 config_key_set = set(upgrade_config.keys())
-                config_key_set.remove("resave_records")
+                try:
+                    config_key_set.remove("resave_records")
+                except KeyError:
+                    pass
                 for callable_name in list(config_key_set):
                     if upgrade_config.get(callable_name) is False:
                         continue

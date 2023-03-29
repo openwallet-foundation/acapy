@@ -167,11 +167,13 @@ class TestUpgrade(AsyncTestCase):
         ), async_mock.patch.object(
             ConnRecord, "save", async_mock.CoroutineMock()
         ):
-            await test_module.upgrade(
-                {
-                    "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
-                }
-            )
+            with self.assertRaises(UpgradeError) as ctx:
+                await test_module.upgrade(
+                    {
+                        "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
+                    }
+                )
+            assert "No upgrade from version found in wallet or" in str(ctx.exception)
 
     async def test_upgrade_x_callable_not_set(self):
         with async_mock.patch.object(
@@ -196,7 +198,7 @@ class TestUpgrade(AsyncTestCase):
                         },
                         "update_existing_records": True,
                     },
-                    "v0.6.0": {"update_existing_records": True},
+                    "v0.6.0": {"update_existing_records_b": True},
                 }
             ),
         ):
@@ -206,7 +208,7 @@ class TestUpgrade(AsyncTestCase):
                         "upgrade.from_version": "v0.6.0",
                     }
                 )
-            assert "No update_existing_records function specified" in str(ctx.exception)
+            assert "No function specified for" in str(ctx.exception)
 
     async def test_upgrade_x_class_not_found(self):
         with async_mock.patch.object(
@@ -314,25 +316,6 @@ class TestUpgrade(AsyncTestCase):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade({})
             assert "No version configs found in" in str(ctx.exception)
-
-    async def test_upgrade_x_from_version_not_in_config(self):
-        with async_mock.patch.object(
-            test_module,
-            "wallet_config",
-            async_mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
-            ),
-        ):
-            with self.assertRaises(UpgradeError) as ctx:
-                await test_module.upgrade(
-                    {
-                        "upgrade.from_version": "v1.2.3",
-                    }
-                )
-            assert "No upgrade configuration found for" in str(ctx.exception)
 
     def test_main(self):
         with async_mock.patch.object(

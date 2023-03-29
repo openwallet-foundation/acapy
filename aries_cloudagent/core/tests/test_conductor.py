@@ -1370,43 +1370,6 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             await conductor.setup()
             mock_genesis_load.assert_called_once()
 
-    async def test_startup_x_version_mismatch(self):
-        builder: ContextBuilder = StubContextBuilder(self.test_settings)
-        conductor = test_module.Conductor(builder)
-
-        with async_mock.patch.object(
-            test_module, "InboundTransportManager", autospec=True
-        ) as mock_inbound_mgr, async_mock.patch.object(
-            test_module, "OutboundTransportManager", autospec=True
-        ) as mock_outbound_mgr, async_mock.patch.object(
-            test_module, "LOGGER"
-        ) as mock_logger, async_mock.patch.object(
-            BaseStorage,
-            "find_record",
-            async_mock.AsyncMock(return_value=async_mock.MagicMock(value=f"v0.6.0")),
-        ):
-            mock_outbound_mgr.return_value.registered_transports = {
-                "test": async_mock.MagicMock(schemes=["http"])
-            }
-            await conductor.setup()
-
-            session = await conductor.root_profile.session()
-
-            wallet = session.inject(BaseWallet)
-            await wallet.create_public_did(
-                SOV,
-                ED25519,
-            )
-
-            mock_inbound_mgr.return_value.setup.assert_awaited_once()
-            mock_outbound_mgr.return_value.setup.assert_awaited_once()
-
-            mock_inbound_mgr.return_value.registered_transports = {}
-            mock_outbound_mgr.return_value.registered_transports = {}
-            with self.assertRaises(RuntimeError):
-                await conductor.start()
-                mock_logger.exception.assert_called_once()
-
     async def test_startup_x_no_storage_version(self):
         builder: ContextBuilder = StubContextBuilder(self.test_settings)
         conductor = test_module.Conductor(builder)
@@ -1421,6 +1384,10 @@ class TestConductorMediationSetup(IsolatedAsyncioTestCase, Config):
             BaseStorage,
             "find_record",
             async_mock.AsyncMock(side_effect=StorageNotFoundError()),
+        ), async_mock.patch.object(
+            test_module,
+            "add_version_record",
+            async_mock.AsyncMock(),
         ):
             mock_outbound_mgr.return_value.registered_transports = {
                 "test": async_mock.MagicMock(schemes=["http"])
