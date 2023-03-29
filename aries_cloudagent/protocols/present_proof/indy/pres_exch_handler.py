@@ -36,45 +36,61 @@ class IndyPresExchHandler:
         """Initialize PresExchange Handler."""
         super().__init__()
         self._profile = profile
+        self.holder = profile.inject(AnonCredsHolder)
 
-    async def return_presentation(
-        self,
-        pres_ex_record: Union[V10PresentationExchange, V20PresExRecord],
-        requested_credentials: dict = {},
-    ) -> dict:
-        """Return Indy proof request as dict."""
-        # Get all credentials for this presentation
-        holder = self._profile.inject(AnonCredsHolder)
-        credentials = {}
-
-        # extract credential ids and non_revoked
-        requested_referents = {}
+    def _extract_proof_request(self, pres_ex_record):
         if isinstance(pres_ex_record, V20PresExRecord):
-            proof_request = pres_ex_record.pres_request.attachment(
-                V20PresFormat.Format.INDY
-            )
+            return pres_ex_record.pres_request.attachment(V20PresFormat.Format.INDY)
         elif isinstance(pres_ex_record, V10PresentationExchange):
-            proof_request = pres_ex_record._presentation_request.ser
-        non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
+            return pres_ex_record._presentation_request.ser
+
+        raise TypeError(
+            "pres_ex_record must be V10PresentationExchange or V20PresExRecord"
+        )
+
+    def _get_requested_referents(
+        self,
+        proof_request: dict,
+        requested_credentials: dict,
+        non_revoc_intervals: dict,
+    ) -> dict:
+        """Get requested referents for a proof request and requested credentials.
+
+        Returns a dictionary that looks like:
+        {
+          "referent-0": {"cred_id": "0", "non_revoked": {"from": ..., "to": ...}},
+          "referent-1": {"cred_id": "1", "non_revoked": {"from": ..., "to": ...}}
+        }
+        """
+
+        requested_referents = {}
         attr_creds = requested_credentials.get("requested_attributes", {})
         req_attrs = proof_request.get("requested_attributes", {})
         for reft in attr_creds:
             requested_referents[reft] = {"cred_id": attr_creds[reft]["cred_id"]}
             if reft in req_attrs and reft in non_revoc_intervals:
                 requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
+
         pred_creds = requested_credentials.get("requested_predicates", {})
         req_preds = proof_request.get("requested_predicates", {})
         for reft in pred_creds:
             requested_referents[reft] = {"cred_id": pred_creds[reft]["cred_id"]}
             if reft in req_preds and reft in non_revoc_intervals:
                 requested_referents[reft]["non_revoked"] = non_revoc_intervals[reft]
+        return requested_referents
+
+    async def _get_credentials(self, requested_referents: dict):
         # extract mapping of presentation referents to credential ids
+        credentials = {}
         for reft in requested_referents:
             credential_id = requested_referents[reft]["cred_id"]
             if credential_id not in credentials:
                 credentials[credential_id] = json.loads(
-                    await holder.get_credential(credential_id)
+                    await self.holder.get_credential(credential_id)
                 )
+        return credentials
+
+    def _remove_superfluous_timestamps(self, requested_credentials, credentials):
         # remove any timestamps that cannot correspond to non-revoc intervals
         for r in ("requested_attributes", "requested_predicates"):
             for reft, req_item in requested_credentials.get(r, {}).items():
@@ -85,6 +101,8 @@ class IndyPresExchHandler:
                         f"Removed superfluous timestamp from requested_credentials {r} "
                         f"{reft} for non-revocable credential {req_item['cred_id']}"
                     )
+
+    async def _get_ledger_objects(self, credentials: dict):
         # Get all schemas, credential definitions, and revocation registries in use
         schemas = {}
         cred_defs = {}
@@ -119,8 +137,16 @@ class IndyPresExchHandler:
                         ] = RevocationRegistry.from_definition(
                             await ledger.get_revoc_reg_def(revocation_registry_id), True
                         )
-        # Get delta with non-revocation interval defined in "non_revoked"
-        # of the presentation request or attributes
+        return schemas, cred_defs, revocation_registries
+
+    async def _get_revocation_registries_deltas(
+        self, requested_referents: dict, credentials: dict
+    ):
+        """Get deltas.
+
+        Get delta with non-revocation interval defined in "non_revoked"
+        of the presentation request or attributes
+        """
         epoch_now = int(time.time())
         revoc_reg_deltas = {}
         for precis in requested_referents.values():  # cred_id, non-revoc interval
@@ -165,7 +191,13 @@ class IndyPresExchHandler:
                         # often one cred satisfies many requested attrs/preds
                         if stamp_me["cred_id"] == credential_id:
                             stamp_me["timestamp"] = revoc_reg_deltas[key][3]
-        # Get revocation states to prove non-revoked
+
+        return revoc_reg_deltas
+
+    async def _get_revocation_states(
+        self, revocation_registries: dict, credentials: dict, revoc_reg_deltas: dict
+    ):
+        """Get revocation states to prove non-revoked."""
         revocation_states = {}
         for (
             rev_reg_id,
@@ -179,7 +211,7 @@ class IndyPresExchHandler:
             tails_local_path = await rev_reg.get_or_fetch_local_tails_path()
             try:
                 revocation_states[rev_reg_id][delta_timestamp] = json.loads(
-                    await holder.create_revocation_state(
+                    await self.holder.create_revocation_state(
                         credentials[credential_id]["cred_rev_id"],
                         rev_reg.reg_def,
                         delta,
@@ -192,6 +224,9 @@ class IndyPresExchHandler:
                     f"Failed to create revocation state: {e.error_code}, {e.message}"
                 )
                 raise e
+        return revocation_states
+
+    def _set_timestamps(self, requested_credentials: dict, requested_referents: dict):
         for referent, precis in requested_referents.items():
             if "timestamp" not in precis:
                 continue
@@ -203,7 +238,38 @@ class IndyPresExchHandler:
                 requested_credentials["requested_predicates"][referent][
                     "timestamp"
                 ] = precis["timestamp"]
-        indy_proof_json = await holder.create_presentation(
+
+    async def return_presentation(
+        self,
+        pres_ex_record: Union[V10PresentationExchange, V20PresExRecord],
+        requested_credentials: dict = {},
+    ) -> dict:
+        """Return Indy proof request as dict."""
+        proof_request = self._extract_proof_request(pres_ex_record)
+        non_revoc_intervals = indy_proof_req2non_revoc_intervals(proof_request)
+
+        requested_referents = self._get_requested_referents(
+            proof_request, requested_credentials, non_revoc_intervals
+        )
+
+        credentials = await self._get_credentials(requested_referents)
+        self._remove_superfluous_timestamps(requested_credentials, credentials)
+
+        schemas, cred_defs, revocation_registries = await self._get_ledger_objects(
+            credentials
+        )
+
+        revoc_reg_deltas = await self._get_revocation_registries_deltas(
+            requested_referents, credentials
+        )
+
+        revocation_states = await self._get_revocation_states(
+            revocation_registries, credentials, revoc_reg_deltas
+        )
+
+        self._set_timestamps(requested_credentials, requested_referents)
+
+        indy_proof_json = await self.holder.create_presentation(
             proof_request,
             requested_credentials,
             schemas,
