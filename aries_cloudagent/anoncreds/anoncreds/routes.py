@@ -270,7 +270,7 @@ async def cred_def_post(request: web.BaseRequest):
     tag = cred_def.get("tag")
 
     issuer = context.inject(AnonCredsIssuer)
-    result = await issuer.create_and_store_credential_definition(
+    result = await issuer.create_and_register_credential_definition(
         issuer_id,
         schema_id,
         tag,

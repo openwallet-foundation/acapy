@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-import time
+from time import time
 
 from typing import Optional, Sequence, Tuple
 
@@ -250,7 +250,7 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
                 "Error checking for credential definition"
             ) from err
 
-    async def create_and_store_credential_definition(
+    async def create_and_register_credential_definition(
         self,
         issuer_id: str,
         schema_id: str,
@@ -318,10 +318,12 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
                     # Note: Indy-SDK uses a separate SchemaId record for this
                     tags={
                         "schema_id": schema_id,
+                        "schema_issuer_id": schema_result.schema.issuer_id,
                         "issuer_id": issuer_id,
                         "schema_name": schema_result.schema.name,
                         "schema_version": schema_result.schema.version,
                         "state": result.credential_definition_state.state,
+                        "epoch": str(int(time())),
                     },
                 )
                 await txn.handle.insert(
@@ -349,30 +351,86 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
     async def get_created_credential_definitions(
         self,
         issuer_id: Optional[str] = None,
+        schema_issuer_id: Optional[str] = None,
         schema_id: Optional[str] = None,
         schema_name: Optional[str] = None,
         schema_version: Optional[str] = None,
         state: Optional[str] = None,
+        epoch: Optional[str] = None,
     ) -> Sequence[str]:
         """Retrieve IDs of credential definitions previously created."""
         async with self._profile.session() as session:
             # TODO limit? scan?
-            credential_definitions = await session.handle.fetch_all(
+            credential_definition_entries = await session.handle.fetch_all(
                 CATEGORY_CRED_DEF,
                 {
                     key: value
                     for key, value in {
                         "issuer_id": issuer_id,
+                        "schema_issuer_id": schema_issuer_id,
                         "schema_id": schema_id,
                         "schema_name": schema_name,
                         "schema_version": schema_version,
                         "state": state,
+                        "epoch": epoch,
                     }.items()
                     if value is not None
                 },
             )
-        # entry.name was stored as the credential_definition's ID
-        return [entry.name for entry in credential_definitions]
+        return [entry.name for entry in credential_definition_entries]
+
+    async def match_created_credential_definitions(
+        self,
+        cred_def_id: Optional[str] = None,
+        issuer_id: Optional[str] = None,
+        schema_issuer_id: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_name: Optional[str] = None,
+        schema_version: Optional[str] = None,
+        state: Optional[str] = None,
+        epoch: Optional[str] = None,
+    ) -> Optional[str]:
+        """Return cred def id of most recent matching cred def."""
+        async with self._profile.session() as session:
+            # TODO limit? scan?
+            if cred_def_id:
+                cred_def_entry = await session.handle.fetch(
+                    CATEGORY_CRED_DEF, cred_def_id
+                )
+            else:
+                credential_definition_entries = await session.handle.fetch_all(
+                    CATEGORY_CRED_DEF,
+                    {
+                        key: value
+                        for key, value in {
+                            "issuer_id": issuer_id,
+                            "schema_issuer_id": schema_issuer_id,
+                            "schema_id": schema_id,
+                            "schema_name": schema_name,
+                            "schema_version": schema_version,
+                            "state": state,
+                            "epoch": epoch,
+                        }.items()
+                        if value is not None
+                    },
+                )
+                cred_def_entry = max(
+                    [entry for entry in credential_definition_entries],
+                    key=lambda r: int(r.tags["epoch"]),
+                )
+
+        if cred_def_entry:
+            return cred_def_entry.name
+
+        return None
+
+    async def cred_def_supports_revocation(self, cred_def_id: str) -> bool:
+        """Return whether a credential definition supports revocation."""
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        cred_def_result = await anoncreds_registry.get_credential_definition(
+            self.profile, cred_def_id
+        )
+        return cred_def_result.credential_definition.value.revocation is not None
 
     async def create_and_register_revocation_registry_definition(
         self,
@@ -587,18 +645,18 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
 
     async def create_credential(
         self,
-        schema: dict,
+        schema_id: str,
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        revoc_reg_id: str = None,
-        tails_file_path: str = None,
+        revoc_reg_id: Optional[str] = None,
+        tails_file_path: Optional[str] = None,
     ) -> Tuple[str, str]:
         """
         Create a credential.
 
         Args
-            schema: Schema to create credential for
+            schema_id: Schema ID to create credential for
             credential_offer: Credential Offer to create credential for
             credential_request: Credential request to create credential for
             credential_values: Values to go in credential
@@ -609,6 +667,8 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
             A tuple of created credential and revocation id
 
         """
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
         credential_definition_id = credential_offer["cred_def_id"]
         try:
             async with self._profile.session() as session:
@@ -628,7 +688,7 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
             )
 
         raw_values = {}
-        schema_attributes = schema["attrNames"]
+        schema_attributes = schema_result.schema.attr_names
         for attribute in schema_attributes:
             # Ensure every attribute present in schema to be set.
             # Extraneous attribute names are ignored.
@@ -682,6 +742,9 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
                         rev_reg_def = RevocationRegistryDefinition.load(
                             rev_reg_def.raw_value
                         )
+                        rev_status_list = RevocationStatusList.load(
+                            rev_status_list.raw_value
+                        )
                     except AnoncredsError as err:
                         raise AnonCredsIssuerError(
                             "Error loading revocation registry definition"
@@ -710,6 +773,7 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
         else:
             revoc = None
             credential_revocation_id = None
+            rev_status_list = None
 
         try:
             credential = await asyncio.get_event_loop().run_in_executor(

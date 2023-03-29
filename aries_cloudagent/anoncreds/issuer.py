@@ -97,7 +97,7 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def create_and_store_credential_definition(
+    async def create_and_register_credential_definition(
         self,
         issuer_id: str,
         schema_id: str,
@@ -130,6 +130,24 @@ class AnonCredsIssuer(ABC, metaclass=ABCMeta):
         state: Optional[str] = None,
     ) -> Sequence[str]:
         """Get created credential definitions."""
+
+    @abstractmethod
+    async def match_created_credential_definitions(
+        self,
+        cred_def_id: Optional[str] = None,
+        issuer_id: Optional[str] = None,
+        schema_issuer_id: Optional[str] = None,
+        schema_id: Optional[str] = None,
+        schema_name: Optional[str] = None,
+        schema_version: Optional[str] = None,
+        state: Optional[str] = None,
+        epoch: Optional[str] = None,
+    ) -> Optional[str]:
+        """Return cred def id of most recent matching cred def."""
+
+    @abstractmethod
+    async def cred_def_supports_revocation(self, cred_def_id: str) -> bool:
+        """Return whether a credential definition supports revocation."""
 
     @abstractmethod
     async def create_credential_offer(self, credential_definition_id) -> str:

@@ -19,7 +19,6 @@ from ......anoncreds.models.cred_abstract import IndyCredAbstractSchema
 from ......ledger.base import BaseLedger
 from ......ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
-    GET_SCHEMA,
     IndyLedgerRequestsExecutor,
 )
 from ......messaging.credential_definitions.util import (
@@ -195,8 +194,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
-        cred_def_id = await self._match_sent_cred_def_id(
-            cred_proposal_message.attachment(IndyCredFormatHandler.format)
+        cred_def_id = await issuer.match_created_credential_definitions(
+            **cred_proposal_message.attachment(IndyCredFormatHandler.format)
         )
 
         async def _create():
@@ -341,21 +340,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_def_id = cred_offer["cred_def_id"]
 
         issuer = self.profile.inject(AnonCredsIssuer)
-        multitenant_mgr = self.profile.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(self.profile)
-        else:
-            ledger_exec_inst = self.profile.inject(IndyLedgerRequestsExecutor)
-        ledger = (
-            await ledger_exec_inst.get_ledger_for_identifier(
-                schema_id,
-                txn_record_type=GET_SCHEMA,
-            )
-        )[1]
-        async with ledger:
-            schema = await ledger.get_schema(schema_id)
-            cred_def = await ledger.get_credential_definition(cred_def_id)
-        revocable = cred_def["value"].get("revocation")
+        revocable = await issuer.cred_def_supports_revocation(cred_def_id)
         result = None
 
         for attempt in range(max(retries, 1)):
@@ -367,6 +352,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 await asyncio.sleep(2)
 
             if revocable:
+                # TODO make this go through the anoncreds interface
                 revoc = IndyRevocation(self.profile)
                 registry_info = await revoc.get_or_create_active_registry(cred_def_id)
                 if not registry_info:
@@ -381,7 +367,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
             try:
                 (cred_json, cred_rev_id) = await issuer.create_credential(
-                    schema,
+                    schema_id,
                     cred_offer,
                     cred_request,
                     cred_values,
