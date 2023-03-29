@@ -2323,7 +2323,9 @@ class TestConnectionManager(AsyncTestCase):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.fetch_connection_targets(mock_conn)
 
-    async def test_fetch_connection_targets_conn_invitation_supported_JsonWebKey2020_key_type(self):
+    async def test_fetch_connection_targets_conn_invitation_supported_JsonWebKey2020_key_type(
+        self,
+    ):
         async with self.profile.session() as session:
             builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
             vmethod = builder.verification_method.add(
@@ -2332,7 +2334,7 @@ class TestConnectionManager(AsyncTestCase):
                 public_key_jwk={
                     "kty": "OKP",
                     "crv": "Ed25519",
-                    "x": bytes_to_b64(b58_to_bytes(self.test_target_verkey), True)
+                    "x": bytes_to_b64(b58_to_bytes(self.test_target_verkey), True),
                 },
             )
             builder.service.add_didcomm(

@@ -279,7 +279,10 @@ class BaseConnectionManager:
 
         return (
             endpoint,
-            [self._extract_key_material_in_base58_format(key) for key in recipient_keys],
+            [
+                self._extract_key_material_in_base58_format(key)
+                for key in recipient_keys
+            ],
             [self._extract_key_material_in_base58_format(key) for key in routing_keys],
         )
 
@@ -288,11 +291,12 @@ class BaseConnectionManager:
         if isinstance(method, Ed25519VerificationKey2018):
             return method.material
         elif isinstance(method, JsonWebKey2020):
-            if method.public_key_jwk.get('kty') == 'OKP':
+            if method.public_key_jwk.get("kty") == "OKP":
                 return bytes_to_b58(b64_to_bytes(method.public_key_jwk.get("x"), True))
             else:
                 raise BaseConnectionManagerError(
-                    f"Key type {type(method).__name__} with kty {method.public_key_jwk.get('kty')} is not supported"
+                    f"Key type {type(method).__name__}"
+                    f"with kty {method.public_key_jwk.get('kty')} is not supported"
                 )
         else:
             raise BaseConnectionManagerError(
