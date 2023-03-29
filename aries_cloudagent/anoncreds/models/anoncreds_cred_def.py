@@ -1,8 +1,12 @@
 """Anoncreds cred def OpenAPI validators"""
 from typing import Any, Dict, List, Optional
 from typing_extensions import Literal
-from anoncreds import CredentialDefinition
 
+from anoncreds import (
+    CredentialDefinition,
+    RevocationRegistryDefinition,
+    RevocationStatusList,
+)
 from marshmallow import EXCLUDE, fields
 from marshmallow.validate import OneOf
 
@@ -322,13 +326,13 @@ class GetCredDefResultSchema(BaseModelSchema):
     credential_definitions_metadata = fields.Dict()
 
 
-class AnonCredsRevocationRegistryDefinition(BaseModel):
-    """AnonCredsRevocationRegistryDefinition"""
+class RevRegDef(BaseModel):
+    """RevRegDef"""
 
     class Meta:
-        """AnonCredsRevocationRegistryDefinition metadata."""
+        """RevRegDef metadata."""
 
-        schema_class = "AnonCredsRevocationRegistryDefinitionSchema"
+        schema_class = "RevRegDefSchema"
 
     def __init__(
         self,
@@ -353,14 +357,23 @@ class AnonCredsRevocationRegistryDefinition(BaseModel):
         self.tails_location = tails_Location
         self.tails_hash = tails_hash
 
+    @classmethod
+    def from_native(cls, rev_reg_def: RevocationRegistryDefinition):
+        """Convert a native revocation registry definition to a RevRegDef object."""
+        return cls.deserialize(rev_reg_def.to_json())
 
-class AnonCredsRevocationRegistryDefinitionSchema(BaseModelSchema):
-    """AnonCredsRevocationRegistryDefinitionSchema"""
+    def to_native(self):
+        """Convert to native anoncreds revocation registry definition."""
+        return RevocationRegistryDefinition.load(self.serialize())
+
+
+class RevRegDefSchema(BaseModelSchema):
+    """RevRegDefSchema."""
 
     class Meta:
-        """AnonCredsRevocationRegistryDefinitionSchema metadata."""
+        """RevRegDefSchema metadata."""
 
-        model_class = AnonCredsRevocationRegistryDefinition
+        model_class = RevRegDef
         unknown = EXCLUDE
 
     issuer_id = fields.Str(
@@ -382,6 +395,104 @@ class AnonCredsRevocationRegistryDefinitionSchema(BaseModelSchema):
     tails_hash = fields.Str(data_key="tailsHash")
 
 
+class RevRegDefState(BaseModel):
+    """RevRegDefState."""
+
+    STATE_FINISHED = "finished"
+    STATE_FAILED = "failed"
+    STATE_ACTION = "action"
+    STATE_WAIT = "wait"
+
+    class Meta:
+        """RevRegDefState metadata."""
+
+        schema_class = "RevRegDefStateSchema"
+
+    def __init__(
+        self,
+        state: str,
+        revocation_registry_definition_id: str,
+        revocation_registry_definition: RevRegDef,
+    ):
+        self.state = state
+        self.revocation_registry_definition_id = revocation_registry_definition_id
+        self.revocation_registry_definition = revocation_registry_definition
+
+
+class RevRegDefStateSchema(BaseModelSchema):
+    """RevRegDefStateSchema."""
+
+    class Meta:
+        """RevRegDefStateSchema metadata."""
+
+        model_class = RevRegDefState
+        unknown = EXCLUDE
+
+    state = fields.Str(
+        validate=OneOf(
+            [
+                RevRegDefState.STATE_FINISHED,
+                RevRegDefState.STATE_FAILED,
+                RevRegDefState.STATE_ACTION,
+                RevRegDefState.STATE_WAIT,
+            ]
+        )
+    )
+    revocation_registry_definition_id = fields.Str(
+        description="revocation registry definition id"
+    )
+    revocation_registry_definition = fields.Nested(
+        RevRegDefSchema(), description="revocation registry definition"
+    )
+
+
+class RevRegDefResult(BaseModel):
+    """Cred def result."""
+
+    class Meta:
+        """RevRegDefResult metadata."""
+
+        schema_class = "RevRegDefResultSchema"
+
+    def __init__(
+        self,
+        job_id: Optional[str],
+        revocation_registry_definition_state: RevRegDefState,
+        registration_metadata: dict,
+        revocation_registry_definition_metadata: dict,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.job_id = job_id
+        self.revocation_registry_definition_state = revocation_registry_definition_state
+        self.registration_metadata = registration_metadata
+        self.revocation_registry_definition_metadata = (
+            revocation_registry_definition_metadata
+        )
+
+    @property
+    def rev_reg_def_id(self):
+        return (
+            self.revocation_registry_definition_state.revocation_registry_definition_id
+        )
+
+
+class RevRegDefResultSchema(BaseModelSchema):
+    """Cred def result schema."""
+
+    class Meta:
+        """RevRegDefResultSchema metadata."""
+
+        model_class = RevRegDefResult
+        unknown = EXCLUDE
+
+    job_id = fields.Str()
+    revocation_registry_definition_state = fields.Nested(RevRegDefStateSchema())
+    registration_metadata = fields.Dict()
+    # For indy, revocation_registry_definition_metadata will contain the seqNo
+    revocation_registry_definition_metadata = fields.Dict()
+
+
 class AnonCredsRegistryGetRevocationRegistryDefinition(BaseModel):
     """AnonCredsRegistryGetRevocationRegistryDefinition"""
 
@@ -392,7 +503,7 @@ class AnonCredsRegistryGetRevocationRegistryDefinition(BaseModel):
 
     def __init__(
         self,
-        revocation_registry: AnonCredsRevocationRegistryDefinition,
+        revocation_registry: RevRegDef,
         revocation_registry_id: str,
         resolution_metadata: Dict[str, Any],
         revocation_registry_metadata: Dict[str, Any],
@@ -412,7 +523,7 @@ class AnonCredsRegistryGetRevocationRegistryDefinitionSchema(BaseModelSchema):
         model_class = AnonCredsRegistryGetRevocationRegistryDefinition
         unknown = EXCLUDE
 
-    revocation_registry = fields.Nested(AnonCredsRevocationRegistryDefinitionSchema())
+    revocation_registry = fields.Nested(RevRegDefSchema())
     revocation_registry_id = fields.Str()
     resolution_metadata = fields.Dict()
     revocation_registry_metadata = fields.Dict()
@@ -449,11 +560,11 @@ class AnonCredsRegistryGetRevocationRegistryDefinitionsSchema(BaseModelSchema):
     )
 
 
-class AnonCredsRevocationList(BaseModel):
-    """AnonCredsRevocationList"""
+class RevStatusList(BaseModel):
+    """RevStatusList."""
 
     class Meta:
-        """AnonCredsRevocationList metadata."""
+        """RevStatusList metadata."""
 
         schema_class = "AnonCredsRevocationListSchema"
 
@@ -473,14 +584,23 @@ class AnonCredsRevocationList(BaseModel):
         self.current_accumulator = current_accumulator
         self.timestamp = timestamp
 
+    @classmethod
+    def from_native(cls, rev_status_list: RevocationStatusList):
+        """Convert from native revocation status list."""
+        return cls.deserialize(rev_status_list.to_json())
 
-class AnonCredsRevocationListSchema(BaseModelSchema):
-    """AnonCredsRevocationListSchema"""
+    def to_native(self):
+        """Convert to native revocation status list."""
+        return RevocationStatusList.load(self.serialize())
+
+
+class RevStatusListSchema(BaseModelSchema):
+    """RevStatusListSchema."""
 
     class Meta:
-        """AnonCredsRevocationListSchema metadata."""
+        """RevStatusListSchema metadata."""
 
-        model_class = AnonCredsRevocationList
+        model_class = RevStatusList
         unknown = EXCLUDE
 
     issuer_id = fields.Str(
@@ -500,6 +620,100 @@ class AnonCredsRevocationListSchema(BaseModelSchema):
     timestamp = fields.Int()
 
 
+class RevStatusListState(BaseModel):
+    """RevStatusListState."""
+
+    STATE_FINISHED = "finished"
+    STATE_FAILED = "failed"
+    STATE_ACTION = "action"
+    STATE_WAIT = "wait"
+
+    class Meta:
+        """RevStatusListState metadata."""
+
+        schema_class = "RevStatusListStateSchema"
+
+    def __init__(
+        self,
+        state: str,
+        revocation_status_list_id: str,
+        revocation_status_list: RevStatusList,
+    ):
+        self.state = state
+        self.revocation_status_list_id = revocation_status_list_id
+        self.revocation_status_list = revocation_status_list
+
+
+class RevStatusListStateSchema(BaseModelSchema):
+    """RevStatusListStateSchema."""
+
+    class Meta:
+        """RevStatusListStateSchema metadata."""
+
+        model_class = RevStatusListState
+        unknown = EXCLUDE
+
+    state = fields.Str(
+        validate=OneOf(
+            [
+                RevStatusListState.STATE_FINISHED,
+                RevStatusListState.STATE_FAILED,
+                RevStatusListState.STATE_ACTION,
+                RevStatusListState.STATE_WAIT,
+            ]
+        )
+    )
+    revocation_status_list_id = fields.Str(
+        description="revocation registry definition id"
+    )
+    revocation_status_list = fields.Nested(
+        RevStatusListSchema(), description="revocation registry definition"
+    )
+
+
+class RevStatusListResult(BaseModel):
+    """Cred def result."""
+
+    class Meta:
+        """RevStatusListResult metadata."""
+
+        schema_class = "RevStatusListResultSchema"
+
+    def __init__(
+        self,
+        job_id: Optional[str],
+        revocation_status_list_state: RevStatusListState,
+        registration_metadata: dict,
+        revocation_status_list_metadata: dict,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.job_id = job_id
+        self.revocation_status_list_state = revocation_status_list_state
+        self.registration_metadata = registration_metadata
+        self.revocation_status_list_metadata = revocation_status_list_metadata
+
+    @property
+    def rev_reg_def_id(self):
+        return self.revocation_status_list_state.revocation_status_list_id
+
+
+class RevStatusListResultSchema(BaseModelSchema):
+    """Cred def result schema."""
+
+    class Meta:
+        """RevStatusListResultSchema metadata."""
+
+        model_class = RevStatusListResult
+        unknown = EXCLUDE
+
+    job_id = fields.Str()
+    revocation_status_list_state = fields.Nested(RevStatusListStateSchema())
+    registration_metadata = fields.Dict()
+    # For indy, revocation_status_list_metadata will contain the seqNo
+    revocation_status_list_metadata = fields.Dict()
+
+
 class AnonCredsRegistryGetRevocationList(BaseModel):
     """AnonCredsRegistryGetRevocationList"""
 
@@ -510,7 +724,7 @@ class AnonCredsRegistryGetRevocationList(BaseModel):
 
     def __init__(
         self,
-        revocation_list: AnonCredsRevocationList,
+        revocation_list: RevStatusList,
         resolution_metadata: Dict[str, Any],
         revocation_registry_metadata: Dict[str, Any],
         **kwargs,
@@ -530,6 +744,6 @@ class AnonCredsRegistryGetRevocationListSchema(BaseModelSchema):
         model_class = AnonCredsRegistryGetRevocationList
         unknown = EXCLUDE
 
-    revocation_list = fields.Nested(AnonCredsRevocationListSchema)
+    revocation_list = fields.Nested(RevStatusListSchema)
     resolution_metadata = fields.Str()
     revocation_registry_metadata = fields.Dict()

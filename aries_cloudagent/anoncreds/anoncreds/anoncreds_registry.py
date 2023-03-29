@@ -10,6 +10,10 @@ from ..models.anoncreds_cred_def import (
     CredDef,
     CredDefResult,
     GetCredDefResult,
+    RevRegDef,
+    RevRegDefResult,
+    RevStatusList,
+    RevStatusListResult,
 )
 from ..models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 from .base_registry import (
@@ -118,11 +122,19 @@ class AnonCredsRegistry:
         resolver = await self._resolver_for_identifier(revocation_registry_id)
         return await resolver.get_revocation_registry_definition(revocation_registry_id)
 
-    # TODO: determine keyword arguments
-    async def register_revocation_registry_definition(self):
+    async def register_revocation_registry_definition(
+        self,
+        profile: Profile,
+        revocation_registry_definition: RevRegDef,
+        options: Optional[dict] = None,
+    ) -> RevRegDefResult:
         """Register a revocation registry definition on the registry."""
-        registrar = await self._registrar_for_identifier("something")
-        return await registrar.register_revocation_registry_definition()
+        registrar = await self._registrar_for_identifier(
+            revocation_registry_definition.issuer_id
+        )
+        return await registrar.register_revocation_registry_definition(
+            profile, revocation_registry_definition, options
+        )
 
     async def get_revocation_list(
         self, revocation_registry_id: str, timestamp: str
@@ -131,8 +143,14 @@ class AnonCredsRegistry:
         resolver = await self._resolver_for_identifier(revocation_registry_id)
         return await resolver.get_revocation_list(revocation_registry_id, timestamp)
 
-    # TODO: determine keyword arguments
-    async def register_revocation_list(self):
+    async def register_revocation_status_list(
+        self,
+        profile: Profile,
+        rev_status_list: RevStatusList,
+        options: Optional[dict] = None,
+    ) -> RevStatusListResult:
         """Register a revocation list on the registry."""
         registrar = await self._registrar_for_identifier("something")
-        return await registrar.register_revocation_registry_definition()
+        return await registrar.register_revocation_status_list(
+            profile, rev_status_list, options
+        )

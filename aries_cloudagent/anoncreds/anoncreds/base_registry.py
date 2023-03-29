@@ -11,6 +11,10 @@ from ..models.anoncreds_cred_def import (
     CredDef,
     CredDefResult,
     GetCredDefResult,
+    RevRegDef,
+    RevRegDefResult,
+    RevStatusList,
+    RevStatusListResult,
 )
 from ..models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 
@@ -130,12 +134,20 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
     ) -> CredDefResult:
         """Register a credential definition on the registry."""
 
-    # TODO: determine keyword arguments
     @abstractmethod
-    async def register_revocation_registry_definition(self):
+    async def register_revocation_registry_definition(
+        self,
+        profile: Profile,
+        revocation_registry_definition: RevRegDef,
+        options: Optional[dict] = None,
+    ) -> RevRegDefResult:
         """Register a revocation registry definition on the registry."""
 
-    # TODO: determine keyword arguments
     @abstractmethod
-    async def register_revocation_list(self):
+    async def register_revocation_status_list(
+        self,
+        profile: Profile,
+        rev_status_list: RevStatusList,
+        options: Optional[dict] = None,
+    ) -> RevStatusListResult:
         """Register a revocation list on the registry."""

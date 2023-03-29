@@ -23,7 +23,15 @@ from anoncreds import (
 
 from .anoncreds_registry import AnonCredsRegistry
 from .base_registry import AnonCredsSchemaAlreadyExists
-from ..models.anoncreds_cred_def import CredDef, CredDefResult, CredDefState
+from ..models.anoncreds_cred_def import (
+    CredDef,
+    CredDefResult,
+    CredDefState,
+    RevRegDef,
+    RevRegDefResult,
+    RevRegDefState,
+    RevStatusList,
+)
 from ..models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
 
 from ...askar.profile import AskarProfile
@@ -66,6 +74,29 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
     def profile(self) -> AskarProfile:
         """Accessor for the profile instance."""
         return self._profile
+
+    async def _update_entry_state(self, category: str, name: str, state: str):
+        """Update the state tag of an entry in a given category."""
+        try:
+            async with self._profile.transaction() as txn:
+                entry = await txn.handle.fetch(
+                    category,
+                    name,
+                    for_update=True,
+                )
+                if not entry:
+                    raise AnonCredsIssuerError(
+                        f"{category} with id {name} could not be found"
+                    )
+
+                entry.tags["state"] = state
+                await txn.handle.replace(
+                    CATEGORY_SCHEMA,
+                    name,
+                    tags=entry.tags,
+                )
+        except AskarError as err:
+            raise AnonCredsIssuerError(f"Error marking {category} as {state}") from err
 
     async def _store_schema(
         self,
@@ -162,22 +193,13 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating schema") from err
 
+    async def update_schema_state(self, schema_id: str, state: str):
+        """Update the state of the stored schema."""
+        await self._update_entry_state(CATEGORY_SCHEMA, schema_id, state)
+
     async def finish_schema(self, schema_id: str):
-        try:
-            async with self._profile.transaction() as txn:
-                entry = await txn.handle.fetch(
-                    CATEGORY_SCHEMA,
-                    schema_id,
-                    for_update=True,
-                )
-                entry.tags["state"] = SchemaState.STATE_FINISHED
-                await txn.handle.replace(
-                    CATEGORY_SCHEMA,
-                    schema_id,
-                    tags=entry.tags,
-                )
-        except AskarError as err:
-            raise AnonCredsIssuerError("Error marking schema as finished") from err
+        """Mark a schema as finished."""
+        await self.update_schema_state(schema_id, SchemaState.STATE_FINISHED)
 
     async def get_created_schemas(
         self,
@@ -314,25 +336,13 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
 
         return result
 
-    async def finish_credential_definition(self, cred_def_id: str):
+    async def update_cred_def_state(self, cred_def_id: str, state: str):
+        """Update the state of a cred def."""
+        await self._update_entry_state(CATEGORY_CRED_DEF, cred_def_id, state)
+
+    async def finish_cred_def(self, cred_def_id: str):
         """Finish a cred def."""
-        try:
-            async with self._profile.transaction() as txn:
-                entry = await txn.handle.fetch(
-                    CATEGORY_CRED_DEF,
-                    cred_def_id,
-                    for_update=True,
-                )
-                entry.tags["state"] = CredDefState.STATE_FINISHED
-                await txn.handle.replace(
-                    CATEGORY_SCHEMA,
-                    cred_def_id,
-                    tags=entry.tags,
-                )
-        except AskarError as err:
-            raise AnonCredsIssuerError(
-                "Error marking credential definition as finished"
-            ) from err
+        await self.update_cred_def_state(cred_def_id, CredDefState.STATE_FINISHED)
 
     async def get_created_credential_definitions(
         self,
@@ -361,6 +371,174 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
             )
         # entry.name was stored as the credential_definition's ID
         return [entry.name for entry in credential_definitions]
+
+    async def create_and_register_revocation_registry_definition(
+        self,
+        issuer_id: str,
+        cred_def_id: str,
+        registry_type: str,
+        tag: str,
+        max_cred_num: int,
+        tails_base_path: str,
+        options: Optional[dict] = None,
+    ) -> RevRegDefResult:
+        """
+        Create a new revocation registry and store it in the wallet.
+
+        Args:
+            origin_did: the DID issuing the revocation registry
+            cred_def_id: the identifier of the related credential definition
+            revoc_def_type: the revocation registry type (default CL_ACCUM)
+            tag: the unique revocation registry tag
+            max_cred_num: the number of credentials supported in the registry
+            tails_base_path: where to store the tails file
+            issuance_type: optionally override the issuance type
+
+        Returns:
+            A tuple of the revocation registry ID, JSON, and entry JSON
+
+        """
+        try:
+            async with self._profile.session() as session:
+                cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
+        except AskarError as err:
+            raise AnonCredsIssuerError(
+                "Error retrieving credential definition"
+            ) from err
+
+        if not cred_def:
+            raise AnonCredsIssuerError(
+                "Credential definition not found for revocation registry"
+            )
+
+        try:
+            (
+                rev_reg_def,
+                rev_reg_def_private,
+            ) = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: RevocationRegistryDefinition.create(
+                    cred_def_id,
+                    cred_def.raw_value,
+                    issuer_id,
+                    tag,
+                    registry_type,
+                    max_cred_num,
+                    tails_dir_path=tails_base_path,
+                ),
+            )
+
+        except AnoncredsError as err:
+            raise AnonCredsIssuerError("Error creating revocation registry") from err
+
+        rev_reg_def_json = rev_reg_def.to_json()
+
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        result = await anoncreds_registry.register_revocation_registry_definition(
+            self.profile, RevRegDef.from_native(rev_reg_def), options
+        )
+
+        # rev_reg_def_id = f"{origin_did}:4:{cred_def_id}:CL_ACCUM:{tag}"
+        rev_reg_def_id = result.rev_reg_def_id
+
+        try:
+            async with self._profile.transaction() as txn:
+                await txn.handle.insert(
+                    CATEGORY_REV_REG_INFO,
+                    rev_reg_def_id,
+                    value_json={"curr_id": 0, "used_ids": []},
+                )
+                await txn.handle.insert(
+                    CATEGORY_REV_REG_DEF,
+                    rev_reg_def_id,
+                    rev_reg_def_json,
+                    tags={"cred_def_id": cred_def_id},
+                )
+                await txn.handle.insert(
+                    CATEGORY_REV_REG_DEF_PRIVATE,
+                    rev_reg_def_id,
+                    rev_reg_def_private.to_json_buffer(),
+                )
+                await txn.commit()
+        except AskarError as err:
+            raise AnonCredsIssuerError("Error saving new revocation registry") from err
+
+        return result
+
+    async def update_revocation_registry_definition_state(
+        self, rev_reg_def_id: str, state: str
+    ):
+        """Update the state of a rev reg def."""
+        await self._update_entry_state(CATEGORY_REV_REG_DEF, rev_reg_def_id, state)
+
+    async def finish_revocation_registry_definition(self, rev_reg_def_id: str):
+        """Mark a rev reg def as finished."""
+        await self.update_revocation_registry_definition_state(
+            rev_reg_def_id, RevRegDefState.STATE_FINISHED
+        )
+
+    async def get_created_revocation_registry_definitions(
+        self,
+        cred_def_id: Optional[str] = None,
+        state: Optional[str] = None,
+    ) -> Sequence[str]:
+        """Retrieve IDs of rev reg defs previously created."""
+        async with self._profile.session() as session:
+            # TODO limit? scan?
+            rev_reg_defs = await session.handle.fetch_all(
+                CATEGORY_REV_REG_DEF,
+                {
+                    key: value
+                    for key, value in {
+                        "cred_def_id": cred_def_id,
+                        "state": state,
+                    }.items()
+                    if value is not None
+                },
+            )
+        # entry.name was stored as the credential_definition's ID
+        return [entry.name for entry in rev_reg_defs]
+
+    async def create_and_register_revocation_status_list(
+        self, rev_reg_def_id: str, timestamp: int, options: dict
+    ):
+        """Create and register a revocation status list."""
+        try:
+            async with self._profile.session() as session:
+                rev_reg_def_entry = await session.handle.fetch(
+                    CATEGORY_REV_REG_DEF, rev_reg_def_id
+                )
+        except AskarError as err:
+            raise AnonCredsIssuerError(
+                "Error retrieving credential definition"
+            ) from err
+
+        if not rev_reg_def_entry:
+            raise AnonCredsIssuerError(
+                f"Revocation registry definition not found for id {rev_reg_def_id}"
+            )
+
+        issuer_id = rev_reg_def_entry.value_json["issuerId"]
+
+        rev_status_list = RevocationStatusList.create(
+            rev_reg_def_id, rev_reg_def_entry.raw_value, issuer_id, timestamp
+        )
+
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        result = await anoncreds_registry.register_revocation_status_list(
+            self.profile, RevStatusList.from_native(rev_status_list), options
+        )
+        rev_status_list_json = rev_status_list.to_json()
+
+        try:
+            async with self._profile.session() as session:
+                await session.handle.insert(
+                    CATEGORY_REV_STATUS_LIST, rev_reg_def_id, rev_status_list_json
+                )
+        except AskarError as err:
+            raise AnonCredsIssuerError("Error saving new revocation registry") from err
+
+        return result
 
     async def create_credential_offer(self, credential_definition_id: str) -> str:
         """
@@ -736,97 +914,4 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
 
         return await asyncio.get_event_loop().run_in_executor(
             None, update, fro_delta, to_delta
-        )
-
-    async def create_and_store_revocation_registry(
-        self,
-        origin_did: str,
-        cred_def_id: str,
-        revoc_def_type: str,
-        tag: str,
-        max_cred_num: int,
-        tails_base_path: str,
-    ) -> Tuple[str, str, str]:
-        """
-        Create a new revocation registry and store it in the wallet.
-
-        Args:
-            origin_did: the DID issuing the revocation registry
-            cred_def_id: the identifier of the related credential definition
-            revoc_def_type: the revocation registry type (default CL_ACCUM)
-            tag: the unique revocation registry tag
-            max_cred_num: the number of credentials supported in the registry
-            tails_base_path: where to store the tails file
-            issuance_type: optionally override the issuance type
-
-        Returns:
-            A tuple of the revocation registry ID, JSON, and entry JSON
-
-        """
-        # TODO Passed in by caller?
-        rev_reg_def_id = f"{origin_did}:4:{cred_def_id}:CL_ACCUM:{tag}"
-        try:
-            async with self._profile.session() as session:
-                cred_def = await session.handle.fetch(CATEGORY_CRED_DEF, cred_def_id)
-        except AskarError as err:
-            raise AnonCredsIssuerError(
-                "Error retrieving credential definition"
-            ) from err
-        if not cred_def:
-            raise AnonCredsIssuerError(
-                "Credential definition not found for revocation registry"
-            )
-
-        try:
-            (
-                rev_reg_def,
-                rev_reg_def_private,
-            ) = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: RevocationRegistryDefinition.create(
-                    cred_def_id,
-                    cred_def.raw_value,
-                    origin_did,
-                    tag,
-                    revoc_def_type,
-                    max_cred_num,
-                    tails_dir_path=tails_base_path,
-                ),
-            )
-
-            rev_status_list = RevocationStatusList.create(
-                rev_reg_def_id, rev_reg_def, origin_did, int(time.time())
-            )
-        except AnoncredsError as err:
-            raise AnonCredsIssuerError("Error creating revocation registry") from err
-
-        rev_reg_def_json = rev_reg_def.to_json()
-        rev_status_list_json = rev_status_list.to_json()
-
-        try:
-            async with self._profile.transaction() as txn:
-                await txn.handle.insert(
-                    CATEGORY_REV_STATUS_LIST, rev_reg_def_id, rev_status_list_json
-                )
-                await txn.handle.insert(
-                    CATEGORY_REV_REG_INFO,
-                    rev_reg_def_id,
-                    value_json={"curr_id": 0, "used_ids": []},
-                )
-                await txn.handle.insert(
-                    CATEGORY_REV_REG_DEF, rev_reg_def_id, rev_reg_def_json
-                )
-                await txn.handle.insert(
-                    CATEGORY_REV_REG_DEF_PRIVATE,
-                    rev_reg_def_id,
-                    rev_reg_def_private.to_json_buffer(),
-                )
-                await txn.commit()
-        except AskarError as err:
-            raise AnonCredsIssuerError("Error saving new revocation registry") from err
-
-        return (
-            rev_reg_def_id,
-            rev_reg_def_json,
-            rev_status_list_json,
         )

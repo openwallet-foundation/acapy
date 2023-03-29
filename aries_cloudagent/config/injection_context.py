@@ -64,7 +64,7 @@ class InjectionContext(BaseInjector):
             self.injector.settings.update(settings)
 
     def start_scope(
-        self, scope_name: str, settings: Mapping[str, object] = None
+        self, scope_name: str, settings: Optional[Mapping[str, object]] = None
     ) -> "InjectionContext":
         """Begin a new named scope.
 
