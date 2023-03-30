@@ -172,7 +172,7 @@ async def upgrade(settings: dict):
                     )
                 )
 
-        force_upgrade_flag = root_profile.settings.get("upgrade.force_upgrade") or False
+        force_upgrade_flag = settings.get("upgrade.force_upgrade") or False
         if upgrade_from_version_config and upgrade_from_version_setting:
             if (
                 package_version.parse(upgrade_from_version_config)
