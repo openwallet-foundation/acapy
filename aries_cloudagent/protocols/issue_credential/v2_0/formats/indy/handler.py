@@ -189,7 +189,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Create indy credential offer."""
 
-        issuer = self.profile.inject(AnonCredsIssuer)
+        issuer = AnonCredsIssuer(self.profile)
         ledger = self.profile.inject(BaseLedger)
         cache = self.profile.inject_or(BaseCache)
 
@@ -272,7 +272,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 self.profile, cred_def_id
             )
 
-            holder = self.profile.inject(AnonCredsHolder)
+            holder = AnonCredsHolder(self.profile)
             request_json, metadata_json = await holder.create_credential_request(
                 cred_offer, cred_def_result.credential_definition, holder_did
             )
@@ -330,7 +330,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         schema_id = cred_offer["schema_id"]
         cred_def_id = cred_offer["cred_def_id"]
 
-        issuer = self.profile.inject(AnonCredsIssuer)
+        issuer = AnonCredsIssuer(self.profile)
+
         revocable = await issuer.cred_def_supports_revocation(cred_def_id)
         result = None
 
@@ -436,7 +437,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             )
             rev_reg_def = rev_reg_def_result.revocation_registry.serialize()
 
-        holder = self.profile.inject(AnonCredsHolder)
+        holder = AnonCredsHolder(self.profile)
         cred_offer_message = cred_ex_record.cred_offer
         mime_types = None
         if cred_offer_message and cred_offer_message.credential_preview:

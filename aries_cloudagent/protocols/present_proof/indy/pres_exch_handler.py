@@ -31,7 +31,7 @@ class IndyPresExchHandler:
         """Initialize PresExchange Handler."""
         super().__init__()
         self._profile = profile
-        self.holder = profile.inject(AnonCredsHolder)
+        self.holder = AnonCredsHolder(profile)
 
     def _extract_proof_request(self, pres_ex_record):
         if isinstance(pres_ex_record, V20PresExRecord):

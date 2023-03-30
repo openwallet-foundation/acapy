@@ -248,7 +248,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer = context.inject(AnonCredsIssuer)
+    issuer = AnonCredsIssuer(context.profile)
     try:  # even if in wallet, send it and raise if erroneously so
         async with ledger:
             (cred_def_id, cred_def, novel) = await shield(

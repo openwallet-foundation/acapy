@@ -257,7 +257,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             raise AnonCredsRegistrationError(reason)
 
         # Check if in wallet but not on ledger
-        issuer = profile.inject(AnonCredsIssuer)
+        issuer = AnonCredsIssuer(profile)
         if await issuer.credential_definition_in_wallet(cred_def_id):
             try:
                 await self.get_credential_definition(profile, cred_def_id)

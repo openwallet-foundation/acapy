@@ -174,7 +174,7 @@ async def schemas_post(request: web.BaseRequest):
     name = schema_data.get("name")
     version = schema_data.get("version")
 
-    issuer = context.inject(AnonCredsIssuer)
+    issuer = AnonCredsIssuer(context.profile)
     result = await issuer.create_and_register_schema(
         issuer_id, name, version, attr_names, options=options
     )
@@ -243,7 +243,7 @@ async def schemas_get(request: web.BaseRequest):
     schema_name = request.query.get("schema_name")
     schema_version = request.query.get("schema_version")
 
-    issuer = context.inject(AnonCredsIssuer)
+    issuer = AnonCredsIssuer(context.profile)
     schema_ids = await issuer.get_created_schemas(
         schema_name, schema_version, schema_issuer_id
     )
@@ -269,7 +269,7 @@ async def cred_def_post(request: web.BaseRequest):
     schema_id = cred_def.get("schemaId")
     tag = cred_def.get("tag")
 
-    issuer = context.inject(AnonCredsIssuer)
+    issuer = AnonCredsIssuer(context.profile)
     result = await issuer.create_and_register_credential_definition(
         issuer_id,
         schema_id,
@@ -322,7 +322,7 @@ async def cred_defs_get(request: web.BaseRequest):
 
     """
     context: AdminRequestContext = request["context"]
-    issuer = context.inject(AnonCredsIssuer)
+    issuer = AnonCredsIssuer(context.profile)
 
     cred_def_ids = await issuer.get_created_credential_definitions(
         issuer_id=request.query.get("issuer_id"),

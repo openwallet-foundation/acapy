@@ -9,11 +9,6 @@ from enum import Enum
 from hashlib import sha256
 from typing import List, Optional, Sequence, Tuple, Union
 
-from ..anoncreds.anoncreds.issuer import (
-    DEFAULT_CRED_DEF_TAG,
-    AnonCredsIssuer,
-    AnonCredsIssuerError,
-)
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
 
@@ -387,120 +382,6 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         endorser_did: str = None,
     ) -> dict:
         """Publish a revocation registry entry to the ledger."""
-
-    async def create_and_send_credential_definition(
-        self,
-        issuer: AnonCredsIssuer,
-        schema_id: str,
-        signature_type: str = None,
-        tag: str = None,
-        support_revocation: bool = False,
-        write_ledger: bool = True,
-        endorser_did: str = None,
-    ) -> Tuple[str, dict, bool]:
-        """
-        Send credential definition to ledger and store relevant key matter in wallet.
-
-        Args:
-            issuer: The issuer instance to use for credential definition creation
-            schema_id: The schema id of the schema to create cred def for
-            signature_type: The signature type to use on the credential definition
-            tag: Optional tag to distinguish multiple credential definitions
-            support_revocation: Optional flag to enable revocation for this cred def
-
-        Returns:
-            Tuple with cred def id, cred def structure, and whether it's novel
-
-        """
-        public_info = await self.get_wallet_public_did()
-        if not public_info:
-            raise BadLedgerRequestError(
-                "Cannot publish credential definition without a public DID"
-            )
-
-        schema = await self.get_schema(schema_id)
-        if not schema:
-            raise LedgerError(f"Ledger {self.pool_name} has no schema {schema_id}")
-
-        novel = False
-
-        # check if cred def is on ledger already
-        for test_tag in [tag] if tag else ["tag", DEFAULT_CRED_DEF_TAG]:
-            credential_definition_id = issuer.make_credential_definition_id(
-                public_info.did, schema, signature_type, test_tag
-            )
-            ledger_cred_def = await self.fetch_credential_definition(
-                credential_definition_id
-            )
-            if ledger_cred_def:
-                LOGGER.warning(
-                    "Credential definition %s already exists on ledger %s",
-                    credential_definition_id,
-                    self.pool_name,
-                )
-
-                try:
-                    if not await issuer.credential_definition_in_wallet(
-                        credential_definition_id
-                    ):
-                        raise LedgerError(
-                            f"Credential definition {credential_definition_id} is on "
-                            f"ledger {self.pool_name} but not in wallet "
-                            f"{self.profile.name}"
-                        )
-                except AnonCredsIssuerError as err:
-                    raise LedgerError(err.message) from err
-
-                credential_definition_json = json.dumps(ledger_cred_def)
-                break
-            else:  # no such cred def on ledger
-                try:
-                    if await issuer.credential_definition_in_wallet(
-                        credential_definition_id
-                    ):
-                        raise LedgerError(
-                            f"Credential definition {credential_definition_id} is in "
-                            f"wallet {self.profile.name} but not on ledger "
-                            f"{self.pool.name}"
-                        )
-                except AnonCredsIssuerError as err:
-                    raise LedgerError(err.message) from err
-
-            # Cred def is neither on ledger nor in wallet: create and send it
-            novel = True
-            try:
-                (
-                    credential_definition_id,
-                    credential_definition_json,
-                ) = await issuer.create_and_store_credential_definition(
-                    public_info.did,
-                    schema,
-                    signature_type,
-                    tag,
-                    support_revocation,
-                )
-            except AnonCredsIssuerError as err:
-                raise LedgerError(err.message) from err
-
-            if await self.is_ledger_read_only():
-                raise LedgerError(
-                    "Error cannot write cred def when ledger is in read only mode"
-                )
-
-            cred_def_req = await self._create_credential_definition_request(
-                public_info,
-                credential_definition_json,
-                write_ledger=write_ledger,
-                endorser_did=endorser_did,
-            )
-
-            resp = await self.txn_submit(
-                cred_def_req, True, sign_did=public_info, write_ledger=write_ledger
-            )
-            if not write_ledger:
-                return (credential_definition_id, {"signed_txn": resp}, novel)
-
-        return (credential_definition_id, json.loads(credential_definition_json), novel)
 
     async def send_credential_definition(
         self,

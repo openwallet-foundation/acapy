@@ -122,7 +122,7 @@ class PresentationRequestHandler(BaseHandler):
                 req_creds = await indy_proof_req_preview2indy_requested_creds(
                     indy_proof_request,
                     presentation_preview,
-                    holder=context.inject(AnonCredsHolder),
+                    holder=AnonCredsHolder(context.profile),
                 )
             except ValueError as err:
                 self._logger.warning(f"{err}")

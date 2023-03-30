@@ -18,6 +18,7 @@ from anoncreds import (
 )
 from aries_askar import AskarError
 
+from ...askar.profile import AskarProfile
 from ...core.error import BaseError
 from ..models.anoncreds_cred_def import CredDef, CredDefResult, CredDefState
 from ..models.anoncreds_revocation import (
@@ -56,8 +57,7 @@ class AnonCredsIssuerRevocationRegistryFullError(AnonCredsIssuerError):
 class AnonCredsIssuer:
     """AnonCreds issuer class."""
 
-    def __init__(self, profile):
-        # TODO: fix circular dependency issue with AskarProfile preventing type hinting
+    def __init__(self, profile: AskarProfile):
         """
         Initialize an IndyCredxIssuer instance.
 
@@ -68,7 +68,7 @@ class AnonCredsIssuer:
         self._profile = profile
 
     @property
-    def profile(self):
+    def profile(self) -> AskarProfile:
         """Accessor for the profile instance."""
         return self._profile
 

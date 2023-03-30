@@ -479,7 +479,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     start = int(start) if isinstance(start, str) else 0
     count = int(count) if isinstance(count, str) else 10
 
-    indy_holder = profile.inject(AnonCredsHolder)
+    indy_holder = AnonCredsHolder(profile)
     indy_credentials = []
     # INDY
     try:

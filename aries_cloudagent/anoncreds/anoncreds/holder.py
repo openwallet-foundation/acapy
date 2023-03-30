@@ -5,10 +5,8 @@ import json
 import logging
 import re
 import uuid
-
 from typing import Dict, Optional, Sequence, Tuple, Union
 
-from aries_askar import AskarError, AskarErrorCode
 from anoncreds import (
     AnoncredsError,
     Credential,
@@ -18,12 +16,13 @@ from anoncreds import (
     Presentation,
     PresentCredentials,
 )
+from aries_askar import AskarError, AskarErrorCode
+
+from ...askar.profile import AskarProfile
 from ...core.error import BaseError
-
-from ..models.anoncreds_cred_def import CredDef
-
+from ...ledger.base import BaseLedger
 from ...wallet.error import WalletNotFoundError
-
+from ..models.anoncreds_cred_def import CredDef
 
 LOGGER = logging.getLogger(__name__)
 
@@ -57,8 +56,7 @@ class AnonCredsHolder:
 
     MASTER_SECRET_ID = "default"
 
-    def __init__(self, profile):
-        # TODO: fix circular dependency issue with AskarProfile preventing type hinting
+    def __init__(self, profile: AskarProfile):
         """
         Initialize an AnonCredsHolder instance.
 
@@ -398,9 +396,8 @@ class AnonCredsHolder:
             raise AnonCredsHolderError("Error loading requested credential") from err
 
     async def credential_revoked(
-        self, ledger, credential_id: str, fro: int = None, to: int = None
+        self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
     ) -> bool:
-        # TODO: fix circular dependency issue with BaseLedger preventing type hinting
         """
         Check ledger for revocation status of credential by cred id.
 
