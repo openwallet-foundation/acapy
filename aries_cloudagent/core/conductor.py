@@ -27,7 +27,7 @@ from ..config.logging import LoggingConfigurator
 from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
 from ..core.profile import Profile
-from ..anoncreds.anoncreds.verifier import AnonCredsVerifier
+from ..anoncreds.verifier import AnonCredsVerifier
 
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (

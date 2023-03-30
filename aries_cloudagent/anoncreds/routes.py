@@ -13,19 +13,19 @@ from marshmallow import fields
 
 from .registry import AnonCredsRegistry
 from .issuer import AnonCredsIssuer
-from ..models.anoncreds_cred_def import (
+from .models.anoncreds_cred_def import (
     CredDefSchema,
     GetCredDefResultSchema,
 )
-from ..models.anoncreds_schema import (
+from .models.anoncreds_schema import (
     AnonCredsSchemaSchema,
     SchemaResultSchema,
     GetSchemaResultSchema,
 )
 
-from ...admin.request_context import AdminRequestContext
-from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import (
+from ..admin.request_context import AdminRequestContext
+from ..messaging.models.openapi import OpenAPISchema
+from ..messaging.valid import (
     UUIDFour,
 )
 

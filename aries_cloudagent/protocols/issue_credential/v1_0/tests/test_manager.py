@@ -10,8 +10,8 @@ from more_itertools import side_effect
 from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
-from .....anoncreds.anoncreds.holder import AnonCredsHolder
-from .....anoncreds.anoncreds.issuer import AnonCredsIssuer
+from .....anoncreds.holder import AnonCredsHolder
+from .....anoncreds.issuer import AnonCredsIssuer
 from .....messaging.decorators.thread_decorator import ThreadDecorator
 from .....messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .....messaging.responder import BaseResponder, MockResponder

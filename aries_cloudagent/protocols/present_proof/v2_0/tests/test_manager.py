@@ -6,14 +6,14 @@ from time import time
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from .....core.in_memory import InMemoryProfile
-from .....anoncreds.anoncreds.holder import AnonCredsHolder
+from .....anoncreds.holder import AnonCredsHolder
 from .....anoncreds.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,
 )
-from .....anoncreds.anoncreds.verifier import AnonCredsVerifier
+from .....anoncreds.verifier import AnonCredsVerifier
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,

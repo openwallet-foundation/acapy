@@ -6,9 +6,9 @@ from time import time
 from unittest.mock import ANY
 
 from .....admin.request_context import AdminRequestContext
-from .....anoncreds.anoncreds.holder import AnonCredsHolder
+from .....anoncreds.holder import AnonCredsHolder
 from .....anoncreds.models.proof_request import IndyProofReqAttrSpecSchema
-from .....anoncreds.anoncreds.verifier import AnonCredsVerifier
+from .....anoncreds.verifier import AnonCredsVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder

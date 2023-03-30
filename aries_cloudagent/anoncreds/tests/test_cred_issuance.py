@@ -4,14 +4,16 @@ import pytest
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
-from ....askar.profile import AskarProfileManager
-from ....config.injection_context import InjectionContext
-from ....ledger.base import BaseLedger
-from ....ledger.multiple_ledger.ledger_requests_executor import (
+from .. import holder, issuer
+
+from ...askar.profile import AskarProfileManager
+from ...config.injection_context import InjectionContext
+from ...ledger.base import BaseLedger
+from ...ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 
-from .. import issuer, holder, verifier
+from .. import verifier
 
 
 TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"

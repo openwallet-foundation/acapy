@@ -4,32 +4,32 @@ import re
 from asyncio import shield
 from typing import Optional, Pattern
 
-from .....config.injection_context import InjectionContext
-from .....core.profile import Profile
-from .....ledger.base import BaseLedger
-from .....ledger.error import LedgerError, LedgerObjectAlreadyExistsError
-from .....ledger.merkel_validation.constants import GET_SCHEMA
-from .....ledger.multiple_ledger.ledger_requests_executor import (
+from ....config.injection_context import InjectionContext
+from ....core.profile import Profile
+from ....ledger.base import BaseLedger
+from ....ledger.error import LedgerError, LedgerObjectAlreadyExistsError
+from ....ledger.merkel_validation.constants import GET_SCHEMA
+from ....ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
 )
-from .....multitenant.base import BaseMultitenantManager
-from .....revocation.error import RevocationError
-from .....revocation.indy import IndyRevocation
-from .....storage.error import StorageNotFoundError
+from ....multitenant.base import BaseMultitenantManager
+from ....revocation.error import RevocationError
+from ....revocation.indy import IndyRevocation
+from ....storage.error import StorageNotFoundError
 from ...issuer import AnonCredsIssuer, AnonCredsIssuerError
-from ....models.anoncreds_cred_def import (
+from ...models.anoncreds_cred_def import (
     CredDef,
     CredDefState,
     CredDefValue,
     CredDefResult,
     GetCredDefResult,
 )
-from ....models.anoncreds_revocation import (
+from ...models.anoncreds_revocation import (
     GetRevStatusListResult,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )
-from ....models.anoncreds_schema import (
+from ...models.anoncreds_schema import (
     GetSchemaResult,
     AnonCredsSchema,
     SchemaResult,

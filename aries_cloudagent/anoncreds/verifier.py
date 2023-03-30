@@ -8,11 +8,11 @@ from typing import List, Mapping, Tuple
 
 from anoncreds import AnoncredsError, Presentation
 
-from ...anoncreds.anoncreds.registry import AnonCredsRegistry
-from ...anoncreds.models.anoncreds_cred_def import GetCredDefResult
-from ...anoncreds.models.xform import indy_proof_req2non_revoc_intervals
-from ...core.profile import Profile
-from ...messaging.util import canon, encode
+from .registry import AnonCredsRegistry
+from .models.anoncreds_cred_def import GetCredDefResult
+from .models.xform import indy_proof_req2non_revoc_intervals
+from ..core.profile import Profile
+from ..messaging.util import canon, encode
 
 LOGGER = logging.getLogger(__name__)
 

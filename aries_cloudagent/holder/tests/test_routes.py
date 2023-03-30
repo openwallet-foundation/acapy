@@ -8,7 +8,7 @@ from ...ledger.base import BaseLedger
 from ...wallet.base import BaseWallet
 
 from ...admin.request_context import AdminRequestContext
-from ...anoncreds.anoncreds.holder import AnonCredsHolder
+from ...anoncreds.holder import AnonCredsHolder
 from ...ledger.base import BaseLedger
 from ...storage.vc_holder.base import VCHolder
 from ...storage.vc_holder.vc_record import VCRecord

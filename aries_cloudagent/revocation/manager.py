@@ -9,7 +9,7 @@ from ..protocols.revocation_notification.v1_0.models.rev_notification_record imp
 )
 from ..core.error import BaseError
 from ..core.profile import Profile
-from ..anoncreds.anoncreds.issuer import AnonCredsIssuer
+from ..anoncreds.issuer import AnonCredsIssuer
 from ..storage.error import StorageNotFoundError
 from .indy import IndyRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord

@@ -1,6 +1,6 @@
 """Utilities to deal with indy."""
 
-from ...anoncreds.anoncreds.holder import AnonCredsHolder
+from ..holder import AnonCredsHolder
 
 from .pres_preview import IndyPresPreview
 

@@ -16,7 +16,7 @@ from marshmallow import fields
 from marshmallow.validate import Regexp
 
 from ...admin.request_context import AdminRequestContext
-from ...anoncreds.anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...connections.models.conn_record import ConnRecord
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile

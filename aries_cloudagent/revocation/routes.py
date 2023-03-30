@@ -22,7 +22,7 @@ from ..admin.request_context import AdminRequestContext
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
-from ..anoncreds.anoncreds.issuer import AnonCredsIssuerError
+from ..anoncreds.issuer import AnonCredsIssuerError
 from ..ledger.base import BaseLedger
 from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..ledger.error import LedgerError

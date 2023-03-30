@@ -18,16 +18,16 @@ from anoncreds import (
 )
 from aries_askar import AskarError
 
-from ...askar.profile import AskarProfile
-from ...core.error import BaseError
-from ..models.anoncreds_cred_def import CredDef, CredDefResult, CredDefState
-from ..models.anoncreds_revocation import (
+from ..askar.profile import AskarProfile
+from ..core.error import BaseError
+from .models.anoncreds_cred_def import CredDef, CredDefResult, CredDefState
+from .models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefResult,
     RevRegDefState,
     RevStatusList,
 )
-from ..models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
+from .models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
 from .base import AnonCredsSchemaAlreadyExists
 from .registry import AnonCredsRegistry
 

@@ -9,7 +9,7 @@ from asyncio import shield
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....anoncreds.anoncreds.issuer import AnonCredsIssuerError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
 from ....messaging.credential_definitions.util import notify_cred_def_event

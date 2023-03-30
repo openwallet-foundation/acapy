@@ -4,10 +4,28 @@ from typing_extensions import Literal
 
 from anoncreds import CredentialDefinition
 from marshmallow import EXCLUDE, fields
-from marshmallow.validate import OneOf
+from marshmallow.validate import OneOf, Regexp
 
 from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.valid import NUM_STR_WHOLE
+
+
+# TODO: remove after solving circular dependency issue
+class NumericStrWhole(Regexp):
+    """Validate value against whole number numeric string."""
+
+    EXAMPLE = "0"
+    PATTERN = r"^[0-9]*$"
+
+    def __init__(self):
+        """Initializer."""
+
+        super().__init__(
+            NumericStrWhole.PATTERN,
+            error="Value {input} is not a non-negative numeric string",
+        )
+
+
+NUM_STR_WHOLE = {"validate": NumericStrWhole(), "example": NumericStrWhole.EXAMPLE}
 
 
 class CredDefValuePrimary(BaseModel):

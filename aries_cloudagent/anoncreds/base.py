@@ -2,15 +2,15 @@
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, Pattern, Tuple, TypeVar
 
-from ...config.injection_context import InjectionContext
-from ...core.error import BaseError
-from ...core.profile import Profile
-from ..models.anoncreds_cred_def import (
+from ..config.injection_context import InjectionContext
+from ..core.error import BaseError
+from ..core.profile import Profile
+from .models.anoncreds_cred_def import (
     CredDef,
     CredDefResult,
     GetCredDefResult,
 )
-from ..models.anoncreds_revocation import (
+from .models.anoncreds_revocation import (
     GetRevStatusListResult,
     AnonCredsRegistryGetRevocationRegistryDefinition,
     RevRegDef,
@@ -18,7 +18,7 @@ from ..models.anoncreds_revocation import (
     RevStatusList,
     RevStatusListResult,
 )
-from ..models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 
 
 T = TypeVar("T")

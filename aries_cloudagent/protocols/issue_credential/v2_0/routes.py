@@ -20,8 +20,8 @@ from ....wallet.util import default_did_from_verkey
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
-from ....anoncreds.anoncreds.holder import AnonCredsHolderError
-from ....anoncreds.anoncreds.issuer import AnonCredsIssuerError
+from ....anoncreds.holder import AnonCredsHolderError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError

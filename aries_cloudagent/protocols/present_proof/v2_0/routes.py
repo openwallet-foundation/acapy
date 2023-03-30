@@ -15,7 +15,7 @@ from typing import Mapping, Sequence, Tuple
 
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
-from ....anoncreds.anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.cred_precis import IndyCredPrecisSchema
 from ....anoncreds.models.proof import IndyPresSpecSchema
 from ....anoncreds.models.proof_request import IndyProofRequestSchema

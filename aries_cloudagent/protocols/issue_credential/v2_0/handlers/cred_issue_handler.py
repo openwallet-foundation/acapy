@@ -1,7 +1,7 @@
 """Credential issue message handler."""
 
 from .....core.oob_processor import OobMessageProcessor
-from .....anoncreds.anoncreds.holder import AnonCredsHolderError
+from .....anoncreds.holder import AnonCredsHolderError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext

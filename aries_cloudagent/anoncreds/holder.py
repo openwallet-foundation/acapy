@@ -18,11 +18,11 @@ from anoncreds import (
 )
 from aries_askar import AskarError, AskarErrorCode
 
-from ...askar.profile import AskarProfile
-from ...core.error import BaseError
-from ...ledger.base import BaseLedger
-from ...wallet.error import WalletNotFoundError
-from ..models.anoncreds_cred_def import CredDef
+from ..askar.profile import AskarProfile
+from ..core.error import BaseError
+from ..ledger.base import BaseLedger
+from ..wallet.error import WalletNotFoundError
+from .models.anoncreds_cred_def import CredDef
 
 LOGGER = logging.getLogger(__name__)
 

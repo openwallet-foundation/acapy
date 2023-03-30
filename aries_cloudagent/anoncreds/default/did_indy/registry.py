@@ -1,25 +1,28 @@
-"""DID Web Registry"""
+"""DID Indy Registry"""
+import logging
 import re
 from typing import Pattern
 
-from .....config.injection_context import InjectionContext
-from .....core.profile import Profile
-from ....models.anoncreds_cred_def import (
+from ....config.injection_context import InjectionContext
+from ....core.profile import Profile
+from ...models.anoncreds_cred_def import (
     GetCredDefResult,
 )
-from ....models.anoncreds_revocation import (
+from ...models.anoncreds_revocation import (
     GetRevStatusListResult,
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )
-from ....models.anoncreds_schema import GetSchemaResult
+from ...models.anoncreds_schema import GetSchemaResult
 from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 
+LOGGER = logging.getLogger(__name__)
 
-class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
-    """DIDWebRegistry"""
+
+class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
+    """DIDIndyRegistry"""
 
     def __init__(self):
-        self._supported_identifiers_regex = re.compile(r"^did:web:.*$")
+        self._supported_identifiers_regex = re.compile(r"^did:indy:.*$")
 
     @property
     def supported_identifiers_regex(self) -> Pattern:
@@ -28,9 +31,9 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def setup(self, context: InjectionContext):
         """Setup."""
-        print("Successfully registered DIDWebRegistry")
+        print("Successfully registered DIDIndyRegistry")
 
-    async def get_schema(self, profile, schema_id: str) -> GetSchemaResult:
+    async def get_schema(self, profile: Profile, schema_id) -> GetSchemaResult:
         """Get a schema from the registry."""
 
     async def get_schemas(self, profile: Profile, filter: str):
@@ -46,7 +49,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Register a schema on the registry."""
 
     async def get_credential_definition(
-        self, profile, credential_definition_id: str
+        self, profile: Profile, cred_def_id: str
     ) -> GetCredDefResult:
         """Get a credential definition from the registry."""
 
@@ -66,12 +69,17 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Register a credential definition on the registry."""
 
     async def get_revocation_registry_definition(
-        self, revocation_registry_id: str
+        self, profile: Profile, rev_reg_id: str
     ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
         """Get a revocation registry definition from the registry."""
 
     # TODO: determine keyword arguments
-    async def register_revocation_registry_definition(self):
+    async def register_revocation_registry_definition(
+        self,
+        profile: Profile,
+        rev_reg_id: str,
+        issuer_id: str,
+    ):
         """Register a revocation registry definition on the registry."""
 
     async def get_revocation_registry_definitions(self, profile: Profile, filter: str):

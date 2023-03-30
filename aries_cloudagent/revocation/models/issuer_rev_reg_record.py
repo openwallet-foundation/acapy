@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from marshmallow import fields, validate
 
 from ...core.profile import Profile, ProfileSession
-from ...anoncreds.anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.models.revocation import (
     IndyRevRegDef,
     IndyRevRegDefSchema,

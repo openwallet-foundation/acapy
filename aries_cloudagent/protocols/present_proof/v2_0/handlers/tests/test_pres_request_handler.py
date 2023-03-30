@@ -2,7 +2,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from copy import deepcopy
 
 from ......core.oob_processor import OobMessageProcessor
-from ......anoncreds.anoncreds.holder import AnonCredsHolder
+from ......anoncreds.holder import AnonCredsHolder
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder

@@ -1,6 +1,6 @@
 """Credential proposal message handler."""
 
-from .....anoncreds.anoncreds.issuer import AnonCredsIssuerError
+from .....anoncreds.issuer import AnonCredsIssuerError
 from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError

@@ -3,13 +3,13 @@ import logging
 from typing import List, Optional
 
 
-from ...core.profile import Profile
-from ..models.anoncreds_cred_def import (
+from ..core.profile import Profile
+from .models.anoncreds_cred_def import (
     CredDef,
     CredDefResult,
     GetCredDefResult,
 )
-from ..models.anoncreds_revocation import (
+from .models.anoncreds_revocation import (
     GetRevStatusListResult,
     AnonCredsRegistryGetRevocationRegistryDefinition,
     RevRegDef,
@@ -17,7 +17,7 @@ from ..models.anoncreds_revocation import (
     RevStatusList,
     RevStatusListResult,
 )
-from ..models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
+from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 from .base import (
     AnonCredsRegistrationError,
     AnonCredsResolutionError,
