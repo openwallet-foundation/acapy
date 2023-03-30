@@ -13,7 +13,7 @@ from aiohttp_apispec import (
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
-from ..anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ..anoncreds.anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ..anoncreds.models.cred_precis import IndyCredInfoSchema
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError

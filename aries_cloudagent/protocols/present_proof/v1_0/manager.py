@@ -8,7 +8,7 @@ from ...out_of_band.v1_0.models.oob_record import OobRecord
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....anoncreds.verifier import AnonCredsVerifier
+from ....anoncreds.anoncreds.verifier import AnonCredsVerifier
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.responder import BaseResponder
 from ....storage.error import StorageNotFoundError

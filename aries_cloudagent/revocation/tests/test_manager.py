@@ -8,7 +8,7 @@ from aries_cloudagent.revocation.models.issuer_cred_rev_record import (
 )
 
 from ...core.in_memory import InMemoryProfile
-from ...anoncreds.issuer import AnonCredsIssuer
+from ...anoncreds.anoncreds.issuer import AnonCredsIssuer
 from ...protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )

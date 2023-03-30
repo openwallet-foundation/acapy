@@ -7,7 +7,7 @@ from asynctest import mock as async_mock
 import indy_vdr
 
 from ...core.in_memory import InMemoryProfile
-from ...anoncreds.issuer import AnonCredsIssuer
+from ...anoncreds.anoncreds.issuer import AnonCredsIssuer
 from ...wallet.base import BaseWallet
 from ...wallet.key_type import KeyType, ED25519
 from ...wallet.did_method import SOV, DIDMethods

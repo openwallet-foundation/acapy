@@ -20,7 +20,7 @@ from marshmallow import fields
 from ...admin.request_context import AdminRequestContext
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
-from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ...anoncreds.anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.models.cred_def import CredentialDefinitionSchema
 from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError

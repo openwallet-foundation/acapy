@@ -16,14 +16,14 @@ from .......ledger.multiple_ledger.ledger_requests_executor import (
 )
 from .......multitenant.base import BaseMultitenantManager
 from .......multitenant.manager import MultitenantManager
-from .......anoncreds.issuer import AnonCredsIssuer
+from .......anoncreds.anoncreds.issuer import AnonCredsIssuer
 from .......cache.in_memory import InMemoryCache
 from .......cache.base import BaseCache
 from .......storage.record import StorageRecord
 from .......storage.error import StorageNotFoundError
 from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .......messaging.decorators.attach_decorator import AttachDecorator
-from .......anoncreds.holder import AnonCredsHolder
+from .......anoncreds.anoncreds.holder import AnonCredsHolder
 from ....models.detail.indy import V20CredExRecordIndy
 from ....messages.cred_proposal import V20CredProposal
 from ....messages.cred_format import V20CredFormat

@@ -3,31 +3,23 @@
 import asyncio
 import logging
 from time import time
-
 from typing import Optional, Sequence, Tuple
 
-from aries_askar import AskarError
-
 from anoncreds import (
-    Schema,
+    AnoncredsError,
     Credential,
     CredentialDefinition,
     CredentialOffer,
     CredentialRevocationConfig,
-    AnoncredsError,
     RevocationRegistryDefinition,
     RevocationRegistryDelta,
     RevocationStatusList,
+    Schema,
 )
+from aries_askar import AskarError
 
-
-from .registry import AnonCredsRegistry
-from .base import AnonCredsSchemaAlreadyExists
-from ..models.anoncreds_cred_def import (
-    CredDef,
-    CredDefResult,
-    CredDefState,
-)
+from ...core.error import BaseError
+from ..models.anoncreds_cred_def import CredDef, CredDefResult, CredDefState
 from ..models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefResult,
@@ -35,19 +27,13 @@ from ..models.anoncreds_revocation import (
     RevStatusList,
 )
 from ..models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
-
-from ...askar.profile import AskarProfile
-
-from ..issuer import (
-    AnonCredsIssuer,
-    AnonCredsIssuerError,
-    AnonCredsIssuerRevocationRegistryFullError,
-    DEFAULT_CRED_DEF_TAG,
-    DEFAULT_SIGNATURE_TYPE,
-)
+from .base import AnonCredsSchemaAlreadyExists
+from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
 
+DEFAULT_CRED_DEF_TAG = "default"
+DEFAULT_SIGNATURE_TYPE = "CL"
 CATEGORY_CRED_DEF = "credential_def"
 CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
 CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
@@ -59,10 +45,19 @@ CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
 CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
 
 
-class AnonCredsRsIssuer(AnonCredsIssuer):
-    """Indy-Credx issuer class."""
+class AnonCredsIssuerError(BaseError):
+    """Generic issuer error."""
 
-    def __init__(self, profile: AskarProfile):
+
+class AnonCredsIssuerRevocationRegistryFullError(AnonCredsIssuerError):
+    """Revocation registry is full when issuing a new credential."""
+
+
+class AnonCredsIssuer:
+    """AnonCreds issuer class."""
+
+    def __init__(self, profile):
+        # TODO: fix circular dependency issue with AskarProfile preventing type hinting
         """
         Initialize an IndyCredxIssuer instance.
 
@@ -73,7 +68,7 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
         self._profile = profile
 
     @property
-    def profile(self) -> AskarProfile:
+    def profile(self):
         """Accessor for the profile instance."""
         return self._profile
 
@@ -228,6 +223,15 @@ class AnonCredsRsIssuer(AnonCredsIssuer):
             )
         # entry.name was stored as the schema's ID
         return [entry.name for entry in schemas]
+
+    @staticmethod
+    def make_credential_definition_id(
+        origin_did: str, schema: dict, signature_type: str = None, tag: str = None
+    ) -> str:
+        """Derive the ID for a credential definition."""
+        signature_type = signature_type or DEFAULT_SIGNATURE_TYPE
+        tag = tag or DEFAULT_CRED_DEF_TAG
+        return f"{origin_did}:3:{signature_type}:{str(schema['seqNo'])}:{tag}"
 
     async def credential_definition_in_wallet(
         self, credential_definition_id: str

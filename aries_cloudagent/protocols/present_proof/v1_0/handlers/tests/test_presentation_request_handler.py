@@ -2,7 +2,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 
 from ......core.oob_processor import OobMessageProcessor
-from ......anoncreds.holder import AnonCredsHolder
+from ......anoncreds.anoncreds.holder import AnonCredsHolder
 from ......anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,

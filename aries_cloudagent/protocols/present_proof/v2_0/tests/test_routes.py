@@ -6,9 +6,9 @@ from time import time
 from unittest.mock import ANY
 
 from .....admin.request_context import AdminRequestContext
-from .....anoncreds.holder import AnonCredsHolder
+from .....anoncreds.anoncreds.holder import AnonCredsHolder
 from .....anoncreds.models.proof_request import IndyProofReqAttrSpecSchema
-from .....anoncreds.verifier import AnonCredsVerifier
+from .....anoncreds.anoncreds.verifier import AnonCredsVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder
@@ -311,7 +311,9 @@ class TestPresentProofRoutes(AsyncTestCase):
             AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
-                    async_mock.CoroutineMock(side_effect=test_module.AnonCredsHolderError())
+                    async_mock.CoroutineMock(
+                        side_effect=test_module.AnonCredsHolderError()
+                    )
                 )
             ),
         )

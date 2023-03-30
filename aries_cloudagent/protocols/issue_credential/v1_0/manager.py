@@ -10,8 +10,8 @@ from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ....anoncreds.issuer import (
+from ....anoncreds.anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....anoncreds.anoncreds.issuer import (
     AnonCredsIssuer,
     AnonCredsIssuerRevocationRegistryFullError,
 )

@@ -6,13 +6,13 @@ import logging
 from marshmallow import RAISE
 from typing import Mapping, Tuple
 
-from ......anoncreds.holder import AnonCredsHolder
+from ......anoncreds.anoncreds.holder import AnonCredsHolder
 from ......anoncreds.models.predicate import Predicate
 from ......anoncreds.models.proof import IndyProofSchema
 from ......anoncreds.models.proof_request import IndyProofRequestSchema
 from ......anoncreds.models.xform import indy_proof_req_preview2indy_requested_creds
 from ......anoncreds.util import generate_pr_nonce
-from ......anoncreds.verifier import AnonCredsVerifier
+from ......anoncreds.anoncreds.verifier import AnonCredsVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
 

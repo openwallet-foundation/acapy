@@ -17,7 +17,7 @@ from .....multitenant.base import BaseMultitenantManager
 from .....revocation.error import RevocationError
 from .....revocation.indy import IndyRevocation
 from .....storage.error import StorageNotFoundError
-from ....issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ...issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ....models.anoncreds_cred_def import (
     CredDef,
     CredDefState,
