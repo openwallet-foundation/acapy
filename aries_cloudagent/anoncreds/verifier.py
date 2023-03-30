@@ -8,7 +8,7 @@ from typing import List, Mapping, Tuple
 
 from ..core.profile import Profile
 from ..messaging.util import canon, encode
-from .anoncreds.anoncreds_registry import AnonCredsRegistry
+from .anoncreds.registry import AnonCredsRegistry
 from .models.anoncreds_cred_def import GetCredDefResult
 from .models.xform import indy_proof_req2non_revoc_intervals
 

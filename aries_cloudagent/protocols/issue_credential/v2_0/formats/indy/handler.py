@@ -7,7 +7,7 @@ from typing import Mapping, Tuple
 
 from marshmallow import RAISE
 
-from ......anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
+from ......anoncreds.anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import (
     AnonCredsIssuer,

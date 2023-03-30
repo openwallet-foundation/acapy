@@ -3,7 +3,7 @@ import logging
 from ...config.injection_context import InjectionContext
 from ...config.provider import ClassProvider
 
-from ..anoncreds.anoncreds_registry import AnonCredsRegistry
+from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ async def setup(context: InjectionContext):
         return
 
     indy_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.anoncreds.default.did_indy_registry.registry"
+        "aries_cloudagent.anoncreds.anoncreds.default.did_indy.registry"
         ".DIDIndyRegistry",
         # supported_identifiers=[],
         # method_name="did:indy",
@@ -25,7 +25,7 @@ async def setup(context: InjectionContext):
     registry.register(indy_registry)
 
     web_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.anoncreds.default.did_web_registry.registry"
+        "aries_cloudagent.anoncreds.anoncreds.default.did_web.registry"
         ".DIDWebRegistry",
         # supported_identifiers=[],
         # method_name="did:web",
@@ -34,7 +34,7 @@ async def setup(context: InjectionContext):
     registry.register(web_registry)
 
     legacy_indy_registry = ClassProvider(
-        "aries_cloudagent.anoncreds.anoncreds.default.legacy_indy_registry.registry"
+        "aries_cloudagent.anoncreds.anoncreds.default.legacy_indy.registry"
         ".LegacyIndyRegistry",
         # supported_identifiers=[],
         # method_name="",

@@ -13,7 +13,7 @@ from ....models.anoncreds_revocation import (
     AnonCredsRegistryGetRevocationRegistryDefinition,
 )
 from ....models.anoncreds_schema import GetSchemaResult
-from ...base_registry import BaseAnonCredsRegistrar, BaseAnonCredsResolver
+from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 
 LOGGER = logging.getLogger(__name__)
 

@@ -21,8 +21,8 @@ from anoncreds import (
 )
 
 
-from .anoncreds_registry import AnonCredsRegistry
-from .base_registry import AnonCredsSchemaAlreadyExists
+from .registry import AnonCredsRegistry
+from .base import AnonCredsSchemaAlreadyExists
 from ..models.anoncreds_cred_def import (
     CredDef,
     CredDefResult,

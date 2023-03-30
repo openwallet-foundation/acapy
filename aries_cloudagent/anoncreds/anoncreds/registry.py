@@ -18,7 +18,7 @@ from ..models.anoncreds_revocation import (
     RevStatusListResult,
 )
 from ..models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
-from .base_registry import (
+from .base import (
     AnonCredsRegistrationError,
     AnonCredsResolutionError,
     BaseAnonCredsHandler,

@@ -11,7 +11,7 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
-from .anoncreds_registry import AnonCredsRegistry
+from .registry import AnonCredsRegistry
 from ..issuer import AnonCredsIssuer
 from ..models.anoncreds_cred_def import (
     CredDefSchema,

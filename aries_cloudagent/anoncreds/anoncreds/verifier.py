@@ -6,7 +6,7 @@ from typing import Tuple
 
 from anoncreds import AnoncredsError, Presentation
 
-from aries_cloudagent.anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
+from aries_cloudagent.anoncreds.anoncreds.registry import AnonCredsRegistry
 
 from ...core.profile import Profile
 

@@ -1,6 +1,6 @@
 """Classes for configuring the default injection context."""
 
-from ..anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
+from ..anoncreds.anoncreds.registry import AnonCredsRegistry
 from ..cache.base import BaseCache
 from ..cache.in_memory import InMemoryCache
 from ..core.event_bus import EventBus
@@ -131,13 +131,13 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.wallet")
         plugin_registry.register_plugin("aries_cloudagent.anoncreds.anoncreds")
         plugin_registry.register_plugin(
-            "aries_cloudagent.anoncreds.anoncreds.default.did_indy_registry"
+            "aries_cloudagent.anoncreds.anoncreds.default.did_indy"
         )
         plugin_registry.register_plugin(
-            "aries_cloudagent.anoncreds.anoncreds.default.did_web_registry"
+            "aries_cloudagent.anoncreds.anoncreds.default.did_web"
         )
         plugin_registry.register_plugin(
-            "aries_cloudagent.anoncreds.anoncreds.default.legacy_indy_registry"
+            "aries_cloudagent.anoncreds.anoncreds.default.legacy_indy"
         )
 
         if context.settings.get("multitenant.admin_enabled"):

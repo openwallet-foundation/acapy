@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Union
 
-from ....anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
+from ....anoncreds.anoncreds.registry import AnonCredsRegistry
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.xform import indy_proof_req2non_revoc_intervals
 from ....core.error import BaseError

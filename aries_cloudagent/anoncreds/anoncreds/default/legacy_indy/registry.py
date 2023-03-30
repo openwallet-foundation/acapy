@@ -35,7 +35,7 @@ from ....models.anoncreds_schema import (
     SchemaResult,
     SchemaState,
 )
-from ...base_registry import (
+from ...base import (
     AnonCredsObjectAlreadyExists,
     AnonCredsObjectNotFound,
     AnonCredsRegistrationError,
