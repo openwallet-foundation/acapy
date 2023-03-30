@@ -96,6 +96,7 @@ def get_upgrade_version_list(
     sorted_version_list: Optional[List] = None,
     config_path: Optional[str] = None,
 ) -> List:
+    """Get available versions from the upgrade config."""
     if not sorted_version_list:
         version_upgrade_config_inst = VersionUpgradeConfig(config_path)
         upgrade_configs = version_upgrade_config_inst.upgrade_configs
@@ -112,11 +113,15 @@ def get_upgrade_version_list(
 
 
 async def add_version_record(profile: Profile, version: str):
+    """Add an acapy_version storage record for provided version."""
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
-        version_storage_record = await storage.find_record(
-            type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
-        )
+        try:
+            version_storage_record = await storage.find_record(
+                type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
+            )
+        except StorageNotFoundError:
+            version_storage_record = None
         if not version_storage_record:
             await storage.add_record(
                 StorageRecord(
@@ -139,7 +144,6 @@ async def upgrade(settings: dict):
         )
         upgrade_configs = version_upgrade_config_inst.upgrade_configs
         root_profile, _ = await wallet_config(context)
-        version_storage_record = None
         upgrade_to_version = f"v{__version__}"
         versions_found_in_config = upgrade_configs.keys()
         sorted_versions_found_in_config = sorted(
@@ -157,6 +161,7 @@ async def upgrade(settings: dict):
                 upgrade_from_version_config = version_storage_record.value
             except StorageNotFoundError:
                 LOGGER.info("No ACA-Py version found in wallet storage.")
+                version_storage_record = None
 
             if "upgrade.from_version" in settings:
                 upgrade_from_version_setting = settings.get("upgrade.from_version")
@@ -277,7 +282,8 @@ async def upgrade(settings: dict):
                         version_storage_record, upgrade_to_version, {}
                     )
                 LOGGER.info(
-                    f"{RECORD_TYPE_ACAPY_VERSION} storage record set to {upgrade_to_version}"
+                    f"{RECORD_TYPE_ACAPY_VERSION} storage record "
+                    f"set to {upgrade_to_version}"
                 )
         await root_profile.close()
     except BaseError as e:

@@ -2058,8 +2058,9 @@ class UpgradeGroup(ArgumentGroup):
             action="store_true",
             env_var="ACAPY_UPGRADE_FORCE_UPGRADE",
             help=(
-                "Forces the '—from-version' argument to override the version retrieved from "
-                "secure storage when calculating upgrades to be run."
+                "Forces the '—from-version' argument to override the version "
+                "retrieved from secure storage when calculating upgrades to "
+                "be run."
             ),
         )
 
