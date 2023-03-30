@@ -9,7 +9,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
 from ...config.injection_context import InjectionContext
 from ...cache.in_memory import InMemoryCache
-from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ...anoncreds.anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.sdk.profile import IndySdkProfile
 from ...storage.record import StorageRecord
 from ...wallet.base import BaseWallet
@@ -1845,8 +1845,8 @@ class TestIndySdkLedger(AsyncTestCase):
         mock_fetch_cred_def.return_value = None
 
         issuer = async_mock.MagicMock(AnonCredsIssuer)
-        issuer.create_and_store_credential_definition.side_effect = AnonCredsIssuerError(
-            "invalid structure"
+        issuer.create_and_store_credential_definition.side_effect = (
+            AnonCredsIssuerError("invalid structure")
         )
         ledger = IndySdkLedger(IndySdkLedgerPool("name", checked=True), self.profile)
         schema_id = "schema_issuer_did:name:1.0"

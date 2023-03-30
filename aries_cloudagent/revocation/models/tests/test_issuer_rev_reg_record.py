@@ -5,7 +5,7 @@ from os.path import join
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from ....core.in_memory import InMemoryProfile
-from ....anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ....anoncreds.anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ....anoncreds.models.revocation import IndyRevRegDef
 from ....anoncreds.util import indy_client_dir
 from ....ledger.base import BaseLedger

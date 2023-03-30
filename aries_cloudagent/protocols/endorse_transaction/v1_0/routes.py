@@ -18,7 +18,7 @@ from ....connections.models.conn_record import ConnRecord
 from ....core.event_bus import Event, EventBus
 from ....core.profile import Profile
 from ....core.util import STARTUP_EVENT_PATTERN, SHUTDOWN_EVENT_PATTERN
-from ....anoncreds.issuer import AnonCredsIssuerError
+from ....anoncreds.anoncreds.issuer import AnonCredsIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema

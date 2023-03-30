@@ -18,14 +18,12 @@ from anoncreds import (
     Presentation,
     PresentCredentials,
 )
+from ...core.error import BaseError
 
 from ..models.anoncreds_cred_def import CredDef
 
-from ...askar.profile import AskarProfile
-from ...ledger.base import BaseLedger
 from ...wallet.error import WalletNotFoundError
 
-from ..holder import AnonCredsHolder, AnonCredsHolderError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -50,14 +48,19 @@ def _normalize_attr_name(name: str) -> str:
     return name.replace(" ", "")
 
 
-class AnonCredsRsHolder(AnonCredsHolder):
+class AnonCredsHolderError(BaseError):
+    """Base class for holder exceptions."""
+
+
+class AnonCredsHolder:
     """AnonCreds holder class."""
 
     MASTER_SECRET_ID = "default"
 
-    def __init__(self, profile: AskarProfile):
+    def __init__(self, profile):
+        # TODO: fix circular dependency issue with AskarProfile preventing type hinting
         """
-        Initialize an AnonCredsRsHolder instance.
+        Initialize an AnonCredsHolder instance.
 
         Args:
             profile: The active profile instance
@@ -66,7 +69,7 @@ class AnonCredsRsHolder(AnonCredsHolder):
         self._profile = profile
 
     @property
-    def profile(self) -> AskarProfile:
+    def profile(self):
         """Accessor for the profile instance."""
         return self._profile
 
@@ -77,7 +80,7 @@ class AnonCredsRsHolder(AnonCredsHolder):
             async with self._profile.session() as session:
                 try:
                     record = await session.handle.fetch(
-                        CATEGORY_MASTER_SECRET, AnonCredsRsHolder.MASTER_SECRET_ID
+                        CATEGORY_MASTER_SECRET, AnonCredsHolder.MASTER_SECRET_ID
                     )
                 except AskarError as err:
                     raise AnonCredsHolderError("Error fetching master secret") from err
@@ -99,7 +102,7 @@ class AnonCredsRsHolder(AnonCredsHolder):
                     try:
                         await session.handle.insert(
                             CATEGORY_MASTER_SECRET,
-                            AnonCredsRsHolder.MASTER_SECRET_ID,
+                            AnonCredsHolder.MASTER_SECRET_ID,
                             secret.to_json_buffer(),
                         )
                     except AskarError as err:
@@ -139,7 +142,7 @@ class AnonCredsRsHolder(AnonCredsHolder):
                 holder_did,
                 credential_definition.to_native(),
                 secret,
-                AnonCredsRsHolder.MASTER_SECRET_ID,
+                AnonCredsHolder.MASTER_SECRET_ID,
                 credential_offer,
             )
         except AnoncredsError as err:
@@ -395,8 +398,9 @@ class AnonCredsRsHolder(AnonCredsHolder):
             raise AnonCredsHolderError("Error loading requested credential") from err
 
     async def credential_revoked(
-        self, ledger: BaseLedger, credential_id: str, fro: int = None, to: int = None
+        self, ledger, credential_id: str, fro: int = None, to: int = None
     ) -> bool:
+        # TODO: fix circular dependency issue with BaseLedger preventing type hinting
         """
         Check ledger for revocation status of credential by cred id.
 

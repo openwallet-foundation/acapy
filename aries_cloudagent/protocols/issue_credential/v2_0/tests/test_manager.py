@@ -9,7 +9,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....core.in_memory import InMemoryProfile
-from .....anoncreds.issuer import AnonCredsIssuer
+from .....anoncreds.anoncreds.issuer import AnonCredsIssuer
 from .....messaging.decorators.thread_decorator import ThreadDecorator
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder

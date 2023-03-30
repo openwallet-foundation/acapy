@@ -9,7 +9,7 @@ from enum import Enum
 from hashlib import sha256
 from typing import List, Optional, Sequence, Tuple, Union
 
-from ..anoncreds.issuer import (
+from ..anoncreds.anoncreds.issuer import (
     DEFAULT_CRED_DEF_TAG,
     AnonCredsIssuer,
     AnonCredsIssuerError,

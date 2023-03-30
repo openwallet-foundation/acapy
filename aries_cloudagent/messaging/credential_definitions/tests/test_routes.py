@@ -3,7 +3,7 @@ from asynctest import mock as async_mock
 
 from ....admin.request_context import AdminRequestContext
 from ....core.in_memory import InMemoryProfile
-from ....anoncreds.issuer import AnonCredsIssuer
+from ....anoncreds.anoncreds.issuer import AnonCredsIssuer
 from ....ledger.base import BaseLedger
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
