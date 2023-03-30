@@ -111,6 +111,7 @@ class TestArgParse(AsyncTestCase):
                 "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml",
                 "--from-version",
                 "v0.7.2",
+                "--force-upgrade",
             ]
         )
 
@@ -118,6 +119,7 @@ class TestArgParse(AsyncTestCase):
             result.upgrade_config_path
             == "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yml"
         )
+        assert result.force_upgrade is True
 
         settings = group.get_settings(result)
 
