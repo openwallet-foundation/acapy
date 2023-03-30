@@ -2,6 +2,12 @@
 
 Integration tests for aca-py are implemented using Behave functional tests to drive aca-py agents based on the alice/faber demo framework.
 
+If you are new to the ACA-Py integration test suite, this [video](https://youtu.be/AbuPg4J8Pd4) from ACA-Py Maintainer @ianco describes
+the Integration Tests in ACA-Py, how to run them and how to add more tests. See also the video at the end of this document about running
+Aries Agent Test Harness tests before you submit your pull requests.
+
+## Getting Started
+
 To run the aca-py Behave tests, open a bash shell run the following:
 
 ```bash
@@ -155,4 +161,8 @@ To run a specific set of Aca-py integration tests (or exclude specific tests):
 ```
 
 (All command line parameters are passed to the `behave` command, so [all parameters supported by behave](https://behave.readthedocs.io/en/stable/behave.html) can be used.)
+
+## Aries Agent Test Harness ACA-Py Tests
+
+This [video](https://youtu.be/1dwyEBxQqWI) is a presentation by Aries Cloud Agent Python (ACA-Py) developer @ianco about using the Aries Agent Test Harness for local pre-release testing of ACA-Py. Have a big change that you want to test with other Aries Frameworks? Following this guidance to run AATH tests with your under-development branch of ACA-Py.
 
