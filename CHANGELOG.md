@@ -1,3 +1,26 @@
+# 0.8.1-rc0
+
+## March 31, 2023
+
+An urgent update to Release 0.8.1 to address an inability to execute the
+`upgrade` command. The `upgrade` command is needed for Pull Request [\#2116] -
+"UPGRADE: Fix multi-use invitation performance", which is necessary for (at
+least) deployments of ACA-Py as a mediator. The important update is Pull Request
+[\#2185] (listed below).
+
+[\#2116]: https://github.com/hyperledger/aries-cloudagent-python/pull/2116
+[\#2185]: https://github.com/hyperledger/aries-cloudagent-python/pull/2185
+
+### Categorized List of Pull Requests
+
+- Fixes for the `upgrade` Command
+  - Update and automate ACA-Py upgrade process [\#2185](https://github.com/hyperledger/aries-cloudagent-python/pull/2185) [shaangill025](https://github.com/shaangill025)
+  - Adds the upgrade command YML file to the PyPi Release [\#2179](https://github.com/hyperledger/aries-cloudagent-python/pull/2179) [swcurran](https://github.com/swcurran)
+- Test and Documentation
+  - Create UnitTests.md [\#2183](https://github.com/hyperledger/aries-cloudagent-python/pull/2183) [swcurran](https://github.com/swcurran)
+  - Add link to recorded session about the ACA-Py Integration tests [\#2184](https://github.com/hyperledger/aries-cloudagent-python/pull/2184) [swcurran](https://github.com/swcurran)
+- Release management pull requests
+
 # 0.8.0
 
 ## March 14, 2023
