@@ -1,11 +1,12 @@
 """Revocation registry admin routes."""
 
+from asyncio import shield
 import json
 import logging
 import os
-import shutil
-from asyncio import shield
 import re
+from time import time
+import shutil
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -19,13 +20,14 @@ from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ..admin.request_context import AdminRequestContext
+from ..anoncreds.issuer import AnonCredsIssuerError
+from ..anoncreds.registry import AnonCredsRegistry
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
-from ..anoncreds.issuer import AnonCredsIssuerError
 from ..ledger.base import BaseLedger
-from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..ledger.error import LedgerError
+from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
@@ -36,8 +38,8 @@ from ..messaging.valid import (
     INDY_REV_REG_ID,
     INDY_REV_REG_SIZE,
     UUID4,
-    WHOLE_NUM,
     UUIDFour,
+    WHOLE_NUM,
 )
 from ..protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
@@ -47,14 +49,13 @@ from ..protocols.endorse_transaction.v1_0.models.transaction_record import (
     TransactionRecordSchema,
 )
 from ..protocols.endorse_transaction.v1_0.util import (
-    is_author_role,
     get_endorser_connection_id,
+    is_author_role,
 )
 from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
-
+from .anoncreds import AnonCredsRevocation
 from .error import RevocationError, RevocationNotSupportedError
-from .indy import AnonCredsRevocation
 from .manager import RevocationManager, RevocationManagerError
 from .models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
@@ -62,10 +63,10 @@ from .models.issuer_cred_rev_record import (
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord, IssuerRevRegRecordSchema
 from .util import (
-    REVOCATION_EVENT_PREFIX,
-    REVOCATION_REG_INIT_EVENT,
-    REVOCATION_REG_ENDORSED_EVENT,
     REVOCATION_ENTRY_EVENT,
+    REVOCATION_EVENT_PREFIX,
+    REVOCATION_REG_ENDORSED_EVENT,
+    REVOCATION_REG_INIT_EVENT,
     notify_revocation_entry_event,
 )
 
@@ -294,8 +295,8 @@ class CredRevRecordDetailsResultSchema(OpenAPISchema):
 class CredRevIndyRecordsResultSchema(OpenAPISchema):
     """Result schema for revoc reg delta."""
 
-    rev_reg_delta = fields.Dict(
-        description="Indy revocation registry delta",
+    rev_status_list = fields.Dict(
+        description="revocation status list",
     )
 
 
@@ -731,7 +732,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(CredRevIndyRecordsResultSchema(), 200, description="")
-async def get_rev_reg_indy_recs(request: web.BaseRequest):
+async def get_rev_status_list(request: web.BaseRequest):
     """
     Request handler to get details of revoked credentials from ledger.
 
@@ -746,12 +747,14 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    revoc = AnonCredsRevocation(context.profile)
-    rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
+    anoncreds_registry = context.inject(AnonCredsRegistry)
+    rev_status_list = await anoncreds_registry.get_revocation_status_list(
+        context.profile, rev_reg_id, int(time())
+    )
 
     return web.json_response(
         {
-            "rev_reg_delta": rev_reg_delta,
+            "rev_status_list": rev_status_list,
         }
     )
 
@@ -1575,7 +1578,7 @@ async def register(app: web.Application):
             ),
             web.get(
                 "/revocation/registry/{rev_reg_id}/issued/indy_recs",
-                get_rev_reg_indy_recs,
+                get_rev_status_list,
                 allow_head=False,
             ),
             web.post("/revocation/create-registry", create_rev_reg),

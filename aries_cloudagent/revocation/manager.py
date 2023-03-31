@@ -11,7 +11,7 @@ from ..core.error import BaseError
 from ..core.profile import Profile
 from ..anoncreds.issuer import AnonCredsIssuer
 from ..storage.error import StorageNotFoundError
-from .indy import AnonCredsRevocation
+from .anoncreds import AnonCredsRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .util import notify_pending_cleared_event, notify_revocation_published_event
@@ -130,7 +130,7 @@ class RevocationManager:
                 await rev_notify_rec.save(session, reason="New revocation notification")
 
         if publish:
-            rev_reg = await revoc.get_ledger_registry(rev_reg_id)
+            rev_reg = await revoc.get_revocation_registry(rev_reg_id)
             await rev_reg.get_or_fetch_local_tails_path()
             # pick up pending revocations on input revocation registry
             crids = (issuer_rr_rec.pending_pub or []) + [cred_rev_id]

@@ -141,7 +141,7 @@ class AnonCredsRegistry:
         )
 
     async def get_revocation_status_list(
-        self, profile: Profile, revocation_registry_id: str, timestamp: str
+        self, profile: Profile, revocation_registry_id: str, timestamp: int
     ) -> GetRevStatusListResult:
         """Get a revocation list from the registry."""
         resolver = await self._resolver_for_identifier(revocation_registry_id)
