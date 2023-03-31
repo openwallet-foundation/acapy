@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 import yaml
 
 from configargparse import ArgumentParser
@@ -23,9 +24,7 @@ from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 
 from . import PROG
 
-DEFAULT_UPGRADE_CONFIG_PATH = (
-    "./aries_cloudagent/commands/default_version_upgrade_config.yml"
-)
+DEFAULT_UPGRADE_CONFIG_FILE_NAME = "default_version_upgrade_config.yml"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -43,7 +42,12 @@ class VersionUpgradeConfig:
         if config_path:
             self.setup_version_upgrade_config(config_path)
         else:
-            self.setup_version_upgrade_config(DEFAULT_UPGRADE_CONFIG_PATH)
+            self.setup_version_upgrade_config(
+                os.path.join(
+                    os.path.dirname(os.path.realpath(__file__)),
+                    DEFAULT_UPGRADE_CONFIG_FILE_NAME,
+                )
+            )
 
     def setup_version_upgrade_config(self, path: str):
         """Set ups config dict from the provided YML file."""
