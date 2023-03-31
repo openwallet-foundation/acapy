@@ -15,12 +15,12 @@ from ..error import (
     RevocationNotSupportedError,
     RevocationRegistryBadSizeError,
 )
-from ..indy import IndyRevocation
+from ..indy import AnonCredsRevocation
 from ..models.issuer_rev_reg_record import DEFAULT_REGISTRY_SIZE, IssuerRevRegRecord
 from ..models.revocation_registry import RevocationRegistry
 
 
-class TestIndyRevocation(AsyncTestCase):
+class TestAnonCredsRevocation(AsyncTestCase):
     def setUp(self):
         self.profile = InMemoryProfile.test_profile()
         self.context = self.profile.context
@@ -40,7 +40,7 @@ class TestIndyRevocation(AsyncTestCase):
                 )
             ),
         )
-        self.revoc = IndyRevocation(self.profile)
+        self.revoc = AnonCredsRevocation(self.profile)
 
         self.test_did = "sample-did"
 
@@ -162,7 +162,7 @@ class TestIndyRevocation(AsyncTestCase):
         ) as mock_from_def:
             result = await self.revoc.get_ledger_registry("dummy")
             assert result == mock_from_def.return_value
-            assert "dummy" in IndyRevocation.REV_REG_CACHE
+            assert "dummy" in AnonCredsRevocation.REV_REG_CACHE
 
             await self.revoc.get_ledger_registry("dummy")
 
@@ -183,7 +183,7 @@ class TestIndyRevocation(AsyncTestCase):
         ) as mock_from_def:
             result = await self.revoc.get_ledger_registry("dummy2")
             assert result == mock_from_def.return_value
-            assert "dummy2" in IndyRevocation.REV_REG_CACHE
+            assert "dummy2" in AnonCredsRevocation.REV_REG_CACHE
 
             await self.revoc.get_ledger_registry("dummy2")
 

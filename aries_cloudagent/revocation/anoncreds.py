@@ -27,13 +27,13 @@ from .models.revocation_registry import RevocationRegistry
 from .util import notify_revocation_reg_init_event
 
 
-class IndyRevocation:
+class AnonCredsRevocation:
     """Class for managing Indy credential revocation."""
 
     REV_REG_CACHE = {}
 
     def __init__(self, profile: Profile):
-        """Initialize the IndyRevocation instance."""
+        """Initialize the AnonCredsRevocation instance."""
         self._profile = profile
 
     async def init_issuer_registry(
@@ -212,8 +212,8 @@ class IndyRevocation:
 
     async def get_ledger_registry(self, revoc_reg_id: str) -> RevocationRegistry:
         """Get a revocation registry from the ledger, fetching as necessary."""
-        if revoc_reg_id in IndyRevocation.REV_REG_CACHE:
-            return IndyRevocation.REV_REG_CACHE[revoc_reg_id]
+        if revoc_reg_id in AnonCredsRevocation.REV_REG_CACHE:
+            return AnonCredsRevocation.REV_REG_CACHE[revoc_reg_id]
 
         ledger = await self.get_ledger_for_registry(revoc_reg_id)
 
@@ -221,7 +221,7 @@ class IndyRevocation:
             rev_reg = RevocationRegistry.from_definition(
                 await ledger.get_revoc_reg_def(revoc_reg_id), True
             )
-            IndyRevocation.REV_REG_CACHE[revoc_reg_id] = rev_reg
+            AnonCredsRevocation.REV_REG_CACHE[revoc_reg_id] = rev_reg
             return rev_reg
 
     async def get_ledger_for_registry(self, revoc_reg_id: str) -> BaseLedger:

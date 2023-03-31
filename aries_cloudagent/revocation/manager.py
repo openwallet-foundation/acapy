@@ -11,7 +11,7 @@ from ..core.error import BaseError
 from ..core.profile import Profile
 from ..anoncreds.issuer import AnonCredsIssuer
 from ..storage.error import StorageNotFoundError
-from .indy import IndyRevocation
+from .indy import AnonCredsRevocation
 from .models.issuer_cred_rev_record import IssuerCredRevRecord
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .util import notify_pending_cleared_event, notify_revocation_published_event
@@ -109,7 +109,7 @@ class RevocationManager:
         """
         issuer = AnonCredsIssuer(self._profile)
 
-        revoc = IndyRevocation(self._profile)
+        revoc = AnonCredsRevocation(self._profile)
         issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         if not issuer_rr_rec:
             raise RevocationManagerError(

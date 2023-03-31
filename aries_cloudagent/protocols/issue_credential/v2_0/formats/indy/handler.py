@@ -28,7 +28,7 @@ from ......messaging.credential_definitions.util import (
 )
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
-from ......revocation.indy import IndyRevocation
+from ......revocation.anoncreds import AnonCredsRevocation
 from ......revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......revocation.models.revocation_registry import RevocationRegistry
 from ......storage.base import BaseStorage
@@ -345,7 +345,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
 
             if revocable:
                 # TODO make this go through the anoncreds interface
-                revoc = IndyRevocation(self.profile)
+                revoc = AnonCredsRevocation(self.profile)
                 registry_info = await revoc.get_or_create_active_registry(cred_def_id)
                 if not registry_info:
                     continue
@@ -371,7 +371,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 continue
 
             if revocable and rev_reg.max_creds <= int(cred_rev_id):
-                revoc = IndyRevocation(self.profile)
+                revoc = AnonCredsRevocation(self.profile)
                 await revoc.handle_full_registry(rev_reg_id)
                 del revoc
 

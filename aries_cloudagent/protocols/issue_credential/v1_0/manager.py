@@ -26,7 +26,7 @@ from ....messaging.credential_definitions.util import (
 )
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
-from ....revocation.indy import IndyRevocation
+from ....revocation.anoncreds import AnonCredsRevocation
 from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.base import BaseStorage
@@ -642,7 +642,7 @@ class CredentialManager:
                     await asyncio.sleep(2)
 
                 if revocable:
-                    revoc = IndyRevocation(self._profile)
+                    revoc = AnonCredsRevocation(self._profile)
                     registry_info = await revoc.get_or_create_active_registry(
                         cred_def_id
                     )
@@ -670,7 +670,7 @@ class CredentialManager:
                     continue
 
                 if revocable and rev_reg.max_creds <= int(cred_rev_id):
-                    revoc = IndyRevocation(self._profile)
+                    revoc = AnonCredsRevocation(self._profile)
                     await revoc.handle_full_registry(rev_reg_id)
                     del revoc
 

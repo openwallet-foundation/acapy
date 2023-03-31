@@ -54,7 +54,7 @@ from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
 
 from .error import RevocationError, RevocationNotSupportedError
-from .indy import IndyRevocation
+from .indy import AnonCredsRevocation
 from .manager import RevocationManager, RevocationManagerError
 from .models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
@@ -573,7 +573,7 @@ async def create_rev_reg(request: web.BaseRequest):
         )
 
     try:
-        revoc = IndyRevocation(profile)
+        revoc = AnonCredsRevocation(profile)
         issuer_rev_reg_rec = await revoc.init_issuer_registry(
             credential_definition_id,
             max_cred_num=max_cred_num,
@@ -649,7 +649,7 @@ async def get_rev_reg(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = AnonCredsRevocation(context.profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -746,7 +746,7 @@ async def get_rev_reg_indy_recs(request: web.BaseRequest):
 
     rev_reg_id = request.match_info["rev_reg_id"]
 
-    revoc = IndyRevocation(context.profile)
+    revoc = AnonCredsRevocation(context.profile)
     rev_reg_delta = await revoc.get_issuer_rev_reg_delta(rev_reg_id)
 
     return web.json_response(
@@ -905,7 +905,7 @@ async def get_active_rev_reg(request: web.BaseRequest):
     cred_def_id = request.match_info["cred_def_id"]
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = AnonCredsRevocation(context.profile)
         rev_reg = await revoc.get_active_issuer_rev_reg_record(cred_def_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -936,7 +936,7 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = AnonCredsRevocation(context.profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -962,7 +962,7 @@ async def upload_tails_file(request: web.BaseRequest):
 
     rev_reg_id = request.match_info["rev_reg_id"]
     try:
-        revoc = IndyRevocation(context.profile)
+        revoc = AnonCredsRevocation(context.profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -1047,7 +1047,7 @@ async def send_rev_reg_def(request: web.BaseRequest):
         endorser_did = endorser_info["endorser_did"]
 
     try:
-        revoc = IndyRevocation(profile)
+        revoc = AnonCredsRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
 
         rev_reg_resp = await rev_reg.send_def(
@@ -1161,7 +1161,7 @@ async def send_rev_reg_entry(request: web.BaseRequest):
         endorser_did = endorser_info["endorser_did"]
 
     try:
-        revoc = IndyRevocation(profile)
+        revoc = AnonCredsRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         rev_entry_resp = await rev_reg.send_entry(
             profile,
@@ -1234,7 +1234,7 @@ async def update_rev_reg(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
 
     try:
-        revoc = IndyRevocation(profile)
+        revoc = AnonCredsRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         await rev_reg.set_tails_file_public_uri(profile, tails_public_uri)
 
@@ -1267,7 +1267,7 @@ async def set_rev_reg_state(request: web.BaseRequest):
     state = request.query.get("state")
 
     try:
-        revoc = IndyRevocation(profile)
+        revoc = AnonCredsRevocation(profile)
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         async with profile.session() as session:
             await rev_reg.set_state(session, state)
@@ -1382,7 +1382,7 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
         "create_pending_rev_reg", False
     )
     if write_ledger and create_pending_rev_reg:
-        revoc = IndyRevocation(profile)
+        revoc = AnonCredsRevocation(profile)
         await revoc.init_issuer_registry(
             registry_record.cred_def_id,
             registry_record.max_cred_num,
@@ -1460,7 +1460,7 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
     """Handle revocation registry endorsement event."""
     meta_data = event.payload
     rev_reg_id = meta_data["context"]["rev_reg_id"]
-    revoc = IndyRevocation(profile)
+    revoc = AnonCredsRevocation(profile)
     registry_record = await revoc.get_issuer_rev_reg_record(rev_reg_id)
 
     if profile.settings.get_value("endorser.auto_request"):
@@ -1501,7 +1501,7 @@ async def delete_tails(request: web.BaseRequest) -> json:
     context: AdminRequestContext = request["context"]
     rev_reg_id = request.query.get("rev_reg_id")
     cred_def_id = request.query.get("cred_def_id")
-    revoc = IndyRevocation(context.profile)
+    revoc = AnonCredsRevocation(context.profile)
     session = revoc._profile.session()
     if rev_reg_id:
         rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)

@@ -16,7 +16,7 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
 )
 from ....multitenant.base import BaseMultitenantManager
 from ....revocation.error import RevocationError
-from ....revocation.indy import IndyRevocation
+from ....revocation.anoncreds import AnonCredsRevocation
 from ....storage.error import StorageNotFoundError
 from ...issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...models.anoncreds_cred_def import (
@@ -335,7 +335,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Get a revocation registry definition from the registry."""
 
         try:
-            revoc = IndyRevocation(profile)
+            revoc = AnonCredsRevocation(profile)
             rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
         except StorageNotFoundError as err:
             raise AnonCredsResolutionError(err)

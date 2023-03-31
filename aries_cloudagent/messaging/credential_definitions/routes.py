@@ -41,7 +41,7 @@ from ...protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
 )
 
-from ...revocation.indy import IndyRevocation
+from ...revocation.anoncreds import AnonCredsRevocation
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError
 
@@ -519,7 +519,7 @@ async def on_cred_def_event(profile: Profile, event: Event):
         # For a cred def we also automatically create a second "pending" revocation
         # registry, so when the first one fills up we can continue to issue credentials
         # without a delay
-        revoc = IndyRevocation(profile)
+        revoc = AnonCredsRevocation(profile)
         await revoc.init_issuer_registry(
             cred_def_id,
             rev_reg_size,
