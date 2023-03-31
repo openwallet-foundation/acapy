@@ -142,7 +142,9 @@ class TestProofRoutes(AsyncTestCase):
             AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
-                    async_mock.CoroutineMock(side_effect=test_module.AnonCredsHolderError())
+                    async_mock.CoroutineMock(
+                        side_effect=test_module.AnonCredsHolderError()
+                    )
                 )
             ),
         )

@@ -1,17 +1,18 @@
-"""Base Indy Verifier class."""
+"""Indy-Credx verifier implementation."""
 
-from abc import ABC, ABCMeta, abstractmethod
-from enum import Enum
+import asyncio
 import logging
+from enum import Enum
 from time import time
 from typing import List, Mapping, Tuple
 
-from ..core.profile import Profile
-from ..messaging.util import canon, encode
-from .anoncreds.anoncreds_registry import AnonCredsRegistry
+from anoncreds import AnoncredsError, Presentation
+
+from .registry import AnonCredsRegistry
 from .models.anoncreds_cred_def import GetCredDefResult
 from .models.xform import indy_proof_req2non_revoc_intervals
-
+from ..core.profile import Profile
+from ..messaging.util import canon, encode
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,18 +28,18 @@ class PresVerifyMsg(str, Enum):
     PRES_VERIFY_ERROR = "VERIFY_ERROR"
 
 
-class AnonCredsVerifier(ABC, metaclass=ABCMeta):
-    """Base class for Indy Verifier."""
+class AnonCredsVerifier:
+    """Verifier class."""
 
-    def __repr__(self) -> str:
+    def __init__(self, profile: Profile):
         """
-        Return a human readable representation of this class.
+        Initialize an AnonCredsVerifier instance.
 
-        Returns:
-            A human readable string for this class
+        Args:
+            profile: an active profile instance
 
         """
-        return "<{}>".format(self.__class__.__name__)
+        self.profile = profile
 
     def non_revoc_intervals(self, pres_req: dict, pres: dict, cred_defs: dict) -> list:
         """
@@ -375,18 +376,72 @@ class AnonCredsVerifier(ABC, metaclass=ABCMeta):
                     raise ValueError(f"Encoded representation mismatch for '{attr}'")
         return msgs
 
-    @abstractmethod
     async def process_pres_identifiers(
         self,
         identifiers: list,
     ) -> Tuple[dict, dict, dict, dict]:
         """Return schemas, cred_defs, rev_reg_defs, rev_status_lists."""
+        schema_ids = []
+        cred_def_ids = []
 
-    @abstractmethod
+        schemas = {}
+        cred_defs = {}
+        rev_reg_defs = {}
+        rev_status_lists = {}
+
+        for identifier in identifiers:
+            schema_ids.append(identifier["schema_id"])
+            cred_def_ids.append(identifier["cred_def_id"])
+
+            anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+            # Build schemas for anoncreds
+            if identifier["schema_id"] not in schemas:
+                schemas[identifier["schema_id"]] = (
+                    await anoncreds_registry.get_schema(
+                        self.profile, identifier["schema_id"]
+                    )
+                ).schema.serialize()
+            if identifier["cred_def_id"] not in cred_defs:
+                cred_defs[identifier["cred_def_id"]] = (
+                    await anoncreds_registry.get_credential_definition(
+                        self.profile, identifier["cred_def_id"]
+                    )
+                ).credential_definition.serialize()
+
+            if identifier.get("rev_reg_id"):
+                if identifier["rev_reg_id"] not in rev_reg_defs:
+                    rev_reg_defs[identifier["rev_reg_id"]] = (
+                        await anoncreds_registry.get_revocation_registry_definition(
+                            self.profile, identifier["rev_reg_id"]
+                        )
+                    ).revocation_registry.serialize()
+
+                if identifier.get("timestamp"):
+                    rev_status_lists.setdefault(identifier["rev_reg_id"], {})
+
+                    if (
+                        identifier["timestamp"]
+                        not in rev_status_lists[identifier["rev_reg_id"]]
+                    ):
+                        result = await anoncreds_registry.get_revocation_status_list(
+                            self.profile,
+                            identifier["rev_reg_id"],
+                            identifier["timestamp"],
+                        )
+                        rev_status_lists[identifier["rev_reg_id"]][
+                            identifier["timestamp"]
+                        ] = result.revocation_list.serialize()
+        return (
+            schemas,
+            cred_defs,
+            rev_reg_defs,
+            rev_status_lists,
+        )
+
     async def verify_presentation(
         self,
-        presentation_request,
-        presentation,
+        pres_req,
+        pres,
         schemas,
         credential_definitions,
         rev_reg_defs,
@@ -396,10 +451,48 @@ class AnonCredsVerifier(ABC, metaclass=ABCMeta):
         Verify a presentation.
 
         Args:
-            presentation_request: Presentation request data
-            presentation: Presentation data
+            pres_req: Presentation request data
+            pres: Presentation data
             schemas: Schema data
             credential_definitions: credential definition data
             rev_reg_defs: revocation registry definitions
             rev_reg_entries: revocation registry entries
         """
+
+        msgs = []
+        try:
+            msgs += self.non_revoc_intervals(pres_req, pres, credential_definitions)
+            msgs += await self.check_timestamps(
+                self.profile, pres_req, pres, rev_reg_defs
+            )
+            msgs += await self.pre_verify(pres_req, pres)
+        except ValueError as err:
+            s = str(err)
+            msgs.append(f"{PresVerifyMsg.PRES_VALUE_ERROR.value}::{s}")
+            LOGGER.error(
+                f"Presentation on nonce={pres_req['nonce']} "
+                f"cannot be validated: {str(err)}"
+            )
+            return (False, msgs)
+
+        try:
+            presentation = Presentation.load(pres)
+            verified = await asyncio.get_event_loop().run_in_executor(
+                None,
+                presentation.verify,
+                pres_req,
+                schemas,
+                credential_definitions,
+                rev_reg_defs,
+                rev_status_lists,
+            )
+        except AnoncredsError as err:
+            s = str(err)
+            msgs.append(f"{PresVerifyMsg.PRES_VERIFY_ERROR.value}::{s}")
+            LOGGER.exception(
+                f"Validation of presentation on nonce={pres_req['nonce']} "
+                "failed with error"
+            )
+            verified = False
+
+        return (verified, msgs)

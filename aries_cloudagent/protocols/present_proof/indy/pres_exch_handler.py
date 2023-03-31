@@ -4,7 +4,7 @@ import logging
 import time
 from typing import Union
 
-from ....anoncreds.anoncreds.anoncreds_registry import AnonCredsRegistry
+from ....anoncreds.registry import AnonCredsRegistry
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.xform import indy_proof_req2non_revoc_intervals
 from ....core.error import BaseError
@@ -31,7 +31,7 @@ class IndyPresExchHandler:
         """Initialize PresExchange Handler."""
         super().__init__()
         self._profile = profile
-        self.holder = profile.inject(AnonCredsHolder)
+        self.holder = AnonCredsHolder(profile)
 
     def _extract_proof_request(self, pres_ex_record):
         if isinstance(pres_ex_record, V20PresExRecord):

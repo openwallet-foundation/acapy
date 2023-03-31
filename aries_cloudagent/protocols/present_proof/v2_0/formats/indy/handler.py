@@ -143,7 +143,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                     await indy_proof_req_preview2indy_requested_creds(
                         indy_proof_request,
                         preview=None,
-                        holder=self._profile.inject(AnonCredsHolder),
+                        holder=AnonCredsHolder(self._profile),
                     )
                 )
             except ValueError as err:
@@ -320,7 +320,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         pres_request_msg = pres_ex_record.pres_request
         indy_proof_request = pres_request_msg.attachment(IndyPresExchangeHandler.format)
         indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
-        verifier = self._profile.inject(AnonCredsVerifier)
+        verifier = AnonCredsVerifier(self._profile)
+
         (
             schemas,
             cred_defs,
@@ -328,7 +329,8 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             rev_status_lists,
         ) = await verifier.process_pres_identifiers(indy_proof["identifiers"])
 
-        verifier = self._profile.inject(AnonCredsVerifier)
+        verifier = AnonCredsVerifier(self._profile)
+
         (verified, verified_msgs) = await verifier.verify_presentation(
             indy_proof_request,
             indy_proof,

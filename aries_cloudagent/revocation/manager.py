@@ -107,7 +107,7 @@ class RevocationManager:
                 along with any revocations pending against it
 
         """
-        issuer = self._profile.inject(AnonCredsIssuer)
+        issuer = AnonCredsIssuer(self._profile)
 
         revoc = IndyRevocation(self._profile)
         issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
@@ -208,7 +208,7 @@ class RevocationManager:
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
         result = {}
-        issuer = self._profile.inject(AnonCredsIssuer)
+        issuer = AnonCredsIssuer(self._profile)
 
         async with self._profile.session() as session:
             issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)

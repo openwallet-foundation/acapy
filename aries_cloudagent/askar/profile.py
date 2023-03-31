@@ -16,9 +16,6 @@ from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..core.error import ProfileError
 from ..core.profile import Profile, ProfileManager, ProfileSession
-from ..anoncreds.holder import AnonCredsHolder
-from ..anoncreds.issuer import AnonCredsIssuer
-from ..anoncreds.verifier import AnonCredsVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ..storage.base import BaseStorage, BaseStorageSearch
@@ -99,21 +96,6 @@ class AskarProfile(Profile):
                 "aries_cloudagent.storage.askar.AskarStorageSearch", ref(self)
             ),
         )
-
-        injector.bind_provider(
-            AnonCredsHolder,
-            ClassProvider(
-                "aries_cloudagent.anoncreds.anoncreds.holder.AnonCredsRsHolder",
-                ref(self),
-            ),
-        )
-        injector.bind_provider(
-            AnonCredsIssuer,
-            ClassProvider(
-                "aries_cloudagent.anoncreds.anoncreds.issuer.AnonCredsRsIssuer",
-                ref(self),
-            ),
-        )
         injector.bind_provider(
             VCHolder,
             ClassProvider(
@@ -121,18 +103,9 @@ class AskarProfile(Profile):
                 ref(self),
             ),
         )
-
         if self.ledger_pool:
             injector.bind_provider(
                 BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))
-            )
-        if self.ledger_pool or self.settings.get("ledger.ledger_config_list"):
-            injector.bind_provider(
-                AnonCredsVerifier,
-                ClassProvider(
-                    "aries_cloudagent.anoncreds.anoncreds.verifier.AnonCredsRsVerifier",
-                    ref(self),
-                ),
             )
 
     def session(self, context: InjectionContext = None) -> "AskarProfileSession":

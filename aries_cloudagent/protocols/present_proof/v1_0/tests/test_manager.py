@@ -11,14 +11,12 @@ from aries_cloudagent.protocols.issue_credential.v1_0.models.credential_exchange
 from .....core.in_memory import InMemoryProfile
 from .....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from .....anoncreds.issuer import AnonCredsIssuer
-from .....anoncreds.sdk.holder import IndySdkHolder
 from .....anoncreds.models.xform import indy_proof_req_preview2indy_requested_creds
 from .....anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPreview,
     IndyPresPredSpec,
 )
-from .....anoncreds.sdk.verifier import IndySdkVerifier
 from .....anoncreds.verifier import AnonCredsVerifier
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (

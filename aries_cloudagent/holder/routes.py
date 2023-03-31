@@ -175,7 +175,7 @@ async def credentials_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    holder = context.profile.inject(AnonCredsHolder)
+    holder = AnonCredsHolder(context.profile)
     try:
         credential = await holder.get_credential(credential_id)
     except WalletNotFoundError as err:

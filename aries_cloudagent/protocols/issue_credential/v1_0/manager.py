@@ -436,7 +436,7 @@ class CredentialManager:
                     credential_definition_id
                 )
 
-            holder = self._profile.inject(AnonCredsHolder)
+            holder = AnonCredsHolder(self._profile)
             request_json, metadata_json = await holder.create_credential_request(
                 cred_offer_ser,
                 credential_definition,
@@ -815,7 +815,7 @@ class CredentialManager:
                     raw_cred_serde.de.rev_reg_id
                 )
 
-        holder = self._profile.inject(AnonCredsHolder)
+        holder = AnonCredsHolder(self._profile)
         if (
             cred_ex_record.credential_proposal_dict
             and cred_ex_record.credential_proposal_dict.credential_proposal

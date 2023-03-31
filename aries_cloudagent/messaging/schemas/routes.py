@@ -254,7 +254,7 @@ async def schemas_send_schema(request: web.BaseRequest):
             reason += ": missing wallet-type?"
         raise web.HTTPForbidden(reason=reason)
 
-    issuer = context.inject(AnonCredsIssuer)
+    issuer = AnonCredsIssuer(context.profile)
     async with ledger:
         try:
             # if create_transaction_for_endorser, then the returned "schema_def"
