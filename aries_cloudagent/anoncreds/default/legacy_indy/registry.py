@@ -3,6 +3,7 @@ import logging
 import re
 from asyncio import shield
 from typing import Optional, Pattern
+from urllib.parse import urlparse
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
@@ -28,6 +29,9 @@ from ...models.anoncreds_cred_def import (
 from ...models.anoncreds_revocation import (
     GetRevStatusListResult,
     AnonCredsRegistryGetRevocationRegistryDefinition,
+    RevRegDef,
+    RevRegDefResult,
+    RevRegDefState,
 )
 from ...models.anoncreds_schema import (
     GetSchemaResult,
@@ -88,6 +92,14 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             ) from err
 
         return f"{cred_def.issuer_id}:3:{signature_type}:{seq_no}:{tag}"
+
+    @staticmethod
+    def make_rev_reg_def_id(rev_reg_def: RevRegDef) -> str:
+        """Derive the ID for a revocation registry definition."""
+        return (
+            f"{rev_reg_def.issuer_id}:4:{rev_reg_def.cred_def_id}:"
+            f"{rev_reg_def.type}:{rev_reg_def.tag}"
+        )
 
     async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
@@ -334,29 +346,67 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     async def get_revocation_registry_definitions(self, profile: Profile, filter: str):
         """Get credential definition ids filtered by filter"""
 
-    # TODO: determine keyword arguments
+    def _check_url(self, url) -> None:
+        parsed = urlparse(url)
+        if not (parsed.scheme and parsed.netloc and parsed.path):
+            raise RevocationError("URI {} is not a valid URL".format(url))
+
     async def register_revocation_registry_definition(
         self,
         profile: Profile,
-        rev_reg_id: str,
-        issuer_id: str,
-    ):
+        revocation_registry_definition: RevRegDef,
+        options: Optional[dict] = None,
+    ) -> RevRegDefResult:
         """Register a revocation registry definition on the registry."""
 
-        try:
-            revoc = IndyRevocation(profile)
-            rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
+        tails_base_url = profile.settings.get("tails_server_base_url")
+        if not tails_base_url:
+            raise AnonCredsRegistrationError("tails_server_base_url not configured")
 
-            await rev_reg.send_def(
-                profile,
-                write_ledger=True,
-                endorser_did=issuer_id,
-            )
-            LOGGER.debug("published rev reg definition: %s", rev_reg_id)
-        except StorageNotFoundError as err:
-            raise AnonCredsRegistrationError(err)
-        except RevocationError as err:
-            raise AnonCredsRegistrationError(err)
+        rev_reg_def_id = self.make_rev_reg_def_id(revocation_registry_definition)
+        revocation_registry_definition.value.tails_location = (
+            tails_base_url.rstrip("/") + f"/{rev_reg_def_id}"
+        )
+
+        try:
+            self._check_url(revocation_registry_definition.value.tails_location)
+
+            # Translate anoncreds object to indy object
+            indy_rev_reg_def = {
+                "ver": "1.0",
+                "id": rev_reg_def_id,
+                "revocDefType": revocation_registry_definition.type,
+                "credDefId": revocation_registry_definition.cred_def_id,
+                "tag": revocation_registry_definition.tag,
+                "value": {
+                    "issuanceType": "ISSUANCE_BY_DEFAULT",
+                    "maxCredNum": revocation_registry_definition.value.max_cred_num,
+                    "publicKeys": revocation_registry_definition.value.public_keys,
+                    "tailsHash": revocation_registry_definition.value.tails_hash,
+                    "tailsLocation": revocation_registry_definition.value.tails_location,
+                },
+            }
+
+            ledger = profile.inject(BaseLedger)
+            async with ledger:
+                resp = await ledger.send_revoc_reg_def(
+                    indy_rev_reg_def,
+                    revocation_registry_definition.issuer_id,
+                )
+            seq_no = resp["result"]["txnMetadata"]["seqNo"]
+        except LedgerError as err:
+            raise AnonCredsRegistrationError() from err
+
+        return RevRegDefResult(
+            job_id=None,
+            revocation_registry_definition_state=RevRegDefState(
+                state=RevRegDefState.STATE_FINISHED,
+                revocation_registry_definition_id=rev_reg_def_id,
+                revocation_registry_definition=revocation_registry_definition,
+            ),
+            registration_metadata={},
+            revocation_registry_definition_metadata={"seqNo": seq_no},
+        )
 
     async def get_revocation_status_list(
         self, profile: Profile, revocation_registry_id: str, timestamp: str

@@ -9,6 +9,44 @@ from marshmallow.validate import OneOf
 from ...messaging.models.base import BaseModel, BaseModelSchema
 
 
+class RevRegDefValue(BaseModel):
+    """RevRegDefValue model."""
+
+    class Meta:
+        """RevRegDefValue metadata."""
+
+        schema_class = "RevRegDefValueSchema"
+
+    def __init__(
+        self,
+        public_keys: dict,
+        max_cred_num: int,
+        tails_location: str,
+        tails_hash: str,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.public_keys = public_keys
+        self.max_cred_num = max_cred_num
+        self.tails_location = tails_location
+        self.tails_hash = tails_hash
+
+
+class RevRegDefValueSchema(BaseModelSchema):
+    """RevRegDefValue schema."""
+
+    class Meta:
+        """RevRegDefValueSchema metadata."""
+
+        model_class = RevRegDefValue
+        unknown = EXCLUDE
+
+    public_keys = fields.Dict(data_key="publicKeys")
+    max_cred_num = fields.Int(data_key="maxCredNum")
+    tails_location = fields.Str(data_key="tailsLocation")
+    tails_hash = fields.Str(data_key="tailsHash")
+
+
 class RevRegDef(BaseModel):
     """RevRegDef"""
 
@@ -23,11 +61,7 @@ class RevRegDef(BaseModel):
         type: Literal["CL_ACCUM"],
         cred_def_id: str,
         tag: str,
-        # TODO: determine type for `publicKeys`
-        public_keys: dict,
-        max_cred_num: int,
-        tails_Location: str,
-        tails_hash: str,
+        value: RevRegDefValue,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -35,10 +69,7 @@ class RevRegDef(BaseModel):
         self.type = type
         self.cred_def_id = cred_def_id
         self.tag = tag
-        self.public_keys = public_keys
-        self.max_cred_num = max_cred_num
-        self.tails_location = tails_Location
-        self.tails_hash = tails_hash
+        self.value = value
 
     @classmethod
     def from_native(cls, rev_reg_def: RevocationRegistryDefinition):
@@ -63,17 +94,13 @@ class RevRegDefSchema(BaseModelSchema):
         description="Issuer Identifier of the credential definition or schema",
         data_key="issuerId",
     )
-    type = fields.Str()
+    type = fields.Str(data_key="revocDefType")
     cred_def_id = fields.Str(
         description="Credential definition identifier",
         data_key="credDefId",
     )
-    tag = fields.Str(description="""""")
-    # TODO: type for public key
-    public_keys = fields.Dict(data_key="publicKeys")
-    max_cred_num = fields.Int(data_key="maxCredNum")
-    tails_location = fields.Str(data_key="tailsLocation")
-    tails_hash = fields.Str(data_key="tailsHash")
+    tag = fields.Str(description="tag for the revocation registry definition")
+    value = fields.Nested(RevRegDefValueSchema())
 
 
 class RevRegDefState(BaseModel):

@@ -14,7 +14,7 @@ from marshmallow import fields
 from .registry import AnonCredsRegistry
 from .issuer import AnonCredsIssuer
 from .models.anoncreds_cred_def import (
-    CredDefSchema,
+    CredDefResultSchema,
     GetCredDefResultSchema,
 )
 from .models.anoncreds_schema import (
@@ -22,6 +22,7 @@ from .models.anoncreds_schema import (
     SchemaResultSchema,
     GetSchemaResultSchema,
 )
+from .models.anoncreds_revocation import RevRegDefResultSchema
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
@@ -87,25 +88,6 @@ class CredDefsQueryStringSchema(OpenAPISchema):
     state = fields.Str(
         description="Credential definition state",
     )
-
-
-class CredDefState(OpenAPISchema):
-    """Parameters and validators for credential definition state."""
-
-    state = fields.Str()  # TODO: create validator for only possible states
-    credential_definition_id = fields.Str(
-        description="Credential definition identifier",
-    )
-    credential_definition = fields.Nested(CredDefSchema())
-
-
-class PostCredDefResponseSchema(OpenAPISchema):
-    """Parameters and validators for credential definition create response."""
-
-    job_id = fields.Str()
-    credential_definition_state = fields.Nested(CredDefState())
-    registration_metadata = fields.Dict()
-    credential_definition_metadata = fields.Dict()
 
 
 class SchemaPostOptionSchema(OpenAPISchema):
@@ -252,7 +234,7 @@ async def schemas_get(request: web.BaseRequest):
 
 @docs(tags=["anoncreds"], summary="")
 @request_schema(CredDefPostRequestSchema())
-@response_schema(PostCredDefResponseSchema(), 200, description="")
+@response_schema(CredDefResultSchema(), 200, description="")
 async def cred_def_post(request: web.BaseRequest):
     """Request handler for creating .
 
@@ -274,6 +256,70 @@ async def cred_def_post(request: web.BaseRequest):
         issuer_id,
         schema_id,
         tag,
+        options=options,
+    )
+
+    return web.json_response(result.serialize())
+
+
+class RevRegCreateRequestSchema(OpenAPISchema):
+    """Request schema for revocation registry creation request."""
+
+    issuer_id = fields.Str(
+        description="Issuer Identifier of the credential definition or schema",
+        data_key="issuerId",
+    )
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        data_key="credDefId",
+    )
+    tag = fields.Str(description="tag for revocation registry")
+    max_cred_num = fields.Int(data_key="maxCredNum")
+    registry_type = fields.Str(
+        description="Revocation registry type",
+        data_key="type",
+        required=False,
+    )
+
+
+@docs(tags=["anoncreds"], summary="")
+@request_schema(RevRegCreateRequestSchema())
+@response_schema(RevRegDefResultSchema(), 200, description="")
+async def rev_reg_def_post(request: web.BaseRequest):
+    """Request handler for creating .
+
+    Args:
+
+
+    (method) def create_and_register_revocation_registry_definition(
+        issuer_id: str,
+        cred_def_id: str,
+        tag: str,
+        max_cred_num: int,
+        registry_type: str,
+        tails_base_path: str,
+        options: dict[Unknown, Unknown] | None = None
+    ) -> Coroutine[Any, Any, RevRegDefResult]
+
+    Returns:
+
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    options = body.get("options")
+    issuer_id = body.get("issuerId")
+    cred_def_id = body.get("credDefId")
+    tag = body.get("tag")
+    max_cred_num = body.get("maxCredNum")
+    registry_type = body.get("type")
+
+    issuer = AnonCredsIssuer(context.profile)
+    result = await issuer.create_and_register_revocation_registry_definition(
+        issuer_id,
+        cred_def_id,
+        tag,
+        max_cred_num,
+        registry_type=registry_type,
         options=options,
     )
 
@@ -353,6 +399,7 @@ async def register(app: web.Application):
                 cred_defs_get,
                 allow_head=False,
             ),
+            web.post("/anoncreds/revocation-registry-definition", rev_reg_def_post),
         ]
     )
 
