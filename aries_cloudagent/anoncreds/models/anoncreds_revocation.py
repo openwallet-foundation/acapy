@@ -184,6 +184,10 @@ class RevRegDefResult(BaseModel):
             self.revocation_registry_definition_state.revocation_registry_definition_id
         )
 
+    @property
+    def rev_reg_def(self):
+        return self.revocation_registry_definition_state.revocation_registry_definition
+
 
 class RevRegDefResultSchema(BaseModelSchema):
     """Cred def result schema."""

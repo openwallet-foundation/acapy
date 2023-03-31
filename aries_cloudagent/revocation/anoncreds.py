@@ -31,12 +31,14 @@ class AnonCredsRevocation:
 
     async def init_issuer_registry(
         self,
+        issuer_id: str,
         cred_def_id: str,
         max_cred_num: int = None,
         revoc_def_type: str = None,
         tag: str = None,
         create_pending_rev_reg: bool = False,
         endorser_connection_id: str = None,
+        options: Optional[dict] = None,
         notify: bool = True,
     ) -> IssuerRevRegRecord:
         """Create a new revocation registry record for a credential definition."""
@@ -56,19 +58,16 @@ class AnonCredsRevocation:
             )
 
         record_id = str(uuid4())
-        issuer_did = cred_def_id.split(":")[0]
         record = IssuerRevRegRecord(
             new_with_id=True,
             record_id=record_id,
             cred_def_id=cred_def_id,
-            issuer_did=issuer_did,
+            issuer_id=issuer_id,
             max_cred_num=max_cred_num,
             revoc_def_type=revoc_def_type,
-            tag=tag,
+            tag=tag or record_id,
+            options=options,
         )
-        revoc_def_type = record.revoc_def_type
-        rtag = record.tag or record_id
-        record.revoc_reg_id = f"{issuer_did}:4:{cred_def_id}:{revoc_def_type}:{rtag}"
         async with self._profile.session() as session:
             await record.save(session, reason="Init revocation registry")
 

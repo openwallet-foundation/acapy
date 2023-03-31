@@ -1,4 +1,5 @@
 """Anoncreds admin routes."""
+from asyncio import shield
 import logging
 
 from aiohttp import web
@@ -11,24 +12,21 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
-from .registry import AnonCredsRegistry
-from .issuer import AnonCredsIssuer
-from .models.anoncreds_cred_def import (
-    CredDefResultSchema,
-    GetCredDefResultSchema,
-)
-from .models.anoncreds_schema import (
-    AnonCredsSchemaSchema,
-    SchemaResultSchema,
-    GetSchemaResultSchema,
-)
-from .models.anoncreds_revocation import RevRegDefResultSchema
+from aries_cloudagent.revocation.error import RevocationNotSupportedError
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.valid import (
-    UUIDFour,
+from ..messaging.valid import UUIDFour
+from ..revocation.anoncreds import AnonCredsRevocation
+from .issuer import AnonCredsIssuer
+from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
+from .models.anoncreds_revocation import RevRegDefResultSchema
+from .models.anoncreds_schema import (
+    AnonCredsSchemaSchema,
+    GetSchemaResultSchema,
+    SchemaResultSchema,
 )
+from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -306,22 +304,31 @@ async def rev_reg_def_post(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     body = await request.json()
-    options = body.get("options")
     issuer_id = body.get("issuerId")
     cred_def_id = body.get("credDefId")
-    tag = body.get("tag")
     max_cred_num = body.get("maxCredNum")
-    registry_type = body.get("type")
+    options = body.get("options")
 
     issuer = AnonCredsIssuer(context.profile)
-    result = await issuer.create_and_register_revocation_registry_definition(
-        issuer_id,
-        cred_def_id,
-        tag,
-        max_cred_num,
-        registry_type=registry_type,
-        options=options,
-    )
+    # check we published this cred def
+    found = await issuer.match_created_credential_definitions(cred_def_id)
+    if not found:
+        raise web.HTTPNotFound(
+            reason=f"Not issuer of credential definition id {cred_def_id}"
+        )
+
+    try:
+        revoc = AnonCredsRevocation(context.profile)
+        issuer_rev_reg_rec = await revoc.init_issuer_registry(
+            issuer_id,
+            cred_def_id,
+            max_cred_num=max_cred_num,
+            options=options,
+            notify=False,
+        )
+    except RevocationNotSupportedError as e:
+        raise web.HTTPBadRequest(reason=e.message) from e
+    result = await shield(issuer_rev_reg_rec.generate_and_publish(context.profile))
 
     return web.json_response(result.serialize())
 

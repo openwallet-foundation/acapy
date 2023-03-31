@@ -23,6 +23,8 @@ credential revocation was successfully written to the wallet but the ledger writ
 failed.)
 """
 
+# TODO This should probably be moved to an Indy plugin
+
 
 class RevocRecoveryException(Exception):
     """Raise exception generating the recovery transaction."""

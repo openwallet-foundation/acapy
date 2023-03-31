@@ -20,7 +20,7 @@ from marshmallow import fields, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from ..admin.request_context import AdminRequestContext
-from ..anoncreds.issuer import AnonCredsIssuerError
+from ..anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ..anoncreds.registry import AnonCredsRegistry
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
@@ -28,7 +28,6 @@ from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.error import LedgerError
 from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
-from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
@@ -52,7 +51,6 @@ from ..protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
     is_author_role,
 )
-from ..storage.base import BaseStorage
 from ..storage.error import StorageError, StorageNotFoundError
 from .anoncreds import AnonCredsRevocation
 from .error import RevocationError, RevocationNotSupportedError
@@ -561,13 +559,8 @@ async def create_rev_reg(request: web.BaseRequest):
     max_cred_num = body.get("max_cred_num")
 
     # check we published this cred def
-    async with profile.session() as session:
-        storage = session.inject(BaseStorage)
-
-        found = await storage.find_all_records(
-            type_filter=CRED_DEF_SENT_RECORD_TYPE,
-            tag_query={"cred_def_id": credential_definition_id},
-        )
+    issuer = AnonCredsIssuer(context.profile)
+    found = await issuer.match_created_credential_definitions(credential_definition_id)
     if not found:
         raise web.HTTPNotFound(
             reason=f"Not issuer of credential definition id {credential_definition_id}"

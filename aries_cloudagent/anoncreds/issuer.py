@@ -564,7 +564,7 @@ class AnonCredsIssuer:
         return [entry.name for entry in rev_reg_defs]
 
     async def create_and_register_revocation_status_list(
-        self, rev_reg_def_id: str, timestamp: int, options: dict
+        self, rev_reg_def_id: str, options: dict
     ):
         """Create and register a revocation status list."""
         try:
@@ -585,7 +585,9 @@ class AnonCredsIssuer:
         issuer_id = rev_reg_def_entry.value_json["issuerId"]
 
         rev_status_list = RevocationStatusList.create(
-            rev_reg_def_id, rev_reg_def_entry.raw_value, issuer_id, timestamp
+            rev_reg_def_id,
+            rev_reg_def_entry.raw_value,
+            issuer_id,
         )
 
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
