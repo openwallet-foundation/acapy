@@ -12,7 +12,6 @@ from marshmallow.fields import Field
 from .util import epoch_to_str
 
 from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
-from ..revocation.models.revocation_registry import RevocationRegistry
 from ..wallet.did_posture import DIDPosture as DIDPostureEnum
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
@@ -160,17 +159,19 @@ class IndyRevRegSize(Range):
     """Validate value as indy revocation registry size."""
 
     EXAMPLE = 1000
+    MIN_SIZE = 4
+    MAX_SIZE = 32768
 
     def __init__(self):
         """Initializer."""
 
         super().__init__(
-            min=RevocationRegistry.MIN_SIZE,
-            max=RevocationRegistry.MAX_SIZE,
+            min=self.MIN_SIZE,
+            max=self.MAX_SIZE,
             error=(
                 "Value {input} must be an integer between "
-                f"{RevocationRegistry.MIN_SIZE} and "
-                f"{RevocationRegistry.MAX_SIZE} inclusively"
+                f"{self.MIN_SIZE} and "
+                f"{self.MAX_SIZE} inclusively"
             ),
         )
 
@@ -180,8 +181,8 @@ class IndyRevRegSize(Range):
         if type(value) != int:
             raise ValidationError(
                 "Value {input} must be an integer between "
-                f"{RevocationRegistry.MIN_SIZE} and "
-                f"{RevocationRegistry.MAX_SIZE} inclusively"
+                f"{self.MIN_SIZE} and "
+                f"{self.MAX_SIZE} inclusively"
             )
         super().__call__(value)
 
