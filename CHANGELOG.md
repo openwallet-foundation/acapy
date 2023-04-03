@@ -24,7 +24,7 @@ ACA-Py be included before the final 0.8.1 release is tagged.
   - Create UnitTests.md [\#2183](https://github.com/hyperledger/aries-cloudagent-python/pull/2183) [swcurran](https://github.com/swcurran)
   - Add link to recorded session about the ACA-Py Integration tests [\#2184](https://github.com/hyperledger/aries-cloudagent-python/pull/2184) [swcurran](https://github.com/swcurran)
 - Release management pull requests
-  - 0.8.1-rc2 [\#2197](https://github.com/hyperledger/aries-cloudagent-python/pull/2194) [swcurran](https://github.com/swcurran)
+  - 0.8.1-rc2 [\#2198](https://github.com/hyperledger/aries-cloudagent-python/pull/2198) [swcurran](https://github.com/swcurran)
   - 0.8.1-rc1 [\#2194](https://github.com/hyperledger/aries-cloudagent-python/pull/2194) [swcurran](https://github.com/swcurran)
   - 0.8.1-rc0 [\#2190](https://github.com/hyperledger/aries-cloudagent-python/pull/2190) [swcurran](https://github.com/swcurran)
 
