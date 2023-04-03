@@ -152,6 +152,8 @@ async def upgrade(
 ):
     """Perform upgradation steps."""
     try:
+        if profile and (settings or settings == {}):
+            raise UpgradeError("upgrade requires either profile or settings, not both.")
         if profile:
             root_profile = profile
             settings = profile.settings
@@ -304,7 +306,8 @@ async def upgrade(
                     f"{RECORD_TYPE_ACAPY_VERSION} storage record "
                     f"set to {upgrade_to_version}"
                 )
-        await root_profile.close()
+        if not profile:
+            await root_profile.close()
     except BaseError as e:
         raise UpgradeError(f"Error during upgrade: {e}")
 

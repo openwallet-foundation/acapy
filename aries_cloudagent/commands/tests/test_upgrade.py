@@ -376,6 +376,14 @@ class TestUpgrade(AsyncTestCase):
                 await test_module.upgrade(settings={})
             assert "No version configs found in" in str(ctx.exception)
 
+    async def test_upgrade_x_params(self):
+        with self.assertRaises(UpgradeError) as ctx:
+            await test_module.upgrade(profile=self.profile, settings={})
+        assert "upgrade requires either profile or settings" in str(ctx.exception)
+        with self.assertRaises(UpgradeError) as ctx:
+            await test_module.upgrade(profile=self.profile, settings={"...": "..."})
+        assert "upgrade requires either profile or settings" in str(ctx.exception)
+
     def test_main(self):
         with async_mock.patch.object(
             test_module, "__name__", "__main__"
