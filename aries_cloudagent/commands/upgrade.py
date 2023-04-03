@@ -152,13 +152,13 @@ async def upgrade(
 ):
     """Perform upgradation steps."""
     try:
-        if settings or settings == {}:
-            context_builder = DefaultContextBuilder(settings)
-            context = await context_builder.build_context()
-            root_profile, _ = await wallet_config(context)
         if profile:
             root_profile = profile
             settings = profile.settings
+        else:
+            context_builder = DefaultContextBuilder(settings)
+            context = await context_builder.build_context()
+            root_profile, _ = await wallet_config(context)
         version_upgrade_config_inst = VersionUpgradeConfig(
             settings.get("upgrade.config_path")
         )
@@ -168,8 +168,8 @@ async def upgrade(
         sorted_versions_found_in_config = sorted(
             versions_found_in_config, key=lambda x: package_version.parse(x)
         )
+        upgrade_from_version_storage = None
         upgrade_from_version_config = None
-        upgrade_from_version_setting = None
         upgrade_from_version = None
         async with root_profile.session() as session:
             storage = session.inject(BaseStorage)
@@ -177,41 +177,41 @@ async def upgrade(
                 version_storage_record = await storage.find_record(
                     type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
                 )
-                upgrade_from_version_config = version_storage_record.value
+                upgrade_from_version_storage = version_storage_record.value
             except StorageNotFoundError:
                 LOGGER.info("No ACA-Py version found in wallet storage.")
                 version_storage_record = None
 
             if "upgrade.from_version" in settings:
-                upgrade_from_version_setting = settings.get("upgrade.from_version")
+                upgrade_from_version_config = settings.get("upgrade.from_version")
                 LOGGER.info(
                     (
-                        f"Selecting {upgrade_from_version_setting} as "
+                        f"Selecting {upgrade_from_version_config} as "
                         "--from-version from the config."
                     )
                 )
 
         force_upgrade_flag = settings.get("upgrade.force_upgrade") or False
-        if upgrade_from_version_config and upgrade_from_version_setting:
+        if upgrade_from_version_storage and upgrade_from_version_config:
             if (
-                package_version.parse(upgrade_from_version_config)
-                > package_version.parse(upgrade_from_version_setting)
+                package_version.parse(upgrade_from_version_storage)
+                > package_version.parse(upgrade_from_version_config)
             ) and force_upgrade_flag:
-                upgrade_from_version = upgrade_from_version_setting
-            else:
                 upgrade_from_version = upgrade_from_version_config
+            else:
+                upgrade_from_version = upgrade_from_version_storage
         if (
             not upgrade_from_version
-            and not upgrade_from_version_config
-            and upgrade_from_version_setting
-        ):
-            upgrade_from_version = upgrade_from_version_setting
-        if (
-            not upgrade_from_version
+            and not upgrade_from_version_storage
             and upgrade_from_version_config
-            and not upgrade_from_version_setting
         ):
             upgrade_from_version = upgrade_from_version_config
+        if (
+            not upgrade_from_version
+            and upgrade_from_version_storage
+            and not upgrade_from_version_config
+        ):
+            upgrade_from_version = upgrade_from_version_storage
         if not upgrade_from_version:
             raise UpgradeError(
                 "No upgrade from version found in wallet or settings [--from-version]"
