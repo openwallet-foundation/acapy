@@ -12,6 +12,8 @@ from urllib.parse import urlparse
 
 from marshmallow import fields, validate
 
+from ...anoncreds.registry import AnonCredsRegistry
+
 from ...core.profile import Profile, ProfileSession
 from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.models.anoncreds_revocation import (
@@ -339,47 +341,54 @@ class IssuerRevRegRecord(BaseRecord):
                     self.revoc_reg_id, self.state
                 )
             )
+        anoncreds_registry = profile.inject(AnonCredsRegistry)
 
-        ledger = profile.inject(BaseLedger)
-        async with ledger:
-            try:
-                rev_entry_res = await ledger.send_revoc_reg_entry(
-                    self.revoc_reg_id,
-                    self.revoc_def_type,
-                    self._revoc_reg_entry.ser,
-                    self.issuer_id,
-                    write_ledger=write_ledger,
-                    endorser_did=endorser_did,
+        try:
+            rev_entry_res = (
+                await anoncreds_registry.register_revocation_registry_definition(
+                    profile,
+                    self.revoc_reg_def,  # TODO: is this the correct rev_reg_def?
+                    {},  # TODO: use options with endorser did and ...
                 )
-            except LedgerTransactionError as err:
-                if "InvalidClientRequest" in err.roll_up:
-                    # ... if the ledger write fails (with "InvalidClientRequest")
-                    # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
-                    #   Ledger rejected transaction request: client request invalid:
-                    #   InvalidClientRequest(...)
-                    # In this scenario we try to post a correction
-                    LOGGER.warn("Retry ledger update/fix due to error")
-                    LOGGER.warn(err)
-                    (_, _, res) = await self.fix_ledger_entry(
-                        profile,
-                        True,
-                        ledger.pool.genesis_txns,
-                    )
-                    rev_entry_res = {"result": res}
-                    LOGGER.warn("Ledger update/fix applied")
-                elif "InvalidClientTaaAcceptanceError" in err.roll_up:
-                    # if no write access (with "InvalidClientTaaAcceptanceError")
-                    # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
-                    #   Ledger rejected transaction request: client request invalid:
-                    #   InvalidClientTaaAcceptanceError(...)
-                    LOGGER.error("Ledger update failed due to TAA issue")
-                    LOGGER.error(err)
-                    raise err
-                else:
-                    # not sure what happened, raise an error
-                    LOGGER.error("Ledger update failed due to unknown issue")
-                    LOGGER.error(err)
-                    raise err
+            )
+            """rev_entry_res = await ledger.send_revoc_reg_entry(
+                self.revoc_reg_id,
+                self.revoc_def_type,
+                self._revoc_reg_entry.ser,
+                self.issuer_id,
+                write_ledger=write_ledger,
+                endorser_did=endorser_did,
+            )"""
+        except LedgerTransactionError as err:  # TODO: update errors
+            if "InvalidClientRequest" in err.roll_up:
+                # ... if the ledger write fails (with "InvalidClientRequest")
+                # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
+                #   Ledger rejected transaction request: client request invalid:
+                #   InvalidClientRequest(...)
+                # In this scenario we try to post a correction
+                LOGGER.warn("Retry ledger update/fix due to error")
+                LOGGER.warn(err)
+                """(_, _, res) = await self.fix_ledger_entry(
+                    profile,
+                    True,
+                    ledger.pool.genesis_txns,
+                )
+                rev_entry_res = {"result": res}"""
+                rev_entry_res = {"result": "res"}
+                LOGGER.warn("Ledger update/fix applied")
+            elif "InvalidClientTaaAcceptanceError" in err.roll_up:
+                # if no write access (with "InvalidClientTaaAcceptanceError")
+                # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
+                #   Ledger rejected transaction request: client request invalid:
+                #   InvalidClientTaaAcceptanceError(...)
+                LOGGER.error("Ledger update failed due to TAA issue")
+                LOGGER.error(err)
+                raise err
+            else:
+                # not sure what happened, raise an error
+                LOGGER.error("Ledger update failed due to unknown issue")
+                LOGGER.error(err)
+                raise err
         if self.state == IssuerRevRegRecord.STATE_POSTED:
             self.state = IssuerRevRegRecord.STATE_ACTIVE  # initial entry activates
             async with profile.session() as session:
