@@ -29,6 +29,7 @@ from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
 from ..commands.upgrade import (
     get_upgrade_version_list,
+    add_version_record,
     upgrade,
 )
 from ..core.profile import Profile
@@ -319,6 +320,7 @@ class Conductor:
         )
 
         # record ACA-Py version in Wallet, if needed
+        from_version_storage = None
         from_version = None
         agent_version = f"v{__version__}"
         async with self.root_profile.session() as session:
@@ -328,10 +330,10 @@ class Conductor:
                     type_filter=RECORD_TYPE_ACAPY_VERSION,
                     tag_query={},
                 )
-                from_version = record.value
+                from_version_storage = record.value
                 LOGGER.info(
                     "Existing acapy_version storage record found, "
-                    f"version set to {from_version}"
+                    f"version set to {from_version_storage}"
                 )
             except StorageNotFoundError:
                 LOGGER.warning("Wallet version storage record not found.")
@@ -341,15 +343,17 @@ class Conductor:
         )
 
         if force_upgrade_flag and from_version_config:
-            if from_version:
-                if package_version.parse(from_version) > package_version.parse(
+            if from_version_storage:
+                if package_version.parse(from_version_storage) > package_version.parse(
                     from_version_config
                 ):
                     from_version = from_version_config
+                else:
+                    from_version = from_version_storage
             else:
                 from_version = from_version_config
         else:
-            from_version = from_version or from_version_config
+            from_version = from_version_storage or from_version_config
         if not from_version:
             LOGGER.warning(
                 (
@@ -366,6 +370,8 @@ class Conductor:
         )
         if len(config_available_list) >= 1:
             await upgrade(profile=self.root_profile)
+        elif not (from_version_storage and from_version_storage == agent_version):
+            await add_version_record(profile=self.root_profile, version=agent_version)
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
