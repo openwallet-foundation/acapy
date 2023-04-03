@@ -326,8 +326,12 @@ class Conductor:
                     tag_query={},
                 )
                 from_version = record.value
+                LOGGER.info(
+                    "Existing acapy_version storage record found, "
+                    f"version set to {from_version}"
+                )
             except StorageNotFoundError:
-                LOGGER.warning(("Wallet version storage record not found."))
+                LOGGER.warning("Wallet version storage record not found.")
         from_version = from_version or self.root_profile.settings.get(
             "upgrade.config_path"
         )
@@ -340,7 +344,7 @@ class Conductor:
                 from_version != agent_version
                 or self.root_profile.settings.get("upgrade.force_upgrade")
             ):
-                await upgrade(self.root_profile.settings)
+                await upgrade(profile=self.root_profile)
         else:
             LOGGER.warning(
                 (

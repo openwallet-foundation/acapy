@@ -7,12 +7,20 @@ import yaml
 
 from configargparse import ArgumentParser
 from packaging import version as package_version
-from typing import Callable, Sequence, Optional, List
+from typing import (
+    Callable,
+    Sequence,
+    Optional,
+    List,
+    Union,
+    Mapping,
+    Any,
+)
 
 from ..core.profile import Profile
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
-from ..config.base import BaseError
+from ..config.base import BaseError, BaseSettings
 from ..config.util import common_config
 from ..config.wallet import wallet_config
 from ..messaging.models.base_record import BaseRecord
@@ -138,16 +146,23 @@ async def add_version_record(profile: Profile, version: str):
     LOGGER.info(f"{RECORD_TYPE_ACAPY_VERSION} storage record set to {version}")
 
 
-async def upgrade(settings: dict):
+async def upgrade(
+    settings: Optional[Union[Mapping[str, Any], BaseSettings]] = None,
+    profile: Optional[Profile] = None,
+):
     """Perform upgradation steps."""
-    context_builder = DefaultContextBuilder(settings)
-    context = await context_builder.build_context()
     try:
+        if settings or settings == {}:
+            context_builder = DefaultContextBuilder(settings)
+            context = await context_builder.build_context()
+            root_profile, _ = await wallet_config(context)
+        if profile:
+            root_profile = profile
+            settings = profile.settings
         version_upgrade_config_inst = VersionUpgradeConfig(
             settings.get("upgrade.config_path")
         )
         upgrade_configs = version_upgrade_config_inst.upgrade_configs
-        root_profile, _ = await wallet_config(context)
         upgrade_to_version = f"v{__version__}"
         versions_found_in_config = upgrade_configs.keys()
         sorted_versions_found_in_config = sorted(
@@ -314,7 +329,7 @@ def execute(argv: Sequence[str] = None):
     settings = get_settings(args)
     common_config(settings)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(upgrade(settings))
+    loop.run_until_complete(upgrade(settings=settings))
 
 
 def main():
