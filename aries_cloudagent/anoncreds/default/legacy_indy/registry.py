@@ -2,13 +2,17 @@
 import logging
 import re
 from asyncio import shield
-from typing import Optional, Pattern
+from typing import Optional, Pattern, Tuple
 from urllib.parse import urlparse
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
-from ....ledger.error import LedgerError, LedgerObjectAlreadyExistsError
+from ....ledger.error import (
+    LedgerError,
+    LedgerObjectAlreadyExistsError,
+    LedgerTransactionError,
+)
 from ....ledger.merkel_validation.constants import GET_SCHEMA
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
@@ -32,6 +36,8 @@ from ...models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefResult,
     RevRegDefState,
+    RevStatusList,
+    RevStatusListResult,
 )
 from ...models.anoncreds_schema import (
     GetSchemaResult,
@@ -414,5 +420,132 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Get a revocation list from the registry."""
 
     # TODO: determine keyword arguments
-    async def register_revocation_status_list(self):
+    async def register_revocation_status_list(
+        self,
+        profile: Profile,
+        rev_reg_def: RevRegDef,
+        rev_status_list: RevStatusList,
+        options: Optional[dict] = None,
+    ) -> RevStatusListResult:
         """Register a revocation list on the registry."""
+        ledger = profile.inject(BaseLedger)
+
+        # TODO Translate rev_status_list to rev_reg_entry
+        rev_reg_entry = {}
+
+        try:
+            rev_entry_res = await ledger.send_revoc_reg_entry(
+                rev_status_list.rev_reg_id,
+                rev_reg_def.type,
+                rev_reg_entry,
+                rev_status_list.issuer_id,
+                write_ledger=True,
+                endorser_did=None,
+            )
+        except LedgerTransactionError as err:  # TODO: update errors
+            if "InvalidClientRequest" in err.roll_up:
+                # ... if the ledger write fails (with "InvalidClientRequest")
+                # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
+                #   Ledger rejected transaction request: client request invalid:
+                #   InvalidClientRequest(...)
+                # In this scenario we try to post a correction
+                LOGGER.warn("Retry ledger update/fix due to error")
+                LOGGER.warn(err)
+                (_, _, res) = await self.fix_ledger_entry(
+                    profile,
+                    True,
+                    ledger.pool.genesis_txns,
+                )
+                rev_entry_res = {"result": res}
+                LOGGER.warn("Ledger update/fix applied")
+            elif "InvalidClientTaaAcceptanceError" in err.roll_up:
+                # if no write access (with "InvalidClientTaaAcceptanceError")
+                # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
+                #   Ledger rejected transaction request: client request invalid:
+                #   InvalidClientTaaAcceptanceError(...)
+                LOGGER.error("Ledger update failed due to TAA issue")
+                LOGGER.error(err)
+                raise err
+            else:
+                # not sure what happened, raise an error
+                LOGGER.error("Ledger update failed due to unknown issue")
+                LOGGER.error(err)
+                raise err
+
+        # TODO Fill this in with rev_entry_res and rev_status_list
+        return RevStatusListResult()
+
+    # TODO Adjust this to work here (moved from IssuerRevRegRecord)
+    async def fix_ledger_entry(
+        self,
+        profile: Profile,
+        apply_ledger_update: bool,
+        genesis_transactions: str,
+    ) -> Tuple[dict, dict, dict]:
+        """Fix the ledger entry to match wallet-recorded credentials."""
+        # get rev reg delta (revocations published to ledger)
+        ledger = profile.inject(BaseLedger)
+        async with ledger:
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(self.revoc_reg_id)
+
+        # get rev reg records from wallet (revocations and status)
+        recs = []
+        rec_count = 0
+        accum_count = 0
+        recovery_txn = {}
+        applied_txn = {}
+        async with profile.session() as session:
+            recs = await IssuerCredRevRecord.query_by_ids(
+                session, rev_reg_id=self.revoc_reg_id
+            )
+
+            revoked_ids = []
+            for rec in recs:
+                if rec.state == IssuerCredRevRecord.STATE_REVOKED:
+                    revoked_ids.append(int(rec.cred_rev_id))
+                    if int(rec.cred_rev_id) not in rev_reg_delta["value"]["revoked"]:
+                        # await rec.set_state(session, IssuerCredRevRecord.STATE_ISSUED)
+                        rec_count += 1
+
+            LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
+            LOGGER.debug(
+                ">>> rev_reg_record.revoc_reg_entry.value: %s",
+                self.revoc_reg_entry.value,
+            )
+            LOGGER.debug(
+                '>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value")
+            )
+
+            # if we had any revocation discrepencies, check the accumulator value
+            if rec_count > 0:
+                if (self.revoc_reg_entry.value and rev_reg_delta.get("value")) and not (
+                    self.revoc_reg_entry.value.accum == rev_reg_delta["value"]["accum"]
+                ):
+                    # self.revoc_reg_entry = rev_reg_delta["value"]
+                    # await self.save(session)
+                    accum_count += 1
+
+                calculated_txn = await generate_ledger_rrrecovery_txn(
+                    genesis_transactions,
+                    self.revoc_reg_id,
+                    revoked_ids,
+                )
+                recovery_txn = json.loads(calculated_txn.to_json())
+
+                LOGGER.debug(">>> apply_ledger_update = %s", apply_ledger_update)
+                if apply_ledger_update:
+                    ledger = session.inject_or(BaseLedger)
+                    if not ledger:
+                        reason = "No ledger available"
+                        if not session.context.settings.get_value("wallet.type"):
+                            reason += ": missing wallet-type?"
+                        raise LedgerError(reason=reason)
+
+                    async with ledger:
+                        ledger_response = await ledger.send_revoc_reg_entry(
+                            self.revoc_reg_id, "CL_ACCUM", recovery_txn
+                        )
+
+                    applied_txn = ledger_response["result"]
+
+        return (rev_reg_delta, recovery_txn, applied_txn)

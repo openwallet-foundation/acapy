@@ -20,6 +20,7 @@ from ...anoncreds.models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefSchema,
     RevStatusList,
+    RevStatusListResult,
     RevStatusListSchema,
 )
 from ...anoncreds.util import indy_client_dir
@@ -217,6 +218,7 @@ class IssuerRevRegRecord(BaseRecord):
 
         return result
 
+    # TODO Delete me; replaced by generate_and_publish
     async def generate_registry(self, profile: Profile):
         """Create the revocation registry definition and tails file."""
         if not self.tag:
@@ -267,6 +269,7 @@ class IssuerRevRegRecord(BaseRecord):
         async with profile.session() as session:
             await self.save(session, reason="Generated registry")
 
+    # TODO Delete me? Probably not needed anymore with the generate_and_publish
     async def set_tails_file_public_uri(self, profile: Profile, tails_file_uri: str):
         """Update tails file's publicly accessible URI."""
         if not (self.revoc_reg_def and self.revoc_reg_def.value.tails_location):
@@ -280,6 +283,7 @@ class IssuerRevRegRecord(BaseRecord):
         async with profile.session() as session:
             await self.save(session, reason="Set tails file public URI")
 
+    # TODO Delete me; replaced by generate_and_publish
     async def send_def(
         self,
         profile: Profile,
@@ -317,9 +321,10 @@ class IssuerRevRegRecord(BaseRecord):
     async def send_entry(
         self,
         profile: Profile,
+        options: Optional[dict] = None,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ) -> dict:
+    ) -> RevStatusListResult:
         """Send a registry entry to the ledger."""
         if not (
             self.revoc_reg_id
@@ -344,12 +349,10 @@ class IssuerRevRegRecord(BaseRecord):
         anoncreds_registry = profile.inject(AnonCredsRegistry)
 
         try:
-            rev_entry_res = (
-                await anoncreds_registry.register_revocation_registry_definition(
-                    profile,
-                    self.revoc_reg_def,  # TODO: is this the correct rev_reg_def?
-                    {},  # TODO: use options with endorser did and ...
-                )
+            rev_entry_res = await anoncreds_registry.register_revocation_status_list(
+                profile,
+                self.rev_status_list,  # TODO: is this the correct rev_reg_def?
+                options,
             )
             """rev_entry_res = await ledger.send_revoc_reg_entry(
                 self.revoc_reg_id,
