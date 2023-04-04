@@ -1,7 +1,8 @@
 """Legacy Indy Registry"""
+from asyncio import shield
+import json
 import logging
 import re
-from asyncio import shield
 from typing import Optional, Pattern, Tuple
 from urllib.parse import urlparse
 
@@ -19,32 +20,11 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ....multitenant.base import BaseMultitenantManager
-from ....revocation.error import RevocationError
 from ....revocation.anoncreds import AnonCredsRevocation
+from ....revocation.error import RevocationError
+from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
+from ....revocation.recover import generate_ledger_rrrecovery_txn
 from ....storage.error import StorageNotFoundError
-from ...issuer import AnonCredsIssuer, AnonCredsIssuerError
-from ...models.anoncreds_cred_def import (
-    CredDef,
-    CredDefState,
-    CredDefValue,
-    CredDefResult,
-    GetCredDefResult,
-)
-from ...models.anoncreds_revocation import (
-    GetRevStatusListResult,
-    AnonCredsRegistryGetRevocationRegistryDefinition,
-    RevRegDef,
-    RevRegDefResult,
-    RevRegDefState,
-    RevStatusList,
-    RevStatusListResult,
-)
-from ...models.anoncreds_schema import (
-    GetSchemaResult,
-    AnonCredsSchema,
-    SchemaResult,
-    SchemaState,
-)
 from ...base import (
     AnonCredsObjectAlreadyExists,
     AnonCredsObjectNotFound,
@@ -53,6 +33,30 @@ from ...base import (
     AnonCredsSchemaAlreadyExists,
     BaseAnonCredsRegistrar,
     BaseAnonCredsResolver,
+)
+from ...issuer import AnonCredsIssuer, AnonCredsIssuerError
+from ...models.anoncreds_cred_def import (
+    CredDef,
+    CredDefResult,
+    CredDefState,
+    CredDefValue,
+    GetCredDefResult,
+)
+from ...models.anoncreds_revocation import (
+    AnonCredsRegistryGetRevocationRegistryDefinition,
+    GetRevStatusListResult,
+    RevRegDef,
+    RevRegDefResult,
+    RevRegDefState,
+    RevStatusList,
+    RevStatusListResult,
+    RevStatusListState,
+)
+from ...models.anoncreds_schema import (
+    AnonCredsSchema,
+    GetSchemaResult,
+    SchemaResult,
+    SchemaState,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -419,7 +423,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     ) -> GetRevStatusListResult:
         """Get a revocation list from the registry."""
 
-    # TODO: determine keyword arguments
     async def register_revocation_status_list(
         self,
         profile: Profile,
@@ -428,10 +431,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         options: Optional[dict] = None,
     ) -> RevStatusListResult:
         """Register a revocation list on the registry."""
+        # TODO Handle multitenancy and multi-ledger (like in get cred def)
         ledger = profile.inject(BaseLedger)
 
-        # TODO Translate rev_status_list to rev_reg_entry
-        rev_reg_entry = {}
+        rev_reg_entry = {"value": {"accum": rev_status_list.current_accumulator}}
 
         try:
             rev_entry_res = await ledger.send_revoc_reg_entry(
@@ -442,7 +445,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 write_ledger=True,
                 endorser_did=None,
             )
-        except LedgerTransactionError as err:  # TODO: update errors
+        except LedgerTransactionError as err:
             if "InvalidClientRequest" in err.roll_up:
                 # ... if the ledger write fails (with "InvalidClientRequest")
                 # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
@@ -453,6 +456,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 LOGGER.warn(err)
                 (_, _, res) = await self.fix_ledger_entry(
                     profile,
+                    rev_status_list,
                     True,
                     ledger.pool.genesis_txns,
                 )
@@ -463,22 +467,33 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
                 #   Ledger rejected transaction request: client request invalid:
                 #   InvalidClientTaaAcceptanceError(...)
-                LOGGER.error("Ledger update failed due to TAA issue")
-                LOGGER.error(err)
-                raise err
+                LOGGER.exception("Ledger update failed due to TAA issue")
+                raise AnonCredsRegistrationError(
+                    "Ledger update failed due to TAA Issue"
+                ) from err
             else:
                 # not sure what happened, raise an error
-                LOGGER.error("Ledger update failed due to unknown issue")
-                LOGGER.error(err)
-                raise err
+                LOGGER.exception("Ledger update failed due to unknown issue")
+                raise AnonCredsRegistrationError(
+                    "Ledger update failed due to unknown issue"
+                ) from err
 
-        # TODO Fill this in with rev_entry_res and rev_status_list
-        return RevStatusListResult()
+        return RevStatusListResult(
+            job_id=None,
+            revocation_status_list_state=RevStatusListState(
+                state=RevStatusListState.STATE_FINISHED,
+                revocation_status_list=rev_status_list,
+            ),
+            registration_metadata={},
+            revocation_status_list_metadata={
+                "seqNo": rev_entry_res["result"]["txnMetadata"]["seqNo"],
+            },
+        )
 
-    # TODO Adjust this to work here (moved from IssuerRevRegRecord)
     async def fix_ledger_entry(
         self,
         profile: Profile,
+        rev_status_list: RevStatusList,
         apply_ledger_update: bool,
         genesis_transactions: str,
     ) -> Tuple[dict, dict, dict]:
@@ -486,7 +501,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         # get rev reg delta (revocations published to ledger)
         ledger = profile.inject(BaseLedger)
         async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(self.revoc_reg_id)
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                rev_status_list.rev_reg_id
+            )
 
         # get rev reg records from wallet (revocations and status)
         recs = []
@@ -496,7 +513,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         applied_txn = {}
         async with profile.session() as session:
             recs = await IssuerCredRevRecord.query_by_ids(
-                session, rev_reg_id=self.revoc_reg_id
+                session, rev_reg_id=rev_status_list.rev_reg_id
             )
 
             revoked_ids = []
@@ -509,8 +526,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
             LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
             LOGGER.debug(
-                ">>> rev_reg_record.revoc_reg_entry.value: %s",
-                self.revoc_reg_entry.value,
+                ">>> rev_status_list.revocation_list: %s",
+                rev_status_list.revocation_list,
             )
             LOGGER.debug(
                 '>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value")
@@ -518,8 +535,11 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
             # if we had any revocation discrepencies, check the accumulator value
             if rec_count > 0:
-                if (self.revoc_reg_entry.value and rev_reg_delta.get("value")) and not (
-                    self.revoc_reg_entry.value.accum == rev_reg_delta["value"]["accum"]
+                if (
+                    rev_status_list.current_accumulator and rev_reg_delta.get("value")
+                ) and (
+                    rev_status_list.current_accumulator
+                    != rev_reg_delta["value"]["accum"]
                 ):
                     # self.revoc_reg_entry = rev_reg_delta["value"]
                     # await self.save(session)
@@ -527,7 +547,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
                 calculated_txn = await generate_ledger_rrrecovery_txn(
                     genesis_transactions,
-                    self.revoc_reg_id,
+                    rev_status_list.rev_reg_id,
                     revoked_ids,
                 )
                 recovery_txn = json.loads(calculated_txn.to_json())
@@ -543,7 +563,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
                     async with ledger:
                         ledger_response = await ledger.send_revoc_reg_entry(
-                            self.revoc_reg_id, "CL_ACCUM", recovery_txn
+                            rev_status_list.rev_reg_id, "CL_ACCUM", recovery_txn
                         )
 
                     applied_txn = ledger_response["result"]

@@ -820,6 +820,8 @@ class AnonCredsIssuer:
 
         """
 
+        # TODO This method should return the old status list, the new status list,
+        # and the list of changed indices
         delta = None
         failed_crids = set()
         max_attempt = 5

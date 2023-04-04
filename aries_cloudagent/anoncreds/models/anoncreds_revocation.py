@@ -345,11 +345,9 @@ class RevStatusListState(BaseModel):
     def __init__(
         self,
         state: str,
-        revocation_status_list_id: str,
         revocation_status_list: RevStatusList,
     ):
         self.state = state
-        self.revocation_status_list_id = revocation_status_list_id
         self.revocation_status_list = revocation_status_list
 
 
@@ -372,11 +370,8 @@ class RevStatusListStateSchema(BaseModelSchema):
             ]
         )
     )
-    revocation_status_list_id = fields.Str(
-        description="revocation registry definition id"
-    )
     revocation_status_list = fields.Nested(
-        RevStatusListSchema(), description="revocation registry definition"
+        RevStatusListSchema(), description="revocation list"
     )
 
 

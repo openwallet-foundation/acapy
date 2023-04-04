@@ -149,6 +149,7 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
     async def register_revocation_status_list(
         self,
         profile: Profile,
+        rev_reg_def: RevRegDef,
         rev_status_list: RevStatusList,
         options: Optional[dict] = None,
     ) -> RevStatusListResult:

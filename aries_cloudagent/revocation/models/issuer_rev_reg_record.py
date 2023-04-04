@@ -1,20 +1,17 @@
 """Issuer revocation registry storage handling."""
 
+from functools import total_ordering
 import json
 import logging
-import uuid
-from functools import total_ordering
 from os.path import join
 from pathlib import Path
 from shutil import move
-from typing import Any, Mapping, Sequence, Union, Tuple, Optional
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
+import uuid
 
 from marshmallow import fields, validate
 
-from ...anoncreds.registry import AnonCredsRegistry
-
-from ...core.profile import Profile, ProfileSession
 from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.models.anoncreds_revocation import (
     RevRegDef,
@@ -23,19 +20,16 @@ from ...anoncreds.models.anoncreds_revocation import (
     RevStatusListResult,
     RevStatusListSchema,
 )
+from ...anoncreds.registry import AnonCredsRegistry
 from ...anoncreds.util import indy_client_dir
+from ...core.profile import Profile, ProfileSession
 from ...ledger.base import BaseLedger
-from ...ledger.error import LedgerError, LedgerTransactionError
+from ...ledger.error import LedgerError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ...messaging.valid import (
-    BASE58_SHA256_HASH,
-    UUIDFour,
-)
+from ...messaging.valid import BASE58_SHA256_HASH, UUIDFour
 from ...tails.base import BaseTailsServer
-
 from ..error import RevocationError
 from ..recover import generate_ledger_rrrecovery_txn
-
 from .issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation_registry import RevocationRegistry
 
@@ -322,8 +316,8 @@ class IssuerRevRegRecord(BaseRecord):
         self,
         profile: Profile,
         options: Optional[dict] = None,
-        write_ledger: bool = True,
-        endorser_did: str = None,
+        write_ledger: bool = True,  # TODO Delete me
+        endorser_did: str = None,  # TODO Delete me
     ) -> RevStatusListResult:
         """Send a registry entry to the ledger."""
         if not (
@@ -346,54 +340,19 @@ class IssuerRevRegRecord(BaseRecord):
                     self.revoc_reg_id, self.state
                 )
             )
-        anoncreds_registry = profile.inject(AnonCredsRegistry)
 
-        try:
-            rev_entry_res = await anoncreds_registry.register_revocation_status_list(
-                profile,
-                self.rev_status_list,  # TODO: is this the correct rev_reg_def?
-                options,
-            )
-            """rev_entry_res = await ledger.send_revoc_reg_entry(
-                self.revoc_reg_id,
-                self.revoc_def_type,
-                self._revoc_reg_entry.ser,
-                self.issuer_id,
-                write_ledger=write_ledger,
-                endorser_did=endorser_did,
-            )"""
-        except LedgerTransactionError as err:  # TODO: update errors
-            if "InvalidClientRequest" in err.roll_up:
-                # ... if the ledger write fails (with "InvalidClientRequest")
-                # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
-                #   Ledger rejected transaction request: client request invalid:
-                #   InvalidClientRequest(...)
-                # In this scenario we try to post a correction
-                LOGGER.warn("Retry ledger update/fix due to error")
-                LOGGER.warn(err)
-                """(_, _, res) = await self.fix_ledger_entry(
-                    profile,
-                    True,
-                    ledger.pool.genesis_txns,
-                )
-                rev_entry_res = {"result": res}"""
-                rev_entry_res = {"result": "res"}
-                LOGGER.warn("Ledger update/fix applied")
-            elif "InvalidClientTaaAcceptanceError" in err.roll_up:
-                # if no write access (with "InvalidClientTaaAcceptanceError")
-                # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
-                #   Ledger rejected transaction request: client request invalid:
-                #   InvalidClientTaaAcceptanceError(...)
-                LOGGER.error("Ledger update failed due to TAA issue")
-                LOGGER.error(err)
-                raise err
-            else:
-                # not sure what happened, raise an error
-                LOGGER.error("Ledger update failed due to unknown issue")
-                LOGGER.error(err)
-                raise err
+        anoncreds_registry = profile.inject(AnonCredsRegistry)
+        rev_entry_res = await anoncreds_registry.register_revocation_status_list(
+            profile,
+            self.revoc_reg_def,
+            self.rev_status_list,
+            options,
+        )
+
         if self.state == IssuerRevRegRecord.STATE_POSTED:
-            self.state = IssuerRevRegRecord.STATE_ACTIVE  # initial entry activates
+            self.state = (
+                IssuerRevRegRecord.STATE_ACTIVE
+            )  # registering rev status list activates
             async with profile.session() as session:
                 await self.save(
                     session, reason="Published initial revocation registry entry"
