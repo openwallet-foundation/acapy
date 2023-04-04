@@ -2021,7 +2021,7 @@ class EndorsementGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_UPGRADE)
+@group(CAT_START, CAT_UPGRADE)
 class UpgradeGroup(ArgumentGroup):
     """ACA-Py Upgrade process settings."""
 
