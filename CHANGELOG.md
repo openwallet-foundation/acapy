@@ -1,19 +1,22 @@
-# 0.8.1-rc1
+# 0.8.1-rc2
 
-## March 31, 2023
+## April 3, 2023
 
 An urgent update to Release 0.8.1 to address an inability to execute the
 `upgrade` command. The `upgrade` command is needed for Pull Request [\#2116] -
 "UPGRADE: Fix multi-use invitation performance", which is necessary for (at
-least) deployments of ACA-Py as a mediator. The important update is Pull Request
-[\#2185] (listed below).
+least) deployments of ACA-Py as a mediator. The important updates are Pull
+Requests [\#2185] and [\#2196] (listed below). Documentation on upgrades in
+ACA-Py be included before the final 0.8.1 release is tagged.
 
 [\#2116]: https://github.com/hyperledger/aries-cloudagent-python/pull/2116
 [\#2185]: https://github.com/hyperledger/aries-cloudagent-python/pull/2185
+[\#2196]: https://github.com/hyperledger/aries-cloudagent-python/pull/2196
 
 ### Categorized List of Pull Requests
 
 - Fixes for the `upgrade` Command
+  - Fix: Indy WalletAlreadyOpenedError during upgrade process [\#2196](https://github.com/hyperledger/aries-cloudagent-python/pull/2196) [shaangill025](https://github.com/shaangill025)
   - Fix: Resolve Upgrade Config file in Container [\#2193](https://github.com/hyperledger/aries-cloudagent-python/pull/2193) [shaangill025](https://github.com/shaangill025)
   - Update and automate ACA-Py upgrade process [\#2185](https://github.com/hyperledger/aries-cloudagent-python/pull/2185) [shaangill025](https://github.com/shaangill025)
   - Adds the upgrade command YML file to the PyPi Release [\#2179](https://github.com/hyperledger/aries-cloudagent-python/pull/2179) [swcurran](https://github.com/swcurran)
@@ -21,6 +24,7 @@ least) deployments of ACA-Py as a mediator. The important update is Pull Request
   - Create UnitTests.md [\#2183](https://github.com/hyperledger/aries-cloudagent-python/pull/2183) [swcurran](https://github.com/swcurran)
   - Add link to recorded session about the ACA-Py Integration tests [\#2184](https://github.com/hyperledger/aries-cloudagent-python/pull/2184) [swcurran](https://github.com/swcurran)
 - Release management pull requests
+  - 0.8.1-rc2 [\#2198](https://github.com/hyperledger/aries-cloudagent-python/pull/2198) [swcurran](https://github.com/swcurran)
   - 0.8.1-rc1 [\#2194](https://github.com/hyperledger/aries-cloudagent-python/pull/2194) [swcurran](https://github.com/swcurran)
   - 0.8.1-rc0 [\#2190](https://github.com/hyperledger/aries-cloudagent-python/pull/2190) [swcurran](https://github.com/swcurran)
 
