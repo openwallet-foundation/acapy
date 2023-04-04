@@ -119,7 +119,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             test_module,
             "get_upgrade_version_list",
             async_mock.MagicMock(
-                return_value=["v0.7.4", "0.7.5", "v0.8.0-rc1", "v8.0.0", "v0.8.1-rc1"]
+                return_value=["v0.7.4", "0.7.5", "v0.8.0-rc1", "v8.0.0", "v0.8.1-rc2"]
             ),
         ), async_mock.patch.object(
             test_module,
