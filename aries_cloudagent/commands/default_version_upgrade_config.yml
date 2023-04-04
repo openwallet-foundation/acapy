@@ -1,4 +1,4 @@
-v0.8.0:
+v0.8.1:
   resave_records:
     base_record_path:
       - "aries_cloudagent.connections.models.conn_record.ConnRecord"
