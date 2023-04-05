@@ -22,7 +22,7 @@ from .error import (
     StorageSearchError,
 )
 from .record import StorageRecord
-from ..anoncreds.sdk.wallet_setup import IndyOpenWallet
+from ..indy.sdk.wallet_setup import IndyOpenWallet
 
 LOGGER = logging.getLogger(__name__)
 

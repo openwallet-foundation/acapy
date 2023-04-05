@@ -2,6 +2,8 @@ import pytest
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
 
+from ...revocation.anoncreds import AnonCredsRevocation
+
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...ledger.multiple_ledger.ledger_requests_executor import (
@@ -15,7 +17,6 @@ from ..error import (
     RevocationNotSupportedError,
     RevocationRegistryBadSizeError,
 )
-from ..indy import AnonCredsRevocation
 from ..models.issuer_rev_reg_record import DEFAULT_REGISTRY_SIZE, IssuerRevRegRecord
 from ..models.revocation_registry import RevocationRegistry
 

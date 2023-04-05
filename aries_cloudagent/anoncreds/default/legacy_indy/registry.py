@@ -58,6 +58,7 @@ from ...models.anoncreds_schema import (
     SchemaResult,
     SchemaState,
 )
+from base58 import alphabet
 
 LOGGER = logging.getLogger(__name__)
 
@@ -69,8 +70,25 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """LegacyIndyRegistry"""
 
     def __init__(self):
-        self._supported_identifiers_regex = re.compile(r"^(?!did).*$")
-        # TODO: fix regex (too general)
+        B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
+        INDY_DID = rf"^(did:sov:)?[{B58}]{{21,22}}$"
+        INDY_SCHEMA_ID = rf"^[{B58}]{{21,22}}:2:.+:[0-9.]+$"
+        INDY_CRED_DEF_ID = (
+            rf"^([{B58}]{{21,22}})"  # issuer DID
+            f":3"  # cred def id marker
+            f":CL"  # sig alg
+            rf":(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))"  # schema txn / id
+            f":(.+)?$"  # tag
+        )
+        INDY_REV_REG_DEF_ID = (
+            rf"^([{B58}]{{21,22}}):4:"
+            rf"([{B58}]{{21,22}}):3:"
+            rf"CL:(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))(:.+)?:"
+            rf"CL_ACCUM:(.+$)"
+        )
+        self._supported_identifiers_regex = re.compile(
+            rf"{INDY_DID}|{INDY_SCHEMA_ID}|{INDY_CRED_DEF_ID}|{INDY_REV_REG_DEF_ID}"
+        )
 
     @property
     def supported_identifiers_regex(self) -> Pattern:
