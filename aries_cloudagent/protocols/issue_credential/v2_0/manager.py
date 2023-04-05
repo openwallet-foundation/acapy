@@ -519,7 +519,9 @@ class V20CredManager:
                 )
 
         if len(issue_formats) == 0:
-            raise V20CredManagerError("Unable to issue credential. No supported formats")
+            raise V20CredManagerError(
+                "Unable to issue credential. No supported formats"
+            )
 
         cred_issue_message = V20CredIssue(
             replacement_id=replacement_id,

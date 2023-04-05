@@ -12,7 +12,9 @@ class TestArgParse(AsyncTestCase):
         parser = argparse.create_argument_parser()
 
         groups = (
-            g for g in argparse.group.get_registered() if g is not argparse.TransportGroup
+            g
+            for g in argparse.group.get_registered()
+            if g is not argparse.TransportGroup
         )
         argparse.load_argument_groups(parser, *groups)
 
@@ -53,10 +55,14 @@ class TestArgParse(AsyncTestCase):
 
         result = parser.parse_args(
             [
-                "--auto-remove-cred-exch-records-issuer", "True",
-                "--auto-remove-cred-exch-records-holder", "true",
-                "--auto-remove-pres-exch-records-verifier", "TRUE",
-                "--auto-remove-pres-exch-records-prover", "t",
+                "--auto-remove-cred-exch-records-issuer",
+                "True",
+                "--auto-remove-cred-exch-records-holder",
+                "true",
+                "--auto-remove-pres-exch-records-verifier",
+                "TRUE",
+                "--auto-remove-pres-exch-records-prover",
+                "t",
             ]
         )
 
@@ -70,10 +76,14 @@ class TestArgParse(AsyncTestCase):
 
         result = parser.parse_args(
             [
-                "--auto-remove-cred-exch-records-issuer", "Yes",
-                "--auto-remove-cred-exch-records-holder", "yes",
-                "--auto-remove-pres-exch-records-verifier", "YES",
-                "--auto-remove-pres-exch-records-prover", "1",
+                "--auto-remove-cred-exch-records-issuer",
+                "Yes",
+                "--auto-remove-cred-exch-records-holder",
+                "yes",
+                "--auto-remove-pres-exch-records-verifier",
+                "YES",
+                "--auto-remove-pres-exch-records-prover",
+                "1",
             ]
         )
 
@@ -87,10 +97,14 @@ class TestArgParse(AsyncTestCase):
 
         result = parser.parse_args(
             [
-                "--auto-remove-cred-exch-records-issuer", "False",
-                "--auto-remove-cred-exch-records-holder", "false",
-                "--auto-remove-pres-exch-records-verifier", "FALSE",
-                "--auto-remove-pres-exch-records-prover", "f",
+                "--auto-remove-cred-exch-records-issuer",
+                "False",
+                "--auto-remove-cred-exch-records-holder",
+                "false",
+                "--auto-remove-pres-exch-records-verifier",
+                "FALSE",
+                "--auto-remove-pres-exch-records-prover",
+                "f",
             ]
         )
 
@@ -104,10 +118,14 @@ class TestArgParse(AsyncTestCase):
 
         result = parser.parse_args(
             [
-                "--auto-remove-cred-exch-records-issuer", "No",
-                "--auto-remove-cred-exch-records-holder", "no",
-                "--auto-remove-pres-exch-records-verifier", "NO",
-                "--auto-remove-pres-exch-records-prover", "0",
+                "--auto-remove-cred-exch-records-issuer",
+                "No",
+                "--auto-remove-cred-exch-records-holder",
+                "no",
+                "--auto-remove-pres-exch-records-verifier",
+                "NO",
+                "--auto-remove-pres-exch-records-prover",
+                "0",
             ]
         )
 
@@ -118,7 +136,6 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("auto_remove_cred_exch_records_holder") is False
         assert settings.get("auto_remove_pres_exch_records_verifier") is False
         assert settings.get("auto_remove_pres_exch_records_prover") is False
-
 
     async def test_transport_settings(self):
         """Test required argument parsing."""
@@ -608,6 +625,8 @@ class TestArgParse(AsyncTestCase):
         assert supported_regex
         assert supported_regex == ["regex"]
 
-        result = parser.parse_args(["-e", "test", "--universal-resolver-regex", "regex"])
+        result = parser.parse_args(
+            ["-e", "test", "--universal-resolver-regex", "regex"]
+        )
         with self.assertRaises(argparse.ArgsParseError):
             group.get_settings(result)

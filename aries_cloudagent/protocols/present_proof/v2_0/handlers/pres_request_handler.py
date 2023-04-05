@@ -56,7 +56,9 @@ class V20PresRequestHandler(BaseHandler):
             )
 
         connection_id = (
-            context.connection_record.connection_id if context.connection_record else None
+            context.connection_record.connection_id
+            if context.connection_record
+            else None
         )
 
         profile = context.profile
@@ -86,7 +88,9 @@ class V20PresRequestHandler(BaseHandler):
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
                 ),
-                auto_remove=context.settings.get("auto_remove_pres_exch_records_prover"),
+                auto_remove=context.settings.get(
+                    "auto_remove_pres_exch_records_prover"
+                ),
                 trace=(context.message._trace is not None),
             )
 

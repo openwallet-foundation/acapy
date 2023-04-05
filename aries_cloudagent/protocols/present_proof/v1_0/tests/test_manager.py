@@ -365,7 +365,10 @@ class TestPresentationManager(AsyncTestCase):
             PresentationProposal, "serialize", autospec=True
         ):
             exchange = await self.manager.create_exchange_for_proposal(
-                CONN_ID, proposal, auto_present=None, auto_remove=True,
+                CONN_ID,
+                proposal,
+                auto_present=None,
+                auto_remove=True,
             )
             save_ex.assert_called_once()
 
@@ -425,7 +428,9 @@ class TestPresentationManager(AsyncTestCase):
         with async_mock.patch.object(
             V10PresentationExchange, "save", autospec=True
         ) as save_ex:
-            exchange = await self.manager.create_exchange_for_request(CONN_ID, pres_req, auto_remove=True)
+            exchange = await self.manager.create_exchange_for_request(
+                CONN_ID, pres_req, auto_remove=True
+            )
             save_ex.assert_called_once()
 
             assert exchange.thread_id == pres_req._thread_id
