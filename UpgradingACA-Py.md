@@ -36,24 +36,28 @@ only once.
 
 In some cases, it may be necessary to do an offline upgrade, where ACA-Py is
 taken off line temporarily, the database upgraded explicitly, and then
-ACA-Py re-deployed as normal. As yet, we do not know of any cases of this, but
+ACA-Py re-deployed as normal. As yet, we do not have any use cases for this, but
 those deploying ACA-Py should be aware of this possibility. For example,
 we may at some point need an upgrade that **MUST NOT** be executed by more
 than one ACA-Py instance. In that case, a "normal" upgrade could be dangerous
 for deployments on container orchestration platforms like Kubernetes.
 
-If the Maintainers of ACA-Py recognize a case where ACA-Py must be upgraded while
-offline, a new Upgrade feature will be added that will prevent the "auto upgrade"
-process from executing. See [Issue XXXX] for the status of that feature.
+If the Maintainers of ACA-Py recognize a case where ACA-Py must be upgraded
+while offline, a new Upgrade feature will be added that will prevent the "auto
+upgrade" process from executing. See [Issue 2201] and [Pull Request 2204] for
+the status of that feature.
 
-Those deploying ACA-Py upgrades for production installations should check in
-each [CHANGELOG.md] release entry about what upgrades (if any) will be run when
-upgrading to that version, and consider how they want those upgrades to run in
-their ACA-Py installation. In most cases, simply deploying the new version should
-be OK. If the number of records to be upgraded is high (such as a "resave
-connections" upgrade to a deployment with many, many connections), you may want
-to do a test upgrade offline first, to see if there is likely to be a service
-disruption during the upgrade. Plan accordingly!
+[Issue 2201]: https://github.com/hyperledger/aries-cloudagent-python/issues/2201
+[Pull Request 2204]: https://github.com/hyperledger/aries-cloudagent-python/pull/2204
+
+Those deploying ACA-Py upgrades for production installations (forced offline or
+not) should check in each [CHANGELOG.md] release entry about what upgrades (if
+any) will be run when upgrading to that version, and consider how they want
+those upgrades to run in their ACA-Py installation. In most cases, simply
+deploying the new version should be OK. If the number of records to be upgraded
+is high (such as a "resave connections" upgrade to a deployment with many, many
+connections), you may want to do a test upgrade offline first, to see if there
+is likely to be a service disruption during the upgrade. Plan accordingly!
 
 ## Exceptions
 
@@ -67,21 +71,27 @@ Versions prior to ACA-Py 0.8.1 did not automatically populate the secure storage
 of ACA-Py 0.8.1, the version record is added immediately after the secure
 storage database is created. If you are upgrading to ACA-Py 0.8.1 or later, and
 there is no version record in the secure storage, ACA-Py will assume you are
-running version 0.7.5, and execute the upgrade from that version to the current
-one. The choice of 0.7.5 as the default is safe because the same upgrades will
-be run of any version 0.7.5 and earlier, as can be seen in the [Upgrade
-Definition YML file]. Thus, even if you are really upgrading from (for example)
-0.6.2, the same upgrades are needed as from 0.7.5.
+running version 0.7.5, and execute the upgrades from version 0.7.5 to the
+current version. The choice of 0.7.5 as the default is safe because the same
+upgrades will be run on any version of ACA-Py up to and including 0.7.5, as can
+be seen in the [Upgrade Definition YML file]. Thus, even if you are really
+upgrading from (for example) 0.6.2, the same upgrades are needed as from 0.7.5
+to a post-0.8.1 version.
 
 ### Forcing an upgrade
 
-If you would like to force an upgrade from a given version, a pair of ACA-Py
-configuration arguments can be used together. If you specify "`--from-version
+If you need to force an upgrade from a given version of ACA-Py, a pair of
+configuration options can be used together. If you specify "`--from-version
 <ver>`" and "`--force-upgrade`", the `--from-version` version will override what
 is found (or not) in secure storage, and the upgrade will be from that version
-to the current one. However, given the few upgrades defined prior to version
-0.8.1, and the "[no version in secure storage](#no-version-in-secure-storage)"
-handling, it is unlikely this feature will ever be needed.
+to the current one. For example, if you have "0.8.1" in your "secure storage"
+version, and you know that the upgrade for version 0.8.1 has not been executed,
+you can use the parameters `--from-version v0.7.5 --force-upgrade` to force the
+upgrade on next starting an ACA-Py instance. However, given the few upgrades
+defined prior to version 0.8.1, and the "[no version in secure
+storage](#no-version-in-secure-storage)" handling, it is unlikely this
+capability will ever be needed. We expect to deprecate and remove these
+options in future (post-0.8.1) ACA-Py versions.
 
 [CHANGELOG.md]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/CHANGELOG.md
 [version.py]: https://github.com/hyperledger/aries-cloudagent-python/blob/main/aries_cloudagent/version.py
