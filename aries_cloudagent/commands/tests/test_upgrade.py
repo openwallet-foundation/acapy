@@ -46,7 +46,7 @@ class TestUpgrade(AsyncTestCase):
             ConnRecord, "save", async_mock.CoroutineMock()
         ):
             await test_module.upgrade(
-                {
+                settings={
                     "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
                     "upgrade.from_version": "v0.7.2",
                 }
@@ -69,29 +69,21 @@ class TestUpgrade(AsyncTestCase):
         ), async_mock.patch.object(
             ConnRecord, "save", async_mock.CoroutineMock()
         ):
-            await test_module.upgrade({})
+            await test_module.upgrade(settings={})
 
     async def test_upgrade_from_version(self):
+        self.profile.settings.extend(
+            {
+                "upgrade.from_version": "v0.7.2",
+            }
+        )
         with async_mock.patch.object(
-            test_module,
-            "wallet_config",
-            async_mock.CoroutineMock(
-                return_value=(
-                    self.profile,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
-            ),
-        ), async_mock.patch.object(
             ConnRecord,
             "query",
             async_mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.CoroutineMock()
-        ):
+        ), async_mock.patch.object(ConnRecord, "save", async_mock.CoroutineMock()):
             await test_module.upgrade(
-                {
-                    "upgrade.from_version": "v0.7.2",
-                }
+                profile=self.profile,
             )
 
     async def test_upgrade_callable(self):
@@ -125,7 +117,7 @@ class TestUpgrade(AsyncTestCase):
             ),
         ):
             await test_module.upgrade(
-                {
+                settings={
                     "upgrade.from_version": "v0.7.2",
                 }
             )
@@ -146,7 +138,7 @@ class TestUpgrade(AsyncTestCase):
             ),
         ):
             await test_module.upgrade(
-                {
+                settings={
                     "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
                 }
             )
@@ -174,7 +166,7 @@ class TestUpgrade(AsyncTestCase):
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
-                    {
+                    settings={
                         "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
                     }
                 )
@@ -213,7 +205,7 @@ class TestUpgrade(AsyncTestCase):
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
-                    {
+                    settings={
                         "upgrade.from_version": "v0.6.0",
                     }
                 )
@@ -246,7 +238,7 @@ class TestUpgrade(AsyncTestCase):
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
-                    {
+                    settings={
                         "upgrade.from_version": "v0.7.2",
                     }
                 )
@@ -311,7 +303,7 @@ class TestUpgrade(AsyncTestCase):
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
-                    {
+                    settings={
                         "upgrade.from_version": "v0.7.2",
                     }
                 )
@@ -350,7 +342,7 @@ class TestUpgrade(AsyncTestCase):
             ),
         ):
             await test_module.upgrade(
-                {
+                settings={
                     "upgrade.from_version": "v0.7.0",
                     "upgrade.force_upgrade": True,
                 }
@@ -381,8 +373,16 @@ class TestUpgrade(AsyncTestCase):
             async_mock.MagicMock(return_value={}),
         ):
             with self.assertRaises(UpgradeError) as ctx:
-                await test_module.upgrade({})
+                await test_module.upgrade(settings={})
             assert "No version configs found in" in str(ctx.exception)
+
+    async def test_upgrade_x_params(self):
+        with self.assertRaises(UpgradeError) as ctx:
+            await test_module.upgrade(profile=self.profile, settings={})
+        assert "upgrade requires either profile or settings" in str(ctx.exception)
+        with self.assertRaises(UpgradeError) as ctx:
+            await test_module.upgrade(profile=self.profile, settings={"...": "..."})
+        assert "upgrade requires either profile or settings" in str(ctx.exception)
 
     def test_main(self):
         with async_mock.patch.object(
