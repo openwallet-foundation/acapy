@@ -72,7 +72,9 @@ class V20CredManager:
 
         """
         if auto_remove is None:
-            auto_remove = not self._profile.settings.get("preserve_exchange_records")
+            auto_remove = self._profile.settings.get(
+                "auto_remove_cred_exch_records_issuer"
+            )
         cred_ex_record = V20CredExRecord(
             connection_id=connection_id,
             verification_method=verification_method,
@@ -116,7 +118,9 @@ class V20CredManager:
         """
 
         if auto_remove is None:
-            auto_remove = not self._profile.settings.get("preserve_exchange_records")
+            auto_remove = self._profile.settings.get(
+                "auto_remove_cred_exch_records_issuer"
+            )
         cred_ex_record = V20CredExRecord(
             connection_id=connection_id,
             initiator=V20CredExRecord.INITIATOR_SELF,
@@ -175,7 +179,9 @@ class V20CredManager:
             auto_issue=self._profile.settings.get(
                 "debug.auto_respond_credential_request"
             ),
-            auto_remove=not self._profile.settings.get("preserve_exchange_records"),
+            auto_remove=self._profile.settings.get(
+                "auto_remove_cred_exch_records_holder"
+            ),
             trace=(cred_proposal_message._trace is not None),
         )
 
@@ -298,7 +304,9 @@ class V20CredManager:
                 thread_id=cred_offer_message._thread_id,
                 initiator=V20CredExRecord.INITIATOR_EXTERNAL,
                 role=V20CredExRecord.ROLE_HOLDER,
-                auto_remove=not self._profile.settings.get("preserve_exchange_records"),
+                auto_remove=self._profile.settings.get(
+                    "auto_remove_cred_exch_records_holder"
+                ),
                 trace=(cred_offer_message._trace is not None),
             )
 
@@ -433,8 +441,8 @@ class V20CredManager:
                     thread_id=cred_request_message._thread_id,
                     initiator=V20CredExRecord.INITIATOR_EXTERNAL,
                     role=V20CredExRecord.ROLE_ISSUER,
-                    auto_remove=not self._profile.settings.get(
-                        "preserve_exchange_records"
+                    auto_remove=self._profile.settings.get(
+                        "auto_remove_cred_exch_records_holder"
                     ),
                     trace=(cred_request_message._trace is not None),
                     auto_issue=self._profile.settings.get(
@@ -511,9 +519,7 @@ class V20CredManager:
                 )
 
         if len(issue_formats) == 0:
-            raise V20CredManagerError(
-                "Unable to issue credential. No supported formats"
-            )
+            raise V20CredManagerError("Unable to issue credential. No supported formats")
 
         cred_issue_message = V20CredIssue(
             replacement_id=replacement_id,

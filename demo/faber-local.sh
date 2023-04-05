@@ -1,5 +1,5 @@
 #!/bin/bash
-# this runs the Faber example as a local instace of instance of aca-py
+# this runs the Faber example as a local instance of aca-py
 # you need to run a local von-network (in the von-network directory run "./manage start <your local ip> --logs")
 # ... and you need to install the local aca-py python libraries locally ("pip install -r ../requirements.txt -r ../requirements.indy.txt -r ../requirements.bbs.txt")
 
@@ -14,7 +14,8 @@ PYTHONPATH=.. ../bin/aca-py start \
    --wallet-type askar \
    --wallet-name faber.agent916333 \
    --wallet-key faber.agent916333 \
-   --preserve-exchange-records \
+   --auto-remove-cred-exch-records-issuer false \
+   --auto-remove-cred-exch-records-holder false \
    --auto-provision \
    --genesis-url http://localhost:9000/genesis \
    --trace-target log \

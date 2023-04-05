@@ -533,7 +533,7 @@ class TestV20PresManager(AsyncTestCase):
             V20PresProposal, "serialize", autospec=True
         ):
             px_rec = await self.manager.create_exchange_for_proposal(
-                CONN_ID, proposal, auto_present=None
+                CONN_ID, proposal, auto_present=None, auto_remove=True,
             )
             save_ex.assert_called_once()
 
@@ -541,6 +541,7 @@ class TestV20PresManager(AsyncTestCase):
             assert px_rec.initiator == V20PresExRecord.INITIATOR_SELF
             assert px_rec.role == V20PresExRecord.ROLE_PROVER
             assert px_rec.state == V20PresExRecord.STATE_PROPOSAL_SENT
+            assert px_rec.auto_remove == True
 
     async def test_receive_proposal(self):
         connection_record = async_mock.MagicMock(connection_id=CONN_ID)
@@ -747,13 +748,14 @@ class TestV20PresManager(AsyncTestCase):
         pres_req.assign_thread_id("dummy")
 
         with async_mock.patch.object(V20PresExRecord, "save", autospec=True) as save_ex:
-            px_rec = await self.manager.create_exchange_for_request(CONN_ID, pres_req)
+            px_rec = await self.manager.create_exchange_for_request(CONN_ID, pres_req, auto_remove=True)
             save_ex.assert_called_once()
 
             assert px_rec.thread_id == pres_req._thread_id
             assert px_rec.initiator == V20PresExRecord.INITIATOR_SELF
             assert px_rec.role == V20PresExRecord.ROLE_VERIFIER
             assert px_rec.state == V20PresExRecord.STATE_REQUEST_SENT
+            assert px_rec.auto_remove == True
 
     async def test_receive_pres_request(self):
         px_rec_in = V20PresExRecord()

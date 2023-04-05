@@ -11,7 +11,12 @@ from typing import Type
 import deepmerge
 import yaml
 
-from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
+from configargparse import (
+    ArgumentParser,
+    Namespace,
+    YAMLConfigFileParser,
+    ArgumentTypeError,
+)
 
 from ..utils.tracing import trace_event
 
@@ -27,6 +32,18 @@ CAT_UPGRADE = "upgrade"
 ENDORSER_AUTHOR = "author"
 ENDORSER_ENDORSER = "endorser"
 ENDORSER_NONE = "none"
+
+
+def boolstr(v):
+    """Function: boolstr - convert string value to bool for argparse argument type."""
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        return False
+    else:
+        raise ArgumentTypeError("Boolean value expected.")
 
 
 class ArgumentGroup(abc.ABC):
@@ -62,9 +79,7 @@ class group:
     def get_registered(cls, category: str = None):
         """Fetch the set of registered classes in a category."""
         return (
-            grp
-            for (cats, grp) in cls._registered
-            if category is None or category in cats
+            grp for (cats, grp) in cls._registered if category is None or category in cats
         )
 
 
@@ -509,9 +524,7 @@ class DiscoverFeaturesGroup(ArgumentGroup):
                 if "protocols" in provided_lists:
                     settings["disclose_protocol_list"] = provided_lists.get("protocols")
                 if "goal-codes" in provided_lists:
-                    settings["disclose_goal_code_list"] = provided_lists.get(
-                        "goal-codes"
-                    )
+                    settings["disclose_goal_code_list"] = provided_lists.get("goal-codes")
         return settings
 
 
@@ -918,9 +931,7 @@ class LedgerGroup(ArgumentGroup):
                         ledger_config_list.append(txn_config)
                         if "is_write" in txn_config and txn_config["is_write"]:
                             if "genesis_url" in txn_config:
-                                settings["ledger.genesis_url"] = txn_config[
-                                    "genesis_url"
-                                ]
+                                settings["ledger.genesis_url"] = txn_config["genesis_url"]
                             elif "genesis_file" in txn_config:
                                 settings["ledger.genesis_file"] = txn_config[
                                     "genesis_file"
@@ -1122,7 +1133,59 @@ class ProtocolGroup(ArgumentGroup):
             "--preserve-exchange-records",
             action="store_true",
             env_var="ACAPY_PRESERVE_EXCHANGE_RECORDS",
-            help="Keep credential exchange records after exchange has completed.",
+            help="Keep credential exchange records after exchange has completed. "
+            "DEPRECATED: see `--preserve-cred-exch-issuer` and "
+            "`--preserve-cred-exch-holder`",
+        )
+        parser.add_argument(
+            "--auto-remove-cred-exch-records-issuer",
+            env_var="ACAPY_AUTO_REMOVE_CRED_EXCH_RECORDS_ISSUER",
+            dest="auto_remove_cred_exch_records_issuer",
+            type=boolstr,
+            nargs="?",
+            const=True,
+            default=True,
+            help="Remove issuer credential exchange records after exchange has "
+            "completed.",
+        )
+        parser.add_argument(
+            "--auto-remove-cred-exch-records-holder",
+            env_var="ACAPY_AUTO_REMOVE_CRED_EXCH_RECORDS_HOLDER",
+            dest="auto_remove_cred_exch_records_holder",
+            type=boolstr,
+            nargs="?",
+            const=True,
+            default=True,
+            help="Remove holder credential exchange records after exchange has "
+            "completed.",
+        )
+        parser.add_argument(
+            "--auto-remove-pres-exch-records-verifier",
+            env_var="ACAPY_AUTO_REMOVE_PRES_EXCH_RECORDS_VERIFIER",
+            dest="auto_remove_pres_exch_records_verifier",
+            type=boolstr,
+            nargs="?",
+            const=True,
+            default=False,
+            help="Remove verifier presentation exchange records after exchange has "
+            "completed.",
+        )
+        parser.add_argument(
+            "--auto-remove-pres-exch-records-prover",
+            env_var="ACAPY_AUTO_REMOVE_PRES_EXCH_RECORDS_PROVER",
+            dest="auto_remove_pres_exch_records_prover",
+            type=boolstr,
+            nargs="?",
+            const=True,
+            default=False,
+            help="Remove prover presentation exchange records after exchange has "
+            "completed.",
+        )
+        parser.set_defaults(
+            auto_remove_cred_exch_records_issuer=True,
+            auto_remove_cred_exch_records_holder=True,
+            auto_remove_pres_exch_records_verifier=False,
+            auto_remove_pres_exch_records_prover=False,
         )
         parser.add_argument(
             "--emit-new-didcomm-prefix",
@@ -1156,7 +1219,13 @@ class ProtocolGroup(ArgumentGroup):
 
     def get_settings(self, args: Namespace) -> dict:
         """Get protocol settings."""
-        settings = {}
+        settings = {
+            "auto_remove_cred_exch_records_issuer": args.auto_remove_cred_exch_records_issuer,  # noqa: E501
+            "auto_remove_cred_exch_records_holder": args.auto_remove_cred_exch_records_holder,  # noqa: E501
+            "auto_remove_pres_exch_records_verifier": args.auto_remove_pres_exch_records_verifier,  # noqa: E501
+            "auto_remove_pres_exch_records_prover": args.auto_remove_pres_exch_records_prover,  # noqa: E501
+        }
+
         if args.auto_ping_connection:
             settings["auto_ping_connection"] = True
         if args.auto_accept_intro_invitation_requests:
@@ -1172,8 +1241,7 @@ class ProtocolGroup(ArgumentGroup):
         if args.requests_through_public_did:
             if not args.public_invites:
                 raise ArgsParseError(
-                    "--public-invites is required to use "
-                    "--requests-through-public-did"
+                    "--public-invites is required to use " "--requests-through-public-did"
                 )
             settings["requests_through_public_did"] = True
         if args.timing:
@@ -1192,8 +1260,8 @@ class ProtocolGroup(ArgumentGroup):
             settings["trace.tag"] = args.trace_tag
         if args.trace_label:
             settings["trace.label"] = args.trace_label
-        elif args.label:
-            settings["trace.label"] = args.label
+        # elif args.label:
+        #    settings["trace.label"] = args.label
         else:
             settings["trace.label"] = "aca-py.agent"
         if settings.get("trace.enabled") or settings.get("trace.target"):
@@ -1211,7 +1279,9 @@ class ProtocolGroup(ArgumentGroup):
             except Exception as e:
                 raise ArgsParseError("Error writing trace event " + str(e))
         if args.preserve_exchange_records:
-            settings["preserve_exchange_records"] = True
+            # if using deprecated arg, set the replacement args
+            settings["auto_remove_cred_exch_records_issuer"] = False
+            settings["auto_remove_cred_exch_records_holder"] = False
         if args.emit_new_didcomm_prefix:
             settings["emit_new_didcomm_prefix"] = True
         if args.emit_new_didcomm_mime_type:
@@ -1480,9 +1550,7 @@ class MediationGroup(ArgumentGroup):
             settings["mediation.clear"] = True
 
         if args.clear_default_mediator and args.default_mediator_id:
-            raise ArgsParseError(
-                "Cannot both set and clear mediation at the same time."
-            )
+            raise ArgsParseError("Cannot both set and clear mediation at the same time.")
 
         return settings
 

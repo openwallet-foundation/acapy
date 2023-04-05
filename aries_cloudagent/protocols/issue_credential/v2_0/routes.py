@@ -200,7 +200,7 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     auto_remove = fields.Bool(
         description=(
             "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
+            "(overrides --auto-remove-cred-exch-records-issuer configuration setting)"
         ),
         required=False,
     )
@@ -248,7 +248,7 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
     auto_remove = fields.Bool(
         description=(
             "Whether to remove the credential exchange record on completion "
-            "(overrides --preserve-exchange-records configuration setting)"
+            "(overrides --auto-remove-cred-exch-records-issuer configuration setting)"
         ),
         required=False,
     )
@@ -559,7 +559,9 @@ async def credential_exchange_create(request: web.BaseRequest):
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     filt_spec = body.get("filter")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_cred_exch_records_issuer")
+    )
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     trace_msg = body.get("trace")
@@ -641,7 +643,9 @@ async def credential_exchange_send(request: web.BaseRequest):
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     preview_spec = body.get("credential_preview")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_cred_exch_records_issuer")
+    )
     trace_msg = body.get("trace")
 
     conn_record = None
@@ -748,7 +752,9 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_cred_exch_records_issuer")
+    )
     trace_msg = body.get("trace")
 
     conn_record = None
@@ -875,7 +881,9 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_cred_exch_records_issuer")
+    )
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     filt_spec = body.get("filter")
@@ -949,7 +957,9 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     auto_issue = body.get(
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_cred_exch_records_issuer")
+    )
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     trace_msg = body.get("trace")
@@ -1146,7 +1156,9 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     filt_spec = body.get("filter")
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
-    auto_remove = body.get("auto_remove")
+    auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_cred_exch_records_issuer")
+    )
     trace_msg = body.get("trace")
     holder_did = body.get("holder_did")
 

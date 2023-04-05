@@ -80,6 +80,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         auto_verify: bool = False,
         error_msg: str = None,
         trace: bool = False,  # backward compat: BaseRecord.from_storage()
+        auto_remove: bool = False,
         **kwargs,
     ):
         """Initialize a new PresentationExchange."""
@@ -102,6 +103,7 @@ class V10PresentationExchange(BaseExchangeRecord):
         self.auto_present = auto_present
         self.auto_verify = auto_verify
         self.error_msg = error_msg
+        self.auto_remove = auto_remove
 
     @property
     def presentation_exchange_id(self) -> str:
@@ -126,9 +128,7 @@ class V10PresentationExchange(BaseExchangeRecord):
     def presentation_request(self) -> IndyProofRequest:
         """Accessor; get deserialized view."""
         return (
-            None
-            if self._presentation_request is None
-            else self._presentation_request.de
+            None if self._presentation_request is None else self._presentation_request.de
         )
 
     @presentation_request.setter
@@ -240,6 +240,7 @@ class V10PresentationExchange(BaseExchangeRecord):
                     "verified",
                     "verified_msgs",
                     "trace",
+                    "auto_remove",
                 )
             },
             **{
@@ -343,4 +344,12 @@ class V10PresentationExchangeSchema(BaseExchangeSchema):
     )
     error_msg = fields.Str(
         required=False, description="Error message", example="Invalid structure"
+    )
+    auto_remove = fields.Bool(
+        required=False,
+        default=True,
+        description=(
+            "Verifier choice to remove this presentation exchange record when complete"
+        ),
+        example=False,
     )

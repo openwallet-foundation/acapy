@@ -98,6 +98,7 @@ class TestRecord(AsyncTestCase):
             verified="false",
             auto_present=True,
             error_msg="error",
+            auto_remove=True,
         )
         record.pres_proposal = pres_proposal  # cover setter
 
@@ -115,6 +116,7 @@ class TestRecord(AsyncTestCase):
             "auto_verify": False,
             "error_msg": "error",
             "trace": False,
+            "auto_remove": True,
         }
 
         bx_record = BasexRecordImpl()

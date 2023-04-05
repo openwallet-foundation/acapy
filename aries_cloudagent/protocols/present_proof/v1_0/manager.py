@@ -50,6 +50,7 @@ class PresentationManager:
         connection_id: str,
         presentation_proposal_message: PresentationProposal,
         auto_present: bool = None,
+        auto_remove: bool = None,
     ):
         """
         Create a presentation exchange record for input presentation proposal.
@@ -60,11 +61,15 @@ class PresentationManager:
                 to exchange record
             auto_present: whether to present proof upon receiving proof request
                 (default to configuration setting)
-
+            auto_remove: whether to remove this presentation exchange upon completion
         Returns:
             Presentation exchange record, created
 
         """
+        if auto_remove is None:
+            auto_remove = self._profile.settings.get(
+                "auto_remove_pres_exch_records_prover"
+            )
         presentation_exchange_record = V10PresentationExchange(
             connection_id=connection_id,
             thread_id=presentation_proposal_message._thread_id,
@@ -74,6 +79,7 @@ class PresentationManager:
             presentation_proposal_dict=presentation_proposal_message,
             auto_present=auto_present,
             trace=(presentation_proposal_message._trace is not None),
+            auto_remove=auto_remove,
         )
         async with self._profile.session() as session:
             await presentation_exchange_record.save(
@@ -100,6 +106,9 @@ class PresentationManager:
             state=V10PresentationExchange.STATE_PROPOSAL_RECEIVED,
             presentation_proposal_dict=message,
             trace=(message._trace is not None),
+            auto_remove=self._profile.settings.get(
+                "auto_remove_pres_exch_records_verifier"
+            ),
         )
         async with self._profile.session() as session:
             await presentation_exchange_record.save(
@@ -170,6 +179,7 @@ class PresentationManager:
         connection_id: str,
         presentation_request_message: PresentationRequest,
         auto_verify: bool = None,
+        auto_remove: bool = None,
     ):
         """
         Create a presentation exchange record for input presentation request.
@@ -178,11 +188,17 @@ class PresentationManager:
             connection_id: connection identifier
             presentation_request_message: presentation request to use in creating
                 exchange record, extracting indy proof request and thread id
+            auto_verify: whether to auto-verify presentation exchange
+            auto_remove: whether to remove this presentation exchange upon completion
 
         Returns:
             Presentation exchange record, updated
 
         """
+        if auto_remove is None:
+            auto_remove = self._profile.settings.get(
+                "auto_remove_pres_exch_records_verifier"
+            )
         presentation_exchange_record = V10PresentationExchange(
             connection_id=connection_id,
             thread_id=presentation_request_message._thread_id,
@@ -193,6 +209,7 @@ class PresentationManager:
             presentation_request_dict=presentation_request_message,
             auto_verify=auto_verify,
             trace=(presentation_request_message._trace is not None),
+            auto_remove=auto_remove,
         )
         async with self._profile.session() as session:
             await presentation_exchange_record.save(
@@ -295,9 +312,7 @@ class PresentationManager:
         )
         presentation_exchange_record.presentation = indy_proof
         async with self._profile.session() as session:
-            await presentation_exchange_record.save(
-                session, reason="create presentation"
-            )
+            await presentation_exchange_record.save(session, reason="create presentation")
 
         return presentation_exchange_record, presentation_message
 
@@ -360,9 +375,9 @@ class PresentationManager:
                 name = proof_req["requested_attributes"][reft]["name"]
                 value = attr_spec["raw"]
                 if not presentation_preview.has_attr_spec(
-                    cred_def_id=presentation["identifiers"][
-                        attr_spec["sub_proof_index"]
-                    ]["cred_def_id"],
+                    cred_def_id=presentation["identifiers"][attr_spec["sub_proof_index"]][
+                        "cred_def_id"
+                    ],
                     name=name,
                     value=value,
                 ):
@@ -434,9 +449,7 @@ class PresentationManager:
         presentation_exchange_record.state = V10PresentationExchange.STATE_VERIFIED
 
         async with self._profile.session() as session:
-            await presentation_exchange_record.save(
-                session, reason="verify presentation"
-            )
+            await presentation_exchange_record.save(session, reason="verify presentation")
 
         await self.send_presentation_ack(presentation_exchange_record, responder)
         return presentation_exchange_record
@@ -491,6 +504,12 @@ class PresentationManager:
                 # connection_id can be none in case of connectionless
                 connection_id=presentation_exchange_record.connection_id,
             )
+
+            # all done: delete
+            if presentation_exchange_record.auto_remove:
+                async with self._profile.session() as session:
+                    await presentation_exchange_record.delete_record(session)
+
         else:
             LOGGER.warning(
                 "Configuration has no BaseResponder: cannot ack presentation on %s",
@@ -529,6 +548,11 @@ class PresentationManager:
             await presentation_exchange_record.save(
                 session, reason="receive presentation ack"
             )
+
+        # all done: delete
+        if presentation_exchange_record.auto_remove:
+            async with self._profile.session() as session:
+                await presentation_exchange_record.delete_record(session)
 
         return presentation_exchange_record
 

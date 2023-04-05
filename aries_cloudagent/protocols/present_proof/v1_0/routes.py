@@ -118,6 +118,14 @@ class V10PresentationProposalRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         default=False,
     )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the presentation exchange record on completion "
+            "(overrides --auto-remove-pres-exch-records-prover configuration setting)"
+        ),
+        required=False,
+        default=False,
+    )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
         required=False,
@@ -134,6 +142,14 @@ class V10PresentationCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
         description="Verifier choice to auto-verify proof presentation",
         required=False,
         example=False,
+    )
+    auto_remove = fields.Bool(
+        description=(
+            "Whether to remove the presentation exchange record on completion "
+            "(overrides --auto-remove-pres-exch-records-verifier configuration setting)"
+        ),
+        required=False,
+        default=False,
     )
     trace = fields.Bool(
         description="Whether to trace event (default false)",
@@ -424,7 +440,9 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
     auto_present = body.get(
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
-
+    auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_pres_exch_records_prover")
+    )
     presentation_manager = PresentationManager(profile)
     pres_ex_record = None
     try:
@@ -432,6 +450,7 @@ async def presentation_exchange_send_proposal(request: web.BaseRequest):
             connection_id=connection_id,
             presentation_proposal_message=presentation_proposal_message,
             auto_present=auto_present,
+            auto_remove=auto_remove,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -497,6 +516,9 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
     auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
+    auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_pres_exch_records_verifier")
+    )
     trace_msg = body.get("trace")
     presentation_request_message.assign_trace_decorator(
         context.settings,
@@ -510,6 +532,7 @@ async def presentation_exchange_create_request(request: web.BaseRequest):
             connection_id=None,
             presentation_request_message=presentation_request_message,
             auto_verify=auto_verify,
+            auto_remove=auto_remove,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -586,6 +609,9 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
     auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
+    auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_pres_exch_records_verifier")
+    )
 
     pres_ex_record = None
     try:
@@ -594,6 +620,7 @@ async def presentation_exchange_send_free_request(request: web.BaseRequest):
             connection_id=connection_id,
             presentation_request_message=presentation_request_message,
             auto_verify=auto_verify,
+            auto_remove=auto_remove,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -671,6 +698,9 @@ async def presentation_exchange_send_bound_request(request: web.BaseRequest):
 
     pres_ex_record.auto_verify = body.get(
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
+    )
+    pres_ex_record.auto_remove = body.get(
+        "auto_remove", context.settings.get("auto_remove_pres_exch_records_verifier")
     )
     try:
         presentation_manager = PresentationManager(profile)

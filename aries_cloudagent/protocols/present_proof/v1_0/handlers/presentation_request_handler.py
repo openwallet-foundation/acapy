@@ -95,6 +95,9 @@ class PresentationRequestHandler(BaseHandler):
                 auto_present=context.settings.get(
                     "debug.auto_respond_presentation_request"
                 ),
+                auto_remove=context.settings.get(
+                    "auto_remove_pres_exch_records_prover"
+                ),
                 trace=(context.message._trace is not None),
             )
 
