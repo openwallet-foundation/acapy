@@ -289,18 +289,11 @@ async def upgrade(
                 LOGGER.warning(
                     "Explicit upgrade flag with warning value found "
                     f"for {str(to_skip_explicit_versions)} versions. "
-                    "Proceeding towards any other available upgrades "
-                    "which can be applied now and then towards ACA-Py "
-                    "startup. You can apply the explicit upgrades using "
-                    "the ACA-Py upgrade command later."
+                    "Proceeding with ACA-Py startup. You can apply "
+                    "the explicit upgrades using the ACA-Py upgrade "
+                    "command later."
                 )
-                upgrade_version_in_config_set = set(upgrade_version_in_config)
-                for to_skip_version in to_skip_explicit_versions:
-                    upgrade_version_in_config_set.remove(to_skip_version)
-                upgrade_version_in_config = sorted(
-                    list(upgrade_version_in_config_set),
-                    key=lambda x: package_version.parse(x),
-                )
+                return
         to_update_flag = False
         if upgrade_from_version == upgrade_to_version:
             LOGGER.info(

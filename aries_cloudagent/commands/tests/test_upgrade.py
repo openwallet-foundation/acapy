@@ -619,4 +619,4 @@ class TestUpgrade(AsyncTestCase):
         ):
             await test_module.upgrade(profile=self.profile)
             assert mock_logger.warning.call_count == 1
-            assert mock_logger.info.call_count == 3
+            assert mock_logger.info.call_count == 0
