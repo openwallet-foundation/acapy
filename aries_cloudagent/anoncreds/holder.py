@@ -559,7 +559,7 @@ class AnonCredsHolder:
         self,
         cred_rev_id: str,
         rev_reg_def: dict,
-        rev_status_list: dict,
+        rev_list: dict,
         tails_file_path: str,
     ) -> str:
         """
@@ -581,7 +581,7 @@ class AnonCredsHolder:
                 None,
                 CredentialRevocationState.create,
                 rev_reg_def,
-                rev_status_list,
+                rev_list,
                 int(cred_rev_id),
                 tails_file_path,
             )

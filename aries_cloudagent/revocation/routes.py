@@ -293,8 +293,8 @@ class CredRevRecordDetailsResultSchema(OpenAPISchema):
 class CredRevIndyRecordsResultSchema(OpenAPISchema):
     """Result schema for revoc reg delta."""
 
-    rev_status_list = fields.Dict(
-        description="revocation status list",
+    rev_list = fields.Dict(
+        description="revocation list",
     )
 
 
@@ -725,7 +725,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 )
 @match_info_schema(RevRegIdMatchInfoSchema())
 @response_schema(CredRevIndyRecordsResultSchema(), 200, description="")
-async def get_rev_status_list(request: web.BaseRequest):
+async def get_rev_list(request: web.BaseRequest):
     """
     Request handler to get details of revoked credentials from ledger.
 
@@ -741,13 +741,13 @@ async def get_rev_status_list(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
 
     anoncreds_registry = context.inject(AnonCredsRegistry)
-    rev_status_list = await anoncreds_registry.get_revocation_status_list(
+    rev_list = await anoncreds_registry.get_revocation_list(
         context.profile, rev_reg_id, int(time())
     )
 
     return web.json_response(
         {
-            "rev_status_list": rev_status_list,
+            "rev_list": rev_list,
         }
     )
 
@@ -842,7 +842,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
 
 @docs(
     tags=["revocation"],
-    summary="Get credential revocation status",
+    summary="Get credential revocation",
 )
 @querystring_schema(CredRevRecordQueryStringSchema())
 @response_schema(CredRevRecordResultSchema(), 200, description="")
@@ -1571,7 +1571,7 @@ async def register(app: web.Application):
             ),
             web.get(
                 "/revocation/registry/{rev_reg_id}/issued/indy_recs",
-                get_rev_status_list,
+                get_rev_list,
                 allow_head=False,
             ),
             web.post("/revocation/create-registry", create_rev_reg),

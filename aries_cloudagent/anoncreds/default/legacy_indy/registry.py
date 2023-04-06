@@ -44,13 +44,13 @@ from ...models.anoncreds_cred_def import (
 )
 from ...models.anoncreds_revocation import (
     AnonCredsRegistryGetRevocationRegistryDefinition,
-    GetRevStatusListResult,
+    GetRevListResult,
     RevRegDef,
     RevRegDefResult,
     RevRegDefState,
-    RevStatusList,
-    RevStatusListResult,
-    RevStatusListState,
+    RevList,
+    RevListResult,
+    RevListState,
 )
 from ...models.anoncreds_schema import (
     AnonCredsSchema,
@@ -436,15 +436,15 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             revocation_registry_definition_metadata={"seqNo": seq_no},
         )
 
-    async def get_revocation_status_list(
+    async def get_revocation_list(
         self, profile: Profile, revocation_registry_id: str, timestamp: str
-    ) -> GetRevStatusListResult:
+    ) -> GetRevListResult:
         """Get a revocation list from the registry."""
 
     async def _revoc_reg_entry_with_fix(
         self,
         profile: Profile,
-        rev_status_list: RevStatusList,
+        rev_list: RevList,
         rev_reg_def_type: str,
         entry: dict,
     ) -> dict:
@@ -454,10 +454,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         try:
             rev_entry_res = await ledger.send_revoc_reg_entry(
-                rev_status_list.rev_reg_id,
+                rev_list.rev_reg_id,
                 rev_reg_def_type,
                 entry,
-                rev_status_list.issuer_id,
+                rev_list.issuer_id,
                 write_ledger=True,
                 endorser_did=None,
             )
@@ -472,7 +472,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 LOGGER.warn(err)
                 (_, _, res) = await self.fix_ledger_entry(
                     profile,
-                    rev_status_list,
+                    rev_list,
                     True,
                     ledger.pool.genesis_txns,
                 )
@@ -496,69 +496,69 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         return rev_entry_res
 
-    async def register_revocation_status_list(
+    async def register_revocation_list(
         self,
         profile: Profile,
         rev_reg_def: RevRegDef,
-        rev_status_list: RevStatusList,
+        rev_list: RevList,
         options: Optional[dict] = None,
-    ) -> RevStatusListResult:
+    ) -> RevListResult:
         """Register a revocation list on the registry."""
-        rev_reg_entry = {"value": {"accum": rev_status_list.current_accumulator}}
+        rev_reg_entry = {"value": {"accum": rev_list.current_accumulator}}
 
         rev_entry_res = await self._revoc_reg_entry_with_fix(
-            profile, rev_status_list, rev_reg_def.type, rev_reg_entry
+            profile, rev_list, rev_reg_def.type, rev_reg_entry
         )
 
-        return RevStatusListResult(
+        return RevListResult(
             job_id=None,
-            revocation_status_list_state=RevStatusListState(
-                state=RevStatusListState.STATE_FINISHED,
-                revocation_status_list=rev_status_list,
+            revocation_list_state=RevListState(
+                state=RevListState.STATE_FINISHED,
+                revocation_list=rev_list,
             ),
             registration_metadata={},
-            revocation_status_list_metadata={
+            revocation_list_metadata={
                 "seqNo": rev_entry_res["result"]["txnMetadata"]["seqNo"],
             },
         )
 
-    async def update_revocation_status_list(
+    async def update_revocation_list(
         self,
         profile: Profile,
         rev_reg_def: RevRegDef,
-        prev_status_list: RevStatusList,
-        curr_status_list: RevStatusList,
+        prev_list: RevList,
+        curr_list: RevList,
         options: Optional[dict] = None,
-    ) -> RevStatusListResult:
-        """Update a revocation status list."""
+    ) -> RevListResult:
+        """Update a revocation list."""
         newly_revoked_indices = [
             # Remember: Indices in Indy are 1-based
             index + 1
             for index, (prev, curr) in enumerate(
-                zip(prev_status_list.revocation_list, curr_status_list.revocation_list)
+                zip(prev_list.revocation_list, curr_list.revocation_list)
             )
             if prev != curr
         ]
         rev_reg_entry = {
             "value": {
-                "accum": curr_status_list.current_accumulator,
-                "prevAccum": prev_status_list.current_accumulator,
+                "accum": curr_list.current_accumulator,
+                "prevAccum": prev_list.current_accumulator,
                 "revoked": newly_revoked_indices,
             }
         }
 
         rev_entry_res = await self._revoc_reg_entry_with_fix(
-            profile, curr_status_list, rev_reg_def.type, rev_reg_entry
+            profile, curr_list, rev_reg_def.type, rev_reg_entry
         )
 
-        return RevStatusListResult(
+        return RevListResult(
             job_id=None,
-            revocation_status_list_state=RevStatusListState(
-                state=RevStatusListState.STATE_FINISHED,
-                revocation_status_list=curr_status_list,
+            revocation_list_state=RevListState(
+                state=RevListState.STATE_FINISHED,
+                revocation_list=curr_list,
             ),
             registration_metadata={},
-            revocation_status_list_metadata={
+            revocation_list_metadata={
                 "seqNo": rev_entry_res["result"]["txnMetadata"]["seqNo"],
             },
         )
@@ -566,7 +566,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     async def fix_ledger_entry(
         self,
         profile: Profile,
-        rev_status_list: RevStatusList,
+        rev_list: RevList,
         apply_ledger_update: bool,
         genesis_transactions: str,
     ) -> Tuple[dict, dict, dict]:
@@ -574,11 +574,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         # get rev reg delta (revocations published to ledger)
         ledger = profile.inject(BaseLedger)
         async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_status_list.rev_reg_id
-            )
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_list.rev_reg_id)
 
-        # get rev reg records from wallet (revocations and status)
+        # get rev reg records from wallet (revocations and list)
         recs = []
         rec_count = 0
         accum_count = 0
@@ -586,7 +584,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         applied_txn = {}
         async with profile.session() as session:
             recs = await IssuerCredRevRecord.query_by_ids(
-                session, rev_reg_id=rev_status_list.rev_reg_id
+                session, rev_reg_id=rev_list.rev_reg_id
             )
 
             revoked_ids = []
@@ -599,8 +597,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
             LOGGER.debug(">>> fixed entry recs count = %s", rec_count)
             LOGGER.debug(
-                ">>> rev_status_list.revocation_list: %s",
-                rev_status_list.revocation_list,
+                ">>> rev_list.revocation_list: %s",
+                rev_list.revocation_list,
             )
             LOGGER.debug(
                 '>>> rev_reg_delta.get("value"): %s', rev_reg_delta.get("value")
@@ -608,11 +606,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
             # if we had any revocation discrepencies, check the accumulator value
             if rec_count > 0:
-                if (
-                    rev_status_list.current_accumulator and rev_reg_delta.get("value")
-                ) and (
-                    rev_status_list.current_accumulator
-                    != rev_reg_delta["value"]["accum"]
+                if (rev_list.current_accumulator and rev_reg_delta.get("value")) and (
+                    rev_list.current_accumulator != rev_reg_delta["value"]["accum"]
                 ):
                     # self.revoc_reg_entry = rev_reg_delta["value"]
                     # await self.save(session)
@@ -620,7 +615,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
                 calculated_txn = await generate_ledger_rrrecovery_txn(
                     genesis_transactions,
-                    rev_status_list.rev_reg_id,
+                    rev_list.rev_reg_id,
                     revoked_ids,
                 )
                 recovery_txn = json.loads(calculated_txn.to_json())
@@ -636,7 +631,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
                     async with ledger:
                         ledger_response = await ledger.send_revoc_reg_entry(
-                            rev_status_list.rev_reg_id, "CL_ACCUM", recovery_txn
+                            rev_list.rev_reg_id, "CL_ACCUM", recovery_txn
                         )
 
                     applied_txn = ledger_response["result"]
