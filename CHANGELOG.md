@@ -1,29 +1,65 @@
-# 0.8.1-rc2
+# 0.8.1
 
-## April 3, 2023
+## April 5, 2023
 
-An urgent update to Release 0.8.1 to address an inability to execute the
-`upgrade` command. The `upgrade` command is needed for Pull Request [\#2116] -
-"UPGRADE: Fix multi-use invitation performance", which is necessary for (at
-least) deployments of ACA-Py as a mediator. The important updates are Pull
-Requests [\#2185] and [\#2196] (listed below). Documentation on upgrades in
-ACA-Py be included before the final 0.8.1 release is tagged.
+Version 0.8.1 is an urgent update to Release 0.8.0 to address an inability to
+execute the `upgrade` command. The `upgrade` command is needed for 0.8.0 Pull
+Request [\#2116] - "UPGRADE: Fix multi-use invitation performance", which is
+useful for (at least) deployments of ACA-Py as a mediator. In the release, the
+upgrade process is revamped, and documented in [Upgrading ACA-Py].
 
-[\#2116]: https://github.com/hyperledger/aries-cloudagent-python/pull/2116
-[\#2185]: https://github.com/hyperledger/aries-cloudagent-python/pull/2185
-[\#2196]: https://github.com/hyperledger/aries-cloudagent-python/pull/2196
+Key points about upgrading for those with production, pre-0.8.1 ACA-Py deployments:
+
+- Upgrades now happen **automatically** on startup, when needed.
+- The version of the last executed upgrade, even if it is a "no change" upgrade,
+  is put into secure storage and is used to detect when future upgrades are needed.
+  - Upgrades are needed when the running version is greater than the version is
+    secure storage.
+- If you have an existing, pre-0.8.1 deployment with many connection records,
+there may be a delay in starting as an upgrade will be run that loads and saves
+every connection record, updating the data in the record in the process.
+  - A mechanism is to be added (see [Issue #2201]) for preventing an upgrade
+  running if it should not be run automatically, and requires using the
+  `upgrade` command. To date, there has been no need for this feature.
+- See the [Upgrading ACA-Py] document for more details.
+
+### Postgres Support with Aries Askar
+
+Recent changes to [Aries Askar] have resulted in Askar supporting Postgres
+version 11 and greater. If you are on Postgres 10 or earlier and want to upgrade
+to use Askar, you must migrate your database to Postgres 10.
+
+We have also noted that in some container orchestration environments such as
+[Red Hat's OpenShift] and possibly other [Kubernetes] distributions, Askar using
+[Postgres] versions greater than 14 do not install correctly. Please monitor
+[Issue \#2199] for an update to this limitation. We have found that Postgres 15 does
+install correctly in other environments (such as in `docker compose` setups).
+
+[\#2116]: https://github.com/hyperledger/aries-cloudagent-python/issues/2116
+[Upgrading ACA-Py]: ./UpgradingACA-Py.md
+[Issue #2201]: https://github.com/hyperledger/aries-cloudagent-python/issues/2201
+[Aries Askar]: https://github.com/hyperledger/aries-askar
+[Red Hat's OpenShift]: https://www.openshift.com/products/container-platform/
+[Kubernetes]: https://kubernetes.io/
+[Postgres]: https://www.postgresql.org/
+[Issue \#2199]: https://github.com/hyperledger/aries-cloudagent-python/issues/2199
 
 ### Categorized List of Pull Requests
 
 - Fixes for the `upgrade` Command
+  - Change upgrade definition file entry from 0.8.0 to 0.8.1 [\#2203](https://github.com/hyperledger/aries-cloudagent-python/pull/2203) [swcurran](https://github.com/swcurran)
+  - Add Upgrading ACA-Py document [\#2200](https://github.com/hyperledger/aries-cloudagent-python/pull/2200) [swcurran](https://github.com/swcurran)
   - Fix: Indy WalletAlreadyOpenedError during upgrade process [\#2196](https://github.com/hyperledger/aries-cloudagent-python/pull/2196) [shaangill025](https://github.com/shaangill025)
   - Fix: Resolve Upgrade Config file in Container [\#2193](https://github.com/hyperledger/aries-cloudagent-python/pull/2193) [shaangill025](https://github.com/shaangill025)
   - Update and automate ACA-Py upgrade process [\#2185](https://github.com/hyperledger/aries-cloudagent-python/pull/2185) [shaangill025](https://github.com/shaangill025)
   - Adds the upgrade command YML file to the PyPi Release [\#2179](https://github.com/hyperledger/aries-cloudagent-python/pull/2179) [swcurran](https://github.com/swcurran)
 - Test and Documentation
+  - 3.7 and 3.10 unittests fix [\#2187](https://github.com/hyperledger/aries-cloudagent-python/pull/2187) [Jsyro](https://github.com/Jsyro)
+  - Doc update and some test scripts [\#2189](https://github.com/hyperledger/aries-cloudagent-python/pull/2189) [ianco](https://github.com/ianco)
   - Create UnitTests.md [\#2183](https://github.com/hyperledger/aries-cloudagent-python/pull/2183) [swcurran](https://github.com/swcurran)
   - Add link to recorded session about the ACA-Py Integration tests [\#2184](https://github.com/hyperledger/aries-cloudagent-python/pull/2184) [swcurran](https://github.com/swcurran)
 - Release management pull requests
+  - 0.8.1 [\#2207](https://github.com/hyperledger/aries-cloudagent-python/pull/2207) [swcurran](https://github.com/swcurran)
   - 0.8.1-rc2 [\#2198](https://github.com/hyperledger/aries-cloudagent-python/pull/2198) [swcurran](https://github.com/swcurran)
   - 0.8.1-rc1 [\#2194](https://github.com/hyperledger/aries-cloudagent-python/pull/2194) [swcurran](https://github.com/swcurran)
   - 0.8.1-rc0 [\#2190](https://github.com/hyperledger/aries-cloudagent-python/pull/2190) [swcurran](https://github.com/swcurran)
