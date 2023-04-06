@@ -16,7 +16,7 @@ from indy.error import ErrorCode, IndyError
 
 from ..cache.base import BaseCache
 from ..config.base import BaseInjector, BaseProvider, BaseSettings
-from ..anoncreds.sdk.error import IndyErrorHandler
+from ..indy.sdk.error import IndyErrorHandler
 from ..storage.base import StorageRecord
 from ..storage.indy import IndySdkStorage
 from ..utils import sentinel

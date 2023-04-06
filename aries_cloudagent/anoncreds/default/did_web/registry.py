@@ -21,7 +21,9 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     """DIDWebRegistry"""
 
     def __init__(self):
-        self._supported_identifiers_regex = re.compile(r"^did:web:.*$")
+        self._supported_identifiers_regex = re.compile(
+            r"^did:web:[a-z0-9]+(?:\.[a-z0-9]+)*(?::\d+)?(?:\/[^#\s]*)?(?:#.*)?\s*$"
+        )
 
     @property
     def supported_identifiers_regex(self) -> Pattern:
