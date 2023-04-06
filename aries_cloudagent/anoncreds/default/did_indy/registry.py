@@ -43,7 +43,6 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Get a schema from the registry."""
         raise NotImplementedError()
 
-    # TODO: determine keyword arguments
     async def register_schema(
         self,
         profile: Profile,
@@ -59,7 +58,6 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Get a credential definition from the registry."""
         raise NotImplementedError()
 
-    # TODO: determine keyword arguments
     async def register_credential_definition(
         self,
         profile: Profile,
@@ -91,7 +89,6 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Get a revocation list from the registry."""
         raise NotImplementedError()
 
-    # TODO: determine keyword arguments
     async def register_revocation_status_list(
         self,
         profile: Profile,
@@ -100,4 +97,15 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         options: Optional[dict] = None,
     ) -> RevStatusListResult:
         """Register a revocation list on the registry."""
+        raise NotImplementedError()
+
+    async def update_revocation_status_list(
+        self,
+        profile: Profile,
+        rev_reg_def: RevRegDef,
+        prev_status_list: RevStatusList,
+        curr_status_list: RevStatusList,
+        options: Optional[dict] = None,
+    ) -> RevStatusListResult:
+        """Update a revocation list on the registry."""
         raise NotImplementedError()
