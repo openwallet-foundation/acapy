@@ -8,11 +8,11 @@ from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 from ...models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
 from ...models.anoncreds_revocation import (
     AnonCredsRegistryGetRevocationRegistryDefinition,
-    GetRevStatusListResult,
+    GetRevListResult,
     RevRegDef,
     RevRegDefResult,
-    RevStatusList,
-    RevStatusListResult,
+    RevList,
+    RevListResult,
 )
 from ...models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 
@@ -78,29 +78,29 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Register a revocation registry definition on the registry."""
         raise NotImplementedError()
 
-    async def get_revocation_status_list(
+    async def get_revocation_list(
         self, profile: Profile, revocation_registry_id: str, timestamp: int
-    ) -> GetRevStatusListResult:
+    ) -> GetRevListResult:
         """Get a revocation list from the registry."""
         raise NotImplementedError()
 
-    async def register_revocation_status_list(
+    async def register_revocation_list(
         self,
         profile: Profile,
         rev_reg_def: RevRegDef,
-        rev_status_list: RevStatusList,
+        rev_list: RevList,
         options: Optional[dict] = None,
-    ) -> RevStatusListResult:
+    ) -> RevListResult:
         """Register a revocation list on the registry."""
         raise NotImplementedError()
 
-    async def update_revocation_status_list(
+    async def update_revocation_list(
         self,
         profile: Profile,
         rev_reg_def: RevRegDef,
-        prev_status_list: RevStatusList,
-        curr_status_list: RevStatusList,
+        prev_list: RevList,
+        curr_list: RevList,
         options: Optional[dict] = None,
-    ) -> RevStatusListResult:
+    ) -> RevListResult:
         """Update a revocation list on the registry."""
         raise NotImplementedError()

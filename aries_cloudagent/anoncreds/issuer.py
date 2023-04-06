@@ -25,7 +25,7 @@ from .models.anoncreds_revocation import (
     RevRegDef,
     RevRegDefResult,
     RevRegDefState,
-    RevStatusList,
+    RevList,
 )
 from .models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
 from .base import AnonCredsSchemaAlreadyExists
@@ -39,7 +39,7 @@ CATEGORY_CRED_DEF = "credential_def"
 CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
 CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
 CATEGORY_SCHEMA = "schema"
-CATEGORY_REV_STATUS_LIST = "revocation_status_list"
+CATEGORY_REV_LIST = "revocation_list"
 CATEGORY_REV_REG_INFO = "revocation_reg_info"
 CATEGORY_REV_REG_DEF = "revocation_reg_def"
 CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
@@ -569,10 +569,10 @@ class AnonCredsIssuer:
         # entry.name was stored as the credential_definition's ID
         return [entry.name for entry in rev_reg_defs]
 
-    async def create_and_register_revocation_status_list(
+    async def create_and_register_revocation_list(
         self, rev_reg_def_id: str, options: dict
     ):
-        """Create and register a revocation status list."""
+        """Create and register a revocation list."""
         try:
             async with self._profile.session() as session:
                 rev_reg_def_entry = await session.handle.fetch(
@@ -590,22 +590,22 @@ class AnonCredsIssuer:
 
         issuer_id = rev_reg_def_entry.value_json["issuerId"]
 
-        rev_status_list = RevocationStatusList.create(
+        rev_list = RevocationStatusList.create(
             rev_reg_def_id,
             rev_reg_def_entry.raw_value,
             issuer_id,
         )
 
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
-        result = await anoncreds_registry.register_revocation_status_list(
-            self.profile, RevStatusList.from_native(rev_status_list), options
+        result = await anoncreds_registry.register_revocation_list(
+            self.profile, RevList.from_native(rev_list), options
         )
-        rev_status_list_json = rev_status_list.to_json()
+        rev_list_json = rev_list.to_json()
 
         try:
             async with self._profile.session() as session:
                 await session.handle.insert(
-                    CATEGORY_REV_STATUS_LIST, rev_reg_def_id, rev_status_list_json
+                    CATEGORY_REV_LIST, rev_reg_def_id, rev_list_json
                 )
         except AskarError as err:
             raise AnonCredsIssuerError("Error saving new revocation registry") from err
@@ -717,9 +717,7 @@ class AnonCredsIssuer:
         if revoc_reg_id:
             try:
                 async with self._profile.transaction() as txn:
-                    rev_status_list = await txn.handle.fetch(
-                        CATEGORY_REV_STATUS_LIST, revoc_reg_id
-                    )
+                    rev_list = await txn.handle.fetch(CATEGORY_REV_LIST, revoc_reg_id)
                     rev_reg_info = await txn.handle.fetch(
                         CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                     )
@@ -729,7 +727,7 @@ class AnonCredsIssuer:
                     rev_key = await txn.handle.fetch(
                         CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
                     )
-                    if not rev_status_list:
+                    if not rev_list:
                         raise AnonCredsIssuerError("Revocation registry not found")
                     if not rev_reg_info:
                         raise AnonCredsIssuerError(
@@ -754,9 +752,7 @@ class AnonCredsIssuer:
                         rev_reg_def = RevocationRegistryDefinition.load(
                             rev_reg_def.raw_value
                         )
-                        rev_status_list = RevocationStatusList.load(
-                            rev_status_list.raw_value
-                        )
+                        rev_list = RevocationStatusList.load(rev_list.raw_value)
                     except AnoncredsError as err:
                         raise AnonCredsIssuerError(
                             "Error loading revocation registry definition"
@@ -785,7 +781,7 @@ class AnonCredsIssuer:
         else:
             revoc = None
             credential_revocation_id = None
-            rev_status_list = None
+            rev_list = None
 
         try:
             credential = await asyncio.get_event_loop().run_in_executor(
@@ -798,7 +794,7 @@ class AnonCredsIssuer:
                     raw_values,
                     None,
                     revoc_reg_id,
-                    rev_status_list,
+                    rev_list,
                     revoc,
                 ),
             )
@@ -822,13 +818,13 @@ class AnonCredsIssuer:
             cred_revoc_ids: sequences of credential indexes in the revocation registry
 
         Returns:
-            Tuple with the update revocation status list, list of cred rev ids not revoked
+            Tuple with the update revocation list, list of cred rev ids not revoked
 
         """
 
-        # TODO This method should return the old status list, the new status list,
+        # TODO This method should return the old list, the new list,
         # and the list of changed indices
-        prev_status_list = None
+        prev_list = None
         updated_list = None
         failed_crids = set()
         max_attempt = 5
@@ -845,8 +841,8 @@ class AnonCredsIssuer:
                     rev_reg_def_entry = await session.handle.fetch(
                         CATEGORY_REV_REG_DEF, revoc_reg_id
                     )
-                    rev_status_list_entry = await session.handle.fetch(
-                        CATEGORY_REV_STATUS_LIST, revoc_reg_id
+                    rev_list_entry = await session.handle.fetch(
+                        CATEGORY_REV_LIST, revoc_reg_id
                     )
                     rev_reg_info = await session.handle.fetch(
                         CATEGORY_REV_REG_INFO, revoc_reg_id
@@ -855,7 +851,7 @@ class AnonCredsIssuer:
                     raise AnonCredsIssuerError(
                         "Revocation registry definition not found"
                     )
-                if not rev_status_list_entry:
+                if not rev_list_entry:
                     raise AnonCredsIssuerError("Revocation registry not found")
                 if not rev_reg_info:
                     raise AnonCredsIssuerError("Revocation registry metadata not found")
@@ -912,16 +908,14 @@ class AnonCredsIssuer:
                 break
 
             try:
-                prev_status_list = RevocationStatusList.load(
-                    rev_status_list_entry.raw_value
-                )
+                prev_list = RevocationStatusList.load(rev_list_entry.raw_value)
             except AnoncredsError as err:
                 raise AnonCredsIssuerError("Error loading revocation registry") from err
 
             try:
                 updated_list = await asyncio.get_event_loop().run_in_executor(
                     None,
-                    lambda: prev_status_list.update(
+                    lambda: prev_list.update(
                         int(time.time()),
                         None,  # issued
                         list(rev_crids),  # revoked
@@ -935,13 +929,13 @@ class AnonCredsIssuer:
 
             try:
                 async with self._profile.transaction() as txn:
-                    rev_status_list_upd = await txn.handle.fetch(
-                        CATEGORY_REV_STATUS_LIST, revoc_reg_id, for_update=True
+                    rev_list_upd = await txn.handle.fetch(
+                        CATEGORY_REV_LIST, revoc_reg_id, for_update=True
                     )
                     rev_info_upd = await txn.handle.fetch(
                         CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
                     )
-                    if not rev_status_list_upd or not rev_reg_info:
+                    if not rev_list_upd or not rev_reg_info:
                         LOGGER.warn(
                             "Revocation registry missing, skipping update: {}",
                             revoc_reg_id,
@@ -953,7 +947,7 @@ class AnonCredsIssuer:
                         # handle concurrent update to the registry by retrying
                         continue
                     await txn.handle.replace(
-                        CATEGORY_REV_STATUS_LIST,
+                        CATEGORY_REV_LIST,
                         revoc_reg_id,
                         updated_list.to_json_buffer(),
                     )
@@ -968,7 +962,7 @@ class AnonCredsIssuer:
             break
 
         return RevokeResult(
-            prev=prev_status_list,
+            prev=prev_list,
             curr=updated_list,
             failed=[str(rev_id) for rev_id in sorted(failed_crids)],
         )

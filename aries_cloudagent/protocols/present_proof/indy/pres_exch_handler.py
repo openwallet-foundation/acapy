@@ -132,16 +132,14 @@ class IndyPresExchHandler:
                     )
         return schemas, cred_defs, revocation_registries
 
-    async def _get_revocation_status_lists(
-        self, requested_referents: dict, credentials: dict
-    ):
-        """Get revocation status lists.
+    async def _get_revocation_lists(self, requested_referents: dict, credentials: dict):
+        """Get revocation lists.
 
-        Get revocation status lists with non-revocation interval defined in
+        Get revocation lists with non-revocation interval defined in
         "non_revoked" of the presentation request or attributes
         """
         epoch_now = int(time.time())
-        rev_status_lists = {}
+        rev_lists = {}
         for precis in requested_referents.values():  # cred_id, non-revoc interval
             credential_id = precis["cred_id"]
             if not credentials[credential_id].get("rev_reg_id"):
@@ -158,14 +156,14 @@ class IndyPresExchHandler:
                     f"{reft_non_revoc_interval.get('from', 0)}_"
                     f"{reft_non_revoc_interval.get('to', epoch_now)}"
                 )
-                if key not in rev_status_lists:
-                    result = await anoncreds_registry.get_revocation_status_list(
+                if key not in rev_lists:
+                    result = await anoncreds_registry.get_revocation_list(
                         self._profile,
                         rev_reg_id,
                         reft_non_revoc_interval.get("to", epoch_now),
                     )
 
-                    rev_status_lists[key] = (
+                    rev_lists[key] = (
                         rev_reg_id,
                         credential_id,
                         result.revocation_list.serialize(),
@@ -174,21 +172,21 @@ class IndyPresExchHandler:
                 for stamp_me in requested_referents.values():
                     # often one cred satisfies many requested attrs/preds
                     if stamp_me["cred_id"] == credential_id:
-                        stamp_me["timestamp"] = rev_status_lists[key][3]
+                        stamp_me["timestamp"] = rev_lists[key][3]
 
-        return rev_status_lists
+        return rev_lists
 
     async def _get_revocation_states(
-        self, revocation_registries: dict, credentials: dict, rev_status_lists: dict
+        self, revocation_registries: dict, credentials: dict, rev_lists: dict
     ):
         """Get revocation states to prove non-revoked."""
         revocation_states = {}
         for (
             rev_reg_id,
             credential_id,
-            rev_status_list,
+            rev_list,
             timestamp,
-        ) in rev_status_lists.values():
+        ) in rev_lists.values():
             if rev_reg_id not in revocation_states:
                 revocation_states[rev_reg_id] = {}
             rev_reg = revocation_registries[rev_reg_id]
@@ -198,7 +196,7 @@ class IndyPresExchHandler:
                     await self.holder.create_revocation_state(
                         credentials[credential_id]["cred_rev_id"],
                         rev_reg.reg_def,
-                        rev_status_list,
+                        rev_list,
                         tails_local_path,
                     )
                 )
@@ -242,12 +240,10 @@ class IndyPresExchHandler:
             credentials
         )
 
-        rev_status_lists = await self._get_revocation_status_lists(
-            requested_referents, credentials
-        )
+        rev_lists = await self._get_revocation_lists(requested_referents, credentials)
 
         revocation_states = await self._get_revocation_states(
-            revocation_registries, credentials, rev_status_lists
+            revocation_registries, credentials, rev_lists
         )
 
         self._set_timestamps(requested_credentials, requested_referents)

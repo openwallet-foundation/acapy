@@ -271,11 +271,11 @@ class AnonCredsRegistryGetRevocationRegistryDefinitionsSchema(BaseModelSchema):
     )
 
 
-class RevStatusList(BaseModel):
-    """RevStatusList."""
+class RevList(BaseModel):
+    """RevList."""
 
     class Meta:
-        """RevStatusList metadata."""
+        """RevList metadata."""
 
         schema_class = "AnonCredsRevocationListSchema"
 
@@ -296,22 +296,22 @@ class RevStatusList(BaseModel):
         self.timestamp = timestamp
 
     @classmethod
-    def from_native(cls, rev_status_list: RevocationStatusList):
-        """Convert from native revocation status list."""
-        return cls.deserialize(rev_status_list.to_json())
+    def from_native(cls, rev_list: RevocationStatusList):
+        """Convert from native revocation list."""
+        return cls.deserialize(rev_list.to_json())
 
     def to_native(self):
-        """Convert to native revocation status list."""
+        """Convert to native revocation list."""
         return RevocationStatusList.load(self.serialize())
 
 
-class RevStatusListSchema(BaseModelSchema):
-    """RevStatusListSchema."""
+class RevListSchema(BaseModelSchema):
+    """RevListSchema."""
 
     class Meta:
-        """RevStatusListSchema metadata."""
+        """RevListSchema metadata."""
 
-        model_class = RevStatusList
+        model_class = RevList
         unknown = EXCLUDE
 
     issuer_id = fields.Str(
@@ -329,8 +329,8 @@ class RevStatusListSchema(BaseModelSchema):
     timestamp = fields.Int()
 
 
-class RevStatusListState(BaseModel):
-    """RevStatusListState."""
+class RevListState(BaseModel):
+    """RevListState."""
 
     STATE_FINISHED = "finished"
     STATE_FAILED = "failed"
@@ -338,97 +338,95 @@ class RevStatusListState(BaseModel):
     STATE_WAIT = "wait"
 
     class Meta:
-        """RevStatusListState metadata."""
+        """RevListState metadata."""
 
-        schema_class = "RevStatusListStateSchema"
+        schema_class = "RevListStateSchema"
 
     def __init__(
         self,
         state: str,
-        revocation_status_list: RevStatusList,
+        revocation_list: RevList,
     ):
         self.state = state
-        self.revocation_status_list = revocation_status_list
+        self.revocation_list = revocation_list
 
 
-class RevStatusListStateSchema(BaseModelSchema):
-    """RevStatusListStateSchema."""
+class RevListStateSchema(BaseModelSchema):
+    """RevListStateSchema."""
 
     class Meta:
-        """RevStatusListStateSchema metadata."""
+        """RevListStateSchema metadata."""
 
-        model_class = RevStatusListState
+        model_class = RevListState
         unknown = EXCLUDE
 
     state = fields.Str(
         validate=OneOf(
             [
-                RevStatusListState.STATE_FINISHED,
-                RevStatusListState.STATE_FAILED,
-                RevStatusListState.STATE_ACTION,
-                RevStatusListState.STATE_WAIT,
+                RevListState.STATE_FINISHED,
+                RevListState.STATE_FAILED,
+                RevListState.STATE_ACTION,
+                RevListState.STATE_WAIT,
             ]
         )
     )
-    revocation_status_list = fields.Nested(
-        RevStatusListSchema(), description="revocation list"
-    )
+    revocation_list = fields.Nested(RevListSchema(), description="revocation list")
 
 
-class RevStatusListResult(BaseModel):
+class RevListResult(BaseModel):
     """Cred def result."""
 
     class Meta:
-        """RevStatusListResult metadata."""
+        """RevListResult metadata."""
 
-        schema_class = "RevStatusListResultSchema"
+        schema_class = "RevListResultSchema"
 
     def __init__(
         self,
         job_id: Optional[str],
-        revocation_status_list_state: RevStatusListState,
+        revocation_list_state: RevListState,
         registration_metadata: dict,
-        revocation_status_list_metadata: dict,
+        revocation_list_metadata: dict,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.job_id = job_id
-        self.revocation_status_list_state = revocation_status_list_state
+        self.revocations_list_state = revocation_list_state
         self.registration_metadata = registration_metadata
-        self.revocation_status_list_metadata = revocation_status_list_metadata
+        self.revocation_list_metadata = revocation_list_metadata
 
     @property
     def rev_reg_def_id(self):
-        return self.revocation_status_list_state.revocation_status_list_id
+        return self.revocation_list_state.revocation_list_id
 
 
-class RevStatusListResultSchema(BaseModelSchema):
+class RevListResultSchema(BaseModelSchema):
     """Cred def result schema."""
 
     class Meta:
-        """RevStatusListResultSchema metadata."""
+        """RevListResultSchema metadata."""
 
-        model_class = RevStatusListResult
+        model_class = RevListResult
         unknown = EXCLUDE
 
     job_id = fields.Str()
-    revocation_status_list_state = fields.Nested(RevStatusListStateSchema())
+    revocation_list_state = fields.Nested(RevListStateSchema())
     registration_metadata = fields.Dict()
-    # For indy, revocation_status_list_metadata will contain the seqNo
-    revocation_status_list_metadata = fields.Dict()
+    # For indy, revocation_list_metadata will contain the seqNo
+    revocation_list_metadata = fields.Dict()
 
 
-class GetRevStatusListResult(BaseModel):
-    """GetRevStatusListResult"""
+class GetRevListResult(BaseModel):
+    """GetRevListResult"""
 
     class Meta:
-        """GetRevStatusListResult metadata."""
+        """GetRevListResult metadata."""
 
-        schema_class = "GetRevStatusListResultSchema"
+        schema_class = "GetRevListResultSchema"
 
     def __init__(
         self,
-        revocation_list: RevStatusList,
+        revocation_list: RevList,
         resolution_metadata: Dict[str, Any],
         revocation_registry_metadata: Dict[str, Any],
         **kwargs,
@@ -439,15 +437,15 @@ class GetRevStatusListResult(BaseModel):
         self.revocation_registry_metadata = revocation_registry_metadata
 
 
-class GetRevStatusListResultSchema(BaseModelSchema):
-    """GetRevStatusListResultSchema"""
+class GetRevListResultSchema(BaseModelSchema):
+    """GetRevListResultSchema"""
 
     class Meta:
-        """GetRevStatusListResultSchema metadata."""
+        """GetRevListResultSchema metadata."""
 
-        model_class = GetRevStatusListResult
+        model_class = GetRevListResult
         unknown = EXCLUDE
 
-    revocation_list = fields.Nested(RevStatusListSchema)
+    revocation_list = fields.Nested(RevListSchema)
     resolution_metadata = fields.Str()
     revocation_registry_metadata = fields.Dict()

@@ -380,14 +380,14 @@ class AnonCredsVerifier:
         self,
         identifiers: list,
     ) -> Tuple[dict, dict, dict, dict]:
-        """Return schemas, cred_defs, rev_reg_defs, rev_status_lists."""
+        """Return schemas, cred_defs, rev_reg_defs, rev_lists."""
         schema_ids = []
         cred_def_ids = []
 
         schemas = {}
         cred_defs = {}
         rev_reg_defs = {}
-        rev_status_lists = {}
+        rev_lists = {}
 
         for identifier in identifiers:
             schema_ids.append(identifier["schema_id"])
@@ -417,25 +417,25 @@ class AnonCredsVerifier:
                     ).revocation_registry.serialize()
 
                 if identifier.get("timestamp"):
-                    rev_status_lists.setdefault(identifier["rev_reg_id"], {})
+                    rev_lists.setdefault(identifier["rev_reg_id"], {})
 
                     if (
                         identifier["timestamp"]
-                        not in rev_status_lists[identifier["rev_reg_id"]]
+                        not in rev_lists[identifier["rev_reg_id"]]
                     ):
-                        result = await anoncreds_registry.get_revocation_status_list(
+                        result = await anoncreds_registry.get_revocation_list(
                             self.profile,
                             identifier["rev_reg_id"],
                             identifier["timestamp"],
                         )
-                        rev_status_lists[identifier["rev_reg_id"]][
+                        rev_lists[identifier["rev_reg_id"]][
                             identifier["timestamp"]
                         ] = result.revocation_list.serialize()
         return (
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_status_lists,
+            rev_lists,
         )
 
     async def verify_presentation(
@@ -445,7 +445,7 @@ class AnonCredsVerifier:
         schemas,
         credential_definitions,
         rev_reg_defs,
-        rev_status_lists,
+        rev_lists,
     ) -> Tuple[bool, list]:
         """
         Verify a presentation.
@@ -484,7 +484,7 @@ class AnonCredsVerifier:
                 schemas,
                 credential_definitions,
                 rev_reg_defs,
-                rev_status_lists,
+                rev_lists,
             )
         except AnoncredsError as err:
             s = str(err)

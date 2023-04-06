@@ -10,12 +10,12 @@ from .models.anoncreds_cred_def import (
     GetCredDefResult,
 )
 from .models.anoncreds_revocation import (
-    GetRevStatusListResult,
+    GetRevListResult,
     AnonCredsRegistryGetRevocationRegistryDefinition,
     RevRegDef,
     RevRegDefResult,
-    RevStatusList,
-    RevStatusListResult,
+    RevList,
+    RevListResult,
 )
 from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 from .base import (
@@ -140,38 +140,38 @@ class AnonCredsRegistry:
             profile, revocation_registry_definition, options
         )
 
-    async def get_revocation_status_list(
+    async def get_revocation_list(
         self, profile: Profile, revocation_registry_id: str, timestamp: int
-    ) -> GetRevStatusListResult:
+    ) -> GetRevListResult:
         """Get a revocation list from the registry."""
         resolver = await self._resolver_for_identifier(revocation_registry_id)
-        return await resolver.get_revocation_status_list(
+        return await resolver.get_revocation_list(
             profile, revocation_registry_id, timestamp
         )
 
-    async def register_revocation_status_list(
+    async def register_revocation_list(
         self,
         profile: Profile,
         rev_reg_def: RevRegDef,
-        rev_status_list: RevStatusList,
+        rev_list: RevList,
         options: Optional[dict] = None,
-    ) -> RevStatusListResult:
+    ) -> RevListResult:
         """Register a revocation list on the registry."""
-        registrar = await self._registrar_for_identifier(rev_status_list.issuer_id)
-        return await registrar.register_revocation_status_list(
-            profile, rev_reg_def, rev_status_list, options
+        registrar = await self._registrar_for_identifier(rev_list.issuer_id)
+        return await registrar.register_revocation_list(
+            profile, rev_reg_def, rev_list, options
         )
 
-    async def update_revocation_status_list(
+    async def update_revocation_list(
         self,
         profile: Profile,
         rev_reg_def: RevRegDef,
-        prev_status_list: RevStatusList,
-        curr_status_list: RevStatusList,
+        prev_list: RevList,
+        curr_list: RevList,
         options: Optional[dict] = None,
-    ) -> RevStatusListResult:
+    ) -> RevListResult:
         """Update a revocation list on the registry."""
-        registrar = await self._registrar_for_identifier(curr_status_list.issuer_id)
-        return await registrar.update_revocation_status_list(
-            profile, rev_reg_def, prev_status_list, curr_status_list, options
+        registrar = await self._registrar_for_identifier(curr_list.issuer_id)
+        return await registrar.update_revocation_list(
+            profile, rev_reg_def, prev_list, curr_list, options
         )
