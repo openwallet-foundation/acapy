@@ -154,3 +154,14 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
         options: Optional[dict] = None,
     ) -> RevStatusListResult:
         """Register a revocation list on the registry."""
+
+    @abstractmethod
+    async def update_revocation_status_list(
+        self,
+        profile: Profile,
+        rev_reg_def: RevRegDef,
+        prev_status_list: RevStatusList,
+        curr_status_list: RevStatusList,
+        options: Optional[dict] = None,
+    ) -> RevStatusListResult:
+        """Update a revocation list on the registry."""

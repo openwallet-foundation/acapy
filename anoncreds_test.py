@@ -45,7 +45,7 @@ async def main():
                     "issuerId": public_did.did,
                 },
                 "options": {
-                    "support_revocation": False,
+                    "support_revocation": True,
                 },
             },
         )

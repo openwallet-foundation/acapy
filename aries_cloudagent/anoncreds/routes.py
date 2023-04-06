@@ -260,6 +260,60 @@ async def cred_def_post(request: web.BaseRequest):
     return web.json_response(result.serialize())
 
 
+@docs(tags=["anoncreds"], summary="")
+@match_info_schema(CredIdMatchInfo())
+@response_schema(GetCredDefResultSchema(), 200, description="")
+async def cred_def_get(request: web.BaseRequest):
+    """Request handler for getting credential definition.
+
+    Args:
+
+    Returns:
+
+    """
+    context: AdminRequestContext = request["context"]
+    anon_creds_registry = context.inject(AnonCredsRegistry)
+    credential_id = request.match_info["cred_def_id"]
+    result = await anon_creds_registry.get_credential_definition(
+        context.profile, credential_id
+    )
+    return web.json_response(result.serialize())
+
+
+class GetCredDefsResponseSchema(OpenAPISchema):
+    """AnonCredsRegistryGetCredDefsSchema"""
+
+    credential_definition_ids = fields.List(
+        fields.Str(
+            description="credential definition identifiers",
+        )
+    )
+
+
+@docs(tags=["anoncreds"], summary="")
+@querystring_schema(CredDefsQueryStringSchema())
+@response_schema(GetCredDefsResponseSchema(), 200, description="")
+async def cred_defs_get(request: web.BaseRequest):
+    """Request handler for getting all credential definitions.
+
+    Args:
+
+    Returns:
+
+    """
+    context: AdminRequestContext = request["context"]
+    issuer = AnonCredsIssuer(context.profile)
+
+    cred_def_ids = await issuer.get_created_credential_definitions(
+        issuer_id=request.query.get("issuer_id"),
+        schema_id=request.query.get("schema_id"),
+        schema_name=request.query.get("schema_name"),
+        schema_version=request.query.get("schema_version"),
+        state=request.query.get("state"),
+    )
+    return web.json_response(cred_def_ids)
+
+
 class RevRegCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
@@ -331,60 +385,6 @@ async def rev_reg_def_post(request: web.BaseRequest):
     result = await shield(issuer_rev_reg_rec.generate_and_publish(context.profile))
 
     return web.json_response(result.serialize())
-
-
-@docs(tags=["anoncreds"], summary="")
-@match_info_schema(CredIdMatchInfo())
-@response_schema(GetCredDefResultSchema(), 200, description="")
-async def cred_def_get(request: web.BaseRequest):
-    """Request handler for getting credential definition.
-
-    Args:
-
-    Returns:
-
-    """
-    context: AdminRequestContext = request["context"]
-    anon_creds_registry = context.inject(AnonCredsRegistry)
-    credential_id = request.match_info["cred_def_id"]
-    result = await anon_creds_registry.get_credential_definition(
-        context.profile, credential_id
-    )
-    return web.json_response(result.serialize())
-
-
-class GetCredDefsResponseSchema(OpenAPISchema):
-    """AnonCredsRegistryGetCredDefsSchema"""
-
-    credential_definition_ids = fields.List(
-        fields.Str(
-            description="credential definition identifiers",
-        )
-    )
-
-
-@docs(tags=["anoncreds"], summary="")
-@querystring_schema(CredDefsQueryStringSchema())
-@response_schema(GetCredDefsResponseSchema(), 200, description="")
-async def cred_defs_get(request: web.BaseRequest):
-    """Request handler for getting all credential definitions.
-
-    Args:
-
-    Returns:
-
-    """
-    context: AdminRequestContext = request["context"]
-    issuer = AnonCredsIssuer(context.profile)
-
-    cred_def_ids = await issuer.get_created_credential_definitions(
-        issuer_id=request.query.get("issuer_id"),
-        schema_id=request.query.get("schema_id"),
-        schema_name=request.query.get("schema_name"),
-        schema_version=request.query.get("schema_version"),
-        state=request.query.get("state"),
-    )
-    return web.json_response(cred_def_ids)
 
 
 async def register(app: web.Application):

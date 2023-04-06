@@ -157,7 +157,21 @@ class AnonCredsRegistry:
         options: Optional[dict] = None,
     ) -> RevStatusListResult:
         """Register a revocation list on the registry."""
-        registrar = await self._registrar_for_identifier("something")
+        registrar = await self._registrar_for_identifier(rev_status_list.issuer_id)
         return await registrar.register_revocation_status_list(
             profile, rev_reg_def, rev_status_list, options
+        )
+
+    async def update_revocation_status_list(
+        self,
+        profile: Profile,
+        rev_reg_def: RevRegDef,
+        prev_status_list: RevStatusList,
+        curr_status_list: RevStatusList,
+        options: Optional[dict] = None,
+    ) -> RevStatusListResult:
+        """Update a revocation list on the registry."""
+        registrar = await self._registrar_for_identifier(curr_status_list.issuer_id)
+        return await registrar.update_revocation_status_list(
+            profile, rev_reg_def, prev_status_list, curr_status_list, options
         )

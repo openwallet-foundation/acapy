@@ -423,24 +423,22 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     ) -> GetRevStatusListResult:
         """Get a revocation list from the registry."""
 
-    async def register_revocation_status_list(
+    async def _revoc_reg_entry_with_fix(
         self,
         profile: Profile,
-        rev_reg_def: RevRegDef,
         rev_status_list: RevStatusList,
-        options: Optional[dict] = None,
-    ) -> RevStatusListResult:
-        """Register a revocation list on the registry."""
+        rev_reg_def_type: str,
+        entry: dict,
+    ) -> dict:
+        """Send a revocation registry entry to the ledger with fixes if needed"""
         # TODO Handle multitenancy and multi-ledger (like in get cred def)
         ledger = profile.inject(BaseLedger)
-
-        rev_reg_entry = {"value": {"accum": rev_status_list.current_accumulator}}
 
         try:
             rev_entry_res = await ledger.send_revoc_reg_entry(
                 rev_status_list.rev_reg_id,
-                rev_reg_def.type,
-                rev_reg_entry,
+                rev_reg_def_type,
+                entry,
                 rev_status_list.issuer_id,
                 write_ledger=True,
                 endorser_did=None,
@@ -478,11 +476,68 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     "Ledger update failed due to unknown issue"
                 ) from err
 
+        return rev_entry_res
+
+    async def register_revocation_status_list(
+        self,
+        profile: Profile,
+        rev_reg_def: RevRegDef,
+        rev_status_list: RevStatusList,
+        options: Optional[dict] = None,
+    ) -> RevStatusListResult:
+        """Register a revocation list on the registry."""
+        rev_reg_entry = {"value": {"accum": rev_status_list.current_accumulator}}
+
+        rev_entry_res = await self._revoc_reg_entry_with_fix(
+            profile, rev_status_list, rev_reg_def.type, rev_reg_entry
+        )
+
         return RevStatusListResult(
             job_id=None,
             revocation_status_list_state=RevStatusListState(
                 state=RevStatusListState.STATE_FINISHED,
                 revocation_status_list=rev_status_list,
+            ),
+            registration_metadata={},
+            revocation_status_list_metadata={
+                "seqNo": rev_entry_res["result"]["txnMetadata"]["seqNo"],
+            },
+        )
+
+    async def update_revocation_status_list(
+        self,
+        profile: Profile,
+        rev_reg_def: RevRegDef,
+        prev_status_list: RevStatusList,
+        curr_status_list: RevStatusList,
+        options: Optional[dict] = None,
+    ) -> RevStatusListResult:
+        """Update a revocation status list."""
+        newly_revoked_indices = [
+            # Remember: Indices in Indy are 1-based
+            index + 1
+            for index, (prev, curr) in enumerate(
+                zip(prev_status_list.revocation_list, curr_status_list.revocation_list)
+            )
+            if prev != curr
+        ]
+        rev_reg_entry = {
+            "value": {
+                "accum": curr_status_list.current_accumulator,
+                "prevAccum": prev_status_list.current_accumulator,
+                "revoked": newly_revoked_indices,
+            }
+        }
+
+        rev_entry_res = await self._revoc_reg_entry_with_fix(
+            profile, curr_status_list, rev_reg_def.type, rev_reg_entry
+        )
+
+        return RevStatusListResult(
+            job_id=None,
+            revocation_status_list_state=RevStatusListState(
+                state=RevStatusListState.STATE_FINISHED,
+                revocation_status_list=curr_status_list,
             ),
             registration_metadata={},
             revocation_status_list_metadata={
