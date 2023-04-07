@@ -1,4 +1,4 @@
-"""Base Registry"""
+"""Base Registry."""
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, Pattern, Tuple, TypeVar
 
@@ -34,6 +34,7 @@ class AnonCredsObjectNotFound(BaseAnonCredsError):
     def __init__(
         self, message: Optional[str] = None, resolution_metadata: Optional[dict] = None
     ):
+        """Constructor."""
         super().__init__(message, resolution_metadata)
         self.resolution_metadata = resolution_metadata
 
@@ -48,11 +49,13 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
     def __init__(
         self, message: Optional[str] = None, obj: Optional[T] = None, *args, **kwargs
     ):
+        """Constructor."""
         super().__init__(message, obj, *args, **kwargs)
         self.obj = obj
 
     @property
     def message(self):
+        """Message property."""
         if self.args[0] and self.args[1]:
             return f"{self.args[0]}: {self.args[1]}"
         else:
@@ -66,10 +69,12 @@ class AnonCredsSchemaAlreadyExists(
 
     @property
     def schema_id(self):
+        """Get Schema Id."""
         return self.obj[0] if self.obj else None
 
     @property
     def schema(self):
+        """Get Schema."""
         return self.obj[1] if self.obj else None
 
 
@@ -78,6 +83,8 @@ class AnonCredsResolutionError(BaseAnonCredsError):
 
 
 class BaseAnonCredsHandler(ABC):
+    """Base Anon Creds Handler."""
+
     @property
     @abstractmethod
     def supported_identifiers_regex(self) -> Pattern:
@@ -89,10 +96,12 @@ class BaseAnonCredsHandler(ABC):
 
     @abstractmethod
     async def setup(self, context: InjectionContext):
-        """Setup method."""
+        """Class Setup method."""
 
 
 class BaseAnonCredsResolver(BaseAnonCredsHandler):
+    """Base Anon Creds Resolver."""
+
     @abstractmethod
     async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
@@ -117,6 +126,8 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
 
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
+    """Base Anon Creds Registrar."""
+
     @abstractmethod
     async def register_schema(
         self,
