@@ -117,7 +117,7 @@ def _get_path_from_msg_class(msg_class: type) -> str:
     path = split_str + path.rsplit(split_str, 1)[1]
     version = (re.search(r"v(\d+\_)?(\*|\d+)", path)).group()
     path = path.split(version, 1)[0]
-    return (path.replace("/", ".")) + "definition"
+    return (path.replace(os.sep, ".")) + "definition"
 
 
 def _get_version_def_from_path(definition_path: str, major_version: int = 1):
