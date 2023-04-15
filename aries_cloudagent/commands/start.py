@@ -94,8 +94,11 @@ def run_loop(startup: Coroutine, shutdown: Coroutine):
 
     loop = asyncio.get_event_loop()
     cleanup = functools.partial(asyncio.ensure_future, done(), loop=loop)
-    loop.add_signal_handler(signal.SIGTERM, cleanup)
-    asyncio.ensure_future(init(cleanup), loop=loop)
+    try:
+        loop.add_signal_handler(signal.SIGTERM, cleanup)
+    except:
+        pass    
+   asyncio.ensure_future(init(cleanup), loop=loop)
 
     try:
         loop.run_forever()
