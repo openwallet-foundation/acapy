@@ -12,7 +12,7 @@ on:
 
 jobs:
   tests:
-    if: github.repository == 'hyperledger/aries-cloudagent-python' || (github.event.inputs.run_flows)
+    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
     name: Tests
     strategy:
       fail-fast: false
@@ -28,7 +28,7 @@ jobs:
       os: ${{ matrix.os }}
 
   tests-indy:
-    if: github.repository == 'hyperledger/aries-cloudagent-python' || (github.event.inputs.run_flows)
+    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
     name: Tests (Indy)
     strategy:
       fail-fast: false
