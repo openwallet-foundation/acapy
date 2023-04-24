@@ -5,7 +5,6 @@ from copy import deepcopy
 from time import time
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
-from more_itertools import side_effect
 
 from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache

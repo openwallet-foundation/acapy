@@ -5,7 +5,6 @@ import json
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
-from more_itertools import side_effect
 
 from .. import handler as test_module
 
