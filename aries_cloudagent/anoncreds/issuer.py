@@ -20,6 +20,7 @@ from aries_askar import AskarError
 
 from ..askar.profile import AskarProfile
 from ..core.error import BaseError
+from .base import AnonCredsSchemaAlreadyExists
 from .models.anoncreds_cred_def import CredDef, CredDefResult, CredDefState
 from .models.anoncreds_revocation import (
     RevRegDef,
@@ -28,8 +29,8 @@ from .models.anoncreds_revocation import (
     RevList,
 )
 from .models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
-from .base import AnonCredsSchemaAlreadyExists
 from .registry import AnonCredsRegistry
+from .util import indy_client_dir
 
 LOGGER = logging.getLogger(__name__)
 
@@ -449,7 +450,6 @@ class AnonCredsIssuer:
         registry_type: str,
         tag: str,
         max_cred_num: int,
-        tails_base_path: str,
         options: Optional[dict] = None,
     ) -> RevRegDefResult:
         """
@@ -481,6 +481,8 @@ class AnonCredsIssuer:
                 "Credential definition not found for revocation registry"
             )
 
+        tails_dir = indy_client_dir("tails", create=True)
+
         try:
             (
                 rev_reg_def,
@@ -494,10 +496,10 @@ class AnonCredsIssuer:
                     tag,
                     registry_type,
                     max_cred_num,
-                    tails_dir_path=tails_base_path,
+                    tails_dir_path=tails_dir,
                 ),
             )
-
+            # TODO Move tails file to more human friendly folder structure?
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating revocation registry") from err
 
@@ -508,7 +510,6 @@ class AnonCredsIssuer:
             self.profile, RevRegDef.from_native(rev_reg_def), options
         )
 
-        # rev_reg_def_id = f"{origin_did}:4:{cred_def_id}:CL_ACCUM:{tag}"
         rev_reg_def_id = result.rev_reg_def_id
 
         try:
@@ -570,7 +571,7 @@ class AnonCredsIssuer:
         return [entry.name for entry in rev_reg_defs]
 
     async def create_and_register_revocation_list(
-        self, rev_reg_def_id: str, options: dict
+        self, rev_reg_def_id: str, options: Optional[dict] = None
     ):
         """Create and register a revocation list."""
         try:
@@ -588,24 +589,25 @@ class AnonCredsIssuer:
                 f"Revocation registry definition not found for id {rev_reg_def_id}"
             )
 
-        issuer_id = rev_reg_def_entry.value_json["issuerId"]
+        rev_reg_def = RevRegDef.deserialize(rev_reg_def_entry.value_json)
 
         rev_list = RevocationStatusList.create(
             rev_reg_def_id,
             rev_reg_def_entry.raw_value,
-            issuer_id,
+            rev_reg_def.issuer_id,
         )
 
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         result = await anoncreds_registry.register_revocation_list(
-            self.profile, RevList.from_native(rev_list), options
+            self.profile, rev_reg_def, RevList.from_native(rev_list), options
         )
-        rev_list_json = rev_list.to_json()
 
         try:
             async with self._profile.session() as session:
                 await session.handle.insert(
-                    CATEGORY_REV_LIST, rev_reg_def_id, rev_list_json
+                    CATEGORY_REV_LIST,
+                    rev_reg_def_id,
+                    result.revocation_list_state.revocation_list.to_json(),
                 )
         except AskarError as err:
             raise AnonCredsIssuerError("Error saving new revocation registry") from err

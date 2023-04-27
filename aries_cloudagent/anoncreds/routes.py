@@ -12,15 +12,18 @@ from aiohttp_apispec import (
 )
 from marshmallow import fields
 
-from aries_cloudagent.revocation.error import RevocationNotSupportedError
-
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import UUIDFour
 from ..revocation.anoncreds import AnonCredsRevocation
-from .issuer import AnonCredsIssuer
+from ..revocation.error import RevocationNotSupportedError
+from ..storage.error import StorageNotFoundError
+from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
-from .models.anoncreds_revocation import RevRegDefResultSchema
+from .models.anoncreds_revocation import (
+    RevRegDefResultSchema,
+    RevListResultSchema,
+)
 from .models.anoncreds_schema import (
     AnonCredsSchemaSchema,
     GetSchemaResultSchema,
@@ -382,7 +385,60 @@ async def rev_reg_def_post(request: web.BaseRequest):
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
-    result = await shield(issuer_rev_reg_rec.generate_and_publish(context.profile))
+    result = await shield(issuer_rev_reg_rec.create_and_register_def(context.profile))
+
+    return web.json_response(result.serialize())
+
+
+class RevListCreateRequestSchema(OpenAPISchema):
+    """Request schema for revocation registry creation request."""
+
+    rev_reg_def_id = fields.Str(
+        description="Revocation registry definition identifier",
+        data_key="revRegDefId",
+    )
+
+
+@docs(tags=["anoncreds"], summary="")
+@request_schema(RevListCreateRequestSchema())
+@response_schema(RevListResultSchema(), 200, description="")
+async def rev_list_post(request: web.BaseRequest):
+    """Request handler for creating .
+
+    Args:
+
+
+    (method) def create_and_register_revocation_registry_definition(
+        issuer_id: str,
+        cred_def_id: str,
+        tag: str,
+        max_cred_num: int,
+        registry_type: str,
+        tails_base_path: str,
+        options: dict[Unknown, Unknown] | None = None
+    ) -> Coroutine[Any, Any, RevRegDefResult]
+
+    Returns:
+
+    """
+    context: AdminRequestContext = request["context"]
+    body = await request.json()
+    rev_reg_def_id = body.get("revRegDefId")
+    options = body.get("options")
+
+    try:
+        revoc = AnonCredsRevocation(context.profile)
+        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_def_id)
+        result = await rev_reg.create_and_register_list(
+            context.profile,
+            options,
+        )
+        LOGGER.debug("published revocation list for: %s", rev_reg_def_id)
+
+    except StorageNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except AnonCredsIssuerError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result.serialize())
 
@@ -407,6 +463,7 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.post("/anoncreds/revocation-registry-definition", rev_reg_def_post),
+            web.post("/anoncreds/revocation-list", rev_list_post),
         ]
     )
 

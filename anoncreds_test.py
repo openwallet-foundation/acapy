@@ -55,6 +55,23 @@ async def main():
         cred_def = await alice.get(f"/anoncreds/credential-definition/{cred_def_id}")
         cred_defs = await alice.get("/anoncreds/credential-definitions")
 
+        rev_reg_def = await alice.post(
+            "/anoncreds/revocation-registry-definition",
+            json={
+                "issuerId": public_did.did,
+                "credDefId": cred_def_id,
+                "tag": "default",
+                "maxCredNum": 10,
+            },
+        )
+        rev_status_list = await alice.post(
+            "/anoncreds/revocation-status-list",
+            json={
+                "revRegDefId": rev_reg_def["revocation_registry_definition_state"][
+                    "revocation_registry_definition_id"
+                ]
+            },
+        )
         alice_conn, bob_conn = await didexchange(alice, bob)
         await indy_issue_credential_v2(
             alice,

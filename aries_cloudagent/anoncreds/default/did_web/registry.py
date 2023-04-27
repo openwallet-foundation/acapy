@@ -4,6 +4,17 @@ from typing import Optional, Pattern
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
+from ...models.anoncreds_cred_def import (
+    GetCredDefResult,
+)
+from ...models.anoncreds_revocation import (
+    GetRevListResult,
+    AnonCredsRegistryGetRevocationRegistryDefinition,
+    RevRegDef,
+    RevList,
+    RevListResult,
+)
+from ...models.anoncreds_schema import GetSchemaResult
 from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 from ...models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
 from ...models.anoncreds_revocation import (

@@ -277,20 +277,20 @@ class RevList(BaseModel):
     class Meta:
         """RevList metadata."""
 
-        schema_class = "AnonCredsRevocationListSchema"
+        schema_class = "RevListSchema"
 
     def __init__(
         self,
         issuer_id: str,
-        rev_reg_id: str,
+        rev_reg_def_id: str,
         revocation_list: List[int],
         current_accumulator: str,
-        timestamp: int,
+        timestamp: Optional[int] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
-        self.rev_reg_id = rev_reg_id
+        self.rev_reg_def_id = rev_reg_def_id
         self.revocation_list = revocation_list
         self.current_accumulator = current_accumulator
         self.timestamp = timestamp
@@ -318,15 +318,20 @@ class RevListSchema(BaseModelSchema):
         description="Issuer Identifier of the credential definition or schema",
         data_key="issuerId",
     )
-    rev_reg_id = fields.Str(
+    rev_reg_def_id = fields.Str(
         description="",
-        data_key="revRegId",
+        data_key="revRegDefId",
     )
     revocation_list = fields.List(
-        fields.Str(description=""), description="", data_key="revocationList"
+        fields.Int(),
+        description="Bit list representing revoked credentials",
+        data_key="revocationList",
     )
     current_accumulator = fields.Str(data_key="currentAccumulator")
-    timestamp = fields.Int()
+    timestamp = fields.Int(
+        description="Timestamp at which revocation list is applicable",
+        required=False,
+    )
 
 
 class RevListState(BaseModel):
@@ -391,13 +396,13 @@ class RevListResult(BaseModel):
     ):
         super().__init__(**kwargs)
         self.job_id = job_id
-        self.revocations_list_state = revocation_list_state
+        self.revocation_list_state = revocation_list_state
         self.registration_metadata = registration_metadata
         self.revocation_list_metadata = revocation_list_metadata
 
     @property
     def rev_reg_def_id(self):
-        return self.revocation_list_state.revocation_list_id
+        return self.revocation_list_state.revocation_list.rev_reg_def_id
 
 
 class RevListResultSchema(BaseModelSchema):
