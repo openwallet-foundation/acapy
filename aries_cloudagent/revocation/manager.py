@@ -1,6 +1,5 @@
 """Classes to manage credential revocation."""
 
-import json
 import logging
 from typing import Mapping, Sequence, Text
 
@@ -134,19 +133,20 @@ class RevocationManager:
             await rev_reg.get_or_fetch_local_tails_path()
             # pick up pending revocations on input revocation registry
             crids = (issuer_rr_rec.pending_pub or []) + [cred_rev_id]
-            (delta_json, _) = await issuer.revoke_credentials(
+            (prev, curr, _) = await issuer.revoke_credentials(
                 issuer_rr_rec.revoc_reg_id, issuer_rr_rec.tails_local_path, crids
             )
             async with self._profile.transaction() as txn:
                 issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
                     txn, issuer_rr_rec.record_id, for_update=True
                 )
-                if delta_json:
-                    issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
+                if prev:
+                    issuer_rr_upd.prev_status_list = prev
+                    issuer_rr_upd.rev_status_list = curr
                 await issuer_rr_upd.clear_pending(txn, crids)
                 await txn.commit()
             await self.set_cred_revoked_state(rev_reg_id, crids)
-            if delta_json:
+            if prev:
                 await issuer_rr_upd.send_entry(self._profile)
             await notify_revocation_published_event(
                 self._profile, rev_reg_id, [cred_rev_id]
@@ -225,7 +225,7 @@ class RevocationManager:
             if limit_crids:
                 crids = crids.intersection(limit_crids)
             if crids:
-                (delta_json, failed_crids) = await issuer.revoke_credentials(
+                (prev, curr, failed_crids) = await issuer.revoke_credentials(
                     issuer_rr_rec.revoc_reg_id,
                     issuer_rr_rec.tails_local_path,
                     crids,
@@ -234,12 +234,13 @@ class RevocationManager:
                     issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
                         txn, issuer_rr_rec.record_id, for_update=True
                     )
-                    if delta_json:
-                        issuer_rr_upd.revoc_reg_entry = json.loads(delta_json)
+                    if prev:
+                        issuer_rr_upd.prev_status_list = prev
+                        issuer_rr_upd.rev_status_list = curr
                     await issuer_rr_upd.clear_pending(txn, crids)
                     await txn.commit()
                 await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
-                if delta_json:
+                if prev:
                     await issuer_rr_upd.send_entry(self._profile)
                 published = sorted(crid for crid in crids if crid not in failed_crids)
                 result[issuer_rr_rec.revoc_reg_id] = published

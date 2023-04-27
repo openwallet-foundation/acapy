@@ -41,7 +41,7 @@ class RevocationRegistry:
     ):
         """Initialize the revocation registry instance."""
         self._cred_def_id = cred_def_id
-        self.issuer_id = issuer_id
+        self._issuer_id = issuer_id
         self._max_creds = max_creds
         self._reg_def_type = reg_def_type
         self._registry_id = registry_id
@@ -89,7 +89,7 @@ class RevocationRegistry:
     @property
     def issuer_id(self) -> str:
         """Accessor for the issuer DID."""
-        return self.issuer_id
+        return self._issuer_id
 
     @property
     def max_creds(self) -> int:
@@ -146,7 +146,7 @@ class RevocationRegistry:
         if self._tails_local_path:
             return self._tails_local_path
 
-        tails_dir = indy_client_dir(join("tails", self.registry_id), create=False)
+        tails_dir = indy_client_dir("tails", create=False)
         return join(tails_dir, self._tails_hash)
 
     def has_local_tails_file(self) -> bool:
