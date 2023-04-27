@@ -358,13 +358,13 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         )
 
     async def get_revocation_registry_definition(
-        self, profile: Profile, rev_reg_id: str
+        self, profile: Profile, rev_reg_def_id: str
     ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
         """Get a revocation registry definition from the registry."""
 
         try:
             revoc = AnonCredsRevocation(profile)
-            rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
+            rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_def_id)
         except StorageNotFoundError as err:
             raise AnonCredsResolutionError(err)
 
@@ -454,7 +454,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         try:
             rev_entry_res = await ledger.send_revoc_reg_entry(
-                rev_list.rev_reg_id,
+                rev_list.rev_reg_def_id,
                 rev_reg_def_type,
                 entry,
                 rev_list.issuer_id,
@@ -504,7 +504,10 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         options: Optional[dict] = None,
     ) -> RevListResult:
         """Register a revocation list on the registry."""
-        rev_reg_entry = {"value": {"accum": rev_list.current_accumulator}}
+        rev_reg_entry = {
+            "ver": "1.0",
+            "value": {"accum": rev_list.current_accumulator}
+        }
 
         rev_entry_res = await self._revoc_reg_entry_with_fix(
             profile, rev_list, rev_reg_def.type, rev_reg_entry
@@ -540,11 +543,12 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             if prev != curr
         ]
         rev_reg_entry = {
+            "ver": "1.0",
             "value": {
                 "accum": curr_list.current_accumulator,
                 "prevAccum": prev_list.current_accumulator,
                 "revoked": newly_revoked_indices,
-            }
+            },
         }
 
         rev_entry_res = await self._revoc_reg_entry_with_fix(
@@ -574,7 +578,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         # get rev reg delta (revocations published to ledger)
         ledger = profile.inject(BaseLedger)
         async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_list.rev_reg_id)
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_list.rev_reg_def_id)
 
         # get rev reg records from wallet (revocations and list)
         recs = []
@@ -584,7 +588,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         applied_txn = {}
         async with profile.session() as session:
             recs = await IssuerCredRevRecord.query_by_ids(
-                session, rev_reg_id=rev_list.rev_reg_id
+                session, rev_reg_id=rev_list.rev_reg_def_id
             )
 
             revoked_ids = []
@@ -615,7 +619,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
                 calculated_txn = await generate_ledger_rrrecovery_txn(
                     genesis_transactions,
-                    rev_list.rev_reg_id,
+                    rev_list.rev_reg_def_id,
                     revoked_ids,
                 )
                 recovery_txn = json.loads(calculated_txn.to_json())
@@ -631,7 +635,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
                     async with ledger:
                         ledger_response = await ledger.send_revoc_reg_entry(
-                            rev_list.rev_reg_id, "CL_ACCUM", recovery_txn
+                            rev_list.rev_reg_def_id, "CL_ACCUM", recovery_txn
                         )
 
                     applied_txn = ledger_response["result"]
