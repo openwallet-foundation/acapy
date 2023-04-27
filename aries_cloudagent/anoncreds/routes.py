@@ -463,7 +463,7 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.post("/anoncreds/revocation-registry-definition", rev_reg_def_post),
-            web.post("/anoncreds/revocation-status-list", rev_list_post),
+            web.post("/anoncreds/revocation-list", rev_list_post),
         ]
     )
 
