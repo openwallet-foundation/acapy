@@ -705,11 +705,11 @@ The following table lists endpoints that you need to call ("REST service") and c
 | Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
 | -------------------- | ---------------------- | ------------------------- | ----- |
 | Send Proof Request | **`POST /present-proof-2.0/send-request`** | | REST service |
-| Receive Proof Request | | <agent_cb>/present_proof_v2_0 | callback |
+| Receive Proof Request | | <agent_cb>/present_proof_v2_0 | callback(webhook or websocket) |
 | Find Credentials | | **`GET /present-proof-2.0/records/{pres_ex_id}/credentials`** | REST service |
 | Select Credentials | | | application or user function |
 | Send Proof | | **`POST /present-proof-2.0/records/{pres_ex_id}/send-presentation`** | REST service |
-| Receive Proof | <agent_cb>/present_proof_v2_0 | | callback |
+| Receive Proof | <agent_cb>/present_proof_v2_0 | | callback(webhook or websocket) |
 | Validate Proof | **`POST /present-proof-2.0/records/{pres_ex_id}/verify-presentation`** | | REST service |
 | Save Proof | | | application data |
 
