@@ -22,7 +22,7 @@ from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import (
     RevRegDefResultSchema,
-    RevStatusListResultSchema,
+    RevListResultSchema,
 )
 from .models.anoncreds_schema import (
     AnonCredsSchemaSchema,
@@ -390,7 +390,7 @@ async def rev_reg_def_post(request: web.BaseRequest):
     return web.json_response(result.serialize())
 
 
-class RevStatusListCreateRequestSchema(OpenAPISchema):
+class RevListCreateRequestSchema(OpenAPISchema):
     """Request schema for revocation registry creation request."""
 
     rev_reg_def_id = fields.Str(
@@ -400,9 +400,9 @@ class RevStatusListCreateRequestSchema(OpenAPISchema):
 
 
 @docs(tags=["anoncreds"], summary="")
-@request_schema(RevStatusListCreateRequestSchema())
-@response_schema(RevStatusListResultSchema(), 200, description="")
-async def rev_status_list_post(request: web.BaseRequest):
+@request_schema(RevListCreateRequestSchema())
+@response_schema(RevListResultSchema(), 200, description="")
+async def rev_list_post(request: web.BaseRequest):
     """Request handler for creating .
 
     Args:
@@ -463,7 +463,7 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.post("/anoncreds/revocation-registry-definition", rev_reg_def_post),
-            web.post("/anoncreds/revocation-status-list", rev_status_list_post),
+            web.post("/anoncreds/revocation-status-list", rev_list_post),
         ]
     )
 

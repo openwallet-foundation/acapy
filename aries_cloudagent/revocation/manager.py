@@ -141,8 +141,8 @@ class RevocationManager:
                     txn, issuer_rr_rec.record_id, for_update=True
                 )
                 if prev:
-                    issuer_rr_upd.prev_status_list = prev
-                    issuer_rr_upd.rev_status_list = curr
+                    issuer_rr_upd.prev_list = prev
+                    issuer_rr_upd.rev_list = curr
                 await issuer_rr_upd.clear_pending(txn, crids)
                 await txn.commit()
             await self.set_cred_revoked_state(rev_reg_id, crids)
@@ -235,8 +235,8 @@ class RevocationManager:
                         txn, issuer_rr_rec.record_id, for_update=True
                     )
                     if prev:
-                        issuer_rr_upd.prev_status_list = prev
-                        issuer_rr_upd.rev_status_list = curr
+                        issuer_rr_upd.prev_list = prev
+                        issuer_rr_upd.rev_list = curr
                     await issuer_rr_upd.clear_pending(txn, crids)
                     await txn.commit()
                 await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)

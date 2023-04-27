@@ -277,7 +277,7 @@ class RevList(BaseModel):
     class Meta:
         """RevList metadata."""
 
-        schema_class = "RevStatusListSchema"
+        schema_class = "RevListSchema"
 
     def __init__(
         self,
