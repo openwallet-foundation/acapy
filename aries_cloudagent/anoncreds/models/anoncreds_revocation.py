@@ -396,13 +396,13 @@ class RevListResult(BaseModel):
     ):
         super().__init__(**kwargs)
         self.job_id = job_id
-        self.revocations_list_state = revocation_list_state
+        self.revocation_list_state = revocation_list_state
         self.registration_metadata = registration_metadata
         self.revocation_list_metadata = revocation_list_metadata
 
     @property
     def rev_reg_def_id(self):
-        return self.revocation_list_state.revocation_list_id
+        return self.revocation_list_state.revocation_list.rev_reg_def_id
 
 
 class RevListResultSchema(BaseModelSchema):
