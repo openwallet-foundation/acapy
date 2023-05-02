@@ -364,8 +364,6 @@ class IssuerRevRegRecord(BaseRecord):
         if not (self.revoc_reg_id and self.revoc_def_type and self.issuer_id):
             raise RevocationError("Revocation registry undefined")
 
-        self._check_url(self.tails_public_uri)
-
         if self.state not in (IssuerRevRegRecord.STATE_POSTED,):
             raise RevocationError(
                 "Revocation registry {} in state {}: cannot publish entry".format(
