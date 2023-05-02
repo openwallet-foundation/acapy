@@ -22,6 +22,8 @@ This allows ACA-Py to be used for a wider range of use cases. One use case could
   - [Identifying the wallet](#identifying-the-wallet)
 - [Authentication](#authentication)
   - [Getting a token](#getting-a-token)
+    - [Method 1: Register new tenant](#method-1-register-new-tenant)
+    - [Method 2: Get tenant token](#method-2-get-tenant-token)
   - [JWT Secret](#jwt-secret)
   - [SwaggerUI](#swaggerui)
 - [Tenant Management](#tenant-management)
@@ -127,7 +129,7 @@ The main tradeoff between option 1. and 2. is redundancy and control. Option 1. 
 
 A combination of option 1. and 2. is also possible. In this case, two mediators will be used and the sub wallet mediator will forward to the base wallet mediator, which will, in turn, forward to the ACA-Py instance.
 
-```
+```plaintext
 +---------------------+      +----------------------+      +--------------------+
 | Sub wallet mediator | ---> | Base wallet mediator | ---> | Multi-tenant agent |
 +---------------------+      +----------------------+      +--------------------+
@@ -196,7 +198,7 @@ For sub wallets, an additional authentication method is introduced using JSON We
 
 Example
 
-```
+```jsonc
 GET /connections [headers="Authorization: Bearer {token}]
 ```
 
@@ -227,7 +229,7 @@ new_tenant='{
 }'
 ```
 
-```
+```sh
 echo $new_tenant | curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet" \
    -H "Content-Type: application/json" \
    -H "X-Api-Key: $ACAPY_ADMIN_URL_API_KEY" \
@@ -257,14 +259,13 @@ echo $new_tenant | curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet" \
 }
 ```
 
-
 #### Method 2: Get tenant token
 
 This method allows you to retrieve a tenant `token` for an already registered tenant.  To retrieve a token you will need an Admin API key (if your admin is protected with one), `wallet_key` and the `wallet_id` of the tenant. Note that calling the get tenant token endpoint will **invalidate** the old token. This is useful if the old token needs to be revoked, but does mean that you can't have multiple authentication tokens for the same wallet. Only the last generated token will always be valid.
 
 Example
 
-```
+```sh
 curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/token" \
    -H "Content-Type: application/json" \
    -H "X-Api-Key: $ACAPY_ADMIN_URL_API_KEY" \
@@ -297,9 +298,9 @@ For deterministic JWT creation and verification between restarts and multiple in
 
 ### SwaggerUI
 
-When using the SwaggerUI you can click the :lock: icon next to each of the endpoints or the `Authorize` button at the top to set the correct authentication headers. Make sure to also include the `Bearer ` part in the input field. This won't be automatically added.
+When using the SwaggerUI you can click the :lock: icon next to each of the endpoints or the `Authorize` button at the top to set the correct authentication headers. Make sure to also include the `Bearer` part in the input field. This won't be automatically added.
 
-![](/docs/assets/adminApiAuthentication.png)
+![API Authentication](/docs/assets/adminApiAuthentication.png)
 
 ## Tenant Management
 
@@ -321,7 +322,7 @@ update_tenant='{
 }'
 ```
 
-```
+```sh
 echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${TENANT_WALLET_ID}" \
    -H "Content-Type: application/json" \
    -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
@@ -349,18 +350,20 @@ echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${TEN
   "created_at": "2022-04-01T15:12:35.474975Z"
 }
 ```
+
 > An Admin API Key is all that is ALLOWED to be included in a request header during an update.  Inluding the Bearer token header will result in a 404: Unauthorized error
 
-## Remove a tenant
+### Remove a tenant
 
-The following information is required to delete a tenant: 
+The following information is required to delete a tenant:
+
 - wallet_id
 - wallet_key
 - {Admin_Api_Key} if admin is protected
 
 Example
 
-```
+```sh
 curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
    -H "Content-Type: application/json" \
    -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
