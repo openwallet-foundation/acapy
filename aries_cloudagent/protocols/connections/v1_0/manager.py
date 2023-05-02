@@ -490,7 +490,7 @@ class ConnectionManager(BaseConnectionManager):
                         reason=(
                             "Received connection request from multi-use invitation DID"
                         ),
-                        event=False
+                        event=False,
                     )
 
                 # Transfer metadata from multi-use to new connection
