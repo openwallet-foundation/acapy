@@ -88,7 +88,7 @@ Enable using `--monitor-forward`.
 * `auto_issue`: (boolean) whether to automatically issue the credential
 * `error_msg`: the previous error message
 
-#### Presentation Exchange Record Updated (`/present_proof`)
+### Presentation Exchange Record Updated (`/present_proof`)
 
 * `presentation_exchange_id`: the unique identifier of the presentation exchange
 * `connection_id`: the identifier of the related pairwise connection
