@@ -569,6 +569,7 @@ async def create_rev_reg(request: web.BaseRequest):
     try:
         revoc = AnonCredsRevocation(profile)
         issuer_rev_reg_rec = await revoc.init_issuer_registry(
+            # TODO: pass in issuer_id
             credential_definition_id,
             max_cred_num=max_cred_num,
             notify=False,
@@ -1380,6 +1381,7 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
     if write_ledger and create_pending_rev_reg:
         revoc = AnonCredsRevocation(profile)
         await revoc.init_issuer_registry(
+            registry_record.issuer_id,
             registry_record.cred_def_id,
             registry_record.max_cred_num,
             registry_record.revoc_def_type,
@@ -1483,6 +1485,7 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
             else None
         )
         await revoc.init_issuer_registry(
+            registry_record.issuer_id,
             registry_record.cred_def_id,
             registry_record.max_cred_num,
             registry_record.revoc_def_type,

@@ -101,6 +101,7 @@ class AnonCredsRevocation:
             await txn.commit()
 
         await self.init_issuer_registry(
+            registry.issuer_id,
             registry.cred_def_id,
             registry.max_cred_num,
             registry.revoc_def_type,

@@ -521,6 +521,7 @@ async def on_cred_def_event(profile: Profile, event: Event):
         # without a delay
         revoc = AnonCredsRevocation(profile)
         await revoc.init_issuer_registry(
+            issuer_did,
             cred_def_id,
             rev_reg_size,
             create_pending_rev_reg=create_pending_rev_reg,
