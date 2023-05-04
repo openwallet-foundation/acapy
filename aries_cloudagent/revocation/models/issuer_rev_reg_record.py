@@ -198,7 +198,7 @@ class IssuerRevRegRecord(BaseRecord):
         self.state = IssuerRevRegRecord.STATE_POSTED
         self.tails_hash = result.rev_reg_def.value.tails_hash
         self.tails_public_uri = result.rev_reg_def.value.tails_location
-        self.tails_local_path = result.rev_reg_def.value.tails_location
+        self.tails_local_path = issuer.get_local_tails_path(result.rev_reg_def)
 
         async with profile.session() as session:
             await self.save(session, reason="Generated registry")

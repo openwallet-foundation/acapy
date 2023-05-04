@@ -4,7 +4,6 @@ import json
 import logging
 import re
 from typing import Optional, Pattern, Tuple
-from urllib.parse import urlparse
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
@@ -21,7 +20,6 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
 )
 from ....multitenant.base import BaseMultitenantManager
 from ....revocation.anoncreds import AnonCredsRevocation
-from ....revocation.error import RevocationError
 from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation.recover import generate_ledger_rrrecovery_txn
 from ....storage.error import StorageNotFoundError
@@ -374,11 +372,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     async def get_revocation_registry_definitions(self, profile: Profile, filter: str):
         """Get credential definition ids filtered by filter"""
 
-    def _check_url(self, url) -> None:
-        parsed = urlparse(url)
-        if not (parsed.scheme and parsed.netloc and parsed.path):
-            raise RevocationError("URI {} is not a valid URL".format(url))
-
     async def register_revocation_registry_definition(
         self,
         profile: Profile,
@@ -387,14 +380,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
     ) -> RevRegDefResult:
         """Register a revocation registry definition on the registry."""
 
-        tails_base_url = profile.settings.get("tails_server_base_url")
-        if not tails_base_url:
-            raise AnonCredsRegistrationError("tails_server_base_url not configured")
-
         rev_reg_def_id = self.make_rev_reg_def_id(revocation_registry_definition)
-        revocation_registry_definition.value.tails_location = (
-            tails_base_url.rstrip("/") + f"/{rev_reg_def_id}"
-        )
 
         try:
             self._check_url(revocation_registry_definition.value.tails_location)
@@ -474,7 +460,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     profile,
                     rev_list,
                     True,
-                    ledger.pool.genesis_txns,
+                    ledger.genesis_txns,
                 )
                 rev_entry_res = {"result": res}
                 LOGGER.warn("Ledger update/fix applied")
@@ -504,10 +490,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         options: Optional[dict] = None,
     ) -> RevListResult:
         """Register a revocation list on the registry."""
-        rev_reg_entry = {
-            "ver": "1.0",
-            "value": {"accum": rev_list.current_accumulator}
-        }
+        rev_reg_entry = {"ver": "1.0", "value": {"accum": rev_list.current_accumulator}}
 
         rev_entry_res = await self._revoc_reg_entry_with_fix(
             profile, rev_list, rev_reg_def.type, rev_reg_entry
@@ -578,7 +561,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         # get rev reg delta (revocations published to ledger)
         ledger = profile.inject(BaseLedger)
         async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_list.rev_reg_def_id)
+            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
+                rev_list.rev_reg_def_id
+            )
 
         # get rev reg records from wallet (revocations and list)
         recs = []

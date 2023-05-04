@@ -2,8 +2,11 @@
 
 import asyncio
 import logging
+import os
+from pathlib import Path
 from time import time
 from typing import NamedTuple, Optional, Sequence, Tuple
+from urllib.parse import urlparse
 
 from anoncreds import (
     AnoncredsError,
@@ -20,13 +23,14 @@ from aries_askar import AskarError
 
 from ..askar.profile import AskarProfile
 from ..core.error import BaseError
-from .base import AnonCredsSchemaAlreadyExists
+from ..tails.base import BaseTailsServer
+from .base import AnonCredsRegistrationError, AnonCredsSchemaAlreadyExists
 from .models.anoncreds_cred_def import CredDef, CredDefResult, CredDefState
 from .models.anoncreds_revocation import (
+    RevList,
     RevRegDef,
     RevRegDefResult,
     RevRegDefState,
-    RevList,
 )
 from .models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
 from .registry import AnonCredsRegistry
@@ -36,10 +40,10 @@ LOGGER = logging.getLogger(__name__)
 
 DEFAULT_CRED_DEF_TAG = "default"
 DEFAULT_SIGNATURE_TYPE = "CL"
+CATEGORY_SCHEMA = "schema"
 CATEGORY_CRED_DEF = "credential_def"
 CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
 CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
-CATEGORY_SCHEMA = "schema"
 CATEGORY_REV_LIST = "revocation_list"
 CATEGORY_REV_REG_INFO = "revocation_reg_info"
 CATEGORY_REV_REG_DEF = "revocation_reg_def"
@@ -104,7 +108,7 @@ class AnonCredsIssuer:
 
     async def _store_schema(
         self,
-        schema_id: str,
+        record_id: str,
         schema: AnonCredsSchema,
         state: str,
     ):
@@ -113,7 +117,7 @@ class AnonCredsIssuer:
             async with self._profile.session() as session:
                 await session.handle.insert(
                     CATEGORY_SCHEMA,
-                    schema_id,
+                    record_id,
                     schema.to_json(),
                     {
                         "name": schema.name,
@@ -175,7 +179,7 @@ class AnonCredsIssuer:
             )
 
             await self._store_schema(
-                schema_result.schema_state.schema_id,
+                schema_result.schema_state.schema_id or schema_result.job_id,
                 schema_result.schema_state.schema,
                 state=schema_result.schema_state.state,
             )
@@ -273,14 +277,14 @@ class AnonCredsIssuer:
         Create a new credential definition and store it in the wallet.
 
         Args:
-            origin_did: the DID issuing the credential definition
-            schema_json: the schema used as a basis
-            signature_type: the credential definition signature type (default 'CL')
-            tag: the credential definition tag
-            support_revocation: whether to enable revocation for this credential def
+            issuer_id: the ID of the issuer creating the credential definition
+            schema_id: the schema ID for the credential definition
+            tag: the tag to use for the credential definition
+            signature_type: the signature type to use for the credential definition
+            options: any additional options to use when creating the credential definition
 
         Returns:
-            A tuple of the credential definition ID and JSON
+            CredDefResult: the result of the credential definition creation
 
         """
         anoncreds_registry = self._profile.inject(AnonCredsRegistry)
@@ -453,19 +457,18 @@ class AnonCredsIssuer:
         options: Optional[dict] = None,
     ) -> RevRegDefResult:
         """
-        Create a new revocation registry and store it in the wallet.
+        Create a new revocation registry and register on network.
 
         Args:
-            origin_did: the DID issuing the revocation registry
-            cred_def_id: the identifier of the related credential definition
-            revoc_def_type: the revocation registry type (default CL_ACCUM)
-            tag: the unique revocation registry tag
-            max_cred_num: the number of credentials supported in the registry
-            tails_base_path: where to store the tails file
-            issuance_type: optionally override the issuance type
+            issuer_id (str): issuer identifier
+            cred_def_id (str): credential definition identifier
+            registry_type (str): revocation registry type
+            tag (str): revocation registry tag
+            max_cred_num (int): maximum number of credentials supported
+            options (dict): revocation registry options
 
         Returns:
-            A tuple of the revocation registry ID, JSON, and entry JSON
+            RevRegDefResult: revocation registry definition result
 
         """
         try:
@@ -499,15 +502,17 @@ class AnonCredsIssuer:
                     tails_dir_path=tails_dir,
                 ),
             )
-            # TODO Move tails file to more human friendly folder structure?
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating revocation registry") from err
 
         rev_reg_def_json = rev_reg_def.to_json()
+        rev_reg_def = RevRegDef.from_native(rev_reg_def)
 
+        public_tails_uri = self.get_public_tails_uri(rev_reg_def)
+        rev_reg_def.value.tails_location = public_tails_uri
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         result = await anoncreds_registry.register_revocation_registry_definition(
-            self.profile, RevRegDef.from_native(rev_reg_def), options
+            self.profile, rev_reg_def, options
         )
 
         rev_reg_def_id = result.rev_reg_def_id
@@ -535,6 +540,56 @@ class AnonCredsIssuer:
             raise AnonCredsIssuerError("Error saving new revocation registry") from err
 
         return result
+
+    def _check_url(self, url) -> None:
+        parsed = urlparse(url)
+        if not (parsed.scheme and parsed.netloc and parsed.path):
+            raise AnonCredsRegistrationError("URI {} is not a valid URL".format(url))
+
+    def get_public_tails_uri(self, rev_reg_def: RevRegDef):
+        """Construct tails uri from rev_reg_def."""
+        tails_base_url = self._profile.settings.get("tails_server_base_url")
+        if not tails_base_url:
+            raise AnonCredsRegistrationError("tails_server_base_url not configured")
+
+        public_tails_uri = (
+            tails_base_url.rstrip("/") + f"/{rev_reg_def.value.tails_hash}"
+        )
+
+        self._check_url(public_tails_uri)
+        return public_tails_uri
+
+    def get_local_tails_path(self, rev_reg_def: RevRegDef) -> str:
+        """Get the local path to the tails file."""
+        tails_dir = indy_client_dir("tails", create=False)
+        return os.path.join(tails_dir, rev_reg_def.value.tails_hash)
+
+    async def upload_tails_file(self, rev_reg_def: RevRegDef):
+        """Upload the local tails file to the tails server."""
+        tails_server = self._profile.inject_or(BaseTailsServer)
+        if not tails_server:
+            raise AnonCredsIssuerError("Tails server not configured")
+        if not Path(self.get_local_tails_path(rev_reg_def)).is_file():
+            raise AnonCredsIssuerError("Local tails file not found")
+
+        (upload_success, result) = await tails_server.upload_tails_file(
+            self._profile.context,
+            rev_reg_def.value.tails_hash,
+            self.get_local_tails_path(rev_reg_def),
+            interval=0.8,
+            backoff=-0.5,
+            max_attempts=5,  # heuristic: respect HTTP timeout
+        )
+        if not upload_success:
+            raise AnonCredsIssuerError(
+                f"Tails file for rev reg for {rev_reg_def.cred_def_id} "
+                "failed to upload: {result}"
+            )
+        if rev_reg_def.value.tails_location != result:
+            raise AnonCredsIssuerError(
+                f"Tails file for rev reg for {rev_reg_def.cred_def_id} "
+                "uploaded to wrong location: {result}"
+            )
 
     async def update_revocation_registry_definition_state(
         self, rev_reg_def_id: str, state: str

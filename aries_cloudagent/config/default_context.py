@@ -84,7 +84,7 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_provider(
             BaseTailsServer,
             ClassProvider(
-                "aries_cloudagent.tails.indy_tails_server.IndyTailsServer",
+                "aries_cloudagent.tails.anoncreds_tails_server.AnonCredsTailsServer",
             ),
         )
 
