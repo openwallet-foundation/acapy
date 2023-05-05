@@ -1,1 +1,1 @@
-anoncreds@git+https://github.com/indicio-tech/anoncreds-rs@feature/python-rev-status-lists#subdirectory=wrappers/python
+anoncreds@git+https://github.com/hyperledger/anoncreds-rs@3eca56d#subdirectory=wrappers/python
