@@ -15,7 +15,6 @@ from anoncreds import (
     CredentialOffer,
     CredentialRevocationConfig,
     RevocationRegistryDefinition,
-    RevocationRegistryDelta,
     RevocationStatusList,
     Schema,
 )
@@ -1022,33 +1021,4 @@ class AnonCredsIssuer:
             prev=prev_list,
             curr=updated_list,
             failed=[str(rev_id) for rev_id in sorted(failed_crids)],
-        )
-
-    async def merge_revocation_registry_deltas(
-        self, fro_delta: str, to_delta: str
-    ) -> str:
-        """
-        Merge revocation registry deltas.
-
-        Args:
-            fro_delta: original delta in JSON format
-            to_delta: incoming delta in JSON format
-
-        Returns:
-            Merged delta in JSON format
-
-        """
-
-        def update(d1, d2):
-            try:
-                delta = RevocationRegistryDelta.load(d1)
-                delta.update_with(d2)
-                return delta.to_json()
-            except AnoncredsError as err:
-                raise AnonCredsIssuerError(
-                    "Error merging revocation registry deltas"
-                ) from err
-
-        return await asyncio.get_event_loop().run_in_executor(
-            None, update, fro_delta, to_delta
         )
