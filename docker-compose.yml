@@ -61,7 +61,7 @@ services:
 
   tails:
     platform: linux/amd64
-    image: ghcr.io/bcgov/tails-server:latest
+    image: ghcr.io/indicio-tech/tails-server:sha-d45f581
     ports:
       - 6543:6543
     environment:
