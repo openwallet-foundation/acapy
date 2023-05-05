@@ -166,7 +166,9 @@ class AnonCredsRevocation:
                 session, cred_def_id, {"$neq": IssuerRevRegRecord.STATE_FULL}
             )
             if not rev_reg_recs:
+                issuer_id = cred_def_id.split(":")[0]
                 await self.init_issuer_registry(
+                    issuer_id,
                     cred_def_id,
                     max_cred_num=max_cred_num,
                 )

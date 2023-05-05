@@ -383,8 +383,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         rev_reg_def_id = self.make_rev_reg_def_id(revocation_registry_definition)
 
         try:
-            self._check_url(revocation_registry_definition.value.tails_location)
-
             # Translate anoncreds object to indy object
             indy_rev_reg_def = {
                 "ver": "1.0",
