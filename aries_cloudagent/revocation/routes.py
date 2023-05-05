@@ -568,8 +568,9 @@ async def create_rev_reg(request: web.BaseRequest):
 
     try:
         revoc = AnonCredsRevocation(profile)
+        issuer_id = credential_definition_id.split(":")[0]
         issuer_rev_reg_rec = await revoc.init_issuer_registry(
-            # TODO: pass in issuer_id
+            issuer_id,
             credential_definition_id,
             max_cred_num=max_cred_num,
             notify=False,
