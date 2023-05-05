@@ -207,14 +207,14 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             try:
                 seq_no = await shield(ledger.send_schema(schema_id, indy_schema))
             except LedgerObjectAlreadyExistsError as err:
-                indy_schema = err.obj[1]
+                indy_schema = err.obj
                 schema = AnonCredsSchema(
                     name=indy_schema["name"],
                     version=indy_schema["version"],
                     attr_names=indy_schema["attrNames"],
                     issuer_id=indy_schema["id"].split(":")[0],
                 )
-                raise AnonCredsSchemaAlreadyExists(err.message, (err.obj[0], schema))
+                raise AnonCredsSchemaAlreadyExists(err.message, err.obj_id, schema)
             except (AnonCredsIssuerError, LedgerError) as err:
                 raise AnonCredsRegistrationError("Failed to register schema") from err
 

@@ -1,6 +1,6 @@
 """Base Registry."""
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, Pattern, Tuple, TypeVar
+from typing import Generic, Optional, Pattern, TypeVar
 
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
@@ -47,35 +47,35 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
     """Raised when an AnonCreds object already exists."""
 
     def __init__(
-        self, message: Optional[str] = None, obj: Optional[T] = None, *args, **kwargs
+        self,
+        message: str,
+        obj_id: str,
+        obj: T = None,
+        *args,
+        **kwargs,
     ):
-        """Constructor."""
-        super().__init__(message, obj, *args, **kwargs)
+        super().__init__(message, obj_id, obj, *args, **kwargs)
+        self._message = message
+        self.obj_id = obj_id
         self.obj = obj
 
     @property
     def message(self):
-        """Message property."""
-        if self.args[0] and self.args[1]:
-            return f"{self.args[0]}: {self.args[1]}"
-        else:
-            return super().message
+        return f"{self._message}: {self.obj_id}, {self.obj}"
 
 
-class AnonCredsSchemaAlreadyExists(
-    AnonCredsObjectAlreadyExists[Tuple[str, AnonCredsSchema]]
-):
+class AnonCredsSchemaAlreadyExists(AnonCredsObjectAlreadyExists[AnonCredsSchema]):
     """Raised when a schema already exists."""
 
     @property
     def schema_id(self):
         """Get Schema Id."""
-        return self.obj[0] if self.obj else None
+        return self.obj_id
 
     @property
     def schema(self):
         """Get Schema."""
-        return self.obj[1] if self.obj else None
+        return self.obj
 
 
 class AnonCredsResolutionError(BaseAnonCredsError):

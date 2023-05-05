@@ -20,11 +20,11 @@ from anoncreds import (
 )
 from aries_askar import AskarError
 
-from ..askar.profile import AskarProfile
+from ..askar.profile import AskarProfile, AskarProfileSession
 from ..core.error import BaseError
 from ..tails.base import BaseTailsServer
 from .base import AnonCredsRegistrationError, AnonCredsSchemaAlreadyExists
-from .models.anoncreds_cred_def import CredDef, CredDefResult, CredDefState
+from .models.anoncreds_cred_def import CredDef, CredDefResult
 from .models.anoncreds_revocation import (
     RevList,
     RevRegDef,
@@ -48,6 +48,14 @@ CATEGORY_REV_REG_INFO = "revocation_reg_info"
 CATEGORY_REV_REG_DEF = "revocation_reg_def"
 CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
 CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
+STATE_FINISHED = "finished"
+
+EVENT_PREFIX = "acapy::anoncreds::"
+EVENT_SCHEMA = EVENT_PREFIX + CATEGORY_SCHEMA
+EVENT_CRED_DEF = EVENT_PREFIX + CATEGORY_CRED_DEF
+EVENT_REV_REG_DEF = EVENT_PREFIX + CATEGORY_REV_REG_DEF
+EVENT_REV_LIST = EVENT_PREFIX + CATEGORY_REV_LIST
+EVENT_FINISHED_SUFFIX = "::" + STATE_FINISHED
 
 
 class AnonCredsIssuerError(BaseError):
@@ -65,11 +73,39 @@ class RevokeResult(NamedTuple):
 
 
 class AnonCredsIssuer:
-    """AnonCreds issuer class."""
+    """AnonCreds issuer class.
+
+    This class provides methods for creating and registering AnonCreds objects
+    needed to issue credentials. It also provides methods for storing and
+    retrieving local representations of these objects from the wallet.
+
+    A general pattern is followed when creating and registering objects:
+
+    1. Create the object locally
+    2. Register the object with the anoncreds registry
+    3. Store the object in the wallet
+
+    The wallet storage is used to keep track of the state of the object.
+
+    If the object is fully registered immediately after sending to the registry
+    (state of `finished`), the object is saved to the wallet with an id
+    matching the id returned from the registry.
+
+    If the object is not fully registered but pending (state of `wait`), the
+    object is saved to the wallet with an id matching the job id returned from
+    the registry.
+
+    If the object fails to register (state of `failed`), the object is saved to
+    the wallet with an id matching the job id returned from the registry.
+
+    When an object finishes registration after being in a pending state (moving
+    from state `wait` to state `finished`), the wallet entry matching the job id
+    is removed and an entry matching the registered id is added.
+    """
 
     def __init__(self, profile: AskarProfile):
         """
-        Initialize an IndyCredxIssuer instance.
+        Initialize an AnonCredsIssuer instance.
 
         Args:
             profile: The active profile instance
@@ -105,24 +141,49 @@ class AnonCredsIssuer:
         except AskarError as err:
             raise AnonCredsIssuerError(f"Error marking {category} as {state}") from err
 
+    async def _finish_registration(
+        self, txn: AskarProfileSession, category: str, job_id: str, registered_id: str
+    ):
+        entry = await txn.handle.fetch(
+            category,
+            job_id,
+            for_update=True,
+        )
+        if not entry:
+            raise AnonCredsIssuerError(
+                f"{category} with job id {job_id} could not be found"
+            )
+
+        tags = entry.tags
+        tags["state"] = STATE_FINISHED
+        await txn.handle.insert(
+            category,
+            registered_id,
+            value=entry.value,
+            tags=tags,
+        )
+        await txn.handle.remove(category, job_id)
+
     async def _store_schema(
         self,
-        record_id: str,
-        schema: AnonCredsSchema,
-        state: str,
+        result: SchemaResult,
     ):
         """Store schema after reaching finished state."""
+        ident = result.schema_state.schema_id or result.job_id
+        if not ident:
+            raise ValueError("Schema id or job id must be set")
+
         try:
             async with self._profile.session() as session:
                 await session.handle.insert(
                     CATEGORY_SCHEMA,
-                    record_id,
-                    schema.to_json(),
+                    ident,
+                    result.schema_state.schema.to_json(),
                     {
-                        "name": schema.name,
-                        "version": schema.version,
-                        "issuer_id": schema.issuer_id,
-                        "state": state,
+                        "name": result.schema_state.schema.name,
+                        "version": result.schema_state.schema.version,
+                        "issuer_id": result.schema_state.schema.issuer_id,
+                        "state": result.schema_state.state,
                     },
                 )
         except AskarError as err:
@@ -163,25 +224,21 @@ class AnonCredsIssuer:
             )
             if schemas:
                 raise AnonCredsSchemaAlreadyExists(
-                    f"Schema with {name}: {version} " f"already exists for {issuer_id}"
+                    f"Schema with {name}: {version} " f"already exists for {issuer_id}",
+                    schemas[0].name,
+                    AnonCredsSchema.deserialize(schemas[0].value_json),
                 )
 
-        # TODO Do we even need to create the native object here?
         schema = Schema.create(name, version, issuer_id, attr_names)
         try:
             anoncreds_registry = self._profile.inject(AnonCredsRegistry)
-
             schema_result = await anoncreds_registry.register_schema(
                 self.profile,
                 AnonCredsSchema.from_native(schema),
                 options,
             )
 
-            await self._store_schema(
-                schema_result.schema_state.schema_id or schema_result.job_id,
-                schema_result.schema_state.schema,
-                state=schema_result.schema_state.state,
-            )
+            await self._store_schema(schema_result)
 
             return schema_result
 
@@ -189,31 +246,33 @@ class AnonCredsIssuer:
             # If we find that we've previously written a schema that looks like
             # this one before but that schema is not in our wallet, add it to
             # the wallet so we can return from our get schema calls
-            if err.schema_id and err.schema:
-                await self._store_schema(
-                    err.schema_id, err.schema, SchemaState.STATE_FINISHED
+            await self._store_schema(
+                SchemaResult(
+                    job_id=None,
+                    schema_state=SchemaState(
+                        state=SchemaState.STATE_FINISHED,
+                        schema_id=err.schema_id,
+                        schema=err.schema,
+                    ),
                 )
-                raise AnonCredsIssuerError(
-                    "Schema already exists but was not in wallet; stored in wallet"
-                ) from err
-            raise
+            )
+            raise AnonCredsIssuerError(
+                "Schema already exists but was not in wallet; stored in wallet"
+            ) from err
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating schema") from err
 
-    async def update_schema_state(self, schema_id: str, state: str):
-        """Update the state of the stored schema."""
-        await self._update_entry_state(CATEGORY_SCHEMA, schema_id, state)
-
-    async def finish_schema(self, schema_id: str):
+    async def finish_schema(self, job_id: str, schema_id: str):
         """Mark a schema as finished."""
-        await self.update_schema_state(schema_id, SchemaState.STATE_FINISHED)
+        async with self.profile.transaction() as txn:
+            await self._finish_registration(txn, CATEGORY_SCHEMA, job_id, schema_id)
+            await txn.commit()
 
     async def get_created_schemas(
         self,
         name: Optional[str] = None,
         version: Optional[str] = None,
         issuer_id: Optional[str] = None,
-        state: Optional[str] = None,
     ) -> Sequence[str]:
         """Retrieve IDs of schemas previously created."""
         async with self._profile.session() as session:
@@ -226,22 +285,13 @@ class AnonCredsIssuer:
                         "name": name,
                         "version": version,
                         "issuer_id": issuer_id,
-                        "state": state,
+                        "state": STATE_FINISHED,
                     }.items()
                     if value is not None
                 },
             )
         # entry.name was stored as the schema's ID
         return [entry.name for entry in schemas]
-
-    @staticmethod
-    def make_credential_definition_id(
-        origin_did: str, schema: dict, signature_type: str = None, tag: str = None
-    ) -> str:
-        """Derive the ID for a credential definition."""
-        signature_type = signature_type or DEFAULT_SIGNATURE_TYPE
-        tag = tag or DEFAULT_CRED_DEF_TAG
-        return f"{origin_did}:3:{signature_type}:{str(schema['seqNo'])}:{tag}"
 
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
@@ -322,14 +372,18 @@ class AnonCredsIssuer:
             raise AnonCredsIssuerError("Error creating credential definition") from err
 
         # Store the cred def and it's components
+        ident = (
+            result.credential_definition_state.credential_definition_id or result.job_id
+        )
+        if not ident:
+            raise AnonCredsIssuerError("cred def id or job id required")
+
         try:
-            cred_def_id = result.credential_definition_state.credential_definition_id
             async with self._profile.transaction() as txn:
                 await txn.handle.insert(
                     CATEGORY_CRED_DEF,
-                    cred_def_id,
+                    ident,
                     cred_def_json,
-                    # Note: Indy-SDK uses a separate SchemaId record for this
                     tags={
                         "schema_id": schema_id,
                         "schema_issuer_id": schema_result.schema.issuer_id,
@@ -342,11 +396,11 @@ class AnonCredsIssuer:
                 )
                 await txn.handle.insert(
                     CATEGORY_CRED_DEF_PRIVATE,
-                    cred_def_id,
+                    ident,
                     cred_def_private.to_json_buffer(),
                 )
                 await txn.handle.insert(
-                    CATEGORY_CRED_DEF_KEY_PROOF, cred_def_id, key_proof.to_json_buffer()
+                    CATEGORY_CRED_DEF_KEY_PROOF, ident, key_proof.to_json_buffer()
                 )
                 await txn.commit()
         except AskarError as err:
@@ -354,13 +408,17 @@ class AnonCredsIssuer:
 
         return result
 
-    async def update_cred_def_state(self, cred_def_id: str, state: str):
-        """Update the state of a cred def."""
-        await self._update_entry_state(CATEGORY_CRED_DEF, cred_def_id, state)
-
-    async def finish_cred_def(self, cred_def_id: str):
+    async def finish_cred_def(self, job_id: str, cred_def_id: str):
         """Finish a cred def."""
-        await self.update_cred_def_state(cred_def_id, CredDefState.STATE_FINISHED)
+        async with self.profile.transaction() as txn:
+            await self._finish_registration(txn, CATEGORY_CRED_DEF, job_id, cred_def_id)
+            await self._finish_registration(
+                txn, CATEGORY_CRED_DEF_PRIVATE, job_id, cred_def_id
+            )
+            await self._finish_registration(
+                txn, CATEGORY_CRED_DEF_KEY_PROOF, job_id, cred_def_id
+            )
+            await txn.commit()
 
     async def get_created_credential_definitions(
         self,
@@ -369,7 +427,6 @@ class AnonCredsIssuer:
         schema_id: Optional[str] = None,
         schema_name: Optional[str] = None,
         schema_version: Optional[str] = None,
-        state: Optional[str] = None,
         epoch: Optional[str] = None,
     ) -> Sequence[str]:
         """Retrieve IDs of credential definitions previously created."""
@@ -385,12 +442,13 @@ class AnonCredsIssuer:
                         "schema_id": schema_id,
                         "schema_name": schema_name,
                         "schema_version": schema_version,
-                        "state": state,
                         "epoch": epoch,
+                        "state": STATE_FINISHED,
                     }.items()
                     if value is not None
                 },
             )
+        # entry.name is cred def id when state == finished
         return [entry.name for entry in credential_definition_entries]
 
     async def match_created_credential_definitions(
@@ -401,7 +459,6 @@ class AnonCredsIssuer:
         schema_id: Optional[str] = None,
         schema_name: Optional[str] = None,
         schema_version: Optional[str] = None,
-        state: Optional[str] = None,
         epoch: Optional[str] = None,
     ) -> Optional[str]:
         """Return cred def id of most recent matching cred def."""
@@ -422,7 +479,7 @@ class AnonCredsIssuer:
                             "schema_id": schema_id,
                             "schema_name": schema_name,
                             "schema_version": schema_version,
-                            "state": state,
+                            "state": STATE_FINISHED,
                             "epoch": epoch,
                         }.items()
                         if value is not None

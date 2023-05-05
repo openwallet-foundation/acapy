@@ -86,9 +86,6 @@ class CredDefsQueryStringSchema(OpenAPISchema):
         description="Schema name",
     )
     schema_version = fields.Str(description="Schema version")
-    state = fields.Str(
-        description="Credential definition state",
-    )
 
 
 class SchemaPostOptionSchema(OpenAPISchema):
@@ -312,7 +309,6 @@ async def cred_defs_get(request: web.BaseRequest):
         schema_id=request.query.get("schema_id"),
         schema_name=request.query.get("schema_name"),
         schema_version=request.query.get("schema_version"),
-        state=request.query.get("state"),
     )
     return web.json_response(cred_def_ids)
 

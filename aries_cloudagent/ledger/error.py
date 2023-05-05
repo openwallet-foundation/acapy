@@ -1,6 +1,6 @@
 """Ledger related errors."""
 
-from typing import Any, Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 from ..core.error import BaseError
 
 
@@ -30,13 +30,19 @@ T = TypeVar("T")
 class LedgerObjectAlreadyExistsError(LedgerError, Generic[T]):
     """Raised when a ledger object already existed."""
 
-    def __init__(self, message: Optional[str] = None, obj: T = None, *args, **kwargs):
-        super().__init__(message, obj, *args, **kwargs)
+    def __init__(
+        self,
+        message: str,
+        obj_id: str,
+        obj: T = None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(message, obj_id, obj, *args, **kwargs)
+        self._message = message
+        self.obj_id = obj_id
         self.obj = obj
 
     @property
     def message(self):
-        if self.args[0] and self.args[1]:
-            return f"{self.args[0]}: {self.args[1]}"
-        else:
-            return super().message
+        return f"{self._message}: {self.obj_id}, {self.obj}"
