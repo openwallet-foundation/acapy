@@ -12,10 +12,11 @@ from anoncreds import (
     Credential,
     CredentialRequest,
     CredentialRevocationState,
-    MasterSecret,
     Presentation,
     PresentCredentials,
 )
+from anoncreds.bindings import create_link_secret
+
 from aries_askar import AskarError, AskarErrorCode
 
 from ..askar.profile import AskarProfile
@@ -71,7 +72,7 @@ class AnonCredsHolder:
         """Accessor for the profile instance."""
         return self._profile
 
-    async def get_master_secret(self) -> MasterSecret:
+    async def get_master_secret(self) -> str:
         """Get or create the default master secret."""
 
         while True:
@@ -84,7 +85,7 @@ class AnonCredsHolder:
                     raise AnonCredsHolderError("Error fetching master secret") from err
                 if record:
                     try:
-                        secret = MasterSecret.load(record.raw_value)
+                        secret = record.raw_value
                     except AnoncredsError as err:
                         raise AnonCredsHolderError(
                             "Error loading master secret"
@@ -92,7 +93,7 @@ class AnonCredsHolder:
                     break
                 else:
                     try:
-                        secret = MasterSecret.create()
+                        secret = create_link_secret()
                     except AnoncredsError as err:
                         raise AnonCredsHolderError(
                             "Error creating master secret"
@@ -101,7 +102,7 @@ class AnonCredsHolder:
                         await session.handle.insert(
                             CATEGORY_MASTER_SECRET,
                             AnonCredsHolder.MASTER_SECRET_ID,
-                            secret.to_json_buffer(),
+                            secret,
                         )
                     except AskarError as err:
                         if err.code != AskarErrorCode.DUPLICATE:
