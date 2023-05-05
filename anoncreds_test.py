@@ -65,7 +65,7 @@ async def main():
             },
         )
         rev_status_list = await alice.post(
-            "/anoncreds/revocation-status-list",
+            "/anoncreds/revocation-list",
             json={
                 "revRegDefId": rev_reg_def["revocation_registry_definition_state"][
                     "revocation_registry_definition_id"
