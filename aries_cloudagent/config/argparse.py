@@ -2021,7 +2021,7 @@ class EndorsementGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_UPGRADE)
+@group(CAT_START, CAT_UPGRADE)
 class UpgradeGroup(ArgumentGroup):
     """ACA-Py Upgrade process settings."""
 
@@ -2053,6 +2053,17 @@ class UpgradeGroup(ArgumentGroup):
             ),
         )
 
+        parser.add_argument(
+            "--force-upgrade",
+            action="store_true",
+            env_var="ACAPY_UPGRADE_FORCE_UPGRADE",
+            help=(
+                "Forces the '—from-version' argument to override the version "
+                "retrieved from secure storage when calculating upgrades to "
+                "be run."
+            ),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
@@ -2060,4 +2071,6 @@ class UpgradeGroup(ArgumentGroup):
             settings["upgrade.config_path"] = args.upgrade_config_path
         if args.from_version:
             settings["upgrade.from_version"] = args.from_version
+        if args.force_upgrade:
+            settings["upgrade.force_upgrade"] = args.force_upgrade
         return settings
