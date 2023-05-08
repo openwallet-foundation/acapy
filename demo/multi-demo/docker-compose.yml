@@ -1,0 +1,45 @@
+# Sample docker-compose to start a local aca-py multitenancy agent
+# To start aca-py and the postgres database, just run `docker-compose up`
+# To shut down the services run `docker-compose rm` - this will retain the postgres database, so you can change aca-py startup parameters
+# and restart the docker containers without losing your wallet data
+# If you want to delete your wallet data just run `docker volume ls -q | xargs docker volume rm`
+version: "3"
+services:
+  ngrok-agent:
+    image: wernight/ngrok
+    ports:
+      - 4067:4040
+    command: ngrok http multi-agent:8001 --log stdout
+
+  multi-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.acapy
+    environment:
+      - NGROK_NAME=ngrok-agent
+    ports:
+      - 8010:8010
+      - 8001:8001
+    depends_on:
+      - wallet-db
+    entrypoint: /bin/bash
+    command: [
+        "-c",
+        "sleep 5; \
+        ./ngrok-wait.sh"
+      ]
+    volumes:
+      - ./ngrok-wait.sh:/home/indy/ngrok-wait.sh
+
+  wallet-db:
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=DB_USER
+      - POSTGRES_PASSWORD=DB_PASSWORD
+    ports:
+      - 5433:5432
+    volumes:
+      - wallet-db-data:/var/lib/pgsql/data
+
+volumes:
+  wallet-db-data:

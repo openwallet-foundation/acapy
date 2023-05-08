@@ -176,7 +176,6 @@ class DIDDoc:
 
         rv = []
         for tag in [tags] if isinstance(tags, str) else list(tags):
-
             for svc_key in service.get(tag, {}):
                 canon_key = canon_ref(self.did, svc_key)
                 pubkey = None

@@ -108,7 +108,15 @@ class BaseAgent(DemoAgent):
             pending = 0
             total = len(self.credential_state)
             for result in self.credential_state.values():
-                if result != "done" and result != "credential_acked":
+                # Since cred_ex_record is set to be auto-removed
+                # the state in self.credential_state for completed
+                # exchanges will be deleted. Any problematic
+                # exchanges will be in abandoned state.
+                if (
+                    result != "done"
+                    and result != "deleted"
+                    and result != "credential_acked"
+                ):
                     pending += 1
             if self.credential_event.is_set():
                 continue
@@ -275,7 +283,6 @@ async def main(
     wallet_type: str = None,
     arg_file: str = None,
 ):
-
     if multi_ledger:
         genesis = None
         multi_ledger_config_path = "./demo/multi_ledger_config.yml"
@@ -423,7 +430,7 @@ async def main(
                 pending, total = await agent.check_received_creds()
                 complete = total - pending
                 if reported == complete:
-                    await asyncio.wait_for(agent.update_creds(), 30)
+                    await asyncio.wait_for(agent.update_creds(), 45)
                     continue
                 if iter_pb and complete > reported:
                     try:

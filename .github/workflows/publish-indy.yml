@@ -1,0 +1,113 @@
+name: Publish ACA-Py Image (Indy)
+run-name: Publish ACA-Py ${{ inputs.tag || github.event.release.tag_name }} Image (Indy ${{ inputs.indy_version || '1.16.0' }})
+on:
+  release:
+    types: [published]
+
+  workflow_dispatch:
+    inputs:
+      indy_version:
+        description: 'Indy SDK Version'
+        required: true
+        default: 1.16.0
+        type: string
+      tag:
+        description: 'Image tag'
+        required: true
+        type: string
+      platforms:
+        description: 'Platforms - Comma separated list of the platforms to support.'
+        required: true
+        default: linux/amd64
+        type: string
+      ref:
+        description: 'Optional - The branch, tag or SHA to checkout.'
+        required: false
+        type: string
+
+# Note:
+# - ACA-Py with Indy SDK image builds do not include support for the linux/arm64 platform.
+# - See notes below for details.
+
+env:
+  INDY_VERSION: ${{ inputs.indy_version || '1.16.0' }}
+
+  # Images do not include support for the linux/arm64 platform due to a known issue compiling the postgres plugin
+  # - https://github.com/hyperledger/indy-sdk/issues/2445
+  # There is a pending PR to fix this issue here; https://github.com/hyperledger/indy-sdk/pull/2453
+  #
+  # linux/386 platform support has been disabled pending a permanent fix for https://github.com/hyperledger/aries-cloudagent-python/issues/2124
+  # PLATFORMS: ${{ inputs.platforms || 'linux/amd64,linux/386' }}
+  PLATFORMS: ${{ inputs.platforms || 'linux/amd64' }}
+
+jobs:
+  publish-image:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.6', '3.9']
+
+    name: Publish ACA-Py Image (Indy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref || '' }}
+
+      - name: Gather image info
+        id: info
+        run: |
+          echo "repo-owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Image Metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/${{ steps.info.outputs.repo-owner }}/aries-cloudagent-python
+          tags: |
+            type=raw,value=py${{ matrix.python-version }}-indy-${{ env.INDY_VERSION }}-${{ inputs.tag || github.event.release.tag_name }}
+
+      - name: Build and Push Image to ghcr.io
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          context: .
+          file: docker/Dockerfile.indy
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          target: main
+          build-args: |
+            python_version=${{ matrix.python-version }}
+            indy_version=${{ env.INDY_VERSION }}
+            acapy_version=${{ inputs.tag || github.event.release.tag_name }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          platforms: ${{ env.PLATFORMS }}
+
+      # Temp fix
+      # https://github.com/docker/build-push-action/issues/252
+      # https://github.com/moby/buildkit/issues/1896
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache

@@ -622,7 +622,10 @@ class AriesAgent(DemoAgent):
                         random.randint(1, 101),
                     )
                 )
-            (_, cred_def_id,) = await self.register_schema_and_creddef(  # schema id
+            (
+                _,
+                cred_def_id,
+            ) = await self.register_schema_and_creddef(  # schema id
                 schema_name,
                 version,
                 schema_attrs,

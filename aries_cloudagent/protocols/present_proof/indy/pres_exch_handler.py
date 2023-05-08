@@ -194,7 +194,7 @@ class IndyPresExchHandler:
                     f"Failed to create revocation state: {e.error_code}, {e.message}"
                 )
                 raise e
-        for (referent, precis) in requested_referents.items():
+        for referent, precis in requested_referents.items():
             if "timestamp" not in precis:
                 continue
             if referent in requested_credentials["requested_attributes"]:

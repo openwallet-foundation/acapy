@@ -25,6 +25,14 @@ aries\_cloudagent.protocols.issue\_credential.v1\_0.messages.credential\_ack mod
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.protocols.issue\_credential.v1\_0.messages.credential\_exchange\_webhook module
+-------------------------------------------------------------------------------------------------
+
+.. automodule:: aries_cloudagent.protocols.issue_credential.v1_0.messages.credential_exchange_webhook
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.protocols.issue\_credential.v1\_0.messages.credential\_issue module
 -------------------------------------------------------------------------------------
 

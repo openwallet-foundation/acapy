@@ -65,6 +65,14 @@ aries\_cloudagent.wallet.did\_method module
    :undoc-members:
    :show-inheritance:
 
+aries\_cloudagent.wallet.did\_parameters\_validation module
+-----------------------------------------------------------
+
+.. automodule:: aries_cloudagent.wallet.did_parameters_validation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 aries\_cloudagent.wallet.did\_posture module
 --------------------------------------------
 

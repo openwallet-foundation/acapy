@@ -9,7 +9,6 @@ from ..forward import Forward, ForwardSchema
 
 
 class TestForward(TestCase):
-
     to = "to"
     msg = {"msg": "body"}
 

@@ -1,16 +1,26 @@
 """Upgrade command for handling breaking changes when updating ACA-PY versions."""
 
 import asyncio
+import logging
+import os
 import yaml
 
 from configargparse import ArgumentParser
 from packaging import version as package_version
-from typing import Callable, Sequence, Optional
+from typing import (
+    Callable,
+    Sequence,
+    Optional,
+    List,
+    Union,
+    Mapping,
+    Any,
+)
 
 from ..core.profile import Profile
 from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
-from ..config.base import BaseError
+from ..config.base import BaseError, BaseSettings
 from ..config.util import common_config
 from ..config.wallet import wallet_config
 from ..messaging.models.base_record import BaseRecord
@@ -22,9 +32,8 @@ from ..version import __version__, RECORD_TYPE_ACAPY_VERSION
 
 from . import PROG
 
-DEFAULT_UPGRADE_CONFIG_PATH = (
-    "./aries_cloudagent/commands/default_version_upgrade_config.yml"
-)
+DEFAULT_UPGRADE_CONFIG_FILE_NAME = "default_version_upgrade_config.yml"
+LOGGER = logging.getLogger(__name__)
 
 
 class UpgradeError(BaseError):
@@ -36,22 +45,17 @@ class VersionUpgradeConfig:
 
     def __init__(self, config_path: str = None):
         """Initialize config for use during upgrade process."""
-        self.function_map_config = {}
+        self.function_map_config = UPGRADE_EXISTING_RECORDS_FUNCTION_MAPPING
         self.upgrade_configs = {}
-        self.setup_executable_map_config(CONFIG_v7_3)
         if config_path:
             self.setup_version_upgrade_config(config_path)
         else:
-            self.setup_version_upgrade_config(DEFAULT_UPGRADE_CONFIG_PATH)
-
-    def setup_executable_map_config(self, config_dict: dict):
-        """Set ups config with reference to functions mapped to versions."""
-        for version, config in config_dict.items():
-            self.function_map_config[version] = {}
-            if "update_existing_function_inst" in config:
-                self.function_map_config[version][
-                    "update_existing_function_inst"
-                ] = config.get("update_existing_function_inst")
+            self.setup_version_upgrade_config(
+                os.path.join(
+                    os.path.dirname(os.path.realpath(__file__)),
+                    DEFAULT_UPGRADE_CONFIG_FILE_NAME,
+                )
+            )
 
     def setup_version_upgrade_config(self, path: str):
         """Set ups config dict from the provided YML file."""
@@ -73,19 +77,23 @@ class VersionUpgradeConfig:
                             "resave_records"
                         ).get("base_exch_record_path")
                 version_config_dict[version]["resave_records"] = recs_list
-                version_config_dict[version]["update_existing_records"] = (
-                    provided_config.get("update_existing_records") or False
-                )
+                config_key_set = set(provided_config.keys())
+                try:
+                    config_key_set.remove("resave_records")
+                except KeyError:
+                    pass
+                for executable in config_key_set:
+                    version_config_dict[version][executable] = (
+                        provided_config.get(executable) or False
+                    )
             if version_config_dict == {}:
                 raise UpgradeError(f"No version configs found in {path}")
             self.upgrade_configs = version_config_dict
 
-    def get_update_existing_func(self, ver: str) -> Optional[Callable]:
-        """Return callable update_existing_records function for specific version."""
-        if ver in self.function_map_config:
-            return self.function_map_config.get(ver).get(
-                "update_existing_function_inst"
-            )
+    def get_callable(self, executable: str) -> Optional[Callable]:
+        """Return callable function for executable name."""
+        if executable in self.function_map_config:
+            return self.function_map_config.get(executable)
         else:
             return None
 
@@ -95,123 +103,211 @@ def init_argument_parser(parser: ArgumentParser):
     return arg.load_argument_groups(parser, *arg.group.get_registered(arg.CAT_UPGRADE))
 
 
-async def upgrade(settings: dict):
+def get_upgrade_version_list(
+    from_version: str,
+    sorted_version_list: Optional[List] = None,
+    config_path: Optional[str] = None,
+) -> List:
+    """Get available versions from the upgrade config."""
+    if not sorted_version_list:
+        version_upgrade_config_inst = VersionUpgradeConfig(config_path)
+        upgrade_configs = version_upgrade_config_inst.upgrade_configs
+        versions_found_in_config = upgrade_configs.keys()
+        sorted_version_list = sorted(
+            versions_found_in_config, key=lambda x: package_version.parse(x)
+        )
+
+    version_list = []
+    for version in sorted_version_list:
+        if package_version.parse(version) >= package_version.parse(from_version):
+            version_list.append(version)
+    return version_list
+
+
+async def add_version_record(profile: Profile, version: str):
+    """Add an acapy_version storage record for provided version."""
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        try:
+            version_storage_record = await storage.find_record(
+                type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
+            )
+        except StorageNotFoundError:
+            version_storage_record = None
+        if not version_storage_record:
+            await storage.add_record(
+                StorageRecord(
+                    RECORD_TYPE_ACAPY_VERSION,
+                    version,
+                )
+            )
+        else:
+            await storage.update_record(version_storage_record, version, {})
+    LOGGER.info(f"{RECORD_TYPE_ACAPY_VERSION} storage record set to {version}")
+
+
+async def upgrade(
+    settings: Optional[Union[Mapping[str, Any], BaseSettings]] = None,
+    profile: Optional[Profile] = None,
+):
     """Perform upgradation steps."""
-    context_builder = DefaultContextBuilder(settings)
-    context = await context_builder.build_context()
     try:
+        if profile and (settings or settings == {}):
+            raise UpgradeError("upgrade requires either profile or settings, not both.")
+        if profile:
+            root_profile = profile
+            settings = profile.settings
+        else:
+            context_builder = DefaultContextBuilder(settings)
+            context = await context_builder.build_context()
+            root_profile, _ = await wallet_config(context)
         version_upgrade_config_inst = VersionUpgradeConfig(
             settings.get("upgrade.config_path")
         )
         upgrade_configs = version_upgrade_config_inst.upgrade_configs
-        root_profile, public_did = await wallet_config(context)
-        version_storage_record = None
         upgrade_to_version = f"v{__version__}"
         versions_found_in_config = upgrade_configs.keys()
         sorted_versions_found_in_config = sorted(
             versions_found_in_config, key=lambda x: package_version.parse(x)
         )
+        upgrade_from_version_storage = None
+        upgrade_from_version_config = None
+        upgrade_from_version = None
         async with root_profile.session() as session:
             storage = session.inject(BaseStorage)
             try:
                 version_storage_record = await storage.find_record(
                     type_filter=RECORD_TYPE_ACAPY_VERSION, tag_query={}
                 )
-                upgrade_from_version = version_storage_record.value
-                if "upgrade.from_version" in settings:
-                    print(
-                        (
-                            f"version {upgrade_from_version} found in storage"
-                            ", --from-version will be ignored."
-                        )
-                    )
+                upgrade_from_version_storage = version_storage_record.value
             except StorageNotFoundError:
-                if "upgrade.from_version" in settings:
-                    upgrade_from_version = settings.get("upgrade.from_version")
-                else:
-                    upgrade_from_version = sorted_versions_found_in_config[-1]
-                    print(
-                        "No ACA-Py version found in wallet storage and "
-                        "no --from-version specified. Selecting "
-                        f"{upgrade_from_version} as --from-version from "
-                        "the config."
+                LOGGER.info("No ACA-Py version found in wallet storage.")
+                version_storage_record = None
+
+            if "upgrade.from_version" in settings:
+                upgrade_from_version_config = settings.get("upgrade.from_version")
+                LOGGER.info(
+                    (
+                        f"Selecting {upgrade_from_version_config} as "
+                        "--from-version from the config."
                     )
-        if upgrade_from_version == upgrade_to_version:
-            raise UpgradeError(
-                f"Version {upgrade_from_version} to upgrade from and "
-                f"current version to upgrade to {upgrade_to_version} "
-                "are same."
-            )
-        if upgrade_from_version not in sorted_versions_found_in_config:
-            raise UpgradeError(
-                f"No upgrade configuration found for {upgrade_from_version}"
-            )
-        upgrade_from_version_index = sorted_versions_found_in_config.index(
-            upgrade_from_version
-        )
-        for config_from_version in sorted_versions_found_in_config[
-            upgrade_from_version_index:
-        ]:
-            print(f"Running upgrade process for {config_from_version}")
-            upgrade_config = upgrade_configs.get(config_from_version)
-            # Step 1 re-saving all BaseRecord and BaseExchangeRecord
-            if "resave_records" in upgrade_config:
-                resave_record_paths = upgrade_config.get("resave_records")
-                for record_path in resave_record_paths:
-                    try:
-                        record_type = ClassLoader.load_class(record_path)
-                    except ClassNotFoundError as err:
-                        raise UpgradeError(
-                            f"Unknown Record type {record_path}"
-                        ) from err
-                    if not issubclass(record_type, BaseRecord):
-                        raise UpgradeError(
-                            f"Only BaseRecord can be resaved, found: {str(record_type)}"
-                        )
-                    async with root_profile.session() as session:
-                        all_records = await record_type.query(session)
-                        for record in all_records:
-                            await record.save(
-                                session,
-                                reason="re-saving record during ACA-Py upgrade process",
-                            )
-                        if len(all_records) == 0:
-                            print(f"No records of {str(record_type)} found")
-                        else:
-                            print(
-                                f"All records of {str(record_type)} successfully re-saved"
-                            )
-            # Step 2 Update existing records, if required
+                )
+
+        force_upgrade_flag = settings.get("upgrade.force_upgrade") or False
+        if upgrade_from_version_storage and upgrade_from_version_config:
             if (
-                "update_existing_records" in upgrade_config
-                and upgrade_config.get("update_existing_records") is True
-            ):
-                update_existing_recs_callable = (
-                    version_upgrade_config_inst.get_update_existing_func(
-                        config_from_version
-                    )
-                )
-                if not update_existing_recs_callable:
-                    raise UpgradeError(
-                        "No update_existing_records function "
-                        f"specified for {config_from_version}"
-                    )
-                await update_existing_recs_callable(root_profile)
-        # Update storage version
-        async with root_profile.session() as session:
-            storage = session.inject(BaseStorage)
-            if not version_storage_record:
-                await storage.add_record(
-                    StorageRecord(
-                        RECORD_TYPE_ACAPY_VERSION,
-                        upgrade_to_version,
-                    )
-                )
+                package_version.parse(upgrade_from_version_storage)
+                > package_version.parse(upgrade_from_version_config)
+            ) and force_upgrade_flag:
+                upgrade_from_version = upgrade_from_version_config
             else:
-                await storage.update_record(
-                    version_storage_record, upgrade_to_version, {}
+                upgrade_from_version = upgrade_from_version_storage
+        if (
+            not upgrade_from_version
+            and not upgrade_from_version_storage
+            and upgrade_from_version_config
+        ):
+            upgrade_from_version = upgrade_from_version_config
+        if (
+            not upgrade_from_version
+            and upgrade_from_version_storage
+            and not upgrade_from_version_config
+        ):
+            upgrade_from_version = upgrade_from_version_storage
+        if not upgrade_from_version:
+            raise UpgradeError(
+                "No upgrade from version found in wallet or settings [--from-version]"
+            )
+        upgrade_version_in_config = get_upgrade_version_list(
+            sorted_version_list=sorted_versions_found_in_config,
+            from_version=upgrade_from_version,
+        )
+        to_update_flag = False
+        if upgrade_from_version == upgrade_to_version:
+            LOGGER.info(
+                (
+                    f"Version {upgrade_from_version} to upgrade from and "
+                    f"current version to upgrade to {upgrade_to_version} "
+                    "are same. You can apply upgrade from a lower "
+                    "version by running the upgrade command with "
+                    f"--from-version [< {upgrade_to_version}] and "
+                    "--force-upgrade"
                 )
-        await root_profile.close()
+            )
+        else:
+            resave_record_path_sets = set()
+            executables_call_set = set()
+            for config_from_version in upgrade_version_in_config:
+                LOGGER.info(f"Running upgrade process for {config_from_version}")
+                upgrade_config = upgrade_configs.get(config_from_version)
+                # Step 1 re-saving all BaseRecord and BaseExchangeRecord
+                if "resave_records" in upgrade_config:
+                    resave_record_paths = upgrade_config.get("resave_records")
+                    for record_path in resave_record_paths:
+                        resave_record_path_sets.add(record_path)
+
+                # Step 2 Update existing records, if required
+                config_key_set = set(upgrade_config.keys())
+                try:
+                    config_key_set.remove("resave_records")
+                except KeyError:
+                    pass
+                for callable_name in list(config_key_set):
+                    if upgrade_config.get(callable_name) is False:
+                        continue
+                    executables_call_set.add(callable_name)
+
+            if len(resave_record_path_sets) >= 1 or len(executables_call_set) >= 1:
+                to_update_flag = True
+            for record_path in resave_record_path_sets:
+                try:
+                    rec_type = ClassLoader.load_class(record_path)
+                except ClassNotFoundError as err:
+                    raise UpgradeError(f"Unknown Record type {record_path}") from err
+                if not issubclass(rec_type, BaseRecord):
+                    raise UpgradeError(
+                        f"Only BaseRecord can be resaved, found: {str(rec_type)}"
+                    )
+                async with root_profile.session() as session:
+                    all_records = await rec_type.query(session)
+                    for record in all_records:
+                        await record.save(
+                            session,
+                            reason="re-saving record during the upgrade process",
+                        )
+                    if len(all_records) == 0:
+                        LOGGER.info(f"No records of {str(rec_type)} found")
+                    else:
+                        LOGGER.info(
+                            f"All recs of {str(rec_type)} successfully re-saved"
+                        )
+            for callable_name in executables_call_set:
+                _callable = version_upgrade_config_inst.get_callable(callable_name)
+                if not _callable:
+                    raise UpgradeError(f"No function specified for {callable_name}")
+                await _callable(root_profile)
+
+        # Update storage version
+        if to_update_flag:
+            async with root_profile.session() as session:
+                storage = session.inject(BaseStorage)
+                if not version_storage_record:
+                    await storage.add_record(
+                        StorageRecord(
+                            RECORD_TYPE_ACAPY_VERSION,
+                            upgrade_to_version,
+                        )
+                    )
+                else:
+                    await storage.update_record(
+                        version_storage_record, upgrade_to_version, {}
+                    )
+                LOGGER.info(
+                    f"{RECORD_TYPE_ACAPY_VERSION} storage record "
+                    f"set to {upgrade_to_version}"
+                )
+        if not profile:
+            await root_profile.close()
     except BaseError as e:
         raise UpgradeError(f"Error during upgrade: {e}")
 
@@ -236,7 +332,7 @@ def execute(argv: Sequence[str] = None):
     settings = get_settings(args)
     common_config(settings)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(upgrade(settings))
+    loop.run_until_complete(upgrade(settings=settings))
 
 
 def main():
@@ -245,12 +341,8 @@ def main():
         execute()
 
 
-# Update every release
-CONFIG_v7_3 = {
-    "v0.7.2": {
-        "update_existing_function_inst": update_existing_records,
-    },
+UPGRADE_EXISTING_RECORDS_FUNCTION_MAPPING = {
+    "update_existing_records": update_existing_records
 }
-
 
 main()

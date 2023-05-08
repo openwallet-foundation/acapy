@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.0.0-rc1",
+    "version" : "v0.8.1",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -109,9 +109,10 @@
     }
   }, {
     "name" : "resolver",
-    "description" : "did resolver interface.",
+    "description" : "DID resolver interface",
     "externalDocs" : {
-      "description" : "Specification"
+      "description" : "Specification",
+      "url" : "https://github.com/hyperledger/aries-rfcs/tree/fa4b1947c6077168d2c69f45ed6bee2bb1eae4c8/features/0124-did-resolution-protocol"
     }
   }, {
     "name" : "revocation",
@@ -2442,8 +2443,7 @@
           "required" : false,
           "type" : "array",
           "items" : {
-            "type" : "string",
-            "description" : "Indicate terms to which the mediator requires the recipient to agree"
+            "type" : "string"
           },
           "collectionFormat" : "multi"
         }, {
@@ -2453,8 +2453,7 @@
           "required" : false,
           "type" : "array",
           "items" : {
-            "type" : "string",
-            "description" : "Indicate terms to which the recipient requires the mediator to agree"
+            "type" : "string"
           },
           "collectionFormat" : "multi"
         }, {

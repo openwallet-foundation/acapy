@@ -1,3 +1,8 @@
+v0.8.1:
+  resave_records:
+    base_record_path:
+      - "aries_cloudagent.connections.models.conn_record.ConnRecord"
+  update_existing_records: false
 v0.7.2:
   resave_records:
     base_record_path:

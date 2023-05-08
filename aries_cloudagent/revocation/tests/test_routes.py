@@ -1,3 +1,7 @@
+import os
+import shutil
+import unittest
+
 from aiohttp.web import HTTPBadRequest, HTTPNotFound
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
@@ -87,7 +91,6 @@ class TestRevocationRoutes(AsyncTestCase):
         ) as mock_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock()
 
             await test_module.revoke(self.request)
@@ -107,7 +110,6 @@ class TestRevocationRoutes(AsyncTestCase):
         ) as mock_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock()
 
             await test_module.revoke(self.request)
@@ -128,7 +130,6 @@ class TestRevocationRoutes(AsyncTestCase):
         ) as mock_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_mgr.return_value.revoke_credential = async_mock.CoroutineMock(
                 side_effect=test_module.StorageNotFoundError()
             )
@@ -906,3 +907,63 @@ class TestRevocationRoutes(AsyncTestCase):
         ]["get"]["responses"]["200"]["schema"] == {"type": "string", "format": "binary"}
 
         assert "tags" in mock_app._state["swagger_dict"]
+
+
+class TestDeleteTails(unittest.TestCase):
+    def setUp(self):
+        self.rev_reg_id = "rev_reg_id_123"
+        self.cred_def_id = "cred_def_id_456"
+
+        self.main_dir_rev = "path/to/main/dir/rev"
+        self.tails_path = os.path.join(self.main_dir_rev, "tails")
+        if not (os.path.exists(self.main_dir_rev)):
+            os.makedirs(self.main_dir_rev)
+        open(self.tails_path, "w").close()
+
+    async def test_delete_tails_by_rev_reg_id(self):
+        # Setup
+        rev_reg_id = self.rev_reg_id
+
+        # Test
+        result = await test_module.delete_tails(
+            {"context": None, "query": {"rev_reg_id": rev_reg_id}}
+        )
+
+        # Assert
+        self.assertEqual(result, {"message": "All files deleted successfully"})
+        self.assertFalse(os.path.exists(self.tails_path))
+
+    async def test_delete_tails_by_cred_def_id(self):
+        # Setup
+        cred_def_id = self.cred_def_id
+        main_dir_cred = "path/to/main/dir/cred"
+        os.makedirs(main_dir_cred)
+        cred_dir = os.path.join(main_dir_cred, cred_def_id)
+        os.makedirs(cred_dir)
+
+        # Test
+        result = await test_module.delete_tails(
+            {"context": None, "query": {"cred_def_id": cred_def_id}}
+        )
+
+        # Assert
+        self.assertEqual(result, {"message": "All files deleted successfully"})
+        self.assertFalse(os.path.exists(cred_dir))
+        self.assertTrue(os.path.exists(main_dir_cred))
+
+    async def test_delete_tails_not_found(self):
+        # Setup
+        cred_def_id = "invalid_cred_def_id"
+
+        # Test
+        result = await test_module.delete_tails(
+            {"context": None, "query": {"cred_def_id": cred_def_id}}
+        )
+
+        # Assert
+        self.assertEqual(result, {"message": "No such file or directory"})
+        self.assertTrue(os.path.exists(self.main_dir_rev))
+
+    async def tearDown(self):
+        if os.path.exists(self.main_dir_rev):
+            shutil.rmtree(self.main_dir_rev)

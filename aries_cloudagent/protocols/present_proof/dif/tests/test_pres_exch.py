@@ -363,7 +363,7 @@ class TestPresExchSchemas(TestCase):
                 "descriptor_map": [
                     {
                         "id": "citizenship_input_1",
-                        "format": "ldp_vp",
+                        "format": "ldp_vc",
                         "path": "$.verifiableCredential[0]",
                     }
                 ],

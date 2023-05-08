@@ -370,7 +370,9 @@ class V20PresManager:
 
         return pres_ex_record
 
-    async def verify_pres(self, pres_ex_record: V20PresExRecord):
+    async def verify_pres(
+        self, pres_ex_record: V20PresExRecord, responder: Optional[BaseResponder] = None
+    ):
         """
         Verify a presentation.
 
@@ -402,11 +404,13 @@ class V20PresManager:
             await pres_ex_record.save(session, reason="verify v2.0 presentation")
 
         if pres_request_msg.will_confirm:
-            await self.send_pres_ack(pres_ex_record)
+            await self.send_pres_ack(pres_ex_record, responder)
 
         return pres_ex_record
 
-    async def send_pres_ack(self, pres_ex_record: V20PresExRecord):
+    async def send_pres_ack(
+        self, pres_ex_record: V20PresExRecord, responder: Optional[BaseResponder] = None
+    ):
         """
         Send acknowledgement of presentation receipt.
 
@@ -414,7 +418,7 @@ class V20PresManager:
             pres_ex_record: presentation exchange record with thread id
 
         """
-        responder = self._profile.inject_or(BaseResponder)
+        responder = responder or self._profile.inject_or(BaseResponder)
 
         if responder:
             pres_ack_message = V20PresAck(verification_result=pres_ex_record.verified)
@@ -472,12 +476,10 @@ class V20PresManager:
         """
         # FIXME use transaction, fetch for_update
         async with self._profile.session() as session:
-            pres_ex_record = await (
-                V20PresExRecord.retrieve_by_tag_filter(
-                    session,
-                    {"thread_id": message._thread_id},
-                    {"connection_id": connection_id},
-                )
+            pres_ex_record = await V20PresExRecord.retrieve_by_tag_filter(
+                session,
+                {"thread_id": message._thread_id},
+                {"connection_id": connection_id},
             )
 
             pres_ex_record.state = V20PresExRecord.STATE_ABANDONED

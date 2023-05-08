@@ -12,6 +12,7 @@ import hashlib
 import json
 import logging
 
+from packaging import version as package_version
 from qrcode import QRCode
 
 from ..admin.base_server import BaseAdminServer
@@ -26,6 +27,11 @@ from ..config.ledger import (
 from ..config.logging import LoggingConfigurator
 from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
+from ..commands.upgrade import (
+    get_upgrade_version_list,
+    add_version_record,
+    upgrade,
+)
 from ..core.profile import Profile
 from ..indy.verifier import IndyVerifier
 
@@ -73,6 +79,9 @@ from .oob_processor import OobMessageProcessor
 from .util import SHUTDOWN_EVENT_TOPIC, STARTUP_EVENT_TOPIC
 
 LOGGER = logging.getLogger(__name__)
+# Refer ACA-Py issue #2197
+# When the from version is not found
+DEFAULT_ACAPY_VERSION = "v0.7.5"
 
 
 class Conductor:
@@ -311,26 +320,58 @@ class Conductor:
         )
 
         # record ACA-Py version in Wallet, if needed
+        from_version_storage = None
+        from_version = None
+        agent_version = f"v{__version__}"
         async with self.root_profile.session() as session:
             storage: BaseStorage = session.context.inject(BaseStorage)
-            agent_version = f"v{__version__}"
             try:
                 record = await storage.find_record(
                     type_filter=RECORD_TYPE_ACAPY_VERSION,
                     tag_query={},
                 )
-                if record.value != agent_version:
-                    LOGGER.exception(
-                        (
-                            f"Wallet storage version {record.value} "
-                            "does not match this ACA-Py agent "
-                            f"version {agent_version}. Run aca-py "
-                            "upgrade command to fix this."
-                        )
-                    )
-                    raise
+                from_version_storage = record.value
+                LOGGER.info(
+                    "Existing acapy_version storage record found, "
+                    f"version set to {from_version_storage}"
+                )
             except StorageNotFoundError:
-                pass
+                LOGGER.warning("Wallet version storage record not found.")
+        from_version_config = self.root_profile.settings.get("upgrade.from_version")
+        force_upgrade_flag = (
+            self.root_profile.settings.get("upgrade.force_upgrade") or False
+        )
+
+        if force_upgrade_flag and from_version_config:
+            if from_version_storage:
+                if package_version.parse(from_version_storage) > package_version.parse(
+                    from_version_config
+                ):
+                    from_version = from_version_config
+                else:
+                    from_version = from_version_storage
+            else:
+                from_version = from_version_config
+        else:
+            from_version = from_version_storage or from_version_config
+        if not from_version:
+            LOGGER.warning(
+                (
+                    "No upgrade from version was found from wallet or via"
+                    " --from-version startup argument. Defaulting to "
+                    f"{DEFAULT_ACAPY_VERSION}."
+                )
+            )
+            from_version = DEFAULT_ACAPY_VERSION
+            self.root_profile.settings.set_value("upgrade.from_version", from_version)
+        config_available_list = get_upgrade_version_list(
+            config_path=self.root_profile.settings.get("upgrade.config_path"),
+            from_version=from_version,
+        )
+        if len(config_available_list) >= 1:
+            await upgrade(profile=self.root_profile)
+        elif not (from_version_storage and from_version_storage == agent_version):
+            await add_version_record(profile=self.root_profile, version=agent_version)
 
         # Create a static connection for use by the test-suite
         if context.settings.get("debug.test_suite_endpoint"):
@@ -455,11 +496,9 @@ class Conductor:
                         auto_accept=True,
                     )
                     async with self.root_profile.session() as session:
-                        await (
-                            MediationInviteStore(
-                                session.context.inject(BaseStorage)
-                            ).mark_default_invite_as_used()
-                        )
+                        await MediationInviteStore(
+                            session.context.inject(BaseStorage)
+                        ).mark_default_invite_as_used()
 
                         await record.metadata_set(
                             session, MediationManager.SEND_REQ_AFTER_CONNECTION, True

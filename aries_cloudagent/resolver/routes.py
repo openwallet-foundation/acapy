@@ -53,7 +53,7 @@ from .did_resolver import DIDResolver
 class ResolutionResultSchema(OpenAPISchema):
     """Result schema for did document query."""
 
-    did_doc = fields.Dict(description="DID Document", required=True)
+    did_document = fields.Dict(description="DID Document", required=True)
     metadata = fields.Dict(description="Resolution metadata", required=True)
 
 

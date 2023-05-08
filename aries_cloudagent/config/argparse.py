@@ -272,6 +272,12 @@ class DebugGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--debug-webhooks",
+            action="store_true",
+            env_var="ACAPY_DEBUG_WEBHOOKS",
+            help=("Emit protocol state object as webhook. " "Default: false."),
+        )
+        parser.add_argument(
             "--invite",
             action="store_true",
             env_var="ACAPY_INVITE",
@@ -424,6 +430,8 @@ class DebugGroup(ArgumentGroup):
             settings["debug.credentials"] = True
         if args.debug_presentations:
             settings["debug.presentations"] = True
+        if args.debug_webhooks:
+            settings["debug.webhooks"] = True
         if args.debug_seed:
             settings["debug.seed"] = args.debug_seed
         if args.invite:
@@ -643,6 +651,14 @@ class GeneralGroup(ArgumentGroup):
                 "resolver instance."
             ),
         )
+        parser.add_argument(
+            "--universal-resolver-bearer-token",
+            type=str,
+            nargs="?",
+            metavar="<universal_resolver_token>",
+            env_var="ACAPY_UNIVERSAL_RESOLVER_BEARER_TOKEN",
+            help="Bearer token if universal resolver instance requires authentication.",
+        ),
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract general settings."""
@@ -688,11 +704,20 @@ class GeneralGroup(ArgumentGroup):
                 "--universal-resolver-regex cannot be used without --universal-resolver"
             )
 
+        if args.universal_resolver_bearer_token and not args.universal_resolver:
+            raise ArgsParseError(
+                "--universal-resolver-bearer-token "
+                + "cannot be used without --universal-resolver"
+            )
+
         if args.universal_resolver:
             settings["resolver.universal"] = args.universal_resolver
 
         if args.universal_resolver_regex:
             settings["resolver.universal.supported"] = args.universal_resolver_regex
+
+        if args.universal_resolver_bearer_token:
+            settings["resolver.universal.token"] = args.universal_resolver_bearer_token
 
         return settings
 
@@ -1996,7 +2021,7 @@ class EndorsementGroup(ArgumentGroup):
         return settings
 
 
-@group(CAT_UPGRADE)
+@group(CAT_START, CAT_UPGRADE)
 class UpgradeGroup(ArgumentGroup):
     """ACA-Py Upgrade process settings."""
 
@@ -2028,6 +2053,17 @@ class UpgradeGroup(ArgumentGroup):
             ),
         )
 
+        parser.add_argument(
+            "--force-upgrade",
+            action="store_true",
+            env_var="ACAPY_UPGRADE_FORCE_UPGRADE",
+            help=(
+                "Forces the '—from-version' argument to override the version "
+                "retrieved from secure storage when calculating upgrades to "
+                "be run."
+            ),
+        )
+
     def get_settings(self, args: Namespace) -> dict:
         """Extract ACA-Py upgrade process settings."""
         settings = {}
@@ -2035,4 +2071,6 @@ class UpgradeGroup(ArgumentGroup):
             settings["upgrade.config_path"] = args.upgrade_config_path
         if args.from_version:
             settings["upgrade.from_version"] = args.from_version
+        if args.force_upgrade:
+            settings["upgrade.force_upgrade"] = args.force_upgrade
         return settings

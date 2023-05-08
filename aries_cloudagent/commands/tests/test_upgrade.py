@@ -17,10 +17,7 @@ class TestUpgrade(AsyncTestCase):
     async def setUp(self):
         self.session = InMemoryProfile.test_session()
         self.profile = self.session.profile
-
-        self.session_storage = InMemoryProfile.test_session()
-        self.profile_storage = self.session_storage.profile
-        self.storage = self.session_storage.inject(BaseStorage)
+        self.storage = self.session.inject(BaseStorage)
         record = StorageRecord(
             "acapy_version",
             "v0.7.2",
@@ -37,7 +34,7 @@ class TestUpgrade(AsyncTestCase):
             "wallet_config",
             async_mock.CoroutineMock(
                 return_value=(
-                    self.profile_storage,
+                    self.profile,
                     async_mock.CoroutineMock(did="public DID", verkey="verkey"),
                 )
             ),
@@ -49,32 +46,13 @@ class TestUpgrade(AsyncTestCase):
             ConnRecord, "save", async_mock.CoroutineMock()
         ):
             await test_module.upgrade(
-                {
+                settings={
                     "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
                     "upgrade.from_version": "v0.7.2",
                 }
             )
 
     async def test_upgrade_storage_missing_from_version(self):
-        with async_mock.patch.object(
-            test_module,
-            "wallet_config",
-            async_mock.CoroutineMock(
-                return_value=(
-                    self.profile_storage,
-                    async_mock.CoroutineMock(did="public DID", verkey="verkey"),
-                )
-            ),
-        ), async_mock.patch.object(
-            ConnRecord,
-            "query",
-            async_mock.CoroutineMock(return_value=[ConnRecord()]),
-        ), async_mock.patch.object(
-            ConnRecord, "save", async_mock.CoroutineMock()
-        ):
-            await test_module.upgrade({})
-
-    async def test_upgrade_from_version(self):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
@@ -91,13 +69,28 @@ class TestUpgrade(AsyncTestCase):
         ), async_mock.patch.object(
             ConnRecord, "save", async_mock.CoroutineMock()
         ):
+            await test_module.upgrade(settings={})
+
+    async def test_upgrade_from_version(self):
+        self.profile.settings.extend(
+            {
+                "upgrade.from_version": "v0.7.2",
+            }
+        )
+        with async_mock.patch.object(
+            ConnRecord,
+            "query",
+            async_mock.CoroutineMock(return_value=[ConnRecord()]),
+        ), async_mock.patch.object(ConnRecord, "save", async_mock.CoroutineMock()):
             await test_module.upgrade(
-                {
-                    "upgrade.from_version": "v0.7.2",
-                }
+                profile=self.profile,
             )
 
     async def test_upgrade_callable(self):
+        version_storage_record = await self.storage.find_record(
+            type_filter="acapy_version", tag_query={}
+        )
+        await self.storage.delete_record(version_storage_record)
         with async_mock.patch.object(
             test_module,
             "wallet_config",
@@ -124,7 +117,7 @@ class TestUpgrade(AsyncTestCase):
             ),
         ):
             await test_module.upgrade(
-                {
+                settings={
                     "upgrade.from_version": "v0.7.2",
                 }
             )
@@ -139,19 +132,22 @@ class TestUpgrade(AsyncTestCase):
             "wallet_config",
             async_mock.CoroutineMock(
                 return_value=(
-                    self.profile_storage,
+                    self.profile,
                     async_mock.CoroutineMock(did="public DID", verkey="verkey"),
                 )
             ),
         ):
-            with self.assertRaises(UpgradeError):
-                await test_module.upgrade(
-                    {
-                        "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
-                    }
-                )
+            await test_module.upgrade(
+                settings={
+                    "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
+                }
+            )
 
     async def test_upgrade_missing_from_version(self):
+        version_storage_record = await self.storage.find_record(
+            type_filter="acapy_version", tag_query={}
+        )
+        await self.storage.delete_record(version_storage_record)
         with async_mock.patch.object(
             test_module,
             "wallet_config",
@@ -168,13 +164,19 @@ class TestUpgrade(AsyncTestCase):
         ), async_mock.patch.object(
             ConnRecord, "save", async_mock.CoroutineMock()
         ):
-            await test_module.upgrade(
-                {
-                    "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
-                }
-            )
+            with self.assertRaises(UpgradeError) as ctx:
+                await test_module.upgrade(
+                    settings={
+                        "upgrade.config_path": "./aries_cloudagent/commands/default_version_upgrade_config.yml",
+                    }
+                )
+            assert "No upgrade from version found in wallet or" in str(ctx.exception)
 
     async def test_upgrade_x_callable_not_set(self):
+        version_storage_record = await self.storage.find_record(
+            type_filter="acapy_version", tag_query={}
+        )
+        await self.storage.delete_record(version_storage_record)
         with async_mock.patch.object(
             test_module,
             "wallet_config",
@@ -197,17 +199,17 @@ class TestUpgrade(AsyncTestCase):
                         },
                         "update_existing_records": True,
                     },
-                    "v0.6.0": {"update_existing_records": True},
+                    "v0.6.0": {"update_existing_records_b": True},
                 }
             ),
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
-                    {
+                    settings={
                         "upgrade.from_version": "v0.6.0",
                     }
                 )
-            assert "No update_existing_records function specified" in str(ctx.exception)
+            assert "No function specified for" in str(ctx.exception)
 
     async def test_upgrade_x_class_not_found(self):
         with async_mock.patch.object(
@@ -236,7 +238,7 @@ class TestUpgrade(AsyncTestCase):
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
-                    {
+                    settings={
                         "upgrade.from_version": "v0.7.2",
                     }
                 )
@@ -269,7 +271,8 @@ class TestUpgrade(AsyncTestCase):
                     "--upgrade-config",
                     "./aries_cloudagent/config/tests/test-acapy-upgrade-config.yaml",
                     "--from-version",
-                    "v0.7.2",
+                    "v0.7.0",
+                    "--force-upgrade",
                 ]
             )
 
@@ -300,23 +303,13 @@ class TestUpgrade(AsyncTestCase):
         ):
             with self.assertRaises(UpgradeError) as ctx:
                 await test_module.upgrade(
-                    {
+                    settings={
                         "upgrade.from_version": "v0.7.2",
                     }
                 )
             assert "Only BaseRecord can be resaved" in str(ctx.exception)
 
-    async def test_upgrade_x_invalid_config(self):
-        with async_mock.patch.object(
-            test_module.yaml,
-            "safe_load",
-            async_mock.MagicMock(return_value={}),
-        ):
-            with self.assertRaises(UpgradeError) as ctx:
-                await test_module.upgrade({})
-            assert "No version configs found in" in str(ctx.exception)
-
-    async def test_upgrade_x_from_version_not_in_config(self):
+    async def test_upgrade_force(self):
         with async_mock.patch.object(
             test_module,
             "wallet_config",
@@ -326,14 +319,70 @@ class TestUpgrade(AsyncTestCase):
                     async_mock.CoroutineMock(did="public DID", verkey="verkey"),
                 )
             ),
+        ), async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.7.2": {
+                        "resave_records": {
+                            "base_record_path": [
+                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                            ],
+                        },
+                        "update_existing_records": True,
+                    },
+                    "v0.7.3": {
+                        "update_existing_records": True,
+                    },
+                    "v0.7.1": {
+                        "update_existing_records": False,
+                    },
+                }
+            ),
+        ):
+            await test_module.upgrade(
+                settings={
+                    "upgrade.from_version": "v0.7.0",
+                    "upgrade.force_upgrade": True,
+                }
+            )
+
+    async def test_get_upgrade_version_list(self):
+        assert len(test_module.get_upgrade_version_list(from_version="v0.7.2")) >= 1
+
+    async def test_add_version_record(self):
+        await test_module.add_version_record(self.profile, "v0.7.4")
+        version_storage_record = await self.storage.find_record(
+            type_filter="acapy_version", tag_query={}
+        )
+        assert version_storage_record.value == "v0.7.4"
+        await self.storage.delete_record(version_storage_record)
+        with self.assertRaises(test_module.StorageNotFoundError):
+            await self.storage.find_record(type_filter="acapy_version", tag_query={})
+        await test_module.add_version_record(self.profile, "v0.7.5")
+        version_storage_record = await self.storage.find_record(
+            type_filter="acapy_version", tag_query={}
+        )
+        assert version_storage_record.value == "v0.7.5"
+
+    async def test_upgrade_x_invalid_config(self):
+        with async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(return_value={}),
         ):
             with self.assertRaises(UpgradeError) as ctx:
-                await test_module.upgrade(
-                    {
-                        "upgrade.from_version": "v1.2.3",
-                    }
-                )
-            assert "No upgrade configuration found for" in str(ctx.exception)
+                await test_module.upgrade(settings={})
+            assert "No version configs found in" in str(ctx.exception)
+
+    async def test_upgrade_x_params(self):
+        with self.assertRaises(UpgradeError) as ctx:
+            await test_module.upgrade(profile=self.profile, settings={})
+        assert "upgrade requires either profile or settings" in str(ctx.exception)
+        with self.assertRaises(UpgradeError) as ctx:
+            await test_module.upgrade(profile=self.profile, settings={"...": "..."})
+        assert "upgrade requires either profile or settings" in str(ctx.exception)
 
     def test_main(self):
         with async_mock.patch.object(
