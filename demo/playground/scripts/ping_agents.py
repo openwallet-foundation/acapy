@@ -124,9 +124,11 @@ if __name__ == "__main__":
     print("\n... single tenants, connect ...\n")
 
     # faber create invitation for alice
-    faber_invitation, faber_alice_connection_id, faber_recipient_keys = create_invitation(
-        "faber", "alice", None, FABER_ADMIN_URL
-    )
+    (
+        faber_invitation,
+        faber_alice_connection_id,
+        faber_recipient_keys,
+    ) = create_invitation("faber", "alice", None, FABER_ADMIN_URL)
     alice_faber_connection_id = receive_invitation(
         faber_invitation, "faber", None, ALICE_ADMIN_URL
     )

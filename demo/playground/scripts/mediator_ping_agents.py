@@ -215,9 +215,11 @@ if __name__ == "__main__":
     print("\n... single tenants, connect ...\n")
 
     # faber create invitation for alice
-    faber_invitation, faber_alice_connection_id, faber_recipient_keys = create_invitation(
-        "faber", "alice", faber_mediation_id, FABER_ADMIN_URL
-    )
+    (
+        faber_invitation,
+        faber_alice_connection_id,
+        faber_recipient_keys,
+    ) = create_invitation("faber", "alice", faber_mediation_id, FABER_ADMIN_URL)
     alice_faber_connection_id = receive_invitation(
         faber_invitation, "faber", alice_mediation_id, ALICE_ADMIN_URL
     )
@@ -255,7 +257,11 @@ if __name__ == "__main__":
 
     print("\n... multitenant, connect ...\n")
     multi_mediation_id = None
-    multi_invitation, multi_alice_connection_id, multi_recipient_keys = create_invitation(
+    (
+        multi_invitation,
+        multi_alice_connection_id,
+        multi_recipient_keys,
+    ) = create_invitation(
         multi_wallet_name, "alice", multi_mediation_id, MULTI_ADMIN_URL, multi_headers
     )
 
