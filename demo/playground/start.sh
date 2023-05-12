@@ -2,6 +2,7 @@
 
 # set -euxo pipefail
 
+# if $TUNNEL_NAME is not empty, grab the service's ngrok route and set our ACAPY_ENDPOINT
 if [[ ! -z "$TUNNEL_NAME" ]]; then
     echo "using ngrok tunnel for [$TUNNEL_NAME]"
 
