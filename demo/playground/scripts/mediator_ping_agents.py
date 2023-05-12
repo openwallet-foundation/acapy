@@ -12,7 +12,7 @@ ACME_ADMIN_URL = "http://localhost:9013"
 MULTI_ADMIN_URL = "http://localhost:9014"
 
 
-MEDIATOR_INVITATION_URL = "https://93f7-207-6-152-178.ngrok.io?c_i=eyJAdHlwZSI6ICJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb25zLzEuMC9pbnZpdGF0aW9uIiwgIkBpZCI6ICI3NWVmYzhmYy00ZmNkLTRjY2YtYWFkOC0zYTAzNjZkYTczNDYiLCAibGFiZWwiOiAiTWVkaWF0b3IiLCAicmVjaXBpZW50S2V5cyI6IFsiRlhHZnZCb2l1VFIyVzV6QzFZQzVWeERvVXR5UjFTNndpRTJLTG5ab3lpbXoiXSwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwczovLzkzZjctMjA3LTYtMTUyLTE3OC5uZ3Jvay5pbyJ9"
+MEDIATOR_INVITATION_URL = "<paste your connection invitation here>"
 
 
 def wait_a_bit(secs: int = 1):
@@ -201,16 +201,16 @@ if __name__ == "__main__":
     faber_mediation_connection_id, faber_mediation_id = initialize_mediation(
         FABER_ADMIN_URL
     )
-    print(
-        f"faber \nmediation_connection_id={faber_mediation_connection_id}\nmediation_id={faber_mediation_id}\n"
-    )
+    print("faber")
+    print(f"  mediation_connection_id={faber_mediation_connection_id}")
+    print(f"  mediation_id={faber_mediation_id}")
 
     alice_mediation_connection_id, alice_mediation_id = initialize_mediation(
         ALICE_ADMIN_URL
     )
-    print(
-        f"alice \nmediation_connection_id={alice_mediation_connection_id}\nmediation_id={alice_mediation_id}\n"
-    )
+    print("alice")
+    print(f"  mediation_connection_id={alice_mediation_connection_id}")
+    print(f"  mediation_id={alice_mediation_id}")
 
     print("\n... single tenants, connect ...\n")
 
@@ -249,9 +249,9 @@ if __name__ == "__main__":
     multi_mediation_connection_id, multi_mediation_id = initialize_mediation(
         MULTI_ADMIN_URL, multi_headers
     )
-    print(
-        f"multi ({multi_wallet_name}) \nmediation_connection_id={multi_mediation_connection_id}\nmediation_id={multi_mediation_id}\n"
-    )
+    print("multi")
+    print(f"  mediation_connection_id={multi_mediation_connection_id}")
+    print(f"  mediation_id={multi_mediation_id}")
 
     print("\n... multitenant, connect ...\n")
     multi_mediation_id = None
