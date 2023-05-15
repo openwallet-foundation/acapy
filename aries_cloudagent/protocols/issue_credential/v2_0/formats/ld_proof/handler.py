@@ -5,7 +5,7 @@ from ......vc.ld_proofs.error import LinkedDataProofException
 from ......vc.ld_proofs.check import get_properties_without_context
 import logging
 
-from typing import Mapping
+from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, INCLUDE
 
@@ -253,7 +253,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             # All other methods we can just query
             return await wallet.get_local_did(did)
 
-    async def _get_suite_for_detail(self, detail: LDProofVCDetail) -> LinkedDataProof:
+    async def _get_suite_for_detail(
+        self, detail: LDProofVCDetail, verification_method: Optional[str] = None
+    ) -> LinkedDataProof:
         issuer_id = detail.credential.issuer_id
         proof_type = detail.options.proof_type
 
@@ -268,7 +270,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         )
 
         did_info = await self._did_info_for_did(issuer_id)
-        verification_method = self._get_verification_method(issuer_id)
+        verification_method = verification_method or self._get_verification_method(
+            issuer_id
+        )
 
         suite = await self._get_suite(
             proof_type=proof_type,
@@ -457,7 +461,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         """Receive linked data proof request."""
 
     async def issue_credential(
-        self, cred_ex_record: V20CredExRecord, retries: int = 5
+        self,
+        cred_ex_record: V20CredExRecord,
+        retries: int = 5,
     ) -> CredFormatAttachment:
         """Issue linked data proof credential."""
         if not cred_ex_record.cred_request:
@@ -472,7 +478,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         detail = await self._prepare_detail(detail)
 
         # Get signature suite, proof purpose and document loader
-        suite = await self._get_suite_for_detail(detail)
+        suite = await self._get_suite_for_detail(
+            detail, cred_ex_record.verification_method
+        )
         proof_purpose = self._get_proof_purpose(
             proof_purpose=detail.options.proof_purpose,
             challenge=detail.options.challenge,

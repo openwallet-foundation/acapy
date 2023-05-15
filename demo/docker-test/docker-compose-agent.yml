@@ -1,0 +1,47 @@
+version: "3"
+services:
+  vcr-agent:
+    #image: bcgovimages/aries-cloudagent:py36-1.16-1_0.7.5
+    build:
+      context: ../../
+      dockerfile: docker/Dockerfile.run
+    ports:
+      - 8010:8010
+      - 8001:8001
+    networks:
+      - wallet-net
+    entrypoint: /bin/bash
+    command: [
+        "-c",
+        "sleep 5; \
+        aca-py start \
+        --auto-provision \
+        --seed '00000000o_faber_secondary_school' \
+        --inbound-transport http '0.0.0.0' 8001 \
+        --endpoint 'http://host.docker.internal:8001' \
+        --outbound-transport http \
+        --genesis-url 'http://test.bcovrin.vonx.io/genesis' \
+        --auto-accept-invites \
+        --auto-accept-requests \
+        --auto-ping-connection \
+        --auto-respond-messages \
+        --auto-respond-credential-proposal \
+        --auto-respond-credential-offer \
+        --auto-respond-credential-request \
+        --auto-verify-presentation \
+        --wallet-type 'askar' \
+        --wallet-name 'acapy_agent_wallet' \
+        --wallet-key 'key' \
+        --wallet-storage-type 'postgres_storage' \
+        --wallet-storage-config '{\"url\":\"wallet-db:5432\",\"max_connections\":5}' \
+        --wallet-storage-creds '{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"postgres\",\"admin_password\":\"mysecretpassword\"}' \
+        --admin '0.0.0.0' 8010 \
+        --admin-insecure-mode \
+        --label 'tester_agent' \
+        --log-level 'info' ",
+      ]
+
+networks:
+  wallet-net:
+    external:
+      name: docker-test_wallet-net

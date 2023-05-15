@@ -2,9 +2,9 @@ from ecdsa import ECDH, NIST256p, SigningKey
 
 from ..derive_ecdh import *
 
+
 # Generate the same shared secret from imported generated keys
 def test_ecdh_derive_shared_secret():
-
     # Import keys for two participating users
     aliceSecretKey = "23832cbef38641b8754a35f1f79bbcbc248e09ac93b01c2eaf12474f2ac406b6"
     alicePublicKey = "04fd4ca9eb7954a03517ac8249e6070aa3112e582f596b10f0d45d757b56d5dc0395a7d207d06503a4d6ad6e2ad3a1fd8cc233c072c0dc0f32213deb712c32cbdf"
@@ -23,7 +23,6 @@ def test_ecdh_derive_shared_secret():
 
 # Generate the same shared secret from random keys
 def test_ecdh_derive_shared_secret_random():
-
     # Generate random keys for the two participating users
     aliceSecretKey = SigningKey.generate(curve=NIST256p)
     alice = ECDH(curve=NIST256p)
@@ -46,7 +45,6 @@ def test_ecdh_derive_shared_secret_random():
 
 # Test the entire key generation flow, DeriveECDHSecret() into ConcatKDF()
 def test_ecdh_generate_key():
-
     aliceSecretKey = "23832cbef38641b8754a35f1f79bbcbc248e09ac93b01c2eaf12474f2ac406b6"
     alicePublicKey = "04fd4ca9eb7954a03517ac8249e6070aa3112e582f596b10f0d45d757b56d5dc0395a7d207d06503a4d6ad6e2ad3a1fd8cc233c072c0dc0f32213deb712c32cbdf"
 
@@ -78,7 +76,6 @@ def test_ecdh_generate_key():
 
 # Test the entire key generation flow, derive_shared_secret() into concat_kdf()
 def test_ecdh_generate_key_random():
-
     aliceSecretKey = SigningKey.generate(curve=NIST256p)
     alice = ECDH(curve=NIST256p)
     alice.load_private_key(aliceSecretKey)
@@ -113,7 +110,6 @@ def test_ecdh_generate_key_random():
 
 
 def main():
-
     test_ecdh_derive_shared_secret()
     test_ecdh_derive_shared_secret_random()
     test_ecdh_generate_key()

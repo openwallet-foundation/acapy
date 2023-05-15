@@ -66,7 +66,7 @@ class MultitenantRouteManager(RouteManager):
 
                 # If no error is thrown, it means there is already a record
                 return None
-            except (StorageNotFoundError):
+            except StorageNotFoundError:
                 pass
 
         await routing_mgr.create_route_record(
@@ -81,8 +81,17 @@ class MultitenantRouteManager(RouteManager):
                 keylist_updates = await mediation_mgr.remove_key(
                     replace_key, keylist_updates
                 )
-
-            responder = self.root_profile.inject(BaseResponder)
+            # in order to locate the correct verkey for message packing we need
+            # to use the correct profile.
+            # if we are using default/base mediation then we need
+            # the root_profile to create the responder.
+            # if sub-wallets are configuring their own mediation, then
+            # we need the sub-wallet (profile) to create the responder.
+            responder = (
+                self.root_profile.inject(BaseResponder)
+                if base_mediation_record
+                else profile.inject(BaseResponder)
+            )
             await responder.send(
                 keylist_updates, connection_id=mediation_record.connection_id
             )

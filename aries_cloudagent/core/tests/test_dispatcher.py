@@ -6,6 +6,8 @@ import pytest
 
 from marshmallow import EXCLUDE
 
+from ...cache.base import BaseCache
+from ...cache.in_memory import InMemoryCache
 from ...config.injection_context import InjectionContext
 from ...core.event_bus import EventBus
 from ...core.in_memory import InMemoryProfile
@@ -413,11 +415,84 @@ class TestDispatcher(IsolatedAsyncioTestCase):
             profile,
             settings={"timing.enabled": True},
         )
+        registry = profile.inject(ProtocolRegistry)
+        registry.register_message_types(
+            {
+                pfx.qualify(StubAgentMessage.Meta.message_type): StubAgentMessage
+                for pfx in DIDCommPrefix
+            }
+        )
+        message = StubAgentMessage()
+        responder = test_module.DispatcherResponder(context, message, None)
+        outbound_message = await responder.create_outbound(
+            json.dumps(message.serialize())
+        )
+        with async_mock.patch.object(
+            responder, "_send", async_mock.AsyncMock()
+        ), async_mock.patch.object(
+            test_module.BaseResponder,
+            "conn_rec_active_state_check",
+            async_mock.AsyncMock(return_value=True),
+        ):
+            await responder.send_outbound(outbound_message)
+
+    async def test_create_send_outbound_with_msg_attrs(self):
+        profile = make_profile()
+        context = RequestContext(
+            profile,
+            settings={"timing.enabled": True},
+        )
+        registry = profile.inject(ProtocolRegistry)
+        registry.register_message_types(
+            {
+                pfx.qualify(StubAgentMessage.Meta.message_type): StubAgentMessage
+                for pfx in DIDCommPrefix
+            }
+        )
         message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         outbound_message = await responder.create_outbound(message)
-        with async_mock.patch.object(responder, "_send", async_mock.AsyncMock()):
-            await responder.send_outbound(outbound_message)
+        with async_mock.patch.object(
+            responder, "_send", async_mock.AsyncMock()
+        ), async_mock.patch.object(
+            test_module.BaseResponder,
+            "conn_rec_active_state_check",
+            async_mock.AsyncMock(return_value=True),
+        ):
+            await responder.send_outbound(
+                message=outbound_message,
+                message_type=message._message_type,
+                message_id=message._id,
+            )
+
+    async def test_create_send_outbound_with_msg_attrs_x(self):
+        profile = make_profile()
+        context = RequestContext(
+            profile,
+            settings={"timing.enabled": True},
+        )
+        registry = profile.inject(ProtocolRegistry)
+        registry.register_message_types(
+            {
+                pfx.qualify(StubAgentMessage.Meta.message_type): StubAgentMessage
+                for pfx in DIDCommPrefix
+            }
+        )
+        message = StubAgentMessage()
+        responder = test_module.DispatcherResponder(context, message, None)
+        outbound_message = await responder.create_outbound(message)
+        outbound_message.connection_id = "123"
+        with async_mock.patch.object(
+            test_module.BaseResponder,
+            "conn_rec_active_state_check",
+            async_mock.AsyncMock(return_value=False),
+        ):
+            with self.assertRaises(RuntimeError):
+                await responder.send_outbound(
+                    message=outbound_message,
+                    message_type=message._message_type,
+                    message_id=message._id,
+                )
 
     async def test_create_send_webhook(self):
         profile = make_profile()
@@ -427,16 +502,81 @@ class TestDispatcher(IsolatedAsyncioTestCase):
         with pytest.deprecated_call():
             await responder.send_webhook("topic", {"pay": "load"})
 
+    async def test_conn_rec_active_state_check_a(self):
+        profile = make_profile()
+        profile.context.injector.bind_instance(BaseCache, InMemoryCache())
+        context = RequestContext(profile)
+        message = StubAgentMessage()
+        responder = test_module.DispatcherResponder(context, message, None)
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+        ) as mock_conn_ret_by_id:
+            conn_rec = test_module.ConnRecord()
+            conn_rec.state = test_module.ConnRecord.State.COMPLETED
+            mock_conn_ret_by_id.return_value = conn_rec
+            check_flag = await responder.conn_rec_active_state_check(
+                profile,
+                "conn-id",
+            )
+            assert check_flag
+            check_flag = await responder.conn_rec_active_state_check(
+                profile,
+                "conn-id",
+            )
+            assert check_flag
+
+    async def test_conn_rec_active_state_check_b(self):
+        profile = make_profile()
+        profile.context.injector.bind_instance(BaseCache, InMemoryCache())
+        profile.context.injector.bind_instance(
+            EventBus, async_mock.MagicMock(notify=async_mock.AsyncMock())
+        )
+        context = RequestContext(profile)
+        message = StubAgentMessage()
+        responder = test_module.DispatcherResponder(context, message, None)
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.AsyncMock()
+        ) as mock_conn_ret_by_id:
+            conn_rec_a = test_module.ConnRecord()
+            conn_rec_a.state = test_module.ConnRecord.State.REQUEST
+            conn_rec_b = test_module.ConnRecord()
+            conn_rec_b.state = test_module.ConnRecord.State.COMPLETED
+            mock_conn_ret_by_id.side_effect = [conn_rec_a, conn_rec_b]
+            check_flag = await responder.conn_rec_active_state_check(
+                profile,
+                "conn-id",
+            )
+            assert check_flag
+
     async def test_create_enc_outbound(self):
         profile = make_profile()
         context = RequestContext(profile)
-        message = b"abc123xyz7890000"
+        message = StubAgentMessage()
         responder = test_module.DispatcherResponder(context, message, None)
         with async_mock.patch.object(
             responder, "send_outbound", async_mock.AsyncMock()
         ) as mock_send_outbound:
             await responder.send(message)
             assert mock_send_outbound.called_once()
+        msg_json = json.dumps(StubAgentMessage().serialize())
+        message = msg_json.encode("utf-8")
+        with async_mock.patch.object(
+            responder, "send_outbound", async_mock.AsyncMock()
+        ) as mock_send_outbound:
+            await responder.send(message)
+
+        message = StubAgentMessage()
+        with async_mock.patch.object(
+            responder, "send_outbound", async_mock.AsyncMock()
+        ) as mock_send_outbound:
+            await responder.send_reply(message)
+            assert mock_send_outbound.called_once()
+
+        message = json.dumps(StubAgentMessage().serialize())
+        with async_mock.patch.object(
+            responder, "send_outbound", async_mock.AsyncMock()
+        ) as mock_send_outbound:
+            await responder.send_reply(message)
 
     async def test_expired_context_x(self):
         def _smaller_scope():

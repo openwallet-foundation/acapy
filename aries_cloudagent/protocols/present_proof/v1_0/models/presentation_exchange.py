@@ -21,6 +21,7 @@ from ..messages.presentation_request import (
     PresentationRequest,
     PresentationRequestSchema,
 )
+from ..messages.presentation_webhook import V10PresentationExchangeWebhook
 
 from . import UNENCRYPTED_TAGS
 
@@ -194,6 +195,33 @@ class V10PresentationExchange(BaseExchangeRecord):
             )
         except StorageError as err:
             LOGGER.exception(err)
+
+    # Override
+    async def emit_event(self, session: ProfileSession, payload: Any = None):
+        """
+        Emit an event.
+
+        Args:
+            session: The profile session to use
+            payload: The event payload
+        """
+
+        if not self.RECORD_TOPIC:
+            return
+
+        if self.state:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}::{self.state}"
+        else:
+            topic = f"{self.EVENT_NAMESPACE}::{self.RECORD_TOPIC}"
+
+        if session.profile.settings.get("debug.webhooks"):
+            if not payload:
+                payload = self.serialize()
+        else:
+            payload = V10PresentationExchangeWebhook(**self.__dict__)
+            payload = payload.__dict__
+
+        await session.profile.notify(topic, payload)
 
     @property
     def record_value(self) -> Mapping:

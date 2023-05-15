@@ -1553,7 +1553,6 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
         ) as mock_txn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_txn_mgr.return_value.complete_transaction = async_mock.CoroutineMock()
 
             mock_txn_mgr.return_value.complete_transaction.return_value = (
@@ -1600,7 +1599,6 @@ class TestEndorseTransactionRoutes(AsyncTestCase):
         with async_mock.patch.object(
             TransactionRecord, "retrieve_by_id", async_mock.CoroutineMock()
         ) as mock_txn_rec_retrieve:
-
             mock_txn_rec_retrieve.return_value = async_mock.MagicMock(
                 serialize=async_mock.MagicMock(return_value={"...": "..."}),
                 state=TransactionRecord.STATE_TRANSACTION_CREATED,

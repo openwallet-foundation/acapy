@@ -59,7 +59,6 @@ class TestOobProcessor(AsyncTestCase):
             "retrieve_by_tag_filter",
             async_mock.CoroutineMock(return_value=mock_oob),
         ) as mock_retrieve_oob:
-
             await self.oob_processor.clean_finished_oob_record(
                 self.profile, test_message
             )
@@ -88,7 +87,6 @@ class TestOobProcessor(AsyncTestCase):
             "retrieve_by_tag_filter",
             async_mock.CoroutineMock(return_value=mock_oob),
         ) as mock_retrieve_oob:
-
             await self.oob_processor.clean_finished_oob_record(
                 self.profile, test_message
             )
@@ -143,7 +141,6 @@ class TestOobProcessor(AsyncTestCase):
             "retrieve_by_tag_filter",
             async_mock.CoroutineMock(return_value=mock_oob),
         ) as mock_retrieve_oob:
-
             target = await self.oob_processor.find_oob_target_for_outbound_message(
                 self.profile, outbound
             )
@@ -182,7 +179,6 @@ class TestOobProcessor(AsyncTestCase):
             "retrieve_by_tag_filter",
             async_mock.CoroutineMock(side_effect=(StorageNotFoundError(),)),
         ) as mock_retrieve_oob:
-
             target = await self.oob_processor.find_oob_target_for_outbound_message(
                 self.profile, outbound
             )
@@ -217,7 +213,6 @@ class TestOobProcessor(AsyncTestCase):
             "retrieve_by_tag_filter",
             async_mock.CoroutineMock(return_value=mock_oob),
         ):
-
             message = json.dumps({})
             outbound = OutboundMessage(reply_thread_id="the-thid", payload=message)
             await self.oob_processor.find_oob_target_for_outbound_message(
@@ -525,7 +520,6 @@ class TestOobProcessor(AsyncTestCase):
     async def test_find_oob_record_for_inbound_message_not_attach_thread_id_matching(
         self,
     ):
-
         with async_mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
@@ -639,7 +633,6 @@ class TestOobProcessor(AsyncTestCase):
     async def test_find_oob_record_for_inbound_message_session_emit_delete(
         self,
     ):
-
         with async_mock.patch.object(
             OobRecord,
             "retrieve_by_tag_filter",
@@ -664,7 +657,6 @@ class TestOobProcessor(AsyncTestCase):
     async def test_find_oob_record_for_inbound_message_session_connectionless_save(
         self,
     ):
-
         self.oob_record.connection_id = None
 
         with async_mock.patch.object(
@@ -751,7 +743,6 @@ class TestOobProcessor(AsyncTestCase):
         self.inbound_message_router.assert_called_once_with(self.profile, ANY, False)
 
     async def test_handle_message_unsupported_message_type(self):
-
         with self.assertRaises(OobMessageProcessorError) as err:
             await self.oob_processor.handle_message(
                 self.profile, [{"@type": "unsupported"}], async_mock.MagicMock()

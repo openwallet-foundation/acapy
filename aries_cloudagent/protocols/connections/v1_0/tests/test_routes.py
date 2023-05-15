@@ -5,6 +5,8 @@ from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 
 from .....admin.request_context import AdminRequestContext
+from .....cache.base import BaseCache
+from .....cache.in_memory import InMemoryCache
 from .....connections.models.conn_record import ConnRecord
 from .....storage.error import StorageNotFoundError
 
@@ -360,7 +362,6 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_conn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_mgr.return_value.create_invitation = async_mock.CoroutineMock(
                 return_value=(
                     async_mock.MagicMock(  # connection record
@@ -543,7 +544,6 @@ class TestConnectionRoutes(AsyncTestCase):
         ) as mock_conn_mgr, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
             mock_conn_mgr.return_value.create_request = async_mock.CoroutineMock()
 
@@ -706,6 +706,26 @@ class TestConnectionRoutes(AsyncTestCase):
 
             await test_module.connections_remove(self.request)
             mock_response.assert_called_once_with({})
+
+    async def test_connections_remove_cache_key(self):
+        cache = InMemoryCache()
+        profile = self.context.profile
+        await cache.set("conn_rec_state::dummy", "active")
+        profile.context.injector.bind_instance(BaseCache, cache)
+        self.request.match_info = {"conn_id": "dummy"}
+        mock_conn_rec = async_mock.MagicMock()
+        mock_conn_rec.delete_record = async_mock.CoroutineMock()
+        assert (await cache.get("conn_rec_state::dummy")) == "active"
+        with async_mock.patch.object(
+            test_module.ConnRecord, "retrieve_by_id", async_mock.CoroutineMock()
+        ) as mock_conn_rec_retrieve_by_id, async_mock.patch.object(
+            test_module.web, "json_response"
+        ) as mock_response:
+            mock_conn_rec_retrieve_by_id.return_value = mock_conn_rec
+
+            await test_module.connections_remove(self.request)
+            mock_response.assert_called_once_with({})
+            assert not (await cache.get("conn_rec_state::dummy"))
 
     async def test_connections_remove_not_found(self):
         self.request.match_info = {"conn_id": "dummy"}

@@ -443,7 +443,10 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
         cache = InMemoryCache()
         await cache.set("did_ledger_id_resolver::Av63wJYM7xYR4AiygYq4c3", "test_prod_1")
         self.profile.context.injector.bind_instance(BaseCache, cache)
-        (ledger_id, ledger_inst,) = await self.manager.lookup_did_in_configured_ledgers(
+        (
+            ledger_id,
+            ledger_inst,
+        ) = await self.manager.lookup_did_in_configured_ledgers(
             "Av63wJYM7xYR4AiygYq4c3", cache_did=True
         )
         assert ledger_id == "test_prod_1"
@@ -455,7 +458,10 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
             "did_ledger_id_resolver::Av63wJYM7xYR4AiygYq4c3", "test_non_prod_2", None
         )
         self.profile.context.injector.bind_instance(BaseCache, cache)
-        (ledger_id, ledger_inst,) = await self.manager.lookup_did_in_configured_ledgers(
+        (
+            ledger_id,
+            ledger_inst,
+        ) = await self.manager.lookup_did_in_configured_ledgers(
             "Av63wJYM7xYR4AiygYq4c3", cache_did=True
         )
         assert ledger_id == "test_non_prod_2"

@@ -124,7 +124,9 @@ class AdminResponder(BaseResponder):
         self._profile = weakref.ref(profile)
         self._send = send
 
-    async def send_outbound(self, message: OutboundMessage) -> OutboundSendStatus:
+    async def send_outbound(
+        self, message: OutboundMessage, **kwargs
+    ) -> OutboundSendStatus:
         """
         Send outbound message.
 
@@ -491,7 +493,7 @@ class AdminServer(BaseAdminServer):
 
         def sort_dict(raw: dict) -> dict:
             """Order (JSON, string keys) dict asciibetically by key, recursively."""
-            for (k, v) in raw.items():
+            for k, v in raw.items():
                 if isinstance(v, dict):
                     raw[k] = sort_dict(v)
             return dict(sorted([item for item in raw.items()], key=lambda x: x[0]))

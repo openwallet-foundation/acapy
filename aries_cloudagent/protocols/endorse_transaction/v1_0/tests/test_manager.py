@@ -496,7 +496,6 @@ class TestTransactionManager(AsyncTestCase):
         ) as save_record, async_mock.patch.object(
             ConnRecord, "retrieve_by_id"
         ) as mock_conn_rec_retrieve:
-
             mock_conn_rec_retrieve.return_value = async_mock.MagicMock(
                 metadata_get=async_mock.CoroutineMock(
                     return_value={

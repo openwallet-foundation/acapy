@@ -2,6 +2,8 @@
 
 import json
 import logging
+import os
+import shutil
 from asyncio import shield
 import re
 
@@ -143,6 +145,31 @@ class CredRevRecordQueryStringSchema(OpenAPISchema):
         description="Credential exchange identifier",
         required=False,
         **UUID4,
+    )
+
+
+class RevRegId(OpenAPISchema):
+    """Parameters and validators for delete tails file request."""
+
+    @validates_schema
+    def validate_fields(self, data, **kwargs):
+        """Validate schema fields - must have either rr-id or cr-id."""
+
+        rev_reg_id = data.get("rev_reg_id")
+        cred_def_id = data.get("cred_def_id")
+
+        if not (rev_reg_id or cred_def_id):
+            raise ValidationError("Request must have either rev_reg_id or cred_def_id")
+
+    rev_reg_id = fields.Str(
+        description="Revocation registry identifier",
+        required=False,
+        **INDY_REV_REG_ID,
+    )
+    cred_def_id = fields.Str(
+        description="Credential definition identifier",
+        required=False,
+        **INDY_CRED_DEF_ID,
     )
 
 
@@ -1467,6 +1494,58 @@ async def on_revocation_registry_endorsed_event(profile: Profile, event: Event):
         )
 
 
+class TailsDeleteResponseSchema(OpenAPISchema):
+    """Return schema for tails failes deletion."""
+
+    message = fields.Str()
+
+
+@querystring_schema(RevRegId())
+@response_schema(TailsDeleteResponseSchema())
+@docs(tags=["revocation"], summary="Delete the tail files")
+async def delete_tails(request: web.BaseRequest) -> json:
+    """Delete Tails Files."""
+    context: AdminRequestContext = request["context"]
+    rev_reg_id = request.query.get("rev_reg_id")
+    cred_def_id = request.query.get("cred_def_id")
+    revoc = IndyRevocation(context.profile)
+    session = revoc._profile.session()
+    if rev_reg_id:
+        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_id)
+        tails_path = rev_reg.tails_local_path
+        main_dir_rev = os.path.dirname(tails_path)
+        try:
+            shutil.rmtree(main_dir_rev)
+            return web.json_response({"message": "All files deleted successfully"})
+        except Exception as e:
+            return web.json_response({"message": str(e)})
+    elif cred_def_id:
+        async with session:
+            cred_reg = sorted(
+                await IssuerRevRegRecord.query_by_cred_def_id(
+                    session, cred_def_id, IssuerRevRegRecord.STATE_GENERATED
+                )
+            )[0]
+        tails_path = cred_reg.tails_local_path
+        main_dir_rev = os.path.dirname(tails_path)
+        main_dir_cred = os.path.dirname(main_dir_rev)
+        filenames = os.listdir(main_dir_cred)
+        try:
+            flag = 0
+            for i in filenames:
+                safe_cred_def_id = re.escape(cred_def_id)
+                if re.search(safe_cred_def_id, i):
+                    shutil.rmtree(main_dir_cred + "/" + i)
+                    flag = 1
+            if flag:
+                return web.json_response({"message": "All files deleted successfully"})
+            else:
+                return web.json_response({"message": "No such file or directory"})
+
+        except Exception as e:
+            return web.json_response({"message": str(e)})
+
+
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
@@ -1524,6 +1603,7 @@ async def register(app: web.Application):
                 "/revocation/registry/{rev_reg_id}/fix-revocation-entry-state",
                 update_rev_reg_revoked_state,
             ),
+            web.delete("/revocation/registry/delete-tails-file", delete_tails),
         ]
     )
 

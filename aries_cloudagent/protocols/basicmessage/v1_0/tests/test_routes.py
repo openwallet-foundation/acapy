@@ -34,7 +34,6 @@ class TestBasicMessageRoutes(AsyncTestCase):
         ) as mock_basic_message, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
 
             res = await test_module.connections_send_message(self.request)
@@ -50,7 +49,6 @@ class TestBasicMessageRoutes(AsyncTestCase):
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "BasicMessage", autospec=True
         ) as mock_basic_message:
-
             # Emulate storage not found (bad connection id)
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock(
                 side_effect=StorageNotFoundError
@@ -68,7 +66,6 @@ class TestBasicMessageRoutes(AsyncTestCase):
         ) as mock_connection_record, async_mock.patch.object(
             test_module, "BasicMessage", autospec=True
         ) as mock_basic_message:
-
             # Emulate connection not ready
             mock_connection_record.retrieve_by_id = async_mock.CoroutineMock()
             mock_connection_record.retrieve_by_id.return_value.is_ready = False

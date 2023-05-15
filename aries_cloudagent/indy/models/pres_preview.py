@@ -403,7 +403,7 @@ class IndyPresPreview(BaseModel):
                     },
                 }
 
-        for (reft, attr_spec) in attr_specs_names.items():
+        for reft, attr_spec in attr_specs_names.items():
             proof_req["requested_attributes"][
                 "{}_{}_uuid".format(
                     len(proof_req["requested_attributes"]), canon(attr_spec["names"][0])

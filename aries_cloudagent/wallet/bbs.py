@@ -102,5 +102,5 @@ def create_bls12381g2_keypair(seed: bytes = None) -> Tuple[bytes, bytes]:
     try:
         key_pair = BlsKeyPair.generate_g2(seed)
         return key_pair.public_key, key_pair.secret_key
-    except (Exception) as error:
+    except Exception as error:
         raise BbsException("Unable to create keypair") from error

@@ -5,7 +5,6 @@ from copy import deepcopy
 from time import time
 
 from asynctest import mock as async_mock, TestCase as AsyncTestCase
-from more_itertools import side_effect
 
 from .....core.in_memory import InMemoryProfile
 from .....cache.base import BaseCache
@@ -1357,7 +1356,6 @@ class TestCredentialManager(AsyncTestCase):
         ) as save_ex, async_mock.patch.object(
             V10CredentialExchange, "delete_record", autospec=True
         ) as delete_ex:
-
             mock_rev_reg.from_definition = async_mock.MagicMock(
                 return_value=async_mock.MagicMock(
                     get_or_fetch_local_tails_path=async_mock.CoroutineMock()

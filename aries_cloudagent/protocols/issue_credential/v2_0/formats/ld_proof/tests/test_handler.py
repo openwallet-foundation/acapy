@@ -274,7 +274,6 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             "_did_info_for_did",
             async_mock.CoroutineMock(),
         ) as mock_did_info:
-
             suite = await self.handler._get_suite_for_detail(detail)
 
             assert suite.signature_type == detail.options.proof_type
@@ -589,7 +588,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
             detail = LDProofVCDetail.deserialize(LD_PROOF_VC_DETAIL)
 
-            mock_get_suite.assert_called_once_with(detail)
+            mock_get_suite.assert_called_once_with(detail, None)
             mock_issue.assert_called_once_with(
                 credential=LD_PROOF_VC_DETAIL["credential"],
                 suite=mock_get_suite.return_value,

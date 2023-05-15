@@ -67,7 +67,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -101,7 +100,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -122,7 +120,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -158,7 +155,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -191,7 +187,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -229,7 +224,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -253,7 +247,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_pres_ex:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -280,7 +273,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_pres_ex:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -307,7 +299,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_pres_ex:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -334,7 +325,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -360,7 +350,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -388,7 +377,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_proposal:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -411,7 +399,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.indy.models.pres_preview.IndyPresPreview",
             autospec=True,
         ) as mock_preview:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -456,7 +443,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -510,7 +496,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.indy.util.generate_pr_nonce",
             autospec=True,
         ) as mock_generate_nonce:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -562,7 +547,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -601,7 +585,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -620,7 +603,6 @@ class TestProofRoutes(AsyncTestCase):
             "aries_cloudagent.connections.models.conn_record.ConnRecord",
             autospec=True,
         ) as mock_connection_record:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -664,7 +646,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -731,7 +712,6 @@ class TestProofRoutes(AsyncTestCase):
             "models.presentation_exchange.V10PresentationExchange",
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -793,7 +773,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -838,7 +817,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -883,7 +861,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -923,7 +900,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -998,7 +974,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1075,7 +1050,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1120,7 +1094,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1150,7 +1123,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1196,7 +1168,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1251,7 +1222,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1311,7 +1281,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1354,7 +1323,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1412,7 +1380,6 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_problem_report, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1444,7 +1411,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_pres_ex:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1474,7 +1440,6 @@ class TestProofRoutes(AsyncTestCase):
         ) as mock_problem_report, async_mock.patch.object(
             test_module.web, "json_response"
         ) as mock_response:
-
             # Since we are mocking import
             importlib.reload(test_module)
             mock_pres_ex.retrieve_by_id = async_mock.CoroutineMock(
@@ -1494,7 +1459,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1523,7 +1487,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 
@@ -1545,7 +1508,6 @@ class TestProofRoutes(AsyncTestCase):
             ),
             autospec=True,
         ) as mock_presentation_exchange:
-
             # Since we are mocking import
             importlib.reload(test_module)
 

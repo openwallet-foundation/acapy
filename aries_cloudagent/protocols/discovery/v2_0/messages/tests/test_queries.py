@@ -60,7 +60,6 @@ class TestQueries(TestCase):
 
 
 class TestQuerySchema(TestCase):
-
     test_queries = [
         QueryItem(feature_type="protocol", match=TEST_QUERY_PROTOCOL),
         QueryItem(feature_type="goal-code", match=TEST_QUERY_GOAL_CODE),
