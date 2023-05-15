@@ -341,7 +341,7 @@ class DemoAgent:
             "--preserve-exchange-records",
             "--auto-provision",
             "--public-invites",
-            #("--log-level", "debug"),
+            # ("--log-level", "debug"),
         ]
         if self.aip == 20:
             result.append("--emit-new-didcomm-prefix")
