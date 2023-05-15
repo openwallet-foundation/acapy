@@ -972,7 +972,6 @@ class DemoAgent:
                 headers["Authorization"] = (
                     "Bearer " + self.managed_wallet_params["token"]
                 )
-            print(" >>> POST with headers:", path, headers)
             response = await self.admin_request(
                 "POST", path, data, text, params, headers=headers
             )
@@ -1234,7 +1233,6 @@ class DemoAgent:
                     "auto_accept": json.dumps(auto_accept),
                 }
                 payload = {"mediation_id": self.mediator_request_id}
-                print(" >>> Mediation invitation payload:", payload)
                 invi_rec = await self.admin_POST(
                     "/connections/create-invitation",
                     payload,

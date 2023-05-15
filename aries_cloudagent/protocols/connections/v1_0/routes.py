@@ -553,7 +553,6 @@ async def connections_create_invitation(request: web.BaseRequest):
             records = await ConnRecord.query(
                 session, {}, post_filter_positive={}, alt=True
             )
-            print(" >>> existing connections:", records)
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if connection and connection.alias:

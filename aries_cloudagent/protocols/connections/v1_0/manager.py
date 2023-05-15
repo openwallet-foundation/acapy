@@ -1085,7 +1085,6 @@ class ConnectionManager(BaseConnectionManager):
                             records = await ConnRecord.query(
                                 session, {}, post_filter_positive={}, alt=True
                             )
-                            print(" >>> existing connections:", records)
                             connection = await ConnRecord.retrieve_by_id(
                                 session, connection_id
                             )
