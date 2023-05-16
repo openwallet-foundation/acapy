@@ -1,4 +1,5 @@
 import contextlib
+import logging
 
 from io import StringIO
 
@@ -6,6 +7,8 @@ from asynctest import mock as async_mock
 from tempfile import NamedTemporaryFile
 
 from .. import logging as test_module
+
+from ...core.in_memory import InMemoryProfile
 
 
 class TestLoggingConfigurator:
@@ -92,3 +95,19 @@ class TestLoggingConfigurator:
             test_module.pkg_resources, "resource_stream", async_mock.MagicMock()
         ) as mock_res_stream:
             test_module.load_resource("abc:def", encoding=None)
+
+    def test_get_logger_with_handlers(self):
+        profile = InMemoryProfile.test_profile()
+        profile.settings["log.file"] = "test_file.log"
+        logger = logging.getLogger(__name__)
+        logger = test_module.get_logger_with_handlers(
+            settings=profile.settings,
+            logger=logger,
+        )
+        assert logger
+        profile.settings["log.alias"] = "tenant_id_123"
+        logger = test_module.get_logger_with_handlers(
+            settings=profile.settings,
+            logger=logger,
+        )
+        assert logger

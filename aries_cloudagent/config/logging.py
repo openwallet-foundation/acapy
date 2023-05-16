@@ -1,5 +1,6 @@
 """Utilities related to logging."""
 
+import sys
 import logging
 from io import TextIOWrapper
 from logging.config import fileConfig
@@ -9,9 +10,43 @@ import pkg_resources
 
 from ..version import __version__
 from .banner import Banner
+from .base import BaseSettings
 
 
 DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
+LOG_FORMAT_FILE_ALIAS = logging.Formatter(
+    "%(asctime)s [%(logger_alias)s] %(name)s %(levelname)s %(message)s"
+)
+LOG_FORMAT_FILE_NO_ALIAS = logging.Formatter(
+    "%(asctime)s %(name)s %(levelname)s %(message)s"
+)
+LOG_FORMAT_STREAM = logging.Formatter("%(asctime)s %(name)s %(levelname)s %(message)s")
+
+
+def get_logger_with_handlers(
+    settings: BaseSettings, logger: logging.Logger
+) -> logging.Logger:
+    if settings.get("log.file"):
+        file_path = settings.get("log.file")
+        logger_alias = settings.get("log.alias")
+        file_handler = logging.FileHandler(file_path)
+        if logger_alias:
+            file_handler.setFormatter(LOG_FORMAT_FILE_ALIAS)
+        else:
+            file_handler.setFormatter(LOG_FORMAT_FILE_NO_ALIAS)
+        logger.addHandler(file_handler)
+        std_out_handler = logging.StreamHandler(sys.stdout)
+        std_out_handler.setFormatter(LOG_FORMAT_STREAM)
+        logger.addHandler(std_out_handler)
+        if logger_alias:
+            logger = logging.LoggerAdapter(logger, {"logger_alias": logger_alias})
+        # logger_level = (
+        #     (settings.get("log.level")).upper()
+        #     if settings.get("log.level")
+        #     else logging.INFO
+        # )
+        # logger.setLevel(logger_level)
+    return logger
 
 
 def load_resource(path: str, encoding: str = None) -> TextIO:

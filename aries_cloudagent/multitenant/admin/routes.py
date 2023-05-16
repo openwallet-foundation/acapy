@@ -23,6 +23,33 @@ from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ..error import WalletKeyMissingError
 
 
+ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
+    "ACAPY_LOG_LEVEL": "log.level",
+    "ACAPY_LOG_ALIAS": "log.alias",
+    "ACAPY_INVITE_PUBLIC": "debug.invite_public",
+    "ACAPY_PUBLIC_INVITES": "public_invites",
+    "ACAPY_AUTO_ACCEPT_INVITES": "debug.auto_accept_invites",
+    "ACAPY_AUTO_ACCEPT_REQUESTS": "debug.auto_accept_requests",
+    "ACAPY_AUTO_PING_CONNECTION": "auto_ping_connection",
+    "ACAPY_MONITOR_PING": "debug.monitor_ping",
+    "ACAPY_AUTO_RESPOND_MESSAGES": "debug.auto_respond_messages",
+    "ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER": "debug.auto_resopnd_credential_offer",
+    "ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST": "debug.auto_respond_credential_request",
+    "ACAPY_AUTO_VERIFY_PRESENTATION": "debug.auto_verify_presentation",
+    "ACAPY_NOTIFY_REVOCATION": "revocation.notify",
+    "ACAPY_AUTO_REQUEST_ENDORSEMENT": "endorser.auto_request",
+    "ACAPY_AUTO_WRITE_TRANSACTIONS": "endorser.auto_write",
+    "ACAPY_CREATE_REVOCATION_TRANSACTIONS": "endorser.auto_create_rev_reg",
+    "ACAPY_ENDORSER_ROLE": "endorser.protocol_role",
+}
+
+ACAPY_ENDORSER_FLGAS_DEPENDENT_ON_AUTHOR_ROLE = [
+    "ACAPY_AUTO_REQUEST_ENDORSEMENT",
+    "ACAPY_AUTO_WRITE_TRANSACTIONS",
+    "ACAPY_CREATE_REVOCATION_TRANSACTIONS",
+]
+
+
 def format_wallet_record(wallet_record: WalletRecord):
     """Serialize a WalletRecord object."""
 
@@ -33,6 +60,29 @@ def format_wallet_record(wallet_record: WalletRecord):
         del wallet_info["settings"]["wallet.key"]
 
     return wallet_info
+
+
+def get_extra_settings_dict_per_tenant(tenant_settings: dict) -> dict:
+    """Get per tenant settings to be applied when creating wallet."""
+
+    endorser_role_flag = tenant_settings.get("ACAPY_ENDORSER_ROLE")
+    extra_settings = {}
+    if endorser_role_flag == "author":
+        extra_settings["endorser.author"] = True
+    elif endorser_role_flag == "endorser":
+        extra_settings["endorser.endorser"] = True
+    for flag in tenant_settings.keys():
+        if (
+            flag in ACAPY_ENDORSER_FLGAS_DEPENDENT_ON_AUTHOR_ROLE
+            and endorser_role_flag != "author"
+        ):
+            # These flags require endorser role as author, if not set as author then
+            # this setting will be ignored.
+            continue
+        if flag != "ACAPY_ENDORSER_ROLE":
+            map_flag = ACAPY_LIFECYCLE_CONFIG_FLAG_MAP[flag]
+            extra_settings[map_flag] = tenant_settings[flag]
+    return extra_settings
 
 
 class MultitenantModuleResponseSchema(OpenAPISchema):
@@ -54,6 +104,12 @@ class CreateWalletRequestSchema(OpenAPISchema):
 
     wallet_key = fields.Str(
         description="Master key used for key derivation.", example="MySecretKey123"
+    )
+
+    extra_settings = fields.Dict(
+        keys=fields.Str(description="Agent Config Flag"),
+        values=fields.Str(description="Parameter"),
+        allow_none=True,
     )
 
     wallet_key_derivation = fields.Str(
@@ -141,6 +197,11 @@ class UpdateWalletRequestSchema(OpenAPISchema):
         example="default",
         default="default",
         validate=validate.OneOf(["default", "both", "base"]),
+    )
+    extra_settings = fields.Dict(
+        keys=fields.Str(description="Agent Config Flag"),
+        values=fields.Str(description="Parameter"),
+        allow_none=True,
     )
     wallet_webhook_urls = fields.List(
         fields.Str(
@@ -294,6 +355,7 @@ async def wallet_create(request: web.BaseRequest):
     wallet_key = body.get("wallet_key")
     wallet_webhook_urls = body.get("wallet_webhook_urls") or []
     wallet_dispatch_type = body.get("wallet_dispatch_type") or "default"
+    extra_settings = body.get("extra_settings") or {}
     # If no webhooks specified, then dispatch only to base webhook targets
     if wallet_webhook_urls == []:
         wallet_dispatch_type = "base"
@@ -305,6 +367,8 @@ async def wallet_create(request: web.BaseRequest):
         "wallet.webhook_urls": wallet_webhook_urls,
         "wallet.dispatch_type": wallet_dispatch_type,
     }
+    extra_subwallet_setting = get_extra_settings_dict_per_tenant(extra_settings)
+    settings.update(extra_subwallet_setting)
 
     label = body.get("label")
     image_url = body.get("image_url")
@@ -354,6 +418,7 @@ async def wallet_update(request: web.BaseRequest):
     wallet_dispatch_type = body.get("wallet_dispatch_type")
     label = body.get("label")
     image_url = body.get("image_url")
+    extra_settings = body.get("extra_settings") or {}
 
     if all(
         v is None for v in (wallet_webhook_urls, wallet_dispatch_type, label, image_url)
@@ -376,6 +441,8 @@ async def wallet_update(request: web.BaseRequest):
         settings["default_label"] = label
     if image_url is not None:
         settings["image_url"] = image_url
+    extra_subwallet_setting = get_extra_settings_dict_per_tenant(extra_settings)
+    settings.update(extra_subwallet_setting)
 
     try:
         multitenant_mgr = context.profile.inject(BaseMultitenantManager)

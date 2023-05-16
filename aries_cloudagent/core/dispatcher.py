@@ -16,6 +16,7 @@ import weakref
 from aiohttp.web import HTTPException
 
 from ..connections.models.conn_record import ConnRecord
+from ..config.logging import get_logger_with_handlers
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
 from ..messaging.base_message import BaseMessage
@@ -43,8 +44,6 @@ from .util import (
     # WARNING_VERSION_NOT_SUPPORTED,
 )
 
-LOGGER = logging.getLogger(__name__)
-
 
 class ProblemReportParseError(MessageParseError):
     """Error to raise on failure to parse problem-report message."""
@@ -63,6 +62,9 @@ class Dispatcher:
         self.collector: Collector = None
         self.profile = profile
         self.task_queue: TaskQueue = None
+        self._logger = get_logger_with_handlers(
+            settings=self.profile.settings, logger=logging.getLogger(__name__)
+        )
 
     async def setup(self):
         """Perform async instance setup."""
@@ -88,7 +90,7 @@ class Dispatcher:
         """Log a completed task using the stats collector."""
         if task.exc_info and not issubclass(task.exc_info[0], HTTPException):
             # skip errors intentionally returned to HTTP clients
-            LOGGER.exception(
+            self._logger.exception(
                 "Handler error: %s", task.ident or "", exc_info=task.exc_info
             )
         if self.collector:
@@ -158,7 +160,9 @@ class Dispatcher:
         except ProblemReportParseError:
             pass  # avoid problem report recursion
         except MessageParseError as e:
-            LOGGER.error(f"Message parsing failed: {str(e)}, sending problem report")
+            self._logger.error(
+                f"Message parsing failed: {str(e)}, sending problem report"
+            )
             error_result = ProblemReport(
                 description={
                     "en": str(e),
@@ -170,7 +174,7 @@ class Dispatcher:
         # if warning:
         #     warning_message_type = inbound_message.payload.get("@type")
         #     if warning == WARNING_DEGRADED_FEATURES:
-        #         LOGGER.error(
+        #         self._logger.error(
         #             f"Sending {WARNING_DEGRADED_FEATURES} problem report, "
         #             "message type received with a minor version at or higher"
         #             " than protocol minimum supported and current minor version "
@@ -187,7 +191,7 @@ class Dispatcher:
         #             }
         #         )
         #     elif warning == WARNING_VERSION_MISMATCH:
-        #         LOGGER.error(
+        #         self._logger.error(
         #             f"Sending {WARNING_VERSION_MISMATCH} problem report, message "
         #             "type received with a minor version higher than current minor "
         #             f"version for message_type {warning_message_type}"
