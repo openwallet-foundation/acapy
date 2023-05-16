@@ -88,6 +88,14 @@ class TestMultiIndyVDRLedgerManager(AsyncTestCase):
         assert ledger_id == "test_prod_1"
         assert ledger_inst.pool.name == "test_prod_1"
 
+    async def test_get_ledger_inst_by_id(self):
+        ledger_inst = await self.manager.get_ledger_inst_by_id("test_prod_2")
+        assert ledger_inst
+        ledger_inst = await self.manager.get_ledger_inst_by_id("test_non_prod_2")
+        assert ledger_inst
+        ledger_inst = await self.manager.get_ledger_inst_by_id("test_invalid")
+        assert not ledger_inst
+
     @async_mock.patch("aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_open")
     @async_mock.patch(
         "aries_cloudagent.ledger.indy_vdr.IndyVdrLedgerPool.context_close"
