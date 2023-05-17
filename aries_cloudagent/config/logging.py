@@ -8,25 +8,58 @@ from typing import TextIO
 
 import pkg_resources
 
+from ..core.profile import Profile
 from ..version import __version__
+
 from .banner import Banner
 from .base import BaseSettings
 
 
 DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
 LOG_FORMAT_FILE_ALIAS = logging.Formatter(
-    "%(asctime)s [%(logger_alias)s] %(name)s %(levelname)s %(message)s"
+    "%(asctime)s [%(logger_alias)s] %(levelname)s %(filename)s %(lineno)d %(message)s"
 )
 LOG_FORMAT_FILE_NO_ALIAS = logging.Formatter(
-    "%(asctime)s %(name)s %(levelname)s %(message)s"
+    "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s"
 )
-LOG_FORMAT_STREAM = logging.Formatter("%(asctime)s %(name)s %(levelname)s %(message)s")
+LOG_FORMAT_STREAM = logging.Formatter(
+    "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s"
+)
+
+
+def clear_prev_handlers(logger: logging.Logger) -> logging.Logger:
+    """Remove all handler classes associated with logger instance."""
+    iter_count = 0
+    num_handlers = len(logger.handlers)
+    while iter_count < num_handlers:
+        logger.removeHandler(logger.handlers[0])
+        iter_count = iter_count + 1
+    return logger
+
+
+def get_logger_inst(profile: Profile, logger_name) -> logging.Logger:
+    """Return a logger instance with provided name and handlers."""
+    logger = None
+    if profile.settings.get("log.alias"):
+        logger = get_logger_with_handlers(
+            settings=profile.settings,
+            logger=logging.getLogger(f"{logger_name}_{profile.settings['log.alias']}"),
+        )
+    else:
+        logger = get_logger_with_handlers(
+            settings=profile.settings, logger=logging.getLogger(logger_name)
+        )
+    return logger
 
 
 def get_logger_with_handlers(
     settings: BaseSettings, logger: logging.Logger
 ) -> logging.Logger:
+    """Return logger instance with necessary handlers if required."""
     if settings.get("log.file"):
+        # Clear handlers set previously for this logger instance
+        logger = clear_prev_handlers(logger)
+        # log file handler
         file_path = settings.get("log.file")
         logger_alias = settings.get("log.alias")
         file_handler = logging.FileHandler(file_path)
@@ -35,17 +68,19 @@ def get_logger_with_handlers(
         else:
             file_handler.setFormatter(LOG_FORMAT_FILE_NO_ALIAS)
         logger.addHandler(file_handler)
+        # stream console handler
         std_out_handler = logging.StreamHandler(sys.stdout)
         std_out_handler.setFormatter(LOG_FORMAT_STREAM)
         logger.addHandler(std_out_handler)
         if logger_alias:
             logger = logging.LoggerAdapter(logger, {"logger_alias": logger_alias})
-        # logger_level = (
-        #     (settings.get("log.level")).upper()
-        #     if settings.get("log.level")
-        #     else logging.INFO
-        # )
-        # logger.setLevel(logger_level)
+        # set log level
+        logger_level = (
+            (settings.get("log.level")).upper()
+            if settings.get("log.level")
+            else logging.INFO
+        )
+        logger.setLevel(logger_level)
     return logger
 
 

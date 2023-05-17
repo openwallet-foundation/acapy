@@ -4,6 +4,7 @@ import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, cast
 
+from ..config.logging import get_logger_inst
 from ..messaging.agent_message import AgentMessage
 from ..connections.models.conn_record import ConnRecord
 from ..connections.models.connection_target import ConnectionTarget
@@ -22,7 +23,7 @@ from ..transport.wire_format import JsonWireFormat
 from .error import BaseError
 from .profile import Profile
 
-LOGGER = logging.getLogger(__name__)
+LOGGER_NAME = __name__
 
 
 class OobMessageProcessorError(BaseError):
@@ -71,6 +72,10 @@ class OobMessageProcessor:
         self, profile: Profile, outbound_message: OutboundMessage
     ) -> Optional[ConnectionTarget]:
         """Find connection target for the outbound message."""
+        _logger = get_logger_inst(
+            profile=profile,
+            logger_name=LOGGER_NAME,
+        )
         try:
             async with profile.session() as session:
                 # Try to find the oob record for the outbound message:
@@ -78,7 +83,7 @@ class OobMessageProcessor:
                     session, {"attach_thread_id": outbound_message.reply_thread_id}
                 )
 
-                LOGGER.debug(
+                _logger.debug(
                     "extracting their service from oob record %s",
                     oob_record.their_service,
                 )
@@ -88,7 +93,7 @@ class OobMessageProcessor:
                 # Attach ~service decorator so other message can respond
                 message = json.loads(outbound_message.payload)
                 if not message.get("~service"):
-                    LOGGER.debug(
+                    _logger.debug(
                         "Setting our service on the message ~service %s",
                         oob_record.our_service,
                     )
@@ -101,7 +106,9 @@ class OobMessageProcessor:
 
                 outbound_message.payload = json.dumps(message)
 
-                LOGGER.debug("Sending oob message payload %s", outbound_message.payload)
+                _logger.debug(
+                    "Sending oob message payload %s", outbound_message.payload
+                )
 
                 return ConnectionTarget(
                     endpoint=their_service.endpoint,
@@ -118,12 +125,16 @@ class OobMessageProcessor:
         """Find oob record for inbound message."""
         message_type = context.message._type
         oob_record = None
+        _logger = get_logger_inst(
+            profile=context.profile,
+            logger_name=LOGGER_NAME,
+        )
 
         async with context.profile.session() as session:
             # First try to find the oob record based on the associated pthid
             if context.message_receipt.parent_thread_id:
                 try:
-                    LOGGER.debug(
+                    _logger.debug(
                         "Retrieving OOB record using pthid "
                         f"{context.message_receipt.parent_thread_id} "
                         f"for message type {message_type}"
@@ -147,7 +158,7 @@ class OobMessageProcessor:
                 and context.message_receipt.recipient_verkey
             ):
                 try:
-                    LOGGER.debug(
+                    _logger.debug(
                         "Retrieving OOB record using thid "
                         f"{context.message_receipt.thread_id} and recipient verkey"
                         f" {context.message_receipt.recipient_verkey} for "
@@ -168,7 +179,7 @@ class OobMessageProcessor:
         if not oob_record:
             return None
 
-        LOGGER.debug(
+        _logger.debug(
             f"Found out of band record for inbound message with type {message_type}"
             f": {oob_record.oob_id}"
         )
@@ -184,14 +195,14 @@ class OobMessageProcessor:
             and context.connection_record
             and context.connection_record.connection_id != oob_record.connection_id
         ):
-            LOGGER.debug(
+            _logger.debug(
                 f"Oob record connection id {oob_record.connection_id} is different from"
                 f" inbound message connection {context.connection_record.connection_id}",
             )
             # Mismatch in connection id's in only allowed in state await response
             # (connection id can change bc of reuse)
             if oob_record.state != OobRecord.STATE_AWAIT_RESPONSE:
-                LOGGER.debug(
+                _logger.debug(
                     "Inbound message has incorrect connection_id "
                     f"{context.connection_record.connection_id}. Oob record "
                     f"{oob_record.oob_id} associated with connection id "
@@ -206,7 +217,7 @@ class OobMessageProcessor:
                 oob_record.invitation.requests_attach
                 and oob_record.state == OobRecord.STATE_AWAIT_RESPONSE
             ):
-                LOGGER.debug(
+                _logger.debug(
                     f"Removing stale connection {oob_record.connection_id} due "
                     "to connection reuse"
                 )
@@ -231,7 +242,7 @@ class OobMessageProcessor:
             ]
 
             if context.message_receipt.thread_id not in allowed_thread_ids:
-                LOGGER.debug(
+                _logger.debug(
                     "Inbound message is for not allowed thread "
                     f"{context.message_receipt.thread_id}. Allowed "
                     f"threads are {allowed_thread_ids}"
@@ -243,7 +254,7 @@ class OobMessageProcessor:
             oob_record.attach_thread_id
             and context.message_receipt.thread_id != oob_record.attach_thread_id
         ):
-            LOGGER.debug(
+            _logger.debug(
                 f"Inbound message thread id {context.message_receipt.thread_id} does not"
                 f" match oob record thread id {oob_record.attach_thread_id}"
             )
@@ -270,7 +281,7 @@ class OobMessageProcessor:
                 )
             )
         ):
-            LOGGER.debug(
+            _logger.debug(
                 "Inbound message sender verkey does not match stored service on oob"
                 " record"
             )
@@ -279,7 +290,7 @@ class OobMessageProcessor:
         # If the message has a ~service decorator we save it in the oob record so we
         # can reply to this message
         if context._message._service:
-            LOGGER.debug(
+            _logger.debug(
                 "Storing service decorator in oob record %s",
                 context.message._service.serialize(),
             )
@@ -307,7 +318,10 @@ class OobMessageProcessor:
         their_service: Optional[ServiceDecorator] = None,
     ):
         """Message handler for inbound messages."""
-
+        _logger = get_logger_inst(
+            profile=profile,
+            logger_name=LOGGER_NAME,
+        )
         supported_types = [
             CREDENTIAL_OFFER,
             CRED_20_OFFER,
@@ -347,7 +361,7 @@ class OobMessageProcessor:
             if not oob_record.connection_id:
                 oob_record.attach_thread_id = self.get_thread_id(message)
                 if their_service:
-                    LOGGER.debug(
+                    _logger.debug(
                         "Storing their service in oob record %s", their_service
                     )
                     oob_record.their_service = their_service.serialize()

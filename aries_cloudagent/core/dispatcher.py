@@ -16,7 +16,7 @@ import weakref
 from aiohttp.web import HTTPException
 
 from ..connections.models.conn_record import ConnRecord
-from ..config.logging import get_logger_with_handlers
+from ..config.logging import get_logger_inst
 from ..core.profile import Profile
 from ..messaging.agent_message import AgentMessage
 from ..messaging.base_message import BaseMessage
@@ -44,6 +44,8 @@ from .util import (
     # WARNING_VERSION_NOT_SUPPORTED,
 )
 
+LOGGER_NAME = __name__
+
 
 class ProblemReportParseError(MessageParseError):
     """Error to raise on failure to parse problem-report message."""
@@ -62,8 +64,9 @@ class Dispatcher:
         self.collector: Collector = None
         self.profile = profile
         self.task_queue: TaskQueue = None
-        self._logger = get_logger_with_handlers(
-            settings=self.profile.settings, logger=logging.getLogger(__name__)
+        self._logger = get_logger_inst(
+            profile=self.profile,
+            logger_name=LOGGER_NAME,
         )
 
     async def setup(self):

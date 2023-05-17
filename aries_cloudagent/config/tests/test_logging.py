@@ -111,3 +111,18 @@ class TestLoggingConfigurator:
             logger=logger,
         )
         assert logger
+
+    def test_get_logger_inst(self):
+        profile = InMemoryProfile.test_profile()
+        profile.settings["log.file"] = "test_file.log"
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        assert logger
+        profile.settings["log.alias"] = "tenant_id_123"
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        assert logger
