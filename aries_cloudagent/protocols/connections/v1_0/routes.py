@@ -549,10 +549,6 @@ async def connections_create_invitation(request: web.BaseRequest):
             else invitation_url,
         }
     except (ConnectionManagerError, StorageError, BaseModelError) as err:
-        async with profile.session() as session:
-            records = await ConnRecord.query(
-                session, {}, post_filter_positive={}, alt=True
-            )
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     if connection and connection.alias:
