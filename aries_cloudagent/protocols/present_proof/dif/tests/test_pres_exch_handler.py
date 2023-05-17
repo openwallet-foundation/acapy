@@ -1867,19 +1867,6 @@ class TestPresExchHandler:
             test_cred, "https://example.org/examples/degree.json"
         )
 
-    def test_verification_method(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
-        assert (
-            dif_pres_exch_handler._get_verification_method(
-                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            )
-            == DIDKey.from_did(
-                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            ).key_id
-        )
-        with pytest.raises(DIFPresExchError):
-            dif_pres_exch_handler._get_verification_method("did:test:test")
-
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures
     async def test_sign_pres_no_cred_subject_id(self, profile, setup_tuple):

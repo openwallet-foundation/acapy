@@ -26,6 +26,9 @@ from .......vc.ld_proofs import (
 )
 from .......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .......vc.tests.document_loader import custom_document_loader
+from .......wallet.default_verification_key_strategy import (
+    DefaultVerificationKeyStrategy,
+)
 from .......wallet.key_type import BLS12381G2, ED25519
 from .......wallet.error import WalletNotFoundError
 from .......wallet.did_method import SOV
@@ -123,6 +126,11 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         # Set custom document loader
         self.context.injector.bind_instance(DocumentLoader, custom_document_loader)
+
+        # Set default verkey ID strategy
+        self.context.injector.bind_instance(
+            DefaultVerificationKeyStrategy, DefaultVerificationKeyStrategy()
+        )
 
         self.handler = LDProofCredFormatHandler(self.profile)
 
@@ -317,24 +325,6 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         assert suite.proof == proof
         assert suite.key_pair.key_type == ED25519
         assert suite.key_pair.public_key_base58 == did_info.verkey
-
-    async def test_get_verification_method(self):
-        assert (
-            self.handler._get_verification_method(TEST_DID_KEY)
-            == DIDKey.from_did(TEST_DID_KEY).key_id
-        )
-
-        assert (
-            self.handler._get_verification_method(TEST_DID_SOV)
-            == TEST_DID_SOV + "#key-1"
-        )
-
-        with self.assertRaises(V20CredFormatError) as context:
-            self.handler._get_verification_method("did:random:not-supported")
-
-        assert "Unable to get retrieve verification method for did" in str(
-            context.exception
-        )
 
     async def test_get_proof_purpose(self):
         purpose = self.handler._get_proof_purpose()

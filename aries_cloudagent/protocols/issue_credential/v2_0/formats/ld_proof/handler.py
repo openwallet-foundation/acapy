@@ -12,7 +12,6 @@ from marshmallow import EXCLUDE, INCLUDE
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
-from ......did.did_key import DIDKey
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
@@ -35,6 +34,9 @@ from ......vc.ld_proofs import (
 )
 from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from ......wallet.base import BaseWallet, DIDInfo
+from ......wallet.default_verification_key_strategy import (
+    DefaultVerificationKeyStrategy,
+)
 from ......wallet.error import WalletNotFoundError
 from ......wallet.key_type import BLS12381G2, ED25519
 
@@ -270,9 +272,13 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         )
 
         did_info = await self._did_info_for_did(issuer_id)
-        verification_method = verification_method or self._get_verification_method(
-            issuer_id
-        )
+        verkey_id_strategy = self.profile.context.inject(DefaultVerificationKeyStrategy)
+        verification_method = verkey_id_strategy.get_verkey_id_for_did(issuer_id)
+
+        if verification_method is None:
+            raise V20CredFormatError(
+                f"Unable to get retrieve verification method for did {issuer_id}"
+            )
 
         suite = await self._get_suite(
             proof_type=proof_type,
@@ -308,19 +314,6 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 public_key_base58=did_info.verkey if did_info else None,
             ),
         )
-
-    def _get_verification_method(self, did: str):
-        """Get the verification method for a did."""
-
-        if did.startswith("did:key:"):
-            return DIDKey.from_did(did).key_id
-        elif did.startswith("did:sov:"):
-            # key-1 is what the resolver uses for key id
-            return did + "#key-1"
-        else:
-            raise V20CredFormatError(
-                f"Unable to get retrieve verification method for did {did}"
-            )
 
     def _get_proof_purpose(
         self, *, proof_purpose: str = None, challenge: str = None, domain: str = None
