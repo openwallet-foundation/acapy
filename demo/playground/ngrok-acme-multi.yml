@@ -1,0 +1,8 @@
+tunnels:
+    acme:
+        proto: http
+        addr: acme-agent:9003
+    multi:
+        proto: http
+        addr: multi-agent:9004
+version: "2"
