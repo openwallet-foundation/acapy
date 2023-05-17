@@ -72,7 +72,7 @@ class OobMessageProcessor:
         self, profile: Profile, outbound_message: OutboundMessage
     ) -> Optional[ConnectionTarget]:
         """Find connection target for the outbound message."""
-        _logger = get_logger_inst(
+        _logger: logging.Logger = get_logger_inst(
             profile=profile,
             logger_name=LOGGER_NAME,
         )
@@ -125,7 +125,7 @@ class OobMessageProcessor:
         """Find oob record for inbound message."""
         message_type = context.message._type
         oob_record = None
-        _logger = get_logger_inst(
+        _logger: logging.Logger = get_logger_inst(
             profile=context.profile,
             logger_name=LOGGER_NAME,
         )
@@ -318,7 +318,7 @@ class OobMessageProcessor:
         their_service: Optional[ServiceDecorator] = None,
     ):
         """Message handler for inbound messages."""
-        _logger = get_logger_inst(
+        _logger: logging.Logger = get_logger_inst(
             profile=profile,
             logger_name=LOGGER_NAME,
         )

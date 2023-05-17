@@ -9,6 +9,7 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import ValidationError, fields, validate, validates_schema
+from typing import Union
 
 from ...admin.request_context import AdminRequestContext
 from ...core.error import BaseError
@@ -62,6 +63,16 @@ def format_wallet_record(wallet_record: WalletRecord):
     return wallet_info
 
 
+def process_bool_label(label: str) -> Union[bool, str]:
+    """Return processed extra settings dict value."""
+    if label == "True" or label == "true":
+        return True
+    elif label == "False" or label == "false":
+        return False
+    else:
+        return label
+
+
 def get_extra_settings_dict_per_tenant(tenant_settings: dict) -> dict:
     """Get per tenant settings to be applied when creating wallet."""
 
@@ -81,7 +92,7 @@ def get_extra_settings_dict_per_tenant(tenant_settings: dict) -> dict:
             continue
         if flag != "ACAPY_ENDORSER_ROLE":
             map_flag = ACAPY_LIFECYCLE_CONFIG_FLAG_MAP[flag]
-            extra_settings[map_flag] = tenant_settings[flag]
+            extra_settings[map_flag] = process_bool_label(tenant_settings[flag])
     return extra_settings
 
 

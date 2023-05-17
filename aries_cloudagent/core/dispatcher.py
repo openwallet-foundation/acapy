@@ -64,7 +64,7 @@ class Dispatcher:
         self.collector: Collector = None
         self.profile = profile
         self.task_queue: TaskQueue = None
-        self._logger = get_logger_inst(
+        self._logger: logging.Logger = get_logger_inst(
             profile=self.profile,
             logger_name=LOGGER_NAME,
         )

@@ -62,7 +62,7 @@ class BaseConnectionManager:
         """
         self._profile = profile
         self._route_manager = profile.inject(RouteManager)
-        self._logger = get_logger_inst(
+        self._logger: logging.Logger = get_logger_inst(
             profile=self._profile,
             logger_name=LOGGER_NAME,
         )
