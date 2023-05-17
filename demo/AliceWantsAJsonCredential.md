@@ -18,16 +18,18 @@ cd aries-cloudagent-python/demo
 Open up a second shell (so you have 2 shells open in the `demo` directory) and in one shell:
 
 ```bash
-./run_demo faber --did-exchange --aip 20 --cred-type json-ld
+LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo faber --did-exchange --aip 20 --cred-type json-ld
 ```
 
 ... and in the other:
 
 ```bash
-./run_demo alice
+LEDGER_URL=http://dev.greenlight.bcovrin.vonx.io ./run_demo alice
 ```
 
-Note that you start the `faber` agent with AIP2.0 options.  (When you specify `--cred-type json-ld` faber will set aip to `20` automatically, so the `--aip` option is not strictly required.)
+Note that you start the `faber` agent with AIP2.0 options.  (When you specify `--cred-type json-ld` faber will set aip to `20` automatically, 
+so the `--aip` option is not strictly required). Note as well the use of the `LEDGER_URL`. Technically, that should not be needed if we aren't
+doing anything with an Indy ledger-based credentials. However, there must be something in the way that the Faber and Alice controllers are starting up that requires access to a ledger.
 
 Also note that the above will only work with the `/issue-credential-2.0/create-offer` endpoint.  If you want to use the `/issue-credential-2.0/send` endpoint - which automates each step of the credential exchange - you will need to include the `--no-auto` option when starting each of the alice and faber agents (since the alice and faber controllers *also* automatically respond to each step in the credential exchange).
 
