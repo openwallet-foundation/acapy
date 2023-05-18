@@ -1,15 +1,29 @@
 # Sample docker-compose to start a local aca-py multitenancy agent
-# To start aca-py and the postgres database, just run `docker-compose up`
-# To shut down the services run `docker-compose rm` - this will retain the postgres database, so you can change aca-py startup parameters
+# To start aca-py and the postgres database, just run `docker compose up`
+# To shut down the services run `docker compose rm` - this will retain the postgres database, so you can change aca-py startup parameters
 # and restart the docker containers without losing your wallet data
 # If you want to delete your wallet data just run `docker volume ls -q | xargs docker volume rm`
+#
+# If you want to enable tracing, see elk-stack. Ensure elk-stack is running, uncomment the ACAPY_TRACE environement variables and run `docker compose up`
 version: "3"
+
+
+networks:
+  app-network:
+    name: ${APP_NETWORK_NAME:-appnet}
+    driver: bridge
+  elk-network:
+    name: ${ELK_NETWORK_NAME:-elknet}
+    driver: bridge
+
 services:
   ngrok-agent:
     image: wernight/ngrok
     ports:
       - 4067:4040
     command: ngrok http multi-agent:8001 --log stdout
+    networks:
+      - app-network
 
   multi-agent:
     build:
@@ -17,6 +31,15 @@ services:
       dockerfile: Dockerfile.acapy
     environment:
       - NGROK_NAME=ngrok-agent
+      - ACAPY_AGENT_ACCESS=${ACAPY_AGENT_ACCESS:-local}
+      - ACAPY_ENDPOINT=http://multi-agent:8001
+    #   - ACAPY_TRACE=${ACAPY_TRACE:-1}
+    #   - ACAPY_TRACE_TARGET=${ACAPY_TRACE_TARGET:-http://logstash:9700/}
+    #   - ACAPY_TRACE_TAG=${ACAPY_TRACE_TAG:-acapy.events}
+    #   - ACAPY_TRACE_LABEL=${ACAPY_TRACE_LABEL:-multi.agent.trace}
+      - ACAPY_AUTO_ACCEPT_INVITES=true
+      - ACAPY_LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - RUST_LOG=${RUST_LOG:-ERROR}
     ports:
       - 8010:8010
       - 8001:8001
@@ -30,9 +53,12 @@ services:
       ]
     volumes:
       - ./ngrok-wait.sh:/home/indy/ngrok-wait.sh
+    networks:
+      - app-network
+      - elk-network
 
   wallet-db:
-    image: postgres:12
+    image: postgres:15
     environment:
       - POSTGRES_USER=DB_USER
       - POSTGRES_PASSWORD=DB_PASSWORD
@@ -40,6 +66,9 @@ services:
       - 5433:5432
     volumes:
       - wallet-db-data:/var/lib/pgsql/data
+      - ./max_conns.sql:/docker-entrypoint-initdb.d/max_conns.sql    
+    networks:
+      - app-network
 
 volumes:
   wallet-db-data:

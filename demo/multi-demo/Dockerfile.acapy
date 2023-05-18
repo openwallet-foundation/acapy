@@ -1,4 +1,4 @@
-FROM bcgovimages/aries-cloudagent:py36-1.16-1_1.0.0-rc0
+FROM local:acapy-081
 
 USER root
 
