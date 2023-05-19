@@ -646,6 +646,8 @@ class AnonCredsIssuer:
                 f"Tails file for rev reg for {rev_reg_def.cred_def_id} "
                 "uploaded to wrong location: {result}"
             )
+        # TODO: do we need to set uri? something like..
+        # await self.set_tails_file_public_uri(profile, result)
 
     async def update_revocation_registry_definition_state(
         self, rev_reg_def_id: str, state: str

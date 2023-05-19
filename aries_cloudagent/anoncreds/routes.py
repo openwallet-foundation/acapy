@@ -11,6 +11,12 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import fields
+from aries_cloudagent.askar.profile import AskarProfile
+
+from aries_cloudagent.revocation.routes import (
+    RevRegIdMatchInfoSchema,
+    RevocationModuleResponseSchema,
+)
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
@@ -21,6 +27,8 @@ from ..storage.error import StorageNotFoundError
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import (
+    AnonCredsRegistryGetRevocationRegistryDefinition,
+    RevRegDef,
     RevRegDefResultSchema,
     RevListResultSchema,
 )
@@ -439,6 +447,47 @@ async def rev_list_post(request: web.BaseRequest):
     return web.json_response(result.serialize())
 
 
+@docs(
+    tags=["revocation"],
+    summary="Upload local tails file to server",
+)
+@match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(RevocationModuleResponseSchema(), description="")
+async def upload_tails_file(request: web.BaseRequest):
+    """
+    Request handler to upload local tails file for revocation registry.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile: AskarProfile = context.profile
+    anoncreds_registry: AnonCredsRegistry = context.inject(AnonCredsRegistry)
+    rev_reg_id = request.match_info["rev_reg_id"]
+    try:
+        issuer = AnonCredsIssuer(profile)
+        get_rev_reg_def: AnonCredsRegistryGetRevocationRegistryDefinition = (
+            await anoncreds_registry.get_revocation_registry_definition(
+                profile, rev_reg_id
+            )
+        )
+        rev_reg_def: RevRegDef = get_rev_reg_def.revocation_registry
+    # TODO: Should we check if tails file exists
+    except StorageNotFoundError as err:  # TODO: update error
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    try:
+        await issuer.upload_tails_file(
+            rev_reg_def.value.tails_hash,
+            rev_reg_def.cred_def_id,
+            rev_reg_def.value.tails_location,
+        )
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
+
+    return web.json_response({})
+
+
 async def register(app: web.Application):
     """Register routes."""
 
@@ -460,6 +509,7 @@ async def register(app: web.Application):
             ),
             web.post("/anoncreds/revocation-registry-definition", rev_reg_def_post),
             web.post("/anoncreds/revocation-list", rev_list_post),
+            web.put("/revocation/registry/{rev_reg_id}/tails-file", upload_tails_file),
         ]
     )
 
