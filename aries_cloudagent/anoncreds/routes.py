@@ -477,11 +477,7 @@ async def upload_tails_file(request: web.BaseRequest):
     except StorageNotFoundError as err:  # TODO: update error
         raise web.HTTPNotFound(reason=err.roll_up) from err
     try:
-        await issuer.upload_tails_file(
-            rev_reg_def.value.tails_hash,
-            rev_reg_def.cred_def_id,
-            rev_reg_def.value.tails_location,
-        )
+        await issuer.upload_tails_file(rev_reg_def)
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
