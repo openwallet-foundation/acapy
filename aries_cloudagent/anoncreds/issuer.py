@@ -563,7 +563,7 @@ class AnonCredsIssuer:
 
         rev_reg_def = RevRegDef.from_native(rev_reg_def)
 
-        public_tails_uri = self.get_public_tails_uri(rev_reg_def)
+        public_tails_uri = self.generate_public_tails_uri(rev_reg_def)
         rev_reg_def.value.tails_location = public_tails_uri
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         result = await anoncreds_registry.register_revocation_registry_definition(
@@ -602,7 +602,7 @@ class AnonCredsIssuer:
         if not (parsed.scheme and parsed.netloc and parsed.path):
             raise AnonCredsRegistrationError("URI {} is not a valid URL".format(url))
 
-    def get_public_tails_uri(self, rev_reg_def: RevRegDef):
+    def generate_public_tails_uri(self, rev_reg_def: RevRegDef):
         """Construct tails uri from rev_reg_def."""
         tails_base_url = self._profile.settings.get("tails_server_base_url")
         if not tails_base_url:
@@ -647,8 +647,6 @@ class AnonCredsIssuer:
                 f"uploaded to wrong location: {result} "
                 f"(should have been {rev_reg_def.value.tails_location})"
             )
-        # TODO: do we need to set uri? something like..
-        # await self.set_tails_file_public_uri(profile, result)
 
     async def update_revocation_registry_definition_state(
         self, rev_reg_def_id: str, state: str
@@ -720,10 +718,12 @@ class AnonCredsIssuer:
             )
 
         rev_reg_def = RevRegDef.deserialize(rev_reg_def_entry.value_json)
+        # TODO This is a little rough; stored tails location will have public uri
+        rev_reg_def.value.tails_location = self.get_local_tails_path(rev_reg_def)
 
         rev_list = RevocationStatusList.create(
             rev_reg_def_id,
-            rev_reg_def_entry.raw_value,
+            rev_reg_def.to_native(),
             rev_reg_def.issuer_id,
         )
 

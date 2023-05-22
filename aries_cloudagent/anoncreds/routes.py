@@ -21,7 +21,6 @@ from aries_cloudagent.revocation.routes import (
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import UUIDFour
-from ..revocation.anoncreds import AnonCredsRevocation
 from ..revocation.error import RevocationNotSupportedError
 from ..storage.error import StorageNotFoundError
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
@@ -429,12 +428,13 @@ async def rev_list_post(request: web.BaseRequest):
     rev_reg_def_id = body.get("revRegDefId")
     options = body.get("options")
 
+    issuer = AnonCredsIssuer(context.profile)
     try:
-        revoc = AnonCredsRevocation(context.profile)
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_def_id)
-        result = await rev_reg.create_and_register_list(
-            context.profile,
-            options,
+        result = await shield(
+            issuer.create_and_register_revocation_list(
+                rev_reg_def_id,
+                options,
+            )
         )
         LOGGER.debug("published revocation list for: %s", rev_reg_def_id)
 
