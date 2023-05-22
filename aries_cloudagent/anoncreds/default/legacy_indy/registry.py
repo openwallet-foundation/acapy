@@ -19,10 +19,8 @@ from ....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
 from ....multitenant.base import BaseMultitenantManager
-from ....revocation.anoncreds import AnonCredsRevocation
 from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation.recover import generate_ledger_rrrecovery_txn
-from ....storage.error import StorageNotFoundError
 from ...base import (
     AnonCredsObjectAlreadyExists,
     AnonCredsObjectNotFound,
@@ -49,6 +47,7 @@ from ...models.anoncreds_revocation import (
     RevList,
     RevListResult,
     RevListState,
+    RevRegDefValue,
 )
 from ...models.anoncreds_schema import (
     AnonCredsSchema,
@@ -359,15 +358,49 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self, profile: Profile, rev_reg_def_id: str
     ) -> GetRevRegDefResult:
         """Get a revocation registry definition from the registry."""
+        async with profile.session() as session:
+            multitenant_mgr = session.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
+            else:
+                ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
 
-        try:
-            revoc = AnonCredsRevocation(profile)
-            rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_def_id)
-        except StorageNotFoundError as err:
-            raise AnonCredsResolutionError(err)
+        ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
+            rev_reg_def_id,
+            txn_record_type=GET_CRED_DEF,
+        )
+        if not ledger:
+            reason = "No ledger available"
+            if not profile.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise AnonCredsResolutionError(reason)
 
-        return rev_reg.serialize
-        # use AnonCredsRevocationRegistryDefinition object
+        async with ledger:
+            rev_reg_def = await ledger.get_revoc_reg_def(rev_reg_def_id)
+
+            if rev_reg_def is None:
+                raise AnonCredsObjectNotFound(
+                    f"Revocation registry definition not found: {rev_reg_def_id}",
+                    {"ledger_id": ledger_id},
+                )
+
+            LOGGER.debug("Retrieved revocation registry definition: %s", rev_reg_def)
+            rev_reg_def_value = RevRegDefValue.deserialize(rev_reg_def["value"])
+            anoncreds_rev_reg_def = RevRegDef(
+                issuer_id=rev_reg_def["id"].split(":")[0],
+                cred_def_id=rev_reg_def["credDefId"],
+                type=rev_reg_def["revocDefType"],
+                value=rev_reg_def_value,
+                tag=rev_reg_def["tag"],
+            )
+            result = GetRevRegDefResult(
+                revocation_registry=anoncreds_rev_reg_def,
+                revocation_registry_id=rev_reg_def["id"],
+                resolution_metadata={},
+                revocation_registry_metadata={},
+            )
+
+        return result
 
     async def get_revocation_registry_definitions(self, profile: Profile, filter: str):
         """Get credential definition ids filtered by filter"""

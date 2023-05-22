@@ -27,7 +27,6 @@ from ..storage.error import StorageNotFoundError
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import (
-    GetRevRegDefResult,
     RevRegDef,
     RevRegDefResultSchema,
     RevListResultSchema,
@@ -467,12 +466,12 @@ async def upload_tails_file(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
     try:
         issuer = AnonCredsIssuer(profile)
-        get_rev_reg_def: GetRevRegDefResult = (
+        rev_reg_def_result = (
             await anoncreds_registry.get_revocation_registry_definition(
                 profile, rev_reg_id
             )
         )
-        rev_reg_def: RevRegDef = get_rev_reg_def.revocation_registry
+        rev_reg_def: RevRegDef = rev_reg_def_result.revocation_registry
     # TODO: Should we check if tails file exists
     except StorageNotFoundError as err:  # TODO: update error
         raise web.HTTPNotFound(reason=err.roll_up) from err
