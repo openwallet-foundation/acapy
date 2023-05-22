@@ -27,7 +27,6 @@ from ..storage.error import StorageNotFoundError
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import (
-    RevRegDef,
     RevRegDefResultSchema,
     RevListResultSchema,
 )
@@ -378,17 +377,18 @@ async def rev_reg_def_post(request: web.BaseRequest):
         )
 
     try:
-        revoc = AnonCredsRevocation(context.profile)
-        issuer_rev_reg_rec = await revoc.init_issuer_registry(
-            issuer_id,
-            cred_def_id,
-            max_cred_num=max_cred_num,
-            options=options,
-            notify=False,
+        result = await shield(
+            issuer.create_and_register_revocation_registry_definition(
+                issuer_id,
+                cred_def_id,
+                registry_type="CL_ACCUM",
+                max_cred_num=max_cred_num,
+                tag="default",
+                options=options,
+            )
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
-    result = await shield(issuer_rev_reg_rec.create_and_register_def(context.profile))
 
     return web.json_response(result.serialize())
 
@@ -462,21 +462,17 @@ async def upload_tails_file(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
     profile: AskarProfile = context.profile
-    anoncreds_registry: AnonCredsRegistry = context.inject(AnonCredsRegistry)
     rev_reg_id = request.match_info["rev_reg_id"]
     try:
         issuer = AnonCredsIssuer(profile)
-        rev_reg_def_result = (
-            await anoncreds_registry.get_revocation_registry_definition(
-                profile, rev_reg_id
-            )
+        rev_reg_def = await issuer.get_created_revocation_registry_definition(
+            rev_reg_id
         )
-        rev_reg_def: RevRegDef = rev_reg_def_result.revocation_registry
-    # TODO: Should we check if tails file exists
-    except StorageNotFoundError as err:  # TODO: update error
-        raise web.HTTPNotFound(reason=err.roll_up) from err
-    try:
+        if rev_reg_def is None:
+            raise web.HTTPNotFound(reason="No rev reg def found")
+
         await issuer.upload_tails_file(rev_reg_def)
+
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
 

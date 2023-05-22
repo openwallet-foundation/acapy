@@ -561,7 +561,6 @@ class AnonCredsIssuer:
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating revocation registry") from err
 
-        rev_reg_def_json = rev_reg_def.to_json()
         rev_reg_def = RevRegDef.from_native(rev_reg_def)
 
         public_tails_uri = self.get_public_tails_uri(rev_reg_def)
@@ -572,6 +571,7 @@ class AnonCredsIssuer:
         )
 
         rev_reg_def_id = result.rev_reg_def_id
+        rev_reg_def_json = rev_reg_def.to_json()
 
         try:
             async with self._profile.transaction() as txn:
@@ -639,12 +639,13 @@ class AnonCredsIssuer:
         if not upload_success:
             raise AnonCredsIssuerError(
                 f"Tails file for rev reg for {rev_reg_def.cred_def_id} "
-                "failed to upload: {result}"
+                f"failed to upload: {result}"
             )
         if rev_reg_def.value.tails_location != result:
             raise AnonCredsIssuerError(
                 f"Tails file for rev reg for {rev_reg_def.cred_def_id} "
-                "uploaded to wrong location: {result}"
+                f"uploaded to wrong location: {result} "
+                f"(should have been {rev_reg_def.value.tails_location})"
             )
         # TODO: do we need to set uri? something like..
         # await self.set_tails_file_public_uri(profile, result)
@@ -682,6 +683,22 @@ class AnonCredsIssuer:
             )
         # entry.name was stored as the credential_definition's ID
         return [entry.name for entry in rev_reg_defs]
+
+    async def get_created_revocation_registry_definition(
+        self,
+        rev_reg_def_id: str,
+    ) -> Optional[RevRegDef]:
+        """Retrieve rev reg def by ID from rev reg defs previously created."""
+        async with self._profile.session() as session:
+            rev_reg_def_entry = await session.handle.fetch(
+                CATEGORY_REV_REG_DEF,
+                name=rev_reg_def_id,
+            )
+
+        if rev_reg_def_entry:
+            return RevRegDef.deserialize(rev_reg_def_entry.value_json)
+
+        return None
 
     async def create_and_register_revocation_list(
         self, rev_reg_def_id: str, options: Optional[dict] = None
