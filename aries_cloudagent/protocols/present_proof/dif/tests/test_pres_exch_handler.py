@@ -15,6 +15,7 @@ from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
 from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.crypto import KeyType
+from .....wallet.default_verification_key_strategy import DefaultVerificationKeyStrategy
 from .....wallet.did_method import SOV, KEY, DIDMethods
 from .....wallet.error import WalletNotFoundError
 from .....vc.ld_proofs import (
@@ -73,6 +74,9 @@ def profile():
     context = profile.context
     context.injector.bind_instance(DIDResolver, DIDResolver([]))
     context.injector.bind_instance(DocumentLoader, custom_document_loader)
+    context.injector.bind_instance(
+        DefaultVerificationKeyStrategy, DefaultVerificationKeyStrategy()
+    )
     context.settings["debug.auto_respond_presentation_request"] = True
     return profile
 
