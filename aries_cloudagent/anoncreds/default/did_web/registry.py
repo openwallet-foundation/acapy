@@ -4,26 +4,15 @@ from typing import Optional, Pattern
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
-from ...models.anoncreds_cred_def import (
-    GetCredDefResult,
-)
-from ...models.anoncreds_revocation import (
-    GetRevListResult,
-    AnonCredsRegistryGetRevocationRegistryDefinition,
-    RevRegDef,
-    RevList,
-    RevListResult,
-)
-from ...models.anoncreds_schema import GetSchemaResult
 from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 from ...models.anoncreds_cred_def import CredDef, CredDefResult, GetCredDefResult
 from ...models.anoncreds_revocation import (
-    AnonCredsRegistryGetRevocationRegistryDefinition,
     GetRevListResult,
-    RevRegDef,
-    RevRegDefResult,
+    GetRevRegDefResult,
     RevList,
     RevListResult,
+    RevRegDef,
+    RevRegDefResult,
 )
 from ...models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 
@@ -76,7 +65,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def get_revocation_registry_definition(
         self, profile: Profile, revocation_registry_id: str
-    ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
+    ) -> GetRevRegDefResult:
         """Get a revocation registry definition from the registry."""
         raise NotImplementedError()
 

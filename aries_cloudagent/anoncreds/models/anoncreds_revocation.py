@@ -205,13 +205,13 @@ class RevRegDefResultSchema(BaseModelSchema):
     revocation_registry_definition_metadata = fields.Dict()
 
 
-class AnonCredsRegistryGetRevocationRegistryDefinition(BaseModel):
-    """AnonCredsRegistryGetRevocationRegistryDefinition"""
+class GetRevRegDefResult(BaseModel):
+    """GetRevRegDefResult"""
 
     class Meta:
-        """AnonCredsRegistryGetRevocationRegistryDefinition metadata."""
+        """GetRevRegDefResult metadata."""
 
-        schema_class = "AnonCredsRegistryGetRevocationRegistryDefinitionSchema"
+        schema_class = "GetRevRegDefResultSchema"
 
     def __init__(
         self,
@@ -228,11 +228,11 @@ class AnonCredsRegistryGetRevocationRegistryDefinition(BaseModel):
         self.revocation_registry_metadata = revocation_registry_metadata
 
 
-class AnonCredsRegistryGetRevocationRegistryDefinitionSchema(BaseModelSchema):
+class GetRevRegDefResultSchema(BaseModelSchema):
     class Meta:
-        """AnonCredsRegistryGetRevocationRegistryDefinitionSchema metadata."""
+        """GetRevRegDefResultSchema metadata."""
 
-        model_class = AnonCredsRegistryGetRevocationRegistryDefinition
+        model_class = GetRevRegDefResult
         unknown = EXCLUDE
 
     revocation_registry = fields.Nested(RevRegDefSchema())

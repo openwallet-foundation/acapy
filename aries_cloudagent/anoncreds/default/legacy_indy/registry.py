@@ -41,7 +41,7 @@ from ...models.anoncreds_cred_def import (
     GetCredDefResult,
 )
 from ...models.anoncreds_revocation import (
-    AnonCredsRegistryGetRevocationRegistryDefinition,
+    GetRevRegDefResult,
     GetRevListResult,
     RevRegDef,
     RevRegDefResult,
@@ -357,7 +357,7 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def get_revocation_registry_definition(
         self, profile: Profile, rev_reg_def_id: str
-    ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
+    ) -> GetRevRegDefResult:
         """Get a revocation registry definition from the registry."""
 
         try:

@@ -27,7 +27,7 @@ from ..storage.error import StorageNotFoundError
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
 from .models.anoncreds_cred_def import CredDefResultSchema, GetCredDefResultSchema
 from .models.anoncreds_revocation import (
-    AnonCredsRegistryGetRevocationRegistryDefinition,
+    GetRevRegDefResult,
     RevRegDef,
     RevRegDefResultSchema,
     RevListResultSchema,
@@ -467,7 +467,7 @@ async def upload_tails_file(request: web.BaseRequest):
     rev_reg_id = request.match_info["rev_reg_id"]
     try:
         issuer = AnonCredsIssuer(profile)
-        get_rev_reg_def: AnonCredsRegistryGetRevocationRegistryDefinition = (
+        get_rev_reg_def: GetRevRegDefResult = (
             await anoncreds_registry.get_revocation_registry_definition(
                 profile, rev_reg_id
             )
@@ -505,7 +505,7 @@ async def register(app: web.Application):
             ),
             web.post("/anoncreds/revocation-registry-definition", rev_reg_def_post),
             web.post("/anoncreds/revocation-list", rev_list_post),
-            web.put("/revocation/registry/{rev_reg_id}/tails-file", upload_tails_file),
+            web.put("/anoncreds/registry/{rev_reg_id}/tails-file", upload_tails_file),
         ]
     )
 
