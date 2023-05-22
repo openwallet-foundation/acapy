@@ -273,7 +273,10 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         did_info = await self._did_info_for_did(issuer_id)
         verkey_id_strategy = self.profile.context.inject(DefaultVerificationKeyStrategy)
-        verification_method = verkey_id_strategy.get_verkey_id_for_did(issuer_id)
+        verification_method = (
+            verification_method
+            or verkey_id_strategy.get_verification_method_id_for_did(issuer_id)
+        )
 
         if verification_method is None:
             raise V20CredFormatError(

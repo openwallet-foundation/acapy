@@ -9,7 +9,7 @@ class DefaultVerificationKeyStrategyBase(ABC):
     """Base class for defining which verification method is in use."""
 
     @abstractmethod
-    def get_verkey_id_for_did(self, did) -> Optional[str]:
+    def get_verification_method_id_for_did(self, did) -> Optional[str]:
         """Given a DID, returns the verification key ID in use.
 
         Returns None if no strategy is specified for this DID.
@@ -26,7 +26,7 @@ class DefaultVerificationKeyStrategy(DefaultVerificationKeyStrategyBase):
     Supports did:key: and did:sov only.
     """
 
-    def get_verkey_id_for_did(self, did) -> Optional[str]:
+    def get_verification_method_id_for_did(self, did) -> Optional[str]:
         """Given a did:key or did:sov, returns the verification key ID in use.
 
         Returns None if no strategy is specified for this DID.
