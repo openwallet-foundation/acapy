@@ -1,11 +1,13 @@
 """anoncreds-rs issuer implementation."""
 
 import asyncio
+import hashlib
+import http
 import logging
 import os
 from pathlib import Path
 from time import time
-from typing import NamedTuple, Optional, Sequence, Tuple
+from typing import List, NamedTuple, Optional, Sequence, Tuple
 from urllib.parse import urlparse
 
 from anoncreds import (
@@ -19,6 +21,8 @@ from anoncreds import (
     Schema,
 )
 from aries_askar import AskarError
+import base58
+from requests import RequestException, Session
 
 from ..askar.profile import AskarProfile, AskarProfileSession
 from ..core.error import BaseError
@@ -561,10 +565,9 @@ class AnonCredsIssuer:
         except AnoncredsError as err:
             raise AnonCredsIssuerError("Error creating revocation registry") from err
 
-        rev_reg_def_json = rev_reg_def.to_json()
         rev_reg_def = RevRegDef.from_native(rev_reg_def)
 
-        public_tails_uri = self.get_public_tails_uri(rev_reg_def)
+        public_tails_uri = self.generate_public_tails_uri(rev_reg_def)
         rev_reg_def.value.tails_location = public_tails_uri
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
         result = await anoncreds_registry.register_revocation_registry_definition(
@@ -572,6 +575,7 @@ class AnonCredsIssuer:
         )
 
         rev_reg_def_id = result.rev_reg_def_id
+        rev_reg_def_json = rev_reg_def.to_json()
 
         try:
             async with self._profile.transaction() as txn:
@@ -602,7 +606,7 @@ class AnonCredsIssuer:
         if not (parsed.scheme and parsed.netloc and parsed.path):
             raise AnonCredsRegistrationError("URI {} is not a valid URL".format(url))
 
-    def get_public_tails_uri(self, rev_reg_def: RevRegDef):
+    def generate_public_tails_uri(self, rev_reg_def: RevRegDef):
         """Construct tails uri from rev_reg_def."""
         tails_base_url = self._profile.settings.get("tails_server_base_url")
         if not tails_base_url:
@@ -639,12 +643,13 @@ class AnonCredsIssuer:
         if not upload_success:
             raise AnonCredsIssuerError(
                 f"Tails file for rev reg for {rev_reg_def.cred_def_id} "
-                "failed to upload: {result}"
+                f"failed to upload: {result}"
             )
         if rev_reg_def.value.tails_location != result:
             raise AnonCredsIssuerError(
                 f"Tails file for rev reg for {rev_reg_def.cred_def_id} "
-                "uploaded to wrong location: {result}"
+                f"uploaded to wrong location: {result} "
+                f"(should have been {rev_reg_def.value.tails_location})"
             )
 
     async def update_revocation_registry_definition_state(
@@ -681,6 +686,22 @@ class AnonCredsIssuer:
         # entry.name was stored as the credential_definition's ID
         return [entry.name for entry in rev_reg_defs]
 
+    async def get_created_revocation_registry_definition(
+        self,
+        rev_reg_def_id: str,
+    ) -> Optional[RevRegDef]:
+        """Retrieve rev reg def by ID from rev reg defs previously created."""
+        async with self._profile.session() as session:
+            rev_reg_def_entry = await session.handle.fetch(
+                CATEGORY_REV_REG_DEF,
+                name=rev_reg_def_id,
+            )
+
+        if rev_reg_def_entry:
+            return RevRegDef.deserialize(rev_reg_def_entry.value_json)
+
+        return None
+
     async def create_and_register_revocation_list(
         self, rev_reg_def_id: str, options: Optional[dict] = None
     ):
@@ -701,10 +722,12 @@ class AnonCredsIssuer:
             )
 
         rev_reg_def = RevRegDef.deserialize(rev_reg_def_entry.value_json)
+        # TODO This is a little rough; stored tails location will have public uri
+        rev_reg_def.value.tails_location = self.get_local_tails_path(rev_reg_def)
 
         rev_list = RevocationStatusList.create(
             rev_reg_def_id,
-            rev_reg_def_entry.raw_value,
+            rev_reg_def.to_native(),
             rev_reg_def.issuer_id,
         )
 
@@ -768,33 +791,106 @@ class AnonCredsIssuer:
 
         return credential_offer.to_json()
 
-    async def create_credential(
+    # TODO This is used by both issuer and holder; this should be moved
+    async def retrieve_tails(self, rev_reg_def: RevRegDef):
+        """Retrieve tails file from server."""
+        LOGGER.info(
+            "Downloading the tails file with hash: %s",
+            rev_reg_def.value.tails_hash,
+        )
+
+        tails_file_path = Path(self.get_local_tails_path(rev_reg_def))
+        tails_file_dir = tails_file_path.parent
+        if not tails_file_dir.exists():
+            tails_file_dir.mkdir(parents=True)
+
+        buffer_size = 65536  # should be multiple of 32 bytes for sha256
+        file_hasher = hashlib.sha256()
+        with open(tails_file_path, "wb", buffer_size) as tails_file:
+            with Session() as req_session:
+                try:
+                    resp = req_session.get(
+                        rev_reg_def.value.tails_location, stream=True
+                    )
+                    # Should this directly raise an Error?
+                    if resp.status_code != http.HTTPStatus.OK:
+                        LOGGER.warning(
+                            f"Unexpected status code for tails file: {resp.status_code}"
+                        )
+                    for buf in resp.iter_content(chunk_size=buffer_size):
+                        tails_file.write(buf)
+                        file_hasher.update(buf)
+                except RequestException as rx:
+                    raise AnonCredsIssuerError(f"Error retrieving tails file: {rx}")
+
+        download_tails_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")
+        if download_tails_hash != rev_reg_def.value.tails_hash:
+            try:
+                os.remove(tails_file_path)
+            except OSError as err:
+                LOGGER.warning(f"Could not delete invalid tails file: {err}")
+
+            raise AnonCredsIssuerError(
+                "The hash of the downloaded tails file does not match."
+            )
+
+        return tails_file_path
+
+    # TODO This is used by both issuer and holder; this should be moved
+    async def get_or_fetch_local_tails_path(self, rev_reg_def: RevRegDef):
+        """Return path to local tails file.
+
+        If not present, retrieve from tails server.
+        """
+        tails_file_path = self.get_local_tails_path(rev_reg_def)
+        if Path(tails_file_path).is_file():
+            return tails_file_path
+        return await self.retrieve_tails(rev_reg_def)
+
+    async def handle_full_registry(self, rev_reg_def_id: str):
+        """Update the registry status and start the next registry generation."""
+        # TODO
+
+    async def get_or_create_active_registry(self, cred_def_id: str) -> RevRegDefResult:
+        """Get or create a revocation registry for the given cred def id."""
+        async with self._profile.session() as session:
+            rev_reg_defs = await session.handle.fetch_all(
+                CATEGORY_REV_REG_DEF,
+                {
+                    "cred_def_id": cred_def_id,
+                },
+            )
+
+        if not rev_reg_defs:
+            raise AnonCredsIssuerError("No active registry")
+
+        # TODO Sort and return most recent
+        # TODO Create a registry if none available
+        entry = rev_reg_defs[0]
+
+        rev_reg_def = RevRegDef.deserialize(entry.value_json)
+        result = RevRegDefResult(
+            None,
+            RevRegDefState(
+                state=STATE_FINISHED,
+                revocation_registry_definition_id=entry.name,
+                revocation_registry_definition=rev_reg_def,
+            ),
+            registration_metadata={},
+            revocation_registry_definition_metadata={},
+        )
+        return result
+
+    async def _create_credential(
         self,
-        schema_id: str,
+        credential_definition_id: str,
+        schema_attributes: List[str],
         credential_offer: dict,
         credential_request: dict,
         credential_values: dict,
-        revoc_reg_id: Optional[str] = None,
+        rev_reg_def_id: Optional[str] = None,
         tails_file_path: Optional[str] = None,
     ) -> Tuple[str, str]:
-        """
-        Create a credential.
-
-        Args
-            schema_id: Schema ID to create credential for
-            credential_offer: Credential Offer to create credential for
-            credential_request: Credential request to create credential for
-            credential_values: Values to go in credential
-            revoc_reg_id: ID of the revocation registry
-            tails_file_path: The location of the tails file
-
-        Returns:
-            A tuple of created credential and revocation id
-
-        """
-        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
-        schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
-        credential_definition_id = credential_offer["cred_def_id"]
         try:
             async with self._profile.session() as session:
                 cred_def = await session.handle.fetch(
@@ -813,7 +909,6 @@ class AnonCredsIssuer:
             )
 
         raw_values = {}
-        schema_attributes = schema_result.schema.attr_names
         for attribute in schema_attributes:
             # Ensure every attribute present in schema to be set.
             # Extraneous attribute names are ignored.
@@ -827,18 +922,18 @@ class AnonCredsIssuer:
 
             raw_values[attribute] = str(credential_value)
 
-        if revoc_reg_id:
+        if rev_reg_def_id and tails_file_path:
             try:
                 async with self._profile.transaction() as txn:
-                    rev_list = await txn.handle.fetch(CATEGORY_REV_LIST, revoc_reg_id)
+                    rev_list = await txn.handle.fetch(CATEGORY_REV_LIST, rev_reg_def_id)
                     rev_reg_info = await txn.handle.fetch(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
+                        CATEGORY_REV_REG_INFO, rev_reg_def_id, for_update=True
                     )
                     rev_reg_def = await txn.handle.fetch(
-                        CATEGORY_REV_REG_DEF, revoc_reg_id
+                        CATEGORY_REV_REG_DEF, rev_reg_def_id
                     )
                     rev_key = await txn.handle.fetch(
-                        CATEGORY_REV_REG_DEF_PRIVATE, revoc_reg_id
+                        CATEGORY_REV_REG_DEF_PRIVATE, rev_reg_def_id
                     )
                     if not rev_list:
                         raise AnonCredsIssuerError("Revocation registry not found")
@@ -876,7 +971,7 @@ class AnonCredsIssuer:
                         )
                     rev_info["curr_id"] = rev_reg_index
                     await txn.handle.replace(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info
+                        CATEGORY_REV_REG_INFO, rev_reg_def_id, value_json=rev_info
                     )
                     await txn.commit()
             except AskarError as err:
@@ -906,7 +1001,7 @@ class AnonCredsIssuer:
                     credential_request,
                     raw_values,
                     None,
-                    revoc_reg_id,
+                    rev_reg_def_id,
                     rev_list,
                     revoc,
                 ),
@@ -915,6 +1010,88 @@ class AnonCredsIssuer:
             raise AnonCredsIssuerError("Error creating credential") from err
 
         return credential.to_json(), credential_revocation_id
+
+    async def create_credential(
+        self,
+        credential_offer: dict,
+        credential_request: dict,
+        credential_values: dict,
+        *,
+        retries: int = 5,
+    ) -> Tuple[str, str, str]:
+        """
+        Create a credential.
+
+        Args
+            credential_offer: Credential Offer to create credential for
+            credential_request: Credential request to create credential for
+            credential_values: Values to go in credential
+            revoc_reg_id: ID of the revocation registry
+            retries: number of times to retry credential creation
+
+        Returns:
+            A tuple of created credential and revocation id
+
+        """
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        schema_id = credential_offer["schema_id"]
+        schema_result = await anoncreds_registry.get_schema(self.profile, schema_id)
+        cred_def_id = credential_offer["cred_def_id"]
+
+        revocable = await self.cred_def_supports_revocation(cred_def_id)
+
+        for attempt in range(max(retries, 1)):
+            if attempt > 0:
+                LOGGER.info(
+                    "Waiting 2s before retrying credential issuance for cred def '%s'",
+                    cred_def_id,
+                )
+                await asyncio.sleep(2)
+
+            rev_reg_def_result = None
+            if revocable:
+                rev_reg_def_result = await self.get_or_create_active_registry(
+                    cred_def_id
+                )
+                if (
+                    rev_reg_def_result.revocation_registry_definition_state.state
+                    != STATE_FINISHED
+                ):
+                    continue
+                rev_reg_def_id = rev_reg_def_result.rev_reg_def_id
+                tails_file_path = self.get_local_tails_path(
+                    rev_reg_def_result.rev_reg_def
+                )
+            else:
+                rev_reg_def_id = None
+                tails_file_path = None
+
+            try:
+                cred_json, cred_rev_id = await self._create_credential(
+                    cred_def_id,
+                    schema_result.schema_value.attr_names,
+                    credential_offer,
+                    credential_request,
+                    credential_values,
+                    rev_reg_def_id,
+                    tails_file_path,
+                )
+            except AnonCredsIssuerRevocationRegistryFullError:
+                # unlucky, another instance filled the registry first
+                continue
+
+            if (
+                rev_reg_def_result
+                and rev_reg_def_result.rev_reg_def.value.max_cred_num
+                <= int(cred_rev_id)
+            ):
+                await self.handle_full_registry(rev_reg_def_id)
+
+            return cred_json, cred_rev_id, rev_reg_def_id
+
+        raise AnonCredsIssuerError(
+            f"Cred def '{cred_def_id}' has no active revocation registry"
+        )
 
     async def revoke_credentials(
         self,

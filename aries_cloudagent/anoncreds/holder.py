@@ -85,7 +85,9 @@ class AnonCredsHolder:
                     raise AnonCredsHolderError("Error fetching master secret") from err
                 if record:
                     try:
-                        secret = record.raw_value
+                        # TODO should be able to use raw_value but memoryview
+                        # isn't accepted by cred.process
+                        secret = record.value.decode("ascii")
                     except AnoncredsError as err:
                         raise AnonCredsHolderError(
                             "Error loading master secret"

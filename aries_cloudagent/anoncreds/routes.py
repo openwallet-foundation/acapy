@@ -11,11 +11,16 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import fields
+from aries_cloudagent.askar.profile import AskarProfile
+
+from aries_cloudagent.revocation.routes import (
+    RevRegIdMatchInfoSchema,
+    RevocationModuleResponseSchema,
+)
 
 from ..admin.request_context import AdminRequestContext
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import UUIDFour
-from ..revocation.anoncreds import AnonCredsRevocation
 from ..revocation.error import RevocationNotSupportedError
 from ..storage.error import StorageNotFoundError
 from .issuer import AnonCredsIssuer, AnonCredsIssuerError
@@ -371,17 +376,18 @@ async def rev_reg_def_post(request: web.BaseRequest):
         )
 
     try:
-        revoc = AnonCredsRevocation(context.profile)
-        issuer_rev_reg_rec = await revoc.init_issuer_registry(
-            issuer_id,
-            cred_def_id,
-            max_cred_num=max_cred_num,
-            options=options,
-            notify=False,
+        result = await shield(
+            issuer.create_and_register_revocation_registry_definition(
+                issuer_id,
+                cred_def_id,
+                registry_type="CL_ACCUM",
+                max_cred_num=max_cred_num,
+                tag="default",
+                options=options,
+            )
         )
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
-    result = await shield(issuer_rev_reg_rec.create_and_register_def(context.profile))
 
     return web.json_response(result.serialize())
 
@@ -422,12 +428,13 @@ async def rev_list_post(request: web.BaseRequest):
     rev_reg_def_id = body.get("revRegDefId")
     options = body.get("options")
 
+    issuer = AnonCredsIssuer(context.profile)
     try:
-        revoc = AnonCredsRevocation(context.profile)
-        rev_reg = await revoc.get_issuer_rev_reg_record(rev_reg_def_id)
-        result = await rev_reg.create_and_register_list(
-            context.profile,
-            options,
+        result = await shield(
+            issuer.create_and_register_revocation_list(
+                rev_reg_def_id,
+                options,
+            )
         )
         LOGGER.debug("published revocation list for: %s", rev_reg_def_id)
 
@@ -437,6 +444,39 @@ async def rev_list_post(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     return web.json_response(result.serialize())
+
+
+@docs(
+    tags=["revocation"],
+    summary="Upload local tails file to server",
+)
+@match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(RevocationModuleResponseSchema(), description="")
+async def upload_tails_file(request: web.BaseRequest):
+    """
+    Request handler to upload local tails file for revocation registry.
+
+    Args:
+        request: aiohttp request object
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile: AskarProfile = context.profile
+    rev_reg_id = request.match_info["rev_reg_id"]
+    try:
+        issuer = AnonCredsIssuer(profile)
+        rev_reg_def = await issuer.get_created_revocation_registry_definition(
+            rev_reg_id
+        )
+        if rev_reg_def is None:
+            raise web.HTTPNotFound(reason="No rev reg def found")
+
+        await issuer.upload_tails_file(rev_reg_def)
+
+    except AnonCredsIssuerError as e:
+        raise web.HTTPInternalServerError(reason=str(e)) from e
+
+    return web.json_response({})
 
 
 async def register(app: web.Application):
@@ -460,6 +500,7 @@ async def register(app: web.Application):
             ),
             web.post("/anoncreds/revocation-registry-definition", rev_reg_def_post),
             web.post("/anoncreds/revocation-list", rev_list_post),
+            web.put("/anoncreds/registry/{rev_reg_id}/tails-file", upload_tails_file),
         ]
     )
 

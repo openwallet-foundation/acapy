@@ -11,7 +11,7 @@ from .models.anoncreds_cred_def import (
 )
 from .models.anoncreds_revocation import (
     GetRevListResult,
-    AnonCredsRegistryGetRevocationRegistryDefinition,
+    GetRevRegDefResult,
     RevRegDef,
     RevRegDefResult,
     RevList,
@@ -119,7 +119,7 @@ class AnonCredsRegistry:
 
     async def get_revocation_registry_definition(
         self, profile: Profile, revocation_registry_id: str
-    ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
+    ) -> GetRevRegDefResult:
         """Get a revocation registry definition from the registry."""
         resolver = await self._resolver_for_identifier(revocation_registry_id)
         return await resolver.get_revocation_registry_definition(

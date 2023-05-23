@@ -64,6 +64,12 @@ async def main():
                 "maxCredNum": 10,
             },
         )
+        rev_reg_def_id = rev_reg_def["revocation_registry_definition_state"][
+            "revocation_registry_definition_id"
+        ]
+        tails = await alice.put(
+            f"/anoncreds/registry/{rev_reg_def_id}/tails-file",
+        )
         rev_status_list = await alice.post(
             "/anoncreds/revocation-list",
             json={
