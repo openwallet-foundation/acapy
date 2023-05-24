@@ -591,6 +591,7 @@ class AriesAgent(DemoAgent):
                 json.dumps(invi_rec["invitation"]), label="Invitation Data:", color=None
             )
             qr.print_ascii(invert=True)
+            log_msg(invi_rec["invitation_url"], label="Invitation URL:", color=None)
 
         if wait:
             log_msg("Waiting for connection...")
