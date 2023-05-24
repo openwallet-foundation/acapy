@@ -120,14 +120,17 @@ class IndyPresExchHandler:
             if credential.get("rev_reg_id"):
                 revocation_registry_id = credential["rev_reg_id"]
                 if revocation_registry_id not in revocation_registries:
+                    rev_reg = (
+                        await anoncreds_registry.get_revocation_registry_definition(
+                            self._profile, revocation_registry_id
+                        )
+                    ).revocation_registry.serialize()
+                    # add id to the serialized rev_reg
+                    rev_reg["id"] = revocation_registry_id
                     revocation_registries[
                         revocation_registry_id
                     ] = RevocationRegistry.from_definition(
-                        (
-                            await anoncreds_registry.get_revocation_registry_definition(
-                                self._profile, revocation_registry_id
-                            )
-                        ).revocation_registry.serialize(),
+                        rev_reg,
                         True,
                     )
         return schemas, cred_defs, revocation_registries
