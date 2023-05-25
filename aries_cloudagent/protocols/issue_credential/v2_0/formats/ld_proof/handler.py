@@ -29,11 +29,12 @@ from ......vc.ld_proofs import (
     CredentialIssuancePurpose,
     DocumentLoader,
     Ed25519Signature2018,
+    Ed25519Signature2020,
     LinkedDataProof,
     ProofPurpose,
     WalletKeyPair,
 )
-from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
+from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL, SECURITY_CONTEXT_ED25519_2020_URL
 from ......wallet.base import BaseWallet, DIDInfo
 from ......wallet.error import WalletNotFoundError
 from ......wallet.key_type import BLS12381G2, ED25519
@@ -64,8 +65,8 @@ SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     CredentialIssuancePurpose.term,
     AuthenticationProofPurpose.term,
 }
-SUPPORTED_ISSUANCE_SUITES = {Ed25519Signature2018}
-SIGNATURE_SUITE_KEY_TYPE_MAPPING = {Ed25519Signature2018: ED25519}
+SUPPORTED_ISSUANCE_SUITES = {Ed25519Signature2018, Ed25519Signature2020}
+SIGNATURE_SUITE_KEY_TYPE_MAPPING = {Ed25519Signature2018: ED25519, Ed25519Signature2020: ED25519}
 
 
 # We only want to add bbs suites to supported if the module is installed
@@ -79,8 +80,10 @@ PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
 }
 
 
-KEY_TYPE_SIGNATURE_SUITE_MAPPING = {
-    key_type: suite for suite, key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items()
+# key_type -> set of signature types mappings
+KEY_TYPE_SIGNATURE_TYPE_MAPPING = {
+    key_type: {suite.signature_type for suite, kt in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items() if kt == key_type}
+    for key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.values()
 }
 
 
@@ -212,13 +215,11 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
             # Raise error if we cannot issue a credential with this proof type
             # using this DID from
-            did_proof_type = KEY_TYPE_SIGNATURE_SUITE_MAPPING[
-                did.key_type
-            ].signature_type
-            if proof_type != did_proof_type:
+            did_proof_types = KEY_TYPE_SIGNATURE_TYPE_MAPPING[did.key_type]
+            if proof_type not in did_proof_types:
                 raise V20CredFormatError(
                     f"Unable to issue credential with issuer id {issuer_id} and proof "
-                    f"type {proof_type}. DID only supports proof type {did_proof_type}"
+                    f"type {proof_type}. DID only supports proof types {did_proof_types}"
                 )
 
         except WalletNotFoundError:
@@ -369,6 +370,12 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             and SECURITY_CONTEXT_BBS_URL not in detail.credential.context_urls
         ):
             detail.credential.add_context(SECURITY_CONTEXT_BBS_URL)
+        # Add ED25519-2020 context if not present yet
+        elif (
+            detail.options.proof_type == Ed25519Signature2020.signature_type
+            and SECURITY_CONTEXT_ED25519_2020_URL not in detail.credential.context_urls
+        ):
+            detail.credential.add_context(SECURITY_CONTEXT_ED25519_2020_URL)
 
         # add holder_did as credentialSubject.id (if provided)
         if holder_did and holder_did.startswith("did:key"):

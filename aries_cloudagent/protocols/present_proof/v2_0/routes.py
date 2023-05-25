@@ -36,7 +36,7 @@ from ....storage.base import BaseStorage
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
-from ....vc.ld_proofs import BbsBlsSignature2020, Ed25519Signature2018
+from ....vc.ld_proofs import BbsBlsSignature2020, Ed25519Signature2018, Ed25519Signature2020
 from ....wallet.error import WalletNotFoundError
 
 from ..dif.pres_exch import InputDescriptors, ClaimFormat, SchemaInputDescriptor
@@ -581,11 +581,16 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                     Ed25519Signature2018.signature_type
                                     not in proof_types
                                 )
+                                and (
+                                    Ed25519Signature2020.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise web.HTTPBadRequest(
                                     reason=(
                                         "Only BbsBlsSignature2020 and/or "
-                                        "Ed25519Signature2018 signature types "
+                                        "Ed25519Signature2018 and/or "
+                                        "Ed25519Signature2020 signature types "
                                         "are supported"
                                     )
                                 )
@@ -599,11 +604,15 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                     Ed25519Signature2018.signature_type
                                     not in proof_types
                                 )
+                                and (
+                                    Ed25519Signature2020.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise web.HTTPBadRequest(
                                     reason=(
-                                        "Only BbsBlsSignature2020 and "
-                                        "Ed25519Signature2018 signature types "
+                                        "Only BbsBlsSignature2020, Ed25519Signature2018 and "
+                                        "Ed25519Signature2020 signature types "
                                         "are supported"
                                     )
                                 )
@@ -619,6 +628,14 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                                         break
                                     elif (
                                         proof_format
+                                        == Ed25519Signature2020.signature_type
+                                    ):
+                                        proof_type = [
+                                            Ed25519Signature2020.signature_type
+                                        ]
+                                        break
+                                    elif (
+                                        proof_format
                                         == BbsBlsSignature2020.signature_type
                                     ):
                                         proof_type = [
@@ -629,7 +646,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                         raise web.HTTPBadRequest(
                             reason=(
                                 "Currently, only ldp_vp with "
-                                "BbsBlsSignature2020 and Ed25519Signature2018"
+                                "BbsBlsSignature2020, Ed25519Signature2018 and Ed25519Signature2020"
                                 " signature types are supported"
                             )
                         )
