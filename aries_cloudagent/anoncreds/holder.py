@@ -4,21 +4,21 @@ import asyncio
 import json
 import logging
 import re
-import uuid
 from typing import Dict, Optional, Sequence, Tuple, Union
+import uuid
 
 from anoncreds import (
     AnoncredsError,
     Credential,
     CredentialRequest,
     CredentialRevocationState,
-    Presentation,
     PresentCredentials,
+    Presentation,
 )
 from anoncreds.bindings import create_link_secret
-
 from aries_askar import AskarError, AskarErrorCode
 
+from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ..askar.profile import AskarProfile
 from ..core.error import BaseError
 from ..ledger.base import BaseLedger
@@ -474,8 +474,8 @@ class AnonCredsHolder:
         self,
         presentation_request: dict,
         requested_credentials: dict,
-        schemas: dict,
-        credential_definitions: dict,
+        schemas: Dict[str, AnonCredsSchema],
+        credential_definitions: Dict[str, CredDef],
         rev_states: dict = None,
     ) -> str:
         """
@@ -550,8 +550,14 @@ class AnonCredsHolder:
                 present_creds,
                 self_attest,
                 secret,
-                schemas,
-                credential_definitions,
+                {
+                    schema_id: schema.to_native()
+                    for schema_id, schema in schemas.items()
+                },
+                {
+                    cred_def_id: cred_def.to_native()
+                    for cred_def_id, cred_def in credential_definitions.items()
+                },
             )
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error creating presentation") from err

@@ -2,14 +2,18 @@
 import json
 import logging
 import time
-from typing import Union
+from typing import Dict, Tuple, Union
 
-from ....anoncreds.registry import AnonCredsRegistry
+from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
+from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDef
+
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....anoncreds.models.anoncreds_revocation import RevRegDef
+from ....anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ....anoncreds.models.xform import indy_proof_req2non_revoc_intervals
+from ....anoncreds.registry import AnonCredsRegistry
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....revocation.models.revocation_registry import RevocationRegistry
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
 from ..v2_0.messages.pres_format import V20PresFormat
 from ..v2_0.models.pres_exchange import V20PresExRecord
@@ -97,7 +101,9 @@ class IndyPresExchHandler:
                         f"{reft} for non-revocable credential {req_item['cred_id']}"
                     )
 
-    async def _get_ledger_objects(self, credentials: dict):
+    async def _get_ledger_objects(
+        self, credentials: dict
+    ) -> Tuple[Dict[str, AnonCredsSchema], Dict[str, CredDef], Dict[str, RevRegDef]]:
         """Get all schemas, credential definitions, and revocation registries in use"""
         schemas = {}
         cred_defs = {}
@@ -109,14 +115,14 @@ class IndyPresExchHandler:
             if schema_id not in schemas:
                 schemas[schema_id] = (
                     await anoncreds_registry.get_schema(self._profile, schema_id)
-                ).schema.serialize()
+                ).schema
             cred_def_id = credential["cred_def_id"]
             if cred_def_id not in cred_defs:
                 cred_defs[cred_def_id] = (
                     await anoncreds_registry.get_credential_definition(
                         self._profile, cred_def_id
                     )
-                ).credential_definition.serialize()
+                ).credential_definition
             if credential.get("rev_reg_id"):
                 revocation_registry_id = credential["rev_reg_id"]
                 if revocation_registry_id not in revocation_registries:
@@ -124,15 +130,9 @@ class IndyPresExchHandler:
                         await anoncreds_registry.get_revocation_registry_definition(
                             self._profile, revocation_registry_id
                         )
-                    ).revocation_registry.serialize()
-                    # add id to the serialized rev_reg
-                    rev_reg["id"] = revocation_registry_id
-                    revocation_registries[
-                        revocation_registry_id
-                    ] = RevocationRegistry.from_definition(
-                        rev_reg,
-                        True,
-                    )
+                    ).revocation_registry
+                    revocation_registries[revocation_registry_id] = rev_reg
+
         return schemas, cred_defs, revocation_registries
 
     async def _get_revocation_lists(self, requested_referents: dict, credentials: dict):
@@ -192,13 +192,15 @@ class IndyPresExchHandler:
         ) in rev_lists.values():
             if rev_reg_id not in revocation_states:
                 revocation_states[rev_reg_id] = {}
-            rev_reg = revocation_registries[rev_reg_id]
-            tails_local_path = await rev_reg.get_or_fetch_local_tails_path()
+            rev_reg_def = revocation_registries[rev_reg_id]
+            # TODO Not an issuer specific operation to fetch tails
+            issuer = AnonCredsIssuer(self._profile)
+            tails_local_path = await issuer.get_or_fetch_local_tails_path(rev_reg_def)
             try:
                 revocation_states[rev_reg_id][timestamp] = json.loads(
                     await self.holder.create_revocation_state(
                         credentials[credential_id]["cred_rev_id"],
-                        rev_reg.reg_def,
+                        rev_reg_def.serialize(),
                         rev_list,
                         tails_local_path,
                     )

@@ -792,7 +792,7 @@ class AnonCredsIssuer:
         return credential_offer.to_json()
 
     # TODO This is used by both issuer and holder; this should be moved
-    async def retrieve_tails(self, rev_reg_def: RevRegDef):
+    async def retrieve_tails(self, rev_reg_def: RevRegDef) -> str:
         """Retrieve tails file from server."""
         LOGGER.info(
             "Downloading the tails file with hash: %s",
@@ -834,10 +834,10 @@ class AnonCredsIssuer:
                 "The hash of the downloaded tails file does not match."
             )
 
-        return tails_file_path
+        return str(tails_file_path)
 
     # TODO This is used by both issuer and holder; this should be moved
-    async def get_or_fetch_local_tails_path(self, rev_reg_def: RevRegDef):
+    async def get_or_fetch_local_tails_path(self, rev_reg_def: RevRegDef) -> str:
         """Return path to local tails file.
 
         If not present, retrieve from tails server.
