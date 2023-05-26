@@ -55,9 +55,6 @@ class Ed25519Signature2020(LinkedDataSignature):
 
         """
         signature = await self.key_pair.sign(verify_data)
-        pprint("Signature")
-        pprint(signature)
-        pprint(len(signature))
 
         proof["proofValue"] = multibase.encode(signature, "base58btc")
 
