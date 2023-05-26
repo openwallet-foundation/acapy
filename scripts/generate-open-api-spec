@@ -137,7 +137,7 @@ function runACAPy() {
 }
 
 
-OPEN_API_CONTAINER="swaggerapi/swagger-codegen-cli:2.4.15"
+OPEN_API_CONTAINER="swaggerapi/swagger-codegen-cli:2.4.32"
 # OPEN_API_CONTAINER="openapitools/openapi-generator-cli:v4.3.1"
 OPEN_API_OPTIONS=" "
 OPEN_API_MOUNT="/local"
