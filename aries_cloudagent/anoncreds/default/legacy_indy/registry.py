@@ -402,9 +402,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
         return result
 
-    async def get_revocation_registry_definitions(self, profile: Profile, filter: str):
-        """Get credential definition ids filtered by filter"""
-
     async def register_revocation_registry_definition(
         self,
         profile: Profile,
