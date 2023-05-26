@@ -1,44 +1,16 @@
 """V2.0 issue-credential linked data proof credential format handler."""
 
 
-from ......vc.ld_proofs.error import LinkedDataProofException
-from ......vc.ld_proofs.check import get_properties_without_context
 import logging
-
 from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, INCLUDE
-
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
-from ......did.did_key import DIDKey
-from ......messaging.decorators.attach_decorator import AttachDecorator
-from ......storage.vc_holder.base import VCHolder
-from ......storage.vc_holder.vc_record import VCRecord
-from ......vc.vc_ld import (
-    issue_vc as issue,
-    verify_credential,
-    VerifiableCredentialSchema,
-    LDProof,
-    VerifiableCredential,
-)
-from ......vc.ld_proofs import (
-    AuthenticationProofPurpose,
-    BbsBlsSignature2020,
-    CredentialIssuancePurpose,
-    DocumentLoader,
-    Ed25519Signature2018,
-    Ed25519Signature2020,
-    LinkedDataProof,
-    ProofPurpose,
-    WalletKeyPair,
-)
-from ......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL, SECURITY_CONTEXT_ED25519_2020_URL
-from ......wallet.base import BaseWallet, DIDInfo
-from ......wallet.error import WalletNotFoundError
-from ......wallet.key_type import BLS12381G2, ED25519
-
+from .models.cred_detail import LDProofVCDetail
+from .models.cred_detail import LDProofVCDetailSchema
+from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
 from ...message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -53,11 +25,37 @@ from ...messages.cred_proposal import V20CredProposal
 from ...messages.cred_request import V20CredRequest
 from ...models.cred_ex_record import V20CredExRecord
 from ...models.detail.ld_proof import V20CredExRecordLDProof
-
-from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
-
-from .models.cred_detail import LDProofVCDetailSchema
-from .models.cred_detail import LDProofVCDetail
+from ......did.did_key import DIDKey
+from ......messaging.decorators.attach_decorator import AttachDecorator
+from ......storage.vc_holder.base import VCHolder
+from ......storage.vc_holder.vc_record import VCRecord
+from ......vc.ld_proofs import (
+    AuthenticationProofPurpose,
+    BbsBlsSignature2020,
+    CredentialIssuancePurpose,
+    DocumentLoader,
+    Ed25519Signature2018,
+    Ed25519Signature2020,
+    LinkedDataProof,
+    ProofPurpose,
+    WalletKeyPair,
+)
+from ......vc.ld_proofs.check import get_properties_without_context
+from ......vc.ld_proofs.constants import (
+    SECURITY_CONTEXT_BBS_URL,
+    SECURITY_CONTEXT_ED25519_2020_URL,
+)
+from ......vc.ld_proofs.error import LinkedDataProofException
+from ......vc.vc_ld import (
+    issue_vc as issue,
+    verify_credential,
+    VerifiableCredentialSchema,
+    LDProof,
+    VerifiableCredential,
+)
+from ......wallet.base import BaseWallet, DIDInfo
+from ......wallet.error import WalletNotFoundError
+from ......wallet.key_type import BLS12381G2, ED25519
 
 LOGGER = logging.getLogger(__name__)
 
@@ -66,7 +64,10 @@ SUPPORTED_ISSUANCE_PROOF_PURPOSES = {
     AuthenticationProofPurpose.term,
 }
 SUPPORTED_ISSUANCE_SUITES = {Ed25519Signature2018, Ed25519Signature2020}
-SIGNATURE_SUITE_KEY_TYPE_MAPPING = {Ed25519Signature2018: ED25519, Ed25519Signature2020: ED25519}
+SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
+    Ed25519Signature2018: ED25519,
+    Ed25519Signature2020: ED25519,
+}
 
 
 # We only want to add bbs suites to supported if the module is installed
@@ -82,7 +83,11 @@ PROOF_TYPE_SIGNATURE_SUITE_MAPPING = {
 
 # key_type -> set of signature types mappings
 KEY_TYPE_SIGNATURE_TYPE_MAPPING = {
-    key_type: {suite.signature_type for suite, kt in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items() if kt == key_type}
+    key_type: {
+        suite.signature_type
+        for suite, kt in SIGNATURE_SUITE_KEY_TYPE_MAPPING.items()
+        if kt == key_type
+    }
     for key_type in SIGNATURE_SUITE_KEY_TYPE_MAPPING.values()
 }
 

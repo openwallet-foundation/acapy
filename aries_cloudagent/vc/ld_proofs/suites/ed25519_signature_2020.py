@@ -1,15 +1,14 @@
 """Ed25519Signature2018 suite."""
 
 from datetime import datetime
-from pprint import pprint
 from typing import Union, List
 
-from aries_cloudagent.wallet.util import bytes_to_b58, b64_to_bytes
+from multiformats import multibase
+
 from .linked_data_signature import LinkedDataSignature
 from ..crypto import _KeyPair as KeyPair
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
-from multiformats import multibase
 
 
 class Ed25519Signature2020(LinkedDataSignature):

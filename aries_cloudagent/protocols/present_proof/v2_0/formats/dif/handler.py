@@ -319,8 +319,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     else:
                         raise V20PresFormatHandlerError(
                             "Currently, only ldp_vp with "
-                            "BbsBlsSignature2020, Ed25519Signature2018 and Ed25519Signature2020"
-                            " signature types are supported"
+                            "BbsBlsSignature2020, Ed25519Signature2018 and "
+                            "Ed25519Signature2020 signature types are supported"
                         )
                 if one_of_uri_groups:
                     records = []

@@ -25,7 +25,10 @@ from .......vc.ld_proofs import (
     Ed25519Signature2020,
     BbsBlsSignature2020,
 )
-from .......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL, SECURITY_CONTEXT_ED25519_2020_URL
+from .......vc.ld_proofs.constants import (
+    SECURITY_CONTEXT_BBS_URL,
+    SECURITY_CONTEXT_ED25519_2020_URL,
+)
 from .......vc.tests.document_loader import custom_document_loader
 from .......wallet.key_type import BLS12381G2, ED25519
 from .......wallet.error import WalletNotFoundError
@@ -446,7 +449,10 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         )
 
         # assert ED25519-2020 url added to context
-        assert SECURITY_CONTEXT_ED25519_2020_URL in attachment.content["credential"]["@context"]
+        assert (
+            SECURITY_CONTEXT_ED25519_2020_URL
+            in attachment.content["credential"]["@context"]
+        )
 
     async def test_receive_proposal(self):
         cred_ex_record = async_mock.MagicMock()
@@ -529,7 +535,10 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
         # assert BBS url added to context
-        assert SECURITY_CONTEXT_ED25519_2020_URL in attachment.content["credential"]["@context"]
+        assert (
+            SECURITY_CONTEXT_ED25519_2020_URL
+            in attachment.content["credential"]["@context"]
+        )
 
     async def test_create_offer_x_no_proposal(self):
         with self.assertRaises(V20CredFormatError) as context:
@@ -761,8 +770,12 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
                 cred_ex_record
             )
 
-            credential_with_ed25519_2020 = deepcopy(LD_PROOF_VC_DETAIL_ED25519_2020["credential"])
-            credential_with_ed25519_2020["@context"].append(SECURITY_CONTEXT_ED25519_2020_URL)
+            credential_with_ed25519_2020 = deepcopy(
+                LD_PROOF_VC_DETAIL_ED25519_2020["credential"]
+            )
+            credential_with_ed25519_2020["@context"].append(
+                SECURITY_CONTEXT_ED25519_2020_URL
+            )
 
             mock_issue.assert_called_once_with(
                 credential=credential_with_ed25519_2020,

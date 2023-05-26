@@ -17,7 +17,9 @@ from .bbs_vc_reveal_document_mattr import BBS_VC_REVEAL_DOCUMENT_MATTR
 from .test_ld_document_bad_signed_bbs import TEST_LD_DOCUMENT_BAD_SIGNED_BBS
 from .test_ld_document_signed_bbs import TEST_LD_DOCUMENT_SIGNED_BBS
 from .test_ld_document_bad_signed_ed25519 import TEST_LD_DOCUMENT_BAD_SIGNED_ED25519
-from .test_ld_document_bad_signed_ed25519_2020 import TEST_LD_DOCUMENT_BAD_SIGNED_ED25519_2020
+from .test_ld_document_bad_signed_ed25519_2020 import (
+    TEST_LD_DOCUMENT_BAD_SIGNED_ED25519_2020,
+)
 from .test_ld_document_signed_ed25519 import TEST_LD_DOCUMENT_SIGNED_ED25519
 from .test_ld_document_signed_ed25519_2020 import TEST_LD_DOCUMENT_SIGNED_ED25519_2020
 from .test_ld_document import TEST_LD_DOCUMENT

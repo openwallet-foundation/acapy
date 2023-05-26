@@ -32,6 +32,6 @@ TEST_VC_DOCUMENT_SIGNED_ED25519_2020 = {
         "proofPurpose": "assertionMethod",
         "proofValue": "z4piZ4kJk9aytWcsG93sFqozrTuViYHFamCPQmqVTVQX2qSxdp2ipJPnWpXrvv6jdt9Y41xQjTw3DKXPRLPvGZmWx",
         "type": "Ed25519Signature2020",
-        "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-    }
+        "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
+    },
 }

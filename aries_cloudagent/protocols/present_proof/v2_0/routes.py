@@ -1,6 +1,7 @@
 """Admin routes for presentations."""
 
 import json
+from typing import Mapping, Sequence, Tuple
 
 from aiohttp import web
 from aiohttp_apispec import (
@@ -11,8 +12,27 @@ from aiohttp_apispec import (
     response_schema,
 )
 from marshmallow import fields, validate, validates_schema, ValidationError
-from typing import Mapping, Sequence, Tuple
 
+from . import problem_report_for_record, report_problem
+from .formats.handler import V20PresFormatHandlerError
+from .manager import V20PresManager
+from .message_types import (
+    ATTACHMENT_FORMAT,
+    PRES_20_PROPOSAL,
+    PRES_20_REQUEST,
+    SPEC_URI,
+)
+from .messages.pres_format import V20PresFormat
+from .messages.pres_problem_report import ProblemReportReason
+from .messages.pres_proposal import V20PresProposal
+from .messages.pres_request import V20PresRequest
+from .models.pres_exchange import V20PresExRecord, V20PresExRecordSchema
+from ..dif.pres_exch import InputDescriptors, ClaimFormat, SchemaInputDescriptor
+from ..dif.pres_proposal_schema import DIFProofProposalSchema
+from ..dif.pres_request_schema import (
+    DIFProofRequestSchema,
+    DIFPresSpecSchema,
+)
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....indy.holder import IndyHolder, IndyHolderError
@@ -31,35 +51,17 @@ from ....messaging.valid import (
     UUIDFour,
     UUID4,
 )
-from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.base import BaseStorage
+from ....storage.error import StorageError, StorageNotFoundError
 from ....storage.vc_holder.base import VCHolder
 from ....storage.vc_holder.vc_record import VCRecord
 from ....utils.tracing import trace_event, get_timer, AdminAPIMessageTracingSchema
-from ....vc.ld_proofs import BbsBlsSignature2020, Ed25519Signature2018, Ed25519Signature2020
+from ....vc.ld_proofs import (
+    BbsBlsSignature2020,
+    Ed25519Signature2018,
+    Ed25519Signature2020,
+)
 from ....wallet.error import WalletNotFoundError
-
-from ..dif.pres_exch import InputDescriptors, ClaimFormat, SchemaInputDescriptor
-from ..dif.pres_proposal_schema import DIFProofProposalSchema
-from ..dif.pres_request_schema import (
-    DIFProofRequestSchema,
-    DIFPresSpecSchema,
-)
-
-from . import problem_report_for_record, report_problem
-from .formats.handler import V20PresFormatHandlerError
-from .manager import V20PresManager
-from .message_types import (
-    ATTACHMENT_FORMAT,
-    PRES_20_PROPOSAL,
-    PRES_20_REQUEST,
-    SPEC_URI,
-)
-from .messages.pres_format import V20PresFormat
-from .messages.pres_problem_report import ProblemReportReason
-from .messages.pres_proposal import V20PresProposal
-from .messages.pres_request import V20PresRequest
-from .models.pres_exchange import V20PresExRecord, V20PresExRecordSchema
 
 
 class V20PresentProofModuleResponseSchema(OpenAPISchema):
@@ -611,8 +613,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                             ):
                                 raise web.HTTPBadRequest(
                                     reason=(
-                                        "Only BbsBlsSignature2020, Ed25519Signature2018 and "
-                                        "Ed25519Signature2020 signature types "
+                                        "Only BbsBlsSignature2020, Ed25519Signature2018 "
+                                        "and Ed25519Signature2020 signature types "
                                         "are supported"
                                     )
                                 )
@@ -646,8 +648,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                         raise web.HTTPBadRequest(
                             reason=(
                                 "Currently, only ldp_vp with "
-                                "BbsBlsSignature2020, Ed25519Signature2018 and Ed25519Signature2020"
-                                " signature types are supported"
+                                "BbsBlsSignature2020, Ed25519Signature2018 and "
+                                "Ed25519Signature2020 signature types are supported"
                             )
                         )
                 if one_of_uri_groups:

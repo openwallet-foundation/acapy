@@ -47,7 +47,7 @@ CREDENTIAL_TEMPLATE_2020 = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://www.w3.org/2018/credentials/examples/v1",
-        "https://w3id.org/security/suites/ed25519-2020/v1"
+        "https://w3id.org/security/suites/ed25519-2020/v1",
     ],
     "id": "http://example.gov/credentials/3732",
     "type": ["VerifiableCredential", "UniversityDegreeCredential"],

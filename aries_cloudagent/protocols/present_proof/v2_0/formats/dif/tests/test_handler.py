@@ -404,7 +404,12 @@ class TestDIFFormatHandler(AsyncTestCase):
     async def test_get_all_suites(self):
         suites = await self.handler._get_all_suites(self.wallet)
         assert len(suites) == 3
-        types = [Ed25519Signature2018, Ed25519Signature2020, BbsBlsSignature2020, BbsBlsSignatureProof2020]
+        types = [
+            Ed25519Signature2018,
+            Ed25519Signature2020,
+            BbsBlsSignature2020,
+            BbsBlsSignatureProof2020,
+        ]
         for suite in suites:
             assert type(suite) in types
 
