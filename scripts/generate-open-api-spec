@@ -138,11 +138,9 @@ function runACAPy() {
   fi
 }
 
-
-OPEN_API_CONTAINER="swaggerapi/swagger-codegen-cli:2.4.32"
-# OPEN_API_CONTAINER="openapitools/openapi-generator-cli:v4.3.1"
-OPEN_API_OPTIONS=" "
 OPEN_API_MOUNT="/local"
+ACAPY_SPEC_FILE="${OPEN_API_MOUNT}/acapy-raw.json"
+CONFIG_LOCATION="${ROOT_DIR}/open-api/${OPEN_API_JSON_CONFIG}"
 
 # Pull the open API docker image and run it against the specified web server
 # or local spec file.
