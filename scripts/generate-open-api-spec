@@ -140,7 +140,7 @@ function runACAPy() {
 }
 
 OPEN_API_MOUNT="/local"
-ACAPY_SPEC_FILE="${OPEN_API_MOUNT}/acapy-raw.json"
+ACAPY_SPEC_FILE="acapy-raw.json"
 CONFIG_LOCATION="${ROOT_DIR}/open-api/${OPEN_API_JSON_CONFIG}"
 
 # Pull the open API docker image and run it against the specified web server
@@ -218,10 +218,11 @@ if [ ! -d ${OPEN_API_SHARED_DIR} ]; then
 fi
 
 # Download the Swagger specification from the ACA-Py service
+curl --output "${OPEN_API_SHARED_DIR}/${ACAPY_SPEC_FILE}" http://localhost:${ACA_PY_ADMIN_PORT}/api/docs/swagger.json
 
 # Use the OpenAPI Generator to create both Swagger and OpenAPI spec files from the downloaded Swagger specification
-runOpenAPIGenerate "${ACAPY_SPEC_FILE}" swagger "${CONFIG_LOCATION}" "${OPEN_API_SHARED_DIR}"
-runOpenAPIGenerate "${ACAPY_SPEC_FILE}" openapi "${CONFIG_LOCATION}" "${OPEN_API_SHARED_DIR}"
+runOpenAPIGenerate "${OPEN_API_MOUNT}/${ACAPY_SPEC_FILE}" swagger "${CONFIG_LOCATION}" "${OPEN_API_SHARED_DIR}"
+runOpenAPIGenerate "${OPEN_API_MOUNT}/${ACAPY_SPEC_FILE}" openapi "${CONFIG_LOCATION}" "${OPEN_API_SHARED_DIR}"
 
 # Overwrite the existing Swagger and OpenAPI spec files
 runEval "cp -f ${OPEN_API_SHARED_DIR}/swagger.json ${ROOT_DIR}/open-api/"
