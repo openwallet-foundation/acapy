@@ -6,7 +6,8 @@
 #
 ##########################################################################################
 
-OPENAPI_GEN_CONTAINER="openapitools/openapi-generator-cli:v6.6.0"
+SWAGGER_GEN_CONTAINER="swaggerapi/swagger-codegen-cli:2.4.32"
+OPENAPI_GEN_CONTAINER="openapitools/openapi-generator-cli:v6.6.0" 
 
 # Ensure the script is running from the directory containing this script
 cd $(dirname $0)
