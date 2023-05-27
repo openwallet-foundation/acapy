@@ -53,7 +53,7 @@ function runEval() {
   returnValue=$?
   if [ $returnValue != 0 ]; then
     echo "Command ${1} failed"
-    exit -1
+    exit 1
   fi
   return $returnValue
 }
