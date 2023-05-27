@@ -162,10 +162,7 @@ function runOpenAPIGenerate() {
     configFile="$(basename -- ${configLocation})"
   fi
 
-  openAPICmd="docker run --rm  --user $(id -u):$(id -g) -v ${hostSharedDir}:${OPEN_API_MOUNT} \
-    ${OPENAPI_GEN_CONTAINER} generate \
-    --input-spec ${specFile} \
-    --output ${OPEN_API_MOUNT}"
+  genSpecCmd="docker run --rm  --user $(id -u):$(id -g) -v ${hostSharedDir}:${OPEN_API_MOUNT}"
 
   # specify language generator.
   case ${generatorType} in
@@ -181,14 +178,16 @@ function runOpenAPIGenerate() {
     ;;
   esac
 
+  genSpecCmd+=" --input-spec ${specFile} --output ${OPEN_API_MOUNT}"
+
   if [ ! -z ${configFile} ]; then
-    openAPICmd+=" --config ${OPEN_API_MOUNT}/${configFile}"
+    genSpecCmd+=" --config ${OPEN_API_MOUNT}/${configFile}"
   fi
 
-  printMilestone "Starting Open API code generation with command: \n \
-        \t ${openAPICmd}"
+  printMilestone "Starting ${generatorType} code generation with command: \n \
+        \t ${genSpecCmd}"
 
-  ${openAPICmd}
+  ${genSpecCmd}
 }
 
 ##########################################################################################
