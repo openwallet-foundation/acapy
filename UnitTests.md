@@ -11,12 +11,11 @@ developer @shaangill025.
 - `./scripts/run_tests aries_clouadagent/protocols/out_of_band/v1_0/tests`
 - `./scripts/run_tests_indy` includes Indy specific tests
 
-
 ## Pytest
 
 Example: aries_cloudagent/core/tests/test_event_bus.py
 
-```
+```python
 @pytest.fixture
 def event_bus():
     yield EventBus()
@@ -49,7 +48,7 @@ def processor():
 
 ---
 
-```
+```python
 def test_sub_unsub(event_bus: EventBus, processor):
     """Test subscribe and unsubscribe."""
     event_bus.subscribe(re.compile(".*"), processor)
@@ -61,7 +60,7 @@ def test_sub_unsub(event_bus: EventBus, processor):
 
 From aries_cloudagent/core/event_bus.py
 
-```
+```python
 class EventBus:
     def __init__(self):
         self.topic_patterns_to_subscribers: Dict[Pattern, List[Callable]] = {}
@@ -84,7 +83,7 @@ def unsubscribe(self, pattern: Pattern, processor: Callable):
 
 ---
 
-```
+```python
 @pytest.mark.asyncio
 async def test_sub_notify(event_bus: EventBus, profile, event, processor):
     """Test subscriber receives event."""
@@ -94,7 +93,7 @@ async def test_sub_notify(event_bus: EventBus, profile, event, processor):
     assert processor.event == event
 ```
 
-```
+```python
 async def notify(self, profile: "Profile", event: Event):
     partials = []
     for pattern, subscribers in self.topic_patterns_to_subscribers.items():
@@ -125,7 +124,7 @@ async def notify(self, profile: "Profile", event: Event):
 
 From: aries_cloudagent/protocols/didexchange/v1_0/tests/test.manager.py
 
-```
+```python
 class TestDidExchangeManager(AsyncTestCase, TestConfig):
     async def setUp(self):
         self.responder = MockResponder()
@@ -183,7 +182,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
 
 ---
 
-```
+```python
 async def receive_invitation(
     self,
     invitation: OOBInvitationMessage,
@@ -242,7 +241,7 @@ async def receive_invitation(
 
 - Error catching
 
-```
+```python
   with self.assertRaises(DIDXManagerError) as ctx:
      ...
   assert " ... error ..." in str(ctx.exception)
@@ -255,4 +254,4 @@ async def receive_invitation(
   can be attributed at function or class level. Example, `@pytest.mark.indy`
   
 - Code coverage
-  ![](https://i.imgur.com/VhNYcje.png)
+  ![Code coverage screenshot](https://i.imgur.com/VhNYcje.png)
