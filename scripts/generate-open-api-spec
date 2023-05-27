@@ -209,10 +209,12 @@ if [ ! -d ${OPEN_API_SHARED_DIR} ]; then
 fi
 curl --output ${OPEN_API_SHARED_DIR}/acapy-raw.json http://localhost:${ACA_PY_ADMIN_PORT}/api/docs/swagger.json
 
-# Generate the native OpenAPI JSON spec file 
-runOpenAPIGenerate "${OPEN_API_MOUNT}/acapy-raw.json" openapi "${ROOT_DIR}/open-api/${OPEN_API_JSON_CONFIG}" "${OPEN_API_SHARED_DIR}"
+# Generate the native Swagger as well as the OpenAPI JSON spec file
+runOpenAPIGenerate "${ACAPY_SPEC_FILE}" swagger "${CONFIG_LOCATION}" "${OPEN_API_SHARED_DIR}"
+runOpenAPIGenerate "${ACAPY_SPEC_FILE}" openapi "${CONFIG_LOCATION}" "${OPEN_API_SHARED_DIR}"
 
-# Force over-write the version controlled openapi.json
+# Force over-write the version controlled .json files
+runEval "cp -f ${OPEN_API_SHARED_DIR}/swagger.json ${ROOT_DIR}/open-api/"
 runEval "cp -f ${OPEN_API_SHARED_DIR}/openapi.json ${ROOT_DIR}/open-api/"
 
 # Clean up the working directory.
