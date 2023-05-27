@@ -30,19 +30,15 @@ Another suggestion for code generation is to keep the `modelPropertyNaming` set 
 
 ### Python
 
-- https://pypi.org/project/aries-cloudcontroller/
-  - https://github.com/didx-xyz/aries-cloudcontroller-python
-- https://github.com/bcgov/traction/tree/develop/services/traction/acapy_client
-- https://github.com/Indicio-tech/acapy-client
+- [Aries Cloud Controller (PyPi)](https://pypi.org/project/aries-cloudcontroller/)
+  - [Aries Cloud Controller Python (GitHub / didx-xyz)](https://github.com/didx-xyz/aries-cloudcontroller-python)
+- [Traction (GitHub / bcgov)](https://github.com/bcgov/traction)
+- [acapy-client (GitHub / Indicio-tech)](https://github.com/Indicio-tech/acapy-client)
 
 ### Go
 
-- https://github.com/ldej/go-acapy-client
+- [go-acapy-client (GitHub / Idej)](https://github.com/ldej/go-acapy-client)
 
 ### Java
 
-- https://github.com/hyperledger-labs/acapy-java-client
-
-
-
-
+- [ACA-PY Java Client Library (GitHub / hyperledger-labs)](https://github.com/hyperledger-labs/acapy-java-client)
