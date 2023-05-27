@@ -170,10 +170,10 @@ function runOpenAPIGenerate() {
   # specify language generator.
   case ${generatorType} in
   swagger)
-    openAPICmd+=" -g swagger"
+    genSpecCmd+=" ${SWAGGER_GEN_CONTAINER} generate -l swagger"
     ;;
   openapi)
-    openAPICmd+=" -g openapi"
+    genSpecCmd+=" ${OPENAPI_GEN_CONTAINER} generate -g openapi"
     ;;
   *)
     echo "Unknown generator type: ${generatorType}"
