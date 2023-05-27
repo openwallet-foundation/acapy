@@ -187,11 +187,6 @@ function runOpenAPIGenerate() {
         \t ${openAPICmd}"
 
   ${openAPICmd}
-
-  # Copy the swagger output into the normalised output file name
-  if [[ ${OPEN_API_CONTAINER} = *swagger-codegen* ]] && [[ ${outputLang} = "swagger" ]]; then
-    runEval "cp ${hostSharedDir}/swagger.json ${hostSharedDir}/openapi.json"
-  fi
 }
 
 ##########################################################################################
