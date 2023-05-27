@@ -7,7 +7,7 @@
 ##########################################################################################
 
 SWAGGER_GEN_CONTAINER="swaggerapi/swagger-codegen-cli:2.4.32"
-OPENAPI_GEN_CONTAINER="openapitools/openapi-generator-cli:v6.6.0" 
+OPENAPI_GEN_CONTAINER="openapitools/openapi-generator-cli:v6.6.0"
 
 # Ensure the script is running from the directory containing this script
 cd $(dirname $0)
@@ -21,7 +21,6 @@ OUTPUT_DIR="${ROOT_DIR}/open-api"
 ##########################################################################################
 # Set some default values for ACA-Py, including the default image name and ports
 ACA_PY_DOCKER_IMAGE_DEFAULT="aries-cloudagent-run"
-
 ACA_PY_ADMIN_PORT="8305"
 ACA_PY_INBOUND_PORT="8307"
 ACA_PY_DOCKER_PORTS="${ACA_PY_INBOUND_PORT}:${ACA_PY_INBOUND_PORT} ${ACA_PY_ADMIN_PORT}:${ACA_PY_ADMIN_PORT}"
