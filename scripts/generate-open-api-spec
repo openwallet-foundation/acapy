@@ -6,6 +6,8 @@
 #
 ##########################################################################################
 
+OPENAPI_GEN_CONTAINER="openapitools/openapi-generator-cli:v6.6.0"
+
 # Make sure everything is done starting in our commands home directory
 cd $(dirname $0)
 
