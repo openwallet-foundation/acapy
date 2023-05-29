@@ -156,7 +156,7 @@ if [ -z "$AGENT_ENDPOINT" ] && [ "$RUNMODE" == "docker" ]; then
   echo "Trying to detect ngrok service endpoint"
   JQ=${JQ:-`which jq`}
   if [ -x "$JQ" ]; then
-    NGROK_ENDPOINT=$(curl --silent localhost:4040/api/tunnels | $JQ -r '.tunnels[0].public_url')
+    NGROK_ENDPOINT=$(curl --silent localhost:4040/api/tunnels | $JQ -r ".tunnels[] | select(.config.addr | endswith(\"$AGENT_PORT\")) | .public_url")
     if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
       echo "ngrok not detected for agent endpoint"
     else
