@@ -4,14 +4,13 @@ import logging
 import time
 from typing import Dict, Tuple, Union
 
-from aries_cloudagent.anoncreds.issuer import AnonCredsIssuer
-from aries_cloudagent.anoncreds.models.anoncreds_cred_def import CredDef
-
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....anoncreds.models.anoncreds_cred_def import CredDef
 from ....anoncreds.models.anoncreds_revocation import RevRegDef
 from ....anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ....anoncreds.models.xform import indy_proof_req2non_revoc_intervals
 from ....anoncreds.registry import AnonCredsRegistry
+from ....anoncreds.revocation import AnonCredsRevocation
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ..v1_0.models.presentation_exchange import V10PresentationExchange
@@ -193,9 +192,10 @@ class IndyPresExchHandler:
             if rev_reg_id not in revocation_states:
                 revocation_states[rev_reg_id] = {}
             rev_reg_def = revocation_registries[rev_reg_id]
-            # TODO Not an issuer specific operation to fetch tails
-            issuer = AnonCredsIssuer(self._profile)
-            tails_local_path = await issuer.get_or_fetch_local_tails_path(rev_reg_def)
+            revocation = AnonCredsRevocation(self._profile)
+            tails_local_path = await revocation.get_or_fetch_local_tails_path(
+                rev_reg_def
+            )
             try:
                 revocation_states[rev_reg_id][timestamp] = json.loads(
                     await self.holder.create_revocation_state(

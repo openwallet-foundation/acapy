@@ -14,13 +14,14 @@ from marshmallow import fields, validate
 
 from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...anoncreds.models.anoncreds_revocation import (
-    RevRegDef,
-    RevRegDefSchema,
     RevList,
     RevListResult,
     RevListSchema,
+    RevRegDef,
+    RevRegDefSchema,
 )
 from ...anoncreds.registry import AnonCredsRegistry
+from ...anoncreds.revocation import AnonCredsRevocation
 from ...anoncreds.util import indy_client_dir
 from ...core.profile import Profile, ProfileSession
 from ...ledger.base import BaseLedger
@@ -177,18 +178,20 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        issuer = AnonCredsIssuer(profile)
+        revocation = AnonCredsRevocation(profile)
 
         LOGGER.debug("Creating revocation registry with size: %d", self.max_cred_num)
 
         try:
-            result = await issuer.create_and_register_revocation_registry_definition(
-                self.issuer_id,
-                self.cred_def_id,
-                self.revoc_def_type,
-                self.tag,
-                self.max_cred_num,
-                self.options,
+            result = (
+                await revocation.create_and_register_revocation_registry_definition(
+                    self.issuer_id,
+                    self.cred_def_id,
+                    self.revoc_def_type,
+                    self.tag,
+                    self.max_cred_num,
+                    self.options,
+                )
             )
         except AnonCredsIssuerError as err:
             raise RevocationError() from err
@@ -198,7 +201,7 @@ class IssuerRevRegRecord(BaseRecord):
         self.state = IssuerRevRegRecord.STATE_POSTED
         self.tails_hash = result.rev_reg_def.value.tails_hash
         self.tails_public_uri = result.rev_reg_def.value.tails_location
-        self.tails_local_path = issuer.get_local_tails_path(result.rev_reg_def)
+        self.tails_local_path = revocation.get_local_tails_path(result.rev_reg_def)
 
         async with profile.session() as session:
             await self.save(session, reason="Generated registry")
@@ -371,8 +374,8 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        issuer = AnonCredsIssuer(profile)
-        result = await issuer.create_and_register_revocation_list(
+        revocation = AnonCredsRevocation(profile)
+        result = await revocation.create_and_register_revocation_list(
             self.revoc_reg_id,
             options,
         )

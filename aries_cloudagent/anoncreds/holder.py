@@ -21,6 +21,7 @@ from aries_askar import AskarError, AskarErrorCode
 from ..anoncreds.models.anoncreds_schema import AnonCredsSchema
 from ..askar.profile import AskarProfile
 from ..core.error import BaseError
+from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..wallet.error import WalletNotFoundError
 from .models.anoncreds_cred_def import CredDef
@@ -57,7 +58,7 @@ class AnonCredsHolder:
 
     MASTER_SECRET_ID = "default"
 
-    def __init__(self, profile: AskarProfile):
+    def __init__(self, profile: Profile):
         """
         Initialize an AnonCredsHolder instance.
 
@@ -68,15 +69,18 @@ class AnonCredsHolder:
         self._profile = profile
 
     @property
-    def profile(self):
+    def profile(self) -> AskarProfile:
         """Accessor for the profile instance."""
+        if not isinstance(self._profile, AskarProfile):
+            raise ValueError("AnonCreds interface requires Askar")
+
         return self._profile
 
     async def get_master_secret(self) -> str:
         """Get or create the default master secret."""
 
         while True:
-            async with self._profile.session() as session:
+            async with self.profile.session() as session:
                 try:
                     record = await session.handle.fetch(
                         CATEGORY_MASTER_SECRET, AnonCredsHolder.MASTER_SECRET_ID
@@ -237,7 +241,7 @@ class AnonCredsHolder:
                 mime_types[k] = credential_attr_mime_types[k]
 
         try:
-            async with self._profile.transaction() as txn:
+            async with self.profile.transaction() as txn:
                 await txn.handle.insert(
                     CATEGORY_CREDENTIAL,
                     credential_id,
@@ -270,12 +274,12 @@ class AnonCredsHolder:
         result = []
 
         try:
-            rows = self._profile.store.scan(
+            rows = self.profile.store.scan(
                 CATEGORY_CREDENTIAL,
                 wql,
                 start,
                 count,
-                self._profile.settings.get("wallet.askar_profile"),
+                self.profile.settings.get("wallet.askar_profile"),
             )
             async for row in rows:
                 cred = Credential.load(row.raw_value)
@@ -344,12 +348,12 @@ class AnonCredsHolder:
             if extra_query:
                 tag_filter = {"$and": [tag_filter, extra_query]}
 
-            rows = self._profile.store.scan(
+            rows = self.profile.store.scan(
                 CATEGORY_CREDENTIAL,
                 tag_filter,
                 start,
                 count,
-                self._profile.settings.get("wallet.askar_profile"),
+                self.profile.settings.get("wallet.askar_profile"),
             )
             async for row in rows:
                 if row.name in creds:
@@ -383,7 +387,7 @@ class AnonCredsHolder:
     async def _get_credential(self, credential_id: str) -> Credential:
         """Get an unencoded Credential instance from the store."""
         try:
-            async with self._profile.session() as session:
+            async with self.profile.session() as session:
                 cred = await session.handle.fetch(CATEGORY_CREDENTIAL, credential_id)
         except AskarError as err:
             raise AnonCredsHolderError("Error retrieving credential") from err
@@ -431,7 +435,7 @@ class AnonCredsHolder:
 
         """
         try:
-            async with self._profile.session() as session:
+            async with self.profile.session() as session:
                 await session.handle.remove(CATEGORY_CREDENTIAL, credential_id)
                 await session.handle.remove(
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES, credential_id
@@ -457,7 +461,7 @@ class AnonCredsHolder:
 
         """
         try:
-            async with self._profile.session() as session:
+            async with self.profile.session() as session:
                 mime_types_record = await session.handle.fetch(
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
                     credential_id,

@@ -1,49 +1,46 @@
 import asyncio
 from copy import deepcopy
-from time import time
 import json
+from time import time
+
 from asynctest import TestCase as AsyncTestCase
 from asynctest import mock as async_mock
 from marshmallow import ValidationError
 from more_itertools import side_effect
 
 from .. import handler as test_module
-
+from .......anoncreds.holder import AnonCredsHolder
+from .......anoncreds.issuer import AnonCredsIssuer
+from .......anoncreds.revocation import AnonCredsRevocationRegistryFullError
+from .......cache.base import BaseCache
+from .......cache.in_memory import InMemoryCache
 from .......core.in_memory import InMemoryProfile
 from .......ledger.base import BaseLedger
 from .......ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
-from .......multitenant.base import BaseMultitenantManager
-from .......multitenant.manager import MultitenantManager
-from .......anoncreds.issuer import AnonCredsIssuer
-from .......cache.in_memory import InMemoryCache
-from .......cache.base import BaseCache
-from .......storage.record import StorageRecord
-from .......storage.error import StorageNotFoundError
 from .......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from .......messaging.decorators.attach_decorator import AttachDecorator
-from .......anoncreds.holder import AnonCredsHolder
-from ....models.detail.indy import V20CredExRecordIndy
-from ....messages.cred_proposal import V20CredProposal
-from ....messages.cred_format import V20CredFormat
-from ....messages.cred_issue import V20CredIssue
-from ....messages.inner.cred_preview import V20CredPreview, V20CredAttrSpec
-from ....messages.cred_offer import V20CredOffer
-from ....messages.cred_request import (
-    V20CredRequest,
-)
-from ....models.cred_ex_record import V20CredExRecord
+from .......multitenant.base import BaseMultitenantManager
+from .......multitenant.manager import MultitenantManager
+from .......storage.error import StorageNotFoundError
+from .......storage.record import StorageRecord
 from ....message_types import (
     ATTACHMENT_FORMAT,
-    CRED_20_PROPOSAL,
-    CRED_20_OFFER,
-    CRED_20_REQUEST,
     CRED_20_ISSUE,
+    CRED_20_OFFER,
+    CRED_20_PROPOSAL,
+    CRED_20_REQUEST,
 )
-
+from ....messages.cred_format import V20CredFormat
+from ....messages.cred_issue import V20CredIssue
+from ....messages.cred_offer import V20CredOffer
+from ....messages.cred_proposal import V20CredProposal
+from ....messages.cred_request import V20CredRequest
+from ....messages.inner.cred_preview import V20CredAttrSpec, V20CredPreview
+from ....models.cred_ex_record import V20CredExRecord
+from ....models.detail.indy import V20CredExRecordIndy
 from ...handler import LOGGER, V20CredFormatError
-
 from ..handler import IndyCredFormatHandler
 from ..handler import LOGGER as INDY_LOGGER
 
@@ -1044,7 +1041,7 @@ class TestV20IndyCredFormatHandler(AsyncTestCase):
         )
 
         self.issuer.create_credential = async_mock.CoroutineMock(
-            side_effect=test_module.AnonCredsIssuerRevocationRegistryFullError("Nope")
+            side_effect=AnonCredsRevocationRegistryFullError("Nope")
         )
         with async_mock.patch.object(
             test_module, "IndyRevocation", autospec=True

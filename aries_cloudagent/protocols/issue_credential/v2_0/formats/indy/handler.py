@@ -6,6 +6,8 @@ from typing import Mapping, Tuple
 
 from marshmallow import RAISE
 
+from ......anoncreds.revocation import AnonCredsRevocation
+
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import (
@@ -325,10 +327,19 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         )
 
         issuer = AnonCredsIssuer(self.profile)
+        cred_def_id = cred_offer["cred_def_id"]
+        if await issuer.cred_def_supports_revocation(cred_def_id):
+            revocation = AnonCredsRevocation(self.profile)
+            cred_json, cred_rev_id, rev_reg_def_id = await revocation.create_credential(
+                cred_offer, cred_request, cred_values
+            )
+        else:
+            cred_json = await issuer.create_credential(
+                cred_offer, cred_request, cred_values
+            )
+            cred_rev_id = None
+            rev_reg_def_id = None
 
-        cred_json, cred_rev_id, rev_reg_def_id = await issuer.create_credential(
-            cred_offer, cred_request, cred_values
-        )
         result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
 
         async with self._profile.transaction() as txn:
@@ -392,8 +403,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             mime_types = cred_offer_message.credential_preview.mime_types() or None
 
         if rev_reg_def:
-            issuer = AnonCredsIssuer(self.profile)
-            await issuer.get_or_fetch_local_tails_path(rev_reg_def)
+            revocation = AnonCredsRevocation(self.profile)
+            await revocation.get_or_fetch_local_tails_path(rev_reg_def)
         try:
             detail_record = await self.get_detail_record(cred_ex_record.cred_ex_id)
             if detail_record is None:

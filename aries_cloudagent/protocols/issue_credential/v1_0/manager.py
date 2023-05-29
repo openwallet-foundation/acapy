@@ -3,35 +3,33 @@
 import asyncio
 import json
 import logging
-
 from typing import Mapping, Optional, Tuple
 
+from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
+from ....anoncreds.issuer import AnonCredsIssuer
+from ....anoncreds.revocation import (
+    AnonCredsRevocation,
+    AnonCredsRevocationRegistryFullError,
+)
 from ....cache.base import BaseCache
 from ....connections.models.conn_record import ConnRecord
 from ....core.error import BaseError
 from ....core.profile import Profile
-from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ....anoncreds.issuer import (
-    AnonCredsIssuer,
-    AnonCredsIssuerRevocationRegistryFullError,
-)
 from ....ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     GET_SCHEMA,
     IndyLedgerRequestsExecutor,
 )
 from ....messaging.credential_definitions.util import (
-    CRED_DEF_TAGS,
     CRED_DEF_SENT_RECORD_TYPE,
+    CRED_DEF_TAGS,
 )
 from ....messaging.responder import BaseResponder
 from ....multitenant.base import BaseMultitenantManager
-from ....revocation.anoncreds import AnonCredsRevocation
 from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....revocation.models.revocation_registry import RevocationRegistry
 from ....storage.base import BaseStorage
 from ....storage.error import StorageError, StorageNotFoundError
-
 from ...out_of_band.v1_0.models.oob_record import OobRecord
 from .messages.credential_ack import CredentialAck
 from .messages.credential_issue import CredentialIssue
@@ -43,9 +41,7 @@ from .messages.credential_problem_report import (
 from .messages.credential_proposal import CredentialProposal
 from .messages.credential_request import CredentialRequest
 from .messages.inner.credential_preview import CredentialPreview
-from .models.credential_exchange import (
-    V10CredentialExchange,
-)
+from .models.credential_exchange import V10CredentialExchange
 
 LOGGER = logging.getLogger(__name__)
 
@@ -665,7 +661,7 @@ class CredentialManager:
                         rev_reg_id,
                         tails_path,
                     )
-                except AnonCredsIssuerRevocationRegistryFullError:
+                except AnonCredsRevocationRegistryFullError:
                     # unlucky, another instance filled the registry first
                     continue
 
