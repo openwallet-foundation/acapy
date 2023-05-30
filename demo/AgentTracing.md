@@ -34,9 +34,9 @@ Environment variables:
 ```
 TRACE_ENABLED          Flag to enable tracing
 
-TRACE_TARGET_URL       Host:port of endpoint to log trace events (e.g. fluentd:8088)
+TRACE_TARGET_URL       Host:port of endpoint to log trace events (e.g. logstash:9700)
 
-DOCKER_NET             Docker network to join (must be used if EFK stack is running in docker)
+DOCKER_NET             Docker network to join (must be used if ELK stack is running in docker)
 
 TRACE_TAG              Tag to be included in all logged trace events
 ```
@@ -83,16 +83,16 @@ Faber      | Connected
 
 When `Exchange Tracing` is `ON`, all exchanges will include tracing.
 
-## Logging Trace Events to an EFK Stack
+## Logging Trace Events to an ELK Stack
 
-You can use the `EFK` stack in the [EFK sub-directory](./EFK-stack) as a target for trace events, just start the EFK stack using the docker-compose file and then in two separate bash shells, startup the demo as follows:
+You can use the `ELK` stack in the [ELK Stack sub-directory](./elk-stack) as a target for trace events, just start the ELK stack using the docker-compose file and then in two separate bash shells, startup the demo as follows:
 
 ```bash
-DOCKER_NET=efk-stack_efk_net TRACE_TARGET_URL=fluentd:8088 ./run_demo faber --trace-http
+DOCKER_NET=elknet TRACE_TARGET_URL=logstash:9700 ./run_demo faber --trace-http
 ```
 
 ```bash
-DOCKER_NET=efk-stack_efk_net TRACE_TARGET_URL=fluentd:8088 ./run_demo alice --trace-http
+DOCKER_NET=elknet TRACE_TARGET_URL=logstash:9700 ./run_demo alice --trace-http
 ```
 
 ## Hooking into event messaging
