@@ -197,8 +197,15 @@ class RouteManager(ABC):
 
         raise ValueError("Expected connection to have invitation_key")
 
-    async def route_public_did(self, profile: Profile, verkey: str):
+    async def route_verkey(self, profile: Profile, verkey: str):
         """Establish routing for a public DID."""
+        return await self._route_for_key(profile, verkey, skip_if_exists=True)
+
+    async def route_public_did(self, profile: Profile, verkey: str):
+        """Establish routing for a public DID.
+
+        [DEPRECATED] Establish routing for a public DID. Use route_verkey() instead.
+        """
         return await self._route_for_key(profile, verkey, skip_if_exists=True)
 
     async def route_static(

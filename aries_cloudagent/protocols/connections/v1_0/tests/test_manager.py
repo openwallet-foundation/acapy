@@ -146,7 +146,7 @@ class TestConnectionManager(AsyncTestCase):
     async def test_create_invitation_public(self):
         self.context.update_settings({"public_invites": True})
 
-        self.route_manager.route_public_did = async_mock.CoroutineMock()
+        self.route_manager.route_verkey = async_mock.CoroutineMock()
         with async_mock.patch.object(
             InMemoryWallet, "get_public_did", autospec=True
         ) as mock_wallet_get_public_did:
@@ -163,7 +163,7 @@ class TestConnectionManager(AsyncTestCase):
 
             assert connect_record
             assert connect_invite.did.endswith(self.test_did)
-            self.route_manager.route_public_did.assert_called_once_with(
+            self.route_manager.route_verkey.assert_called_once_with(
                 self.profile, self.test_verkey
             )
 
