@@ -58,7 +58,7 @@ services:
       - elk-network
 
   wallet-db:
-    image: postgres:15
+    image: postgres:14
     environment:
       - POSTGRES_USER=DB_USER
       - POSTGRES_PASSWORD=DB_PASSWORD
