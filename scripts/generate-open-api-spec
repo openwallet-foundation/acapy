@@ -1,23 +1,26 @@
 #!/bin/bash
 #
-# This script will build an ACA-py docker image, 
-# execute the openapi/swagger codegen tool and create an openapi.json spec file
-# for the ACA-py REST API.  
+# This script will build an ACA-py docker image,
+# execute the openapi/swagger codegen tool and create a swagger.json and openapi.json spec file
+# for the ACA-py REST API.
 #
 ##########################################################################################
 
-# Make sure everything is done starting in our commands home directory
+SWAGGER_GEN_CONTAINER="swaggerapi/swagger-codegen-cli:2.4.32"
+OPENAPI_GEN_CONTAINER="openapitools/openapi-generator-cli:v6.6.0"
+
+# Ensure the script is running from the directory containing this script
 cd $(dirname $0)
 
-# Establish basic context of where things exist
+# Define the root and output directories
 ROOT_DIR="${PWD}/.."
 OUTPUT_DIR="${ROOT_DIR}/open-api"
 
 ##########################################################################################
 # Global Defaults and Constants
 ##########################################################################################
+# Set some default values for ACA-Py, including the default image name and ports
 ACA_PY_DOCKER_IMAGE_DEFAULT="aries-cloudagent-run"
-
 ACA_PY_ADMIN_PORT="8305"
 ACA_PY_INBOUND_PORT="8307"
 ACA_PY_DOCKER_PORTS="${ACA_PY_INBOUND_PORT}:${ACA_PY_INBOUND_PORT} ${ACA_PY_ADMIN_PORT}:${ACA_PY_ADMIN_PORT}"
@@ -37,6 +40,7 @@ ACA_PY_CMD_OPTIONS=" \
   --jwt-secret test \
   --no-ledger"
 
+# Specify openAPI JSON config file and shared directory
 OPEN_API_JSON_CONFIG="openAPIJSON.config"
 OPEN_API_SHARED_DIR="${OUTPUT_DIR}/.build"
 
@@ -51,12 +55,12 @@ function runEval() {
   returnValue=$?
   if [ $returnValue != 0 ]; then
     echo "Command ${1} failed"
-    exit -1
+    exit 1
   fi
   return $returnValue
 }
 
-# Print an indication of script reaching a processing 
+# Print an indication of script reaching a processing
 # milestone in a noticable way
 # $1 : Message string to print
 function printMilestone() {
@@ -67,13 +71,11 @@ function printMilestone() {
   echo -e "##########################################################################################\n"
 }
 
-
 # Wait for a web server to provide a funcitoning interface we can use
 # $1 : Url to poll that indicates webserver initialsation complete
 # $2 : maximum number of seconds to wait
 function waitActiveWebInterface() {
-  for (( i=1; i < ${2}; i++))
-  do
+  for ((i = 1; i < ${2}; i++)); do
     curl -s -f ${1}
     if [ $? == 0 ]; then
       return 0
@@ -104,8 +106,8 @@ function buildACAPyDockerImage() {
 # $2: The port mapping from docker to local host in format "docker1:local1 docker2:local2"
 # $3: The ACA-py command line arguements
 # $4: The name of a variable to return the continer ID to
-function runACAPy() { 
-  local acaPyImage="${1}" 
+function runACAPy() {
+  local acaPyImage="${1}"
   local ports="${2}"
   local acaPyArgs="${3}"
   local result="${4}"
@@ -115,12 +117,12 @@ function runACAPy() {
     args="${args} -p ${port}"
   done
 
-  # Mount the agent logs onto the hosting machine 
+  # Mount the agent logs onto the hosting machine
   args="${args} -v /$(pwd)/../logs:/home/indy/logs"
 
   randName=$(cat /dev/urandom | env LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
   acaPyCmd="docker run -d --rm  --name ${acaPyImage}_${randName} ${args} \
-              ${acaPyImage} start ${acaPyArgs}" 
+              ${acaPyImage} start ${acaPyArgs}"
   printMilestone "Starting ACA-py docker image with command: \n \
         \t ${acaPyCmd}"
 
@@ -128,77 +130,79 @@ function runACAPy() {
   containerId=$(${acaPyCmd})
   local returnStatus=$?
   if [[ ${returnStatus} != 0 ]]; then
-      echo "**** FAIL - ACA-Py failed to start, exiting. ****"
-      exit 1
+    echo "**** FAIL - ACA-Py failed to start, exiting. ****"
+    exit 1
   fi
   if [[ "${result}" ]]; then
     eval ${result}="'${containerId}'"
   fi
 }
 
-
-OPEN_API_CONTAINER="swaggerapi/swagger-codegen-cli:2.4.15"
-# OPEN_API_CONTAINER="openapitools/openapi-generator-cli:v4.3.1"
-OPEN_API_OPTIONS=" "
 OPEN_API_MOUNT="/local"
+ACAPY_SPEC_FILE="acapy-raw.json"
+CONFIG_LOCATION="${ROOT_DIR}/open-api/${OPEN_API_JSON_CONFIG}"
 
 # Pull the open API docker image and run it against the specified web server
 # or local spec file.
 # $1 : Web OpenAPI URL or local file to generate API routines from.
-# $2 : Language to generate 
+# $2 : Language to generate (swagger or openapi)
 # $3 : Language config file location
 # $4 : The host shared dir for input/output
 function runOpenAPIGenerate() {
   local specFile="${1}"
-  local outputLang="${2}"
+  local generatorType="${2}"
   local configLocation="${3}"
   local hostSharedDir="${4}"
 
   runEval "mkdir -p ${hostSharedDir}"
-  
+
   if [ ! -z ${configLocation} ]; then
     runEval "cp ${configLocation} ${hostSharedDir}/"
     configFile="$(basename -- ${configLocation})"
   fi
 
-  openAPICmd="docker run --rm  --user $(id -u):$(id -g) -v ${hostSharedDir}:${OPEN_API_MOUNT} ${OPEN_API_CONTAINER} generate \
-  --input-spec ${specFile} \
-  --output ${OPEN_API_MOUNT}"
- 
-  # If using the swagger version of code generator the options are different
-  # to specify language generator.
-  if [[ ${OPEN_API_CONTAINER} = *swagger-codegen* ]]; then
-    if [[ ${outputLang} = "openapi" ]]; then
-      # Generating the json output is a different language name in swagger
-      outputLang="swagger"
-    fi
-    openAPICmd+=" --lang ${outputLang} ${OPEN_API_OPTIONS} "
-  else
-    openAPICmd+=" --generator-name ${outputLang} ${OPEN_API_OPTIONS} "
-  fi
+  genSpecCmd="docker run --rm  --user $(id -u):$(id -g) -v ${hostSharedDir}:${OPEN_API_MOUNT}"
+
+  # specify language generator.
+  case ${generatorType} in
+  swagger)
+    genSpecCmd+=" ${SWAGGER_GEN_CONTAINER} generate -l swagger"
+    ;;
+  openapi)
+    genSpecCmd+=" ${OPENAPI_GEN_CONTAINER} generate -g openapi"
+    ;;
+  *)
+    echo "Unknown generator type: ${generatorType}"
+    exit 1
+    ;;
+  esac
+
+  genSpecCmd+=" --input-spec ${specFile} --output ${OPEN_API_MOUNT}"
 
   if [ ! -z ${configFile} ]; then
-    openAPICmd+=" --config ${OPEN_API_MOUNT}/${configFile}"
+    genSpecCmd+=" --config ${OPEN_API_MOUNT}/${configFile}"
   fi
 
-  printMilestone "Starting Open API code generation with command: \n \
-        \t ${openAPICmd}"
+  printMilestone "Starting ${generatorType} code generation with command: \n \
+        \t ${genSpecCmd}"
 
-  ${openAPICmd}
-
-  # Copy the swagger output into the normalised output file name
-  if [[ ${OPEN_API_CONTAINER} = *swagger-codegen* ]] && [[ ${outputLang} = "swagger" ]]; then
-    runEval "cp ${hostSharedDir}/swagger.json ${hostSharedDir}/openapi.json"
-  fi
+  ${genSpecCmd}
 }
 
 ##########################################################################################
 # Run docker ACA-py image and pull REST API spec file to generate json format
-##########################################################################################  
+##########################################################################################
+
+# Build the ACA-Py Docker image from the current code
 buildACAPyDockerImage "${ROOT_DIR}" "${ACA_PY_DOCKER_IMAGE_DEFAULT}"
-runACAPy "${ACA_PY_DOCKER_IMAGE_DEFAULT}" "${ACA_PY_DOCKER_PORTS}" "${ACA_PY_CMD_OPTIONS}" ACA_PY_CONTAINER_ID 
-# Make sure ACA-py container gets terminated when we do
+
+# Run the ACA-Py Docker image
+runACAPy "${ACA_PY_DOCKER_IMAGE_DEFAULT}" "${ACA_PY_DOCKER_PORTS}" "${ACA_PY_CMD_OPTIONS}" ACA_PY_CONTAINER_ID
+
+# Ensure the ACA-Py container is killed when the script exits
 trap 'docker kill ${ACA_PY_CONTAINER_ID}' EXIT
+
+# Wait for the ACA-Py web interface to become active
 waitActiveWebInterface "http://localhost:${ACA_PY_ADMIN_PORT}" 20
 returnValue=$?
 if [ $returnValue != 0 ]; then
@@ -206,18 +210,21 @@ if [ $returnValue != 0 ]; then
 fi
 printMilestone "ACA-Py Admin interface active\n\t Docker Id '${ACA_PY_CONTAINER_ID}'"
 
-# Pull the swagger raw format spec file from ACA-py
-if [ ! -d ${OPEN_API_SHARED_DIR} ]; then 
-  mkdir -p ${OPEN_API_SHARED_DIR}; 
+# Create the shared directory if it doesn't already exist
+if [ ! -d ${OPEN_API_SHARED_DIR} ]; then
+  mkdir -p ${OPEN_API_SHARED_DIR}
 fi
-curl --output ${OPEN_API_SHARED_DIR}/acapy-raw.json http://localhost:${ACA_PY_ADMIN_PORT}/api/docs/swagger.json
 
-# Generate the native OpenAPI JSON spec file 
-runOpenAPIGenerate "${OPEN_API_MOUNT}/acapy-raw.json" openapi "${ROOT_DIR}/open-api/${OPEN_API_JSON_CONFIG}" "${OPEN_API_SHARED_DIR}"
+# Download the Swagger specification from the ACA-Py service
+curl --output "${OPEN_API_SHARED_DIR}/${ACAPY_SPEC_FILE}" http://localhost:${ACA_PY_ADMIN_PORT}/api/docs/swagger.json
 
-# Force over-write the version controlled openapi.json
+# Use the OpenAPI Generator to create both Swagger and OpenAPI spec files from the downloaded Swagger specification
+runOpenAPIGenerate "${OPEN_API_MOUNT}/${ACAPY_SPEC_FILE}" swagger "${CONFIG_LOCATION}" "${OPEN_API_SHARED_DIR}"
+runOpenAPIGenerate "${OPEN_API_MOUNT}/${ACAPY_SPEC_FILE}" openapi "${CONFIG_LOCATION}" "${OPEN_API_SHARED_DIR}"
+
+# Overwrite the existing Swagger and OpenAPI spec files
+runEval "cp -f ${OPEN_API_SHARED_DIR}/swagger.json ${ROOT_DIR}/open-api/"
 runEval "cp -f ${OPEN_API_SHARED_DIR}/openapi.json ${ROOT_DIR}/open-api/"
 
 # Clean up the working directory.
-rm -Rf ${OPEN_API_SHARED_DIR};
-
+rm -Rf ${OPEN_API_SHARED_DIR}
