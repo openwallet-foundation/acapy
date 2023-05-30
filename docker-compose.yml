@@ -61,7 +61,7 @@ services:
 
   tails:
     platform: linux/amd64
-    image: ghcr.io/indicio-tech/tails-server:sha-d45f581
+    image: ghcr.io/indicio-tech/tails-server:sha-3d2feb2
     ports:
       - 6543:6543
     environment:

@@ -1319,7 +1319,9 @@ async def on_revocation_registry_init_event(profile: Profile, event: Event):
     # Generate the registry and upload the tails file
     async def generate(rr_record: IssuerRevRegRecord) -> dict:
         await rr_record.generate_registry(profile)
-        public_uri = tails_base_url.rstrip("/") + f"/{registry_record.revoc_reg_id}"
+        public_uri = (
+            tails_base_url.rstrip("/") + f"/{registry_record.revoc_reg_id}"
+        )  # TODO: update to include /hash
         await rr_record.set_tails_file_public_uri(profile, public_uri)
         rev_reg_resp = await rr_record.send_def(
             profile,

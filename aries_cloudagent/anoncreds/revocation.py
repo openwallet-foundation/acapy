@@ -371,7 +371,7 @@ class AnonCredsRevocation:
             raise AnonCredsRevocationError("tails_server_base_url not configured")
 
         public_tails_uri = (
-            tails_base_url.rstrip("/") + f"/{rev_reg_def.value.tails_hash}"
+            tails_base_url.rstrip("/") + f"/hash/{rev_reg_def.value.tails_hash}"
         )
 
         self._check_url(public_tails_uri)

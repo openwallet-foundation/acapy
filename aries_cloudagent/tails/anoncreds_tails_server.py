@@ -47,7 +47,7 @@ class AnonCredsTailsServer(BaseTailsServer):
                 "tails_server_upload_url setting is not set"
             )
 
-        upload_url = tails_server_upload_url.rstrip("/") + f"/{filename}"
+        upload_url = tails_server_upload_url.rstrip("/") + f"/hash/{filename}"
 
         try:
             await put_file(
