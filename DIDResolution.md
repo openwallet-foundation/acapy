@@ -1,25 +1,26 @@
 # DID Resolution in ACA-Py
+
 Decentralized Identifiers, or DIDs, are URIs that point to documents that describe cryptographic primitives and protocols used in decentralized identity management. DIDs include methods that describe where and how documents can be retrieved. DID resolution is the process of "resolving" a DID Document from a DID as dictated by the DID method.
 
 A DID Resolver is a piece of software that implements the methods for resolving a document from a DID.
 
 For example, given the DID `did:example:1234abcd`, a DID Resolver that supports `did:example` might return:
 
-```json=
+```json
 {
-	"@context": "https://www.w3.org/ns/did/v1",
-	"id": "did:example:1234abcd",
-	"verificationMethod": [{
-		"id": "did:example:1234abcd#keys-1",
-		"type": "Ed25519VerificationKey2018",
-		"controller": "did:example:1234abcd",
-		"publicKeyBase58": "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
-	}],
-	"service": [{
-		"id": "did:example:1234abcd#did-communication",
-		"type": "did-communication",
-		"serviceEndpoint": "https://agent.example.com/8377464"
-	}]
+ "@context": "https://www.w3.org/ns/did/v1",
+ "id": "did:example:1234abcd",
+ "verificationMethod": [{
+  "id": "did:example:1234abcd#keys-1",
+  "type": "Ed25519VerificationKey2018",
+  "controller": "did:example:1234abcd",
+  "publicKeyBase58": "H3C2AVvLMv6gmMNam3uVAjZpfkcJCwDwnZn6z3wXmqPV"
+ }],
+ "service": [{
+  "id": "did:example:1234abcd#did-communication",
+  "type": "did-communication",
+  "serviceEndpoint": "https://agent.example.com/8377464"
+ }]
 }
 ```
 
@@ -31,8 +32,9 @@ In practice, DIDs and DID Documents are used for a variety of purposes but espec
 
 In ACA-Py, the `DIDResolver` provides the interface to resolve DIDs using registered method resolvers. Method resolver registration happens on startup in a `did_resolvers` list. This registry enables additional resolvers to be loaded via plugin.
 
-#### Example usage:
-```python=
+### Example usage
+
+```python
 class ExampleMessageHandler:
     async def handle(context: RequestContext, responder: BaseResponder):
     """Handle example message."""
@@ -87,6 +89,7 @@ async def setup(context: InjectionContext):
 ```
 
 #### `example_resolver.py`
+
 ```python=
 import re
 from typing import Pattern
@@ -133,25 +136,26 @@ class ExampleResolver(BaseDIDResolver):
 ```
 
 #### Errors
+
 There are 3 different errors associated with resolution in ACA-Py that could be used for development purposes.
 
 - ResolverError
-    - Base class for resolver exceptions.
+  - Base class for resolver exceptions.
 - DIDNotFound
-    - Raised when DID is not found using DID method specific algorithm.
+  - Raised when DID is not found using DID method specific algorithm.
 - DIDMethodNotSupported
-    - Raised when no resolver is registered for a given did method.
+  - Raised when no resolver is registered for a given did method.
 
 ### Using Resolver Plugins
 
-In this section, the [Github Resolver Plugin found here](https://github.com/dbluhm/acapy-resolver-github) will be used as an an example plugin to work with. This resolver resolves `did:github` DIDs. 
+In this section, the [Github Resolver Plugin found here](https://github.com/dbluhm/acapy-resolver-github) will be used as an an example plugin to work with. This resolver resolves `did:github` DIDs.
 
 The resolution algorithm is simple: for the github DID `did:github:dbluhm`, the method specific identifier `dbluhm` (a GitHub username) is used to lookup a `index.jsonld` file in the `ghdid` repository in that GitHub users profile. See [GitHub DID Method Specification](http://docs.github-did.com/did-method-spec/) for more details.
 
 To use this plugin, first install it into your project's python environment:
 
 ```shell
-$ pip install git+https://github.com/dbluhm/acapy-resolver-github
+pip install git+https://github.com/dbluhm/acapy-resolver-github
 ```
 
 Then, invoke ACA-Py as you normally do with the addition of:
@@ -163,7 +167,8 @@ $ aca-py start \
 ```
 
 Or add the following to your configuration file:
-```yaml=
+
+```yaml
 plugin:
   - acapy_resolver_github
 ```
@@ -180,16 +185,19 @@ CMD ["aca-py", "start", "-it", "http", "0.0.0.0", "3000", "-ot", "http", "-e", "
 ```
 
 To use the above dockerfile:
+
 ```shell
-$ docker build -t resolver-example .
-$ docker run --rm -it -p 3000:3000 -p 3001:3001 resolver-example
+docker build -t resolver-example .
+docker run --rm -it -p 3000:3000 -p 3001:3001 resolver-example
 ```
 
 ### Directory of Resolver Plugins
+
 - [Github Resolver](https://github.com/dbluhm/acapy-resolver-github)
 - [Universal Resolver](https://github.com/sicpa-dlab/acapy-resolver-universal)
 - [DIDComm Resolver](https://github.com/sicpa-dlab/acapy-resolver-didcomm)
 
 ## References
-https://www.w3.org/TR/did-core/
-https://w3c-ccg.github.io/did-resolution/
+
+<https://www.w3.org/TR/did-core/>
+<https://w3c-ccg.github.io/did-resolution/>

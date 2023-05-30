@@ -7,6 +7,7 @@ on:
 
 jobs:
   tests:
+    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
     name: Tests
     strategy:
       fail-fast: false
@@ -22,6 +23,7 @@ jobs:
       os: ${{ matrix.os }}
 
   tests-indy:
+    if: github.repository == 'hyperledger/aries-cloudagent-python' || github.event_name == 'workflow_dispatch'
     name: Tests (Indy)
     strategy:
       fail-fast: false
@@ -31,7 +33,6 @@ jobs:
         include:
           - os: "ubuntu-20.04"
             python-version: "3.6"
-
     uses: ./.github/workflows/tests-indy.yml
     with:
       python-version: ${{ matrix.python-version }}
