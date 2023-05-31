@@ -196,7 +196,7 @@ class ConnectionManager(BaseConnectionManager):
 
             # Add mapping for multitenant relaying.
             # Mediation of public keys is not supported yet
-            await self._route_manager.route_public_did(self.profile, public_did.verkey)
+            await self._route_manager.route_verkey(self.profile, public_did.verkey)
 
         else:
             # Create connection record
