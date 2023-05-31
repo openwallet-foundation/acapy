@@ -19,6 +19,8 @@ from indy_credx import (
     Schema,
 )
 
+from aries_cloudagent.anoncreds.revocation import REV_REG_DEF_STATE_ACTIVE
+
 from ...askar.profile import AskarProfile
 
 from ..issuer import (
@@ -592,6 +594,7 @@ class IndyCredxIssuer(IndyIssuer):
 
         rev_reg_def_id = rev_reg_def.id
         rev_reg_def_json = rev_reg_def.to_json()
+        rev_reg_def_json["state"] = REV_REG_DEF_STATE_ACTIVE
         rev_reg_json = rev_reg.to_json()
 
         try:
@@ -603,7 +606,10 @@ class IndyCredxIssuer(IndyIssuer):
                     value_json={"curr_id": 0, "used_ids": []},
                 )
                 await txn.handle.insert(
-                    CATEGORY_REV_REG_DEF, rev_reg_def_id, rev_reg_def_json
+                    CATEGORY_REV_REG_DEF,
+                    rev_reg_def_id,
+                    rev_reg_def_json,
+                    {"active": True},
                 )
                 await txn.handle.insert(
                     CATEGORY_REV_REG_DEF_PRIVATE,

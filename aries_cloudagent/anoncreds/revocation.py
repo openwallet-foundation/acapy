@@ -21,11 +21,14 @@ from aries_askar.error import AskarError
 import base58
 from requests import RequestException, Session
 
+
 from ..askar.profile import AskarProfile, AskarProfileSession
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..tails.base import BaseTailsServer
 from .issuer import (
+    STATE_REVOCATION_PENDING,
+    STATE_REVOCATION_POSTED,
     AnonCredsIssuer,
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,
@@ -47,6 +50,7 @@ CATEGORY_REV_REG_INFO = "revocation_reg_info"
 CATEGORY_REV_REG_DEF = "revocation_reg_def"
 CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
 CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
+REV_REG_DEF_STATE_ACTIVE = "active"
 
 
 class AnonCredsRevocationError(BaseError):
@@ -86,6 +90,29 @@ class AnonCredsRevocation:
 
     # Revocation artifact management
 
+    async def _update_rev_list_record(
+        self, txn: AskarProfileSession, state, rev_reg_def_id: str
+    ):
+        entry = await txn.handle.fetch(
+            CATEGORY_REV_LIST,
+            rev_reg_def_id,
+            for_update=True,
+        )
+        if not entry:
+            raise AnonCredsRevocationError(
+                f"{CATEGORY_REV_LIST} with rev_reg_def_id "
+                f"{rev_reg_def_id} could not be found"
+            )
+
+        tags = entry.tags
+        tags["state"] = state
+        await txn.handle.insert(
+            CATEGORY_REV_LIST,
+            rev_reg_def_id,
+            value=entry.value,
+            tags=tags,
+        )
+
     async def _finish_registration(
         self, txn: AskarProfileSession, category: str, job_id: str, registered_id: str
     ):
@@ -108,6 +135,36 @@ class AnonCredsRevocation:
             tags=tags,
         )
         await txn.handle.remove(category, job_id)
+
+    async def mark_pending_revocation(self, txn: AskarProfileSession, rev_reg_id):
+        await self._update_rev_list_record(txn, STATE_REVOCATION_PENDING, rev_reg_id)
+
+    async def clear_pending_revocation(self, txn: AskarProfileSession, rev_reg_id):
+        await self._update_rev_list_record(txn, STATE_REVOCATION_POSTED, rev_reg_id)
+
+    async def set_active_registry(
+        self, txn: AskarProfileSession, state, revoc_reg_id: str
+    ):
+        entry = await txn.handle.fetch(
+            CATEGORY_REV_REG_DEF,
+            revoc_reg_id,
+            for_update=True,
+        )
+        if not entry:
+            raise AnonCredsRevocationError(
+                f"{CATEGORY_REV_REG_DEF} with revoc_reg_id "
+                f"{revoc_reg_id} could not be found"
+            )
+
+        tags = entry.tags
+        tags["state"] = REV_REG_DEF_STATE_ACTIVE
+        tags["active"] = True
+        await txn.handle.insert(
+            CATEGORY_REV_REG_DEF,
+            revoc_reg_id,
+            value=entry.value,
+            tags=tags,
+        )
 
     async def create_and_register_revocation_registry_definition(
         self,
