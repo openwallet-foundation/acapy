@@ -44,8 +44,6 @@ from .util import (
     # WARNING_VERSION_NOT_SUPPORTED,
 )
 
-LOGGER_NAME = __name__
-
 
 class ProblemReportParseError(MessageParseError):
     """Error to raise on failure to parse problem-report message."""
@@ -66,7 +64,7 @@ class Dispatcher:
         self.task_queue: TaskQueue = None
         self._logger: logging.Logger = get_logger_inst(
             profile=self.profile,
-            logger_name=LOGGER_NAME,
+            logger_name=__name__,
         )
 
     async def setup(self):

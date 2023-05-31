@@ -26,7 +26,6 @@ from ..error import WalletKeyMissingError
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_LOG_LEVEL": "log.level",
-    "ACAPY_LOG_ALIAS": "log.alias",
     "ACAPY_INVITE_PUBLIC": "debug.invite_public",
     "ACAPY_PUBLIC_INVITES": "public_invites",
     "ACAPY_AUTO_ACCEPT_INVITES": "debug.auto_accept_invites",

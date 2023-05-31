@@ -40,8 +40,6 @@ from .models.connection_target import ConnectionTarget
 from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
 from ..wallet.util import bytes_to_b58, b64_to_bytes
 
-LOGGER_NAME = __name__
-
 
 class BaseConnectionManagerError(BaseError):
     """BaseConnectionManager error."""
@@ -64,7 +62,7 @@ class BaseConnectionManager:
         self._route_manager = profile.inject(RouteManager)
         self._logger: logging.Logger = get_logger_inst(
             profile=self._profile,
-            logger_name=LOGGER_NAME,
+            logger_name=__name__,
         )
 
     async def create_did_document(

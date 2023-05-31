@@ -23,8 +23,6 @@ from ..transport.wire_format import JsonWireFormat
 from .error import BaseError
 from .profile import Profile
 
-LOGGER_NAME = __name__
-
 
 class OobMessageProcessorError(BaseError):
     """Base error for OobMessageProcessor."""
@@ -74,7 +72,7 @@ class OobMessageProcessor:
         """Find connection target for the outbound message."""
         _logger: logging.Logger = get_logger_inst(
             profile=profile,
-            logger_name=LOGGER_NAME,
+            logger_name=__name__,
         )
         try:
             async with profile.session() as session:
@@ -127,7 +125,7 @@ class OobMessageProcessor:
         oob_record = None
         _logger: logging.Logger = get_logger_inst(
             profile=context.profile,
-            logger_name=LOGGER_NAME,
+            logger_name=__name__,
         )
 
         async with context.profile.session() as session:
@@ -320,7 +318,7 @@ class OobMessageProcessor:
         """Message handler for inbound messages."""
         _logger: logging.Logger = get_logger_inst(
             profile=profile,
-            logger_name=LOGGER_NAME,
+            logger_name=__name__,
         )
         supported_types = [
             CREDENTIAL_OFFER,
