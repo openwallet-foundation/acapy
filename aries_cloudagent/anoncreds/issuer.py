@@ -31,8 +31,6 @@ CATEGORY_CRED_DEF = "credential_def"
 CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
 CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
 STATE_FINISHED = "finished"
-STATE_REVOCATION_POSTED = "posted"
-STATE_REVOCATION_PENDING = "pending"
 
 EVENT_PREFIX = "acapy::anoncreds::"
 EVENT_SCHEMA = EVENT_PREFIX + CATEGORY_SCHEMA

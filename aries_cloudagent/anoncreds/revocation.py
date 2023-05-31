@@ -27,8 +27,6 @@ from ..core.error import BaseError
 from ..core.profile import Profile
 from ..tails.base import BaseTailsServer
 from .issuer import (
-    STATE_REVOCATION_PENDING,
-    STATE_REVOCATION_POSTED,
     AnonCredsIssuer,
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,
@@ -50,6 +48,8 @@ CATEGORY_REV_REG_INFO = "revocation_reg_info"
 CATEGORY_REV_REG_DEF = "revocation_reg_def"
 CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
 CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
+STATE_REVOCATION_POSTED = "posted"
+STATE_REVOCATION_PENDING = "pending"
 REV_REG_DEF_STATE_ACTIVE = "active"
 
 
@@ -157,7 +157,6 @@ class AnonCredsRevocation:
             )
 
         tags = entry.tags
-        tags["state"] = REV_REG_DEF_STATE_ACTIVE
         tags["active"] = True
         await txn.handle.insert(
             CATEGORY_REV_REG_DEF,
