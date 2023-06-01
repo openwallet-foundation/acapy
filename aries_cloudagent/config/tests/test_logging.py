@@ -13,6 +13,7 @@ from ...wallet.base import BaseWallet
 from ...wallet.did_method import SOV, DIDMethods
 from ...wallet.key_type import ED25519
 
+
 class TestLoggingConfigurator(AsyncTestCase):
     agent_label_arg_value = "Aries Cloud Agent"
     transport_arg_value = "transport"
