@@ -190,6 +190,71 @@ WebSocket example:
 }
 ```
 
+## Per tenant settings
+
+To allow configurablity of ACA-Py startup parameters/environment variables at a tenant/subwallet level. [PR#2233](https://github.com/hyperledger/aries-cloudagent-python/pull/2233) will provide the ability to update the following subset of settings when creating or updating the subwallet:
+
+| Label  | Setting  |
+|---|---|
+| ACAPY_LOG_LEVEL  |  log.level |
+| ACAPY_INVITE_PUBLIC  |  debug.invite_public  |
+| ACAPY_PUBLIC_INVITES  | public_invites  |
+| ACAPY_AUTO_ACCEPT_INVITES  | debug.auto_accept_invites  |
+| ACAPY_AUTO_ACCEPT_REQUESTS  | debug.auto_accept_requests  |
+| ACAPY_AUTO_PING_CONNECTION  | auto_ping_connection  |
+| ACAPY_MONITOR_PING  | debug.monitor_ping  |
+| ACAPY_AUTO_RESPOND_MESSAGES  | debug.auto_respond_messages  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER  | debug.auto_resopnd_credential_offer  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST  | debug.auto_respond_credential_request  |
+| ACAPY_AUTO_VERIFY_PRESENTATION  | debug.auto_verify_presentation  |
+| ACAPY_NOTIFY_REVOCATION  | revocation.notify  |
+| ACAPY_AUTO_REQUEST_ENDORSEMENT  | endorser.auto_request  |
+| ACAPY_AUTO_WRITE_TRANSACTIONS  | endorser.auto_write  |
+| ACAPY_CREATE_REVOCATION_TRANSACTIONS  | endorser.auto_create_rev_reg  |
+| ACAPY_ENDORSER_ROLE  | endorser.protocol_role  |
+
+- `POST /multitenancy/wallet`
+
+  Added `extra_settings` dict field to request schema. `extra_settings` can be configured in the request body as below:
+
+  ```
+  Example request body
+  {
+      "wallet_name": " ... ",
+      "default_label": " ... ",
+      "wallet_type": " ... ",
+      "wallet_key": " ... ",
+      "key_management_mode": "managed",
+      "wallet_webhook_urls": [],
+      "wallet_dispatch_type": "base",
+      "extra_settings": {
+          "ACAPY_LOG_LEVEL": "INFO",
+          "ACAPY_INVITE_PUBLIC": "true",
+          "ACAPY_PUBLIC_INVITES": "True",
+      },
+  }
+  ```
+
+- `PUT /multitenancy/wallet/{wallet_id}`
+
+  Added `extra_settings` dict field to request schema.
+
+  ```
+  {
+    "wallet_webhook_urls": [ ... ],
+    "wallet_dispatch_type": "default",
+    "label": " ... ",
+    "image_url": " ... ",
+    "extra_settings": {
+        "ACAPY_LOG_LEVEL": "INFO",
+        "ACAPY_INVITE_PUBLIC": "True",
+        "ACAPY_PUBLIC_INVITES": "false",
+    },
+  }
+  ```
+
+All the currently suppoorted settings in `extra_settings` are either accepting str or boolean. But the bool attributes in the request body should be passed along as a string such as `"true", "True", "false", "False"`.
+
 ## Authentication
 
 When multi-tenancy is not enabled you can authenticate with the agent using the `x-api-key` header. As there is only a single wallet, this provides sufficient authentication and authorization.
