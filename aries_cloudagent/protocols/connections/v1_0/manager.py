@@ -1088,7 +1088,13 @@ class ConnectionManager(BaseConnectionManager):
 
                     targets = await self.fetch_connection_targets(connection)
 
-                    await entry.set_result([row.serialize() for row in targets], 3600)
+                    if connection.state == ConnRecord.State.COMPLETED.rfc160:
+                        # Only set cache if connection has reached completed state
+                        # Otherwise, a replica that participated early in exchange
+                        # may have bad data set in cache.
+                        await entry.set_result(
+                            [row.serialize() for row in targets], 3600
+                        )
         else:
             targets = await self.fetch_connection_targets(connection)
         return targets
