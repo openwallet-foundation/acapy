@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import http
+import json
 import logging
 import os
 from pathlib import Path
@@ -90,29 +91,6 @@ class AnonCredsRevocation:
 
     # Revocation artifact management
 
-    async def _update_rev_list_record(
-        self, txn: AskarProfileSession, state, rev_reg_def_id: str
-    ):
-        entry = await txn.handle.fetch(
-            CATEGORY_REV_LIST,
-            rev_reg_def_id,
-            for_update=True,
-        )
-        if not entry:
-            raise AnonCredsRevocationError(
-                f"{CATEGORY_REV_LIST} with rev_reg_def_id "
-                f"{rev_reg_def_id} could not be found"
-            )
-
-        tags = entry.tags
-        tags["state"] = state
-        await txn.handle.insert(
-            CATEGORY_REV_LIST,
-            rev_reg_def_id,
-            value=entry.value,
-            tags=tags,
-        )
-
     async def _finish_registration(
         self,
         txn: AskarProfileSession,
@@ -145,35 +123,6 @@ class AnonCredsRevocation:
             tags=tags,
         )
         await txn.handle.remove(category, job_id)
-
-    async def mark_pending_revocation(self, txn: AskarProfileSession, rev_reg_id):
-        await self._update_rev_list_record(txn, STATE_REVOCATION_PENDING, rev_reg_id)
-
-    async def clear_pending_revocation(self, txn: AskarProfileSession, rev_reg_id):
-        await self._update_rev_list_record(txn, STATE_REVOCATION_POSTED, rev_reg_id)
-
-    async def set_active_registry(
-        self, txn: AskarProfileSession, state, revoc_reg_id: str
-    ):
-        entry = await txn.handle.fetch(
-            CATEGORY_REV_REG_DEF,
-            revoc_reg_id,
-            for_update=True,
-        )
-        if not entry:
-            raise AnonCredsRevocationError(
-                f"{CATEGORY_REV_REG_DEF} with revoc_reg_id "
-                f"{revoc_reg_id} could not be found"
-            )
-
-        tags = entry.tags
-        tags["active"] = True
-        await txn.handle.insert(
-            CATEGORY_REV_REG_DEF,
-            revoc_reg_id,
-            value=entry.value,
-            tags=tags,
-        )
 
     async def create_and_register_revocation_registry_definition(
         self,
@@ -341,6 +290,61 @@ class AnonCredsRevocation:
 
         return None
 
+    async def set_active_registry(self, cred_def_id: str, rev_reg_def_id: str):
+        """Mark a registry as active."""
+        async with self.profile.transaction() as txn:
+            entry = await txn.handle.fetch(
+                CATEGORY_REV_REG_DEF,
+                rev_reg_def_id,
+                for_update=True,
+            )
+            if not entry:
+                raise AnonCredsRevocationError(
+                    f"{CATEGORY_REV_REG_DEF} with id "
+                    f"{rev_reg_def_id} could not be found"
+                )
+
+            if entry.tags["active"] == json.dumps(True):
+                # NOTE If there are other registries set as active, we're not
+                # clearing them if the one we want to be active is already
+                # active. This probably isn't an issue.
+                return
+
+            old_active_entries = await txn.handle.fetch_all(
+                CATEGORY_REV_REG_DEF,
+                {
+                    "active": json.dumps(True),
+                    "cred_def_id": cred_def_id,
+                },
+                for_update=True,
+            )
+
+            if len(old_active_entries) > 1:
+                LOGGER.error(
+                    "More than one registry was set as active for "
+                    f"cred def {cred_def_id}; clearing active tag from all records"
+                )
+
+            for old_entry in old_active_entries:
+                tags = old_entry.tags
+                tags["active"] = json.dumps(False)
+                await txn.handle.replace(
+                    CATEGORY_REV_REG_DEF,
+                    old_entry.name,
+                    old_entry.value,
+                    tags,
+                )
+
+            tags = entry.tags
+            tags["active"] = json.dumps(True)
+            await txn.handle.insert(
+                CATEGORY_REV_REG_DEF,
+                rev_reg_def_id,
+                value=entry.value,
+                tags=tags,
+            )
+            await txn.commit()
+
     async def create_and_register_revocation_list(
         self, rev_reg_def_id: str, options: Optional[dict] = None
     ):
@@ -377,12 +381,16 @@ class AnonCredsRevocation:
 
         # TODO Handle `failed` state
 
+        posted = result.revocation_list_state.revocation_list
         try:
             async with self.profile.session() as session:
                 await session.handle.insert(
                     CATEGORY_REV_LIST,
                     rev_reg_def_id,
-                    result.revocation_list_state.revocation_list.to_json(),
+                    value_json={
+                        "posted": posted.serialize(),
+                        "pending": None,
+                    },
                     tags={"state": result.revocation_list_state.state},
                 )
         except AskarError as err:
@@ -410,6 +418,69 @@ class AnonCredsRevocation:
                 rev_reg_def_id,
                 value=entry.value,
                 tags={"state": STATE_FINISHED},
+            )
+            await txn.commit()
+
+    async def mark_pending_revocations(self, rev_reg_def_id: str, *crids: int):
+        async with self.profile.transaction() as txn:
+            entry = await txn.handle.fetch(
+                CATEGORY_REV_REG_DEF,
+                rev_reg_def_id,
+            )
+            if not entry:
+                raise AnonCredsRevocationError(
+                    "Revocation registry definition not found for id {rev_reg_def_id}"
+                )
+            rev_reg_def = RevocationRegistryDefinition.load(entry.value)
+
+            entry = await txn.handle.fetch(
+                CATEGORY_REV_LIST,
+                rev_reg_def_id,
+                for_update=True,
+            )
+
+            if not entry:
+                raise AnonCredsRevocationError(
+                    "Revocation list with id {rev_reg_def_id} not found"
+                )
+
+            posted = RevocationStatusList.load(entry.value_json["posted"])
+            if entry.value_json["pending"]:
+                pending = RevocationStatusList.load(entry.value_json["pending"])
+            else:
+                pending = posted
+
+            pending = pending.update(
+                timestamp=None, issued=None, revoked=crids, rev_reg_def=rev_reg_def
+            )
+
+            await txn.handle.replace(
+                CATEGORY_REV_LIST,
+                rev_reg_def_id,
+                value_json={
+                    "posted": posted.to_dict(),
+                    "pending": pending.to_dict(),
+                },
+            )
+            await txn.commit()
+
+    async def clear_pending_revocations(self, rev_reg_def_id: str):
+        async with self.profile.transaction() as txn:
+            entry = await txn.handle.fetch(
+                CATEGORY_REV_LIST,
+                rev_reg_def_id,
+                for_update=True,
+            )
+
+            if not entry:
+                raise AnonCredsRevocationError(
+                    "Revocation list with id {rev_reg_def_id} not found"
+                )
+
+            await txn.handle.replace(
+                CATEGORY_REV_LIST,
+                rev_reg_def_id,
+                value_json={"posted": entry.value_json["posted"], "pending": None},
             )
             await txn.commit()
 
@@ -531,14 +602,15 @@ class AnonCredsRevocation:
                 CATEGORY_REV_REG_DEF,
                 {
                     "cred_def_id": cred_def_id,
+                    "active": json.dumps(True),
                 },
+                limit=1,
             )
 
         if not rev_reg_defs:
+            # TODO Create a registry if none available
             raise AnonCredsRevocationError("No active registry")
 
-        # TODO Sort and return most recent
-        # TODO Create a registry if none available
         entry = rev_reg_defs[0]
 
         rev_reg_def = RevRegDef.deserialize(entry.value_json)
