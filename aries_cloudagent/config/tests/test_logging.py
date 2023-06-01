@@ -128,6 +128,7 @@ class TestLoggingConfigurator(AsyncTestCase):
             logger_name=__name__,
         )
         assert logger
+        # public did
         profile.settings["log.file"] = "test_file.log"
         profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         async with profile.session() as session:
@@ -138,6 +139,22 @@ class TestLoggingConfigurator(AsyncTestCase):
                 did="DJGEjaMunDtFtBVrn1qJMT",
             )
             await wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        assert logger
+        # not public did
+        profile = InMemoryProfile.test_profile()
+        profile.settings["log.file"] = "test_file.log"
+        profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        async with profile.session() as session:
+            wallet: BaseWallet = session.inject_or(BaseWallet)
+            await wallet.create_local_did(
+                SOV,
+                ED25519,
+                did="DJGEjaMunDtFtBVrn1qJMT",
+            )
         logger = test_module.get_logger_inst(
             profile=profile,
             logger_name=__name__,

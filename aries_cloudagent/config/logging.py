@@ -769,8 +769,10 @@ async def get_public_did_ident(profile: Profile) -> Optional[str]:
     if profile.settings.get("log.file"):
         async with profile.session() as session:
             wallet = session.inject(BaseWallet)
-            public_did_info: DIDInfo = await wallet.get_public_did()
-            return public_did_info.did
+            req_did_info: DIDInfo = await wallet.get_public_did()
+            if not req_did_info:
+                req_did_info: DIDInfo = (await wallet.get_local_dids())[0]
+            return req_did_info.did
     else:
         return None
 
