@@ -603,7 +603,9 @@ class IndyCredxIssuer(IndyIssuer):
                     value_json={"curr_id": 0, "used_ids": []},
                 )
                 await txn.handle.insert(
-                    CATEGORY_REV_REG_DEF, rev_reg_def_id, rev_reg_def_json
+                    CATEGORY_REV_REG_DEF,
+                    rev_reg_def_id,
+                    rev_reg_def_json,
                 )
                 await txn.handle.insert(
                     CATEGORY_REV_REG_DEF_PRIVATE,
