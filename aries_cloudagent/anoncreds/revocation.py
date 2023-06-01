@@ -114,7 +114,13 @@ class AnonCredsRevocation:
         )
 
     async def _finish_registration(
-        self, txn: AskarProfileSession, category: str, job_id: str, registered_id: str
+        self,
+        txn: AskarProfileSession,
+        category: str,
+        job_id: str,
+        registered_id: str,
+        *,
+        state: Optional[str] = None,
     ):
         entry = await txn.handle.fetch(
             category,
@@ -126,8 +132,12 @@ class AnonCredsRevocation:
                 f"{category} with job id {job_id} could not be found"
             )
 
-        tags = entry.tags
-        tags["state"] = STATE_FINISHED
+        if state:
+            tags = entry.tags
+            tags["state"] = state
+        else:
+            tags = entry.tags
+
         await txn.handle.insert(
             category,
             registered_id,
@@ -234,25 +244,33 @@ class AnonCredsRevocation:
             self.profile, rev_reg_def, options
         )
 
-        rev_reg_def_id = result.rev_reg_def_id
-        rev_reg_def_json = rev_reg_def.to_json()
+        ident = result.rev_reg_def_id or result.job_id
+        if not ident:
+            raise AnonCredsRevocationError(
+                "Revocation registry definition id or job id not found"
+            )
+
+        # TODO Handle `failed` state
 
         try:
             async with self.profile.transaction() as txn:
                 await txn.handle.insert(
+                    CATEGORY_REV_REG_DEF,
+                    ident,
+                    rev_reg_def.to_json(),
+                    tags={
+                        "cred_def_id": cred_def_id,
+                        "state": result.revocation_registry_definition_state.state,
+                    },
+                )
+                await txn.handle.insert(
                     CATEGORY_REV_REG_INFO,
-                    rev_reg_def_id,
+                    ident,
                     value_json={"curr_id": 0, "used_ids": []},
                 )
                 await txn.handle.insert(
-                    CATEGORY_REV_REG_DEF,
-                    rev_reg_def_id,
-                    rev_reg_def_json,
-                    tags={"cred_def_id": cred_def_id},
-                )
-                await txn.handle.insert(
                     CATEGORY_REV_REG_DEF_PRIVATE,
-                    rev_reg_def_id,
+                    ident,
                     rev_reg_def_private.to_json_buffer(),
                 )
                 await txn.commit()
@@ -269,7 +287,7 @@ class AnonCredsRevocation:
         """Mark a rev reg def as finished."""
         async with self.profile.transaction() as txn:
             await self._finish_registration(
-                txn, CATEGORY_REV_REG_DEF, job_id, rev_reg_def_id
+                txn, CATEGORY_REV_REG_DEF, job_id, rev_reg_def_id, state=STATE_FINISHED
             )
             await self._finish_registration(
                 txn,
@@ -357,12 +375,15 @@ class AnonCredsRevocation:
             self.profile, rev_reg_def, RevList.from_native(rev_list), options
         )
 
+        # TODO Handle `failed` state
+
         try:
             async with self.profile.session() as session:
                 await session.handle.insert(
                     CATEGORY_REV_LIST,
                     rev_reg_def_id,
                     result.revocation_list_state.revocation_list.to_json(),
+                    tags={"state": result.revocation_list_state.state},
                 )
         except AskarError as err:
             raise AnonCredsRevocationError(
@@ -370,6 +391,27 @@ class AnonCredsRevocation:
             ) from err
 
         return result
+
+    async def finish_revocation_list(self, rev_reg_def_id: str):
+        """Mark a revocation list as finished."""
+        async with self.profile.transaction() as txn:
+            entry = await txn.handle.fetch(
+                CATEGORY_REV_LIST,
+                rev_reg_def_id,
+                for_update=True,
+            )
+            if not entry:
+                raise AnonCredsRevocationError(
+                    f"revocation list with id {rev_reg_def_id} could not be found"
+                )
+
+            await txn.handle.replace(
+                CATEGORY_REV_LIST,
+                rev_reg_def_id,
+                value=entry.value,
+                tags={"state": STATE_FINISHED},
+            )
+            await txn.commit()
 
     async def retrieve_tails(self, rev_reg_def: RevRegDef) -> str:
         """Retrieve tails file from server."""
