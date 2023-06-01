@@ -719,7 +719,7 @@ class CustomJsonFormatter(logging.Formatter):
 
 
 LOG_FORMAT_FILE_ALIAS = CustomJsonFormatter(
-    "%(asctime)s [%(public_did)s] %(levelname)s %(filename)s %(lineno)d %(message)s"
+    "%(asctime)s [%(did)s] %(levelname)s %(filename)s %(lineno)d %(message)s"
 )
 LOG_FORMAT_FILE_NO_ALIAS = CustomJsonFormatter(
     "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s"
@@ -743,12 +743,12 @@ def get_logger_inst(profile: Profile, logger_name) -> logging.Logger:
     """Return a logger instance with provided name and handlers."""
     logger = None
     loop = asyncio.get_event_loop()
-    public_did_ident = loop.run_until_complete(get_public_did_ident(profile))
-    if public_did_ident:
+    did_ident = loop.run_until_complete(get_did_ident(profile))
+    if did_ident:
         logger = get_logger_with_handlers(
             settings=profile.settings,
-            logger=logging.getLogger(f"{logger_name}_{public_did_ident}"),
-            public_did_ident=public_did_ident,
+            logger=logging.getLogger(f"{logger_name}_{did_ident}"),
+            did_ident=did_ident,
             interval=profile.settings.get("log.handler_interval") or 7,
             backup_count=profile.settings.get("log.handler_bakcount") or 1,
             at_when=profile.settings.get("log.handler_when") or "d",
@@ -764,17 +764,20 @@ def get_logger_inst(profile: Profile, logger_name) -> logging.Logger:
     return logger
 
 
-async def get_public_did_ident(profile: Profile) -> Optional[str]:
+async def get_did_ident(profile: Profile) -> Optional[str]:
     """Get public did identifier for logging, if applicable."""
+    did_ident = None
     if profile.settings.get("log.file"):
         async with profile.session() as session:
             wallet = session.inject(BaseWallet)
             req_did_info: DIDInfo = await wallet.get_public_did()
             if not req_did_info:
                 req_did_info: DIDInfo = (await wallet.get_local_dids())[0]
-            return req_did_info.did
+            if req_did_info:
+                did_ident = req_did_info.did
+            return did_ident
     else:
-        return None
+        return did_ident
 
 
 def get_logger_with_handlers(
@@ -783,7 +786,7 @@ def get_logger_with_handlers(
     at_when: str = None,
     interval: int = None,
     backup_count: int = None,
-    public_did_ident: str = None,
+    did_ident: str = None,
 ) -> logging.Logger:
     """Return logger instance with necessary handlers if required."""
     if settings.get("log.file"):
@@ -797,7 +800,7 @@ def get_logger_with_handlers(
             when=at_when,
             backupCount=backup_count,
         )
-        if public_did_ident:
+        if did_ident:
             file_handler.setFormatter(LOG_FORMAT_FILE_ALIAS)
         else:
             file_handler.setFormatter(LOG_FORMAT_FILE_NO_ALIAS)
@@ -806,8 +809,8 @@ def get_logger_with_handlers(
         std_out_handler = logging.StreamHandler(sys.stdout)
         std_out_handler.setFormatter(LOG_FORMAT_STREAM)
         logger.addHandler(std_out_handler)
-        if public_did_ident:
-            logger = logging.LoggerAdapter(logger, {"public_did": public_did_ident})
+        if did_ident:
+            logger = logging.LoggerAdapter(logger, {"did": did_ident})
         # set log level
         logger_level = (
             (settings.get("log.level")).upper()

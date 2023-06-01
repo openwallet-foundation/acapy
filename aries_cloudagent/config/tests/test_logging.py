@@ -114,7 +114,7 @@ class TestLoggingConfigurator(AsyncTestCase):
         logger = test_module.get_logger_with_handlers(
             settings=profile.settings,
             logger=logger,
-            public_did_ident="tenant_did_123",
+            did_ident="tenant_did_123",
             at_when="m",
             interval=1,
             backup_count=1,
