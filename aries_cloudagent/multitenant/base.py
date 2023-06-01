@@ -199,7 +199,7 @@ class BaseMultitenantManager(ABC):
                 public_did_info = await wallet.get_public_did()
 
             if public_did_info:
-                await profile.inject(RouteManager).route_public_did(
+                await profile.inject(RouteManager).route_verkey(
                     profile, public_did_info.verkey
                 )
         except Exception:
