@@ -28,6 +28,9 @@ from .banner import Banner
 from .base import BaseSettings
 
 
+DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
+
+
 def load_resource(path: str, encoding: str = None) -> TextIO:
     """
     Open a resource file located in a python package or the local filesystem.
@@ -208,9 +211,10 @@ class LoggingConfigurator:
 ######################################################################
 class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
     """
-    Handler for logging to a file, rotating the log file at certain timed
-    with file lock unlock mechanism to support multi-process writing
-    to log file.
+    Handler for logging to a file.
+
+    Rotating the log file at certain timed with file lock unlock
+    mechanism to support multi-process writing to log file.
     """
 
     def __init__(
@@ -223,15 +227,24 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         delay=False,
         utc=False,
         atTime=None,
-        errors=None,
     ):
+        """
+        Initialize an instance of `TimedRotatingFileMultiProcessHandler`.
+
+        Args:
+            filename: log file name with path
+            when: specify when to rotate log file
+            interval: interval when to rotate
+            backupCount: count of backup file, backupCount of 0 will mean
+                no limit on count of backup file [no backup will be deleted]
+
+        """
         BaseRotatingHandler.__init__(
             self,
             filename,
             "a",
             encoding=encoding,
             delay=delay,
-            errors=errors,
         )
         self.when = when.upper()
         self.backupCount = backupCount
@@ -283,9 +296,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
             self.save_next_rollover_time()
 
     def _log2mylog(self, msg):
-        """
-        Write to external log file.
-        """
+        """Write to external log file."""
         time_str = mod_time.strftime(
             "%Y-%m-%d %H:%M:%S", mod_time.localtime(mod_time.time())
         )
@@ -296,9 +307,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         fa.close()
 
     def _getLockFile(self):
-        """
-        Return log lock file.
-        """
+        """Return log lock file."""
         if self.baseFilename.endswith(".log"):
             lock_file = self.baseFilename[:-4]
         else:
@@ -307,16 +316,12 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         return lock_file
 
     def _openLockFile(self):
-        """
-        Open log lock file.
-        """
+        """Open log lock file."""
         lock_file = self._getLockFile()
         self.stream_lock = open(lock_file, "w")
 
     def compute_next_rollover_time(self):
-        """
-        Return next rollover time.
-        """
+        """Return next rollover time."""
         next_time = None
         current_datetime = datetime.now()
         if self.when == "D":
@@ -348,9 +353,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         return next_time
 
     def get_next_rollover_time(self):
-        """
-        Get next rollover time stamp from lock file.
-        """
+        """Get next rollover time stamp from lock file."""
         try:
             fp = open(self.lock_file, "r")
             c = fp.read()
@@ -360,9 +363,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
             return False
 
     def save_next_rollover_time(self):
-        """
-        save the nextRolloverTimestamp to lock file.
-        """
+        """Save the nextRolloverTimestamp to lock file."""
         if not self.next_rollover_time:
             return 0
         content = "%d" % self.next_rollover_time
@@ -379,9 +380,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
             unlock(self.stream_lock)
 
     def acquire(self):
-        """
-        Acquire thread and file locks.
-        """
+        """Acquire thread and file locks."""
         BaseRotatingHandler.acquire(self)
         if self.stream_lock:
             if self.stream_lock.closed:
@@ -393,9 +392,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
             lock(self.stream_lock, LOCK_EX)
 
     def release(self):
-        """
-        Release file and thread locks.
-        """
+        """Release file and thread locks."""
         try:
             if self.stream_lock and not self.stream_lock.closed:
                 unlock(self.stream_lock)
@@ -405,7 +402,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
             BaseRotatingHandler.release(self)
 
     def _close_stream(self):
-        """Close the log file stream"""
+        """Close the log file stream."""
         if self.stream:
             try:
                 if not self.stream.closed:
@@ -415,7 +412,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
                 self.stream = None
 
     def _close_stream_lock(self):
-        """Close the lock file stream"""
+        """Close the lock file stream."""
         if self.stream_lock:
             try:
                 if not self.stream_lock.closed:
@@ -425,9 +422,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
                 self.stream_lock = None
 
     def close(self):
-        """
-        Close log stream and stream_lock.
-        """
+        """Close log stream and stream_lock."""
         try:
             self._close_stream()
             self._close_stream_lock()
@@ -436,6 +431,7 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
             self.stream_lock = None
 
     def get_log_files_to_delete(self):
+        """Delete backup files on rotation based on backupCount."""
         dir_name, base_name = os.path.split(self.baseFilename)
         file_names = os.listdir(dir_name)
         result = []
@@ -469,18 +465,14 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         return result
 
     def shouldRollover(self, record):
-        """
-        Determine if rollover should occur.
-        """
+        """Determine if rollover should occur."""
         t = int(mod_time.time())
         if t >= self.next_rollover_time:
             return 1
         return 0
 
     def doRollover(self):
-        """
-        Perform rollover.
-        """
+        """Perform rollover."""
         self._close_stream()
         self.acquire()
         try:
@@ -557,7 +549,7 @@ def merge_record_extra(
     rename_fields: Optional[Dict[str, str]] = None,
 ) -> Dict:
     """
-    Merges extra attrib from LogRecord into target dictionary.
+    Merge extra attrib from LogRecord into target dictionary.
 
     :param record: logging.LogRecord
     :param target: dict to update
@@ -577,11 +569,10 @@ def merge_record_extra(
 
 
 class JsonEncoder(json.JSONEncoder):
-    """
-    Custom JSONEncoder.
-    """
+    """Custom JSONEncoder."""
 
     def default(self, obj):
+        """Return a serializable object or calls the base implementation."""
         if isinstance(obj, (date, datetime, time)):
             return self.format_datetime_obj(obj)
 
@@ -602,13 +593,12 @@ class JsonEncoder(json.JSONEncoder):
                 return None
 
     def format_datetime_obj(self, obj):
+        """Return formatted datetime object."""
         return obj.isoformat()
 
 
 class CustomJsonFormatter(logging.Formatter):
-    """
-    Custom logging JSONFormatter.
-    """
+    """Custom logging JSONFormatter."""
 
     def __init__(
         self,
@@ -625,6 +615,7 @@ class CustomJsonFormatter(logging.Formatter):
         timestamp: Union[bool, str] = False,
         **kwargs: Any,
     ):
+        """Initialize an instance of `CustomJsonFormatter`."""
         self.json_default = self._str_to_fn(json_default)
         self.json_encoder = self._str_to_fn(json_encoder)
         self.json_serializer = self._str_to_fn(json_serialiser)
@@ -645,10 +636,7 @@ class CustomJsonFormatter(logging.Formatter):
         self._skip_fields.update(self.reserved_attrs)
 
     def _str_to_fn(self, fn_as_str):
-        """
-        Parse string as package.module.function, imports module and
-        returns function.
-        """
+        """Parse string as package.module.function and return function."""
         if not isinstance(fn_as_str, str):
             return fn_as_str
 
@@ -657,9 +645,7 @@ class CustomJsonFormatter(logging.Formatter):
         return getattr(module, function)
 
     def parse(self) -> List[str]:
-        """
-        Parse format string looking for substitutions.
-        """
+        """Parse format string looking for substitutions."""
         if isinstance(self._style, logging.StringTemplateStyle):
             formatter_style_pattern = re.compile(r"\$\{(.+?)\}", re.IGNORECASE)
         elif isinstance(self._style, logging.StrFormatStyle):
@@ -705,7 +691,7 @@ class CustomJsonFormatter(logging.Formatter):
             del log_record[old_field_name]
 
     def format(self, record: logging.LogRecord) -> str:
-        """Formats a log record and serializes to json."""
+        """Format a log record and serializes to json."""
         message_dict: Dict[str, Any] = {}
         if isinstance(record.msg, dict):
             message_dict = record.msg
@@ -732,7 +718,6 @@ class CustomJsonFormatter(logging.Formatter):
         )
 
 
-DEFAULT_LOGGING_CONFIG_PATH = "aries_cloudagent.config:default_logging_config.ini"
 LOG_FORMAT_FILE_ALIAS = CustomJsonFormatter(
     "%(asctime)s [%(public_did)s] %(levelname)s %(filename)s %(lineno)d %(message)s"
 )
@@ -780,6 +765,7 @@ def get_logger_inst(profile: Profile, logger_name) -> logging.Logger:
 
 
 async def get_public_did_ident(profile: Profile) -> Optional[str]:
+    """Get public did identifier for logging, if applicable."""
     if profile.settings.get("log.file"):
         async with profile.session() as session:
             wallet = session.inject(BaseWallet)
