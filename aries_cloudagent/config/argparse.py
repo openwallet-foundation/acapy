@@ -1018,6 +1018,27 @@ class LoggingGroup(ArgumentGroup):
                 "will be retained and not deleted at all."
             ),
         )
+        parser.add_argument(
+            "--log-fmt-pattern",
+            dest="log_fmt_pattern",
+            type=str,
+            metavar="<log-fmt-pattern>",
+            default=None,
+            env_var="ACAPY_LOG_FMT_PATTERN",
+            help=(
+                "Specifies logging formatter pattern as string. For example: "
+                "%(asctime)s [%(did)s] %(filename)s %(lineno)d %(message)s."
+            ),
+        )
+        parser.add_argument(
+            "--log-json-fmt",
+            action="store_true",
+            env_var="ACAPY_LOG_JSON_FMT",
+            help=(
+                "Specifies whether to use JSON logging formatter or "
+                "text logging formatter."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract logging settings."""
@@ -1045,6 +1066,12 @@ class LoggingGroup(ArgumentGroup):
                     "With --log-handler-config, 'interval' and 'backupCount' "
                     "should be a number [int]"
                 )
+        if args.log_fmt_pattern:
+            settings["log.fmt_pattern"] = args.log_fmt_pattern
+        if args.log_json_fmt:
+            settings["log.json_fmt"] = True
+        else:
+            settings["log.json_fmt"] = False
         return settings
 
 

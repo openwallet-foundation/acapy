@@ -143,10 +143,21 @@ class TestLoggingConfigurator(AsyncTestCase):
             profile=profile,
             logger_name=__name__,
         )
+        # public did, json_fmt, pattern
+        profile.settings["log.file"] = "test_file.log"
+        profile.settings["log.json_fmt"] = True
+        profile.settings[
+            "log.fmt_pattern"
+        ] = "%(asctime)s [%(did)s] %(lineno)d %(message)s"
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
         assert logger
         # not public did
         profile = InMemoryProfile.test_profile()
         profile.settings["log.file"] = "test_file.log"
+        profile.settings["log.json_fmt"] = False
         profile.context.injector.bind_instance(DIDMethods, DIDMethods())
         async with profile.session() as session:
             wallet: BaseWallet = session.inject_or(BaseWallet)
@@ -155,6 +166,15 @@ class TestLoggingConfigurator(AsyncTestCase):
                 ED25519,
                 did="DJGEjaMunDtFtBVrn1qJMT",
             )
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        assert logger
+        # not public did, json_fmt, pattern
+        profile.settings["log.file"] = "test_file.log"
+        profile.settings["log.json_fmt"] = True
+        profile.settings["log.fmt_pattern"] = "%(asctime)s %(lineno)d %(message)s"
         logger = test_module.get_logger_inst(
             profile=profile,
             logger_name=__name__,

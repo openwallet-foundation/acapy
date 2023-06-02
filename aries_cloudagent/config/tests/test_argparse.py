@@ -307,6 +307,8 @@ class TestArgParse(AsyncTestCase):
                 "INFO",
                 "--log-handler-config",
                 "d;7;1",
+                "--log-fmt-pattern",
+                "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s",
             ]
         )
 
@@ -317,6 +319,32 @@ class TestArgParse(AsyncTestCase):
         assert settings.get("log.handler_when") == "d"
         assert settings.get("log.handler_interval") == 7
         assert settings.get("log.handler_bakcount") == 1
+        assert (
+            settings.get("log.fmt_pattern")
+            == "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s"
+        )
+        assert not settings.get("log.json_fmt")
+
+        result = parser.parse_args(
+            [
+                "--log-file",
+                "test_file.log",
+                "--log-level",
+                "INFO",
+                "--log-handler-config",
+                "d;7;1",
+                "--log-json-fmt",
+            ]
+        )
+
+        settings = group.get_settings(result)
+
+        assert settings.get("log.file") == "test_file.log"
+        assert settings.get("log.level") == "INFO"
+        assert settings.get("log.handler_when") == "d"
+        assert settings.get("log.handler_interval") == 7
+        assert settings.get("log.handler_bakcount") == 1
+        assert settings.get("log.json_fmt")
 
     async def test_error_raised_when_multitenancy_used_and_no_jwt_provided(self):
         """Test that error is raised if no jwt_secret is provided with multitenancy."""

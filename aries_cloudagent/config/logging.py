@@ -1,7 +1,5 @@
 """Utilities related to logging."""
 import asyncio
-import importlib
-import json
 import logging
 import os
 import pkg_resources
@@ -9,16 +7,14 @@ import sys
 from random import randint
 import re
 import time as mod_time
-import traceback
 
-from collections import OrderedDict
-from datetime import date, datetime, time, timezone, timedelta
-from inspect import istraceback
+from datetime import datetime, timedelta
 from io import TextIOWrapper
 from logging.handlers import BaseRotatingHandler
 from logging.config import fileConfig
 from portalocker import lock, unlock, LOCK_EX
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TextIO
+from pythonjsonlogger import jsonlogger
+from typing import Optional, TextIO
 
 from ..core.profile import Profile
 from ..version import __version__
@@ -208,6 +204,10 @@ class LoggingConfigurator:
 # Derived from
 # https://github.com/python/cpython/blob/main/Lib/logging/handlers.py
 # and https://github.com/yorks/mpfhandler/blob/master/src/mpfhandler.py
+#
+# interval and backupCount are not working as intended in mpfhandler
+# library. Also the old backup files were not being deleted on rotation.
+# This required the following custom implementation.
 ######################################################################
 class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
     """
@@ -511,220 +511,15 @@ class TimedRotatingFileMultiProcessHandler(BaseRotatingHandler):
         self.release()
 
 
-######################################################################
-# Derived from
-# https://github.com/madzak/python-json-logger/blob/master/src/
-# pythonjsonlogger/jsonlogger.py
-######################################################################
-RESERVED_ATTRS: Tuple[str, ...] = (
-    "args",
-    "asctime",
-    "created",
-    "exc_info",
-    "exc_text",
-    "filename",
-    "funcName",
-    "levelname",
-    "levelno",
-    "lineno",
-    "module",
-    "msecs",
-    "message",
-    "msg",
-    "name",
-    "pathname",
-    "process",
-    "processName",
-    "relativeCreated",
-    "stack_info",
-    "thread",
-    "threadName",
-)
-
-
-def merge_record_extra(
-    record: logging.LogRecord,
-    target: Dict,
-    reserved: Union[Dict, List],
-    rename_fields: Optional[Dict[str, str]] = None,
-) -> Dict:
-    """
-    Merge extra attrib from LogRecord into target dictionary.
-
-    :param record: logging.LogRecord
-    :param target: dict to update
-    :param reserved: dict or list with reserved keys to skip
-    :param rename_fields: an optional dict, used to rename
-        field names in the output.
-    """
-    if rename_fields is None:
-        rename_fields = {}
-    for key, value in record.__dict__.items():
-        # this allows to have numeric keys
-        if key not in reserved and not (
-            hasattr(key, "startswith") and key.startswith("_")
-        ):
-            target[rename_fields.get(key, key)] = value
-    return target
-
-
-class JsonEncoder(json.JSONEncoder):
-    """Custom JSONEncoder."""
-
-    def default(self, obj):
-        """Return a serializable object or calls the base implementation."""
-        if isinstance(obj, (date, datetime, time)):
-            return self.format_datetime_obj(obj)
-
-        elif istraceback(obj):
-            return "".join(traceback.format_tb(obj)).strip()
-
-        elif type(obj) == Exception or isinstance(obj, Exception) or type(obj) == type:
-            return str(obj)
-
-        try:
-            return super(JsonEncoder, self).default(obj)
-
-        except TypeError:
-            try:
-                return str(obj)
-
-            except Exception:
-                return None
-
-    def format_datetime_obj(self, obj):
-        """Return formatted datetime object."""
-        return obj.isoformat()
-
-
-class CustomJsonFormatter(logging.Formatter):
-    """Custom logging JSONFormatter."""
-
-    def __init__(
-        self,
-        *args: Any,
-        json_default: Optional[Union[Callable, str]] = None,
-        json_encoder: Optional[Union[Callable, str]] = None,
-        json_serialiser: Union[Callable, str] = json.dumps,
-        json_indent: Optional[Union[int, str]] = None,
-        json_ensure_ascii: bool = True,
-        prefix: str = "",
-        rename_fields: Optional[dict] = None,
-        static_fields: Optional[dict] = None,
-        reserved_attrs: Tuple[str, ...] = RESERVED_ATTRS,
-        timestamp: Union[bool, str] = False,
-        **kwargs: Any,
-    ):
-        """Initialize an instance of `CustomJsonFormatter`."""
-        self.json_default = self._str_to_fn(json_default)
-        self.json_encoder = self._str_to_fn(json_encoder)
-        self.json_serializer = self._str_to_fn(json_serialiser)
-        self.json_indent = json_indent
-        self.json_ensure_ascii = json_ensure_ascii
-        self.prefix = prefix
-        self.rename_fields = rename_fields or {}
-        self.static_fields = static_fields or {}
-        self.reserved_attrs = dict(zip(reserved_attrs, reserved_attrs))
-        self.timestamp = timestamp
-
-        logging.Formatter.__init__(self, *args, **kwargs)
-        if not self.json_encoder and not self.json_default:
-            self.json_encoder = JsonEncoder
-
-        self._required_fields = self.parse()
-        self._skip_fields = dict(zip(self._required_fields, self._required_fields))
-        self._skip_fields.update(self.reserved_attrs)
-
-    def _str_to_fn(self, fn_as_str):
-        """Parse string as package.module.function and return function."""
-        if not isinstance(fn_as_str, str):
-            return fn_as_str
-
-        path, _, function = fn_as_str.rpartition(".")
-        module = importlib.import_module(path)
-        return getattr(module, function)
-
-    def parse(self) -> List[str]:
-        """Parse format string looking for substitutions."""
-        if isinstance(self._style, logging.StringTemplateStyle):
-            formatter_style_pattern = re.compile(r"\$\{(.+?)\}", re.IGNORECASE)
-        elif isinstance(self._style, logging.StrFormatStyle):
-            formatter_style_pattern = re.compile(r"\{(.+?)\}", re.IGNORECASE)
-        elif isinstance(self._style, logging.PercentStyle):
-            formatter_style_pattern = re.compile(r"%\((.+?)\)", re.IGNORECASE)
-        else:
-            raise ValueError("Invalid format: %s" % self._fmt)
-
-        if self._fmt:
-            return formatter_style_pattern.findall(self._fmt)
-        else:
-            return []
-
-    def add_fields(
-        self,
-        log_record: Dict[str, Any],
-        record: logging.LogRecord,
-        message_dict: Dict[str, Any],
-    ) -> None:
-        """Add fields, overwriting logic provided in logging.Formatter."""
-        for field in self._required_fields:
-            log_record[field] = record.__dict__.get(field)
-
-        log_record.update(self.static_fields)
-        log_record.update(message_dict)
-        merge_record_extra(
-            record,
-            log_record,
-            reserved=self._skip_fields,
-            rename_fields=self.rename_fields,
-        )
-
-        if self.timestamp:
-            key = self.timestamp if type(self.timestamp) == str else "timestamp"
-            log_record[key] = datetime.fromtimestamp(record.created, tz=timezone.utc)
-
-        self._perform_rename_log_fields(log_record)
-
-    def _perform_rename_log_fields(self, log_record):
-        for old_field_name, new_field_name in self.rename_fields.items():
-            log_record[new_field_name] = log_record[old_field_name]
-            del log_record[old_field_name]
-
-    def format(self, record: logging.LogRecord) -> str:
-        """Format a log record and serializes to json."""
-        message_dict: Dict[str, Any] = {}
-        if isinstance(record.msg, dict):
-            message_dict = record.msg
-            record.message = ""
-        else:
-            record.message = record.getMessage()
-        record.asctime = self.formatTime(record, self.datefmt)
-        if record.exc_info and not message_dict.get("exc_info"):
-            message_dict["exc_info"] = self.formatException(record.exc_info)
-        if not message_dict.get("exc_info") and record.exc_text:
-            message_dict["exc_info"] = record.exc_text
-        if record.stack_info and not message_dict.get("stack_info"):
-            message_dict["stack_info"] = self.formatStack(record.stack_info)
-
-        log_record = OrderedDict()
-        self.add_fields(log_record, record, message_dict)
-
-        return self.json_serializer(
-            log_record,
-            default=self.json_default,
-            cls=self.json_encoder,
-            indent=self.json_indent,
-            ensure_ascii=self.json_ensure_ascii,
-        )
-
-
-LOG_FORMAT_FILE_ALIAS = CustomJsonFormatter(
+LOG_FORMAT_FILE_ALIAS_PATTERN = (
     "%(asctime)s [%(did)s] %(levelname)s %(filename)s %(lineno)d %(message)s"
 )
-LOG_FORMAT_FILE_NO_ALIAS = CustomJsonFormatter(
+
+LOG_FORMAT_FILE_NO_ALIAS_PATTERN = (
     "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s"
 )
-LOG_FORMAT_STREAM = logging.Formatter(
+
+LOG_FORMAT_STREAM_PATTERN = (
     "%(asctime)s %(levelname)s %(filename)s %(lineno)d %(message)s"
 )
 
@@ -801,13 +596,41 @@ def get_logger_with_handlers(
             backupCount=backup_count,
         )
         if did_ident:
-            file_handler.setFormatter(LOG_FORMAT_FILE_ALIAS)
+            if settings.get("log.json_fmt"):
+                file_handler.setFormatter(
+                    jsonlogger.JsonFormatter(
+                        settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_ALIAS_PATTERN
+                    )
+                )
+            else:
+                file_handler.setFormatter(
+                    logging.Formatter(
+                        settings.get("log.fmt_pattern") or LOG_FORMAT_FILE_ALIAS_PATTERN
+                    )
+                )
         else:
-            file_handler.setFormatter(LOG_FORMAT_FILE_NO_ALIAS)
+            if settings.get("log.json_fmt"):
+                file_handler.setFormatter(
+                    jsonlogger.JsonFormatter(
+                        settings.get("log.fmt_pattern")
+                        or LOG_FORMAT_FILE_NO_ALIAS_PATTERN
+                    )
+                )
+            else:
+                file_handler.setFormatter(
+                    logging.Formatter(
+                        settings.get("log.fmt_pattern")
+                        or LOG_FORMAT_FILE_NO_ALIAS_PATTERN
+                    )
+                )
         logger.addHandler(file_handler)
         # stream console handler
         std_out_handler = logging.StreamHandler(sys.stdout)
-        std_out_handler.setFormatter(LOG_FORMAT_STREAM)
+        std_out_handler.setFormatter(
+            logging.Formatter(
+                settings.get("log.fmt_pattern") or LOG_FORMAT_STREAM_PATTERN
+            )
+        )
         logger.addHandler(std_out_handler)
         if did_ident:
             logger = logging.LoggerAdapter(logger, {"did": did_ident})
