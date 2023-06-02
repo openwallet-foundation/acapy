@@ -43,7 +43,7 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_ENDORSER_ROLE": "endorser.protocol_role",
 }
 
-ACAPY_ENDORSER_FLGAS_DEPENDENT_ON_AUTHOR_ROLE = [
+ACAPY_ENDORSER_FLAGS_DEPENDENT_ON_AUTHOR_ROLE = [
     "ACAPY_AUTO_REQUEST_ENDORSEMENT",
     "ACAPY_AUTO_WRITE_TRANSACTIONS",
     "ACAPY_CREATE_REVOCATION_TRANSACTIONS",
@@ -83,7 +83,7 @@ def get_extra_settings_dict_per_tenant(tenant_settings: dict) -> dict:
         extra_settings["endorser.endorser"] = True
     for flag in tenant_settings.keys():
         if (
-            flag in ACAPY_ENDORSER_FLGAS_DEPENDENT_ON_AUTHOR_ROLE
+            flag in ACAPY_ENDORSER_FLAGS_DEPENDENT_ON_AUTHOR_ROLE
             and endorser_role_flag != "author"
         ):
             # These flags require endorser role as author, if not set as author then
