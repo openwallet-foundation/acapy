@@ -1026,8 +1026,10 @@ class LoggingGroup(ArgumentGroup):
             default=None,
             env_var="ACAPY_LOG_FMT_PATTERN",
             help=(
-                "Specifies logging formatter pattern as string. For example: "
-                "%(asctime)s [%(did)s] %(filename)s %(lineno)d %(message)s."
+                "Specifies logging formatter pattern as string. Examples are included "
+                "in 'Logging.md'. For information regarding different attributes "
+                "supported in the pattern, please look at "
+                "https://docs.python.org/3/library/logging.html#logrecord-attributes."
             ),
         )
         parser.add_argument(
