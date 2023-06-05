@@ -111,13 +111,32 @@ def get_proto_default_version(def_path: str, major_version: int = 1) -> str:
     return _get_default_version_from_version_def(version_definition)
 
 
+def _resolve_definition(search_path: str, msg_class: type) -> str:
+    try:
+        path = os.path.normpath(inspect.getfile(msg_class))
+        path = search_path + path.rsplit(search_path, 1)[1]
+        version = (re.search(r"v(\d+\_)?(\*|\d+)", path)).group()
+        path = path.split(version, 1)[0]
+        definition_path = (path.replace("/", ".")) + "definition"
+        if ClassLoader.load_module(definition_path):
+            return definition_path
+    except Exception:
+        # we expect some exceptions resolving paths
+        pass
+
+
 def _get_path_from_msg_class(msg_class: type) -> str:
-    path = os.path.normpath(inspect.getfile(msg_class))
-    split_str = os.getenv("ACAPY_HOME") or "aries_cloudagent"
-    path = split_str + path.rsplit(split_str, 1)[1]
-    version = (re.search(r"v(\d+\_)?(\*|\d+)", path)).group()
-    path = path.split(version, 1)[0]
-    return (path.replace("/", ".")) + "definition"
+    search_paths = ["aries_cloudagent", msg_class.__module__.split(".", 1)[0]]
+    if os.getenv("ACAPY_HOME"):
+        search_paths.insert(os.getenv("ACAPY_HOME"), 0)
+
+    definition_path = None
+    searches = 0
+    while not definition_path and searches < len(search_paths):
+        definition_path = _resolve_definition(search_paths[searches], msg_class)
+        searches = searches + 1
+    # we could throw an exception here,
+    return definition_path
 
 
 def _get_version_def_from_path(definition_path: str, major_version: int = 1):
@@ -140,6 +159,7 @@ async def get_version_def_from_msg_class(
     profile: Profile, msg_class: type, major_version: int = 1
 ):
     """Return version_definition of a protocol from msg_class."""
+    print(f"get_version_def_from_msg_class({profile}, {msg_class}, {major_version})")
     cache = profile.inject_or(BaseCache)
     version_definition = None
     if cache:
@@ -149,7 +169,9 @@ async def get_version_def_from_msg_class(
         if version_definition:
             return version_definition
     definition_path = _get_path_from_msg_class(msg_class)
+    print(f"definition_path = {definition_path}")
     version_definition = _get_version_def_from_path(definition_path, major_version)
+    print(f"version_definition = {version_definition}")
     if not version_definition:
         raise ProtocolDefinitionValidationError(
             f"Unable to load protocol version_definition for {str(msg_class)}"
