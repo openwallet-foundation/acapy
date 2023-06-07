@@ -3,7 +3,7 @@ from asyncio import shield
 import json
 import logging
 import re
-from typing import Optional, Pattern, Tuple
+from typing import Optional, Pattern, Sequence, Tuple
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
@@ -542,16 +542,14 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         rev_reg_def: RevRegDef,
         prev_list: RevList,
         curr_list: RevList,
+        revoked: Sequence[int],
         options: Optional[dict] = None,
     ) -> RevListResult:
         """Update a revocation list."""
         newly_revoked_indices = [
             # Remember: Indices in Indy are 1-based
-            index + 1
-            for index, (prev, curr) in enumerate(
-                zip(prev_list.revocation_list, curr_list.revocation_list)
-            )
-            if prev != curr
+            index  # + 1 TODO This needs to be offset! Commented for testing
+            for index in revoked
         ]
         rev_reg_entry = {
             "ver": "1.0",

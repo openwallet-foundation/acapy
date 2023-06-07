@@ -1,25 +1,22 @@
 """Classes to manage credential revocation."""
 
 import logging
-from typing import Mapping, Sequence, Text
+from typing import Mapping, Optional, Sequence, Text, Tuple
 
-from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
-    RevNotificationRecord,
-)
+from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
+from ..anoncreds.revocation import AnonCredsRevocation
 from ..core.error import BaseError
 from ..core.profile import Profile
-from ..anoncreds.issuer import AnonCredsIssuer
-from ..storage.error import StorageNotFoundError
-from .anoncreds import AnonCredsRevocation
-from .models.issuer_cred_rev_record import IssuerCredRevRecord
-from .models.issuer_rev_reg_record import IssuerRevRegRecord
-from .util import notify_pending_cleared_event, notify_revocation_published_event
 from ..protocols.issue_credential.v1_0.models.credential_exchange import (
     V10CredentialExchange,
 )
-from ..protocols.issue_credential.v2_0.models.cred_ex_record import (
-    V20CredExRecord,
+from ..protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
+    RevNotificationRecord,
 )
+from ..storage.error import StorageNotFoundError
+from .models.issuer_cred_rev_record import IssuerCredRevRecord
+from .util import notify_pending_cleared_event, notify_revocation_published_event
 
 
 class RevocationManagerError(BaseError):
@@ -106,14 +103,31 @@ class RevocationManager:
                 along with any revocations pending against it
 
         """
-        issuer = AnonCredsIssuer(self._profile)
-
         revoc = AnonCredsRevocation(self._profile)
-        issuer_rr_rec = await revoc.get_issuer_rev_reg_record(rev_reg_id)
-        if not issuer_rr_rec:
+        rev_reg_def = await revoc.get_created_revocation_registry_definition(rev_reg_id)
+        if not rev_reg_def:
             raise RevocationManagerError(
                 f"No revocation registry record found for id: {rev_reg_id}"
             )
+
+        if publish:
+            await revoc.get_or_fetch_local_tails_path(rev_reg_def)
+            result = await revoc.revoke_pending_credentials(
+                rev_reg_id,
+                additional_crids=[int(cred_rev_id)],
+            )
+
+            if result.curr and result.revoked:
+                await self.set_cred_revoked_state(rev_reg_id, result.revoked)
+                await revoc.update_revocation_list(
+                    rev_reg_id, result.prev, result.curr, result.revoked
+                )
+            await notify_revocation_published_event(
+                self._profile, rev_reg_id, [cred_rev_id]
+            )
+
+        else:
+            await revoc.mark_pending_revocations(rev_reg_id, int(cred_rev_id))
 
         if notify:
             thread_id = thread_id or f"indy::{rev_reg_id}::{cred_rev_id}"
@@ -128,43 +142,16 @@ class RevocationManager:
             async with self._profile.session() as session:
                 await rev_notify_rec.save(session, reason="New revocation notification")
 
-        if publish:
-            rev_reg = await revoc.get_revocation_registry(rev_reg_id)
-            await rev_reg.get_or_fetch_local_tails_path()
-            # pick up pending revocations on input revocation registry
-            crids = (issuer_rr_rec.pending_pub or []) + [cred_rev_id]
-            (prev, curr, _) = await issuer.revoke_credentials(
-                issuer_rr_rec.revoc_reg_id, issuer_rr_rec.tails_local_path, crids
-            )
-            async with self._profile.transaction() as txn:
-                issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
-                    txn, issuer_rr_rec.record_id, for_update=True
-                )
-                if prev:
-                    issuer_rr_upd.prev_list = prev
-                    issuer_rr_upd.rev_list = curr
-                await issuer_rr_upd.clear_pending(txn, crids)
-                await txn.commit()
-            await self.set_cred_revoked_state(rev_reg_id, crids)
-            if prev:
-                await issuer_rr_upd.send_entry(self._profile)
-            await notify_revocation_published_event(
-                self._profile, rev_reg_id, [cred_rev_id]
-            )
-
-        else:
-            async with self._profile.transaction() as txn:
-                await issuer_rr_rec.mark_pending(txn, cred_rev_id)
-                await txn.commit()
-
     async def update_rev_reg_revoked_state(
         self,
+        rev_reg_def_id: str,
         apply_ledger_update: bool,
-        rev_reg_record: IssuerRevRegRecord,
-        genesis_transactions: dict,
-    ) -> (dict, dict, dict):
+        genesis_transactions: str,
+    ) -> Tuple[dict, dict, dict]:
         """
         Request handler to fix ledger entry of credentials revoked against registry.
+
+        This is an indy registry specific operation.
 
         Args:
             rev_reg_id: revocation registry id
@@ -174,15 +161,31 @@ class RevocationManager:
             Number of credentials posted to ledger
 
         """
-        return await rev_reg_record.fix_ledger_entry(
-            self._profile,
-            apply_ledger_update,
-            genesis_transactions,
+        revoc = AnonCredsRevocation(self._profile)
+        rev_list = await revoc.get_created_revocation_list(rev_reg_def_id)
+        if not rev_list:
+            raise RevocationManagerError(
+                f"No revocation list found for revocation registry id {rev_reg_def_id}"
+            )
+
+        indy_registry = LegacyIndyRegistry()
+
+        if await indy_registry.supports(rev_reg_def_id):
+            return await indy_registry.fix_ledger_entry(
+                self._profile,
+                rev_list,
+                apply_ledger_update,
+                genesis_transactions,
+            )
+
+        raise RevocationManagerError(
+            "Indy registry does not support revocation registry "
+            f"identified by {rev_reg_def_id}"
         )
 
     async def publish_pending_revocations(
         self,
-        rrid2crid: Mapping[Text, Sequence[Text]] = None,
+        rrid2crid: Optional[Mapping[Text, Sequence[Text]]] = None,
     ) -> Mapping[Text, Sequence[Text]]:
         """
         Publish pending revocations to the ledger.
@@ -207,48 +210,32 @@ class RevocationManager:
 
         Returns: mapping from each revocation registry id to its cred rev ids published.
         """
-        result = {}
-        issuer = AnonCredsIssuer(self._profile)
+        published_crids = {}
+        revoc = AnonCredsRevocation(self._profile)
 
-        async with self._profile.session() as session:
-            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(session)
-
-        for issuer_rr_rec in issuer_rr_recs:
-            rrid = issuer_rr_rec.revoc_reg_id
+        rev_reg_def_ids = await revoc.get_revocation_lists_with_pending_revocations()
+        for rrid in rev_reg_def_ids:
             if rrid2crid:
                 if rrid not in rrid2crid:
                     continue
-                limit_crids = rrid2crid[rrid]
+                limit_crids = [int(crid) for crid in rrid2crid[rrid]]
             else:
-                limit_crids = ()
-            crids = set(issuer_rr_rec.pending_pub or ())
-            if limit_crids:
-                crids = crids.intersection(limit_crids)
-            if crids:
-                (prev, curr, failed_crids) = await issuer.revoke_credentials(
-                    issuer_rr_rec.revoc_reg_id,
-                    issuer_rr_rec.tails_local_path,
-                    crids,
+                limit_crids = None
+
+            result = await revoc.revoke_pending_credentials(
+                rrid, limit_crids=limit_crids
+            )
+            if result.curr and result.revoked:
+                await self.set_cred_revoked_state(rrid, result.revoked)
+                await revoc.update_revocation_list(
+                    rrid, result.prev, result.curr, result.revoked
                 )
-                async with self._profile.transaction() as txn:
-                    issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
-                        txn, issuer_rr_rec.record_id, for_update=True
-                    )
-                    if prev:
-                        issuer_rr_upd.prev_list = prev
-                        issuer_rr_upd.rev_list = curr
-                    await issuer_rr_upd.clear_pending(txn, crids)
-                    await txn.commit()
-                await self.set_cred_revoked_state(issuer_rr_rec.revoc_reg_id, crids)
-                if prev:
-                    await issuer_rr_upd.send_entry(self._profile)
-                published = sorted(crid for crid in crids if crid not in failed_crids)
-                result[issuer_rr_rec.revoc_reg_id] = published
+                published_crids[rrid] = sorted(result.revoked)
                 await notify_revocation_published_event(
-                    self._profile, issuer_rr_rec.revoc_reg_id, crids
+                    self._profile, rrid, [str(crid) for crid in result.revoked]
                 )
 
-        return result
+        return published_crids
 
     async def clear_pending_revocations(
         self, purge: Mapping[Text, Sequence[Text]] = None
@@ -283,13 +270,18 @@ class RevocationManager:
         result = {}
         notify = []
 
+        revoc = AnonCredsRevocation(self._profile)
+        rrids = await revoc.get_revocation_lists_with_pending_revocations()
         async with self._profile.transaction() as txn:
-            issuer_rr_recs = await IssuerRevRegRecord.query_by_pending(txn)
-            for issuer_rr_rec in issuer_rr_recs:
-                rrid = issuer_rr_rec.revoc_reg_id
-                await issuer_rr_rec.clear_pending(txn, (purge or {}).get(rrid))
-                if issuer_rr_rec.pending_pub:
-                    result[rrid] = issuer_rr_rec.pending_pub
+            for rrid in rrids:
+                await revoc.clear_pending_revocations(
+                    txn,
+                    rrid,
+                    crid_mask=[int(crid) for crid in (purge or {}).get(rrid, ())],
+                )
+                remaining = await revoc.get_pending_revocations(rrid)
+                if remaining:
+                    result[rrid] = remaining
                 notify.append(rrid)
             await txn.commit()
 
@@ -299,7 +291,7 @@ class RevocationManager:
         return result
 
     async def set_cred_revoked_state(
-        self, rev_reg_id: str, cred_rev_ids: Sequence[str]
+        self, rev_reg_id: str, cred_rev_ids: Sequence[int]
     ) -> None:
         """
         Update credentials state to credential_revoked.
@@ -318,7 +310,7 @@ class RevocationManager:
             try:
                 async with self._profile.transaction() as txn:
                     rev_rec = await IssuerCredRevRecord.retrieve_by_ids(
-                        txn, rev_reg_id, cred_rev_id, for_update=True
+                        txn, rev_reg_id, str(cred_rev_id), for_update=True
                     )
                     cred_ex_id = rev_rec.cred_ex_id
                     cred_ex_version = rev_rec.cred_ex_version

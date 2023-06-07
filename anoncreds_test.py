@@ -70,6 +70,9 @@ async def main():
         tails = await alice.put(
             f"/anoncreds/registry/{rev_reg_def_id}/tails-file",
         )
+        active = await alice.put(
+            f"/anoncreds/registry/{rev_reg_def_id}/active",
+        )
         rev_status_list = await alice.post(
             "/anoncreds/revocation-list",
             json={
@@ -79,13 +82,39 @@ async def main():
             },
         )
         alice_conn, bob_conn = await didexchange(alice, bob)
-        await indy_issue_credential_v2(
+        alice_cred_ex, bob_cred_ex = await indy_issue_credential_v2(
             alice,
             bob,
             alice_conn.connection_id,
             bob_conn.connection_id,
             cred_def_id,
             {"name": "Bob", "age": "42"},
+        )
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            name="proof-1",
+            version="0.1",
+            comment="testing",
+            requested_attributes=[
+                {"name": "name", "restrictions": [{"cred_def_id": cred_def_id}]},
+                {"name": "age", "restrictions": [{"cred_def_id": cred_def_id}]},
+            ],
+        )
+        print(alice_pres.verified)
+
+        result = await alice.post(
+            "/anoncreds/revoke",
+            json={
+                "cred_ex_id": alice_cred_ex.cred_ex_id,
+                "connection_id": alice_conn.connection_id,
+                "notify": True,
+            },
+        )
+        result = await alice.post(
+            "/anoncreds/publish-revocations",
         )
         bob_pres, alice_pres = await indy_present_proof_v2(
             bob,

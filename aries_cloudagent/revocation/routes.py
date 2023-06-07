@@ -780,16 +780,8 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     LOGGER.debug(">>> apply_ledger_update_json = %s", apply_ledger_update_json)
     apply_ledger_update = json.loads(request.query.get("apply_ledger_update", "false"))
 
-    rev_reg_record = None
     genesis_transactions = None
     async with context.profile.session() as session:
-        try:
-            rev_reg_record = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
-                session, rev_reg_id
-            )
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-
         genesis_transactions = context.settings.get("ledger.genesis_transactions")
         if not genesis_transactions:
             ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
@@ -820,7 +812,7 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
             recovery_txn,
             applied_txn,
         ) = await rev_manager.update_rev_reg_revoked_state(
-            apply_ledger_update, rev_reg_record, genesis_transactions
+            rev_reg_id, apply_ledger_update, genesis_transactions
         )
     except (
         RevocationManagerError,

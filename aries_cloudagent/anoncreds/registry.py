@@ -1,6 +1,6 @@
 """AnonCreds Registry"""
 import logging
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 
 from ..core.profile import Profile
@@ -168,10 +168,11 @@ class AnonCredsRegistry:
         rev_reg_def: RevRegDef,
         prev_list: RevList,
         curr_list: RevList,
+        revoked: Sequence[int],
         options: Optional[dict] = None,
     ) -> RevListResult:
         """Update a revocation list on the registry."""
-        registrar = await self._registrar_for_identifier(curr_list.issuer_id)
+        registrar = await self._registrar_for_identifier(prev_list.issuer_id)
         return await registrar.update_revocation_list(
-            profile, rev_reg_def, prev_list, curr_list, options
+            profile, rev_reg_def, prev_list, curr_list, revoked, options
         )

@@ -1,6 +1,6 @@
 """Base Registry."""
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, Pattern, TypeVar
+from typing import Generic, Optional, Pattern, Sequence, TypeVar
 
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
@@ -173,6 +173,7 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
         rev_reg_def: RevRegDef,
         prev_list: RevList,
         curr_list: RevList,
+        revoked: Sequence[int],
         options: Optional[dict] = None,
     ) -> RevListResult:
         """Update a revocation list on the registry."""

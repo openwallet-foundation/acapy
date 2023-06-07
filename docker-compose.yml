@@ -20,6 +20,7 @@ services:
         --auto-provision
         --genesis-url https://raw.githubusercontent.com/Indicio-tech/indicio-network/main/genesis_files/pool_transactions_testnet_genesis
         --tails-server-base-url http://tails:6543
+        --notify-revocation
         --log-level debug
     healthcheck:
       test: ["CMD-SHELL", "python", "healthcheck.py", "http://localhost:3001/status/live"]
@@ -48,6 +49,7 @@ services:
         --auto-provision
         --genesis-url https://raw.githubusercontent.com/Indicio-tech/indicio-network/main/genesis_files/pool_transactions_testnet_genesis
         --tails-server-base-url http://tails:6543
+        --monitor-revocation-notification
         --log-level debug
     healthcheck:
       test: ["CMD-SHELL", "python", "healthcheck.py", "http://localhost:3005/status/live"]

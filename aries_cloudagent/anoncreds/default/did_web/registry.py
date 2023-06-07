@@ -1,6 +1,6 @@
 """DID Web Registry"""
 import re
-from typing import Optional, Pattern
+from typing import Optional, Pattern, Sequence
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
@@ -100,6 +100,7 @@ class DIDWebRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         rev_reg_def: RevRegDef,
         prev_list: RevList,
         curr_list: RevList,
+        revoked: Sequence[int],
         options: Optional[dict] = None,
     ) -> RevListResult:
         """Update a revocation list on the registry."""

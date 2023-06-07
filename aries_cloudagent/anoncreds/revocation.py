@@ -25,7 +25,7 @@ from requests import RequestException, Session
 
 from ..askar.profile import AskarProfile, AskarProfileSession
 from ..core.error import BaseError
-from ..core.profile import Profile
+from ..core.profile import Profile, ProfileSession
 from ..tails.base import BaseTailsServer
 from .issuer import (
     AnonCredsIssuer,
@@ -45,7 +45,6 @@ from .util import indy_client_dir
 LOGGER = logging.getLogger(__name__)
 
 CATEGORY_REV_LIST = "revocation_list"
-CATEGORY_REV_REG_INFO = "revocation_reg_info"
 CATEGORY_REV_REG_DEF = "revocation_reg_def"
 CATEGORY_REV_REG_DEF_PRIVATE = "revocation_reg_def_private"
 CATEGORY_REV_REG_ISSUER = "revocation_reg_def_issuer"
@@ -63,8 +62,9 @@ class AnonCredsRevocationRegistryFullError(AnonCredsRevocationError):
 
 
 class RevokeResult(NamedTuple):
-    prev: Optional[RevocationStatusList] = None
-    curr: Optional[RevocationStatusList] = None
+    prev: RevList
+    curr: Optional[RevList] = None
+    revoked: Optional[Sequence[int]] = None
     failed: Optional[Sequence[str]] = None
 
 
@@ -210,12 +210,8 @@ class AnonCredsRevocation:
                     tags={
                         "cred_def_id": cred_def_id,
                         "state": result.revocation_registry_definition_state.state,
+                        "active": json.dumps(False),
                     },
-                )
-                await txn.handle.insert(
-                    CATEGORY_REV_REG_INFO,
-                    ident,
-                    value_json={"curr_id": 0, "used_ids": []},
                 )
                 await txn.handle.insert(
                     CATEGORY_REV_REG_DEF_PRIVATE,
@@ -237,12 +233,6 @@ class AnonCredsRevocation:
         async with self.profile.transaction() as txn:
             await self._finish_registration(
                 txn, CATEGORY_REV_REG_DEF, job_id, rev_reg_def_id, state=STATE_FINISHED
-            )
-            await self._finish_registration(
-                txn,
-                CATEGORY_REV_REG_INFO,
-                job_id,
-                rev_reg_def_id,
             )
             await self._finish_registration(
                 txn,
@@ -290,7 +280,7 @@ class AnonCredsRevocation:
 
         return None
 
-    async def set_active_registry(self, cred_def_id: str, rev_reg_def_id: str):
+    async def set_active_registry(self, rev_reg_def_id: str):
         """Mark a registry as active."""
         async with self.profile.transaction() as txn:
             entry = await txn.handle.fetch(
@@ -309,6 +299,8 @@ class AnonCredsRevocation:
                 # clearing them if the one we want to be active is already
                 # active. This probably isn't an issue.
                 return
+
+            cred_def_id = entry.tags["cred_def_id"]
 
             old_active_entries = await txn.handle.fetch_all(
                 CATEGORY_REV_REG_DEF,
@@ -337,7 +329,7 @@ class AnonCredsRevocation:
 
             tags = entry.tags
             tags["active"] = json.dumps(True)
-            await txn.handle.insert(
+            await txn.handle.replace(
                 CATEGORY_REV_REG_DEF,
                 rev_reg_def_id,
                 value=entry.value,
@@ -356,7 +348,7 @@ class AnonCredsRevocation:
                 )
         except AskarError as err:
             raise AnonCredsRevocationError(
-                "Error retrieving credential definition"
+                "Error retrieving revocation registry definition"
             ) from err
 
         if not rev_reg_def_entry:
@@ -381,17 +373,22 @@ class AnonCredsRevocation:
 
         # TODO Handle `failed` state
 
-        posted = result.revocation_list_state.revocation_list
+        rev_list = result.revocation_list_state.revocation_list
         try:
             async with self.profile.session() as session:
                 await session.handle.insert(
                     CATEGORY_REV_LIST,
                     rev_reg_def_id,
                     value_json={
-                        "posted": posted.serialize(),
+                        "rev_list": rev_list.serialize(),
                         "pending": None,
+                        # TODO THIS IS A HACK; this fixes ACA-Py expecting 1-based indexes
+                        "next_index": 1,
                     },
-                    tags={"state": result.revocation_list_state.state},
+                    tags={
+                        "state": result.revocation_list_state.state,
+                        "pending": json.dumps(False),
+                    },
                 )
         except AskarError as err:
             raise AnonCredsRevocationError(
@@ -413,76 +410,123 @@ class AnonCredsRevocation:
                     f"revocation list with id {rev_reg_def_id} could not be found"
                 )
 
+            tags = entry.tags
+            tags["state"] = STATE_FINISHED
             await txn.handle.replace(
                 CATEGORY_REV_LIST,
                 rev_reg_def_id,
                 value=entry.value,
-                tags={"state": STATE_FINISHED},
+                tags=tags,
             )
             await txn.commit()
 
-    async def mark_pending_revocations(self, rev_reg_def_id: str, *crids: int):
-        async with self.profile.transaction() as txn:
-            entry = await txn.handle.fetch(
-                CATEGORY_REV_REG_DEF,
-                rev_reg_def_id,
-            )
-            if not entry:
-                raise AnonCredsRevocationError(
-                    "Revocation registry definition not found for id {rev_reg_def_id}"
+    async def update_revocation_list(
+        self,
+        rev_reg_def_id: str,
+        prev: RevList,
+        curr: RevList,
+        revoked: Sequence[int],
+        options: Optional[dict] = None,
+    ):
+        """Publish and update to a revocation list."""
+        try:
+            async with self.profile.session() as session:
+                rev_reg_def_entry = await session.handle.fetch(
+                    CATEGORY_REV_REG_DEF, rev_reg_def_id
                 )
-            rev_reg_def = RevocationRegistryDefinition.load(entry.value)
+        except AskarError as err:
+            raise AnonCredsRevocationError(
+                "Error retrieving revocation registry definition"
+            ) from err
 
-            entry = await txn.handle.fetch(
-                CATEGORY_REV_LIST,
-                rev_reg_def_id,
-                for_update=True,
+        if not rev_reg_def_entry:
+            raise AnonCredsRevocationError(
+                f"Revocation registry definition not found for id {rev_reg_def_id}"
             )
 
-            if not entry:
-                raise AnonCredsRevocationError(
-                    "Revocation list with id {rev_reg_def_id} not found"
+        try:
+            async with self.profile.session() as session:
+                rev_list_entry = await session.handle.fetch(
+                    CATEGORY_REV_LIST, rev_reg_def_id
                 )
+        except AskarError as err:
+            raise AnonCredsRevocationError("Error retrieving revocation list") from err
 
-            posted = RevocationStatusList.load(entry.value_json["posted"])
-            if entry.value_json["pending"]:
-                pending = RevocationStatusList.load(entry.value_json["pending"])
-            else:
-                pending = posted
-
-            pending = pending.update(
-                timestamp=None, issued=None, revoked=crids, rev_reg_def=rev_reg_def
+        if not rev_list_entry:
+            raise AnonCredsRevocationError(
+                f"Revocation list not found for id {rev_reg_def_id}"
             )
 
-            await txn.handle.replace(
-                CATEGORY_REV_LIST,
-                rev_reg_def_id,
-                value_json={
-                    "posted": posted.to_dict(),
-                    "pending": pending.to_dict(),
-                },
-            )
-            await txn.commit()
-
-    async def clear_pending_revocations(self, rev_reg_def_id: str):
-        async with self.profile.transaction() as txn:
-            entry = await txn.handle.fetch(
-                CATEGORY_REV_LIST,
-                rev_reg_def_id,
-                for_update=True,
+        rev_reg_def = RevRegDef.deserialize(rev_reg_def_entry.value_json)
+        rev_list = RevList.deserialize(rev_list_entry.value_json["rev_list"])
+        if rev_list.revocation_list != curr.revocation_list:
+            raise AnonCredsRevocationError(
+                "Passed revocation list does not match stored"
             )
 
-            if not entry:
-                raise AnonCredsRevocationError(
-                    "Revocation list with id {rev_reg_def_id} not found"
+        anoncreds_registry = self.profile.inject(AnonCredsRegistry)
+        result = await anoncreds_registry.update_revocation_list(
+            self.profile, rev_reg_def, prev, curr, revoked, options
+        )
+
+        # TODO Handle `failed` state
+
+        try:
+            async with self.profile.session() as session:
+                rev_list_entry_upd = await session.handle.fetch(
+                    CATEGORY_REV_LIST, rev_reg_def_id, for_update=True
                 )
+                if not rev_list_entry_upd:
+                    raise AnonCredsRevocationError(
+                        "Revocation list not found for id {rev_reg_def_id}"
+                    )
+                tags = rev_list_entry_upd.tags
+                tags["state"] = result.revocation_list_state.state
+                await session.handle.replace(
+                    CATEGORY_REV_LIST,
+                    rev_reg_def_id,
+                    value=rev_list_entry_upd.value,
+                    tags=tags,
+                )
+        except AskarError as err:
+            raise AnonCredsRevocationError(
+                "Error saving new revocation registry"
+            ) from err
 
-            await txn.handle.replace(
-                CATEGORY_REV_LIST,
-                rev_reg_def_id,
-                value_json={"posted": entry.value_json["posted"], "pending": None},
-            )
-            await txn.commit()
+        return result
+
+    async def get_created_revocation_list(
+        self, rev_reg_def_id: str
+    ) -> Optional[RevList]:
+        """Return rev list from record in wallet."""
+        try:
+            async with self.profile.session() as session:
+                rev_list_entry = await session.handle.fetch(
+                    CATEGORY_REV_LIST, rev_reg_def_id
+                )
+        except AskarError as err:
+            raise AnonCredsRevocationError("Error retrieving revocation list") from err
+
+        if rev_list_entry:
+            return RevList.deserialize(rev_list_entry.value_json["rev_list"])
+
+        return None
+
+    async def get_revocation_lists_with_pending_revocations(self) -> Sequence[str]:
+        """Return a list of rev reg def ids with pending revocations."""
+        try:
+            async with self.profile.session() as session:
+                rev_list_entries = await session.handle.fetch_all(
+                    CATEGORY_REV_LIST,
+                    {"pending": json.dumps(True)},
+                )
+        except AskarError as err:
+            raise AnonCredsRevocationError("Error retrieving revocation list") from err
+
+        if rev_list_entries:
+            return [entry.name for entry in rev_list_entries]
+
+        return []
 
     async def retrieve_tails(self, rev_reg_def: RevRegDef) -> str:
         """Retrieve tails file from server."""
@@ -673,9 +717,6 @@ class AnonCredsRevocation:
             try:
                 async with self.profile.transaction() as txn:
                     rev_list = await txn.handle.fetch(CATEGORY_REV_LIST, rev_reg_def_id)
-                    rev_reg_info = await txn.handle.fetch(
-                        CATEGORY_REV_REG_INFO, rev_reg_def_id, for_update=True
-                    )
                     rev_reg_def = await txn.handle.fetch(
                         CATEGORY_REV_REG_DEF, rev_reg_def_id
                     )
@@ -684,10 +725,6 @@ class AnonCredsRevocation:
                     )
                     if not rev_list:
                         raise AnonCredsRevocationError("Revocation registry not found")
-                    if not rev_reg_info:
-                        raise AnonCredsRevocationError(
-                            "Revocation registry metadata not found"
-                        )
                     if not rev_reg_def:
                         raise AnonCredsRevocationError(
                             "Revocation registry definition not found"
@@ -701,13 +738,14 @@ class AnonCredsRevocation:
                     # be updated because we always use ISSUANCE_BY_DEFAULT.
                     # If something goes wrong later, the index will be skipped.
                     # FIXME - double check issuance type in case of upgraded wallet?
-                    rev_info = rev_reg_info.value_json
-                    rev_reg_index = rev_info["curr_id"] + 1
+                    rev_info = rev_list.value_json
+                    rev_info_tags = rev_list.tags
+                    rev_reg_index = rev_info["next_index"]
                     try:
                         rev_reg_def = RevocationRegistryDefinition.load(
                             rev_reg_def.raw_value
                         )
-                        rev_list = RevocationStatusList.load(rev_list.raw_value)
+                        rev_list = RevocationStatusList.load(rev_info["rev_list"])
                     except AnoncredsError as err:
                         raise AnonCredsRevocationError(
                             "Error loading revocation registry definition"
@@ -716,9 +754,12 @@ class AnonCredsRevocation:
                         raise AnonCredsRevocationRegistryFullError(
                             "Revocation registry is full"
                         )
-                    rev_info["curr_id"] = rev_reg_index
+                    rev_info["next_index"] = rev_reg_index + 1
                     await txn.handle.replace(
-                        CATEGORY_REV_REG_INFO, rev_reg_def_id, value_json=rev_info
+                        CATEGORY_REV_LIST,
+                        rev_reg_def_id,
+                        value_json=rev_info,
+                        tags=rev_info_tags,
                     )
                     await txn.commit()
             except AskarError as err:
@@ -841,28 +882,27 @@ class AnonCredsRevocation:
             f"Cred def '{cred_def_id}' has no active revocation registry"
         )
 
-    async def revoke_credentials(
+    async def revoke_pending_credentials(
         self,
         revoc_reg_id: str,
-        tails_file_path: str,
-        cred_revoc_ids: Sequence[str],
+        *,
+        additional_crids: Optional[Sequence[int]] = None,
+        limit_crids: Optional[Sequence[int]] = None,
     ) -> RevokeResult:
         """
         Revoke a set of credentials in a revocation registry.
 
         Args:
             revoc_reg_id: ID of the revocation registry
-            tails_file_path: path to the local tails file
-            cred_revoc_ids: sequences of credential indexes in the revocation registry
+            additional_crids: sequences of additional credential indexes to revoke
+            limit_crids: a sequence of credential indexes to limit revocation to
+                If None, all pending revocations will be published.
+                If given, the intersection of pending and limit crids will be published.
 
         Returns:
             Tuple with the update revocation list, list of cred rev ids not revoked
 
         """
-
-        # TODO This method should return the old list, the new list,
-        # and the list of changed indices
-        prev_list = None
         updated_list = None
         failed_crids = set()
         max_attempt = 5
@@ -882,27 +922,23 @@ class AnonCredsRevocation:
                     rev_list_entry = await session.handle.fetch(
                         CATEGORY_REV_LIST, revoc_reg_id
                     )
-                    rev_reg_info = await session.handle.fetch(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id
-                    )
                 if not rev_reg_def_entry:
                     raise AnonCredsRevocationError(
                         "Revocation registry definition not found"
                     )
                 if not rev_list_entry:
                     raise AnonCredsRevocationError("Revocation registry not found")
-                if not rev_reg_info:
-                    raise AnonCredsRevocationError(
-                        "Revocation registry metadata not found"
-                    )
             except AskarError as err:
                 raise AnonCredsRevocationError(
                     "Error retrieving revocation registry"
                 ) from err
 
             try:
-                rev_reg_def = RevocationRegistryDefinition.load(
-                    rev_reg_def_entry.raw_value
+                # TODO This is a little rough; stored tails location will have public uri
+                # but library needs local tails location
+                rev_reg_def = RevRegDef.deserialize(rev_reg_def_entry.value_json)
+                rev_reg_def.value.tails_location = self.get_local_tails_path(
+                    rev_reg_def
                 )
             except AnoncredsError as err:
                 raise AnonCredsRevocationError(
@@ -911,12 +947,12 @@ class AnonCredsRevocation:
 
             rev_crids = set()
             failed_crids = set()
-            max_cred_num = rev_reg_def.max_cred_num
-            rev_info = rev_reg_info.value_json
-            used_ids = set(rev_info.get("used_ids") or [])
+            max_cred_num = rev_reg_def.value.max_cred_num
+            rev_info = rev_list_entry.value_json
+            cred_revoc_ids = rev_info["pending"] + (additional_crids or [])
+            rev_list = RevList.deserialize(rev_info["rev_list"])
 
             for rev_id in cred_revoc_ids:
-                rev_id = int(rev_id)
                 if rev_id < 1 or rev_id > max_cred_num:
                     LOGGER.error(
                         "Skipping requested credential revocation"
@@ -925,7 +961,7 @@ class AnonCredsRevocation:
                         rev_id,
                     )
                     failed_crids.add(rev_id)
-                elif rev_id > rev_info["curr_id"]:
+                elif rev_id >= rev_info["next_index"]:
                     LOGGER.warn(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s not yet issued",
@@ -933,7 +969,7 @@ class AnonCredsRevocation:
                         rev_id,
                     )
                     failed_crids.add(rev_id)
-                elif rev_id in used_ids:
+                elif rev_list.revocation_list[rev_id] == 1:
                     LOGGER.warn(
                         "Skipping requested credential revocation"
                         "on rev reg id %s, cred rev id=%s already revoked",
@@ -947,21 +983,20 @@ class AnonCredsRevocation:
             if not rev_crids:
                 break
 
-            try:
-                prev_list = RevocationStatusList.load(rev_list_entry.raw_value)
-            except AnoncredsError as err:
-                raise AnonCredsRevocationError(
-                    "Error loading revocation registry"
-                ) from err
+            if limit_crids is None:
+                skipped_crids = set()
+            else:
+                skipped_crids = rev_crids - set(limit_crids)
+            rev_crids = rev_crids - skipped_crids
 
             try:
                 updated_list = await asyncio.get_event_loop().run_in_executor(
                     None,
-                    lambda: prev_list.update(
+                    lambda: rev_list.to_native().update(
                         int(time.time()),
                         None,  # issued
                         list(rev_crids),  # revoked
-                        rev_reg_def,
+                        rev_reg_def.to_native(),
                     ),
                 )
             except AnoncredsError as err:
@@ -971,32 +1006,31 @@ class AnonCredsRevocation:
 
             try:
                 async with self.profile.transaction() as txn:
-                    rev_list_upd = await txn.handle.fetch(
+                    rev_info_upd = await txn.handle.fetch(
                         CATEGORY_REV_LIST, revoc_reg_id, for_update=True
                     )
-                    rev_info_upd = await txn.handle.fetch(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id, for_update=True
-                    )
-                    if not rev_list_upd or not rev_reg_info:
+                    if not rev_info_upd:
                         LOGGER.warn(
                             "Revocation registry missing, skipping update: {}",
                             revoc_reg_id,
                         )
                         updated_list = None
                         break
+                    tags = rev_info_upd.tags
                     rev_info_upd = rev_info_upd.value_json
                     if rev_info_upd != rev_info:
                         # handle concurrent update to the registry by retrying
                         continue
+                    rev_info_upd["rev_list"] = updated_list.to_dict()
+                    rev_info_upd["pending"] = (
+                        list(skipped_crids) if skipped_crids else None
+                    )
+                    tags["pending"] = json.dumps(True if skipped_crids else False)
                     await txn.handle.replace(
                         CATEGORY_REV_LIST,
                         revoc_reg_id,
-                        updated_list.to_json_buffer(),
-                    )
-                    used_ids.update(rev_crids)
-                    rev_info_upd["used_ids"] = sorted(used_ids)
-                    await txn.handle.replace(
-                        CATEGORY_REV_REG_INFO, revoc_reg_id, value_json=rev_info_upd
+                        value_json=rev_info_upd,
+                        tags=tags,
                     )
                     await txn.commit()
             except AskarError as err:
@@ -1006,7 +1040,85 @@ class AnonCredsRevocation:
             break
 
         return RevokeResult(
-            prev=prev_list,
-            curr=updated_list,
+            prev=rev_list,
+            curr=RevList.from_native(updated_list) if updated_list else None,
+            revoked=list(rev_crids),
             failed=[str(rev_id) for rev_id in sorted(failed_crids)],
+        )
+
+    async def mark_pending_revocations(self, rev_reg_def_id: str, *crids: int):
+        """Stores the cred rev ids to publish later."""
+        async with self.profile.transaction() as txn:
+            entry = await txn.handle.fetch(
+                CATEGORY_REV_LIST,
+                rev_reg_def_id,
+                for_update=True,
+            )
+
+            if not entry:
+                raise AnonCredsRevocationError(
+                    "Revocation list with id {rev_reg_def_id} not found"
+                )
+
+            pending: Optional[List[int]] = entry.value_json["pending"]
+            if pending:
+                pending.extend(crids)
+            else:
+                pending = list(crids)
+
+            value = entry.value_json
+            value["pending"] = pending
+            tags = entry.tags
+            tags["pending"] = json.dumps(True)
+            await txn.handle.replace(
+                CATEGORY_REV_LIST,
+                rev_reg_def_id,
+                value_json=value,
+                tags=tags,
+            )
+            await txn.commit()
+
+    async def get_pending_revocations(self, rev_reg_def_id: str) -> List[int]:
+        """Retrieve the list of credential revocation ids pending revocation."""
+        async with self.profile.session() as session:
+            entry = await session.handle.fetch(CATEGORY_REV_LIST, rev_reg_def_id)
+            if not entry:
+                return []
+
+            return entry.value_json["pending"] or []
+
+    async def clear_pending_revocations(
+        self,
+        txn: ProfileSession,
+        rev_reg_def_id: str,
+        crid_mask: Optional[Sequence[int]] = None,
+    ):
+        """Clear pending revocations."""
+        if not isinstance(txn, AskarProfileSession):
+            raise ValueError("Askar wallet required")
+
+        entry = await txn.handle.fetch(
+            CATEGORY_REV_LIST,
+            rev_reg_def_id,
+            for_update=True,
+        )
+
+        if not entry:
+            raise AnonCredsRevocationError(
+                "Revocation list with id {rev_reg_def_id} not found"
+            )
+
+        value = entry.value_json
+        if crid_mask is None:
+            value["pending"] = None
+        else:
+            value["pending"] = set(value["pending"]) - set(crid_mask)
+
+        tags = entry.tags
+        tags["pending"] = json.dumps(False)
+        await txn.handle.replace(
+            CATEGORY_REV_LIST,
+            rev_reg_def_id,
+            value_json=value,
+            tags=tags,
         )
