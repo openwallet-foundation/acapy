@@ -1,14 +1,20 @@
 import contextlib
+import logging
 
 from io import StringIO
 
-from asynctest import mock as async_mock
+from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from tempfile import NamedTemporaryFile
 
 from .. import logging as test_module
 
+from ...core.in_memory import InMemoryProfile
+from ...wallet.base import BaseWallet
+from ...wallet.did_method import SOV, DIDMethods
+from ...wallet.key_type import ED25519
 
-class TestLoggingConfigurator:
+
+class TestLoggingConfigurator(AsyncTestCase):
     agent_label_arg_value = "Aries Cloud Agent"
     transport_arg_value = "transport"
     host_arg_value = "host"
@@ -92,3 +98,85 @@ class TestLoggingConfigurator:
             test_module.pkg_resources, "resource_stream", async_mock.MagicMock()
         ) as mock_res_stream:
             test_module.load_resource("abc:def", encoding=None)
+
+    def test_get_logger_with_handlers(self):
+        profile = InMemoryProfile.test_profile()
+        profile.settings["log.file"] = "test_file.log"
+        logger = logging.getLogger(__name__)
+        logger = test_module.get_logger_with_handlers(
+            settings=profile.settings,
+            logger=logger,
+            at_when="m",
+            interval=1,
+            backup_count=1,
+        )
+        assert logger
+        logger = test_module.get_logger_with_handlers(
+            settings=profile.settings,
+            logger=logger,
+            did_ident="tenant_did_123",
+            at_when="m",
+            interval=1,
+            backup_count=1,
+        )
+        assert logger
+
+    async def test_get_logger_inst(self):
+        profile = InMemoryProfile.test_profile()
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        assert logger
+        # public did
+        profile.settings["log.file"] = "test_file.log"
+        profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        async with profile.session() as session:
+            wallet: BaseWallet = session.inject_or(BaseWallet)
+            await wallet.create_local_did(
+                SOV,
+                ED25519,
+                did="DJGEjaMunDtFtBVrn1qJMT",
+            )
+            await wallet.set_public_did("DJGEjaMunDtFtBVrn1qJMT")
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        # public did, json_fmt, pattern
+        profile.settings["log.file"] = "test_file.log"
+        profile.settings["log.json_fmt"] = True
+        profile.settings[
+            "log.fmt_pattern"
+        ] = "%(asctime)s [%(did)s] %(lineno)d %(message)s"
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        assert logger
+        # not public did
+        profile = InMemoryProfile.test_profile()
+        profile.settings["log.file"] = "test_file.log"
+        profile.settings["log.json_fmt"] = False
+        profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+        async with profile.session() as session:
+            wallet: BaseWallet = session.inject_or(BaseWallet)
+            await wallet.create_local_did(
+                SOV,
+                ED25519,
+                did="DJGEjaMunDtFtBVrn1qJMT",
+            )
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        assert logger
+        # not public did, json_fmt, pattern
+        profile.settings["log.file"] = "test_file.log"
+        profile.settings["log.json_fmt"] = True
+        profile.settings["log.fmt_pattern"] = "%(asctime)s %(lineno)d %(message)s"
+        logger = test_module.get_logger_inst(
+            profile=profile,
+            logger_name=__name__,
+        )
+        assert logger
