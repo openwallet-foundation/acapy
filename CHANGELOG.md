@@ -1,3 +1,44 @@
+# 0.8.2-rc0
+
+## June 9, 2023
+
+Release 0.8.2 contains a number of minor fixes and updates to ACA-Py, including
+the correction of a regression in Release 0.8.0 related to the use of plugins
+(see [\#2255]). Highlights include making it easier to use tracing in a
+development environment to collect detailed performance information about what
+is going in within ACA-Py.
+
+There are no breaking changes in this release.
+
+### Categorized List of Pull Requests
+
+- Connections Fixes/Updates
+  - Resolve definitions.py fix [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) [usingtechnology](https://github.com/usingtechnology)
+  - Add support for JsonWebKey2020 for the connection invitations [\#2173](https://github.com/hyperledger/aries-cloudagent-python/pull/2173) [dkulic](https://github.com/dkulic)
+  - fix: only cache completed connection targets [\#2240](https://github.com/hyperledger/aries-cloudagent-python/pull/2240) [dbluhm](https://github.com/dbluhm)
+  - Connection target should not be limited only to indy dids [\#2229](https://github.com/hyperledger/aries-cloudagent-python/pull/2229) [dkulic](https://github.com/dkulic)
+  - Disable webhook trigger on initial response to multi-use connection invitation [\#2223](https://github.com/hyperledger/aries-cloudagent-python/pull/2223) [esune](https://github.com/esune)
+- Credential Exchange (Issue, Present) Updates
+  - Pass document loader to jsonld.expand [\#2175](https://github.com/hyperledger/aries-cloudagent-python/pull/2175) [andrewwhitehead](https://github.com/andrewwhitehead)
+- Multi-tenancy fixes/updates
+  - stand up multiple agents (single and multi) for local development and testing [\#2230](https://github.com/hyperledger/aries-cloudagent-python/pull/2230) [usingtechnology](https://github.com/usingtechnology)
+  - Multi-tenant self-managed mediation verkey lookup [\#2232](https://github.com/hyperledger/aries-cloudagent-python/pull/2232) [usingtechnology](https://github.com/usingtechnology)
+  - fix: route multitenant connectionless oob invitation [\#2243](https://github.com/hyperledger/aries-cloudagent-python/pull/2243) [TimoGlastra](https://github.com/TimoGlastra)
+  - Fix multitenant/mediation in demo [\#2075](https://github.com/hyperledger/aries-cloudagent-python/pull/2075) [ianco](https://github.com/ianco)
+- Other Bug and Documentation Fixes
+  - ./run_demo performance -c 1 --mediation --timing --trace-log [#2245](https://github.com/hyperledger/aries-cloudagent-python/pull/2245) [usingtechnology](https://github.com/usingtechnology)
+  - Fix formatting and grammatical errors in different readme's [\#2222](https://github.com/hyperledger/aries-cloudagent-python/pull/2222) [ff137](https://github.com/ff137)
+  - Fix broken link in README [\#2221](https://github.com/hyperledger/aries-cloudagent-python/pull/2221) [ff137](https://github.com/ff137)
+  - fix: run only on main, forks ok [\#2166](https://github.com/hyperledger/aries-cloudagent-python/pull/2166) [anwalker293](https://github.com/anwalker293)
+  - Update Alice Wants a JSON-LD Credential to fix invocation [\#2219](https://github.com/hyperledger/aries-cloudagent-python/pull/2219) [swcurran](https://github.com/swcurran)
+- Dependencies and Internal Updates
+  - Bump requests from 2.30.0 to 2.31.0 in /demo/playground/scripts dependenciesPull requests that update a dependency file [\#2238](https://github.com/hyperledger/aries-cloudagent-python/pull/2238) [dependabot bot](https://github.com/dependabot)
+  - Upgrade codegen tools in scripts/generate-open-api-spec and publish Swagger 2.0 and OpenAPI 3.0 specs [\#2246](https://github.com/hyperledger/aries-cloudagent-python/pull/2246) [ff137](https://github.com/ff137)
+- Message Tracing/Timing Updates
+  - Add updated ELK stack for demos. [\#2236](https://github.com/hyperledger/aries-cloudagent-python/pull/2236) [usingtechnology](https://github.com/usingtechnology)
+- Release management pull requests
+  - 0.8.2-rc0 [\#2259](https://github.com/hyperledger/aries-cloudagent-python/pull/2259) [swcurran](https://github.com/swcurran)
+
 # 0.8.1
 
 ## April 5, 2023
