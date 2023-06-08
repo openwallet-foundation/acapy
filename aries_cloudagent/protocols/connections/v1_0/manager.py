@@ -196,7 +196,7 @@ class ConnectionManager(BaseConnectionManager):
 
             # Add mapping for multitenant relaying.
             # Mediation of public keys is not supported yet
-            await self._route_manager.route_public_did(self.profile, public_did.verkey)
+            await self._route_manager.route_verkey(self.profile, public_did.verkey)
 
         else:
             # Create connection record
@@ -490,6 +490,7 @@ class ConnectionManager(BaseConnectionManager):
                         reason=(
                             "Received connection request from multi-use invitation DID"
                         ),
+                        event=False,
                     )
 
                 # Transfer metadata from multi-use to new connection
@@ -1087,7 +1088,13 @@ class ConnectionManager(BaseConnectionManager):
 
                     targets = await self.fetch_connection_targets(connection)
 
-                    await entry.set_result([row.serialize() for row in targets], 3600)
+                    if connection.state == ConnRecord.State.COMPLETED.rfc160:
+                        # Only set cache if connection has reached completed state
+                        # Otherwise, a replica that participated early in exchange
+                        # may have bad data set in cache.
+                        await entry.set_result(
+                            [row.serialize() for row in targets], 3600
+                        )
         else:
             targets = await self.fetch_connection_targets(connection)
         return targets

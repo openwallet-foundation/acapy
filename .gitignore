@@ -154,6 +154,7 @@ Temporary Items
 ###
 
 .idea/*
+**/.idea/*
 
 ###
 ### Windows
@@ -189,3 +190,7 @@ _build/
 
 # Open API build
 open-api/.build
+
+# poetry
+poetry.lock
+pyproject.toml

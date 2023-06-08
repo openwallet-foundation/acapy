@@ -210,7 +210,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
 
     async def test_create_wallet_saves_wallet_record_creates_profile(self):
         mock_route_manager = async_mock.MagicMock()
-        mock_route_manager.route_public_did = async_mock.CoroutineMock()
+        mock_route_manager.route_verkey = async_mock.CoroutineMock()
         self.context.injector.bind_instance(RouteManager, mock_route_manager)
 
         with async_mock.patch.object(
@@ -232,7 +232,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
                 {"wallet.key": "test_key"},
                 provision=True,
             )
-            mock_route_manager.route_public_did.assert_not_called()
+            mock_route_manager.route_verkey.assert_not_called()
             assert isinstance(wallet_record, WalletRecord)
             assert wallet_record.wallet_name == "test_wallet"
             assert wallet_record.key_management_mode == WalletRecord.MODE_MANAGED
@@ -248,7 +248,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
         )
 
         mock_route_manager = async_mock.MagicMock()
-        mock_route_manager.route_public_did = async_mock.CoroutineMock()
+        mock_route_manager.route_verkey = async_mock.CoroutineMock()
 
         with async_mock.patch.object(
             WalletRecord, "save"
@@ -267,7 +267,7 @@ class TestBaseMultitenantManager(AsyncTestCase):
                 WalletRecord.MODE_MANAGED,
             )
 
-            mock_route_manager.route_public_did.assert_called_once_with(
+            mock_route_manager.route_verkey.assert_called_once_with(
                 get_wallet_profile.return_value, did_info.verkey
             )
 

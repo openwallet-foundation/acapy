@@ -1,0 +1,265 @@
+# Sample docker-compose to start a local aca-py multitenancy agent
+# To start aca-py and the postgres database, just run `docker compose up`
+# To shut down the services run `docker compose rm` - this will retain the postgres database, so you can change aca-py startup parameters
+# and restart the docker containers without losing your wallet data
+# If you want to delete your wallet data just run `docker volume ls -q | xargs docker volume rm`
+#
+# If you want to enable tracing, see elk-stack. Ensure elk-stack is running, uncomment the ACAPY_TRACE environement variables and run `docker compose up`
+version: "3"
+
+
+networks:
+  app-network:
+    name: ${APP_NETWORK_NAME:-playgroundnet}
+    driver: bridge
+  elk-network:
+     name: ${ELK_NETWORK_NAME:-elknet}
+     driver: bridge
+
+services:
+  ngrok-faber-alice:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    hostname: ${NGROK_FABER_ALICE_HOST}
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:-}
+    command:
+      - "start"
+      - "--all"
+      - "--config"
+      - "/etc/ngrok.yml"
+    volumes:
+      - ./ngrok-faber-alice.yml:/etc/ngrok.yml
+    networks:
+      - app-network
+    # ports:
+    #   - 4040:4040
+    healthcheck:
+      test: /bin/bash -c "</dev/tcp/${NGROK_FABER_ALICE_HOST}/4040"
+      interval: 3s
+      timeout: 3s
+      start_period: 5s
+      retries: 5
+
+  ngrok-acme-multi:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    hostname: ${NGROK_ACME_MULTI_HOST}
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:-}
+    command:
+      - "start"
+      - "--all"
+      - "--config"
+      - "/etc/ngrok.yml"
+    volumes:
+      - ./ngrok-acme-multi.yml:/etc/ngrok.yml
+    networks:
+      - app-network
+    # ports:
+    #   - 4040:4040
+    healthcheck:
+      test: /bin/bash -c "</dev/tcp/${NGROK_ACME_MULTI_HOST}/4040"
+      interval: 3s
+      timeout: 3s
+      start_period: 5s
+      retries: 5
+
+  faber-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.acapy
+    depends_on:
+      wallet-db:
+        condition: service_healthy
+      ngrok-faber-alice:
+        condition: service_healthy
+    restart: unless-stopped    
+    hostname: ${FABER_HOST}
+    environment:
+      - TUNNEL_HOST=${FABER_TUNNEL_HOST}
+      - TUNNEL_NAME=${FABER_TUNNEL_NAME}
+      - AGENT_LABEL=${FABER_AGENT_LABEL}
+      - AGENT_HTTP_IN_PORT=${FABER_AGENT_HTTP_IN_PORT}
+      - AGENT_HTTP_ADMIN_PORT=${FABER_AGENT_HTTP_ADMIN_PORT}
+      - AGENT_ARG_FILE=${FABER_AGENT_ARG_FILE}
+      - ACAPY_ENDPOINT=${FABER_ACAPY_ENDPOINT}
+      - ACAPY_WALLET_STORAGE_CONFIG=${FABER_ACAPY_WALLET_STORAGE_CONFIG}
+      - ACAPY_WALLET_STORAGE_CREDS=${FABER_ACAPY_WALLET_STORAGE_CREDS}
+      - ACAPY_WALLET_NAME=${FABER_ACAPY_WALLET_NAME}
+      - ACAPY_WALLET_KEY=${FABER_ACAPY_WALLET_KEY}
+      - ACAPY_GENESIS_URL=${FABER_ACAPY_GENESIS_URL}
+      - ACAPY_LOG_LEVEL=${FABER_ACAPY_LOG_LEVEL}
+      - RUST_LOG=${FABER_RUST_LOG}
+      - POSTGRESQL_HOST=${FABER_POSTGRESQL_HOST}
+      - POSTGRESQL_PORT=${FABER_POSTGRESQL_PORT}
+    #   - ACAPY_TRACE=${FABER_ACAPY_TRACE}
+    #   - ACAPY_TRACE_TARGET=${FABER_ACAPY_TRACE_TARGET}
+    #   - ACAPY_TRACE_TAG=${FABER_ACAPY_TRACE_TAG}
+    #   - ACAPY_TRACE_LABEL=${FABER_ACAPY_TRACE_LABEL}
+    ports:
+      - ${FABER_AGENT_HTTP_ADMIN_PORT}:${FABER_AGENT_HTTP_ADMIN_PORT}
+      - ${FABER_AGENT_HTTP_IN_PORT}:${FABER_AGENT_HTTP_IN_PORT}
+    networks:
+      - app-network
+    #   - elk-network
+    healthcheck:
+      test: /bin/bash -c "</dev/tcp/${FABER_HOST}/${FABER_AGENT_HTTP_IN_PORT}"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  alice-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.acapy
+    depends_on:
+      wallet-db:
+        condition: service_healthy
+      ngrok-faber-alice:
+        condition: service_healthy
+    restart: unless-stopped    
+    hostname: ${ALICE_HOST}
+    environment:
+      - TUNNEL_HOST=${ALICE_TUNNEL_HOST}
+      - TUNNEL_NAME=${ALICE_TUNNEL_NAME}
+      - AGENT_LABEL=${ALICE_AGENT_LABEL}
+      - AGENT_HTTP_IN_PORT=${ALICE_AGENT_HTTP_IN_PORT}
+      - AGENT_HTTP_ADMIN_PORT=${ALICE_AGENT_HTTP_ADMIN_PORT}
+      - AGENT_ARG_FILE=${ALICE_AGENT_ARG_FILE}
+      - ACAPY_ENDPOINT=${ALICE_ACAPY_ENDPOINT}
+      - ACAPY_WALLET_STORAGE_CONFIG=${ALICE_ACAPY_WALLET_STORAGE_CONFIG}
+      - ACAPY_WALLET_STORAGE_CREDS=${ALICE_ACAPY_WALLET_STORAGE_CREDS}
+      - ACAPY_WALLET_NAME=${ALICE_ACAPY_WALLET_NAME}
+      - ACAPY_WALLET_KEY=${ALICE_ACAPY_WALLET_KEY}
+      - ACAPY_GENESIS_URL=${ALICE_ACAPY_GENESIS_URL}
+      - ACAPY_LOG_LEVEL=${ALICE_ACAPY_LOG_LEVEL}
+      - RUST_LOG=${ALICE_RUST_LOG}
+      - POSTGRESQL_HOST=${ALICE_POSTGRESQL_HOST}
+      - POSTGRESQL_PORT=${ALICE_POSTGRESQL_PORT}
+    #   - ACAPY_TRACE=${ALICE_ACAPY_TRACE}
+    #   - ACAPY_TRACE_TARGET=${ALICE_ACAPY_TRACE_TARGET}
+    #   - ACAPY_TRACE_TAG=${ALICE_ACAPY_TRACE_TAG}
+    #   - ACAPY_TRACE_LABEL=${ALICE_ACAPY_TRACE_LABEL}
+    ports:
+      - ${ALICE_AGENT_HTTP_ADMIN_PORT}:${ALICE_AGENT_HTTP_ADMIN_PORT}
+      - ${ALICE_AGENT_HTTP_IN_PORT}:${ALICE_AGENT_HTTP_IN_PORT}
+    networks:
+      - app-network
+    #   - elk-network
+    healthcheck:
+      test: /bin/bash -c "</dev/tcp/${ALICE_HOST}/${ALICE_AGENT_HTTP_IN_PORT}"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  acme-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.acapy
+    depends_on:
+      wallet-db:
+        condition: service_healthy
+      ngrok-acme-multi:
+        condition: service_healthy
+    restart: unless-stopped    
+    hostname: ${ACME_HOST}
+    environment:
+      - TUNNEL_HOST=${ACME_TUNNEL_HOST}
+      - TUNNEL_NAME=${ACME_TUNNEL_NAME}
+      - AGENT_LABEL=${ACME_AGENT_LABEL}
+      - AGENT_HTTP_IN_PORT=${ACME_AGENT_HTTP_IN_PORT}
+      - AGENT_HTTP_ADMIN_PORT=${ACME_AGENT_HTTP_ADMIN_PORT}
+      - AGENT_ARG_FILE=${ACME_AGENT_ARG_FILE}
+      - ACAPY_ENDPOINT=${ACME_ACAPY_ENDPOINT}
+      - ACAPY_WALLET_STORAGE_CONFIG=${ACME_ACAPY_WALLET_STORAGE_CONFIG}
+      - ACAPY_WALLET_STORAGE_CREDS=${ACME_ACAPY_WALLET_STORAGE_CREDS}
+      - ACAPY_WALLET_NAME=${ACME_ACAPY_WALLET_NAME}
+      - ACAPY_WALLET_KEY=${ACME_ACAPY_WALLET_KEY}
+      - ACAPY_GENESIS_URL=${ACME_ACAPY_GENESIS_URL}
+      - ACAPY_LOG_LEVEL=${ACME_ACAPY_LOG_LEVEL}
+      - RUST_LOG=${ACME_RUST_LOG}
+      - POSTGRESQL_HOST=${ACME_POSTGRESQL_HOST}
+      - POSTGRESQL_PORT=${ACME_POSTGRESQL_PORT}
+    #   - ACAPY_TRACE=${ACME_ACAPY_TRACE}
+    #   - ACAPY_TRACE_TARGET=${ACME_ACAPY_TRACE_TARGET}
+    #   - ACAPY_TRACE_TAG=${ACME_ACAPY_TRACE_TAG}
+    #   - ACAPY_TRACE_LABEL=${ACME_ACAPY_TRACE_LABEL}
+    ports:
+      - ${ACME_AGENT_HTTP_ADMIN_PORT}:${ACME_AGENT_HTTP_ADMIN_PORT}
+      - ${ACME_AGENT_HTTP_IN_PORT}:${ACME_AGENT_HTTP_IN_PORT}
+    networks:
+      - app-network
+    #   - elk-network
+    healthcheck:
+      test: /bin/bash -c "</dev/tcp/${ACME_HOST}/${ACME_AGENT_HTTP_IN_PORT}"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  multi-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.acapy
+    depends_on:
+      wallet-db:
+        condition: service_healthy
+      ngrok-acme-multi:
+        condition: service_healthy
+    restart: unless-stopped    
+    hostname: ${MULTI_HOST}
+    environment:
+      - TUNNEL_HOST=${MULTI_TUNNEL_HOST}
+      - TUNNEL_NAME=${MULTI_TUNNEL_NAME}
+      - AGENT_LABEL=${MULTI_AGENT_LABEL}
+      - AGENT_HTTP_IN_PORT=${MULTI_AGENT_HTTP_IN_PORT}
+      - AGENT_HTTP_ADMIN_PORT=${MULTI_AGENT_HTTP_ADMIN_PORT}
+      - AGENT_ARG_FILE=${MULTI_AGENT_ARG_FILE}
+      - ACAPY_ENDPOINT=${MULTI_ACAPY_ENDPOINT}
+      - ACAPY_WALLET_STORAGE_CONFIG=${MULTI_ACAPY_WALLET_STORAGE_CONFIG}
+      - ACAPY_WALLET_STORAGE_CREDS=${MULTI_ACAPY_WALLET_STORAGE_CREDS}
+      - ACAPY_WALLET_NAME=${MULTI_ACAPY_WALLET_NAME}
+      - ACAPY_WALLET_KEY=${MULTI_ACAPY_WALLET_KEY}
+      - ACAPY_GENESIS_URL=${MULTI_ACAPY_GENESIS_URL}
+      - ACAPY_LOG_LEVEL=${MULTI_ACAPY_LOG_LEVEL}
+      - RUST_LOG=${MULTI_RUST_LOG}
+      - POSTGRESQL_HOST=${MULTI_POSTGRESQL_HOST}
+      - POSTGRESQL_PORT=${MULTI_POSTGRESQL_PORT}
+    #   - ACAPY_TRACE=${MULTI_ACAPY_TRACE}
+    #   - ACAPY_TRACE_TARGET=${MULTI_ACAPY_TRACE_TARGET}
+    #   - ACAPY_TRACE_TAG=${MULTI_ACAPY_TRACE_TAG}
+    #   - ACAPY_TRACE_LABEL=${MULTI_ACAPY_TRACE_LABEL}
+    ports:
+      - ${MULTI_AGENT_HTTP_ADMIN_PORT}:${MULTI_AGENT_HTTP_ADMIN_PORT}
+      - ${MULTI_AGENT_HTTP_IN_PORT}:${MULTI_AGENT_HTTP_IN_PORT}
+    networks:
+      - app-network
+    #   - elk-network
+    healthcheck:
+      test: /bin/bash -c "</dev/tcp/${MULTI_HOST}/${MULTI_AGENT_HTTP_IN_PORT}"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  wallet-db:
+    image: postgres:14
+    # restart: always
+    hostname: ${POSTGRESQL_HOST}
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
+    # ports:
+    #  - ${POSTGRESQL_PORT}:${POSTGRESQL_PORT}
+    networks:
+      - app-network
+    volumes:
+      - wallet-db-data:/var/lib/pgsql/data
+      - ./max_conns.sql:/docker-entrypoint-initdb.d/max_conns.sql    
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  wallet-db-data:
+

@@ -1,16 +1,22 @@
-from asynctest import TestCase as AsyncTestCase
+import pytest
 
 from ..connection_target import ConnectionTarget
 
-TEST_DID = "55GkHamhTU1ZbTbV2ab9DE"
+TEST_DID_UNQUALIFIED = "55GkHamhTU1ZbTbV2ab9DE"
+TEST_DID_SOV = "did:sov:55GkHamhTU1ZbTbV2ab9DE"
+TEST_DID_PEER = "did:peer:WgWxqztrNooG92RXvxSTWv"
+TEST_DID_WEB = "did:web:example"
 TEST_VERKEY = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
 TEST_ENDPOINT = "http://localhost"
 
 
-class TestConnectionTarget(AsyncTestCase):
-    def test_deser(self):
+class TestConnectionTarget:
+    @pytest.mark.parametrize(
+        "did", [TEST_DID_UNQUALIFIED, TEST_DID_SOV, TEST_DID_PEER, TEST_DID_WEB]
+    )
+    def test_deser(self, did):
         target = ConnectionTarget(
-            did=TEST_DID,
+            did=did,
             endpoint=TEST_ENDPOINT,
             label="a label",
             recipient_keys=[TEST_VERKEY],
