@@ -37,7 +37,7 @@ There are no breaking changes in this release.
 - Message Tracing/Timing Updates
   - Add updated ELK stack for demos. [\#2236](https://github.com/hyperledger/aries-cloudagent-python/pull/2236) [usingtechnology](https://github.com/usingtechnology)
 - Release management pull requests
-  - 0.8.2-rc0 [\#2259](https://github.com/hyperledger/aries-cloudagent-python/pull/2259) [swcurran](https://github.com/swcurran)
+  - 0.8.2-rc0 [\#2260](https://github.com/hyperledger/aries-cloudagent-python/pull/2260) [swcurran](https://github.com/swcurran)
 
 # 0.8.1
 
