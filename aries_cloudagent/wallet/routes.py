@@ -8,6 +8,9 @@ from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
 
+from aries_cloudagent.messaging.jsonld.credential import b64decode
+from aries_cloudagent.messaging.jsonld.error import BadJWSHeaderError
+
 from ..admin.request_context import AdminRequestContext
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
@@ -815,10 +818,10 @@ async def wallet_jwt_sign(request: web.BaseRequest):
             headers["alg"] = "EdDSA"
             headers["typ"] = "JWT"  # TODO: why not JWS?
             headers["kid"] = f"{did}#keys-1"  # TODO: fix me
-            # headers["crit"] = ["b64"]
+            headers["crit"] = ["b64"]  # TODO: do we need this
             # TODO: do we need to b64encode before signing?
             signature = await wallet.sign_message(
-                f"{headers}.{payload}".encode("utf-8"), did_info.verkey
+                f"{headers.encode('utf-8')}.{payload.encode('utf-8')}", did_info.verkey
             )
         except WalletNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
@@ -838,15 +841,33 @@ async def wallet_jwt_verify(request: web.BaseRequest):
     Args:
         "jwt": { ... }
     """
-    # context: AdminRequestContext = request["context"]
+    context: AdminRequestContext = request["context"]
     body = await request.json()
     jwt = body["jwt"]
-    headers, payload, signiture = jwt.split(".", 3)
-    headers = b64_to_bytes(headers, urlsafe=True)
-    payload = b64_to_bytes(payload, urlsafe=True)
-    signiture = b64_to_bytes(signiture, urlsafe=True)
-    Bona_fide = True
-    return web.json_response(Bona_fide)
+    encoded_header, encoded_payload, encoded_signiture = jwt.split(".", 3)
+    header = json.loads(b64decode(encoded_header))
+
+    if (
+        "alg" not in header
+        or header["alg"] != "EdDSA"
+        or "b64" not in header
+        or header["b64"] is not False
+        or "crit" not in header
+        or header["crit"] != ["b64"]
+        or "kid" not in header
+    ):
+        raise BadJWSHeaderError(
+            "Invalid JWS header parameters for Ed25519Signature2018."
+        )
+    # payload = json.loads(b64decode(encoded_payload))
+    verkey = header["kid"]
+    decoded_signature = b64_to_bytes(encoded_signiture, urlsafe=True)
+    async with context.session() as session:
+        wallet = session.inject(BaseWallet)
+        Bona_fide = await wallet.verify_message(
+            f"{encoded_header}.{encoded_payload}", decoded_signature, verkey, ED25519
+        )
+        return web.json_response(Bona_fide)
 
 
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
