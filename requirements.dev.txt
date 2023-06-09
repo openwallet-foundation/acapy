@@ -20,4 +20,3 @@ ptvsd==4.3.2
 pydevd==1.5.1
 
 pydevd-pycharm~=193.6015.39
-random-word==1.0.11; python_version >= "3"
