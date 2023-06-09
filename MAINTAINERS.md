@@ -35,8 +35,6 @@ Maintainers are assigned the following scopes in this repository:
 | TimoGlastra     | Timo Glastra     | Admin      |      |            | timo@animo.id            | Animo Solutions     |
 | WadeBarnes      | Wade Barnes      | Admin      |      |            | wade@neoterictech.ca     | BC Gov              |
 
-Daniel Bluhm <>, Daniel Hardman <daniel.hardman@gmail.com>, Andrew Whitehead <cywolf@gmail.com>, Timo Glastra <timo@animo.id>, Shaanjot Gill <gill.shaanjots@gmail.com>, Sam Curren <telegramsam@gmail.com>, Wade Barnes <wade@neoterictech.ca>
-
 ## Emeritus Maintainers
 
 | Name | GitHub ID | Scope | LFID | Discord ID | Email | Company Affiliation |
