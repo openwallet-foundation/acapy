@@ -596,7 +596,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             raise V20CredFormatError(f"Received invalid credential: {result}")
 
         # Saving expanded type as a cred_tag
-        expanded = jsonld.expand(cred_dict)
+        expanded = jsonld.expand(cred_dict, options={"documentLoader": document_loader})
         types = JsonLdProcessor.get_values(
             expanded[0],
             "@type",

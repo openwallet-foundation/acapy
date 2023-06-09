@@ -490,7 +490,8 @@ class DIFPresExchHandler:
         if type(schemas) is dict:
             schemas = [schemas]
         schema_ids = [schema.get("id") for schema in schemas]
-        expanded = jsonld.expand(cred_dict)
+        document_loader = self.profile.inject(DocumentLoader)
+        expanded = jsonld.expand(cred_dict, options={"documentLoader": document_loader})
         types = JsonLdProcessor.get_values(
             expanded[0],
             "@type",

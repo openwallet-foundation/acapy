@@ -663,7 +663,18 @@ class DemoAgent:
             color = self.color or "fg:ansiblue"
         else:
             color = None
-        log_msg(*output, color=color, prefix=self.prefix_str, end=end, **kwargs)
+        try:
+            log_msg(*output, color=color, prefix=self.prefix_str, end=end, **kwargs)
+        except AssertionError as e:
+            if self.trace_enabled and self.trace_target == "log":
+                # when tracing to a log file,
+                # we hit an issue with the underlying prompt_toolkit.
+                # it attempts to output what is written by the log and can't find the
+                # correct terminal and throws an error. The trace log record does show
+                # in the terminal, so let's just ignore this error.
+                pass
+            else:
+                raise e
 
     def log(self, *msg, **kwargs):
         self.handle_output(*msg, **kwargs)
