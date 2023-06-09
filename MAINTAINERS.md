@@ -24,16 +24,18 @@ Maintainers are assigned the following scopes in this repository:
 
 <!-- Please keep this sorted alphabetically by github -->
 
-| GitHub ID       | Name             | Scope      | LFID | Discord ID | Email | Company Affiliation |
-| --------------- | ---------------- | ---------- | ---- | ---------- | ----- | ------------------- |
-| andrewwhitehead | Andrew Whitehead | Admin      |      |            |       | BC Gov              |
-| dbluhm          | Daniel Bluhm     | Admin      |      |            |       | Indicio PBC         |
-| dh1128          | Daniel Hardman   | Admin      |      |            |       | Provident           |
-| shaangill025    | Shaanjot Gill    | Maintainer |      |            |       | BC Gov              |
-| swcurran        | Stephen Curran   | Admin      |      |            |       | BC Gov              |
-| TelegramSam     | Sam Curren       | Maintainer |      |            |       | Indicio PBC         |
-| TimoGlastra     | Timo Glastra     | Admin      |      |            |       | Animo Solutions     |
-| WadeBarnes      | Wade Barnes      | Admin      |      |            |       | BC Gov              |
+| GitHub ID       | Name             | Scope      | LFID | Discord ID | Email                    | Company Affiliation |
+| --------------- | ---------------- | ---------- | ---- | ---------- | ------------------------ | ------------------- |
+| andrewwhitehead | Andrew Whitehead | Admin      |      |            | cywolf@gmail.com         | BC Gov              |
+| dbluhm          | Daniel Bluhm     | Admin      |      |            | daniel@indicio.tech      | Indicio PBC         |
+| dh1128          | Daniel Hardman   | Admin      |      |            | daniel.hardman@gmail.com | Provident           |
+| shaangill025    | Shaanjot Gill    | Maintainer |      |            | gill.shaanjots@gmail.com | BC Gov              |
+| swcurran        | Stephen Curran   | Admin      |      |            | swcurran@cloudcompass.ca | BC Gov              |
+| TelegramSam     | Sam Curren       | Maintainer |      |            | telegramsam@gmail.com    | Indicio PBC         |
+| TimoGlastra     | Timo Glastra     | Admin      |      |            | timo@animo.id            | Animo Solutions     |
+| WadeBarnes      | Wade Barnes      | Admin      |      |            | wade@neoterictech.ca     | BC Gov              |
+
+Daniel Bluhm <>, Daniel Hardman <daniel.hardman@gmail.com>, Andrew Whitehead <cywolf@gmail.com>, Timo Glastra <timo@animo.id>, Shaanjot Gill <gill.shaanjots@gmail.com>, Sam Curren <telegramsam@gmail.com>, Wade Barnes <wade@neoterictech.ca>
 
 ## Emeritus Maintainers
 
