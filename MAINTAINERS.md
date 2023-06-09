@@ -34,6 +34,7 @@ Maintainers are assigned the following scopes in this repository:
 | TelegramSam     | Sam Curren       | Maintainer |      |            | telegramsam@gmail.com    | Indicio PBC         |
 | TimoGlastra     | Timo Glastra     | Admin      |      |            | timo@animo.id            | Animo Solutions     |
 | WadeBarnes      | Wade Barnes      | Admin      |      |            | wade@neoterictech.ca     | BC Gov              |
+| usingtechnology | Jason Sherman    | Maintainer |      |            | tools@usingtechnolo.gy   | BC Gov              |
 
 ## Emeritus Maintainers
 
