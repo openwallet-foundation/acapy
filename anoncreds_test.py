@@ -1,4 +1,5 @@
 import os
+import time
 
 from controller.controller import Controller
 from controller.protocols import (
@@ -116,6 +117,7 @@ async def main():
         result = await alice.post(
             "/anoncreds/publish-revocations",
         )
+        non_revoked_time = int(time.time())
         bob_pres, alice_pres = await indy_present_proof_v2(
             bob,
             alice,
@@ -128,6 +130,7 @@ async def main():
                 {"name": "name", "restrictions": [{"cred_def_id": cred_def_id}]},
                 {"name": "age", "restrictions": [{"cred_def_id": cred_def_id}]},
             ],
+            non_revoked={"from": non_revoked_time, "to": non_revoked_time},
         )
         print(alice_pres.verified)
 

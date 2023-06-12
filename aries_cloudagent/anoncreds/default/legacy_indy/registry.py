@@ -451,9 +451,52 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         )
 
     async def get_revocation_list(
-        self, profile: Profile, revocation_registry_id: str, timestamp: str
+        self, profile: Profile, rev_reg_def_id: str, timestamp: int
     ) -> GetRevListResult:
         """Get a revocation list from the registry."""
+        async with profile.session() as session:
+            multitenant_mgr = session.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
+            else:
+                ledger_exec_inst = session.inject(IndyLedgerRequestsExecutor)
+
+        ledger_id, ledger = await ledger_exec_inst.get_ledger_for_identifier(
+            rev_reg_def_id,
+            txn_record_type=GET_CRED_DEF,
+        )
+        if not ledger:
+            reason = "No ledger available"
+            if not profile.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise AnonCredsResolutionError(reason)
+
+        async with ledger:
+            delta, timestamp = await ledger.get_revoc_reg_delta(
+                rev_reg_def_id, timestamp_to=timestamp
+            )
+
+            if delta is None:
+                raise AnonCredsObjectNotFound(
+                    f"Revocation list not found for rev reg def: {rev_reg_def_id}",
+                    {"ledger_id": ledger_id},
+                )
+
+            LOGGER.debug("Retrieved delta: %s", delta)
+            rev_list = RevList(
+                issuer_id=rev_reg_def_id.split(":")[0],
+                rev_reg_def_id=rev_reg_def_id,
+                revocation_list=delta["value"]["revoked"],
+                current_accumulator=delta["value"]["accum"],
+                timestamp=timestamp,
+            )
+            result = GetRevListResult(
+                revocation_list=rev_list,
+                resolution_metadata={},
+                revocation_registry_metadata={},
+            )
+
+        return result
 
     async def _revoc_reg_entry_with_fix(
         self,
