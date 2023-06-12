@@ -234,7 +234,7 @@ services:
       - ${MULTI_AGENT_HTTP_IN_PORT}:${MULTI_AGENT_HTTP_IN_PORT}
     networks:
       - app-network
-      - elk-network
+    #   - elk-network
     healthcheck:
       test: /bin/bash -c "</dev/tcp/${MULTI_HOST}/${MULTI_AGENT_HTTP_IN_PORT}"
       interval: 5s
@@ -242,7 +242,7 @@ services:
       retries: 5
 
   wallet-db:
-    image: postgres:15
+    image: postgres:14
     # restart: always
     hostname: ${POSTGRESQL_HOST}
     environment:
