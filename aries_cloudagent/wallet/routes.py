@@ -366,7 +366,13 @@ async def wallet_create_did(request: web.BaseRequest):
     info = None
     async with context.session() as session:
         did_methods = session.inject(DIDMethods)
-        method = did_methods.from_method(body.get("method", "")) or SOV
+
+        method = did_methods.from_method(body.get("method", "sov"))
+        if not method:
+            raise web.HTTPForbidden(
+                reason=(f"method {body.get('method')} is not supported by the agent.")
+            )
+
         key_types = session.inject(KeyTypes)
         # set default method and key type for backwards compat
         key_type = (
