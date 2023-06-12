@@ -26,6 +26,7 @@ from .test_doc import (
     DOC_DERIVED_BBS,
     DOC_SIGNED_BBS,
     DOC_TEMPLATE,
+    DOC_TEMPLATE_2020,
     DOC_SIGNED,
     DOC_SIGNED_2020,
     DOC_TEMPLATE_BBS,
@@ -93,7 +94,7 @@ class TestLDProofs(TestCase):
             date=datetime(2019, 12, 11, 3, 50, 55, 0, timezone.utc),
         )
         signed = await sign(
-            document=DOC_TEMPLATE,
+            document=DOC_TEMPLATE_2020,
             suite=suite,
             purpose=AssertionProofPurpose(),
             document_loader=custom_document_loader,

@@ -37,9 +37,26 @@ DOC_SIGNED = {
     },
 }
 
+DOC_TEMPLATE_2020 = {
+    "@context": [
+        "https://w3id.org/security/v2",
+        "https://w3id.org/security/suites/ed25519-2020/v1",
+        {
+            "schema": "http://schema.org/",
+            "name": "schema:name",
+            "homepage": "schema:url",
+            "image": "schema:image",
+        },
+    ],
+    "name": "Manu Sporny",
+    "homepage": "https://manu.sporny.org/",
+    "image": "https://manu.sporny.org/images/manu.png",
+}
+
 DOC_SIGNED_2020 = {
     "@context": [
         "https://w3id.org/security/v2",
+        "https://w3id.org/security/suites/ed25519-2020/v1",
         {
             "schema": "http://schema.org/",
             "name": "schema:name",
@@ -55,7 +72,7 @@ DOC_SIGNED_2020 = {
         "created": "2019-12-11T03:50:55+00:00",
         "type": "Ed25519Signature2020",
         "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-        "proofValue": "z67Fcr8ANsG36dL225aqDaZF4QdcBhmETivJxz9eha5mRfZ6vrjRMmemAwsUL2nS8L8C4pTjuoWwdjSkyvsrsMJbL",
+        "proofValue": "z3R1pBptysFeWSTMeNVefAHQoPodXYT5pV1Nb9H2vpj2ucb3SJDSVpTvKNuV176KoXdtSrJLxot9CZgD6QtsCJZfJ",
     },
 }
 
@@ -220,6 +237,7 @@ DOC_VERIFIED_2020 = DocumentVerificationResult(
     document={
         "@context": [
             "https://w3id.org/security/v2",
+            "https://w3id.org/security/suites/ed25519-2020/v1",
             {
                 "schema": "http://schema.org/",
                 "name": "schema:name",
@@ -235,7 +253,7 @@ DOC_VERIFIED_2020 = DocumentVerificationResult(
             "created": "2019-12-11T03:50:55+00:00",
             "type": "Ed25519Signature2020",
             "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-            "proofValue": "z67Fcr8ANsG36dL225aqDaZF4QdcBhmETivJxz9eha5mRfZ6vrjRMmemAwsUL2nS8L8C4pTjuoWwdjSkyvsrsMJbL",
+            "proofValue": "z3R1pBptysFeWSTMeNVefAHQoPodXYT5pV1Nb9H2vpj2ucb3SJDSVpTvKNuV176KoXdtSrJLxot9CZgD6QtsCJZfJ",
         },
     },
     results=[
@@ -244,6 +262,7 @@ DOC_VERIFIED_2020 = DocumentVerificationResult(
             proof={
                 "@context": [
                     "https://w3id.org/security/v2",
+                    "https://w3id.org/security/suites/ed25519-2020/v1",
                     {
                         "schema": "http://schema.org/",
                         "name": "schema:name",
@@ -255,7 +274,7 @@ DOC_VERIFIED_2020 = DocumentVerificationResult(
                 "created": "2019-12-11T03:50:55+00:00",
                 "type": "Ed25519Signature2020",
                 "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-                "proofValue": "z67Fcr8ANsG36dL225aqDaZF4QdcBhmETivJxz9eha5mRfZ6vrjRMmemAwsUL2nS8L8C4pTjuoWwdjSkyvsrsMJbL",
+                "proofValue": "z3R1pBptysFeWSTMeNVefAHQoPodXYT5pV1Nb9H2vpj2ucb3SJDSVpTvKNuV176KoXdtSrJLxot9CZgD6QtsCJZfJ",
             },
             purpose_result=PurposeResult(
                 valid=True,
