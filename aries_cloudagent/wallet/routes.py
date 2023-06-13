@@ -10,6 +10,8 @@ from marshmallow import fields, validate
 
 from aries_cloudagent.messaging.jsonld.credential import b64decode
 from aries_cloudagent.messaging.jsonld.error import BadJWSHeaderError
+from aries_cloudagent.messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
+from aries_cloudagent.resolver.did_resolver import DIDResolver
 
 from ..admin.request_context import AdminRequestContext
 from ..connections.models.conn_record import ConnRecord
@@ -113,10 +115,10 @@ class JWSCreateSchema(OpenAPISchema):
 
     headers = fields.Dict()
     payload = fields.Dict(required=True)
-    did = fields.Str(description="DID of interest", required=True, **INDY_DID)
+    did = fields.Str(description="DID of interest", required=False, **INDY_DID)
     verification_method = fields.Str(
         data_key="verificationMethod",
-        required=True,
+        required=False,
         description="Information used for proof verification",
         example=(
             "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
@@ -803,10 +805,16 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     did = body.get("did")
+    verification_method = body.get("verificationMethod")
+    """ TODO:
+    If the DID is given, we'll select the first appropriate key from
+    the DID Doc and use that for the kid (in practice, we assume the
+    appropriate key is #keys-1).
+    """
     if did is None:
-        did = body.get("verificationMethod").split("#", 1)[0]
-    if did is None:
-        raise web.HTTPBadRequest(reason="did and verificationMethod required.")
+        if verification_method is None:
+            raise web.HTTPBadRequest(reason="did or verificationMethod required.")
+        did = verification_method.split("#", 1)[0]
     payload = body["payload"]
     headers = body.get("headers", {})
     async with context.session() as session:
@@ -816,19 +824,23 @@ async def wallet_jwt_sign(request: web.BaseRequest):
         try:
             did_info = await wallet.get_local_did(did)
             headers["alg"] = "EdDSA"
-            headers["typ"] = "JWT"  # TODO: why not JWS?
+            headers["typ"] = "JWT"
             headers["kid"] = f"{did}#keys-1"  # TODO: fix me
-            headers["crit"] = ["b64"]  # TODO: do we need this
-            # TODO: do we need to b64encode before signing?
+            encoded_headers = bytes_to_b64(
+                json.dumps(headers).encode(), urlsafe=True, pad=False
+            )
+            encoded_payload = bytes_to_b64(
+                json.dumps(payload).encode(), urlsafe=True, pad=False
+            )
             signature = await wallet.sign_message(
-                f"{headers.encode('utf-8')}.{payload.encode('utf-8')}", did_info.verkey
+                f"{encoded_headers}.{encoded_payload}".encode(), did_info.verkey
             )
         except WalletNotFoundError as err:
             raise web.HTTPNotFound(reason=err.roll_up) from err
         except WalletError as err:
             raise web.HTTPBadRequest(reason=err.roll_up) from err
     sig = bytes_to_b64(signature, pad=False)
-    return web.json_response(f"{headers}.{payload}.{sig}")
+    return web.json_response(f"{encoded_headers}.{encoded_payload}.{sig}")
 
 
 @docs(tags=["wallet"], summary="Verify a EdDSA jws using did keys with a given JWS")
@@ -847,22 +859,24 @@ async def wallet_jwt_verify(request: web.BaseRequest):
     encoded_header, encoded_payload, encoded_signiture = jwt.split(".", 3)
     header = json.loads(b64decode(encoded_header))
 
-    if (
-        "alg" not in header
-        or header["alg"] != "EdDSA"
-        or "b64" not in header
-        or header["b64"] is not False
-        or "crit" not in header
-        or header["crit"] != ["b64"]
-        or "kid" not in header
-    ):
+    if "alg" not in header or header["alg"] != "EdDSA" or "kid" not in header:
         raise BadJWSHeaderError(
             "Invalid JWS header parameters for Ed25519Signature2018."
         )
     # payload = json.loads(b64decode(encoded_payload))
-    verkey = header["kid"]
+    verification_method = header["kid"]
     decoded_signature = b64_to_bytes(encoded_signiture, urlsafe=True)
     async with context.session() as session:
+        resolver = session.inject(DIDResolver)
+        vmethod = await resolver.dereference(
+            context.profile,
+            verification_method,
+        )
+
+        if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):
+            raise web.HTTPBadRequest(reason=f"{vmethod.type} is not supported")
+        verkey = vmethod.material
+
         wallet = session.inject(BaseWallet)
         Bona_fide = await wallet.verify_message(
             f"{encoded_header}.{encoded_payload}", decoded_signature, verkey, ED25519
