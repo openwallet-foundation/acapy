@@ -1,6 +1,8 @@
 """Utilities for specifying which verification method is in use for a given DID."""
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, List
+
+from aries_cloudagent.wallet.key_type import KeyType
 
 from aries_cloudagent.did.did_key import DIDKey
 
@@ -9,12 +11,19 @@ class BaseVerificationKeyStrategy(ABC):
     """Base class for defining which verification method is in use."""
 
     @abstractmethod
-    def get_verification_method_id_for_did(self, did) -> Optional[str]:
+    def get_verification_method_id_for_did(
+        self,
+        did: str,
+        allowed_verification_method_types: Optional[List[KeyType]] = None,
+        proof_purpose: Optional[str] = None,
+    ) -> Optional[str]:
         """Given a DID, returns the verification key ID in use.
 
         Returns None if no strategy is specified for this DID.
 
-        :params str did: the did
+        :params did: the did
+        :params allowed_verification_method_types: list of accepted key types
+        :params proof_purpose: the verkey relationship (assertionMethod, keyAgreement, ..)
         :returns Optional[str]: the current verkey ID
         """
         pass
@@ -26,12 +35,19 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
     Supports did:key: and did:sov only.
     """
 
-    def get_verification_method_id_for_did(self, did) -> Optional[str]:
+    def get_verification_method_id_for_did(
+        self,
+        did: str,
+        allowed_verification_method_types: Optional[List[KeyType]] = None,
+        proof_purpose: Optional[str] = None,
+    ) -> Optional[str]:
         """Given a did:key or did:sov, returns the verification key ID in use.
 
         Returns None if no strategy is specified for this DID.
 
         :params str did: the did
+        :params allowed_verification_method_types: list of accepted key types
+        :params proof_purpose: the verkey relationship (assertionMethod, keyAgreement, ..)
         :returns Optional[str]: the current verkey ID
         """
         if did.startswith("did:key:"):
