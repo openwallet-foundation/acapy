@@ -104,7 +104,11 @@ async def main():
                 {"name": "age", "restrictions": [{"cred_def_id": cred_def_id}]},
             ],
         )
-        print(alice_pres.verified)
+        print("Before revocation")
+        print(alice_pres.verified, "should be true")
+        before_revoking_time = int(time.time())
+
+        await asyncio.sleep(5)
 
         result = await alice.post(
             "/anoncreds/revoke",
@@ -117,22 +121,103 @@ async def main():
         result = await alice.post(
             "/anoncreds/publish-revocations",
         )
-        non_revoked_time = int(time.time())
+        await asyncio.sleep(3)
+
+        # Request proof from holder again after revoking
+        revoked_time = int(time.time())
         bob_pres, alice_pres = await indy_present_proof_v2(
             bob,
             alice,
             bob_conn.connection_id,
             alice_conn.connection_id,
-            name="proof-1",
-            version="0.1",
-            comment="testing",
             requested_attributes=[
-                {"name": "name", "restrictions": [{"cred_def_id": cred_def_id}]},
-                {"name": "age", "restrictions": [{"cred_def_id": cred_def_id}]},
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                }
             ],
-            non_revoked={"from": non_revoked_time, "to": non_revoked_time},
+            non_revoked={"from": revoked_time, "to": revoked_time},
         )
-        print(alice_pres.verified)
+        print("Interval after revocation")
+        print(alice_pres.verified, "should be false")
+
+        # Request proof from holder again after revoking,
+        # using the interval before cred revoked
+        # (non_revoked interval/when cred was valid)
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                }
+            ],
+            non_revoked={"from": before_revoking_time, "to": before_revoking_time},
+        )
+        print("Interval before revocation")
+        print(alice_pres.verified, "should be true")
+
+        # Request proof, no interval
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                }
+            ],
+        )
+        print("No interval")
+        print(alice_pres.verified, "should be true")
+
+        # Request proof, using invalid/revoked interval but using
+        # local non_revoked override (in requsted attrs)
+        # ("LOCAL"-->requested attrs)
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                    "non_revoked": {
+                        "from": before_revoking_time,
+                        "to": before_revoking_time,
+                    },
+                }
+            ],
+            non_revoked={"from": revoked_time, "to": revoked_time},
+        )
+        print("Local interval overriding global?")
+        print(alice_pres.verified, "should be true")
+
+        # Request proof, just local invalid interval
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                    "non_revoked": {
+                        "from": revoked_time,
+                        "to": revoked_time,
+                    },
+                }
+            ],
+        )
+        print("Local interval")
+        print(alice_pres.verified, "should be false")
 
 
 if __name__ == "__main__":

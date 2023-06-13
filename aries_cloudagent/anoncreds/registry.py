@@ -141,13 +141,11 @@ class AnonCredsRegistry:
         )
 
     async def get_revocation_list(
-        self, profile: Profile, revocation_registry_id: str, timestamp: int
+        self, profile: Profile, rev_reg_def_id: str, timestamp: int
     ) -> GetRevListResult:
         """Get a revocation list from the registry."""
-        resolver = await self._resolver_for_identifier(revocation_registry_id)
-        return await resolver.get_revocation_list(
-            profile, revocation_registry_id, timestamp
-        )
+        resolver = await self._resolver_for_identifier(rev_reg_def_id)
+        return await resolver.get_revocation_list(profile, rev_reg_def_id, timestamp)
 
     async def register_revocation_list(
         self,

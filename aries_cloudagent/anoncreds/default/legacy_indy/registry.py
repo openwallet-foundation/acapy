@@ -3,8 +3,9 @@ from asyncio import shield
 import json
 import logging
 import re
-from typing import Optional, Pattern, Sequence, Tuple
+from typing import List, Optional, Pattern, Sequence, Tuple
 
+from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
 from ....ledger.base import BaseLedger
@@ -450,6 +451,33 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             revocation_registry_definition_metadata={"seqNo": seq_no},
         )
 
+    async def _get_or_fetch_rev_reg_def_max_cred_num(
+        self, profile: Profile, ledger: BaseLedger, rev_reg_def_id: str
+    ) -> int:
+        """Retrieve max cred num for a rev reg def.
+
+        The value is retrieved from cache or from the ledger if necessary.
+        """
+        cache = profile.inject(BaseCache)
+        cache_key = f"anoncreds::legacy_indy::rev_reg_max_cred_num::{rev_reg_def_id}"
+
+        if cache:
+            max_cred_num = await cache.get(cache_key)
+            if max_cred_num:
+                return max_cred_num
+
+        rev_reg_def = await ledger.get_revoc_reg_def(rev_reg_def_id)
+        max_cred_num = rev_reg_def["value"]["maxCredNum"]
+
+        if cache:
+            await cache.set(cache_key, max_cred_num)
+
+        return max_cred_num
+
+    def _indexes_to_bit_array(self, indexes: List[int], size: int) -> List[int]:
+        """Turn a sequence of indexes into a full state bit array."""
+        return [1 if index in indexes else 0 for index in range(1, size + 1)]
+
     async def get_revocation_list(
         self, profile: Profile, rev_reg_def_id: str, timestamp: int
     ) -> GetRevListResult:
@@ -483,10 +511,19 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 )
 
             LOGGER.debug("Retrieved delta: %s", delta)
+            max_cred_num = await self._get_or_fetch_rev_reg_def_max_cred_num(
+                profile, ledger, rev_reg_def_id
+            )
+            revocation_list_from_indexes = self._indexes_to_bit_array(
+                delta["value"]["revoked"], max_cred_num
+            )
+            LOGGER.debug(
+                "Index list to full state bit array: %s", revocation_list_from_indexes
+            )
             rev_list = RevList(
                 issuer_id=rev_reg_def_id.split(":")[0],
                 rev_reg_def_id=rev_reg_def_id,
-                revocation_list=delta["value"]["revoked"],
+                revocation_list=revocation_list_from_indexes,
                 current_accumulator=delta["value"]["accum"],
                 timestamp=timestamp,
             )
@@ -510,14 +547,15 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         ledger = profile.inject(BaseLedger)
 
         try:
-            rev_entry_res = await ledger.send_revoc_reg_entry(
-                rev_list.rev_reg_def_id,
-                rev_reg_def_type,
-                entry,
-                rev_list.issuer_id,
-                write_ledger=True,
-                endorser_did=None,
-            )
+            async with ledger:
+                rev_entry_res = await ledger.send_revoc_reg_entry(
+                    rev_list.rev_reg_def_id,
+                    rev_reg_def_type,
+                    entry,
+                    rev_list.issuer_id,
+                    write_ledger=True,
+                    endorser_did=None,
+                )
         except LedgerTransactionError as err:
             if "InvalidClientRequest" in err.roll_up:
                 # ... if the ledger write fails (with "InvalidClientRequest")
