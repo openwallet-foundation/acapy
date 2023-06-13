@@ -7,13 +7,14 @@ For Connection, DIDExchange and OutOfBand Manager.
 import logging
 from typing import Optional, List, Sequence, Tuple, Text
 
+from multiformats import multibase
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
     DIDCommService,
     VerificationMethod,
 )
 import pydid
-from pydid.verification_method import Ed25519VerificationKey2018, JsonWebKey2020
+from pydid.verification_method import Ed25519VerificationKey2018, JsonWebKey2020, Ed25519VerificationKey2020
 
 from ..config.logging import get_logger_inst
 from ..core.error import BaseError
@@ -294,6 +295,8 @@ class BaseConnectionManager:
     def _extract_key_material_in_base58_format(method: VerificationMethod) -> str:
         if isinstance(method, Ed25519VerificationKey2018):
             return method.material
+        elif isinstance(method, Ed25519VerificationKey2020):
+            return bytes_to_b58(multibase.decode(method.material))
         elif isinstance(method, JsonWebKey2020):
             if method.public_key_jwk.get("kty") == "OKP":
                 return bytes_to_b58(b64_to_bytes(method.public_key_jwk.get("x"), True))
