@@ -38,7 +38,9 @@ from ....vc.ld_proofs.constants import (
 )
 from ....vc.vc_ld.prove import sign_presentation, create_presentation, derive_credential
 from ....wallet.base import BaseWallet, DIDInfo
-from ....wallet.default_verification_key_strategy import DefaultVerificationKeyStrategy
+from ....wallet.default_verification_key_strategy import (
+    BaseVerificationKeyStrategy,
+)
 from ....wallet.error import WalletError, WalletNotFoundError
 from ....wallet.key_type import BLS12381G2, ED25519
 
@@ -117,7 +119,7 @@ class DIFPresExchHandler:
     ):
         """Get signature suite for signing presentation."""
         did_info = await self._did_info_for_did(issuer_id)
-        verkey_id_strategy = self.profile.context.inject(DefaultVerificationKeyStrategy)
+        verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
         verification_method = verkey_id_strategy.get_verification_method_id_for_did(
             issuer_id
         )

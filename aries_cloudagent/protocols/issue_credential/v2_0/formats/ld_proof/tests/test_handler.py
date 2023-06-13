@@ -28,6 +28,7 @@ from .......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
 from .......vc.tests.document_loader import custom_document_loader
 from .......wallet.default_verification_key_strategy import (
     DefaultVerificationKeyStrategy,
+    BaseVerificationKeyStrategy,
 )
 from .......wallet.key_type import BLS12381G2, ED25519
 from .......wallet.error import WalletNotFoundError
@@ -129,7 +130,7 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         # Set default verkey ID strategy
         self.context.injector.bind_instance(
-            DefaultVerificationKeyStrategy, DefaultVerificationKeyStrategy()
+            BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
         )
 
         self.handler = LDProofCredFormatHandler(self.profile)

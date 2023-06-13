@@ -5,7 +5,7 @@ from typing import Optional
 from aries_cloudagent.did.did_key import DIDKey
 
 
-class DefaultVerificationKeyStrategyBase(ABC):
+class BaseVerificationKeyStrategy(ABC):
     """Base class for defining which verification method is in use."""
 
     @abstractmethod
@@ -20,7 +20,7 @@ class DefaultVerificationKeyStrategyBase(ABC):
         pass
 
 
-class DefaultVerificationKeyStrategy(DefaultVerificationKeyStrategyBase):
+class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
     """A basic implementation for verkey strategy.
 
     Supports did:key: and did:sov only.

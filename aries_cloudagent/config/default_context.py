@@ -17,7 +17,10 @@ from ..tails.base import BaseTailsServer
 from ..transport.wire_format import BaseWireFormat
 from ..utils.dependencies import is_indy_sdk_module_installed
 from ..utils.stats import Collector
-from ..wallet.default_verification_key_strategy import DefaultVerificationKeyStrategy
+from ..wallet.default_verification_key_strategy import (
+    DefaultVerificationKeyStrategy,
+    BaseVerificationKeyStrategy,
+)
 from ..wallet.did_method import DIDMethods
 from ..wallet.key_type import KeyTypes
 from .base_context import ContextBuilder
@@ -55,7 +58,7 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_instance(DIDMethods, DIDMethods())
         context.injector.bind_instance(KeyTypes, KeyTypes())
         context.injector.bind_instance(
-            DefaultVerificationKeyStrategy, DefaultVerificationKeyStrategy()
+            BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
         )
 
         await self.bind_providers(context)
