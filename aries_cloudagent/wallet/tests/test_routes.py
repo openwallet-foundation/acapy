@@ -129,6 +129,17 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             )
             assert result is json_response.return_value
 
+    async def test_create_did_unsupported_method(self):
+        self.request.json = async_mock.AsyncMock(
+            return_value={
+                "method": "madeupmethod",
+                "options": {"key_type": "bls12381g2"},
+            }
+        )
+
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.wallet_create_did(self.request)
+
     async def test_create_did_unsupported_key_type(self):
         self.request.json = async_mock.AsyncMock(
             return_value={"method": "sov", "options": {"key_type": "bls12381g2"}}
