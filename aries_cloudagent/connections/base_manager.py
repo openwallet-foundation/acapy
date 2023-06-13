@@ -14,7 +14,11 @@ from pydid import (
     VerificationMethod,
 )
 import pydid
-from pydid.verification_method import Ed25519VerificationKey2018, JsonWebKey2020, Ed25519VerificationKey2020
+from pydid.verification_method import (
+    Ed25519VerificationKey2018,
+    JsonWebKey2020,
+    Ed25519VerificationKey2020,
+)
 
 from ..config.logging import get_logger_inst
 from ..core.error import BaseError

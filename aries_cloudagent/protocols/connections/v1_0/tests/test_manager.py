@@ -3,7 +3,11 @@ from unittest.mock import call
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
 from multiformats import multibase
 from pydid import DIDDocument, DIDDocumentBuilder
-from pydid.verification_method import Ed25519VerificationKey2018, Ed25519VerificationKey2020, JsonWebKey2020
+from pydid.verification_method import (
+    Ed25519VerificationKey2018,
+    Ed25519VerificationKey2020,
+    JsonWebKey2020,
+)
 
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
@@ -2324,12 +2328,16 @@ class TestConnectionManager(AsyncTestCase):
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.fetch_connection_targets(mock_conn)
 
-    async def test_fetch_connection_targets_conn_invitation_supports_Ed25519VerificationKey2018_key_type(self):
+    async def test_fetch_connection_targets_conn_invitation_supports_Ed25519VerificationKey2018_key_type(
+        self,
+    ):
         async with self.profile.session() as session:
             builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
             vmethod = builder.verification_method.add(
                 Ed25519VerificationKey2020,
-                public_key_multibase=multibase.encode(b58_to_bytes(self.test_target_verkey), "base58btc")
+                public_key_multibase=multibase.encode(
+                    b58_to_bytes(self.test_target_verkey), "base58btc"
+                ),
             )
             builder.service.add_didcomm(
                 type_="IndyAgent",
