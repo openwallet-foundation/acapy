@@ -120,8 +120,10 @@ class DIFPresExchHandler:
         """Get signature suite for signing presentation."""
         did_info = await self._did_info_for_did(issuer_id)
         verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
-        verification_method = verkey_id_strategy.get_verification_method_id_for_did(
-            issuer_id, proof_purpose="assertionMethod"
+        verification_method = (
+            await verkey_id_strategy.get_verification_method_id_for_did(
+                issuer_id, proof_purpose="assertionMethod"
+            )
         )
 
         if verification_method is None:

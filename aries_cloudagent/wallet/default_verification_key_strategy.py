@@ -11,7 +11,7 @@ class BaseVerificationKeyStrategy(ABC):
     """Base class for defining which verification method is in use."""
 
     @abstractmethod
-    def get_verification_method_id_for_did(
+    async def get_verification_method_id_for_did(
         self,
         did: str,
         allowed_verification_method_types: Optional[List[KeyType]] = None,
@@ -35,7 +35,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
     Supports did:key: and did:sov only.
     """
 
-    def get_verification_method_id_for_did(
+    async def get_verification_method_id_for_did(
         self,
         did: str,
         allowed_verification_method_types: Optional[List[KeyType]] = None,

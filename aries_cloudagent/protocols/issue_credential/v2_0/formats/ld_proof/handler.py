@@ -275,7 +275,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
         verification_method = (
             verification_method
-            or verkey_id_strategy.get_verification_method_id_for_did(
+            or await verkey_id_strategy.get_verification_method_id_for_did(
                 issuer_id, proof_purpose="assertionMethod"
             )
         )

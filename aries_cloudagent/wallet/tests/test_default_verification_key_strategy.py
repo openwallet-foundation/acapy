@@ -11,20 +11,22 @@ TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
 
 
 class TestDefaultVerificationKeyStrategy(TestCase):
-    def test_with_did_sov(self):
+    async def test_with_did_sov(self):
         strategy = DefaultVerificationKeyStrategy()
         assert (
-            strategy.get_verification_method_id_for_did(TEST_DID_SOV)
+            await strategy.get_verification_method_id_for_did(TEST_DID_SOV)
             == TEST_DID_SOV + "#key-1"
         )
 
-    def test_with_did_key(self):
+    async def test_with_did_key(self):
         strategy = DefaultVerificationKeyStrategy()
         assert (
-            strategy.get_verification_method_id_for_did(TEST_DID_KEY)
+            await strategy.get_verification_method_id_for_did(TEST_DID_KEY)
             == DIDKey.from_did(TEST_DID_KEY).key_id
         )
 
-    def test_unsupported_did_method(self):
+    async def test_unsupported_did_method(self):
         strategy = DefaultVerificationKeyStrategy()
-        assert strategy.get_verification_method_id_for_did("did:test:test") is None
+        assert (
+            await strategy.get_verification_method_id_for_did("did:test:test") is None
+        )
