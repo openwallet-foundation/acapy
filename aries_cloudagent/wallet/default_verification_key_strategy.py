@@ -2,6 +2,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
 
+from aries_cloudagent.core.profile import Profile
+
 from aries_cloudagent.wallet.key_type import KeyType
 
 from aries_cloudagent.did.did_key import DIDKey
@@ -14,6 +16,7 @@ class BaseVerificationKeyStrategy(ABC):
     async def get_verification_method_id_for_did(
         self,
         did: str,
+        profile: Optional[Profile] = None,
         allowed_verification_method_types: Optional[List[KeyType]] = None,
         proof_purpose: Optional[str] = None,
     ) -> Optional[str]:
@@ -38,6 +41,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
     async def get_verification_method_id_for_did(
         self,
         did: str,
+        profile: Optional[Profile] = None,
         allowed_verification_method_types: Optional[List[KeyType]] = None,
         proof_purpose: Optional[str] = None,
     ) -> Optional[str]:
