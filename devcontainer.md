@@ -34,10 +34,10 @@ In this guide, we will use [Docker](https://www.docker.com) and [Visual Studio C
 There are 2 ways to open ACA-Py into the devcontainer and start developing.
 
 1. Open Visual Studio Code, and use the Command Palette to open the devcontainer.
-	
-	```
-	> Dev Containers: Open Folder in Container...
-	```
+    
+    ```
+    > Dev Containers: Open Folder in Container...
+    ```
 
 2. Open the root of this repository and you should be prompted to `Reopen in Container`.
 
@@ -45,7 +45,7 @@ There are 2 ways to open ACA-Py into the devcontainer and start developing.
 
 #### devcontainer.json
 
-When the [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) is opened, you will see it building... what it is building is a Python 3.9 image and loading it with ACA-Py requiments (and black). Since this is a Docker container, we will also open ports `9060` and `9061` which will allow you to run ACA-Py with those ports available to your `localhost`. We also load a few Visual Studio settings (for running Pytests and formatting with Flake and Black).
+When the [.devcontainer/devcontainer.json](.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.9 image (bash shell) and loading it with all the ACA-Py requirements (and black). Since this is a Docker container, we will also open ports `9060` and `9061`, allowing you to run/debug ACA-Py with those ports available to your `localhost`. We also load a few Visual Studio settings (for running Pytests and formatting with Flake and Black).
 
 In VS Code, open a Terminal, you should be able to run the following commands:
 
@@ -85,7 +85,7 @@ In `launch.json` you will see:
 
 ```
         {
-            "name": "start acapy",
+            "name": "Run/Debug ACA-Py",
             "type": "python",
             "request": "launch",
             "module": "aries_cloudagent",
@@ -97,13 +97,15 @@ In `launch.json` you will see:
         },
 ```
 
+To run your ACA-Py code in debug mode, go to the Run and Debug view, select "Run/Debug ACA-Py" and click "Start Debugging" (F5).
+
 This will start your source code as a running ACA-Py instance, all configuration is in the `multitenant.yml` file. This is just a sample of a configuration, and we chose multi-tenancy so we can easily create multiple wallets/agents and have them interact.  Note that we are not using a database and are joining the ` http://test.bcovrin.vonx.io` ledger. Feel free to change to a local VON Network (by default, it would be `http://host.docker.internal:9000`) or another ledger. This is purposefully a very simple configuration.
 
-Remember those ports we exposed in `devcontainer`? You can open a browser to `http://localhost:9061/api/doc` and see your Admin Console Swagger. Set some breakpoints and hit some endpoints and start debugging your source code.
+Remember those ports we exposed in `devcontainer`? You can open a browser to `http://localhost:9061/api/doc` and see your Admin Console Swagger. Set some breakpoints and hit some endpoints, and start debugging your source code.
 
 For example, open `aries_cloudagent/admin/server.py` and set a breakpoint in `async def status_handler(self, request: web.BaseRequest):`, then call [`GET /status`](http://localhost:9061/api/doc#/server/get_status) in the Admin Console and hit your breakpoint.
 
 
 ## Next Steps
 
-At this point, you now have a development environment where you can add pytests, add ACA-Py code and run and debug it all. Be aware there are limitations with `devcontainer` and other docker networks. You may need to adjust other docker compose files to not start their own networks, and you may need to reference containers using `host.docker.internal`. This isn't a panacea, but should get you going in the right direction and provide you with some tools to get developing.
+At this point, you now have a development environment where you can add pytests, add ACA-Py code and run and debug it all. Be aware there are limitations with `devcontainer` and other docker networks. You may need to adjust other docker-compose files not to start their own networks, and you may need to reference containers using `host.docker.internal`. This isn't a panacea but should get you going in the right direction and provide you with some development tools.

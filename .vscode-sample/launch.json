@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "start acapy",
+            "name": "Run/Debug ACA-Py",
             "type": "python",
             "request": "launch",
             "module": "aries_cloudagent",
