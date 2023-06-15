@@ -1,13 +1,10 @@
 from unittest import TestCase
 
-from aries_cloudagent.core.profile import Profile
-
 from aries_cloudagent.did.did_key import DIDKey
 
 from aries_cloudagent.wallet.default_verification_key_strategy import (
     DefaultVerificationKeyStrategy,
 )
-from build.lib.aries_cloudagent.config.injection_context import InjectionContext
 
 TEST_DID_SOV = "did:sov:LjgpST2rjsoxYegQDRm7EL"
 TEST_DID_KEY = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
