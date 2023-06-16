@@ -106,7 +106,7 @@ aca-py start    --inbound-transport http 0.0.0.0 8000 \
 
 ACA-Py ships with both inbound and outbound transport drivers for `http` and `ws` (websockets). Additional transport drivers can be added as pluggable implementations. See the existing implementations in the [transports module](aries_cloudagent/transport) for getting starting on adding a new transport.
 
-Most configuration parameters are provided to the the agent at startup. Refer to the `Running` sections above for details on listing the available command line parameters.
+Most configuration parameters are provided to the agent at startup. Refer to the `Running` sections above for details on listing the available command line parameters.
 
 ### Provisioning Secure Storage
 
