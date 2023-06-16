@@ -29,7 +29,11 @@ See the [README](README.md) for details about this repository and information ab
 
 Aries Cloud Agent Python (ACA-Py) is a configurable, extensible, non-mobile Aries agent that implements an easy way for developers to build decentralized identity services that use verifiable credentials.
 
-The information on this page assumes you are developer with a background in decentralized identity, Indy, Aries and verifiable credentials. If you aren't familiar with those concepts and projects, please use our [Getting Started Guide](/docs/GettingStartedAriesDev/README.md) to learn more.
+The information on this page assumes you are developer with a background in
+decentralized identity, Aries, DID Methods, and verifiable credentials,
+especially AnonCreds. If you aren't familiar with those concepts and projects,
+please use our [Getting Started Guide](/docs/GettingStartedAriesDev/README.md)
+to learn more.
 
 ## Developer Demos
 
@@ -39,8 +43,12 @@ To put ACA-Py through its paces at the command line, checkout our [demos](/docs/
 
 ### Configuring ACA-PY: Command Line Parameters
 
-ACA-Py agent instances are configured through the use of command line parameters. Use the `--help` option
-to discover the available command line parameters.
+ACA-Py agent instances are configured through the use of command line
+parameters, environment variables and/or YAML files. All of the configurations
+settings can be managed using any combination of the three methods (command line
+parameters override environment variables override YAML). Use the `--help`
+option to discover the available command line parameters. There are a lot of
+them--for good and bad.
 
 ### Docker
 
@@ -100,17 +108,19 @@ ACA-Py ships with both inbound and outbound transport drivers for `http` and `ws
 
 Most configuration parameters are provided to the the agent at startup. Refer to the `Running` sections above for details on listing the available command line parameters.
 
-### Provisioning a Wallet
+### Provisioning Secure Storage
 
-It is possible to provision an Indy wallet before running an agent to avoid passing in the wallet seed on every invocation of an agent (e.g. on every `aca-py start ...`).
+It is possible to provision a secure storage (sometimes called a wallet--but not
+the same as a mobile wallet app) before running an agent to avoid passing in the
+secure storage seed on every invocation of an agent (e.g. on every `aca-py start ...`).
 
 ```bash
-aca-py provision --wallet-type indy --seed $SEED
+aca-py provision --wallet-type askar --seed $SEED
 ```
 
 For additional `provision` options, execute `aca-py provision --help`.
 
-Additional information about wallet storages can be found [here](Databases.md).
+Additional information about secure storage options and configuration settings can be found [here](Databases.md).
 
 ### Mediation
 
@@ -152,7 +162,7 @@ Any ports you will be using from the docker container should be published using 
 PORTS="5000:5000 8000:8000 10000:10000" ./scripts/run_docker start --inbound-transport http 0.0.0.0 10000 --outbound-transport http --debug --log-level DEBUG
 ```
 
-Refer to [the previous section](#Running) for instructions on how to run the software.
+Refer to [the previous section](#Running) for instructions on how to run ACA-Py.
 
 ### Logging
 
@@ -193,8 +203,8 @@ Check out and run AATH tests as follows (this tests the aca-py `main` branch):
 ```bash
 git clone https://github.com/hyperledger/aries-agent-test-harness.git
 cd aries-agent-test-harness
-./manage build -a acapy-master
-./manage run -d acapy-master -t @AcceptanceTest -t ~@wip
+./manage build -a acapy-main
+./manage run -d acapy-main -t @AcceptanceTest -t ~@wip
 ```
 
 The `manage` script is described in detail [here](https://github.com/hyperledger/aries-agent-test-harness#the-manage-bash-script), including how to modify the AATH code to run the tests against your aca-py repo/branch.
