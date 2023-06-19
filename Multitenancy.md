@@ -416,8 +416,8 @@ To allow configurablity of ACA-Py startup parameters/environment variables at a 
       "wallet_dispatch_type": "base",
       "extra_settings": {
           "ACAPY_LOG_LEVEL": "INFO",
-          "ACAPY_INVITE_PUBLIC": "true",
-          "ACAPY_PUBLIC_INVITES": "True",
+          "ACAPY_INVITE_PUBLIC": true,
+          "ACAPY_PUBLIC_INVITES": true
       },
   }
   ```
@@ -442,8 +442,8 @@ To allow configurablity of ACA-Py startup parameters/environment variables at a 
     "image_url": " ... ",
     "extra_settings": {
         "ACAPY_LOG_LEVEL": "INFO",
-        "ACAPY_INVITE_PUBLIC": "True",
-        "ACAPY_PUBLIC_INVITES": "false",
+        "ACAPY_INVITE_PUBLIC": true,
+        "ACAPY_PUBLIC_INVITES": false
     },
   }
   ```
@@ -454,5 +454,3 @@ To allow configurablity of ACA-Py startup parameters/environment variables at a 
    -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
    -d @-
   ```
-
-All the currently suppoorted settings in `extra_settings` are either accepting str or boolean. But the bool attributes in the request body should be passed along as a string such as `"true", "True", "false", "False"`.
