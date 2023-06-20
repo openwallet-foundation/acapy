@@ -16,7 +16,7 @@ class BaseVerificationKeyStrategy(ABC):
     async def get_verification_method_id_for_did(
         self,
         did: str,
-        profile: Optional[Profile] = None,
+        profile: Optional[Profile],
         allowed_verification_method_types: Optional[List[KeyType]] = None,
         proof_purpose: Optional[str] = None,
     ) -> Optional[str]:
@@ -25,6 +25,7 @@ class BaseVerificationKeyStrategy(ABC):
         Returns None if no strategy is specified for this DID.
 
         :params did: the did
+        :params profile: context of the call
         :params allowed_verification_method_types: list of accepted key types
         :params proof_purpose: the verkey relationship (assertionMethod, keyAgreement, ..)
         :returns Optional[str]: the current verkey ID
@@ -41,7 +42,7 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
     async def get_verification_method_id_for_did(
         self,
         did: str,
-        profile: Optional[Profile] = None,
+        profile: Optional[Profile],
         allowed_verification_method_types: Optional[List[KeyType]] = None,
         proof_purpose: Optional[str] = None,
     ) -> Optional[str]:
@@ -49,7 +50,8 @@ class DefaultVerificationKeyStrategy(BaseVerificationKeyStrategy):
 
         Returns None if no strategy is specified for this DID.
 
-        :params str did: the did
+        :params did: the did
+        :params profile: context of the call
         :params allowed_verification_method_types: list of accepted key types
         :params proof_purpose: the verkey relationship (assertionMethod, keyAgreement, ..)
         :returns Optional[str]: the current verkey ID

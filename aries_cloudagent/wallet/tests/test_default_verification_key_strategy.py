@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from aries_cloudagent.core.profile import Profile
+
 from aries_cloudagent.did.did_key import DIDKey
 
 from aries_cloudagent.wallet.default_verification_key_strategy import (
@@ -14,19 +16,22 @@ class TestDefaultVerificationKeyStrategy(TestCase):
     async def test_with_did_sov(self):
         strategy = DefaultVerificationKeyStrategy()
         assert (
-            await strategy.get_verification_method_id_for_did(TEST_DID_SOV)
+            await strategy.get_verification_method_id_for_did(TEST_DID_SOV, Profile())
             == TEST_DID_SOV + "#key-1"
         )
 
     async def test_with_did_key(self):
         strategy = DefaultVerificationKeyStrategy()
         assert (
-            await strategy.get_verification_method_id_for_did(TEST_DID_KEY)
+            await strategy.get_verification_method_id_for_did(TEST_DID_KEY, Profile())
             == DIDKey.from_did(TEST_DID_KEY).key_id
         )
 
     async def test_unsupported_did_method(self):
         strategy = DefaultVerificationKeyStrategy()
         assert (
-            await strategy.get_verification_method_id_for_did("did:test:test") is None
+            await strategy.get_verification_method_id_for_did(
+                "did:test:test", Profile()
+            )
+            is None
         )
