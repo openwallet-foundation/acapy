@@ -144,11 +144,21 @@ class RouteManager(ABC):
         """Set up routing for a new connection when we are the inviter."""
         LOGGER.debug("Routing connection as inviter")
         my_info = await self.get_or_create_my_did(profile, conn_record)
+
+        replace_key = conn_record.invitation_key
+        async with profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            public_did = await wallet.get_public_did()
+
+        # Do not replace key, if it is public
+        if public_did and public_did.verkey == conn_record.invitation_key:
+            replace_key = None
+
         return await self._route_for_key(
             profile,
             my_info.verkey,
             mediation_record,
-            replace_key=conn_record.invitation_key,
+            replace_key=replace_key,
             skip_if_exists=True,
         )
 
