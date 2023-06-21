@@ -4334,6 +4334,41 @@
         }
       }
     },
+    "/settings" : {
+      "get" : {
+        "tags" : [ "settings" ],
+        "summary" : "Get profile settings or config",
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "type" : "object",
+            "description" : "Settings for this wallet.",
+            "properties" : { }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "settings" ],
+        "summary" : "Update profile settings or config",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/UpdateProfileSettingsRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "type" : "object",
+            "description" : "Settings for this wallet.",
+            "properties" : { }
+          }
+        }
+      }
+    },
     "/shutdown" : {
       "get" : {
         "tags" : [ "server" ],
@@ -11911,6 +11946,16 @@
       "properties" : {
         "ledger_id" : {
           "type" : "string"
+        }
+      }
+    },
+    "UpdateProfileSettingsRequest" : {
+      "type" : "object",
+      "properties" : {
+        "extra_settings" : {
+          "type" : "object",
+          "description" : "Settings or config to update.",
+          "properties" : { }
         }
       }
     },

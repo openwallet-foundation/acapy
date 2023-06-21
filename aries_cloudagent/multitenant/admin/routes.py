@@ -32,7 +32,7 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_AUTO_PING_CONNECTION": "auto_ping_connection",
     "ACAPY_MONITOR_PING": "debug.monitor_ping",
     "ACAPY_AUTO_RESPOND_MESSAGES": "debug.auto_respond_messages",
-    "ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER": "debug.auto_resopnd_credential_offer",
+    "ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER": "debug.auto_respond_credential_offer",
     "ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST": "debug.auto_respond_credential_request",
     "ACAPY_AUTO_VERIFY_PRESENTATION": "debug.auto_verify_presentation",
     "ACAPY_NOTIFY_REVOCATION": "revocation.notify",
@@ -42,10 +42,32 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_ENDORSER_ROLE": "endorser.protocol_role",
 }
 
+ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {
+    "log_level": "log.level",
+    "invite_public": "debug.invite_public",
+    "public_invites": "public_invites",
+    "auto_accept_invites": "debug.auto_accept_invites",
+    "auto_accept_requests": "debug.auto_accept_requests",
+    "auto_ping_connection": "auto_ping_connection",
+    "monitor_ping": "debug.monitor_ping",
+    "auto_respond_messages": "debug.auto_respond_messages",
+    "auto_respond_credential_offer": "debug.auto_respond_credential_offer",
+    "auto_respond_credential_request": "debug.auto_respond_credential_request",
+    "auto_verify_presentation": "debug.auto_verify_presentation",
+    "notify_revocation": "revocation.notify",
+    "auto_request_endorsement": "endorser.auto_request",
+    "auto_write_transactions": "endorser.auto_write",
+    "auto_create_revocation_transactions": "endorser.auto_create_rev_reg",
+    "endorser_protocol_role": "endorser.protocol_role",
+}
+
 ACAPY_ENDORSER_FLAGS_DEPENDENT_ON_AUTHOR_ROLE = [
     "ACAPY_AUTO_REQUEST_ENDORSEMENT",
     "ACAPY_AUTO_WRITE_TRANSACTIONS",
     "ACAPY_CREATE_REVOCATION_TRANSACTIONS",
+    "auto_request_endorsement",
+    "auto_write_transactions",
+    "auto_create_revocation_transactions",
 ]
 
 
@@ -64,11 +86,13 @@ def format_wallet_record(wallet_record: WalletRecord):
 def get_extra_settings_dict_per_tenant(tenant_settings: dict) -> dict:
     """Get per tenant settings to be applied when creating wallet."""
 
-    endorser_role_flag = tenant_settings.get("ACAPY_ENDORSER_ROLE")
+    endorser_role_flag = tenant_settings.get(
+        "ACAPY_ENDORSER_ROLE"
+    ) or tenant_settings.get("endorser_protocol_role")
     extra_settings = {}
-    if endorser_role_flag == "author":
+    if endorser_role_flag and endorser_role_flag == "author":
         extra_settings["endorser.author"] = True
-    elif endorser_role_flag == "endorser":
+    elif endorser_role_flag and endorser_role_flag == "endorser":
         extra_settings["endorser.endorser"] = True
     for flag in tenant_settings.keys():
         if (
@@ -79,7 +103,11 @@ def get_extra_settings_dict_per_tenant(tenant_settings: dict) -> dict:
             # this setting will be ignored.
             continue
         if flag != "ACAPY_ENDORSER_ROLE":
-            map_flag = ACAPY_LIFECYCLE_CONFIG_FLAG_MAP[flag]
+            map_flag = ACAPY_LIFECYCLE_CONFIG_FLAG_MAP.get(
+                flag
+            ) or ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP.get(flag)
+            if not map_flag:
+                continue
             extra_settings[map_flag] = tenant_settings[flag]
     return extra_settings
 

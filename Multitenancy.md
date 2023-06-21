@@ -381,24 +381,24 @@ curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
 
 To allow configurablity of ACA-Py startup parameters/environment variables at a tenant/subwallet level. [PR#2233](https://github.com/hyperledger/aries-cloudagent-python/pull/2233) will provide the ability to update the following subset of settings when creating or updating the subwallet:
 
-| Label  | Setting  |
-|---|---|
-| ACAPY_LOG_LEVEL  |  log.level |
-| ACAPY_INVITE_PUBLIC  |  debug.invite_public  |
-| ACAPY_PUBLIC_INVITES  | public_invites  |
-| ACAPY_AUTO_ACCEPT_INVITES  | debug.auto_accept_invites  |
-| ACAPY_AUTO_ACCEPT_REQUESTS  | debug.auto_accept_requests  |
-| ACAPY_AUTO_PING_CONNECTION  | auto_ping_connection  |
-| ACAPY_MONITOR_PING  | debug.monitor_ping  |
-| ACAPY_AUTO_RESPOND_MESSAGES  | debug.auto_respond_messages  |
-| ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER  | debug.auto_resopnd_credential_offer  |
-| ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST  | debug.auto_respond_credential_request  |
-| ACAPY_AUTO_VERIFY_PRESENTATION  | debug.auto_verify_presentation  |
-| ACAPY_NOTIFY_REVOCATION  | revocation.notify  |
-| ACAPY_AUTO_REQUEST_ENDORSEMENT  | endorser.auto_request  |
-| ACAPY_AUTO_WRITE_TRANSACTIONS  | endorser.auto_write  |
-| ACAPY_CREATE_REVOCATION_TRANSACTIONS  | endorser.auto_create_rev_reg  |
-| ACAPY_ENDORSER_ROLE  | endorser.protocol_role  |
+| Labels |   | Setting  |
+|---|---|---|
+| ACAPY_LOG_LEVEL  |  log_level |  log.level |
+| ACAPY_INVITE_PUBLIC  |  invite_public |  debug.invite_public  |
+| ACAPY_PUBLIC_INVITES  |  public_invites | public_invites  |
+| ACAPY_AUTO_ACCEPT_INVITES  |  auto_accept_invites | debug.auto_accept_invites  |
+| ACAPY_AUTO_ACCEPT_REQUESTS  |  auto_accept_requests | debug.auto_accept_requests  |
+| ACAPY_AUTO_PING_CONNECTION  |  auto_ping_connection | auto_ping_connection  |
+| ACAPY_MONITOR_PING  |  monitor_ping | debug.monitor_ping  |
+| ACAPY_AUTO_RESPOND_MESSAGES  |  auto_respond_messages | debug.auto_respond_messages  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER  |  auto_respond_credential_offer | debug.auto_resopnd_credential_offer  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST  |  auto_respond_credential_request | debug.auto_respond_credential_request  |
+| ACAPY_AUTO_VERIFY_PRESENTATION  |  auto_verify_presentation | debug.auto_verify_presentation  |
+| ACAPY_NOTIFY_REVOCATION  |  notify_revocation | revocation.notify  |
+| ACAPY_AUTO_REQUEST_ENDORSEMENT  |  auto_request_endorsement | endorser.auto_request  |
+| ACAPY_AUTO_WRITE_TRANSACTIONS  |  auto_write_transactions | endorser.auto_write  |
+| ACAPY_CREATE_REVOCATION_TRANSACTIONS  |  auto_create_revocation_transactions | endorser.auto_create_rev_reg  |
+| ACAPY_ENDORSER_ROLE  |  endorser_protocol_role | endorser.protocol_role  |
 
 - `POST /multitenancy/wallet`
 
@@ -417,7 +417,7 @@ To allow configurablity of ACA-Py startup parameters/environment variables at a 
       "extra_settings": {
           "ACAPY_LOG_LEVEL": "INFO",
           "ACAPY_INVITE_PUBLIC": true,
-          "ACAPY_PUBLIC_INVITES": true
+          "public_invites": true
       },
   }
   ```
