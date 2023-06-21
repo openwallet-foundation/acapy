@@ -333,11 +333,13 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 raise AnonCredsObjectAlreadyExists(
                     f"Credential definition with id {cred_def_id} "
                     "already exists in wallet and on ledger.",
+                    cred_def_id,
                 ) from err
             else:
                 raise AnonCredsObjectAlreadyExists(
                     f"Credential definition {cred_def_id} is on "
-                    f"ledger but not in wallet {profile.name}"
+                    f"ledger but not in wallet {profile.name}",
+                    cred_def_id,
                 ) from err
         except (AnonCredsIssuerError, LedgerError) as err:
             raise AnonCredsRegistrationError(
@@ -457,6 +459,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Retrieve max cred num for a rev reg def.
 
         The value is retrieved from cache or from the ledger if necessary.
+        The issuer could retrieve this value from the wallet but this info
+        must also be known to the holder.
         """
         cache = profile.inject(BaseCache)
         cache_key = f"anoncreds::legacy_indy::rev_reg_max_cred_num::{rev_reg_def_id}"
