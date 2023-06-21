@@ -157,14 +157,15 @@ class AnonCredsVerifier:
             reg_def = rev_reg_defs.get(rev_reg_id)
             if not reg_def:
                 raise ValueError(f"Missing registry definition for '{rev_reg_id}'")
-            if "txnTime" not in reg_def:
-                raise ValueError(
-                    f"Missing txnTime for registry definition '{rev_reg_id}'"
-                )
-            if timestamp < reg_def["txnTime"]:
-                raise ValueError(
-                    f"Timestamp {timestamp} predates rev reg {rev_reg_id} creation"
-                )
+            # TODO Generic anoncreds rev reg def does not include txn time or similar
+            # if "txnTime" not in reg_def:
+            #     raise ValueError(
+            #         f"Missing txnTime for registry definition '{rev_reg_id}'"
+            #     )
+            # if timestamp < reg_def["txnTime"]:
+            #     raise ValueError(
+            #         f"Timestamp {timestamp} predates rev reg {rev_reg_id} creation"
+            #     )
 
         # timestamp superfluous, missing, or outside non-revocation interval
         revealed_attrs = pres["requested_proof"].get("revealed_attrs", {})
@@ -380,14 +381,14 @@ class AnonCredsVerifier:
         self,
         identifiers: list,
     ) -> Tuple[dict, dict, dict, dict]:
-        """Return schemas, cred_defs, rev_reg_defs, rev_status_lists."""
+        """Return schemas, cred_defs, rev_reg_defs, rev_lists."""
         schema_ids = []
         cred_def_ids = []
 
         schemas = {}
         cred_defs = {}
         rev_reg_defs = {}
-        rev_status_lists = {}
+        rev_lists = {}
 
         for identifier in identifiers:
             schema_ids.append(identifier["schema_id"])
@@ -417,25 +418,25 @@ class AnonCredsVerifier:
                     ).revocation_registry.serialize()
 
                 if identifier.get("timestamp"):
-                    rev_status_lists.setdefault(identifier["rev_reg_id"], {})
+                    rev_lists.setdefault(identifier["rev_reg_id"], {})
 
                     if (
                         identifier["timestamp"]
-                        not in rev_status_lists[identifier["rev_reg_id"]]
+                        not in rev_lists[identifier["rev_reg_id"]]
                     ):
-                        result = await anoncreds_registry.get_revocation_status_list(
+                        result = await anoncreds_registry.get_revocation_list(
                             self.profile,
                             identifier["rev_reg_id"],
                             identifier["timestamp"],
                         )
-                        rev_status_lists[identifier["rev_reg_id"]][
+                        rev_lists[identifier["rev_reg_id"]][
                             identifier["timestamp"]
                         ] = result.revocation_list.serialize()
         return (
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_status_lists,
+            rev_lists,
         )
 
     async def verify_presentation(
@@ -445,7 +446,7 @@ class AnonCredsVerifier:
         schemas,
         credential_definitions,
         rev_reg_defs,
-        rev_status_lists,
+        rev_lists,
     ) -> Tuple[bool, list]:
         """
         Verify a presentation.
@@ -484,7 +485,11 @@ class AnonCredsVerifier:
                 schemas,
                 credential_definitions,
                 rev_reg_defs,
-                rev_status_lists,
+                [
+                    rev_list
+                    for timestamp_to_list in rev_lists.values()
+                    for rev_list in timestamp_to_list.values()
+                ],
             )
         except AnoncredsError as err:
             s = str(err)

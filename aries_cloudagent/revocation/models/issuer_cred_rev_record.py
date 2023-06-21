@@ -7,9 +7,6 @@ from marshmallow import fields
 from ...core.profile import ProfileSession
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import (
-    INDY_CRED_DEF_ID,
-    INDY_CRED_REV_ID,
-    INDY_REV_REG_ID,
     UUIDFour,
 )
 
@@ -152,17 +149,14 @@ class IssuerCredRevRecordSchema(BaseRecordSchema):
     rev_reg_id = fields.Str(
         required=False,
         description="Revocation registry identifier",
-        **INDY_REV_REG_ID,
     )
     cred_def_id = fields.Str(
         required=False,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
     )
     cred_rev_id = fields.Str(
         required=False,
         description="Credential revocation identifier",
-        **INDY_CRED_REV_ID,
     )
     cred_ex_version = fields.Str(
         required=False,

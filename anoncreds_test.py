@@ -1,4 +1,5 @@
 import os
+import time
 
 from controller.controller import Controller
 from controller.protocols import (
@@ -45,7 +46,7 @@ async def main():
                     "issuerId": public_did.did,
                 },
                 "options": {
-                    "support_revocation": False,
+                    "support_revocation": True,
                 },
             },
         )
@@ -55,8 +56,34 @@ async def main():
         cred_def = await alice.get(f"/anoncreds/credential-definition/{cred_def_id}")
         cred_defs = await alice.get("/anoncreds/credential-definitions")
 
+        rev_reg_def = await alice.post(
+            "/anoncreds/revocation-registry-definition",
+            json={
+                "issuerId": public_did.did,
+                "credDefId": cred_def_id,
+                "tag": "default",
+                "maxCredNum": 10,
+            },
+        )
+        rev_reg_def_id = rev_reg_def["revocation_registry_definition_state"][
+            "revocation_registry_definition_id"
+        ]
+        tails = await alice.put(
+            f"/anoncreds/registry/{rev_reg_def_id}/tails-file",
+        )
+        active = await alice.put(
+            f"/anoncreds/registry/{rev_reg_def_id}/active",
+        )
+        rev_status_list = await alice.post(
+            "/anoncreds/revocation-list",
+            json={
+                "revRegDefId": rev_reg_def["revocation_registry_definition_state"][
+                    "revocation_registry_definition_id"
+                ]
+            },
+        )
         alice_conn, bob_conn = await didexchange(alice, bob)
-        await indy_issue_credential_v2(
+        alice_cred_ex, bob_cred_ex = await indy_issue_credential_v2(
             alice,
             bob,
             alice_conn.connection_id,
@@ -77,7 +104,120 @@ async def main():
                 {"name": "age", "restrictions": [{"cred_def_id": cred_def_id}]},
             ],
         )
-        print(alice_pres.verified)
+        print("Before revocation")
+        print(alice_pres.verified, "should be true")
+        before_revoking_time = int(time.time())
+
+        await asyncio.sleep(5)
+
+        result = await alice.post(
+            "/anoncreds/revoke",
+            json={
+                "cred_ex_id": alice_cred_ex.cred_ex_id,
+                "connection_id": alice_conn.connection_id,
+                "notify": True,
+            },
+        )
+        result = await alice.post(
+            "/anoncreds/publish-revocations",
+        )
+        await asyncio.sleep(3)
+
+        # Request proof from holder again after revoking
+        revoked_time = int(time.time())
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                }
+            ],
+            non_revoked={"from": revoked_time, "to": revoked_time},
+        )
+        print("Interval after revocation")
+        print(alice_pres.verified, "should be false")
+
+        # Request proof from holder again after revoking,
+        # using the interval before cred revoked
+        # (non_revoked interval/when cred was valid)
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                }
+            ],
+            non_revoked={"from": before_revoking_time, "to": before_revoking_time},
+        )
+        print("Interval before revocation")
+        print(alice_pres.verified, "should be true")
+
+        # Request proof, no interval
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                }
+            ],
+        )
+        print("No interval")
+        print(alice_pres.verified, "should be true")
+
+        # Request proof, using invalid/revoked interval but using
+        # local non_revoked override (in requsted attrs)
+        # ("LOCAL"-->requested attrs)
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                    "non_revoked": {
+                        "from": before_revoking_time,
+                        "to": before_revoking_time,
+                    },
+                }
+            ],
+            non_revoked={"from": revoked_time, "to": revoked_time},
+        )
+        print("Local interval overriding global?")
+        print(alice_pres.verified, "should be true")
+
+        # Request proof, just local invalid interval
+        bob_pres, alice_pres = await indy_present_proof_v2(
+            bob,
+            alice,
+            bob_conn.connection_id,
+            alice_conn.connection_id,
+            requested_attributes=[
+                {
+                    "name": "name",
+                    "restrictions": [{"cred_def_id": cred_def_id}],
+                    "non_revoked": {
+                        "from": revoked_time,
+                        "to": revoked_time,
+                    },
+                }
+            ],
+        )
+        print("Local interval")
+        print(alice_pres.verified, "should be false")
 
 
 if __name__ == "__main__":

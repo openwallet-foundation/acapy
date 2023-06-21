@@ -415,7 +415,7 @@ class PresentationManager:
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_status_lists,
+            rev_lists,
         ) = await verifier.process_pres_identifiers(indy_proof["identifiers"])
 
         verifier = self._profile.inject(AnonCredsVerifier)
@@ -427,7 +427,7 @@ class PresentationManager:
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_status_lists,
+            rev_lists,
         )
         presentation_exchange_record.verified = json.dumps(verified_bool)
         presentation_exchange_record.verified_msgs = list(set(verified_msgs))

@@ -11,8 +11,9 @@ import indy.wallet
 from indy.error import ErrorCode
 from asynctest import mock as async_mock
 
+from ...indy.sdk.profile import IndySdkProfileManager, IndySdkProfile
+
 from ...config.injection_context import InjectionContext
-from ...anoncreds.sdk.profile import IndySdkProfileManager, IndySdkProfile
 from ...storage.base import BaseStorage
 from ...storage.error import StorageError, StorageSearchError
 from ...storage.indy import IndySdkStorage

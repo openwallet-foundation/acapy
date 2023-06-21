@@ -10,7 +10,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from ...config.injection_context import InjectionContext
 from ...cache.in_memory import InMemoryCache
 from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
-from ...anoncreds.sdk.profile import IndySdkProfile
+from ...indy.sdk.profile import IndySdkProfile
 from ...storage.record import StorageRecord
 from ...wallet.base import BaseWallet
 from ...wallet.did_info import DIDInfo

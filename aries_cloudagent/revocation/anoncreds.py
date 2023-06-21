@@ -3,20 +3,13 @@
 from typing import Optional, Sequence, Tuple
 from uuid import uuid4
 
+from ..anoncreds.registry import AnonCredsRegistry
 from ..core.profile import Profile
-from ..ledger.base import BaseLedger
-from ..ledger.multiple_ledger.ledger_requests_executor import (
-    GET_CRED_DEF,
-    GET_REVOC_REG_DEF,
-    IndyLedgerRequestsExecutor,
-)
-from ..multitenant.base import BaseMultitenantManager
 from ..protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
     is_author_role,
 )
 from ..storage.base import StorageNotFoundError
-
 from .error import (
     RevocationError,
     RevocationNotSupportedError,
@@ -27,42 +20,33 @@ from .models.revocation_registry import RevocationRegistry
 from .util import notify_revocation_reg_init_event
 
 
-class IndyRevocation:
+class AnonCredsRevocation:
     """Class for managing Indy credential revocation."""
 
     REV_REG_CACHE = {}
 
     def __init__(self, profile: Profile):
-        """Initialize the IndyRevocation instance."""
+        """Initialize the AnonCredsRevocation instance."""
         self._profile = profile
 
     async def init_issuer_registry(
         self,
+        issuer_id: str,
         cred_def_id: str,
         max_cred_num: int = None,
         revoc_def_type: str = None,
         tag: str = None,
         create_pending_rev_reg: bool = False,
         endorser_connection_id: str = None,
+        options: Optional[dict] = None,
         notify: bool = True,
     ) -> IssuerRevRegRecord:
         """Create a new revocation registry record for a credential definition."""
-        multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
-        else:
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger = (
-            await ledger_exec_inst.get_ledger_for_identifier(
-                cred_def_id,
-                txn_record_type=GET_CRED_DEF,
-            )
-        )[1]
-        async with ledger:
-            cred_def = await ledger.get_credential_definition(cred_def_id)
-        if not cred_def:
-            raise RevocationNotSupportedError("Credential definition not found")
-        if not cred_def["value"].get("revocation"):
+        anoncreds_registry = self._profile.inject(AnonCredsRegistry)
+        result = await anoncreds_registry.get_credential_definition(
+            self._profile, cred_def_id
+        )
+        if not result.credential_definition.value.revocation:
             raise RevocationNotSupportedError(
                 "Credential definition does not support revocation"
             )
@@ -74,19 +58,16 @@ class IndyRevocation:
             )
 
         record_id = str(uuid4())
-        issuer_did = cred_def_id.split(":")[0]
         record = IssuerRevRegRecord(
             new_with_id=True,
             record_id=record_id,
             cred_def_id=cred_def_id,
-            issuer_did=issuer_did,
+            issuer_id=issuer_id,
             max_cred_num=max_cred_num,
             revoc_def_type=revoc_def_type,
-            tag=tag,
+            tag=tag or record_id,
+            options=options,
         )
-        revoc_def_type = record.revoc_def_type
-        rtag = record.tag or record_id
-        record.revoc_reg_id = f"{issuer_did}:4:{cred_def_id}:{revoc_def_type}:{rtag}"
         async with self._profile.session() as session:
             await record.save(session, reason="Init revocation registry")
 
@@ -120,6 +101,7 @@ class IndyRevocation:
             await txn.commit()
 
         await self.init_issuer_registry(
+            registry.issuer_id,
             registry.cred_def_id,
             registry.max_cred_num,
             registry.revoc_def_type,
@@ -161,26 +143,6 @@ class IndyRevocation:
         async with self._profile.session() as session:
             return await IssuerRevRegRecord.query(session)
 
-    async def get_issuer_rev_reg_delta(
-        self, rev_reg_id: str, fro: int = None, to: int = None
-    ) -> dict:
-        """
-        Check ledger for revocation status for a given revocation registry.
-
-        Args:
-            rev_reg_id: ID of the revocation registry
-
-        """
-        ledger = await self.get_ledger_for_registry(rev_reg_id)
-        async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(
-                rev_reg_id,
-                fro,
-                to,
-            )
-
-        return rev_reg_delta
-
     async def get_or_create_active_registry(
         self, cred_def_id: str, max_cred_num: int = None
     ) -> Optional[Tuple[IssuerRevRegRecord, RevocationRegistry]]:
@@ -204,37 +166,22 @@ class IndyRevocation:
                 session, cred_def_id, {"$neq": IssuerRevRegRecord.STATE_FULL}
             )
             if not rev_reg_recs:
+                issuer_id = cred_def_id.split(":")[0]
                 await self.init_issuer_registry(
+                    issuer_id,
                     cred_def_id,
                     max_cred_num=max_cred_num,
                 )
         return None
 
-    async def get_ledger_registry(self, revoc_reg_id: str) -> RevocationRegistry:
-        """Get a revocation registry from the ledger, fetching as necessary."""
-        if revoc_reg_id in IndyRevocation.REV_REG_CACHE:
-            return IndyRevocation.REV_REG_CACHE[revoc_reg_id]
-
-        ledger = await self.get_ledger_for_registry(revoc_reg_id)
-
-        async with ledger:
-            rev_reg = RevocationRegistry.from_definition(
-                await ledger.get_revoc_reg_def(revoc_reg_id), True
-            )
-            IndyRevocation.REV_REG_CACHE[revoc_reg_id] = rev_reg
-            return rev_reg
-
-    async def get_ledger_for_registry(self, revoc_reg_id: str) -> BaseLedger:
-        """Get the ledger for the given registry."""
-        multitenant_mgr = self._profile.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(self._profile)
-        else:
-            ledger_exec_inst = self._profile.inject(IndyLedgerRequestsExecutor)
-        ledger = (
-            await ledger_exec_inst.get_ledger_for_identifier(
-                revoc_reg_id,
-                txn_record_type=GET_REVOC_REG_DEF,
-            )
-        )[1]
-        return ledger
+    async def get_revocation_registry(self, revoc_reg_id: str) -> RevocationRegistry:
+        """Return a revocation registry by identifier and hydrate."""
+        anoncreds_registry = self._profile.inject(AnonCredsRegistry)
+        result = await anoncreds_registry.get_revocation_registry_definition(
+            self._profile, revoc_reg_id
+        )
+        rev_reg = RevocationRegistry.from_definition(
+            result.revocation_registry.serialize(), True
+        )
+        AnonCredsRevocation.REV_REG_CACHE[revoc_reg_id] = rev_reg
+        return rev_reg

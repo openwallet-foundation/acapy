@@ -1,6 +1,6 @@
-"""Base Registry"""
+"""Base Registry."""
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, Pattern, Tuple, TypeVar
+from typing import Generic, Optional, Pattern, Sequence, TypeVar
 
 from ..config.injection_context import InjectionContext
 from ..core.error import BaseError
@@ -11,12 +11,12 @@ from .models.anoncreds_cred_def import (
     GetCredDefResult,
 )
 from .models.anoncreds_revocation import (
-    GetRevStatusListResult,
-    AnonCredsRegistryGetRevocationRegistryDefinition,
+    GetRevListResult,
+    GetRevRegDefResult,
     RevRegDef,
     RevRegDefResult,
-    RevStatusList,
-    RevStatusListResult,
+    RevList,
+    RevListResult,
 )
 from .models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 
@@ -34,6 +34,7 @@ class AnonCredsObjectNotFound(BaseAnonCredsError):
     def __init__(
         self, message: Optional[str] = None, resolution_metadata: Optional[dict] = None
     ):
+        """Constructor."""
         super().__init__(message, resolution_metadata)
         self.resolution_metadata = resolution_metadata
 
@@ -46,31 +47,35 @@ class AnonCredsObjectAlreadyExists(AnonCredsRegistrationError, Generic[T]):
     """Raised when an AnonCreds object already exists."""
 
     def __init__(
-        self, message: Optional[str] = None, obj: Optional[T] = None, *args, **kwargs
+        self,
+        message: str,
+        obj_id: str,
+        obj: T = None,
+        *args,
+        **kwargs,
     ):
-        super().__init__(message, obj, *args, **kwargs)
+        super().__init__(message, obj_id, obj, *args, **kwargs)
+        self._message = message
+        self.obj_id = obj_id
         self.obj = obj
 
     @property
     def message(self):
-        if self.args[0] and self.args[1]:
-            return f"{self.args[0]}: {self.args[1]}"
-        else:
-            return super().message
+        return f"{self._message}: {self.obj_id}, {self.obj}"
 
 
-class AnonCredsSchemaAlreadyExists(
-    AnonCredsObjectAlreadyExists[Tuple[str, AnonCredsSchema]]
-):
+class AnonCredsSchemaAlreadyExists(AnonCredsObjectAlreadyExists[AnonCredsSchema]):
     """Raised when a schema already exists."""
 
     @property
     def schema_id(self):
-        return self.obj[0] if self.obj else None
+        """Get Schema Id."""
+        return self.obj_id
 
     @property
     def schema(self):
-        return self.obj[1] if self.obj else None
+        """Get Schema."""
+        return self.obj
 
 
 class AnonCredsResolutionError(BaseAnonCredsError):
@@ -78,6 +83,8 @@ class AnonCredsResolutionError(BaseAnonCredsError):
 
 
 class BaseAnonCredsHandler(ABC):
+    """Base Anon Creds Handler."""
+
     @property
     @abstractmethod
     def supported_identifiers_regex(self) -> Pattern:
@@ -89,10 +96,12 @@ class BaseAnonCredsHandler(ABC):
 
     @abstractmethod
     async def setup(self, context: InjectionContext):
-        """Setup method."""
+        """Class Setup method."""
 
 
 class BaseAnonCredsResolver(BaseAnonCredsHandler):
+    """Base Anon Creds Resolver."""
+
     @abstractmethod
     async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
@@ -106,17 +115,19 @@ class BaseAnonCredsResolver(BaseAnonCredsHandler):
     @abstractmethod
     async def get_revocation_registry_definition(
         self, profile: Profile, revocation_registry_id: str
-    ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
+    ) -> GetRevRegDefResult:
         """Get a revocation registry definition from the registry."""
 
     @abstractmethod
-    async def get_revocation_status_list(
-        self, profile: Profile, revocation_registry_id: str, timestamp: str
-    ) -> GetRevStatusListResult:
+    async def get_revocation_list(
+        self, profile: Profile, revocation_registry_id: str, timestamp: int
+    ) -> GetRevListResult:
         """Get a revocation list from the registry."""
 
 
 class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
+    """Base Anon Creds Registrar."""
+
     @abstractmethod
     async def register_schema(
         self,
@@ -146,10 +157,23 @@ class BaseAnonCredsRegistrar(BaseAnonCredsHandler):
         """Register a revocation registry definition on the registry."""
 
     @abstractmethod
-    async def register_revocation_status_list(
+    async def register_revocation_list(
         self,
         profile: Profile,
-        rev_status_list: RevStatusList,
+        rev_reg_def: RevRegDef,
+        rev_list: RevList,
         options: Optional[dict] = None,
-    ) -> RevStatusListResult:
+    ) -> RevListResult:
         """Register a revocation list on the registry."""
+
+    @abstractmethod
+    async def update_revocation_list(
+        self,
+        profile: Profile,
+        rev_reg_def: RevRegDef,
+        prev_list: RevList,
+        curr_list: RevList,
+        revoked: Sequence[int],
+        options: Optional[dict] = None,
+    ) -> RevListResult:
+        """Update a revocation list on the registry."""

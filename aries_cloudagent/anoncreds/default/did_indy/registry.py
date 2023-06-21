@@ -1,18 +1,24 @@
 """DID Indy Registry"""
 import logging
 import re
-from typing import Pattern
+from typing import Optional, Pattern, Sequence
 
 from ....config.injection_context import InjectionContext
 from ....core.profile import Profile
 from ...models.anoncreds_cred_def import (
+    CredDef,
+    CredDefResult,
     GetCredDefResult,
 )
 from ...models.anoncreds_revocation import (
-    GetRevStatusListResult,
-    AnonCredsRegistryGetRevocationRegistryDefinition,
+    GetRevListResult,
+    GetRevRegDefResult,
+    RevRegDef,
+    RevRegDefResult,
+    RevList,
+    RevListResult,
 )
-from ...models.anoncreds_schema import GetSchemaResult
+from ...models.anoncreds_schema import AnonCredsSchema, GetSchemaResult, SchemaResult
 from ...base import BaseAnonCredsRegistrar, BaseAnonCredsResolver
 
 LOGGER = logging.getLogger(__name__)
@@ -33,63 +39,74 @@ class DIDIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         """Setup."""
         print("Successfully registered DIDIndyRegistry")
 
-    async def get_schema(self, profile: Profile, schema_id) -> GetSchemaResult:
+    async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
+        raise NotImplementedError()
 
-    async def get_schemas(self, profile: Profile, filter: str):
-        """Get schema ids filtered by filter"""
-
-    # TODO: determine keyword arguments
     async def register_schema(
         self,
         profile: Profile,
-        options: dict,
-        schema,
-    ):
+        schema: AnonCredsSchema,
+        options: Optional[dict],
+    ) -> SchemaResult:
         """Register a schema on the registry."""
+        raise NotImplementedError()
 
     async def get_credential_definition(
-        self, profile: Profile, cred_def_id: str
+        self, profile: Profile, credential_definition_id: str
     ) -> GetCredDefResult:
         """Get a credential definition from the registry."""
+        raise NotImplementedError()
 
-    async def get_credential_definitions(self, profile: Profile, filter: str):
-        """Get credential definition ids filtered by filter"""
-
-    # TODO: determine keyword arguments
     async def register_credential_definition(
         self,
         profile: Profile,
-        schema_id: str,
-        support_revocation: bool,
-        tag: str,
-        rev_reg_size: int,
-        issuer_id: str,
-    ):
+        schema: GetSchemaResult,
+        credential_definition: CredDef,
+        options: Optional[dict] = None,
+    ) -> CredDefResult:
         """Register a credential definition on the registry."""
+        raise NotImplementedError()
 
     async def get_revocation_registry_definition(
-        self, profile: Profile, rev_reg_id: str
-    ) -> AnonCredsRegistryGetRevocationRegistryDefinition:
+        self, profile: Profile, revocation_registry_id: str
+    ) -> GetRevRegDefResult:
         """Get a revocation registry definition from the registry."""
+        raise NotImplementedError()
 
-    # TODO: determine keyword arguments
     async def register_revocation_registry_definition(
         self,
         profile: Profile,
-        rev_reg_id: str,
-        issuer_id: str,
-    ):
+        revocation_registry_definition: RevRegDef,
+        options: Optional[dict] = None,
+    ) -> RevRegDefResult:
         """Register a revocation registry definition on the registry."""
+        raise NotImplementedError()
 
-    async def get_revocation_registry_definitions(self, profile: Profile, filter: str):
-        """Get credential definition ids filtered by filter"""
-
-    async def get_revocation_status_list(
-        self, profile: Profile, revocation_registry_id: str, timestamp: str
-    ) -> GetRevStatusListResult:
+    async def get_revocation_list(
+        self, profile: Profile, revocation_registry_id: str, timestamp: int
+    ) -> GetRevListResult:
         """Get a revocation list from the registry."""
+        raise NotImplementedError()
 
-    # TODO: determine keyword arguments
-    async def register_revocation_status_list(self):
+    async def register_revocation_list(
+        self,
+        profile: Profile,
+        rev_reg_def: RevRegDef,
+        rev_list: RevList,
+        options: Optional[dict] = None,
+    ) -> RevListResult:
         """Register a revocation list on the registry."""
+        raise NotImplementedError()
+
+    async def update_revocation_list(
+        self,
+        profile: Profile,
+        rev_reg_def: RevRegDef,
+        prev_list: RevList,
+        curr_list: RevList,
+        revoked: Sequence[int],
+        options: Optional[dict] = None,
+    ) -> RevListResult:
+        """Update a revocation list on the registry."""
+        raise NotImplementedError()

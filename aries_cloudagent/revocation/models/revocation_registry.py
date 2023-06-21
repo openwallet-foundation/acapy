@@ -30,7 +30,7 @@ class RevocationRegistry:
         registry_id: str = None,
         *,
         cred_def_id: str = None,
-        issuer_did: str = None,
+        issuer_id: str = None,
         max_creds: int = None,
         reg_def_type: str = None,
         tag: str = None,
@@ -41,7 +41,7 @@ class RevocationRegistry:
     ):
         """Initialize the revocation registry instance."""
         self._cred_def_id = cred_def_id
-        self._issuer_did = issuer_did
+        self._issuer_id = issuer_id
         self._max_creds = max_creds
         self._reg_def_type = reg_def_type
         self._registry_id = registry_id
@@ -60,11 +60,11 @@ class RevocationRegistry:
 
         reg_id = revoc_reg_def["id"]
         tails_location = revoc_reg_def["value"]["tailsLocation"]
-        issuer_did_match = re.match(r"^.*?([^:]*):3:CL:.*", revoc_reg_def["credDefId"])
-        issuer_did = issuer_did_match.group(1) if issuer_did_match else None
+        issuer_id = re.match(r"^.*?([^:]*):3:CL:.*", revoc_reg_def["credDefId"])
+        issuer_id = issuer_id.group(1) if issuer_id else None
         init = {
             "cred_def_id": revoc_reg_def["credDefId"],
-            "issuer_did": issuer_did,
+            "issuer_id": issuer_id,
             "reg_def_type": revoc_reg_def["revocDefType"],
             "max_creds": revoc_reg_def["value"]["maxCredNum"],
             "tag": revoc_reg_def["tag"],
@@ -87,9 +87,9 @@ class RevocationRegistry:
         return self._cred_def_id
 
     @property
-    def issuer_did(self) -> str:
+    def issuer_id(self) -> str:
         """Accessor for the issuer DID."""
-        return self._issuer_did
+        return self._issuer_id
 
     @property
     def max_creds(self) -> int:
@@ -146,7 +146,7 @@ class RevocationRegistry:
         if self._tails_local_path:
             return self._tails_local_path
 
-        tails_dir = indy_client_dir(join("tails", self.registry_id), create=False)
+        tails_dir = indy_client_dir("tails", create=False)
         return join(tails_dir, self._tails_hash)
 
     def has_local_tails_file(self) -> bool:

@@ -1,17 +1,17 @@
 """V2.0 issue-credential indy credential format handler."""
 
-import asyncio
 import json
 import logging
 from typing import Mapping, Tuple
 
 from marshmallow import RAISE
 
+from ......anoncreds.revocation import AnonCredsRevocation
+
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ......anoncreds.issuer import (
     AnonCredsIssuer,
-    AnonCredsIssuerRevocationRegistryFullError,
 )
 from ......anoncreds.models.cred import IndyCredentialSchema
 from ......anoncreds.models.cred_abstract import IndyCredAbstractSchema
@@ -28,9 +28,7 @@ from ......messaging.credential_definitions.util import (
 )
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......multitenant.base import BaseMultitenantManager
-from ......revocation.indy import IndyRevocation
 from ......revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
-from ......revocation.models.revocation_registry import RevocationRegistry
 from ......storage.base import BaseStorage
 from ...message_types import (
     ATTACHMENT_FORMAT,
@@ -327,83 +325,44 @@ class IndyCredFormatHandler(V20CredFormatHandler):
         cred_values = cred_ex_record.cred_offer.credential_preview.attr_dict(
             decode=False
         )
-        schema_id = cred_offer["schema_id"]
-        cred_def_id = cred_offer["cred_def_id"]
 
         issuer = AnonCredsIssuer(self.profile)
-
-        revocable = await issuer.cred_def_supports_revocation(cred_def_id)
-        result = None
-
-        for attempt in range(max(retries, 1)):
-            if attempt > 0:
-                LOGGER.info(
-                    "Waiting 2s before retrying credential issuance for cred def '%s'",
-                    cred_def_id,
-                )
-                await asyncio.sleep(2)
-
-            if revocable:
-                # TODO make this go through the anoncreds interface
-                revoc = IndyRevocation(self.profile)
-                registry_info = await revoc.get_or_create_active_registry(cred_def_id)
-                if not registry_info:
-                    continue
-                del revoc
-                issuer_rev_reg, rev_reg = registry_info
-                rev_reg_id = issuer_rev_reg.revoc_reg_id
-                tails_path = rev_reg.tails_local_path
-            else:
-                rev_reg_id = None
-                tails_path = None
-
-            try:
-                (cred_json, cred_rev_id) = await issuer.create_credential(
-                    schema_id,
-                    cred_offer,
-                    cred_request,
-                    cred_values,
-                    rev_reg_id,
-                    tails_path,
-                )
-            except AnonCredsIssuerRevocationRegistryFullError:
-                # unlucky, another instance filled the registry first
-                continue
-
-            if revocable and rev_reg.max_creds <= int(cred_rev_id):
-                revoc = IndyRevocation(self.profile)
-                await revoc.handle_full_registry(rev_reg_id)
-                del revoc
-
-            result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
-            break
-
-        if not result:
-            raise V20CredFormatError(
-                f"Cred def '{cred_def_id}' has no active revocation registry"
+        cred_def_id = cred_offer["cred_def_id"]
+        if await issuer.cred_def_supports_revocation(cred_def_id):
+            revocation = AnonCredsRevocation(self.profile)
+            cred_json, cred_rev_id, rev_reg_def_id = await revocation.create_credential(
+                cred_offer, cred_request, cred_values
             )
+        else:
+            cred_json = await issuer.create_credential(
+                cred_offer, cred_request, cred_values
+            )
+            cred_rev_id = None
+            rev_reg_def_id = None
+
+        result = self.get_format_data(CRED_20_ISSUE, json.loads(cred_json))
 
         async with self._profile.transaction() as txn:
             detail_record = V20CredExRecordIndy(
                 cred_ex_id=cred_ex_record.cred_ex_id,
-                rev_reg_id=rev_reg_id,
+                rev_reg_id=rev_reg_def_id,
                 cred_rev_id=cred_rev_id,
             )
             await detail_record.save(txn, reason="v2.0 issue credential")
 
-            if revocable and cred_rev_id:
+            if cred_rev_id:
                 issuer_cr_rec = IssuerCredRevRecord(
                     state=IssuerCredRevRecord.STATE_ISSUED,
                     cred_ex_id=cred_ex_record.cred_ex_id,
                     cred_ex_version=IssuerCredRevRecord.VERSION_2,
-                    rev_reg_id=rev_reg_id,
+                    rev_reg_id=rev_reg_def_id,
                     cred_rev_id=cred_rev_id,
                 )
                 await issuer_cr_rec.save(
                     txn,
                     reason=(
                         "Created issuer cred rev record for "
-                        f"rev reg id {rev_reg_id}, index {cred_rev_id}"
+                        f"rev reg id {rev_reg_def_id}, index {cred_rev_id}"
                     ),
                 )
             await txn.commit()
@@ -435,7 +394,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                     self.profile, cred["rev_reg_id"]
                 )
             )
-            rev_reg_def = rev_reg_def_result.revocation_registry.serialize()
+            rev_reg_def = rev_reg_def_result.revocation_registry
 
         holder = AnonCredsHolder(self.profile)
         cred_offer_message = cred_ex_record.cred_offer
@@ -444,8 +403,8 @@ class IndyCredFormatHandler(V20CredFormatHandler):
             mime_types = cred_offer_message.credential_preview.mime_types() or None
 
         if rev_reg_def:
-            rev_reg = RevocationRegistry.from_definition(rev_reg_def, True)
-            await rev_reg.get_or_fetch_local_tails_path()
+            revocation = AnonCredsRevocation(self.profile)
+            await revocation.get_or_fetch_local_tails_path(rev_reg_def)
         try:
             detail_record = await self.get_detail_record(cred_ex_record.cred_ex_id)
             if detail_record is None:
@@ -459,7 +418,7 @@ class IndyCredFormatHandler(V20CredFormatHandler):
                 detail_record.cred_request_metadata,
                 mime_types,
                 credential_id=cred_id,
-                rev_reg_def=rev_reg_def,
+                rev_reg_def=rev_reg_def.serialize() if rev_reg_def else None,
             )
 
             detail_record.cred_id_stored = cred_id_stored

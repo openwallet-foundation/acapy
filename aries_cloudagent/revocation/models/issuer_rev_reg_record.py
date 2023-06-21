@@ -1,41 +1,36 @@
 """Issuer revocation registry storage handling."""
 
+from functools import total_ordering
 import json
 import logging
-import uuid
-from functools import total_ordering
 from os.path import join
 from pathlib import Path
 from shutil import move
-from typing import Any, Mapping, Sequence, Union, Tuple
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
+import uuid
 
 from marshmallow import fields, validate
 
-from ...core.profile import Profile, ProfileSession
 from ...anoncreds.issuer import AnonCredsIssuer, AnonCredsIssuerError
-from ...anoncreds.models.revocation import (
-    IndyRevRegDef,
-    IndyRevRegDefSchema,
-    IndyRevRegEntry,
-    IndyRevRegEntrySchema,
+from ...anoncreds.models.anoncreds_revocation import (
+    RevList,
+    RevListResult,
+    RevListSchema,
+    RevRegDef,
+    RevRegDefSchema,
 )
+from ...anoncreds.registry import AnonCredsRegistry
+from ...anoncreds.revocation import AnonCredsRevocation
 from ...anoncreds.util import indy_client_dir
+from ...core.profile import Profile, ProfileSession
 from ...ledger.base import BaseLedger
-from ...ledger.error import LedgerError, LedgerTransactionError
+from ...ledger.error import LedgerError
 from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
-from ...messaging.valid import (
-    BASE58_SHA256_HASH,
-    INDY_CRED_DEF_ID,
-    INDY_DID,
-    INDY_REV_REG_ID,
-    UUIDFour,
-)
+from ...messaging.valid import BASE58_SHA256_HASH, UUIDFour
 from ...tails.base import BaseTailsServer
-
 from ..error import RevocationError
 from ..recover import generate_ledger_rrrecovery_txn
-
 from .issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation_registry import RevocationRegistry
 
@@ -59,7 +54,7 @@ class IssuerRevRegRecord(BaseRecord):
     LOG_STATE_FLAG = "debug.revocation"
     TAG_NAMES = {
         "cred_def_id",
-        "issuer_did",
+        "issuer_id",
         "revoc_def_type",
         "revoc_reg_id",
         "state",
@@ -80,17 +75,18 @@ class IssuerRevRegRecord(BaseRecord):
         state: str = None,
         cred_def_id: str = None,
         error_msg: str = None,
-        issuer_did: str = None,
+        issuer_id: str = None,
         max_cred_num: int = None,
         revoc_def_type: str = None,
         revoc_reg_id: str = None,
-        revoc_reg_def: Union[IndyRevRegDef, Mapping] = None,
-        revoc_reg_entry: Union[IndyRevRegEntry, Mapping] = None,
+        revoc_reg_def: Union[RevRegDef, Mapping] = None,
+        rev_list: Union[RevList, Mapping] = None,
         tag: str = None,
         tails_hash: str = None,
         tails_local_path: str = None,
         tails_public_uri: str = None,
         pending_pub: Sequence[str] = None,
+        options: Optional[dict] = None,
         **kwargs,
     ):
         """Initialize the issuer revocation registry record."""
@@ -99,12 +95,12 @@ class IssuerRevRegRecord(BaseRecord):
         )
         self.cred_def_id = cred_def_id
         self.error_msg = error_msg
-        self.issuer_did = issuer_did
+        self.issuer_id = issuer_id
         self.max_cred_num = max_cred_num or DEFAULT_REGISTRY_SIZE
         self.revoc_def_type = revoc_def_type or self.REVOC_DEF_TYPE_CL
         self.revoc_reg_id = revoc_reg_id
-        self._revoc_reg_def = IndyRevRegDef.serde(revoc_reg_def)
-        self._revoc_reg_entry = IndyRevRegEntry.serde(revoc_reg_entry)
+        self._revoc_reg_def = RevRegDef.serde(revoc_reg_def)
+        self._revoc_reg_entry = RevList.serde(rev_list)
         self.tag = tag
         self.tails_hash = tails_hash
         self.tails_local_path = tails_local_path
@@ -112,6 +108,7 @@ class IssuerRevRegRecord(BaseRecord):
         self.pending_pub = (
             sorted(list(set(pending_pub))) if pending_pub else []
         )  # order for eq comparison between instances
+        self.options = options or {}
 
     @property
     def record_id(self) -> str:
@@ -119,24 +116,24 @@ class IssuerRevRegRecord(BaseRecord):
         return self._id
 
     @property
-    def revoc_reg_def(self) -> IndyRevRegDef:
+    def revoc_reg_def(self) -> RevRegDef:
         """Accessor; get deserialized."""
         return None if self._revoc_reg_def is None else self._revoc_reg_def.de
 
     @revoc_reg_def.setter
     def revoc_reg_def(self, value):
         """Setter; store de/serialized views."""
-        self._revoc_reg_def = IndyRevRegDef.serde(value)
+        self._revoc_reg_def = RevRegDef.serde(value)
 
     @property
-    def revoc_reg_entry(self) -> IndyRevRegEntry:
+    def rev_list(self) -> RevList:
         """Accessor; get deserialized."""
         return None if self._revoc_reg_entry is None else self._revoc_reg_entry.de
 
-    @revoc_reg_entry.setter
-    def revoc_reg_entry(self, value):
+    @rev_list.setter
+    def rev_list(self, value):
         """Setter; store de/serialized views."""
-        self._revoc_reg_entry = IndyRevRegEntry.serde(value)
+        self._revoc_reg_entry = RevList.serde(value)
 
     @property
     def record_value(self) -> Mapping:
@@ -158,7 +155,7 @@ class IssuerRevRegRecord(BaseRecord):
                 prop: getattr(self, f"_{prop}").ser
                 for prop in (
                     "revoc_reg_def",
-                    "revoc_reg_entry",
+                    "rev_list",
                 )
                 if getattr(self, prop) is not None
             },
@@ -169,6 +166,49 @@ class IssuerRevRegRecord(BaseRecord):
         if not (parsed.scheme and parsed.netloc and parsed.path):
             raise RevocationError("URI {} is not a valid URL".format(url))
 
+    async def create_and_register_def(self, profile: Profile):
+        """Create the revocation registry definition and tails file and publish it."""
+        if not self.tag:
+            self.tag = self._id or str(uuid.uuid4())
+
+        if self.state != IssuerRevRegRecord.STATE_INIT:
+            raise RevocationError(
+                "Revocation registry {} in state {}: cannot generate".format(
+                    self.revoc_reg_id, self.state
+                )
+            )
+
+        revocation = AnonCredsRevocation(profile)
+
+        LOGGER.debug("Creating revocation registry with size: %d", self.max_cred_num)
+
+        try:
+            result = (
+                await revocation.create_and_register_revocation_registry_definition(
+                    self.issuer_id,
+                    self.cred_def_id,
+                    self.revoc_def_type,
+                    self.tag,
+                    self.max_cred_num,
+                    self.options,
+                )
+            )
+        except AnonCredsIssuerError as err:
+            raise RevocationError() from err
+
+        self.revoc_reg_id = result.rev_reg_def_id
+        self.revoc_reg_def = result.rev_reg_def.serialize()
+        self.state = IssuerRevRegRecord.STATE_POSTED
+        self.tails_hash = result.rev_reg_def.value.tails_hash
+        self.tails_public_uri = result.rev_reg_def.value.tails_location
+        self.tails_local_path = revocation.get_local_tails_path(result.rev_reg_def)
+
+        async with profile.session() as session:
+            await self.save(session, reason="Generated registry")
+
+        return result
+
+    # TODO Delete me; replaced by create_and_register_def
     async def generate_registry(self, profile: Profile):
         """Create the revocation registry definition and tails file."""
         if not self.tag:
@@ -193,7 +233,7 @@ class IssuerRevRegRecord(BaseRecord):
                 revoc_reg_def_json,
                 revoc_reg_entry_json,
             ) = await issuer.create_and_store_revocation_registry(
-                self.issuer_did,
+                self.issuer_id,
                 self.cred_def_id,
                 self.revoc_def_type,
                 self.tag,
@@ -219,6 +259,7 @@ class IssuerRevRegRecord(BaseRecord):
         async with profile.session() as session:
             await self.save(session, reason="Generated registry")
 
+    # TODO Delete me? Probably not needed anymore with the create_and_register_def
     async def set_tails_file_public_uri(self, profile: Profile, tails_file_uri: str):
         """Update tails file's publicly accessible URI."""
         if not (self.revoc_reg_def and self.revoc_reg_def.value.tails_location):
@@ -232,6 +273,7 @@ class IssuerRevRegRecord(BaseRecord):
         async with profile.session() as session:
             await self.save(session, reason="Set tails file public URI")
 
+    # TODO Delete me; replaced by create_and_register_def
     async def send_def(
         self,
         profile: Profile,
@@ -239,7 +281,7 @@ class IssuerRevRegRecord(BaseRecord):
         endorser_did: str = None,
     ) -> dict:
         """Send the revocation registry definition to the ledger."""
-        if not (self.revoc_reg_def and self.issuer_did):
+        if not (self.revoc_reg_def and self.issuer_id):
             raise RevocationError(f"Revocation registry {self.revoc_reg_id} undefined")
 
         self._check_url(self.tails_public_uri)
@@ -255,7 +297,7 @@ class IssuerRevRegRecord(BaseRecord):
         async with ledger:
             rev_reg_res = await ledger.send_revoc_reg_def(
                 self._revoc_reg_def.ser,
-                self.issuer_did,
+                self.issuer_id,
                 write_ledger=write_ledger,
                 endorser_did=endorser_did,
             )
@@ -269,15 +311,16 @@ class IssuerRevRegRecord(BaseRecord):
     async def send_entry(
         self,
         profile: Profile,
-        write_ledger: bool = True,
-        endorser_did: str = None,
-    ) -> dict:
+        options: Optional[dict] = None,
+        write_ledger: bool = True,  # TODO Delete me
+        endorser_did: str = None,  # TODO Delete me
+    ) -> RevListResult:
         """Send a registry entry to the ledger."""
         if not (
             self.revoc_reg_id
             and self.revoc_def_type
-            and self.revoc_reg_entry
-            and self.issuer_did
+            and self.rev_list
+            and self.issuer_id
         ):
             raise RevocationError("Revocation registry undefined")
 
@@ -294,48 +337,18 @@ class IssuerRevRegRecord(BaseRecord):
                 )
             )
 
-        ledger = profile.inject(BaseLedger)
-        async with ledger:
-            try:
-                rev_entry_res = await ledger.send_revoc_reg_entry(
-                    self.revoc_reg_id,
-                    self.revoc_def_type,
-                    self._revoc_reg_entry.ser,
-                    self.issuer_did,
-                    write_ledger=write_ledger,
-                    endorser_did=endorser_did,
-                )
-            except LedgerTransactionError as err:
-                if "InvalidClientRequest" in err.roll_up:
-                    # ... if the ledger write fails (with "InvalidClientRequest")
-                    # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
-                    #   Ledger rejected transaction request: client request invalid:
-                    #   InvalidClientRequest(...)
-                    # In this scenario we try to post a correction
-                    LOGGER.warn("Retry ledger update/fix due to error")
-                    LOGGER.warn(err)
-                    (_, _, res) = await self.fix_ledger_entry(
-                        profile,
-                        True,
-                        ledger.pool.genesis_txns,
-                    )
-                    rev_entry_res = {"result": res}
-                    LOGGER.warn("Ledger update/fix applied")
-                elif "InvalidClientTaaAcceptanceError" in err.roll_up:
-                    # if no write access (with "InvalidClientTaaAcceptanceError")
-                    # e.g. aries_cloudagent.ledger.error.LedgerTransactionError:
-                    #   Ledger rejected transaction request: client request invalid:
-                    #   InvalidClientTaaAcceptanceError(...)
-                    LOGGER.error("Ledger update failed due to TAA issue")
-                    LOGGER.error(err)
-                    raise err
-                else:
-                    # not sure what happened, raise an error
-                    LOGGER.error("Ledger update failed due to unknown issue")
-                    LOGGER.error(err)
-                    raise err
+        anoncreds_registry = profile.inject(AnonCredsRegistry)
+        rev_entry_res = await anoncreds_registry.register_revocation_list(
+            profile,
+            self.revoc_reg_def,
+            self.rev_list,
+            options,
+        )
+
         if self.state == IssuerRevRegRecord.STATE_POSTED:
-            self.state = IssuerRevRegRecord.STATE_ACTIVE  # initial entry activates
+            self.state = (
+                IssuerRevRegRecord.STATE_ACTIVE
+            )  # registering rev list activates
             async with profile.session() as session:
                 await self.save(
                     session, reason="Published initial revocation registry entry"
@@ -343,6 +356,43 @@ class IssuerRevRegRecord(BaseRecord):
 
         return rev_entry_res
 
+    async def create_and_register_list(
+        self,
+        profile: Profile,
+        options: Optional[dict] = None,
+        write_ledger: bool = True,  # TODO Delete me
+        endorser_did: str = None,  # TODO Delete me
+    ) -> RevListResult:
+        """Send a registry entry to the ledger."""
+        if not (self.revoc_reg_id and self.revoc_def_type and self.issuer_id):
+            raise RevocationError("Revocation registry undefined")
+
+        if self.state not in (IssuerRevRegRecord.STATE_POSTED,):
+            raise RevocationError(
+                "Revocation registry {} in state {}: cannot publish entry".format(
+                    self.revoc_reg_id, self.state
+                )
+            )
+
+        revocation = AnonCredsRevocation(profile)
+        result = await revocation.create_and_register_revocation_list(
+            self.revoc_reg_id,
+            options,
+        )
+
+        if self.state == IssuerRevRegRecord.STATE_POSTED:
+            self.state = (
+                IssuerRevRegRecord.STATE_ACTIVE
+            )  # registering rev status list activates
+            async with profile.session() as session:
+                await self.save(
+                    session, reason="Published initial revocation registry entry"
+                )
+
+        return result
+
+    # TODO Update to align with rev status list (if that's even necessary; does
+    # this move to indy registry?)
     async def fix_ledger_entry(
         self,
         profile: Profile,
@@ -480,7 +530,7 @@ class IssuerRevRegRecord(BaseRecord):
         return RevocationRegistry(
             self.revoc_reg_id,
             cred_def_id=self.cred_def_id,
-            issuer_did=self.issuer_did,
+            issuer_id=self.issuer_id,
             max_creds=self.max_cred_num,
             reg_def_type=self.revoc_def_type,
             tag=self.tag,
@@ -577,14 +627,13 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
     cred_def_id = fields.Str(
         required=False,
         description="Credential definition identifier",
-        **INDY_CRED_DEF_ID,
     )
     error_msg = fields.Str(
         required=False,
         description="Error message",
         example="Revocation registry undefined",
     )
-    issuer_did = fields.Str(required=False, description="Issuer DID", **INDY_DID)
+    issuer_id = fields.Str(required=False, description="Issuer DID")
     max_cred_num = fields.Int(
         required=False,
         description="Maximum number of credentials for revocation registry",
@@ -598,15 +647,15 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         validate=validate.Equal("CL_ACCUM"),
     )
     revoc_reg_id = fields.Str(
-        required=False, description="Revocation registry identifier", **INDY_REV_REG_ID
+        required=False, description="Revocation registry identifier"
     )
     revoc_reg_def = fields.Nested(
-        IndyRevRegDefSchema(),
+        RevRegDefSchema(),
         required=False,
         description="Revocation registry definition",
     )
-    revoc_reg_entry = fields.Nested(
-        IndyRevRegEntrySchema(), required=False, description="Revocation registry entry"
+    rev_list = fields.Nested(
+        RevListSchema(), required=False, description="Revocation registry entry"
     )
     tag = fields.Str(
         required=False, description="Tag within issuer revocation registry identifier"
@@ -628,3 +677,4 @@ class IssuerRevRegRecordSchema(BaseRecordSchema):
         ),
         required=False,
     )
+    options = fields.Dict(description="Arbitrary options")

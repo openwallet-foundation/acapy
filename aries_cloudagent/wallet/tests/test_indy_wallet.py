@@ -12,9 +12,9 @@ from asynctest import mock as async_mock
 from ...config.injection_context import InjectionContext
 from ...core.error import ProfileDuplicateError, ProfileError, ProfileNotFoundError
 from ...core.in_memory import InMemoryProfile
-from ...anoncreds.sdk import wallet_setup as test_setup_module
-from ...anoncreds.sdk.profile import IndySdkProfile, IndySdkProfileManager
-from ...anoncreds.sdk.wallet_setup import IndyWalletConfig
+from ...indy.sdk import wallet_setup as test_setup_module
+from ...indy.sdk.profile import IndySdkProfile, IndySdkProfileManager
+from ...indy.sdk.wallet_setup import IndyWalletConfig
 from ...ledger.endpoint_type import EndpointType
 from ...ledger.indy import IndySdkLedgerPool
 from ...wallet.did_method import SOV, DIDMethods

@@ -326,7 +326,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_status_lists,
+            rev_lists,
         ) = await verifier.process_pres_identifiers(indy_proof["identifiers"])
 
         verifier = AnonCredsVerifier(self._profile)
@@ -337,7 +337,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_status_lists,
+            rev_lists,
         )
         pres_ex_record.verified = json.dumps(verified)
         pres_ex_record.verified_msgs = list(set(verified_msgs))

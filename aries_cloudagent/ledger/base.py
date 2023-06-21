@@ -287,7 +287,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         if schema_info:
             raise LedgerObjectAlreadyExistsError(
-                "Schema already exists on ledger", schema_info
+                "Schema already exists on ledger", *schema_info
             )
 
         if await self.is_ledger_read_only():
@@ -340,7 +340,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
                         e,
                     )
                     raise LedgerObjectAlreadyExistsError(
-                        f"Schema already exists on ledger (Error: {e})", schema_info
+                        f"Schema already exists on ledger (Error: {e})", *schema_info
                     )
                 else:
                     raise
@@ -422,6 +422,7 @@ class BaseLedger(ABC, metaclass=ABCMeta):
             raise LedgerObjectAlreadyExistsError(
                 f"Credential definition with id {cred_def_id} "
                 "already exists in wallet and on ledger.",
+                cred_def_id,
                 credential_definition_json,
             )
 

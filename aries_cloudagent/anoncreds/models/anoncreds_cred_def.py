@@ -207,7 +207,10 @@ class CredDefState(BaseModel):
         schema_class = "CredDefStateSchema"
 
     def __init__(
-        self, state: str, credential_definition_id: str, credential_definition: CredDef
+        self,
+        state: str,
+        credential_definition_id: Optional[str],
+        credential_definition: CredDef,
     ):
         self.state = state
         self.credential_definition_id = credential_definition_id
@@ -233,7 +236,9 @@ class CredDefStateSchema(BaseModelSchema):
             ]
         )
     )
-    credential_definition_id = fields.Str(description="credential definition id")
+    credential_definition_id = fields.Str(
+        description="credential definition id", allow_none=True
+    )
     credential_definition = fields.Nested(
         CredDefSchema(), description="credential definition"
     )
