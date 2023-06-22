@@ -13,7 +13,7 @@ class BaseTailsServer(ABC, metaclass=ABCMeta):
     async def upload_tails_file(
         self,
         context: InjectionContext,
-        rev_reg_id: str,
+        filename: str,
         tails_file_path: str,
         interval: float = 1.0,
         backoff: float = 0.25,
@@ -22,9 +22,14 @@ class BaseTailsServer(ABC, metaclass=ABCMeta):
         """Upload tails file to tails server.
 
         Args:
-            rev_reg_id: The revocation registry identifier
+            context: context with configuration settings
+            filename: file name given to tails server
             tails_file: The path to the tails file to upload
             interval: initial interval between attempts
             backoff: exponential backoff in retry interval
             max_attempts: maximum number of attempts to make
+
+        Returns:
+            Tuple[bool, str]: tuple with success status and url of uploaded
+            file or error message if failed
         """

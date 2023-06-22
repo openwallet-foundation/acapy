@@ -3,7 +3,7 @@
 cd "$(dirname "$0")" || exit 1
 CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
 
-$CONTAINER_RUNTIME build -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
+$CONTAINER_RUNTIME build --platform linux/amd64 -t aries-cloudagent-run -f ../docker/Dockerfile.run .. || exit 1
 
 ARGS=""
 for PORT in $PORTS; do
@@ -89,4 +89,4 @@ fi
 
 echo ""
 # shellcheck disable=SC2086,SC2090
-$CONTAINER_RUNTIME run --rm -ti $ARGS aries-cloudagent-run "${ACAPY_ARGUMENTS[@]}"
+$CONTAINER_RUNTIME run --rm -ti --platform linux/amd64 $ARGS aries-cloudagent-run "${ACAPY_ARGUMENTS[@]}"

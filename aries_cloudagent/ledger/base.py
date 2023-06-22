@@ -7,13 +7,17 @@ import re
 from abc import ABC, abstractmethod, ABCMeta
 from enum import Enum
 from hashlib import sha256
-from typing import List, Sequence, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
-from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
 
-from .error import BadLedgerRequestError, LedgerError, LedgerTransactionError
+from .error import (
+    BadLedgerRequestError,
+    LedgerError,
+    LedgerTransactionError,
+    LedgerObjectAlreadyExistsError,
+)
 
 from .endpoint_type import EndpointType
 
@@ -251,121 +255,97 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
     async def check_existing_schema(
         self,
-        public_did: str,
-        schema_name: str,
-        schema_version: str,
+        schema_id: str,
         attribute_names: Sequence[str],
     ) -> Tuple[str, dict]:
         """Check if a schema has already been published."""
-        fetch_schema_id = f"{public_did}:2:{schema_name}:{schema_version}"
-        schema = await self.fetch_schema_by_id(fetch_schema_id)
+        schema = await self.fetch_schema_by_id(schema_id)
         if schema:
             fetched_attrs = schema["attrNames"].copy()
-            fetched_attrs.sort()
-            cmp_attrs = list(attribute_names)
-            cmp_attrs.sort()
-            if fetched_attrs != cmp_attrs:
+            if set(fetched_attrs) != set(attribute_names):
                 raise LedgerTransactionError(
                     "Schema already exists on ledger, but attributes do not match: "
-                    + f"{schema_name}:{schema_version} {fetched_attrs} != {cmp_attrs}"
+                    + f"{schema_id} {fetched_attrs} != {attribute_names}"
                 )
-            return fetch_schema_id, schema
+            return schema_id, schema
 
-    async def create_and_send_schema(
+    async def send_schema(
         self,
-        issuer: IndyIssuer,
-        schema_name: str,
-        schema_version: str,
-        attribute_names: Sequence[str],
+        schema_id: str,
+        schema_def: dict,
         write_ledger: bool = True,
-        endorser_did: str = None,
-    ) -> Tuple[str, dict]:
-        """
-        Send schema to ledger.
-
-        Args:
-            issuer: The issuer instance to use for schema creation
-            schema_name: The schema name
-            schema_version: The schema version
-            attribute_names: A list of schema attributes
-
-        """
-
+        endorser_did: Optional[str] = None,
+    ) -> int:
+        """Send an already created schema to the ledger."""
         public_info = await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError("Cannot publish schema without a public DID")
 
         schema_info = await self.check_existing_schema(
-            public_info.did, schema_name, schema_version, attribute_names
+            schema_id, schema_def["attrNames"]
         )
+
         if schema_info:
-            LOGGER.warning("Schema already exists on ledger. Returning details.")
-            schema_id, schema_def = schema_info
-        else:
-            if await self.is_ledger_read_only():
-                raise LedgerError(
-                    "Error cannot write schema when ledger is in read only mode"
-                )
-
-            try:
-                schema_id, schema_json = await issuer.create_schema(
-                    public_info.did,
-                    schema_name,
-                    schema_version,
-                    attribute_names,
-                )
-            except IndyIssuerError as err:
-                raise LedgerError(err.message) from err
-            schema_def = json.loads(schema_json)
-
-            schema_req = await self._create_schema_request(
-                public_info,
-                schema_json,
-                write_ledger=write_ledger,
-                endorser_did=endorser_did,
+            raise LedgerObjectAlreadyExistsError(
+                "Schema already exists on ledger", *schema_info
             )
 
+        if await self.is_ledger_read_only():
+            raise LedgerError(
+                "Error cannot write schema when ledger is in read only mode"
+            )
+
+        schema_req = await self._create_schema_request(
+            public_info,
+            json.dumps(schema_def),
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
+        )
+
+        try:
+            resp = await self.txn_submit(
+                schema_req,
+                sign=True,
+                sign_did=public_info,
+                write_ledger=write_ledger,
+            )
+
+            # TODO Clean this up
+            # if not write_ledger:
+            #     return schema_id, {"signed_txn": resp}
+
             try:
-                resp = await self.txn_submit(
-                    schema_req,
-                    sign=True,
-                    sign_did=public_info,
-                    write_ledger=write_ledger,
+                # parse sequence number out of response
+                seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
+                return seq_no
+            except KeyError as err:
+                raise LedgerError(
+                    "Failed to parse schema sequence number from ledger response"
+                ) from err
+        except LedgerTransactionError as e:
+            # Identify possible duplicate schema errors on indy-node < 1.9 and > 1.9
+            if (
+                "can have one and only one SCHEMA with name" in e.message
+                or "UnauthorizedClientRequest" in e.message
+            ):
+                # handle potential race condition if multiple agents are publishing
+                # the same schema simultaneously
+                schema_info = await self.check_existing_schema(
+                    schema_id, schema_def["attrNames"]
                 )
-
-                if not write_ledger:
-                    return schema_id, {"signed_txn": resp}
-
-                try:
-                    # parse sequence number out of response
-                    seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
-                    schema_def["seqNo"] = seq_no
-                except KeyError as err:
-                    raise LedgerError(
-                        "Failed to parse schema sequence number from ledger response"
-                    ) from err
-            except LedgerTransactionError as e:
-                # Identify possible duplicate schema errors on indy-node < 1.9 and > 1.9
-                if (
-                    "can have one and only one SCHEMA with name" in e.message
-                    or "UnauthorizedClientRequest" in e.message
-                ):
-                    # handle potential race condition if multiple agents are publishing
-                    # the same schema simultaneously
-                    schema_info = await self.check_existing_schema(
-                        public_info.did, schema_name, schema_version, attribute_names
+                if schema_info:
+                    LOGGER.warning(
+                        "Schema already exists on ledger. Returning details."
+                        " Error: %s",
+                        e,
                     )
-                    if schema_info:
-                        LOGGER.warning(
-                            "Schema already exists on ledger. Returning details."
-                            " Error: %s",
-                            e,
-                        )
-                        schema_id, schema_def = schema_info
+                    raise LedgerObjectAlreadyExistsError(
+                        f"Schema already exists on ledger (Error: {e})", *schema_info
+                    )
                 else:
                     raise
-
-        return schema_id, schema_def
+            else:
+                raise
 
     @abstractmethod
     async def _create_schema_request(
@@ -403,16 +383,14 @@ class BaseLedger(ABC, metaclass=ABCMeta):
     ) -> dict:
         """Publish a revocation registry entry to the ledger."""
 
-    async def create_and_send_credential_definition(
+    async def send_credential_definition(
         self,
-        issuer: IndyIssuer,
         schema_id: str,
-        signature_type: str = None,
-        tag: str = None,
-        support_revocation: bool = False,
+        cred_def_id: str,
+        cred_def: dict,
         write_ledger: bool = True,
         endorser_did: str = None,
-    ) -> Tuple[str, dict, bool]:
+    ) -> int:
         """
         Send credential definition to ledger and store relevant key matter in wallet.
 
@@ -435,87 +413,41 @@ class BaseLedger(ABC, metaclass=ABCMeta):
 
         schema = await self.get_schema(schema_id)
         if not schema:
-            raise LedgerError(f"Ledger {self.pool_name} has no schema {schema_id}")
-
-        novel = False
+            raise LedgerError(f"Ledger {self.pool.name} has no schema {schema_id}")
 
         # check if cred def is on ledger already
-        for test_tag in [tag] if tag else ["tag", DEFAULT_CRED_DEF_TAG]:
-            credential_definition_id = issuer.make_credential_definition_id(
-                public_info.did, schema, signature_type, test_tag
-            )
-            ledger_cred_def = await self.fetch_credential_definition(
-                credential_definition_id
-            )
-            if ledger_cred_def:
-                LOGGER.warning(
-                    "Credential definition %s already exists on ledger %s",
-                    credential_definition_id,
-                    self.pool_name,
-                )
-
-                try:
-                    if not await issuer.credential_definition_in_wallet(
-                        credential_definition_id
-                    ):
-                        raise LedgerError(
-                            f"Credential definition {credential_definition_id} is on "
-                            f"ledger {self.pool_name} but not in wallet "
-                            f"{self.profile.name}"
-                        )
-                except IndyIssuerError as err:
-                    raise LedgerError(err.message) from err
-
-                credential_definition_json = json.dumps(ledger_cred_def)
-                break
-            else:  # no such cred def on ledger
-                try:
-                    if await issuer.credential_definition_in_wallet(
-                        credential_definition_id
-                    ):
-                        raise LedgerError(
-                            f"Credential definition {credential_definition_id} is in "
-                            f"wallet {self.profile.name} but not on ledger "
-                            f"{self.pool.name}"
-                        )
-                except IndyIssuerError as err:
-                    raise LedgerError(err.message) from err
-
-            # Cred def is neither on ledger nor in wallet: create and send it
-            novel = True
-            try:
-                (
-                    credential_definition_id,
-                    credential_definition_json,
-                ) = await issuer.create_and_store_credential_definition(
-                    public_info.did,
-                    schema,
-                    signature_type,
-                    tag,
-                    support_revocation,
-                )
-            except IndyIssuerError as err:
-                raise LedgerError(err.message) from err
-
-            if await self.is_ledger_read_only():
-                raise LedgerError(
-                    "Error cannot write cred def when ledger is in read only mode"
-                )
-
-            cred_def_req = await self._create_credential_definition_request(
-                public_info,
+        ledger_cred_def = await self.fetch_credential_definition(cred_def_id)
+        if ledger_cred_def:
+            credential_definition_json = json.dumps(ledger_cred_def)
+            raise LedgerObjectAlreadyExistsError(
+                f"Credential definition with id {cred_def_id} "
+                "already exists in wallet and on ledger.",
+                cred_def_id,
                 credential_definition_json,
-                write_ledger=write_ledger,
-                endorser_did=endorser_did,
             )
 
-            resp = await self.txn_submit(
-                cred_def_req, True, sign_did=public_info, write_ledger=write_ledger
+        if await self.is_ledger_read_only():
+            raise LedgerError(
+                "Error cannot write cred def when ledger is in read only mode"
             )
-            if not write_ledger:
-                return (credential_definition_id, {"signed_txn": resp}, novel)
 
-        return (credential_definition_id, json.loads(credential_definition_json), novel)
+        cred_def_req = await self._create_credential_definition_request(
+            public_info,
+            json.dumps(cred_def),
+            write_ledger=write_ledger,
+            endorser_did=endorser_did,
+        )
+
+        resp = await self.txn_submit(
+            cred_def_req, True, sign_did=public_info, write_ledger=write_ledger
+        )
+
+        # TODO Clean up
+        # if not write_ledger:
+        #     return (credential_definition_id, {"signed_txn": resp}, novel)
+
+        seq_no = json.loads(resp)["result"]["txnMetadata"]["seqNo"]
+        return seq_no
 
     @abstractmethod
     async def _create_credential_definition_request(

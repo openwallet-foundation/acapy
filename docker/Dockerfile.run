@@ -1,6 +1,13 @@
-FROM bcgovimages/von-image:py36-1.15-1
+ARG python_version=3.9.16
+FROM python:${python_version}-slim-buster
 
-ENV ENABLE_PTVSD 0
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+    libsodium23 git curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /usr/src/app
 
 ADD requirements*.txt ./
 
@@ -8,17 +15,20 @@ RUN pip3 install --no-cache-dir \
     -r requirements.txt \
     -r requirements.askar.txt \
     -r requirements.bbs.txt \
-    -r requirements.dev.txt
+    -r requirements.dev.txt \
+    -r requirements.anoncreds.txt
+RUN curl -sL https://github.com/hyperledger/anoncreds-rs/releases/download/v0.1.0-dev.15/library-linux-x86_64.tar.gz | tar -xz -C /usr/local/lib/python3.9/site-packages/anoncreds/
 
 RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
 ADD aries_cloudagent/version.py aries_cloudagent/version.py
 ADD bin ./bin
 ADD README.md ./
 ADD setup.py ./
+ADD healthcheck.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
-RUN mkdir logs && chown -R indy:indy logs && chmod -R ug+rw logs
+RUN mkdir logs && chmod -R ug+rw logs
 ADD aries_cloudagent ./aries_cloudagent
 
 ENTRYPOINT ["/bin/bash", "-c", "aca-py \"$@\"", "--"]

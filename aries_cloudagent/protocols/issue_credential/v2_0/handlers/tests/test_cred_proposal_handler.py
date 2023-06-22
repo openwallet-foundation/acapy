@@ -80,7 +80,7 @@ class TestV20CredProposalHandler(AsyncTestCase):
             )
             mock_cred_mgr.return_value.receive_proposal.return_value.auto_offer = True
             mock_cred_mgr.return_value.create_offer = async_mock.CoroutineMock(
-                side_effect=test_module.IndyIssuerError()
+                side_effect=test_module.AnonCredsIssuerError()
             )
 
             request_context.message = V20CredProposal()

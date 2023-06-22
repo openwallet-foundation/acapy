@@ -6,9 +6,9 @@ from time import time
 from unittest.mock import ANY
 
 from .....admin.request_context import AdminRequestContext
-from .....indy.holder import IndyHolder
+from .....anoncreds.holder import AnonCredsHolder
 from .....indy.models.proof_request import IndyProofReqAttrSpecSchema
-from .....indy.verifier import IndyVerifier
+from .....anoncreds.verifier import AnonCredsVerifier
 from .....ledger.base import BaseLedger
 from .....storage.error import StorageNotFoundError
 from .....storage.vc_holder.base import VCHolder
@@ -308,10 +308,12 @@ class TestPresentProofRoutes(AsyncTestCase):
         self.request.query = {"extra_query": {}}
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
-                    async_mock.CoroutineMock(side_effect=test_module.IndyHolderError())
+                    async_mock.CoroutineMock(
+                        side_effect=test_module.AnonCredsHolderError()
+                    )
                 )
             ),
         )
@@ -336,7 +338,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock(return_value=returned_credentials)
@@ -365,7 +367,7 @@ class TestPresentProofRoutes(AsyncTestCase):
 
         returned_credentials = [{"name": "Credential1"}, {"name": "Credential2"}]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock(return_value=returned_credentials)
@@ -396,7 +398,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             async_mock.MagicMock(cred_value={"name": "Credential2"}),
         ]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -474,7 +476,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             ),
         ]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -564,7 +566,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             async_mock.MagicMock(cred_value={"name": "Credential2"}),
         ]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -644,7 +646,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             async_mock.MagicMock(cred_value={"name": "Credential2"}),
         ]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -724,7 +726,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             async_mock.MagicMock(cred_value={"name": "Credential2"}),
         ]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -829,7 +831,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
 
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -892,7 +894,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
 
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -952,7 +954,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
 
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -1015,7 +1017,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         )
 
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -1080,7 +1082,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             async_mock.MagicMock(cred_value={"name": "Credential2"}),
         ]
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -1121,7 +1123,7 @@ class TestPresentProofRoutes(AsyncTestCase):
         self.request.query = {"extra_query": {}}
 
         self.profile.context.injector.bind_instance(
-            IndyHolder,
+            AnonCredsHolder,
             async_mock.MagicMock(
                 get_credentials_for_presentation_request_by_referent=(
                     async_mock.CoroutineMock()
@@ -1499,7 +1501,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             ),
         )
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -1556,7 +1558,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             ),
         )
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -1596,7 +1598,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             ),
         )
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -1653,7 +1655,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             ),
         )
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -1688,7 +1690,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             ),
         )
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -1744,7 +1746,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             "pres_ex_id": "dummy",
         }
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -1799,7 +1801,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             "pres_ex_id": "dummy",
         }
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -1878,7 +1880,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             error_msg=None,
         )
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -1953,7 +1955,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             "pres_ex_id": "dummy",
         }
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -1998,7 +2000,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             "pres_ex_id": "dummy",
         }
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),
@@ -2075,7 +2077,7 @@ class TestPresentProofRoutes(AsyncTestCase):
             "pres_ex_id": "dummy",
         }
         self.profile.context.injector.bind_instance(
-            IndyVerifier,
+            AnonCredsVerifier,
             async_mock.MagicMock(
                 verify_presentation=async_mock.CoroutineMock(),
             ),

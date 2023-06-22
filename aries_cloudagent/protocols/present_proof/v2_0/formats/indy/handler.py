@@ -6,13 +6,13 @@ import logging
 from marshmallow import RAISE
 from typing import Mapping, Tuple
 
-from ......indy.holder import IndyHolder
+from ......anoncreds.holder import AnonCredsHolder
 from ......indy.models.predicate import Predicate
 from ......indy.models.proof import IndyProofSchema
 from ......indy.models.proof_request import IndyProofRequestSchema
 from ......indy.models.xform import indy_proof_req_preview2indy_requested_creds
-from ......indy.util import generate_pr_nonce
-from ......indy.verifier import IndyVerifier
+from ......anoncreds.util import generate_pr_nonce
+from ......anoncreds.verifier import AnonCredsVerifier
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......messaging.util import canon
 
@@ -143,7 +143,7 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
                     await indy_proof_req_preview2indy_requested_creds(
                         indy_proof_request,
                         preview=None,
-                        holder=self._profile.inject(IndyHolder),
+                        holder=AnonCredsHolder(self._profile),
                     )
                 )
             except ValueError as err:
@@ -320,22 +320,24 @@ class IndyPresExchangeHandler(V20PresFormatHandler):
         pres_request_msg = pres_ex_record.pres_request
         indy_proof_request = pres_request_msg.attachment(IndyPresExchangeHandler.format)
         indy_proof = pres_ex_record.pres.attachment(IndyPresExchangeHandler.format)
-        indy_handler = IndyPresExchHandler(self._profile)
+        verifier = AnonCredsVerifier(self._profile)
+
         (
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_reg_entries,
-        ) = await indy_handler.process_pres_identifiers(indy_proof["identifiers"])
+            rev_lists,
+        ) = await verifier.process_pres_identifiers(indy_proof["identifiers"])
 
-        verifier = self._profile.inject(IndyVerifier)
+        verifier = AnonCredsVerifier(self._profile)
+
         (verified, verified_msgs) = await verifier.verify_presentation(
             indy_proof_request,
             indy_proof,
             schemas,
             cred_defs,
             rev_reg_defs,
-            rev_reg_entries,
+            rev_lists,
         )
         pres_ex_record.verified = json.dumps(verified)
         pres_ex_record.verified_msgs = list(set(verified_msgs))

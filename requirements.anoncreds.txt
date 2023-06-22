@@ -1,0 +1,1 @@
+anoncreds@git+https://github.com/hyperledger/anoncreds-rs@3eca56d#subdirectory=wrappers/python
