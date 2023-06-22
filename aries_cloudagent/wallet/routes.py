@@ -7,13 +7,14 @@ from typing import List
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
+from pydid import DIDUrl
 
-from aries_cloudagent.messaging.jsonld.credential import b64decode
-from aries_cloudagent.messaging.jsonld.error import BadJWSHeaderError
-from aries_cloudagent.messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
-from aries_cloudagent.resolver.did_resolver import DIDResolver
-from aries_cloudagent.wallet.jwt import add_jwt_headers, jwt_sign, jwt_verify
-from pydid.common import DID_PATTERN
+from ..messaging.jsonld.credential import b64decode
+from ..messaging.jsonld.error import BadJWSHeaderError
+from ..messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
+from ..resolver.did_resolver import DIDResolver
+from ..wallet.jwt import add_jwt_headers, jwt_sign, jwt_verify
+from ..did.did_key import DIDKey
 from ..admin.request_context import AdminRequestContext
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
@@ -812,12 +813,18 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     if verification_method is None:
         if did is None:
             raise web.HTTPBadRequest(reason="did or verificationMethod required.")
-        matched = DID_PATTERN.match(did)
-        if matched:  # check for qualified did,
-            verification_method = did
-            did = matched.group(2)
-        else:  # create qualified did if not present.
-            verification_method = f"did:sov:{did}#keys-1"
+
+        if not did.startswith("did:"):
+            did = f"did:sov:{did}"
+
+        if did.startswith("did:key:"):
+            verification_method = DIDKey.from_did(did).key_id
+
+        elif did.startswith("did:sov:"):
+            # key-1 is what the resolver uses for key id
+            verification_method = did + "#key-1"
+    else:
+        did = DIDUrl.parse(verification_method).did
 
     payload = body["payload"]
     headers = body.get("headers", {})
@@ -833,20 +840,11 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     )
     LOGGER.info(f"encoded_payload: {encoded_payload}")
     try:
-        signature = await jwt_sign(
-            context, encoded_headers, encoded_payload, verification_method
-        )
-    except WalletNotFoundError:
-        LOGGER.info(
-            f"failed local did lookup using verification method: {verification_method}"
-            f" attempting with did: {did}"
-        )
-        try:
-            signature = await jwt_sign(context, encoded_headers, encoded_payload, did)
-        except WalletNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except WalletError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
+        signature = await jwt_sign(context, encoded_headers, encoded_payload, did)
+    except WalletNotFoundError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
+    except WalletError as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     sig = bytes_to_b64(signature, urlsafe=True, pad=False)
     return web.json_response(f"{encoded_headers}.{encoded_payload}.{sig}")
@@ -885,13 +883,16 @@ async def wallet_jwt_verify(request: web.BaseRequest):
         )
 
         if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):
-            raise web.HTTPBadRequest(reason=f"{vmethod.type} is not supported")
+            raise web.HTTPBadRequest(
+                reason=f"Dereferenced type {type(vmethod).__name__} is not supported"
+            )
+
         verkey = vmethod.material
 
-    Bona_fide = await jwt_verify(
+    bona_fide = await jwt_verify(
         context, encoded_header, encoded_payload, decoded_signature, verkey
     )
-    return web.json_response(Bona_fide)
+    return web.json_response(bona_fide)
 
 
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
