@@ -9,7 +9,6 @@ from aiohttp_apispec import docs, querystring_schema, request_schema, response_s
 from marshmallow import fields, validate
 from pydid import DIDUrl
 
-from ..messaging.jsonld.credential import b64decode
 from ..messaging.jsonld.error import BadJWSHeaderError
 from ..messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
 from ..resolver.did_resolver import DIDResolver
@@ -134,6 +133,13 @@ class JWSVerifySchema(OpenAPISchema):
     """Request schema to verify a jws created from a DID."""
 
     jwt = fields.Str(**JWT)
+
+
+class JWSVerifyResponseSchema(OpenAPISchema):
+    """Response schema for verification result."""
+
+    valid = fields.Bool(required=True)
+    error = fields.Str(description="Error text", required=False)
 
 
 class DIDEndpointSchema(OpenAPISchema):
@@ -804,7 +810,6 @@ async def wallet_jwt_sign(request: web.BaseRequest):
         "verificationMethod": "did:example:123#keys-1"
         with did and verification being mutually exclusive.
     """
-    LOGGER.critical("JWT Sign start")
     context: AdminRequestContext = request["context"]
     body = await request.json()
     did = body.get("did")
@@ -833,12 +838,9 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     encoded_headers = bytes_to_b64(
         json.dumps(headers).encode(), urlsafe=True, pad=False
     )
-    LOGGER.info(f"header: {headers}")
-    LOGGER.info(f"payload: {payload}")
     encoded_payload = bytes_to_b64(
         json.dumps(payload).encode(), urlsafe=True, pad=False
     )
-    LOGGER.info(f"encoded_payload: {encoded_payload}")
     try:
         signature = await jwt_sign(context, encoded_headers, encoded_payload, did)
     except WalletNotFoundError as err:
@@ -851,8 +853,8 @@ async def wallet_jwt_sign(request: web.BaseRequest):
 
 
 @docs(tags=["wallet"], summary="Verify a EdDSA jws using did keys with a given JWS")
-@request_schema(JWSVerifySchema)
-@response_schema(WalletModuleResponseSchema(), description="")
+@request_schema(JWSVerifySchema())
+@response_schema(JWSVerifyResponseSchema(), 200, description="")
 async def wallet_jwt_verify(request: web.BaseRequest):
     """
         Request handler for jws validation using did.
@@ -865,13 +867,11 @@ async def wallet_jwt_verify(request: web.BaseRequest):
     jwt = body["jwt"]
     encoded_header, encoded_payload, encoded_signiture = jwt.split(".", 3)
     header = json.loads(b64_to_bytes(encoded_header, urlsafe=True))
-    LOGGER.info(f"header: {header}")
     if "alg" not in header or header["alg"] != "EdDSA" or "kid" not in header:
         raise BadJWSHeaderError(
             "Invalid JWS header parameters for Ed25519Signature2018."
         )
-    payload = json.loads(b64decode(encoded_payload))
-    LOGGER.info(f"payload: {payload}")
+    # payload = json.loads(b64decode(encoded_payload))
     verification_method = header["kid"]
     decoded_signature = b64_to_bytes(encoded_signiture, urlsafe=True)
 
@@ -888,11 +888,12 @@ async def wallet_jwt_verify(request: web.BaseRequest):
             )
 
         verkey = vmethod.material
-
-    bona_fide = await jwt_verify(
-        context, encoded_header, encoded_payload, decoded_signature, verkey
-    )
-    return web.json_response(bona_fide)
+    response = {
+        "valid": await jwt_verify(
+            context, encoded_header, encoded_payload, decoded_signature, verkey
+        )
+    }
+    return web.json_response(response)
 
 
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
