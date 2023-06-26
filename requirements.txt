@@ -29,3 +29,4 @@ python-json-logger~=2.0.7
 rlp==1.2.0
 unflatten~=0.1
 qrcode[pil]~=6.1
+peerdid~=0.5

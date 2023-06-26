@@ -71,6 +71,12 @@ KEY = DIDMethod(
     rotation=False,
 )
 
+#https://identity.foundation/peer-did-method-spec/
+PEER = DIDMethod(
+    name="peer",
+    key_types=[ED25519],
+    rotation=False,
+)
 
 class DIDMethods:
     """DID Method class specifying DID methods with supported key types."""
@@ -80,6 +86,7 @@ class DIDMethods:
         self._registry: Dict[str, DIDMethod] = {
             SOV.method_name: SOV,
             KEY.method_name: KEY,
+            PEER.method_name: PEER,
         }
 
     def registered(self, method: str) -> bool:
