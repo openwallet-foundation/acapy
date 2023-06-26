@@ -1,6 +1,6 @@
-# 0.8.2-rc0
+# 0.8.2-rc1
 
-## June 9, 2023
+## June 26, 2023
 
 Release 0.8.2 contains a number of minor fixes and updates to ACA-Py, including
 the correction of a regression in Release 0.8.0 related to the use of plugins
@@ -8,12 +8,15 @@ the correction of a regression in Release 0.8.0 related to the use of plugins
 development environment to collect detailed performance information about what
 is going in within ACA-Py.
 
+For those using plugins, RC1 includes PR [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) to fix a backwards compatibility break in
+the loading of plugins that was inadvertently introduced in 0.8.1.
+
 There are no breaking changes in this release.
 
 ### Categorized List of Pull Requests
 
 - Connections Fixes/Updates
-  - Resolve definitions.py fix [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) [usingtechnology](https://github.com/usingtechnology)
+  - Resolve definitions.py fix to fix backwards compatibility break in plugins [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) [usingtechnology](https://github.com/usingtechnology)
   - Add support for JsonWebKey2020 for the connection invitations [\#2173](https://github.com/hyperledger/aries-cloudagent-python/pull/2173) [dkulic](https://github.com/dkulic)
   - fix: only cache completed connection targets [\#2240](https://github.com/hyperledger/aries-cloudagent-python/pull/2240) [dbluhm](https://github.com/dbluhm)
   - Connection target should not be limited only to indy dids [\#2229](https://github.com/hyperledger/aries-cloudagent-python/pull/2229) [dkulic](https://github.com/dkulic)
@@ -46,6 +49,7 @@ There are no breaking changes in this release.
 - Message Tracing/Timing Updates
   - Add updated ELK stack for demos. [\#2236](https://github.com/hyperledger/aries-cloudagent-python/pull/2236) [usingtechnology](https://github.com/usingtechnology)
 - Release management pull requests
+  - 0.8.2-rc1 [\#2282](https://github.com/hyperledger/aries-cloudagent-python/pull/2282) [swcurran](https://github.com/swcurran)
   - 0.8.2-rc0 [\#2260](https://github.com/hyperledger/aries-cloudagent-python/pull/2260) [swcurran](https://github.com/swcurran)
 
 # 0.8.1
