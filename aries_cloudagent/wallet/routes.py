@@ -7,13 +7,7 @@ from typing import List
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
-from pydid import DIDUrl
 
-from ..messaging.jsonld.error import BadJWSHeaderError
-from ..messaging.jsonld.routes import SUPPORTED_VERIFICATION_METHOD_TYPES
-from ..resolver.did_resolver import DIDResolver
-from ..wallet.jwt import add_jwt_headers, jwt_sign, jwt_verify
-from ..did.did_key import DIDKey
 from ..admin.request_context import AdminRequestContext
 from ..connections.models.conn_record import ConnRecord
 from ..core.event_bus import Event, EventBus
@@ -21,6 +15,7 @@ from ..core.profile import Profile
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError, LedgerError
+from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMethod
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.responder import BaseResponder
@@ -28,9 +23,9 @@ from ..messaging.valid import (
     DID_POSTURE,
     ENDPOINT,
     ENDPOINT_TYPE,
+    GENERIC_DID,
     INDY_DID,
     INDY_RAW_PUBLIC_KEY,
-    GENERIC_DID,
     JWT,
     Uri,
 )
@@ -43,14 +38,16 @@ from ..protocols.endorse_transaction.v1_0.util import (
     get_endorser_connection_id,
     is_author_role,
 )
+from ..resolver.base import ResolverError
 from ..storage.error import StorageError, StorageNotFoundError
+from ..wallet.jwt import jwt_sign, jwt_verify
 from .base import BaseWallet
 from .did_info import DIDInfo
-from .did_method import SOV, KEY, DIDMethod, DIDMethods, HolderDefinedDid
+from .did_method import KEY, SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, KeyTypes
-from .util import EVENT_LISTENER_PATTERN, b64_to_bytes, bytes_to_b64
+from .util import EVENT_LISTENER_PATTERN
 
 LOGGER = logging.getLogger(__name__)
 
@@ -814,42 +811,21 @@ async def wallet_jwt_sign(request: web.BaseRequest):
     body = await request.json()
     did = body.get("did")
     verification_method = body.get("verificationMethod")
-
-    if verification_method is None:
-        if did is None:
-            raise web.HTTPBadRequest(reason="did or verificationMethod required.")
-
-        if not did.startswith("did:"):
-            did = f"did:sov:{did}"
-
-        if did.startswith("did:key:"):
-            verification_method = DIDKey.from_did(did).key_id
-
-        elif did.startswith("did:sov:"):
-            # key-1 is what the resolver uses for key id
-            verification_method = did + "#key-1"
-    else:
-        did = DIDUrl.parse(verification_method).did
-
-    payload = body["payload"]
     headers = body.get("headers", {})
+    payload = body.get("payload", {})
 
-    add_jwt_headers(headers, verification_method)
-    encoded_headers = bytes_to_b64(
-        json.dumps(headers).encode(), urlsafe=True, pad=False
-    )
-    encoded_payload = bytes_to_b64(
-        json.dumps(payload).encode(), urlsafe=True, pad=False
-    )
     try:
-        signature = await jwt_sign(context, encoded_headers, encoded_payload, did)
+        jws = await jwt_sign(
+            context.profile, headers, payload, did, verification_method
+        )
+    except ValueError as err:
+        raise web.HTTPBadRequest(reason="Bad did or verification method") from err
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
     except WalletError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    sig = bytes_to_b64(signature, urlsafe=True, pad=False)
-    return web.json_response(f"{encoded_headers}.{encoded_payload}.{sig}")
+    return web.json_response(jws)
 
 
 @docs(tags=["wallet"], summary="Verify a EdDSA jws using did keys with a given JWS")
@@ -865,34 +841,14 @@ async def wallet_jwt_verify(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     body = await request.json()
     jwt = body["jwt"]
-    encoded_header, encoded_payload, encoded_signiture = jwt.split(".", 3)
-    header = json.loads(b64_to_bytes(encoded_header, urlsafe=True))
-    if "alg" not in header or header["alg"] != "EdDSA" or "kid" not in header:
-        raise BadJWSHeaderError(
-            "Invalid JWS header parameters for Ed25519Signature2018."
-        )
-    # payload = json.loads(b64decode(encoded_payload))
-    verification_method = header["kid"]
-    decoded_signature = b64_to_bytes(encoded_signiture, urlsafe=True)
+    try:
+        result = await jwt_verify(context.profile, jwt)
+        response = {"valid": result.valid}
+    except (BadJWSHeaderError, InvalidVerificationMethod) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+    except ResolverError as err:
+        raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    async with context.session() as session:
-        resolver = session.inject(DIDResolver)
-        vmethod = await resolver.dereference(
-            context.profile,
-            verification_method,
-        )
-
-        if not isinstance(vmethod, SUPPORTED_VERIFICATION_METHOD_TYPES):
-            raise web.HTTPBadRequest(
-                reason=f"Dereferenced type {type(vmethod).__name__} is not supported"
-            )
-
-        verkey = vmethod.material
-    response = {
-        "valid": await jwt_verify(
-            context, encoded_header, encoded_payload, decoded_signature, verkey
-        )
-    }
     return web.json_response(response)
 
 
