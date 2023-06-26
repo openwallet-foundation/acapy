@@ -23,7 +23,7 @@ from ....resolver.did_resolver import DIDResolver
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
-from ....wallet.did_method import SOV
+from ....wallet.did_method import SOV, PEER
 from ....wallet.did_posture import DIDPosture
 from ....wallet.error import WalletError
 from ....wallet.key_type import ED25519
@@ -287,6 +287,11 @@ class DIDXManager(BaseConnectionManager):
                     method=SOV,
                     key_type=ED25519,
                 )
+                test_peer_did = await wallet.create_local_did(
+                    method=PEER, key_type=ED25519
+                )
+                self._logger.warning("DIDXMan.create_request")
+                self._logger.warning(test_peer_did.did)
             conn_rec.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken

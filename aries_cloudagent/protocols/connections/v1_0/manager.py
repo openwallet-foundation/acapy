@@ -10,6 +10,7 @@ from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
+from ....connections.models.diddoc.diddoc import DIDPeer2
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
@@ -19,7 +20,7 @@ from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.did_info import DIDInfo
-from ....wallet.did_method import SOV
+from ....wallet.did_method import SOV, PEER
 from ....wallet.error import WalletNotFoundError
 from ....wallet.key_type import ED25519
 from ....wallet.util import bytes_to_b58
@@ -232,7 +233,6 @@ class ConnectionManager(BaseConnectionManager):
                 endpoint=my_endpoint,
                 image_url=image_url,
             )
-
         async with self.profile.session() as session:
             await connection.attach_invitation(session, invitation)
 
@@ -368,6 +368,9 @@ class ConnectionManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 # Create new DID for connection
                 my_info = await wallet.create_local_did(SOV, ED25519)
+                peer_my_info = await wallet.create_local_did(PEER, ED25519)
+                self._logger.warn("ConnMan.create_request")
+                self._logger.warn(peer_my_info)
             connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken

@@ -325,3 +325,28 @@ class DIDDoc:
         """Format DIDDoc for logging."""
 
         return f"<DIDDoc did={self.did}>"
+
+class DIDPeer2(dids.DID):
+    """
+        did:peer:2 following the Method 2 of 
+        https://identity.foundation/peer-did-method-spec/#generation-method
+    """
+
+    @classmethod
+    def create_peer_did_2_from_verkey(cls, verkey: str) -> "DIDPeerDoc":
+        """verkey must by base58"""
+        prefix = "did:peer:2"
+
+        enc_keys = [keys.X25519KeyAgreementKey.from_base58(verkey)]
+        sign_keys = [keys.Ed25519VerificationKey.from_base58(verkey)]
+
+        service = {
+            "type": "DIDCommMessaging",
+            "serviceEndpoint": "https://example.com/endpoint1",
+            "routingKeys": ["did:example:somemediator#somekey1"],
+            "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
+        }
+
+        var = dids.create_peer_did_numalgo_2(enc_keys, sign_keys,service)
+        print(var)
+
