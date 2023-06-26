@@ -402,7 +402,13 @@ async def wallet_create_did(request: web.BaseRequest):
     info = None
     async with context.session() as session:
         did_methods = session.inject(DIDMethods)
-        method = did_methods.from_method(body.get("method", "")) or SOV
+
+        method = did_methods.from_method(body.get("method", "sov"))
+        if not method:
+            raise web.HTTPForbidden(
+                reason=(f"method {body.get('method')} is not supported by the agent.")
+            )
+
         key_types = session.inject(KeyTypes)
         # set default method and key type for backwards compat
         key_type = (
@@ -668,7 +674,7 @@ async def promote_wallet_public_did(
 
         # Route the public DID
         route_manager = profile.inject(RouteManager)
-        await route_manager.route_public_did(profile, info.verkey)
+        await route_manager.route_verkey(profile, info.verkey)
 
     return info, attrib_def
 
