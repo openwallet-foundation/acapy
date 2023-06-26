@@ -2,7 +2,7 @@ import pytest
 
 from unittest import TestCase
 
-from ......indy.models.pres_preview import (
+from ......anoncreds.models.pres_preview import (
     IndyPresAttrSpec,
     IndyPresPredSpec,
     IndyPresPreview,

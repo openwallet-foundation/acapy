@@ -9,7 +9,7 @@ from asynctest import mock as async_mock, TestCase as AsyncTestCase
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
 from .....core.in_memory import InMemoryProfile
-from .....indy.issuer import IndyIssuer
+from .....anoncreds.issuer import AnonCredsIssuer
 from .....messaging.decorators.thread_decorator import ThreadDecorator
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
@@ -973,7 +973,7 @@ class TestV20CredManager(AsyncTestCase):
         issuer.create_credential = async_mock.CoroutineMock(
             return_value=(json.dumps(INDY_CRED), cred_rev_id)
         )
-        self.context.injector.bind_instance(IndyIssuer, issuer)
+        self.context.injector.bind_instance(AnonCredsIssuer, issuer)
 
         with async_mock.patch.object(
             V20CredExRecord, "save", autospec=True

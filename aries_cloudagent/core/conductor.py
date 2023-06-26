@@ -33,7 +33,7 @@ from ..commands.upgrade import (
     upgrade,
 )
 from ..core.profile import Profile
-from ..indy.verifier import IndyVerifier
+from ..anoncreds.verifier import AnonCredsVerifier
 
 from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..ledger.multiple_ledger.base_manager import (
@@ -154,9 +154,9 @@ class Conductor:
                     and ledger.BACKEND_NAME == "indy-vdr"
                 ):
                     context.injector.bind_provider(
-                        IndyVerifier,
+                        AnonCredsVerifier,
                         ClassProvider(
-                            "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
+                            "aries_cloudagent.anoncreds.credx.verifier.IndyCredxVerifier",
                             self.root_profile,
                         ),
                     )
@@ -165,9 +165,9 @@ class Conductor:
                     and ledger.BACKEND_NAME == "indy"
                 ):
                     context.injector.bind_provider(
-                        IndyVerifier,
+                        AnonCredsVerifier,
                         ClassProvider(
-                            "aries_cloudagent.indy.sdk.verifier.IndySdkVerifier",
+                            "aries_cloudagent.anoncreds.sdk.verifier.IndySdkVerifier",
                             self.root_profile,
                         ),
                     )

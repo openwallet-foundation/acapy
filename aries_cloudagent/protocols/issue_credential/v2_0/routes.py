@@ -20,8 +20,8 @@ from ....wallet.util import default_did_from_verkey
 from ....admin.request_context import AdminRequestContext
 from ....connections.models.conn_record import ConnRecord
 from ....core.profile import Profile
-from ....indy.holder import IndyHolderError
-from ....indy.issuer import IndyIssuerError
+from ....anoncreds.holder import AnonCredsHolderError
+from ....anoncreds.issuer import AnonCredsIssuerError
 from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
@@ -976,7 +976,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageNotFoundError,
         V20CredFormatError,
@@ -1081,7 +1081,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
         V20CredFormatError,
@@ -1187,7 +1187,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         StorageError,
         V20CredManagerError,
@@ -1296,7 +1296,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyHolderError,
+        AnonCredsHolderError,
         LedgerError,
         StorageError,
         V20CredFormatError,
@@ -1390,7 +1390,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        IndyIssuerError,
+        AnonCredsIssuerError,
         LedgerError,
         StorageError,
         V20CredFormatError,
@@ -1479,7 +1479,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         cred_ex_record = await cred_manager.store_credential(cred_ex_record, cred_id)
 
     except (
-        IndyHolderError,
+        AnonCredsHolderError,
         StorageError,
         V20CredManagerError,
     ) as err:  # treat failure to store as mangled on receipt hence protocol error

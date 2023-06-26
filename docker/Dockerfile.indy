@@ -195,7 +195,9 @@ RUN pip3 install --no-cache-dir \
     -r requirements.txt \
     -r requirements.askar.txt \
     -r requirements.bbs.txt \
-    -r requirements.dev.txt
+    -r requirements.dev.txt \
+    -r requirements.anoncreds.txt
+RUN curl -sL https://github.com/Indicio-tech/anoncreds-rs/releases/download/v0.1.0-dev.9/library-linux-x86_64.tar.gz | tar -xz -C /usr/local/lib/python3.9/site-packages/anoncreds/
 
 ADD --chown=indy:root . .
 USER indy

@@ -21,7 +21,7 @@ class IndyTailsServer(BaseTailsServer):
     async def upload_tails_file(
         self,
         context: InjectionContext,
-        rev_reg_id: str,
+        filename: str,
         tails_file_path: str,
         interval: float = 1.0,
         backoff: float = 0.25,
@@ -31,11 +31,15 @@ class IndyTailsServer(BaseTailsServer):
 
         Args:
             context: context with configuration settings
-            rev_reg_id: revocation registry identifier
+            filename: file name given to tails server
             tails_file_path: path to the tails file to upload
             interval: initial interval between attempts
             backoff: exponential backoff in retry interval
             max_attempts: maximum number of attempts to make
+
+        Returns:
+            Tuple[bool, str]: tuple with success status and url of uploaded
+            file or error message if failed
         """
         tails_server_upload_url = context.settings.get("tails_server_upload_url")
         genesis_transactions = context.settings.get("ledger.genesis_transactions")
@@ -59,7 +63,7 @@ class IndyTailsServer(BaseTailsServer):
                 "tails_server_upload_url setting is not set"
             )
 
-        upload_url = tails_server_upload_url.rstrip("/") + f"/{rev_reg_id}"
+        upload_url = tails_server_upload_url.rstrip("/") + f"/{filename}"
 
         try:
             await put_file(

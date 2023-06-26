@@ -16,9 +16,6 @@ from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..core.error import ProfileError
 from ..core.profile import Profile, ProfileManager, ProfileSession
-from ..indy.holder import IndyHolder
-from ..indy.issuer import IndyIssuer
-from ..indy.verifier import IndyVerifier
 from ..ledger.base import BaseLedger
 from ..ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ..storage.base import BaseStorage, BaseStorageSearch
@@ -99,20 +96,6 @@ class AskarProfile(Profile):
                 "aries_cloudagent.storage.askar.AskarStorageSearch", ref(self)
             ),
         )
-
-        injector.bind_provider(
-            IndyHolder,
-            ClassProvider(
-                "aries_cloudagent.indy.credx.holder.IndyCredxHolder",
-                ref(self),
-            ),
-        )
-        injector.bind_provider(
-            IndyIssuer,
-            ClassProvider(
-                "aries_cloudagent.indy.credx.issuer.IndyCredxIssuer", ref(self)
-            ),
-        )
         injector.bind_provider(
             VCHolder,
             ClassProvider(
@@ -120,25 +103,16 @@ class AskarProfile(Profile):
                 ref(self),
             ),
         )
-
         if self.ledger_pool:
             injector.bind_provider(
                 BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))
             )
-        if self.ledger_pool or self.settings.get("ledger.ledger_config_list"):
-            injector.bind_provider(
-                IndyVerifier,
-                ClassProvider(
-                    "aries_cloudagent.indy.credx.verifier.IndyCredxVerifier",
-                    ref(self),
-                ),
-            )
 
-    def session(self, context: InjectionContext = None) -> ProfileSession:
+    def session(self, context: InjectionContext = None) -> "AskarProfileSession":
         """Start a new interactive session with no transaction support requested."""
         return AskarProfileSession(self, False, context=context)
 
-    def transaction(self, context: InjectionContext = None) -> ProfileSession:
+    def transaction(self, context: InjectionContext = None) -> "AskarProfileSession":
         """
         Start a new interactive session with commit and rollback support.
 
