@@ -178,7 +178,26 @@ async def test_update_profile_settings(mock_response):
     )
     with async_mock.patch.object(
         multi_tenant_manager, "update_wallet"
-    ) as update_wallet:
+    ) as update_wallet, async_mock.patch.object(
+        multi_tenant_manager, "get_wallet_and_profile"
+    ) as get_wallet_and_profile:
+        get_wallet_and_profile.return_value = (
+            async_mock.MagicMock(
+                settings={
+                    "admin.admin_client_max_request_size": 1,
+                    "debug.auto_respond_credential_offer": True,
+                    "debug.auto_respond_credential_request": True,
+                    "debug.auto_respond_presentation_proposal": True,
+                    "debug.auto_verify_presentation": True,
+                    "public_invites": False,
+                    "debug.invite_public": False,
+                    "debug.auto_accept_invites": False,
+                    "debug.auto_accept_requests": False,
+                    "auto_ping_connection": False,
+                }
+            ),
+            profile,
+        )
         update_wallet.return_value = async_mock.MagicMock(
             settings={
                 "public_invites": False,
@@ -195,4 +214,7 @@ async def test_update_profile_settings(mock_response):
         "debug.auto_accept_invites": False,
         "debug.auto_accept_requests": False,
         "auto_ping_connection": False,
+        "debug.auto_respond_credential_offer": True,
+        "debug.auto_respond_credential_request": True,
+        "debug.auto_verify_presentation": True,
     }

@@ -383,22 +383,22 @@ To allow configurablity of ACA-Py startup parameters/environment variables at a 
 
 | Labels |   | Setting  |
 |---|---|---|
-| ACAPY_LOG_LEVEL  |  log_level |  log.level |
-| ACAPY_INVITE_PUBLIC  |  invite_public |  debug.invite_public  |
-| ACAPY_PUBLIC_INVITES  |  public_invites | public_invites  |
-| ACAPY_AUTO_ACCEPT_INVITES  |  auto_accept_invites | debug.auto_accept_invites  |
-| ACAPY_AUTO_ACCEPT_REQUESTS  |  auto_accept_requests | debug.auto_accept_requests  |
-| ACAPY_AUTO_PING_CONNECTION  |  auto_ping_connection | auto_ping_connection  |
-| ACAPY_MONITOR_PING  |  monitor_ping | debug.monitor_ping  |
-| ACAPY_AUTO_RESPOND_MESSAGES  |  auto_respond_messages | debug.auto_respond_messages  |
-| ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER  |  auto_respond_credential_offer | debug.auto_resopnd_credential_offer  |
-| ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST  |  auto_respond_credential_request | debug.auto_respond_credential_request  |
-| ACAPY_AUTO_VERIFY_PRESENTATION  |  auto_verify_presentation | debug.auto_verify_presentation  |
-| ACAPY_NOTIFY_REVOCATION  |  notify_revocation | revocation.notify  |
-| ACAPY_AUTO_REQUEST_ENDORSEMENT  |  auto_request_endorsement | endorser.auto_request  |
-| ACAPY_AUTO_WRITE_TRANSACTIONS  |  auto_write_transactions | endorser.auto_write  |
-| ACAPY_CREATE_REVOCATION_TRANSACTIONS  |  auto_create_revocation_transactions | endorser.auto_create_rev_reg  |
-| ACAPY_ENDORSER_ROLE  |  endorser_protocol_role | endorser.protocol_role  |
+| ACAPY_LOG_LEVEL  |  log-level |  log.level |
+| ACAPY_INVITE_PUBLIC  |  invite-public |  debug.invite_public  |
+| ACAPY_PUBLIC_INVITES  |  public-invites | public_invites  |
+| ACAPY_AUTO_ACCEPT_INVITES  |  auto-accept-invites | debug.auto_accept_invites  |
+| ACAPY_AUTO_ACCEPT_REQUESTS  |  auto-accept-requests | debug.auto_accept_requests  |
+| ACAPY_AUTO_PING_CONNECTION  |  auto-ping-connection | auto_ping_connection  |
+| ACAPY_MONITOR_PING  |  monitor-ping | debug.monitor_ping  |
+| ACAPY_AUTO_RESPOND_MESSAGES  |  auto-respond-messages | debug.auto_respond_messages  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER  |  auto-respond-credential-offer | debug.auto_resopnd_credential_offer  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST  |  auto-respond-credential-request | debug.auto_respond_credential_request  |
+| ACAPY_AUTO_VERIFY_PRESENTATION  |  auto-verify-presentation | debug.auto_verify_presentation  |
+| ACAPY_NOTIFY_REVOCATION  |  notify-revocation | revocation.notify  |
+| ACAPY_AUTO_REQUEST_ENDORSEMENT  |  auto-request-endorsement | endorser.auto_request  |
+| ACAPY_AUTO_WRITE_TRANSACTIONS  |  auto-write-transactions | endorser.auto_write  |
+| ACAPY_CREATE_REVOCATION_TRANSACTIONS  |  auto-create-revocation-transactions | endorser.auto_create_rev_reg  |
+| ACAPY_ENDORSER_ROLE  |  endorser-protocol-role | endorser.protocol_role  |
 
 - `POST /multitenancy/wallet`
 

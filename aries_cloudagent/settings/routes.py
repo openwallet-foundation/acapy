@@ -57,7 +57,7 @@ def _get_filtered_settings_dict(wallet_settings: dict):
 
 @docs(
     tags=["settings"],
-    summary="Update settings or config associated with the profile.",
+    summary="Update configurable settings associated with the profile.",
 )
 @request_schema(UpdateProfileSettingsSchema())
 @response_schema(ProfileSettingsSchema(), 200, description="")
@@ -79,11 +79,17 @@ async def update_profile_settings(request: web.BaseRequest):
             multitenant_mgr = session.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
                 wallet_id = context.metadata.get("wallet_id")
+                wallet_key = context.metadata.get("wallet_key")
                 wallet_record = await multitenant_mgr.update_wallet(
                     wallet_id, extra_settings
                 )
+                wallet_record, profile = await multitenant_mgr.get_wallet_and_profile(
+                    root_profile.context, wallet_id, wallet_key
+                )
+                profile_settings = profile.settings.to_dict()
                 wallet_settings = wallet_record.settings
-                settings_dict = _get_filtered_settings_dict(wallet_settings)
+                all_settings = {**profile_settings, **wallet_settings}
+                settings_dict = _get_filtered_settings_dict(all_settings)
             else:
                 root_profile.context.update_settings(extra_settings)
                 settings_dict = _get_filtered_settings_dict(
