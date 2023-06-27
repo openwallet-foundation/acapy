@@ -17,14 +17,13 @@ RUN pip3 install --no-cache-dir \
     -r requirements.bbs.txt \
     -r requirements.dev.txt \
     -r requirements.anoncreds.txt
-RUN curl -sL https://github.com/hyperledger/anoncreds-rs/releases/download/v0.1.0-dev.15/library-linux-x86_64.tar.gz | tar -xz -C /usr/local/lib/python3.9/site-packages/anoncreds/
+RUN curl -sL https://github.com/hyperledger/anoncreds-rs/releases/download/v0.1.0/library-linux-x86_64.tar.gz | tar -xz -C /usr/local/lib/python3.9/site-packages/anoncreds/
 
 RUN mkdir aries_cloudagent && touch aries_cloudagent/__init__.py
 ADD aries_cloudagent/version.py aries_cloudagent/version.py
 ADD bin ./bin
 ADD README.md ./
 ADD setup.py ./
-ADD healthcheck.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
