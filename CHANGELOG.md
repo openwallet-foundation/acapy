@@ -1,6 +1,6 @@
-# 0.8.2-rc0
+# 0.8.2-rc1
 
-## June 9, 2023
+## June 26, 2023
 
 Release 0.8.2 contains a number of minor fixes and updates to ACA-Py, including
 the correction of a regression in Release 0.8.0 related to the use of plugins
@@ -8,12 +8,15 @@ the correction of a regression in Release 0.8.0 related to the use of plugins
 development environment to collect detailed performance information about what
 is going in within ACA-Py.
 
+For those using plugins, RC1 includes PR [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) to fix a backwards compatibility break in
+the loading of plugins that was inadvertently introduced in 0.8.1.
+
 There are no breaking changes in this release.
 
 ### Categorized List of Pull Requests
 
 - Connections Fixes/Updates
-  - Resolve definitions.py fix [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) [usingtechnology](https://github.com/usingtechnology)
+  - Resolve definitions.py fix to fix backwards compatibility break in plugins [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) [usingtechnology](https://github.com/usingtechnology)
   - Add support for JsonWebKey2020 for the connection invitations [\#2173](https://github.com/hyperledger/aries-cloudagent-python/pull/2173) [dkulic](https://github.com/dkulic)
   - fix: only cache completed connection targets [\#2240](https://github.com/hyperledger/aries-cloudagent-python/pull/2240) [dbluhm](https://github.com/dbluhm)
   - Connection target should not be limited only to indy dids [\#2229](https://github.com/hyperledger/aries-cloudagent-python/pull/2229) [dkulic](https://github.com/dkulic)
@@ -26,6 +29,12 @@ There are no breaking changes in this release.
   - fix: route multitenant connectionless oob invitation [\#2243](https://github.com/hyperledger/aries-cloudagent-python/pull/2243) [TimoGlastra](https://github.com/TimoGlastra)
   - Fix multitenant/mediation in demo [\#2075](https://github.com/hyperledger/aries-cloudagent-python/pull/2075) [ianco](https://github.com/ianco)
 - Other Bug and Documentation Fixes
+  - Assign ~thread.thid with thread_id value [\#2261](https://github.com/hyperledger/aries-cloudagent-python/pull/2261) [usingtechnology](https://github.com/usingtechnology)
+  - Fix: Do not replace public verkey on mediator [\#2269](https://github.com/hyperledger/aries-cloudagent-python/pull/2269) [mkempa](https://github.com/mkempa)
+  - Provide an optional Profile to the verification key strategy [\#2265](https://github.com/hyperledger/aries-cloudagent-python/pull/2265) [yvgny](https://github.com/yvgny)
+  - refactor: Extract verification method ID generation to a separate class [\#2235](https://github.com/hyperledger/aries-cloudagent-python/pull/2235) [yvgny](https://github.com/yvgny)
+  - Create .readthedocs.yaml file [\#2268](https://github.com/hyperledger/aries-cloudagent-python/pull/2268) [swcurran](https://github.com/swcurran)
+  - feat(did creation route): reject unregistered did methods [\#2262](https://github.com/hyperledger/aries-cloudagent-python/pull/2262) [chumbert](https://github.com/chumbert)
   - ./run_demo performance -c 1 --mediation --timing --trace-log [#2245](https://github.com/hyperledger/aries-cloudagent-python/pull/2245) [usingtechnology](https://github.com/usingtechnology)
   - Fix formatting and grammatical errors in different readme's [\#2222](https://github.com/hyperledger/aries-cloudagent-python/pull/2222) [ff137](https://github.com/ff137)
   - Fix broken link in README [\#2221](https://github.com/hyperledger/aries-cloudagent-python/pull/2221) [ff137](https://github.com/ff137)
@@ -34,9 +43,13 @@ There are no breaking changes in this release.
 - Dependencies and Internal Updates
   - Bump requests from 2.30.0 to 2.31.0 in /demo/playground/scripts dependenciesPull requests that update a dependency file [\#2238](https://github.com/hyperledger/aries-cloudagent-python/pull/2238) [dependabot bot](https://github.com/dependabot)
   - Upgrade codegen tools in scripts/generate-open-api-spec and publish Swagger 2.0 and OpenAPI 3.0 specs [\#2246](https://github.com/hyperledger/aries-cloudagent-python/pull/2246) [ff137](https://github.com/ff137)
+- ACA-Py Administrative Updates
+  - Propose adding Jason Sherman [usingtechnology](https://github.com/usingtechnology) as a Maintainer [\#2263](https://github.com/hyperledger/aries-cloudagent-python/pull/2263) [swcurran](https://github.com/swcurran)
+  - Updating Maintainers list to be accurate and using the TOC format [\#2258](https://github.com/hyperledger/aries-cloudagent-python/pull/2258) [swcurran](https://github.com/swcurran)
 - Message Tracing/Timing Updates
   - Add updated ELK stack for demos. [\#2236](https://github.com/hyperledger/aries-cloudagent-python/pull/2236) [usingtechnology](https://github.com/usingtechnology)
 - Release management pull requests
+  - 0.8.2-rc1 [\#2282](https://github.com/hyperledger/aries-cloudagent-python/pull/2282) [swcurran](https://github.com/swcurran)
   - 0.8.2-rc0 [\#2260](https://github.com/hyperledger/aries-cloudagent-python/pull/2260) [swcurran](https://github.com/swcurran)
 
 # 0.8.1
