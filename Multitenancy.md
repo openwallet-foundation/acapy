@@ -417,7 +417,7 @@ To allow configurablity of ACA-Py startup parameters/environment variables at a 
       "extra_settings": {
           "ACAPY_LOG_LEVEL": "INFO",
           "ACAPY_INVITE_PUBLIC": true,
-          "public_invites": true
+          "public-invites": true
       },
   }
   ```

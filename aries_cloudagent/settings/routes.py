@@ -9,6 +9,7 @@ from marshmallow import fields
 from ..admin.request_context import AdminRequestContext
 from ..multitenant.base import BaseMultitenantManager
 from ..core.error import BaseError
+from ..core.profile import Profile
 from ..messaging.models.openapi import OpenAPISchema
 from ..multitenant.admin.routes import (
     get_extra_settings_dict_per_tenant,
@@ -55,6 +56,24 @@ def _get_filtered_settings_dict(wallet_settings: dict):
     return settings_dict
 
 
+def _get_multitenant_settings_dict(
+    profile_settings: dict,
+    wallet_settings: dict,
+):
+    """Get filtered settings dict when multitenant manager is present."""
+    all_settings = {**profile_settings, **wallet_settings}
+    settings_dict = _get_filtered_settings_dict(all_settings)
+    return settings_dict
+
+
+def _get_settings_dict(
+    profile: Profile,
+):
+    """Get filtered settings dict when multitenant manager is not present."""
+    settings_dict = _get_filtered_settings_dict((profile.settings).to_dict())
+    return settings_dict
+
+
 @docs(
     tags=["settings"],
     summary="Update configurable settings associated with the profile.",
@@ -86,15 +105,13 @@ async def update_profile_settings(request: web.BaseRequest):
                 wallet_record, profile = await multitenant_mgr.get_wallet_and_profile(
                     root_profile.context, wallet_id, wallet_key
                 )
-                profile_settings = profile.settings.to_dict()
-                wallet_settings = wallet_record.settings
-                all_settings = {**profile_settings, **wallet_settings}
-                settings_dict = _get_filtered_settings_dict(all_settings)
+                settings_dict = _get_multitenant_settings_dict(
+                    profile_settings=profile.settings.to_dict(),
+                    wallet_settings=wallet_record.settings,
+                )
             else:
                 root_profile.context.update_settings(extra_settings)
-                settings_dict = _get_filtered_settings_dict(
-                    (context.profile.settings).to_dict()
-                )
+                settings_dict = _get_settings_dict(profile=root_profile)
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response(settings_dict)
@@ -123,14 +140,12 @@ async def get_profile_settings(request: web.BaseRequest):
                 wallet_record, profile = await multitenant_mgr.get_wallet_and_profile(
                     root_profile.context, wallet_id, wallet_key
                 )
-                profile_settings = profile.settings.to_dict()
-                wallet_settings = wallet_record.settings
-                all_settings = {**profile_settings, **wallet_settings}
-                settings_dict = _get_filtered_settings_dict(all_settings)
-            else:
-                settings_dict = _get_filtered_settings_dict(
-                    (root_profile.settings).to_dict()
+                settings_dict = _get_multitenant_settings_dict(
+                    profile_settings=profile.settings.to_dict(),
+                    wallet_settings=wallet_record.settings,
                 )
+            else:
+                settings_dict = _get_settings_dict(profile=root_profile)
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response(settings_dict)
