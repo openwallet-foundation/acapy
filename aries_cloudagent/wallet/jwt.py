@@ -26,6 +26,24 @@ def b64_to_dict(value: str) -> Mapping[str, Any]:
     return json.loads(b64_to_bytes(value, urlsafe=True))
 
 
+def nym_to_did(value: str) -> str:
+    """Return a did from nym if passed value is nym, else return value."""
+    if value.startswith("did:"):
+        return value
+    return f"did:sov:{value}"
+
+
+def did_lookup_name(value: str) -> str:
+    """Return the value used to lookup a DID in the wallet.
+
+    If value is did:sov, return the unqualified value. Else, return value.
+    """
+    if value.startswith("did:sov:"):
+        return value.split(":", 3)[2]
+
+    return value
+
+
 async def jwt_sign(
     profile: Profile,
     headers: Mapping[str, Any],
@@ -38,8 +56,7 @@ async def jwt_sign(
         if did is None:
             raise ValueError("did or verificationMethod required.")
 
-        if not did.startswith("did:"):
-            did = f"did:sov:{did}"
+        did = nym_to_did(did)
 
         verkey_strat = profile.inject(BaseVerificationKeyStrategy)
         verification_method = await verkey_strat.get_verification_method_id_for_did(
@@ -65,7 +82,7 @@ async def jwt_sign(
     async with profile.session() as session:
         wallet = session.inject(BaseWallet)
         LOGGER.info(f"jwt sign: {did}")
-        did_info = await wallet.get_local_did(did)
+        did_info = await wallet.get_local_did(did_lookup_name(did))
         sig_bytes = await wallet.sign_message(
             f"{encoded_headers}.{encoded_payload}".encode(), did_info.verkey
         )

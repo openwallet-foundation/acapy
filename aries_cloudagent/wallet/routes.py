@@ -137,6 +137,9 @@ class JWSVerifyResponseSchema(OpenAPISchema):
 
     valid = fields.Bool(required=True)
     error = fields.Str(description="Error text", required=False)
+    kid = fields.Str(description="kid of signer", required=True)
+    headers = fields.Dict(description="Headers from verified JWT.", required=True)
+    payload = fields.Dict(description="Payload from verified JWT", required=True)
 
 
 class DIDEndpointSchema(OpenAPISchema):
@@ -849,13 +852,19 @@ async def wallet_jwt_verify(request: web.BaseRequest):
     jwt = body["jwt"]
     try:
         result = await jwt_verify(context.profile, jwt)
-        response = {"valid": result.valid}
     except (BadJWSHeaderError, InvalidVerificationMethod) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     except ResolverError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
-    return web.json_response(response)
+    return web.json_response(
+        {
+            "valid": result.valid,
+            "headers": result.headers,
+            "payload": result.payload,
+            "kid": result.kid,
+        }
+    )
 
 
 @docs(tags=["wallet"], summary="Query DID endpoint in wallet")
