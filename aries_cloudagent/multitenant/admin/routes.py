@@ -43,31 +43,31 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
 }
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {
-    "log_level": "log.level",
-    "invite_public": "debug.invite_public",
-    "public_invites": "public_invites",
-    "auto_accept_invites": "debug.auto_accept_invites",
-    "auto_accept_requests": "debug.auto_accept_requests",
-    "auto_ping_connection": "auto_ping_connection",
-    "monitor_ping": "debug.monitor_ping",
-    "auto_respond_messages": "debug.auto_respond_messages",
-    "auto_respond_credential_offer": "debug.auto_respond_credential_offer",
-    "auto_respond_credential_request": "debug.auto_respond_credential_request",
-    "auto_verify_presentation": "debug.auto_verify_presentation",
-    "notify_revocation": "revocation.notify",
-    "auto_request_endorsement": "endorser.auto_request",
-    "auto_write_transactions": "endorser.auto_write",
-    "auto_create_revocation_transactions": "endorser.auto_create_rev_reg",
-    "endorser_protocol_role": "endorser.protocol_role",
+    "log-level": "log.level",
+    "invite-public": "debug.invite_public",
+    "public-invites": "public_invites",
+    "auto-accept-invites": "debug.auto_accept_invites",
+    "auto-accept-requests": "debug.auto_accept_requests",
+    "auto-ping-connection": "auto_ping_connection",
+    "monitor-ping": "debug.monitor_ping",
+    "auto-respond-messages": "debug.auto_respond_messages",
+    "auto-respond-credential-offer": "debug.auto_respond_credential_offer",
+    "auto-respond-credential-request": "debug.auto_respond_credential_request",
+    "auto-verify-presentation": "debug.auto_verify_presentation",
+    "notify-revocation": "revocation.notify",
+    "auto-request-endorsement": "endorser.auto_request",
+    "auto-write-transactions": "endorser.auto_write",
+    "auto-create-revocation-transactions": "endorser.auto_create_rev_reg",
+    "endorser-protocol-role": "endorser.protocol_role",
 }
 
 ACAPY_ENDORSER_FLAGS_DEPENDENT_ON_AUTHOR_ROLE = [
     "ACAPY_AUTO_REQUEST_ENDORSEMENT",
     "ACAPY_AUTO_WRITE_TRANSACTIONS",
     "ACAPY_CREATE_REVOCATION_TRANSACTIONS",
-    "auto_request_endorsement",
-    "auto_write_transactions",
-    "auto_create_revocation_transactions",
+    "auto-request-endorsement",
+    "auto-write-transactions",
+    "auto-create-revocation-transactions",
 ]
 
 

@@ -7,9 +7,13 @@ from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
+from ..multitenant.base import BaseMultitenantManager
 from ..core.error import BaseError
 from ..messaging.models.openapi import OpenAPISchema
-from ..multitenant.admin.routes import get_extra_settings_dict_per_tenant
+from ..multitenant.admin.routes import (
+    get_extra_settings_dict_per_tenant,
+    ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +45,16 @@ class ProfileSettingsSchema(OpenAPISchema):
     )
 
 
+def _get_filtered_settings_dict(wallet_settings: dict):
+    """Get filtered settings dict to display."""
+    filter_param_list = list(ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP.values())
+    settings_dict = {}
+    for param in filter_param_list:
+        if param in wallet_settings:
+            settings_dict[param] = wallet_settings.get(param)
+    return settings_dict
+
+
 @docs(
     tags=["settings"],
     summary="Update settings or config associated with the profile.",
@@ -55,21 +69,34 @@ async def update_profile_settings(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
+    root_profile = context.root_profile or context.profile
     try:
         body = await request.json()
-        extra_setting = get_extra_settings_dict_per_tenant(
+        extra_settings = get_extra_settings_dict_per_tenant(
             body.get("extra_settings") or {}
         )
-        context.profile.settings.update(extra_setting)
-        result = context.profile.settings
+        async with root_profile.session() as session:
+            multitenant_mgr = session.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                wallet_id = context.metadata.get("wallet_id")
+                wallet_record = await multitenant_mgr.update_wallet(
+                    wallet_id, extra_settings
+                )
+                wallet_settings = wallet_record.settings
+                settings_dict = _get_filtered_settings_dict(wallet_settings)
+            else:
+                root_profile.context.update_settings(extra_settings)
+                settings_dict = _get_filtered_settings_dict(
+                    (context.profile.settings).to_dict()
+                )
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response(result.to_dict())
+    return web.json_response(settings_dict)
 
 
 @docs(
     tags=["settings"],
-    summary="Get the settings or config associated with the profile.",
+    summary="Get the configurable settings associated with the profile.",
 )
 @response_schema(ProfileSettingsSchema(), 200, description="")
 async def get_profile_settings(request: web.BaseRequest):
@@ -80,12 +107,27 @@ async def get_profile_settings(request: web.BaseRequest):
         request: aiohttp request object
     """
     context: AdminRequestContext = request["context"]
-
+    root_profile = context.root_profile or context.profile
     try:
-        result = context.profile.settings
+        async with root_profile.session() as session:
+            multitenant_mgr = session.inject_or(BaseMultitenantManager)
+            if multitenant_mgr:
+                wallet_id = context.metadata.get("wallet_id")
+                wallet_key = context.metadata.get("wallet_key")
+                wallet_record, profile = await multitenant_mgr.get_wallet_and_profile(
+                    root_profile.context, wallet_id, wallet_key
+                )
+                profile_settings = profile.settings.to_dict()
+                wallet_settings = wallet_record.settings
+                all_settings = {**profile_settings, **wallet_settings}
+                settings_dict = _get_filtered_settings_dict(all_settings)
+            else:
+                settings_dict = _get_filtered_settings_dict(
+                    (root_profile.settings).to_dict()
+                )
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
-    return web.json_response(result.to_dict())
+    return web.json_response(settings_dict)
 
 
 async def register(app: web.Application):

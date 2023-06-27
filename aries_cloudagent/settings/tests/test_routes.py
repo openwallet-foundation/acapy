@@ -4,7 +4,11 @@
 
 import pytest
 from asynctest import mock as async_mock
+
+from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
+from ...multitenant.base import BaseMultitenantManager
+from ...multitenant.manager import MultitenantManager
 
 from .. import routes as test_module
 
@@ -32,10 +36,10 @@ async def test_get_profile_settings(mock_response):
             "debug.auto_accept_requests": True,
         }
     )
-    context = profile.context
-    setattr(context, "profile", profile)
     request_dict = {
-        "context": context,
+        "context": AdminRequestContext(
+            profile=profile,
+        ),
     }
     request = async_mock.MagicMock(
         query={},
@@ -44,10 +48,55 @@ async def test_get_profile_settings(mock_response):
     )
     await test_module.get_profile_settings(request)
     assert mock_response.call_args[0][0] == {
-        "admin.admin_client_max_request_size": 1,
         "debug.auto_respond_credential_offer": True,
         "debug.auto_respond_credential_request": True,
-        "debug.auto_respond_presentation_proposal": True,
+        "debug.auto_verify_presentation": True,
+        "debug.auto_accept_invites": True,
+        "debug.auto_accept_requests": True,
+    }
+    # Multitenant
+    profile = InMemoryProfile.test_profile()
+    multi_tenant_manager = MultitenantManager(profile)
+    profile.context.injector.bind_instance(
+        BaseMultitenantManager,
+        multi_tenant_manager,
+    )
+    request_dict = {
+        "context": AdminRequestContext(
+            profile=profile,
+            root_profile=profile,
+            metadata={
+                "wallet_id": "walletid",
+                "wallet_key": "walletkey",
+            },
+        ),
+    }
+    request = async_mock.MagicMock(
+        query={},
+        json=async_mock.CoroutineMock(return_value={}),
+        __getitem__=lambda _, k: request_dict[k],
+    )
+    with async_mock.patch.object(
+        multi_tenant_manager, "get_wallet_and_profile"
+    ) as get_wallet_and_profile:
+        get_wallet_and_profile.return_value = (
+            async_mock.MagicMock(
+                settings={
+                    "admin.admin_client_max_request_size": 1,
+                    "debug.auto_respond_credential_offer": True,
+                    "debug.auto_respond_credential_request": True,
+                    "debug.auto_respond_presentation_proposal": True,
+                    "debug.auto_verify_presentation": True,
+                    "debug.auto_accept_invites": True,
+                    "debug.auto_accept_requests": True,
+                }
+            ),
+            profile,
+        )
+        await test_module.get_profile_settings(request)
+    assert mock_response.call_args[0][0] == {
+        "debug.auto_respond_credential_offer": True,
+        "debug.auto_respond_credential_request": True,
         "debug.auto_verify_presentation": True,
         "debug.auto_accept_invites": True,
         "debug.auto_accept_requests": True,
@@ -66,10 +115,10 @@ async def test_update_profile_settings(mock_response):
             "auto_ping_connection": True,
         }
     )
-    context = profile.context
-    setattr(context, "profile", profile)
     request_dict = {
-        "context": context,
+        "context": AdminRequestContext(
+            profile=profile,
+        ),
     }
     request = async_mock.MagicMock(
         query={},
@@ -87,6 +136,59 @@ async def test_update_profile_settings(mock_response):
         __getitem__=lambda _, k: request_dict[k],
     )
     await test_module.update_profile_settings(request)
+    assert mock_response.call_args[0][0] == {
+        "public_invites": False,
+        "debug.invite_public": False,
+        "debug.auto_accept_invites": False,
+        "debug.auto_accept_requests": False,
+        "auto_ping_connection": False,
+    }
+    # Multitenant
+    profile = InMemoryProfile.test_profile()
+    multi_tenant_manager = MultitenantManager(profile)
+    profile.context.injector.bind_instance(
+        BaseMultitenantManager,
+        multi_tenant_manager,
+    )
+
+    request_dict = {
+        "context": AdminRequestContext(
+            profile=profile,
+            root_profile=profile,
+            metadata={
+                "wallet_id": "walletid",
+                "wallet_key": "walletkey",
+            },
+        ),
+    }
+    request = async_mock.MagicMock(
+        query={},
+        json=async_mock.CoroutineMock(
+            return_value={
+                "extra_settings": {
+                    "ACAPY_INVITE_PUBLIC": False,
+                    "ACAPY_PUBLIC_INVITES": False,
+                    "ACAPY_AUTO_ACCEPT_INVITES": False,
+                    "ACAPY_AUTO_ACCEPT_REQUESTS": False,
+                    "ACAPY_AUTO_PING_CONNECTION": False,
+                }
+            }
+        ),
+        __getitem__=lambda _, k: request_dict[k],
+    )
+    with async_mock.patch.object(
+        multi_tenant_manager, "update_wallet"
+    ) as update_wallet:
+        update_wallet.return_value = async_mock.MagicMock(
+            settings={
+                "public_invites": False,
+                "debug.invite_public": False,
+                "debug.auto_accept_invites": False,
+                "debug.auto_accept_requests": False,
+                "auto_ping_connection": False,
+            }
+        )
+        await test_module.update_profile_settings(request)
     assert mock_response.call_args[0][0] == {
         "public_invites": False,
         "debug.invite_public": False,
