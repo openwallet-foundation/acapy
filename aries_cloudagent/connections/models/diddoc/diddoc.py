@@ -22,6 +22,7 @@ import json
 import logging
 
 from typing import List, Sequence, Union
+from peerdid import dids, keys
 
 from .publickey import PublicKey, PublicKeyType
 from .service import Service
@@ -333,7 +334,7 @@ class DIDPeer2(dids.DID):
     """
 
     @classmethod
-    def create_peer_did_2_from_verkey(cls, verkey: str) -> "DIDPeerDoc":
+    def create_peer_did_2_from_verkey(cls, verkey: str) -> dids.DID:
         """verkey must by base58"""
         prefix = "did:peer:2"
 
@@ -348,5 +349,5 @@ class DIDPeer2(dids.DID):
         }
 
         var = dids.create_peer_did_numalgo_2(enc_keys, sign_keys,service)
-        print(var)
+        return var
 

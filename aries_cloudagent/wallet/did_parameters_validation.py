@@ -64,6 +64,6 @@ class DIDParametersValidation:
         elif method == SOV:
             return bytes_to_b58(verkey[:16]) if not did else did
         elif method == PEER:
-            return DIDPeer2.create_peer_did_2_from_verkey(bytes_to_b58(verkey))
+            return DIDPeer2.create_peer_did_2_from_verkey(bytes_to_b58(verkey)) 
         
         return did
