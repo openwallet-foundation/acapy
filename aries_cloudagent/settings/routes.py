@@ -26,9 +26,9 @@ class UpdateProfileSettingsSchema(OpenAPISchema):
         description="Agent config key-value pairs",
         required=False,
         example={
-            "log_level": "INFO",
+            "log-level": "INFO",
             "ACAPY_INVITE_PUBLIC": True,
-            "public_invites": False,
+            "public-invites": False,
         },
     )
 
