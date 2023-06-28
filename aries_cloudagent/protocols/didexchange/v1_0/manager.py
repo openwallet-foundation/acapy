@@ -10,7 +10,7 @@ from pydid import DIDCommService
 
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
-from ....connections.models.diddoc import DIDDoc
+from ....connections.models.diddoc import SovDIDDoc
 from ....core.error import BaseError
 from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
@@ -840,7 +840,7 @@ class DIDXManager(BaseConnectionManager):
         wallet: BaseWallet,
         attached: AttachDecorator,
         invi_key: str = None,
-    ) -> DIDDoc:
+    ) -> SovDIDDoc:
         """Verify DIDDoc attachment and return signed data."""
         signed_diddoc_bytes = attached.data.signed
         if not signed_diddoc_bytes:
@@ -848,7 +848,7 @@ class DIDXManager(BaseConnectionManager):
         if not await attached.data.verify(wallet, invi_key):
             raise DIDXManagerError("DID doc attachment signature failed verification")
 
-        return DIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
+        return SovDIDDoc.deserialize(json.loads(signed_diddoc_bytes.decode()))
 
     async def get_resolved_did_document(self, qualified_did: str) -> ResolvedDocument:
         """Return resolved DID document."""

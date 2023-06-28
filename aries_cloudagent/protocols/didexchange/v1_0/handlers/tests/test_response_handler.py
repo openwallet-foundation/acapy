@@ -4,7 +4,7 @@ from asynctest import TestCase as AsyncTestCase
 
 from ......connections.models import connection_target
 from ......connections.models.diddoc import (
-    DIDDoc,
+    SovDIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
@@ -33,7 +33,7 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 class TestDIDXResponseHandler(AsyncTestCase):
     def did_doc(self):
-        doc = DIDDoc(did=TEST_DID)
+        doc = SovDIDDoc(did=TEST_DID)
         controller = TEST_DID
         ident = "1"
         pk_value = TEST_VERKEY

@@ -21,17 +21,19 @@ limitations under the License.
 import json
 import logging
 
-from typing import List, Sequence, Union
+from typing import List, Sequence, Union, Any
 from peerdid import dids, keys
-
+from peerdid.dids import DIDDocument
 from .publickey import PublicKey, PublicKeyType
 from .service import Service
 from .util import canon_did, canon_ref, ok_did, resource
 
 LOGGER = logging.getLogger(__name__)
 
+class DIDDoc():
+    pass
 
-class DIDDoc:
+class SovDIDDoc(DIDDocument):
     """
     DID document, grouping a DID with verification keys and services.
 
@@ -132,7 +134,7 @@ class DIDDoc:
         """
 
         return {
-            "@context": DIDDoc.CONTEXT,
+            "@context": SovDIDDoc.CONTEXT,
             "id": canon_ref(self.did, self.did),
             "publicKey": [pubkey.to_dict() for pubkey in self.pubkey.values()],
             "authentication": [
@@ -214,7 +216,7 @@ class DIDDoc:
         return rv
 
     @classmethod
-    def deserialize(cls, did_doc: dict) -> "DIDDoc":
+    def deserialize(cls, did_doc: dict) -> "SovDIDDoc":
         """
         Construct DIDDoc object from dict representation.
 
@@ -230,7 +232,7 @@ class DIDDoc:
 
         rv = None
         if "id" in did_doc:
-            rv = DIDDoc(did_doc["id"])
+            rv = SovDIDDoc(did_doc["id"])
         else:
             # heuristic: get DID to serve as DID document identifier from
             # the first OK-looking public key
@@ -240,7 +242,7 @@ class DIDDoc:
                         try:
                             pubkey_did = canon_did(resource(key_spec.get("id", "")))
                             if ok_did(pubkey_did):
-                                rv = DIDDoc(pubkey_did)
+                                rv = SovDIDDoc(pubkey_did)
                                 break
                         except ValueError:  # no identifier here, move on to next
                             break
@@ -303,8 +305,10 @@ class DIDDoc:
 
         return rv
 
+    
+
     @classmethod
-    def from_json(cls, did_doc_json: str) -> "DIDDoc":
+    def from_json(cls, did_doc_json: str) -> "SovDIDDoc":
         """
         Construct DIDDoc object from json representation.
 
@@ -349,5 +353,5 @@ class DIDPeer2(dids.DID):
         }
 
         var = dids.create_peer_did_numalgo_2(enc_keys, sign_keys,service)
+        dids.resolve_peer_did(var)
         return var
-

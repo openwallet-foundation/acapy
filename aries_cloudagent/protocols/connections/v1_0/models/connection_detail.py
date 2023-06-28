@@ -1,8 +1,8 @@
 """An object for containing the connection request/response DID information."""
 
 from marshmallow import EXCLUDE, fields
-
-from .....connections.models.diddoc import DIDDoc
+from peerdid.dids import DIDDocument
+from .....connections.models.diddoc import SovDIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import INDY_DID
 
@@ -18,14 +18,14 @@ class DIDDocWrapper(fields.Field):
             value: The value to serialize
 
         Returns:
-            The serialized DIDDoc
+            The serialized SovDIDDoc
 
         """
         return value.serialize()
 
     def _deserialize(self, value, attr=None, data=None, **kwargs):
         """
-        Deserialize a value into a DIDDoc.
+        Deserialize a value into a SovDIDDoc.
 
         Args:
             value: The value to deserialize
@@ -34,7 +34,8 @@ class DIDDocWrapper(fields.Field):
             The deserialized value
 
         """
-        return DIDDoc.deserialize(value)
+
+        return SovDIDDoc.deserialize(value)
 
 
 class ConnectionDetail(BaseModel):
@@ -70,7 +71,7 @@ class ConnectionDetail(BaseModel):
         return self._did
 
     @property
-    def did_doc(self) -> DIDDoc:
+    def did_doc(self) -> SovDIDDoc:
         """
         Accessor for the connection DID Document.
 

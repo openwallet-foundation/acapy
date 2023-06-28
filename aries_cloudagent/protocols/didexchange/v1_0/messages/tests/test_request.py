@@ -2,7 +2,7 @@ from unittest import mock
 
 from asynctest import TestCase as AsyncTestCase
 
-from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ......connections.models.diddoc import SovDIDDoc, PublicKey, PublicKeyType, Service
 from ......core.in_memory import InMemoryProfile
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......wallet.did_method import SOV, DIDMethods
@@ -20,7 +20,7 @@ class TestConfig:
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        doc = DIDDoc(did=self.test_did)
+        doc = SovDIDDoc(did=self.test_did)
         controller = self.test_did
         ident = "1"
         pk_value = self.test_verkey

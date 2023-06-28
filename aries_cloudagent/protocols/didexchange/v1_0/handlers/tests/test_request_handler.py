@@ -3,7 +3,7 @@ from asynctest import TestCase as AsyncTestCase
 
 from ......connections.models import connection_target, conn_record
 from ......connections.models.diddoc import (
-    DIDDoc,
+    SovDIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
@@ -34,7 +34,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
     """Class unit testing request handler."""
 
     def did_doc(self):
-        doc = DIDDoc(did=TEST_DID)
+        doc = SovDIDDoc(did=TEST_DID)
         controller = TEST_DID
         ident = "1"
         pk_value = TEST_VERKEY

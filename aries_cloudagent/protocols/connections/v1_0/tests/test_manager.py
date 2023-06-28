@@ -10,7 +10,7 @@ from .....config.base import InjectionError
 from .....connections.base_manager import BaseConnectionManagerError
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
-from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from .....connections.models.diddoc import SovDIDDoc, PublicKey, PublicKeyType, Service
 from .....core.oob_processor import OobMessageProcessor
 from .....core.in_memory import InMemoryProfile
 from .....core.profile import ProfileSession
@@ -44,7 +44,7 @@ from .....wallet.util import bytes_to_b64, b58_to_bytes
 
 class TestConnectionManager(AsyncTestCase):
     def make_did_doc(self, did, verkey):
-        doc = DIDDoc(did=did)
+        doc = SovDIDDoc(did=did)
         controller = did
         ident = "1"
         pk_value = verkey
@@ -2668,7 +2668,7 @@ class TestConnectionManager(AsyncTestCase):
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(None, self.test_verkey)
 
-        x_did_doc = DIDDoc(did=None)
+        x_did_doc = SovDIDDoc(did=None)
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, self.test_verkey)
 

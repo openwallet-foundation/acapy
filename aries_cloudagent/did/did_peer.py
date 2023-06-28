@@ -6,7 +6,7 @@ from typing import Union, Optional
 from io import BytesIO
 from peerdid import dids, keys
 
-from ..connections.models.diddoc import DIDDoc, DIDPeerDoc
+from ..connections.models.diddoc import SovDIDDoc, DIDPeerDoc
 from ..messaging.valid import PeerDID
 from ..wallet.util import multi_hash_encode, multi_base_encode
 
@@ -17,7 +17,7 @@ class PeerDidNumAlgo(Enum):
     MULTIPLE_INCEPTION_KEY_WITHOUT_DOC = 2
 
 
-def get_did_from_did_doc(did_doc: Union[DIDDoc, DIDPeerDoc]) -> str:
+def get_did_from_did_doc(did_doc: Union[SovDIDDoc, DIDPeerDoc]) -> str:
     #use lib functions
     pass
 

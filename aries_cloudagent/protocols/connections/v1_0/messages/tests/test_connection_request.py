@@ -3,7 +3,7 @@ from unittest import mock, TestCase
 from asynctest import TestCase as AsyncTestCase
 
 from ......connections.models.diddoc import (
-    DIDDoc,
+    SovDIDDoc,
     PublicKey,
     PublicKeyType,
     Service,
@@ -25,7 +25,7 @@ class TestConfig:
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        doc = DIDDoc(did=self.test_did)
+        doc = SovDIDDoc(did=self.test_did)
         controller = self.test_did
         ident = "1"
         pk_value = self.test_verkey
@@ -120,7 +120,7 @@ class TestConnectionRequestSchema(AsyncTestCase, TestConfig):
         did_doc_dict = self.make_did_doc().serialize()
         del did_doc_dict["authentication"]
         del did_doc_dict["service"]
-        did_doc = DIDDoc.deserialize(did_doc_dict)
+        did_doc = SovDIDDoc.deserialize(did_doc_dict)
 
         connection_request = ConnectionRequest(
             connection=ConnectionDetail(did=self.test_did, did_doc=did_doc),

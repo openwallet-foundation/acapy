@@ -37,7 +37,7 @@ from ..wallet.base import BaseWallet
 from ..wallet.did_info import DIDInfo
 from .models.conn_record import ConnRecord
 from .models.connection_target import ConnectionTarget
-from .models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from .models.diddoc import SovDIDDoc, PublicKey, PublicKeyType, Service
 from ..wallet.util import bytes_to_b58, b64_to_bytes
 
 
@@ -71,7 +71,7 @@ class BaseConnectionManager:
         inbound_connection_id: str = None,
         svc_endpoints: Sequence[str] = None,
         mediation_records: List[MediationRecord] = None,
-    ) -> DIDDoc:
+    ) -> SovDIDDoc:
         """Create our DID doc for a given DID.
 
         Args:
@@ -86,7 +86,7 @@ class BaseConnectionManager:
 
         """
 
-        did_doc = DIDDoc(did=did_info.did)
+        did_doc = SovDIDDoc(did=did_info.did)
         did_controller = did_info.did
         did_key = did_info.verkey
         pk = PublicKey(
@@ -168,11 +168,11 @@ class BaseConnectionManager:
 
         return did_doc
 
-    async def store_did_document(self, did_doc: DIDDoc):
+    async def store_did_document(self, did_doc: SovDIDDoc):
         """Store a DID document.
 
         Args:
-            did_doc: The `DIDDoc` instance to persist
+            did_doc: The `SovDIDDoc` instance to persist
         """
         assert did_doc.did
 
@@ -410,7 +410,7 @@ class BaseConnectionManager:
         return results
 
     def diddoc_connection_targets(
-        self, doc: DIDDoc, sender_verkey: str, their_label: str = None
+        self, doc: SovDIDDoc, sender_verkey: str, their_label: str = None
     ) -> Sequence[ConnectionTarget]:
         """Get a list of connection targets from a DID Document.
 
@@ -421,11 +421,11 @@ class BaseConnectionManager:
         """
 
         if not doc:
-            raise BaseConnectionManagerError("No DIDDoc provided for connection target")
+            raise BaseConnectionManagerError("No SovDIDDoc provided for connection target")
         if not doc.did:
-            raise BaseConnectionManagerError("DIDDoc has no DID")
+            raise BaseConnectionManagerError("SovDIDDoc has no DID")
         if not doc.service:
-            raise BaseConnectionManagerError("No services defined by DIDDoc")
+            raise BaseConnectionManagerError("No services defined by SovDIDDoc")
 
         targets = []
         for service in doc.service.values():
@@ -446,7 +446,7 @@ class BaseConnectionManager:
                 )
         return targets
 
-    async def fetch_did_document(self, did: str) -> Tuple[DIDDoc, StorageRecord]:
+    async def fetch_did_document(self, did: str) -> Tuple[SovDIDDoc, StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
@@ -455,4 +455,4 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        return DIDDoc.from_json(record.value), record
+        return SovDIDDoc.from_json(record.value), record

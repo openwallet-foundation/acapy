@@ -10,7 +10,7 @@ from asynctest import TestCase as AsyncTestCase, mock as async_mock
 
 from .....connections.models.conn_record import ConnRecord
 from .....connections.models.connection_target import ConnectionTarget
-from .....connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from .....connections.models.diddoc import SovDIDDoc, PublicKey, PublicKeyType, Service
 from .....core.event_bus import EventBus
 from .....core.in_memory import InMemoryProfile
 from .....core.util import get_version_from_message
@@ -292,7 +292,7 @@ class TestConfig:
     cred_req_meta = {}
 
     def make_did_doc(self, did, verkey):
-        doc = DIDDoc(did=did)
+        doc = SovDIDDoc(did=did)
         controller = did
         ident = "1"
         pk_value = verkey

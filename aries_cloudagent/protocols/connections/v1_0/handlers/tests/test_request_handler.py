@@ -4,7 +4,7 @@ from asynctest import mock as async_mock
 from ......core.profile import ProfileSession
 from ......connections.models import connection_target
 from ......connections.models.conn_record import ConnRecord
-from ......connections.models.diddoc import DIDDoc, PublicKey, PublicKeyType, Service
+from ......connections.models.diddoc import SovDIDDoc, PublicKey, PublicKeyType, Service
 from ......messaging.request_context import RequestContext
 from ......messaging.responder import MockResponder
 from ......transport.inbound.receipt import MessageReceipt
@@ -46,7 +46,7 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 @pytest.fixture()
 def did_doc():
-    doc = DIDDoc(did=TEST_DID)
+    doc = SovDIDDoc(did=TEST_DID)
     controller = TEST_DID
     ident = "1"
     pk_value = TEST_VERKEY
