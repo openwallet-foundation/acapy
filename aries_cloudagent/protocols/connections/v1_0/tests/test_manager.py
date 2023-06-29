@@ -44,7 +44,7 @@ from .....wallet.util import bytes_to_b64, b58_to_bytes
 
 class TestConnectionManager(AsyncTestCase):
     def make_did_doc(self, did, verkey):
-        doc = SovDIDDoc(did=did)
+        doc = SovDIDDoc(id=did)
         controller = did
         ident = "1"
         pk_value = verkey
@@ -2668,7 +2668,7 @@ class TestConnectionManager(AsyncTestCase):
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(None, self.test_verkey)
 
-        x_did_doc = SovDIDDoc(did=None)
+        x_did_doc = SovDIDDoc(id=None)
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, self.test_verkey)
 

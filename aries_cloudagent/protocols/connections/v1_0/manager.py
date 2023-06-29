@@ -2,7 +2,7 @@
 
 import logging
 from typing import Coroutine, Optional, Sequence, Tuple, cast
-
+from peerdid.dids import DIDDocumentBuilder
 
 from ....core.oob_processor import OobMessageProcessor
 from ....cache.base import BaseCache
@@ -10,7 +10,6 @@ from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
-from ....connections.models.diddoc.diddoc import DIDPeer2
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
@@ -368,9 +367,9 @@ class ConnectionManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 # Create new DID for connection
                 my_info = await wallet.create_local_did(SOV, ED25519)
-                peer_my_info = await wallet.create_local_did(PEER, ED25519)
-                self._logger.warn("ConnMan.create_request")
-                self._logger.warn(peer_my_info)
+                peer_info = await wallet.create_local_did(PEER, ED25519)
+                print("ConnMan.create_request")
+                print(peer_info)
             connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -388,14 +387,23 @@ class ConnectionManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        did_doc = await self.create_did_document(
-            my_info,
-            connection.inbound_connection_id,
-            my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
-        )
+        if my_info.method == SOV:
+            # legacy custom code
+            did_doc = await self.create_did_document(
+                my_info,
+                connection.inbound_connection_id,
+                my_endpoints,
+                mediation_records=list(
+                    filter(None, [base_mediation_record, mediation_record])
+                ),
+            )
+        else:
+            print("prototype code for did doc builder")
+            #use library did_doc construction
+            dd_builder = DIDDocumentBuilder(my_info.did)
+            dd_builder.service.add("", default_endpoint, "default")
+            did_doc = dd_builder.build()
+            print (did_doc)
 
         if not my_label:
             my_label = self.profile.settings.get("default_label")
@@ -436,7 +444,8 @@ class ConnectionManager(BaseConnectionManager):
             {"request": request},
             settings=self.profile.settings,
         )
-
+        print(request.__dict__)
+        print(receipt.__dict__)
         connection = None
         connection_key = None
         my_info = None
@@ -511,6 +520,9 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
+        print("manage:receive_request")
+        print(request.connection)
+        print(conn_did_doc)
         if request.connection.did != conn_did_doc.did:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDoc id",
@@ -596,7 +608,6 @@ class ConnectionManager(BaseConnectionManager):
             {"connection_id": connection.connection_id},
             settings=self.profile.settings,
         )
-
         mediation_record = await self._route_manager.mediation_record_for_connection(
             self.profile, connection, mediation_id
         )

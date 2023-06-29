@@ -15,7 +15,7 @@ from aries_cloudagent.wallet.error import WalletError
 from aries_cloudagent.wallet.key_type import KeyType
 from aries_cloudagent.wallet.util import bytes_to_b58
 
-from aries_cloudagent.connections.models.diddoc.diddoc import DIDPeer2
+from aries_cloudagent.connections.models.diddoc.diddoc import PeerDIDDoc
 
 class DIDParametersValidation:
     """A utility class to check compatibility of provided DID creation parameters."""
@@ -64,6 +64,6 @@ class DIDParametersValidation:
         elif method == SOV:
             return bytes_to_b58(verkey[:16]) if not did else did
         elif method == PEER:
-            return DIDPeer2.create_peer_did_2_from_verkey(bytes_to_b58(verkey)) 
+            return PeerDIDDoc.create_peer_did_2_from_verkey(bytes_to_b58(verkey)) 
         
         return did

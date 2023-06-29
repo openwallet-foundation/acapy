@@ -60,7 +60,7 @@ class TestDIDs:
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
     def make_did_doc(self, did, verkey):
-        doc = SovDIDDoc(did=did)
+        doc = SovDIDDoc(id=did)
         controller = did
         ident = "1"
         pk_value = verkey

@@ -50,7 +50,7 @@ class TestConfig:
     test_target_verkey = "9WCgWKUaAJj3VWxxtzvvMQN3AoFxoBtBDo9ntwJnVVCC"
 
     def make_did_doc(self, did, verkey):
-        doc = SovDIDDoc(did=did)
+        doc = SovDIDDoc(id=did)
         controller = did
         ident = "1"
         pk_value = verkey
@@ -2020,7 +2020,7 @@ class TestDidExchangeManager(AsyncTestCase, TestConfig):
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(None, TestConfig.test_verkey)
 
-        x_did_doc = SovDIDDoc(did=None)
+        x_did_doc = SovDIDDoc(id=None)
         with self.assertRaises(BaseConnectionManagerError):
             self.manager.diddoc_connection_targets(x_did_doc, TestConfig.test_verkey)
 

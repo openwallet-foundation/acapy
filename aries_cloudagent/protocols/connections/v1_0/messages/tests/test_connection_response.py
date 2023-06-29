@@ -25,7 +25,7 @@ class TestConfig:
     test_endpoint = "http://localhost"
 
     def make_did_doc(self):
-        doc = SovDIDDoc(did=self.test_did)
+        doc = SovDIDDoc(id=self.test_did)
         controller = self.test_did
         ident = "1"
         pk_value = self.test_verkey

@@ -292,7 +292,7 @@ class TestConfig:
     cred_req_meta = {}
 
     def make_did_doc(self, did, verkey):
-        doc = SovDIDDoc(did=did)
+        doc = SovDIDDoc(id=did)
         controller = did
         ident = "1"
         pk_value = verkey

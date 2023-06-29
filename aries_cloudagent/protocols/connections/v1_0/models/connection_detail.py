@@ -32,9 +32,9 @@ class DIDDocWrapper(fields.Field):
 
         Returns:
             The deserialized value
-
         """
 
+        print(value)
         return SovDIDDoc.deserialize(value)
 
 
@@ -46,7 +46,7 @@ class ConnectionDetail(BaseModel):
 
         schema_class = "ConnectionDetailSchema"
 
-    def __init__(self, *, did: str = None, did_doc: DIDDoc = None, **kwargs):
+    def __init__(self, *, did: str = None, did_doc: SovDIDDoc = None, **kwargs):
         """
         Initialize a ConnectionDetail instance.
 
@@ -97,6 +97,7 @@ class ConnectionDetailSchema(BaseModelSchema):
         description="DID for connection detail",
         **INDY_DID
     )
+    #JS this could accept DIDDocWrapper OR another wrapper of peerdid.dids.DIDDocument 
     did_doc = DIDDocWrapper(
         data_key="DIDDoc",
         required=False,

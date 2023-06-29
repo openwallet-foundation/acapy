@@ -86,7 +86,7 @@ class BaseConnectionManager:
 
         """
 
-        did_doc = SovDIDDoc(did=did_info.did)
+        did_doc = SovDIDDoc(id=did_info.did)
         did_controller = did_info.did
         did_key = did_info.verkey
         pk = PublicKey(
@@ -165,7 +165,8 @@ class BaseConnectionManager:
                 svc_endpoint,
             )
             did_doc.set(service)
-
+        print("base_manager:create_did_document exit val")
+        print(did_doc.__dict__)
         return did_doc
 
     async def store_did_document(self, did_doc: SovDIDDoc):
@@ -419,7 +420,8 @@ class BaseConnectionManager:
             sender_verkey: The verkey we are using
             their_label: The connection label they are using
         """
-
+        print("base_manager:diddoc_connection_targets")
+        print(doc)
         if not doc:
             raise BaseConnectionManagerError("No SovDIDDoc provided for connection target")
         if not doc.did:

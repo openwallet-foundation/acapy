@@ -34,7 +34,7 @@ class TestDIDXRequestHandler(AsyncTestCase):
     """Class unit testing request handler."""
 
     def did_doc(self):
-        doc = SovDIDDoc(did=TEST_DID)
+        doc = SovDIDDoc(id=TEST_DID)
         controller = TEST_DID
         ident = "1"
         pk_value = TEST_VERKEY

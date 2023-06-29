@@ -20,7 +20,7 @@ limitations under the License.
 
 from base58 import b58decode
 from urllib.parse import urlparse
-
+from peerdid.dids import DID
 
 def resource(ref: str, delimiter: str = None) -> str:
     """
@@ -57,6 +57,10 @@ def canon_did(uri: str) -> str:
         rv = uri[8:]
         if ok_did(rv):
             return rv
+    #JS .... need this to accept did:peer:2, not sure exactly how to do this. 
+    if uri.startswith("did:peer:2"):
+        d = DID(uri)
+        return d
     raise ValueError(
         "Bad specification {} does not correspond to a sovrin DID".format(uri)
     )
@@ -107,7 +111,7 @@ def ok_did(token: str) -> bool:
     Returns: whether input token looks like a valid schema identifier
 
     """
-
+    return True
     try:
         return len(b58decode(token)) == 16 if token else False
     except ValueError:

@@ -23,7 +23,7 @@ import logging
 
 from typing import List, Sequence, Union, Any
 from peerdid import dids, keys
-from peerdid.dids import DIDDocument
+from peerdid.dids import DIDDocument, create_peer_did_numalgo_0
 from .publickey import PublicKey, PublicKeyType
 from .service import Service
 from .util import canon_did, canon_ref, ok_did, resource
@@ -41,32 +41,21 @@ class SovDIDDoc(DIDDocument):
     everything else as URIs (oriented toward W3C-facing operations).
     """
 
-    CONTEXT = "https://w3id.org/did/v1"
 
-    def __init__(self, did: str = None) -> None:
-        """
-        Initialize the DIDDoc instance.
+    _pubkey: dict = {}
+    _service: dict = {}
 
-        Retain DID ('id' in DIDDoc context); initialize verification keys
-        and services to empty lists.
-
-        Args:
-            did: DID for current DIDdoc
-
-        Raises:
-            ValueError: for bad input DID.
-
-        """
-
-        self._did = canon_did(did) if did else None  # allow specification post-hoc
-        self._pubkey = {}
-        self._service = {}
+    def __init__(self, **kwargs):
+        if "id" in kwargs and ":" not in kwargs["id"]:
+            kwargs["id"] = "did:peer:0" + kwargs["id"]
+            print("SovDIDDoc.__init__")
+            print(kwargs["id"])
+        super().__init__(**kwargs)
 
     @property
     def did(self) -> str:
         """Accessor for DID."""
-
-        return self._did
+        return self.id
 
     @did.setter
     def did(self, value: str) -> None:
@@ -81,7 +70,7 @@ class SovDIDDoc(DIDDocument):
 
         """
 
-        self._did = canon_did(value) if value else None
+        self.id = canon_did(value) if value else None
 
     @property
     def pubkey(self) -> dict:
@@ -94,13 +83,14 @@ class SovDIDDoc(DIDDocument):
         """Accessor for public keys marked as authentication keys, by identifier."""
 
         return {k: self._pubkey[k] for k in self._pubkey if self._pubkey[k].authn}
-
+    
     @property
     def service(self) -> dict:
         """Accessor for services by identifier."""
-
+        
         return self._service
 
+    
     def set(self, item: Union[Service, PublicKey]) -> "DIDDoc":
         """
         Add or replace service or public key; return current DIDDoc.
@@ -114,11 +104,12 @@ class SovDIDDoc(DIDDocument):
         Returns: the current DIDDoc
 
         """
-
+        print("diddoc.set")
+        print(self)
         if isinstance(item, Service):
-            self.service[item.id] = item
+            self._service[item.id] = item
         elif isinstance(item, PublicKey):
-            self.pubkey[item.id] = item
+            self._pubkey[item.id] = item
         else:
             raise ValueError(
                 "Cannot add item {} to DIDDoc on DID {}".format(item, self.did)
@@ -134,9 +125,9 @@ class SovDIDDoc(DIDDocument):
         """
 
         return {
-            "@context": SovDIDDoc.CONTEXT,
+            "@context": self.context,
             "id": canon_ref(self.did, self.did),
-            "publicKey": [pubkey.to_dict() for pubkey in self.pubkey.values()],
+            "publicKey": [pubkey.to_dict() for pubkey in self._pubkey.values()],
             "authentication": [
                 {
                     "type": pubkey.type.authn_type,
@@ -145,7 +136,7 @@ class SovDIDDoc(DIDDocument):
                 for pubkey in self.pubkey.values()
                 if pubkey.authn
             ],
-            "service": [service.to_dict() for service in self.service.values()],
+            "service": [service.to_dict() for service in self._service.values()],
         }
 
     def to_json(self) -> str:
@@ -232,7 +223,9 @@ class SovDIDDoc(DIDDocument):
 
         rv = None
         if "id" in did_doc:
-            rv = SovDIDDoc(did_doc["id"])
+            print("SovDIDDoc:deserialize")
+            print(did_doc["id"])
+            rv = SovDIDDoc(id=did_doc["id"])
         else:
             # heuristic: get DID to serve as DID document identifier from
             # the first OK-looking public key
@@ -268,7 +261,7 @@ class SovDIDDoc(DIDDocument):
                 canon_did(pubkey["controller"]),
                 authn,
             )
-            rv.pubkey[key.id] = key
+            rv._pubkey[key.id] = key
 
         for akey in did_doc.get(
             "authentication", {}
@@ -283,7 +276,7 @@ class SovDIDDoc(DIDDocument):
                     canon_did(akey["controller"]),
                     True,
                 )
-                rv.pubkey[key.id] = key
+                rv._pubkey[key.id] = key
 
         for service in did_doc.get("service", {}):
             endpoint = service["serviceEndpoint"]
@@ -292,7 +285,7 @@ class SovDIDDoc(DIDDocument):
                 service.get(
                     "id",
                     canon_ref(
-                        rv.did, "assigned-service-{}".format(len(rv.service)), ";"
+                        rv.did, "assigned-service-{}".format(len(rv._service)), ";"
                     ),
                 ),
                 service["type"],
@@ -301,7 +294,7 @@ class SovDIDDoc(DIDDocument):
                 canon_ref(rv.did, endpoint, ";") if ";" in endpoint else endpoint,
                 service.get("priority", None),
             )
-            rv.service[svc.id] = svc
+            rv._service[svc.id] = svc
 
         return rv
 
@@ -331,7 +324,7 @@ class SovDIDDoc(DIDDocument):
 
         return f"<DIDDoc did={self.did}>"
 
-class DIDPeer2(dids.DID):
+class PeerDIDDoc(dids.DID):
     """
         did:peer:2 following the Method 2 of 
         https://identity.foundation/peer-did-method-spec/#generation-method
@@ -353,5 +346,4 @@ class DIDPeer2(dids.DID):
         }
 
         var = dids.create_peer_did_numalgo_2(enc_keys, sign_keys,service)
-        dids.resolve_peer_did(var)
         return var

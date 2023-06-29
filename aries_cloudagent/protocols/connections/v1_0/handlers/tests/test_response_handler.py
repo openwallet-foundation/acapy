@@ -38,7 +38,7 @@ TEST_IMAGE_URL = "http://aries.ca/images/sample.png"
 
 @pytest.fixture()
 def did_doc():
-    doc = SovDIDDoc(did=TEST_DID)
+    doc = SovDIDDoc(id=TEST_DID)
     controller = TEST_DID
     ident = "1"
     pk_value = TEST_VERKEY
