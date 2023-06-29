@@ -634,11 +634,11 @@ def get_logger_with_handlers(
         logger.addHandler(std_out_handler)
         if did_ident:
             logger = logging.LoggerAdapter(logger, {"did": did_ident})
-        # set log level
-        logger_level = (
-            (settings.get("log.level")).upper()
-            if settings.get("log.level")
-            else logging.INFO
-        )
-        logger.setLevel(logger_level)
+    # set log level
+    logger_level = (
+        (settings.get("log.level")).upper()
+        if settings.get("log.level")
+        else logging.INFO
+    )
+    logger.setLevel(logger_level)
     return logger
