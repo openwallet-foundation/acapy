@@ -8,7 +8,7 @@ from base58 import alphabet
 from marshmallow.validate import OneOf, Range, Regexp, Validator
 from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Field
-
+from pydid.did import DID_PATTERN
 from .util import epoch_to_str
 
 from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
@@ -262,6 +262,20 @@ class DIDPosture(OneOf):
         )
 
 
+class AnyDID(Regexp):
+    """Validate value against indy DID."""
+
+    EXAMPLE = "did:<METHOD>:WgWxqztrNooG92RXvxSTWv"
+    PATTERN = DID_PATTERN
+
+    def __init__(self):
+        """Initializer."""
+        super().__init__(
+            AnyDID.PATTERN,
+            error="Value {input} is not a decentralized identifier (DID), as defined by pydid",
+        )
+
+
 class IndyDID(Regexp):
     """Validate value against indy DID."""
 
@@ -270,7 +284,6 @@ class IndyDID(Regexp):
 
     def __init__(self):
         """Initializer."""
-
         super().__init__(
             IndyDID.PATTERN,
             error="Value {input} is not an indy decentralized identifier (DID)",
@@ -793,6 +806,7 @@ JWT = {"validate": JSONWebToken(), "example": JSONWebToken.EXAMPLE}
 DID_KEY = {"validate": DIDKey(), "example": DIDKey.EXAMPLE}
 DID_POSTURE = {"validate": DIDPosture(), "example": DIDPosture.EXAMPLE}
 ROUTING_KEY = {"validate": RoutingKey(), "example": RoutingKey.EXAMPLE}
+ANY_DID = {"validate": AnyDID(), "example": AnyDID.EXAMPLE}
 INDY_DID = {"validate": IndyDID(), "example": IndyDID.EXAMPLE}
 GENERIC_DID = {"validate": MaybeIndyDID(), "example": MaybeIndyDID.EXAMPLE}
 INDY_RAW_PUBLIC_KEY = {

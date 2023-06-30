@@ -1,10 +1,10 @@
 """An object for containing the connection request/response DID information."""
 
 from marshmallow import EXCLUDE, fields
-from peerdid.dids import DIDDocument
+from pydid.did import DID_PATTERN
 from .....connections.models.diddoc import SovDIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
-from .....messaging.valid import INDY_DID
+from .....messaging.valid import ANY_DID
 
 
 class DIDDocWrapper(fields.Field):
@@ -95,9 +95,9 @@ class ConnectionDetailSchema(BaseModelSchema):
         data_key="DID",
         required=False,
         description="DID for connection detail",
-        **INDY_DID
+        **ANY_DID
     )
-    #JS this could accept DIDDocWrapper OR another wrapper of peerdid.dids.DIDDocument 
+    # JS this could accept DIDDocWrapper OR another wrapper of peerdid.dids.DIDDocument
     did_doc = DIDDocWrapper(
         data_key="DIDDoc",
         required=False,
