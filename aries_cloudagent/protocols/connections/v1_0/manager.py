@@ -322,6 +322,9 @@ class ConnectionManager(BaseConnectionManager):
                     )
         else:
             self._logger.debug("Connection invitation will await acceptance")
+        self._logger.debug("manager:receive_invitation return")
+        self._logger.debug(connection)
+        self._logger.debug(request)
         return connection
 
     async def create_request(
@@ -366,10 +369,10 @@ class ConnectionManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 # Create new DID for connection
-                my_info = await wallet.create_local_did(SOV, ED25519)
-                peer_info = await wallet.create_local_did(PEER, ED25519)
-                print("ConnMan.create_request")
-                print(peer_info)
+                # peer_info = await wallet.create_local_did(SOV, ED25519)
+                my_info = await wallet.create_local_did(PEER, ED25519)
+                self._logger.debug("ConnMan.create_request.my_info")
+                self._logger.debug(my_info)
             connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -386,7 +389,8 @@ class ConnectionManager(BaseConnectionManager):
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
-
+        self._logger.debug("manager:create_request.my_info")
+        self._logger.debug(my_info)
         if my_info.method == SOV:
             # legacy custom code
             did_doc = await self.create_did_document(
@@ -398,12 +402,12 @@ class ConnectionManager(BaseConnectionManager):
                 ),
             )
         else:
-            print("prototype code for did doc builder")
-            #use library did_doc construction
+            self._logger.debug("prototype code for did doc builder")
+            # use library did_doc construction
             dd_builder = DIDDocumentBuilder(my_info.did)
             dd_builder.service.add("", default_endpoint, "default")
             did_doc = dd_builder.build()
-            print (did_doc)
+            self._logger.debug(did_doc)
 
         if not my_label:
             my_label = self.profile.settings.get("default_label")
@@ -420,7 +424,8 @@ class ConnectionManager(BaseConnectionManager):
 
         async with self.profile.session() as session:
             await connection.save(session, reason="Created connection request")
-
+        self._logger.debug("manager:create_request.request")
+        self._logger.debug(request)
         return request
 
     async def receive_request(
@@ -444,8 +449,10 @@ class ConnectionManager(BaseConnectionManager):
             {"request": request},
             settings=self.profile.settings,
         )
-        print(request.__dict__)
-        print(receipt.__dict__)
+        self._logger.debug("manager:recieve_request.request")
+        self._logger.debug(request.__dict__)
+        self._logger.debug("manager:recieve_request.receipt")
+        self._logger.debug(receipt.__dict__)
         connection = None
         connection_key = None
         my_info = None
@@ -520,9 +527,6 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        print("manage:receive_request")
-        print(request.connection)
-        print(conn_did_doc)
         if request.connection.did != conn_did_doc.did:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDoc id",
@@ -656,14 +660,15 @@ class ConnectionManager(BaseConnectionManager):
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
 
-        did_doc = await self.create_did_document(
-            my_info,
-            connection.inbound_connection_id,
-            my_endpoints,
-            mediation_records=list(
-                filter(None, [base_mediation_record, mediation_record])
-            ),
-        )
+        if my_info.method == SOV:
+            did_doc = await self.create_did_document(
+                my_info,
+                connection.inbound_connection_id,
+                my_endpoints,
+                mediation_records=list(
+                    filter(None, [base_mediation_record, mediation_record])
+                ),
+            )
 
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)

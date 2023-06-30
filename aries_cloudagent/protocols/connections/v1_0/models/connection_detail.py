@@ -33,7 +33,7 @@ class DIDDocWrapper(fields.Field):
         Returns:
             The deserialized value
         """
-
+        print("DIDDocWrapper")
         print(value)
         return SovDIDDoc.deserialize(value)
 

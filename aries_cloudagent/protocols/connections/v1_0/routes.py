@@ -625,6 +625,8 @@ async def connections_accept_invitation(request: web.BaseRequest):
     try:
         async with profile.session() as session:
             connection = await ConnRecord.retrieve_by_id(session, connection_id)
+            print("routes:connection_accept_invitation")
+            print(connection.my_did)
         connection_mgr = ConnectionManager(profile)
         my_label = request.query.get("my_label")
         my_endpoint = request.query.get("my_endpoint")

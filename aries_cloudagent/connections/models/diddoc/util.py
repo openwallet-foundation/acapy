@@ -21,6 +21,8 @@ limitations under the License.
 from base58 import b58decode
 from urllib.parse import urlparse
 from peerdid.dids import DID
+from pydid.did import DID_PATTERN
+
 
 def resource(ref: str, delimiter: str = None) -> str:
     """
@@ -77,7 +79,11 @@ def canon_ref(did: str, ref: str, delimiter: str = None):
         delimiter: delimiter character marking fragment (default '#') or
             introducing identifier (';') against DID resource
     """
+    # if it's already a valid did, allow it
+    if DID_PATTERN.match(did):
+        return DID(did)
 
+    # if not, handle unqualified dids with legacy code
     if not ok_did(did):
         raise ValueError("Bad DID {} cannot act as DID document identifier".format(did))
 
@@ -111,7 +117,6 @@ def ok_did(token: str) -> bool:
     Returns: whether input token looks like a valid schema identifier
 
     """
-    return True
     try:
         return len(b58decode(token)) == 16 if token else False
     except ValueError:

@@ -39,7 +39,8 @@ class ConnectionRequestHandler(BaseHandler):
                 context.message,
                 context.message_receipt,
             )
-
+            print("connection_request_handler")
+            print(connection.__dict__)
             if connection.accept == ConnRecord.ACCEPT_AUTO:
                 response = await mgr.create_response(
                     connection, mediation_id=mediation_id

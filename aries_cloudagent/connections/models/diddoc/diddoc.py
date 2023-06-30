@@ -46,10 +46,10 @@ class SovDIDDoc(DIDDocument):
     _service: dict = {}
 
     def __init__(self, **kwargs):
-        if "id" in kwargs and ":" not in kwargs["id"]:
+        print("SovDIDDoc.__init__")
+        if "id" in kwargs and not str(kwargs["id"]).startswith("did:"):
             kwargs["id"] = "did:peer:0" + kwargs["id"]
-            print("SovDIDDoc.__init__")
-            print(kwargs["id"])
+        print(kwargs["id"])
         super().__init__(**kwargs)
 
     @property
