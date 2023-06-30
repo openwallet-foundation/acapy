@@ -9,6 +9,7 @@ from typing import Optional, List, Sequence, Tuple, Text
 
 from pydid import (
     BaseDIDDocument as ResolvedDocument,
+    DIDDocument,
     DIDCommService,
     VerificationMethod,
 )
@@ -169,21 +170,21 @@ class BaseConnectionManager:
         print(did_doc.__dict__)
         return did_doc
 
-    async def store_did_document(self, did_doc: SovDIDDoc):
+    async def store_did_document(self, did_doc: DIDDocument):
         """Store a DID document.
 
         Args:
             did_doc: The `SovDIDDoc` instance to persist
         """
-        assert did_doc.did
+        assert did_doc.id
 
         try:
-            stored_doc, record = await self.fetch_did_document(did_doc.did)
+            stored_doc, record = await self.fetch_did_document(did_doc.id)
         except StorageNotFoundError:
             record = StorageRecord(
                 self.RECORD_TYPE_DID_DOC,
                 did_doc.to_json(),
-                {"did": did_doc.did},
+                {"did": did_doc.id},
             )
             async with self._profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)
@@ -192,12 +193,13 @@ class BaseConnectionManager:
             async with self._profile.session() as session:
                 storage: BaseStorage = session.inject(BaseStorage)
                 await storage.update_record(
-                    record, did_doc.to_json(), {"did": did_doc.did}
+                    record, did_doc.to_json(), {"did": did_doc.id}
                 )
-        await self.remove_keys_for_did(did_doc.did)
-        for key in did_doc.pubkey.values():
-            if key.controller == did_doc.did:
-                await self.add_key_for_did(did_doc.did, key.value)
+        await self.remove_keys_for_did(did_doc.id)
+        if hasattr(did_doc, "pubkey"):
+            for key in did_doc.pubkey.values():
+                if key.controller == did_doc.id:
+                    await self.add_key_for_did(did_doc.id, key.value)
 
     async def add_key_for_did(self, did: str, key: str):
         """Store a verkey for lookup against a DID.
@@ -411,7 +413,7 @@ class BaseConnectionManager:
         return results
 
     def diddoc_connection_targets(
-        self, doc: SovDIDDoc, sender_verkey: str, their_label: str = None
+        self, doc: DIDDocument, sender_verkey: str, their_label: str = None
     ) -> Sequence[ConnectionTarget]:
         """Get a list of connection targets from a DID Document.
 
@@ -422,23 +424,27 @@ class BaseConnectionManager:
         """
         print("base_manager:diddoc_connection_targets")
         print(doc)
+        print(doc.__dict__)
+        print(doc.service)
         if not doc:
-            raise BaseConnectionManagerError("No SovDIDDoc provided for connection target")
-        if not doc.did:
+            raise BaseConnectionManagerError(
+                "No SovDIDDoc provided for connection target"
+            )
+        if not doc.id:
             raise BaseConnectionManagerError("SovDIDDoc has no DID")
         if not doc.service:
-            raise BaseConnectionManagerError("No services defined by SovDIDDoc")
+            raise BaseConnectionManagerError("No services defined in DIDDocument")
 
         targets = []
-        for service in doc.service.values():
-            if service.recip_keys:
+        for service in doc.service:
+            if service.recipient_keys:
                 targets.append(
                     ConnectionTarget(
-                        did=doc.did,
+                        did=doc.id,
                         endpoint=service.endpoint,
                         label=their_label,
                         recipient_keys=[
-                            key.value for key in (service.recip_keys or ())
+                            key.value for key in (service.recipient_keys or ())
                         ],
                         routing_keys=[
                             key.value for key in (service.routing_keys or ())
@@ -448,7 +454,7 @@ class BaseConnectionManager:
                 )
         return targets
 
-    async def fetch_did_document(self, did: str) -> Tuple[SovDIDDoc, StorageRecord]:
+    async def fetch_did_document(self, did: str) -> Tuple[DIDDocument, StorageRecord]:
         """Retrieve a DID Document for a given DID.
 
         Args:
@@ -457,4 +463,4 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
-        return SovDIDDoc.from_json(record.value), record
+        return DIDDocument.from_json(record.value), record

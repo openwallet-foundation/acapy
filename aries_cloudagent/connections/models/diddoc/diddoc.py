@@ -248,13 +248,13 @@ class SovDIDDoc(DIDDocument):
         ):  # include all public keys, authentication pubkeys by reference
             pubkey_type = PublicKeyType.get(pubkey["type"])
             authn = any(
-                canon_ref(rv.did, ak.get("publicKey", ""))
-                == canon_ref(rv.did, pubkey["id"])
+                canon_ref(rv.id, ak.get("publicKey", ""))
+                == canon_ref(rv.id, pubkey["id"])
                 for ak in did_doc.get("authentication", {})
                 if isinstance(ak.get("publicKey", None), str)
             )
             key = PublicKey(  # initialization canonicalizes id
-                rv.did,
+                rv.id,
                 pubkey["id"],
                 pubkey[pubkey_type.specifier],
                 pubkey_type,
@@ -269,7 +269,7 @@ class SovDIDDoc(DIDDocument):
             if "publicKey" not in akey:  # not yet got it with public keys
                 pubkey_type = PublicKeyType.get(akey["type"])
                 key = PublicKey(  # initialization canonicalized id
-                    rv.did,
+                    rv.id,
                     akey["id"],
                     akey[pubkey_type.specifier],
                     pubkey_type,
@@ -281,17 +281,17 @@ class SovDIDDoc(DIDDocument):
         for service in did_doc.get("service", {}):
             endpoint = service["serviceEndpoint"]
             svc = Service(  # initialization canonicalizes id
-                rv.did,
+                rv.id,
                 service.get(
                     "id",
                     canon_ref(
-                        rv.did, "assigned-service-{}".format(len(rv._service)), ";"
+                        rv.id, "assigned-service-{}".format(len(rv._service)), ";"
                     ),
                 ),
                 service["type"],
                 rv.add_service_pubkeys(service, "recipientKeys"),
                 rv.add_service_pubkeys(service, ["mediatorKeys", "routingKeys"]),
-                canon_ref(rv.did, endpoint, ";") if ";" in endpoint else endpoint,
+                canon_ref(rv.id, endpoint, ";") if ";" in endpoint else endpoint,
                 service.get("priority", None),
             )
             rv._service[svc.id] = svc
@@ -324,7 +324,7 @@ class SovDIDDoc(DIDDocument):
 
         return f"<DIDDoc did={self.did}>"
 
-class PeerDIDDoc(dids.DID):
+class PeerDIDDoc():
     """
         did:peer:2 following the Method 2 of 
         https://identity.foundation/peer-did-method-spec/#generation-method
@@ -340,10 +340,9 @@ class PeerDIDDoc(dids.DID):
 
         service = {
             "type": "DIDCommMessaging",
-            "serviceEndpoint": "https://example.com/endpoint1",
-            "routingKeys": ["did:example:somemediator#somekey1"],
-            "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
+            "serviceEndpoint": "http://host.docker.internal:8030",
+            "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"]
         }
-
+        
         var = dids.create_peer_did_numalgo_2(enc_keys, sign_keys,service)
         return var

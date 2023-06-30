@@ -405,7 +405,7 @@ class ConnectionManager(BaseConnectionManager):
             self._logger.debug("prototype code for did doc builder")
             # use library did_doc construction
             dd_builder = DIDDocumentBuilder(my_info.did)
-            dd_builder.service.add("", default_endpoint, "default")
+            dd_builder.service.add("did-communication", default_endpoint, "default")
             did_doc = dd_builder.build()
             self._logger.debug(did_doc)
 
@@ -527,7 +527,7 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if request.connection.did != conn_did_doc.did:
+        if request.connection.did != conn_did_doc.id:
             raise ConnectionManagerError(
                 "Connection DID does not match DIDDoc id",
                 error_code=ProblemReportReason.REQUEST_NOT_ACCEPTED.value,
