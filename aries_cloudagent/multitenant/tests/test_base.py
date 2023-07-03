@@ -418,6 +418,64 @@ class TestBaseMultitenantManager(AsyncTestCase):
         assert wallet_record.jwt_iat == iat
         assert expected_token == token
 
+    async def test_get_wallet_details_from_token(self):
+        self.profile.settings["multitenant.jwt_secret"] = "very_secret_jwt"
+        wallet_record = WalletRecord(
+            key_management_mode=WalletRecord.MODE_MANAGED,
+            settings={"wallet.type": "indy", "wallet.key": "wallet_key"},
+            jwt_iat=100,
+        )
+        session = await self.profile.session()
+        await wallet_record.save(session)
+        token = jwt.encode(
+            {"wallet_id": wallet_record.wallet_id, "iat": 100},
+            "very_secret_jwt",
+            algorithm="HS256",
+        )
+        ret_wallet_id, ret_wallet_key = self.manager.get_wallet_details_from_token(
+            token
+        )
+        assert ret_wallet_id == wallet_record.wallet_id
+        assert not ret_wallet_key
+
+        token = jwt.encode(
+            {
+                "wallet_id": wallet_record.wallet_id,
+                "iat": 100,
+                "wallet_key": "wallet_key",
+            },
+            "very_secret_jwt",
+            algorithm="HS256",
+        )
+        ret_wallet_id, ret_wallet_key = self.manager.get_wallet_details_from_token(
+            token
+        )
+        assert ret_wallet_id == wallet_record.wallet_id
+        assert ret_wallet_key == "wallet_key"
+
+    async def test_get_wallet_and_profile(self):
+        self.profile.settings["multitenant.jwt_secret"] = "very_secret_jwt"
+        wallet_record = WalletRecord(
+            key_management_mode=WalletRecord.MODE_MANAGED,
+            settings={"wallet.type": "indy", "wallet.key": "wallet_key"},
+            jwt_iat=100,
+        )
+
+        session = await self.profile.session()
+        await wallet_record.save(session)
+
+        with async_mock.patch.object(
+            self.manager, "get_wallet_profile"
+        ) as get_wallet_profile:
+            mock_profile = InMemoryProfile.test_profile()
+            get_wallet_profile.return_value = mock_profile
+
+            wallet, profile = await self.manager.get_wallet_and_profile(
+                self.profile.context, wallet_record.wallet_id, "wallet_key"
+            )
+            assert wallet == wallet_record
+            assert profile == mock_profile
+
     async def test_get_profile_for_token_invalid_token_raises(self):
         self.profile.settings["multitenant.jwt_secret"] = "very_secret_jwt"
 

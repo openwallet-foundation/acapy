@@ -9,6 +9,7 @@ from typing import Optional, Tuple, Mapping
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
+from ...ledger.base import BaseLedger
 from ...ledger.error import LedgerError
 from ...wallet.crypto import did_is_self_certified
 
@@ -62,6 +63,12 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
     async def get_nonprod_ledgers(self) -> Mapping:
         """Return non_production ledgers mapping."""
         return self.non_production_ledgers
+
+    async def get_ledger_inst_by_id(self, ledger_id: str) -> Optional[BaseLedger]:
+        """Return BaseLedger instance."""
+        return self.production_ledgers.get(
+            ledger_id
+        ) or self.non_production_ledgers.get(ledger_id)
 
     async def _get_ledger_by_did(
         self,
