@@ -6,7 +6,7 @@
         "dockerfile": "Dockerfile",
         "context": "..",
         "args": {
-          "VARIANT": "3.9-buster"
+          "VARIANT": "3.9-bullseye"
         }
     },
     "customizations": {
