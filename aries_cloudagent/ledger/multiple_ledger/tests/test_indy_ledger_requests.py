@@ -38,6 +38,9 @@ class TestIndyLedgerRequestsExecutor(AsyncTestCase):
                 lookup_did_in_configured_ledgers=async_mock.CoroutineMock(
                     return_value=("test_prod_1", self.ledger)
                 ),
+                get_ledger_inst_by_id=async_mock.CoroutineMock(
+                    return_value=self.ledger
+                ),
             ),
         )
         self.profile.context.injector.bind_instance(BaseLedger, self.ledger)
@@ -52,6 +55,10 @@ class TestIndyLedgerRequestsExecutor(AsyncTestCase):
         )
         assert ledger_id == "test_prod_1"
         assert ledger_inst.pool.name == "test_prod_1"
+
+    async def test_get_ledger_inst(self):
+        ledger_inst = await self.indy_ledger_requestor.get_ledger_inst("test_prod_1")
+        assert ledger_inst
 
     async def test_get_ledger_for_identifier_is_digit(self):
         ledger_id, ledger = await self.indy_ledger_requestor.get_ledger_for_identifier(
