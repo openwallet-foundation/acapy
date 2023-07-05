@@ -700,16 +700,16 @@ As with the issue credential process, the agents handled some of the presentatio
 
 If you would like to perform all of the proof request/response steps manually, you can call all of the individual `/present-proof-2.0` messages.
 
-The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that your need to respond to. See the [detailed API docs](../AdminAPI.md).
+The following table lists endpoints that you need to call ("REST service") and callbacks that your agent will receive ("callback") that you need to respond to. See the [detailed API docs](../AdminAPI.md).
 
 | Protocol Step        | Faber (Verifier)       | Alice (Holder/Prover)     | Notes |
 | -------------------- | ---------------------- | ------------------------- | ----- |
 | Send Proof Request | **`POST /present-proof-2.0/send-request`** | | REST service |
-| Receive Proof Request | | <agent_cb>/present_proof_v2_0 | callback(webhook or websocket) |
+| Receive Proof Request | | <agent_cb>/present_proof_v2_0 | callback (webhook) |
 | Find Credentials | | **`GET /present-proof-2.0/records/{pres_ex_id}/credentials`** | REST service |
 | Select Credentials | | | application or user function |
 | Send Proof | | **`POST /present-proof-2.0/records/{pres_ex_id}/send-presentation`** | REST service |
-| Receive Proof | <agent_cb>/present_proof_v2_0 | | callback(webhook or websocket) |
+| Receive Proof | <agent_cb>/present_proof_v2_0 | | callback (webhook) |
 | Validate Proof | **`POST /present-proof-2.0/records/{pres_ex_id}/verify-presentation`** | | REST service |
 | Save Proof | | | application data |
 
