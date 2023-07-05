@@ -1,6 +1,6 @@
-# 0.8.2-rc1
+# 0.8.2
 
-## June 26, 2023
+## June 29, 2023
 
 Release 0.8.2 contains a number of minor fixes and updates to ACA-Py, including
 the correction of a regression in Release 0.8.0 related to the use of plugins
@@ -8,10 +8,21 @@ the correction of a regression in Release 0.8.0 related to the use of plugins
 development environment to collect detailed performance information about what
 is going in within ACA-Py.
 
-For those using plugins, RC1 includes PR [\#2255](https://github.com/hyperledger/aries-cloudagent-python/pull/2255) to fix a backwards compatibility break in
-the loading of plugins that was inadvertently introduced in 0.8.1.
+This release pulls in [indy-shared-rs] Release 3.3 which fixes a serious issue in AnonCreds verification, as described in issue [\#2036], where the verification of a presentation with multiple revocable credentials fails when using [Aries Askar] and the
+other shared components. This issue occurs only when using [Aries Askar] and [indy-credx Release 3.3].
+
+An important new feature in this release is the ability to set some instance
+configuration settings at the tenant level of a multi-tenant deployment. See PR
+[\#2233].
 
 There are no breaking changes in this release.
+
+[\#2255]: https://github.com/hyperledger/aries-cloudagent-python/pull/2255
+[\#2233]: https://github.com/hyperledger/aries-cloudagent-python/pull/2233
+[\#2036]: https://github.com/hyperledger/aries-cloudagent-python/issues/2036
+[indy-shared-rs]: https://github.com/hyperledger/indy-shared-rs
+[Aries Askar]: https://github.com/hyperledger/aries-askar
+[indy-credx Release 3.3]: https://github.com/hyperledger/indy-shared-rs/releases/tag/v0.3.3
 
 ### Categorized List of Pull Requests
 
@@ -24,6 +35,7 @@ There are no breaking changes in this release.
 - Credential Exchange (Issue, Present) Updates
   - Pass document loader to jsonld.expand [\#2175](https://github.com/hyperledger/aries-cloudagent-python/pull/2175) [andrewwhitehead](https://github.com/andrewwhitehead)
 - Multi-tenancy fixes/updates
+  - Allow Configuration Settings on a per-tenant basis [\#2233](https://github.com/hyperledger/aries-cloudagent-python/pull/2233) [shaangill025](https://github.com/shaangill025)
   - stand up multiple agents (single and multi) for local development and testing [\#2230](https://github.com/hyperledger/aries-cloudagent-python/pull/2230) [usingtechnology](https://github.com/usingtechnology)
   - Multi-tenant self-managed mediation verkey lookup [\#2232](https://github.com/hyperledger/aries-cloudagent-python/pull/2232) [usingtechnology](https://github.com/usingtechnology)
   - fix: route multitenant connectionless oob invitation [\#2243](https://github.com/hyperledger/aries-cloudagent-python/pull/2243) [TimoGlastra](https://github.com/TimoGlastra)
@@ -49,6 +61,8 @@ There are no breaking changes in this release.
 - Message Tracing/Timing Updates
   - Add updated ELK stack for demos. [\#2236](https://github.com/hyperledger/aries-cloudagent-python/pull/2236) [usingtechnology](https://github.com/usingtechnology)
 - Release management pull requests
+  - 0.8.2 [\#2285](https://github.com/hyperledger/aries-cloudagent-python/pull/2285) [swcurran](https://github.com/swcurran)
+  - 0.8.2-rc2 [\#2284](https://github.com/hyperledger/aries-cloudagent-python/pull/2283) [swcurran](https://github.com/swcurran)
   - 0.8.2-rc1 [\#2282](https://github.com/hyperledger/aries-cloudagent-python/pull/2282) [swcurran](https://github.com/swcurran)
   - 0.8.2-rc0 [\#2260](https://github.com/hyperledger/aries-cloudagent-python/pull/2260) [swcurran](https://github.com/swcurran)
 

@@ -1,0 +1,57 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+    "name": "aries_cloudagent",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "..",
+        "args": {
+          "VARIANT": "3.9-bullseye"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance"
+			],
+            "settings": {
+                "python.testing.pytestArgs": [
+                    ".",
+                    "--no-cov"
+                ],
+                "python.testing.unittestEnabled": false,
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestPath": "pytest",
+                "editor.defaultFormatter": null,
+                "editor.formatOnSave": false, // enable per language
+                "[python]": {
+                    "editor.formatOnSave": true
+                },
+                "python.formatting.provider": "black",
+                "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+                "python.formatting.blackArgs": []
+            }
+        }
+    },
+
+    "features": {
+        "docker-in-docker": "latest",
+    },
+    
+    // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+    "remoteUser": "vscode",
+    
+    "remoteEnv": {
+        //"PATH": "${containerEnv:PATH}:${workspaceRoot}/.venv/bin"
+    },
+    
+    "mounts": [],
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    "forwardPorts": [
+        9060,
+        9061
+    ],
+    "postCreateCommand": "bash ./.devcontainer/post-install.sh"
+    
+}

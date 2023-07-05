@@ -23,11 +23,15 @@ class AdminRequestContext:
         profile: Profile,
         *,
         context: InjectionContext = None,
-        settings: Mapping[str, object] = None
+        settings: Mapping[str, object] = None,
+        root_profile: Profile = None,
+        metadata: dict = None
     ):
         """Initialize an instance of AdminRequestContext."""
         self._context = (context or profile.context).start_scope("admin", settings)
         self._profile = profile
+        self._root_profile = root_profile
+        self._metadata = metadata
 
     @property
     def injector(self) -> Injector:
@@ -38,6 +42,16 @@ class AdminRequestContext:
     def profile(self) -> Profile:
         """Accessor for the associated `Profile` instance."""
         return self._profile
+
+    @property
+    def root_profile(self) -> Optional[Profile]:
+        """Accessor for the associated root_profile instance."""
+        return self._root_profile
+
+    @property
+    def metadata(self) -> dict:
+        """Accessor for the associated metadata."""
+        return self._metadata
 
     @property
     def settings(self) -> Settings:
