@@ -15,6 +15,7 @@ from pydid import (
 import pydid
 from pydid.verification_method import Ed25519VerificationKey2018, JsonWebKey2020
 
+from ..config.logging import get_logger_inst
 from ..core.error import BaseError
 from ..core.profile import Profile
 from ..did.did_key import DIDKey
@@ -57,9 +58,12 @@ class BaseConnectionManager:
         Args:
             session: The profile session for this presentation
         """
-        self._logger = logging.getLogger(__name__)
         self._profile = profile
         self._route_manager = profile.inject(RouteManager)
+        self._logger: logging.Logger = get_logger_inst(
+            profile=self._profile,
+            logger_name=__name__,
+        )
 
     async def create_did_document(
         self,

@@ -22,11 +22,14 @@ This allows ACA-Py to be used for a wider range of use cases. One use case could
   - [Identifying the wallet](#identifying-the-wallet)
 - [Authentication](#authentication)
   - [Getting a token](#getting-a-token)
+    - [Method 1: Register new tenant](#method-1-register-new-tenant)
+    - [Method 2: Get tenant token](#method-2-get-tenant-token)
   - [JWT Secret](#jwt-secret)
   - [SwaggerUI](#swaggerui)
 - [Tenant Management](#tenant-management)
   - [Update a tenant](#update-a-tenant)
   - [Remove a tenant](#remove-a-tenant)
+  - [Per tenant settings](#per-tenant-settings)
 
 ## General Concept
 
@@ -127,7 +130,7 @@ The main tradeoff between option 1. and 2. is redundancy and control. Option 1. 
 
 A combination of option 1. and 2. is also possible. In this case, two mediators will be used and the sub wallet mediator will forward to the base wallet mediator, which will, in turn, forward to the ACA-Py instance.
 
-```
+```plaintext
 +---------------------+      +----------------------+      +--------------------+
 | Sub wallet mediator | ---> | Base wallet mediator | ---> | Multi-tenant agent |
 +---------------------+      +----------------------+      +--------------------+
@@ -196,7 +199,7 @@ For sub wallets, an additional authentication method is introduced using JSON We
 
 Example
 
-```
+```jsonc
 GET /connections [headers="Authorization: Bearer {token}]
 ```
 
@@ -227,7 +230,7 @@ new_tenant='{
 }'
 ```
 
-```
+```sh
 echo $new_tenant | curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet" \
    -H "Content-Type: application/json" \
    -H "X-Api-Key: $ACAPY_ADMIN_URL_API_KEY" \
@@ -257,14 +260,13 @@ echo $new_tenant | curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet" \
 }
 ```
 
-
 #### Method 2: Get tenant token
 
 This method allows you to retrieve a tenant `token` for an already registered tenant.  To retrieve a token you will need an Admin API key (if your admin is protected with one), `wallet_key` and the `wallet_id` of the tenant. Note that calling the get tenant token endpoint will **invalidate** the old token. This is useful if the old token needs to be revoked, but does mean that you can't have multiple authentication tokens for the same wallet. Only the last generated token will always be valid.
 
 Example
 
-```
+```sh
 curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/token" \
    -H "Content-Type: application/json" \
    -H "X-Api-Key: $ACAPY_ADMIN_URL_API_KEY" \
@@ -297,9 +299,9 @@ For deterministic JWT creation and verification between restarts and multiple in
 
 ### SwaggerUI
 
-When using the SwaggerUI you can click the :lock: icon next to each of the endpoints or the `Authorize` button at the top to set the correct authentication headers. Make sure to also include the `Bearer ` part in the input field. This won't be automatically added.
+When using the SwaggerUI you can click the :lock: icon next to each of the endpoints or the `Authorize` button at the top to set the correct authentication headers. Make sure to also include the `Bearer` part in the input field. This won't be automatically added.
 
-![](/docs/assets/adminApiAuthentication.png)
+![API Authentication](/docs/assets/adminApiAuthentication.png)
 
 ## Tenant Management
 
@@ -321,7 +323,7 @@ update_tenant='{
 }'
 ```
 
-```
+```sh
 echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${TENANT_WALLET_ID}" \
    -H "Content-Type: application/json" \
    -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
@@ -349,18 +351,20 @@ echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${TEN
   "created_at": "2022-04-01T15:12:35.474975Z"
 }
 ```
+
 > An Admin API Key is all that is ALLOWED to be included in a request header during an update.  Inluding the Bearer token header will result in a 404: Unauthorized error
 
-## Remove a tenant
+### Remove a tenant
 
-The following information is required to delete a tenant: 
+The following information is required to delete a tenant:
+
 - wallet_id
 - wallet_key
 - {Admin_Api_Key} if admin is protected
 
 Example
 
-```
+```sh
 curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
    -H "Content-Type: application/json" \
    -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
@@ -372,3 +376,81 @@ curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
 ```jsonc
 {}
 ```
+
+### Per tenant settings
+
+To allow configurablity of ACA-Py startup parameters/environment variables at a tenant/subwallet level. [PR#2233](https://github.com/hyperledger/aries-cloudagent-python/pull/2233) will provide the ability to update the following subset of settings when creating or updating the subwallet:
+
+| Labels |   | Setting  |
+|---|---|---|
+| ACAPY_LOG_LEVEL  |  log-level |  log.level |
+| ACAPY_INVITE_PUBLIC  |  invite-public |  debug.invite_public  |
+| ACAPY_PUBLIC_INVITES  |  public-invites | public_invites  |
+| ACAPY_AUTO_ACCEPT_INVITES  |  auto-accept-invites | debug.auto_accept_invites  |
+| ACAPY_AUTO_ACCEPT_REQUESTS  |  auto-accept-requests | debug.auto_accept_requests  |
+| ACAPY_AUTO_PING_CONNECTION  |  auto-ping-connection | auto_ping_connection  |
+| ACAPY_MONITOR_PING  |  monitor-ping | debug.monitor_ping  |
+| ACAPY_AUTO_RESPOND_MESSAGES  |  auto-respond-messages | debug.auto_respond_messages  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_OFFER  |  auto-respond-credential-offer | debug.auto_resopnd_credential_offer  |
+| ACAPY_AUTO_RESPOND_CREDENTIAL_REQUEST  |  auto-respond-credential-request | debug.auto_respond_credential_request  |
+| ACAPY_AUTO_VERIFY_PRESENTATION  |  auto-verify-presentation | debug.auto_verify_presentation  |
+| ACAPY_NOTIFY_REVOCATION  |  notify-revocation | revocation.notify  |
+| ACAPY_AUTO_REQUEST_ENDORSEMENT  |  auto-request-endorsement | endorser.auto_request  |
+| ACAPY_AUTO_WRITE_TRANSACTIONS  |  auto-write-transactions | endorser.auto_write  |
+| ACAPY_CREATE_REVOCATION_TRANSACTIONS  |  auto-create-revocation-transactions | endorser.auto_create_rev_reg  |
+| ACAPY_ENDORSER_ROLE  |  endorser-protocol-role | endorser.protocol_role  |
+
+- `POST /multitenancy/wallet`
+
+  Added `extra_settings` dict field to request schema. `extra_settings` can be configured in the request body as below:
+
+  **`Example Request`**
+  ```
+  {
+      "wallet_name": " ... ",
+      "default_label": " ... ",
+      "wallet_type": " ... ",
+      "wallet_key": " ... ",
+      "key_management_mode": "managed",
+      "wallet_webhook_urls": [],
+      "wallet_dispatch_type": "base",
+      "extra_settings": {
+          "ACAPY_LOG_LEVEL": "INFO",
+          "ACAPY_INVITE_PUBLIC": true,
+          "public-invites": true
+      },
+  }
+  ```
+
+  ```sh
+  echo $new_tenant | curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet" \
+    -H "Content-Type: application/json" \
+    -H "X-Api-Key: $ACAPY_ADMIN_URL_API_KEY" \
+    -d @-
+  ```
+
+- `PUT /multitenancy/wallet/{wallet_id}`
+
+  Added `extra_settings` dict field to request schema.
+
+  **`Example Request`**
+  ```
+  {
+    "wallet_webhook_urls": [ ... ],
+    "wallet_dispatch_type": "default",
+    "label": " ... ",
+    "image_url": " ... ",
+    "extra_settings": {
+        "ACAPY_LOG_LEVEL": "INFO",
+        "ACAPY_INVITE_PUBLIC": true,
+        "ACAPY_PUBLIC_INVITES": false
+    },
+  }
+  ```
+
+  ```sh
+  echo $update_tenant | curl  -X PUT "${ACAPY_ADMIN_URL}/multitenancy/wallet/${WALLET_ID}" \
+   -H "Content-Type: application/json" \
+   -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
+   -d @-
+  ```

@@ -60,6 +60,12 @@ class MultiIndyLedgerManager(BaseMultipleLedgerManager):
         else:
             return None
 
+    async def get_ledger_inst_by_id(self, ledger_id: str) -> Optional[BaseLedger]:
+        """Return BaseLedger instance."""
+        return self.production_ledgers.get(
+            ledger_id
+        ) or self.non_production_ledgers.get(ledger_id)
+
     async def get_prod_ledgers(self) -> Mapping:
         """Return production ledgers mapping."""
         return self.production_ledgers

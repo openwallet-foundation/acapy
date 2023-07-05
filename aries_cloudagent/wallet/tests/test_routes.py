@@ -129,6 +129,17 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             )
             assert result is json_response.return_value
 
+    async def test_create_did_unsupported_method(self):
+        self.request.json = async_mock.AsyncMock(
+            return_value={
+                "method": "madeupmethod",
+                "options": {"key_type": "bls12381g2"},
+            }
+        )
+
+        with self.assertRaises(test_module.web.HTTPForbidden):
+            await test_module.wallet_create_did(self.request)
+
     async def test_create_did_unsupported_key_type(self):
         self.request.json = async_mock.AsyncMock(
             return_value={"method": "sov", "options": {"key_type": "bls12381g2"}}
@@ -427,7 +438,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         mock_route_manager = async_mock.MagicMock()
-        mock_route_manager.route_public_did = async_mock.AsyncMock()
+        mock_route_manager.route_verkey = async_mock.AsyncMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager
@@ -587,7 +598,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         mock_route_manager = async_mock.MagicMock()
-        mock_route_manager.route_public_did = async_mock.AsyncMock()
+        mock_route_manager.route_verkey = async_mock.AsyncMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager
@@ -633,7 +644,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.profile.context.injector.bind_instance(BaseLedger, ledger)
 
         mock_route_manager = async_mock.MagicMock()
-        mock_route_manager.route_public_did = async_mock.AsyncMock()
+        mock_route_manager.route_verkey = async_mock.AsyncMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock(
             return_value=None
         )
