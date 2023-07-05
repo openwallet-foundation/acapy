@@ -3,11 +3,13 @@
 import logging
 from typing import Coroutine, Optional, Sequence, Tuple, cast
 from peerdid.dids import DIDDocumentBuilder
+from peerdid.keys import Ed25519VerificationKey2018
 
 from ....core.oob_processor import OobMessageProcessor
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
+from ....connections.models.diddoc import PublicKey, PublicKeyType  # JS
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
@@ -369,7 +371,7 @@ class ConnectionManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 # Create new DID for connection
-                # peer_info = await wallet.create_local_did(SOV, ED25519)
+                # sov_info = await wallet.create_local_did(SOV, ED25519)
                 my_info = await wallet.create_local_did(PEER, ED25519)
                 self._logger.debug("ConnMan.create_request.my_info")
                 self._logger.debug(my_info)
@@ -403,12 +405,21 @@ class ConnectionManager(BaseConnectionManager):
             )
         else:
             self._logger.debug("prototype code for did doc builder")
-            # use library did_doc construction
+            self._logger.debug(f"did={my_info.did}, verkey={my_info.verkey}")
+            # JS START  library did_doc construction
+            # pk = PublicKey(my_info.did, "2", my_info.verkey, PublicKeyType.ED25519_SIG_2018, my_info.did, True)
+
+            ver_method = Ed25519VerificationKey2018.make(
+                id="#default",
+                controller=my_info.did,
+                public_key_base58=my_info.verkey,
+            )
+
             dd_builder = DIDDocumentBuilder(my_info.did)
-            dd_builder.service.add("did-communication", default_endpoint, "default")
+            dd_builder.service.add_didcomm(default_endpoint, [ver_method])
             did_doc = dd_builder.build()
             self._logger.debug(did_doc)
-
+            # JS END
         if not my_label:
             my_label = self.profile.settings.get("default_label")
         request = ConnectionRequest(
@@ -642,7 +653,9 @@ class ConnectionManager(BaseConnectionManager):
         else:
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                my_info = await wallet.create_local_did(SOV, ED25519)
+                # my_info = await wallet.create_local_did(SOV, ED25519)
+                my_info = await wallet.create_local_did(PEER, ED25519)
+
             connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -669,6 +682,19 @@ class ConnectionManager(BaseConnectionManager):
                     filter(None, [base_mediation_record, mediation_record])
                 ),
             )
+        else:
+            self._logger.debug("prototype code for did doc builder")
+            # use library did_doc construction
+            ver_method = Ed25519VerificationKey2018.make(
+                id="#default",
+                controller=my_info.did,
+                public_key_base58=my_info.verkey,
+            )
+
+            dd_builder = DIDDocumentBuilder(my_info.did)
+            dd_builder.service.add_didcomm(default_endpoint, [ver_method])
+            did_doc = dd_builder.build()
+            self._logger.debug(did_doc)
 
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)

@@ -262,6 +262,7 @@ class BaseConnectionManager:
                 "Cannot connect via public DID that has no associated services"
             )
 
+        # JS this detects DIDCommService
         didcomm_services = sorted(
             [service for service in doc.service if isinstance(service, DIDCommService)],
             key=lambda service: service.priority,
@@ -422,10 +423,6 @@ class BaseConnectionManager:
             sender_verkey: The verkey we are using
             their_label: The connection label they are using
         """
-        print("base_manager:diddoc_connection_targets")
-        print(doc)
-        print(doc.__dict__)
-        print(doc.service)
         if not doc:
             raise BaseConnectionManagerError(
                 "No SovDIDDoc provided for connection target"
@@ -437,15 +434,15 @@ class BaseConnectionManager:
 
         targets = []
         for service in doc.service:
+            self._logger.debug("base_manager:diddoc_connection_targets:service")
+            self._logger.debug(service)
             if service.recipient_keys:
                 targets.append(
                     ConnectionTarget(
                         did=doc.id,
-                        endpoint=service.endpoint,
+                        endpoint=service.service_endpoint,
                         label=their_label,
-                        recipient_keys=[
-                            key.value for key in (service.recipient_keys or ())
-                        ],
+                        recipient_keys=[key for key in (service.recipient_keys or ())],
                         routing_keys=[
                             key.value for key in (service.routing_keys or ())
                         ],

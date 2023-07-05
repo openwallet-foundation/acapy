@@ -48,7 +48,7 @@ class SovDIDDoc(DIDDocument):
     def __init__(self, **kwargs):
         print("SovDIDDoc.__init__")
         if "id" in kwargs and not str(kwargs["id"]).startswith("did:"):
-            kwargs["id"] = "did:peer:0" + kwargs["id"]
+            kwargs["id"] = "did:sov:0" + kwargs["id"]
         print(kwargs["id"])
         super().__init__(**kwargs)
 
