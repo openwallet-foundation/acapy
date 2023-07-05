@@ -47,13 +47,8 @@ Below is a table of all generated images and their tags:
 
 Tag                     | Variant  | Example                  | Description                                                                                     |
 ------------------------|----------|--------------------------|-------------------------------------------------------------------------------------------------|
-py3.6-X.Y.Z             | Standard | py3.6-0.7.4              | Standard image variant built on Python 3.6 for ACA-Py version X.Y.Z                             |
-py3.7-X.Y.Z             | Standard | py3.7-0.7.4              | Standard image variant built on Python 3.7 for ACA-Py version X.Y.Z                             |
-py3.8-X.Y.Z             | Standard | py3.8-0.7.4              | Standard image variant built on Python 3.8 for ACA-Py version X.Y.Z                             |
 py3.9-X.Y.Z             | Standard | py3.9-0.7.4              | Standard image variant built on Python 3.9 for ACA-Py version X.Y.Z                             |
 py3.10-X.Y.Z            | Standard | py3.10-0.7.4             | Standard image variant built on Python 3.10 for ACA-Py version X.Y.Z                            |
-py3.7-indy-A.B.C-X.Y.Z  | Indy     | py3.7-indy-1.16.0-0.7.4  | Standard image variant built on Python 3.7 for ACA-Py version X.Y.Z and Indy SDK Version A.B.C  |
-py3.8-indy-A.B.C-X.Y.Z  | Indy     | py3.8-indy-1.16.0-0.7.4  | Standard image variant built on Python 3.8 for ACA-Py version X.Y.Z and Indy SDK Version A.B.C  |
 py3.9-indy-A.B.C-X.Y.Z  | Indy     | py3.9-indy-1.16.0-0.7.4  | Standard image variant built on Python 3.9 for ACA-Py version X.Y.Z and Indy SDK Version A.B.C  |
 py3.10-indy-A.B.C-X.Y.Z | Indy     | py3.10-indy-1.16.0-0.7.4 | Standard image variant built on Python 3.10 for ACA-Py version X.Y.Z and Indy SDK Version A.B.C |
 

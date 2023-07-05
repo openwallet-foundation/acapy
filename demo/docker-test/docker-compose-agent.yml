@@ -1,7 +1,6 @@
 version: "3"
 services:
   vcr-agent:
-    #image: bcgovimages/aries-cloudagent:py36-1.16-1_0.7.5
     build:
       context: ../../
       dockerfile: docker/Dockerfile.run

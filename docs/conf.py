@@ -50,6 +50,8 @@ autodoc_mock_imports = [
     "marshmallow",
     "typing_extensions",
     "async_timeout",
+    "portalocker",
+    "pythonjsonlogger",
 ]
 
 #    "aries_cloudagent.tests.test_conductor",
@@ -62,7 +64,7 @@ autodoc_mock_imports = [
 # -- Project information -----------------------------------------------------
 
 project = "Aries Cloud Agent - Python"
-copyright = "2021, Province of British Columbia"
+copyright = "2023, Province of British Columbia"
 author = "Province of British Columbia"
 
 # The short X.Y version
@@ -105,7 +107,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

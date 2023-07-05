@@ -210,6 +210,13 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
 
     credential_preview = fields.Nested(V20CredPreviewSchema, required=False)
 
+    replacement_id = fields.Str(
+        description="Optional identifier used to manage credential replacement",
+        required=False,
+        allow_none=True,
+        example=UUIDFour.EXAMPLE,
+    )
+
     @validates_schema
     def validate(self, data, **kwargs):
         """Make sure preview is present when indy format is present."""
@@ -642,6 +649,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         raise web.HTTPBadRequest(reason="Missing filter")
     preview_spec = body.get("credential_preview")
     auto_remove = body.get("auto_remove")
+    replacement_id = body.get("replacement_id")
     trace_msg = body.get("trace")
 
     conn_record = None
@@ -680,6 +688,7 @@ async def credential_exchange_send(request: web.BaseRequest):
             verification_method=verification_method,
             cred_proposal=cred_proposal,
             auto_remove=auto_remove,
+            replacement_id=replacement_id,
         )
         result = cred_ex_record.serialize()
 
@@ -809,6 +818,7 @@ async def _create_free_offer(
     connection_id: str = None,
     auto_issue: bool = False,
     auto_remove: bool = False,
+    replacement_id: str = None,
     preview_spec: dict = None,
     comment: str = None,
     trace_msg: bool = None,
@@ -840,6 +850,7 @@ async def _create_free_offer(
     (cred_ex_record, cred_offer_message) = await cred_manager.create_offer(
         cred_ex_record,
         comment=comment,
+        replacement_id=replacement_id,
     )
 
     return (cred_ex_record, cred_offer_message)
@@ -876,6 +887,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
     auto_remove = body.get("auto_remove")
+    replacement_id = body.get("replacement_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     filt_spec = body.get("filter")
@@ -889,6 +901,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
             filt_spec=filt_spec,
             auto_issue=auto_issue,
             auto_remove=auto_remove,
+            replacement_id=replacement_id,
             preview_spec=preview_spec,
             comment=comment,
             trace_msg=trace_msg,
@@ -950,6 +963,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
         "auto_issue", context.settings.get("debug.auto_respond_credential_request")
     )
     auto_remove = body.get("auto_remove")
+    replacement_id = body.get("replacement_id")
     comment = body.get("comment")
     preview_spec = body.get("credential_preview")
     trace_msg = body.get("trace")
@@ -971,6 +985,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
             preview_spec=preview_spec,
             comment=comment,
             trace_msg=trace_msg,
+            replacement_id=replacement_id,
         )
         result = cred_ex_record.serialize()
 

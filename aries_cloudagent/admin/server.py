@@ -384,7 +384,7 @@ class AdminServer(BaseAdminServer):
         async def setup_context(request: web.Request, handler):
             authorization_header = request.headers.get("Authorization")
             profile = self.root_profile
-
+            meta_data = {}
             # Multitenancy context setup
             if self.multitenant_manager and authorization_header:
                 try:
@@ -397,6 +397,16 @@ class AdminServer(BaseAdminServer):
                     profile = await self.multitenant_manager.get_profile_for_token(
                         self.context, token
                     )
+                    (
+                        walletid,
+                        walletkey,
+                    ) = self.multitenant_manager.get_wallet_details_from_token(
+                        token=token
+                    )
+                    meta_data = {
+                        "wallet_id": walletid,
+                        "wallet_key": walletkey,
+                    }
                 except MultitenantManagerError as err:
                     raise web.HTTPUnauthorized(reason=err.roll_up)
                 except (jwt.InvalidTokenError, StorageNotFoundError):
@@ -411,7 +421,16 @@ class AdminServer(BaseAdminServer):
 
             # TODO may dynamically adjust the profile used here according to
             # headers or other parameters
-            admin_context = AdminRequestContext(profile)
+            if self.multitenant_manager and authorization_header:
+                admin_context = AdminRequestContext(
+                    profile=profile,
+                    root_profile=self.root_profile,
+                    metadata=meta_data,
+                )
+            else:
+                admin_context = AdminRequestContext(
+                    profile=profile,
+                )
 
             request["context"] = admin_context
             request["outbound_message_router"] = responder.send
