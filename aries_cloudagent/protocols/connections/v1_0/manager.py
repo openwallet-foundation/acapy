@@ -693,8 +693,16 @@ class ConnectionManager(BaseConnectionManager):
 
             dd_builder = DIDDocumentBuilder(my_info.did)
             dd_builder.service.add_didcomm(default_endpoint, [ver_method])
+            dd_builder.verification_method.add(
+                type_=Ed25519VerificationKey2018,
+                ident="default",
+                controller=my_info.did,
+                public_key_base58=my_info.verkey,
+            )
             did_doc = dd_builder.build()
+
             self._logger.debug(did_doc)
+            self._logger.debug(did_doc.dereference("#default"))
 
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)

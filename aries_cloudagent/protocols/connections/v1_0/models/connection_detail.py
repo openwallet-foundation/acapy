@@ -56,7 +56,7 @@ class ConnectionDetail(BaseModel):
 
         schema_class = "ConnectionDetailSchema"
 
-    def __init__(self, *, did: str = None, did_doc: SovDIDDoc = None, **kwargs):
+    def __init__(self, *, did: str = None, did_doc: DIDDocument = None, **kwargs):
         """
         Initialize a ConnectionDetail instance.
 
