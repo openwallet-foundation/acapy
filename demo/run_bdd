@@ -126,6 +126,7 @@ AGENT_PORT=8020
 AGENT_PORT_RANGE=8020-8079
 
 echo "Preparing agent image..."
+docker build -q -t indy-base -f ../docker/Dockerfile.indy --target=indy-base .. || exit 1
 docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
 docker build -q -t aries-bdd-image -f ../docker/Dockerfile.bdd .. || exit 1
 

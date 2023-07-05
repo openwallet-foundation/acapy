@@ -41,7 +41,7 @@ if __name__ == "__main__":
             "bbs": parse_requirements("requirements.bbs.txt"),
             "uvloop": {"uvloop": "^=0.14.0"},
         },
-        python_requires=">=3.6.3",
+        python_requires=">=3.9",
         classifiers=[
             "Programming Language :: Python :: 3",
             "License :: OSI Approved :: Apache Software License",
