@@ -674,7 +674,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             return_value=None
         )
         mock_route_manager.routing_info = async_mock.AsyncMock(
-            return_value=(None, default_endpoint)
+            return_value=(None, None)
         )
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager

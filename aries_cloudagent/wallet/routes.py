@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List, cast
+from typing import List
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -499,7 +499,7 @@ async def wallet_set_public_did(request: web.BaseRequest):
 
     routing_keys, mediator_endpoint = await route_manager.routing_info(
         profile,
-        cast(str, profile.settings.get("default_endpoint")),
+        None,
         mediation_record,
     )
 
