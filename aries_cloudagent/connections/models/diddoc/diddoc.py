@@ -21,7 +21,8 @@ limitations under the License.
 import json
 import logging
 
-from typing import List, Sequence, Union, Any
+from typing import List, Sequence, Union, Any, Optional
+from pydid import DIDCommService
 from peerdid import dids, keys
 from peerdid.dids import DIDDocument, create_peer_did_numalgo_0
 from .publickey import PublicKey, PublicKeyType
@@ -30,8 +31,10 @@ from .util import canon_did, canon_ref, ok_did, resource
 
 LOGGER = logging.getLogger(__name__)
 
-class DIDDoc():
+
+class DIDDoc:
     pass
+
 
 class SovDIDDoc(DIDDocument):
     """
@@ -40,7 +43,6 @@ class SovDIDDoc(DIDDocument):
     Retains DIDs as raw values (orientated toward indy-facing operations),
     everything else as URIs (oriented toward W3C-facing operations).
     """
-
 
     _pubkey: dict = {}
     _service: dict = {}
@@ -83,14 +85,13 @@ class SovDIDDoc(DIDDocument):
         """Accessor for public keys marked as authentication keys, by identifier."""
 
         return {k: self._pubkey[k] for k in self._pubkey if self._pubkey[k].authn}
-    
+
     @property
     def service(self) -> dict:
         """Accessor for services by identifier."""
-        
+
         return self._service
 
-    
     def set(self, item: Union[Service, PublicKey]) -> "DIDDoc":
         """
         Add or replace service or public key; return current DIDDoc.
@@ -298,8 +299,6 @@ class SovDIDDoc(DIDDocument):
 
         return rv
 
-    
-
     @classmethod
     def from_json(cls, did_doc_json: str) -> "SovDIDDoc":
         """
@@ -324,25 +323,23 @@ class SovDIDDoc(DIDDocument):
 
         return f"<DIDDoc did={self.did}>"
 
-class PeerDIDDoc():
+
+class PeerDIDDoc:
     """
-        did:peer:2 following the Method 2 of 
-        https://identity.foundation/peer-did-method-spec/#generation-method
+    did:peer:2 following the Method 2 of
+    https://identity.foundation/peer-did-method-spec/#generation-method
     """
 
     @classmethod
-    def create_peer_did_2_from_verkey(cls, verkey: str) -> dids.DID:
+    def create_peer_did_2_from_verkey(
+        cls, verkey: str, service: Optional[DIDCommService] = None
+    ) -> dids.DID:
         """verkey must by base58"""
-        prefix = "did:peer:2"
 
         enc_keys = [keys.X25519KeyAgreementKey.from_base58(verkey)]
         sign_keys = [keys.Ed25519VerificationKey.from_base58(verkey)]
 
-        service = {
-            "type": "DIDCommMessaging",
-            "serviceEndpoint": "http://host.docker.internal:8030",
-            "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"]
-        }
-        
-        var = dids.create_peer_did_numalgo_2(enc_keys, sign_keys,service)
+        var = dids.create_peer_did_numalgo_2(
+            enc_keys, sign_keys, service.dict() if service else None
+        )
         return var

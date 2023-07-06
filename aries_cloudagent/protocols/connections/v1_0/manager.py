@@ -2,7 +2,13 @@
 
 import logging
 from typing import Coroutine, Optional, Sequence, Tuple, cast
-from peerdid.dids import DIDDocumentBuilder, DIDDocument
+from peerdid.dids import (
+    DIDDocumentBuilder,
+    DIDDocument,
+    resolve_peer_did,
+    create_peer_did_numalgo_2,
+    _build_did_doc_numalgo_2,
+)
 from pydid import DIDCommService
 from peerdid.keys import Ed25519VerificationKey2018
 
@@ -10,7 +16,7 @@ from ....core.oob_processor import OobMessageProcessor
 from ....cache.base import BaseCache
 from ....config.base import InjectionError
 from ....connections.base_manager import BaseConnectionManager
-from ....connections.models.diddoc import PublicKey, PublicKeyType  # JS
+from ....connections.models.diddoc import PublicKey, PublicKeyType, PeerDIDDoc  # JS
 from ....connections.models.conn_record import ConnRecord
 from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
@@ -714,9 +720,22 @@ class ConnectionManager(BaseConnectionManager):
                     service=[did_comm_service],
                     verification_method=[ver_method],
                 )
+            self._logger.debug("did_doc")
+
             self._logger.debug(did_doc)
             self._logger.debug(did_doc.dereference("#s"))
             self._logger.debug(did_doc.dereference("#v"))
+
+            self._logger.debug("create_peer_did")
+            peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
+                ver_method.material, service=did_comm_service
+            )
+            self._logger.debug(peer_did)
+
+            self._logger.debug("resolve_peer_did")
+            self._logger.debug(resolve_peer_did(peer_did))
+
+            resolve_peer_did(did_doc.id)
 
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
