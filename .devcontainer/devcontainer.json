@@ -2,18 +2,13 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
     "name": "aries_cloudagent",
-    // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-    "image": "mcr.microsoft.com/devcontainers/python:0-3.9-buster",
-    // Features to add to the dev container. More info: https://containers.dev/features.
-    // "features": {},
-    // Use 'forwardPorts' to make a list of ports inside the container available locally.
-    "forwardPorts": [
-        9060,
-        9061
-    ],
-    // Use 'postCreateCommand' to run commands after the container is created.
-    "postCreateCommand": "python -m pip install --upgrade pip && pip3 install -r requirements.txt -r requirements.askar.txt -r requirements.bbs.txt -r requirements.dev.txt -r requirements.indy.txt &&  pip3 install black",
-    // Configure tool-specific properties.
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "..",
+        "args": {
+          "VARIANT": "3.9-bullseye"
+        }
+    },
     "customizations": {
         "vscode": {
             "extensions": [
@@ -38,7 +33,25 @@
                 "python.formatting.blackArgs": []
             }
         }
-    }
-    // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-    // "remoteUser": "root"
+    },
+
+    "features": {
+        "docker-in-docker": "latest",
+    },
+    
+    // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+    "remoteUser": "vscode",
+    
+    "remoteEnv": {
+        //"PATH": "${containerEnv:PATH}:${workspaceRoot}/.venv/bin"
+    },
+    
+    "mounts": [],
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    "forwardPorts": [
+        9060,
+        9061
+    ],
+    "postCreateCommand": "bash ./.devcontainer/post-install.sh"
+    
 }

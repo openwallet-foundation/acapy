@@ -10,7 +10,25 @@ By no means is ACA-Py limited to these tools; they are merely examples.
 
 The primary use case for this `devcontainer` is for developing, debugging and unit testing (pytest) the [aries_cloudagent](./aries_cloudagent) source code.
 
-There are limitations running this devcontainer, such as not being able to select the docker network. Also, we are not expecting developers to run the [demos](./demo) or other docker based scripts within this container.
+There are limitations running this devcontainer, such as all networking is within this container. This container has [docker-in-docker](https://github.com/microsoft/vscode-dev-containers/blob/main/script-library/docs/docker-in-docker.md) which allows running demos, building docker images, running `docker compose` all within this container.
+
+### Files
+The `.devcontainer` folder contains the `devcontainer.json` file which defines this container. We are using a `Dockerfile` and `post-install.sh` to build and configure the container run image. The `Dockerfile` is simple but in place for simplifying image enhancements (ex. adding `poetry` to the image). The `post-install.sh` will install all the ACA-Py requirements and any additional steps (ex. adding additional development libraries).
+
+### Running docker-in-docker demos
+The following is an example of running the demos in this container using a local [von-network](https://github.com/bcgov/von-network/tree/main). You will have to connect to the local von-network using `host.docker.internal` not `localhost`.
+
+Assumes von-network is running outside of VS Code and this container at the default port (9000).
+
+```sh
+# open a terminal in VS Code...
+cd demo
+LEDGER_URL=http://host.docker.internal:9000 ./run_demo faber
+# open a second terminal in VS Code...
+cd demo
+LEDGER_URL=http://host.docker.internal:9000 ./run_demo alice
+# follow the script...
+```
 
 
 ## Further Reading and Links
