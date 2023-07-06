@@ -2,7 +2,8 @@
 
 import logging
 from typing import Coroutine, Optional, Sequence, Tuple, cast
-from peerdid.dids import DIDDocumentBuilder
+from peerdid.dids import DIDDocumentBuilder, DIDDocument
+from pydid import DIDCommService
 from peerdid.keys import Ed25519VerificationKey2018
 
 from ....core.oob_processor import OobMessageProcessor
@@ -686,23 +687,36 @@ class ConnectionManager(BaseConnectionManager):
             self._logger.debug("prototype code for did doc builder")
             # use library did_doc construction
             ver_method = Ed25519VerificationKey2018.make(
-                id="#default",
+                id=my_info.did + "#v",
                 controller=my_info.did,
                 public_key_base58=my_info.verkey,
             )
-
-            dd_builder = DIDDocumentBuilder(my_info.did)
-            dd_builder.service.add_didcomm(default_endpoint, [ver_method])
-            dd_builder.verification_method.add(
-                type_=Ed25519VerificationKey2018,
-                ident="default",
-                controller=my_info.did,
-                public_key_base58=my_info.verkey,
+            did_comm_service = DIDCommService(
+                id=my_info.did + "#s",
+                service_endpoint=default_endpoint,
+                recipient_keys=[ver_method.id],
             )
-            did_doc = dd_builder.build()
 
+            if False:
+                dd_builder = DIDDocumentBuilder(my_info.did)
+                dd_builder.service.add_didcomm(default_endpoint, [ver_method])
+                dd_builder.verification_method.add(
+                    type_=Ed25519VerificationKey2018,
+                    ident="default",
+                    controller=my_info.did,
+                    public_key_base58=my_info.verkey,
+                )
+                did_doc = dd_builder.build()
+
+            else:
+                did_doc = DIDDocument(
+                    id=my_info.did,
+                    service=[did_comm_service],
+                    verification_method=[ver_method],
+                )
             self._logger.debug(did_doc)
-            self._logger.debug(did_doc.dereference("#default"))
+            self._logger.debug(did_doc.dereference("#s"))
+            self._logger.debug(did_doc.dereference("#v"))
 
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
