@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import List
+from typing import List, cast
 
 from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
@@ -496,12 +496,10 @@ async def wallet_set_public_did(request: web.BaseRequest):
     mediation_record = await route_manager.mediation_record_if_id(
         profile=profile, mediation_id=mediation_id, or_default=True
     )
-    routing_keys = None
-    mediator_endpoint = None
 
     routing_keys, mediator_endpoint = await route_manager.routing_info(
         profile,
-        mediator_endpoint,
+        cast(str, profile.settings.get("default_endpoint")),
         mediation_record,
     )
 
