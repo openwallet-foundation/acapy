@@ -15,6 +15,10 @@ from .....resolver.did_resolver import DIDResolver
 from .....storage.vc_holder.vc_record import VCRecord
 from .....wallet.base import BaseWallet, DIDInfo
 from .....wallet.crypto import KeyType
+from .....wallet.default_verification_key_strategy import (
+    DefaultVerificationKeyStrategy,
+    BaseVerificationKeyStrategy,
+)
 from .....wallet.did_method import SOV, KEY, DIDMethods
 from .....wallet.error import WalletNotFoundError
 from .....vc.ld_proofs import (
@@ -73,6 +77,9 @@ def profile():
     context = profile.context
     context.injector.bind_instance(DIDResolver, DIDResolver([]))
     context.injector.bind_instance(DocumentLoader, custom_document_loader)
+    context.injector.bind_instance(
+        BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
+    )
     context.settings["debug.auto_respond_presentation_request"] = True
     return profile
 
@@ -1866,19 +1873,6 @@ class TestPresExchHandler:
         assert dif_pres_exch_handler.credential_match_schema(
             test_cred, "https://example.org/examples/degree.json"
         )
-
-    def test_verification_method(self, profile):
-        dif_pres_exch_handler = DIFPresExchHandler(profile)
-        assert (
-            dif_pres_exch_handler._get_verification_method(
-                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            )
-            == DIDKey.from_did(
-                "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
-            ).key_id
-        )
-        with pytest.raises(DIFPresExchError):
-            dif_pres_exch_handler._get_verification_method("did:test:test")
 
     @pytest.mark.asyncio
     @pytest.mark.ursa_bbs_signatures

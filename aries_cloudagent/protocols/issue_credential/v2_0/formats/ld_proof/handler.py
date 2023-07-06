@@ -8,24 +8,6 @@ from marshmallow import EXCLUDE, INCLUDE
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 
-from .models.cred_detail import LDProofVCDetail
-from .models.cred_detail import LDProofVCDetailSchema
-from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
-from ...message_types import (
-    ATTACHMENT_FORMAT,
-    CRED_20_ISSUE,
-    CRED_20_OFFER,
-    CRED_20_PROPOSAL,
-    CRED_20_REQUEST,
-)
-from ...messages.cred_format import V20CredFormat
-from ...messages.cred_issue import V20CredIssue
-from ...messages.cred_offer import V20CredOffer
-from ...messages.cred_proposal import V20CredProposal
-from ...messages.cred_request import V20CredRequest
-from ...models.cred_ex_record import V20CredExRecord
-from ...models.detail.ld_proof import V20CredExRecordLDProof
-from ......did.did_key import DIDKey
 from ......messaging.decorators.attach_decorator import AttachDecorator
 from ......storage.vc_holder.base import VCHolder
 from ......storage.vc_holder.vc_record import VCRecord
@@ -46,16 +28,29 @@ from ......vc.ld_proofs.constants import (
     SECURITY_CONTEXT_ED25519_2020_URL,
 )
 from ......vc.ld_proofs.error import LinkedDataProofException
-from ......vc.vc_ld import (
-    issue_vc as issue,
-    verify_credential,
-    VerifiableCredentialSchema,
-    LDProof,
-    VerifiableCredential,
-)
+from ......vc.vc_ld import LDProof, VerifiableCredential, VerifiableCredentialSchema
+from ......vc.vc_ld import issue_vc as issue
+from ......vc.vc_ld import verify_credential
 from ......wallet.base import BaseWallet, DIDInfo
+from ......wallet.default_verification_key_strategy import BaseVerificationKeyStrategy
 from ......wallet.error import WalletNotFoundError
 from ......wallet.key_type import BLS12381G2, ED25519
+from ...message_types import (
+    ATTACHMENT_FORMAT,
+    CRED_20_ISSUE,
+    CRED_20_OFFER,
+    CRED_20_PROPOSAL,
+    CRED_20_REQUEST,
+)
+from ...messages.cred_format import V20CredFormat
+from ...messages.cred_issue import V20CredIssue
+from ...messages.cred_offer import V20CredOffer
+from ...messages.cred_proposal import V20CredProposal
+from ...messages.cred_request import V20CredRequest
+from ...models.cred_ex_record import V20CredExRecord
+from ...models.detail.ld_proof import V20CredExRecordLDProof
+from ..handler import CredFormatAttachment, V20CredFormatError, V20CredFormatHandler
+from .models.cred_detail import LDProofVCDetail, LDProofVCDetailSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -276,9 +271,18 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
         )
 
         did_info = await self._did_info_for_did(issuer_id)
-        verification_method = verification_method or self._get_verification_method(
-            issuer_id
+        verkey_id_strategy = self.profile.context.inject(BaseVerificationKeyStrategy)
+        verification_method = (
+            verification_method
+            or await verkey_id_strategy.get_verification_method_id_for_did(
+                issuer_id, self.profile, proof_purpose="assertionMethod"
+            )
         )
+
+        if verification_method is None:
+            raise V20CredFormatError(
+                f"Unable to get retrieve verification method for did {issuer_id}"
+            )
 
         suite = await self._get_suite(
             proof_type=proof_type,
@@ -314,19 +318,6 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
                 public_key_base58=did_info.verkey if did_info else None,
             ),
         )
-
-    def _get_verification_method(self, did: str):
-        """Get the verification method for a did."""
-
-        if did.startswith("did:key:"):
-            return DIDKey.from_did(did).key_id
-        elif did.startswith("did:sov:"):
-            # key-1 is what the resolver uses for key id
-            return did + "#key-1"
-        else:
-            raise V20CredFormatError(
-                f"Unable to get retrieve verification method for did {did}"
-            )
 
     def _get_proof_purpose(
         self, *, proof_purpose: str = None, challenge: str = None, domain: str = None

@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 import logging
-from typing import Iterable, List, Optional, cast
+from typing import Iterable, List, Optional, cast, Tuple
 
 import jwt
 
@@ -317,6 +317,28 @@ class BaseMultitenantManager(ABC):
             await wallet_record.save(session)
 
         return token
+
+    def get_wallet_details_from_token(self, token: str) -> Tuple[str, str]:
+        """Get the wallet_id and wallet_key from provided token."""
+        jwt_secret = self._profile.context.settings.get("multitenant.jwt_secret")
+        token_body = jwt.decode(token, jwt_secret, algorithms=["HS256"])
+        wallet_id = token_body.get("wallet_id")
+        wallet_key = token_body.get("wallet_key")
+        return wallet_id, wallet_key
+
+    async def get_wallet_and_profile(
+        self, context: InjectionContext, wallet_id: str, wallet_key: str
+    ) -> Tuple[WalletRecord, Profile]:
+        """Get the wallet_record and profile associated with wallet id and key."""
+        extra_settings = {}
+        async with self._profile.session() as session:
+            wallet = await WalletRecord.retrieve_by_id(session, wallet_id)
+        if wallet.requires_external_key:
+            if not wallet_key:
+                raise WalletKeyMissingError()
+            extra_settings["wallet.key"] = wallet_key
+        profile = await self.get_wallet_profile(context, wallet, extra_settings)
+        return (wallet, profile)
 
     async def get_profile_for_token(
         self, context: InjectionContext, token: str
