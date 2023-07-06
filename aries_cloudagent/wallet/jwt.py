@@ -28,9 +28,7 @@ def b64_to_dict(value: str) -> Mapping[str, Any]:
 
 def nym_to_did(value: str) -> str:
     """Return a did from nym if passed value is nym, else return value."""
-    if value.startswith("did:"):
-        return value
-    return f"did:sov:{value}"
+    return value if value.startswith("did:") else f"did:sov:{value}"
 
 
 def did_lookup_name(value: str) -> str:
@@ -38,10 +36,7 @@ def did_lookup_name(value: str) -> str:
 
     If value is did:sov, return the unqualified value. Else, return value.
     """
-    if value.startswith("did:sov:"):
-        return value.split(":", 3)[2]
-
-    return value
+    return value.split(":", 3)[2] if value.startswith("did:sov:") else value
 
 
 async def jwt_sign(

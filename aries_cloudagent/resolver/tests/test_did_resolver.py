@@ -82,7 +82,8 @@ class MockResolver(BaseDIDResolver):
     async def _resolve(self, profile, did, accept):
         if isinstance(self.resolved, Exception):
             raise self.resolved
-        return self.resolved.serialize()
+        meth = getattr(self.resolved, "serialize", None)
+        return meth() if callable(meth) else self.resolved
 
 
 @pytest.fixture
