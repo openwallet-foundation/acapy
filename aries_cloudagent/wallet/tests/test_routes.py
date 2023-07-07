@@ -42,6 +42,11 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         self.did_methods = DIDMethods()
         self.context.injector.bind_instance(DIDMethods, self.did_methods)
 
+        self.test_mediator_routing_keys = [
+            "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRR"
+        ]
+        self.test_mediator_endpoint = "http://mediator.example.com"
+
     async def test_missing_wallet(self):
         self.session_inject[BaseWallet] = None
 
@@ -440,6 +445,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.route_verkey = async_mock.AsyncMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
+        mock_route_manager.routing_info = async_mock.AsyncMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager
         )
@@ -477,6 +485,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
     async def test_set_public_did_no_ledger(self):
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
+        mock_route_manager.routing_info = async_mock.AsyncMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager
         )
@@ -497,6 +508,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
 
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
+        mock_route_manager.routing_info = async_mock.AsyncMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager
         )
@@ -516,6 +530,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
 
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
+        mock_route_manager.routing_info = async_mock.AsyncMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager
         )
@@ -537,6 +554,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
 
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
+        mock_route_manager.routing_info = async_mock.AsyncMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager
         )
@@ -568,6 +588,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
 
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
+        mock_route_manager.routing_info = async_mock.AsyncMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager
         )
@@ -600,6 +623,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         mock_route_manager = async_mock.MagicMock()
         mock_route_manager.route_verkey = async_mock.AsyncMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock()
+        mock_route_manager.routing_info = async_mock.AsyncMock(
+            return_value=(self.test_mediator_routing_keys, self.test_mediator_endpoint)
+        )
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager
         )
@@ -611,7 +637,7 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
             self.wallet.set_public_did.return_value = DIDInfo(
                 self.test_did,
                 self.test_verkey,
-                {**DIDPosture.PUBLIC.metadata, "endpoint": "https://endpoint.com"},
+                {**DIDPosture.PUBLIC.metadata, "endpoint": self.test_mediator_endpoint},
                 SOV,
                 ED25519,
             )
@@ -632,9 +658,8 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
 
     async def test_set_public_did_update_endpoint_use_default_update_in_wallet(self):
         self.request.query = {"did": self.test_did}
-        self.context.update_settings(
-            {"default_endpoint": "https://default_endpoint.com"}
-        )
+        default_endpoint = "https://default_endpoint.com"
+        self.context.update_settings({"default_endpoint": default_endpoint})
 
         Ledger = async_mock.MagicMock()
         ledger = Ledger()
@@ -647,6 +672,9 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         mock_route_manager.route_verkey = async_mock.AsyncMock()
         mock_route_manager.mediation_record_if_id = async_mock.AsyncMock(
             return_value=None
+        )
+        mock_route_manager.routing_info = async_mock.AsyncMock(
+            return_value=(None, None)
         )
         mock_route_manager.__aenter__ = async_mock.AsyncMock(
             return_value=mock_route_manager

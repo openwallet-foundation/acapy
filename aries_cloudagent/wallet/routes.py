@@ -496,11 +496,12 @@ async def wallet_set_public_did(request: web.BaseRequest):
     mediation_record = await route_manager.mediation_record_if_id(
         profile=profile, mediation_id=mediation_id, or_default=True
     )
-    routing_keys = None
-    mediator_endpoint = None
-    if mediation_record:
-        routing_keys = mediation_record.routing_keys
-        mediator_endpoint = mediation_record.endpoint
+
+    routing_keys, mediator_endpoint = await route_manager.routing_info(
+        profile,
+        None,
+        mediation_record,
+    )
 
     try:
         info, attrib_def = await promote_wallet_public_did(
