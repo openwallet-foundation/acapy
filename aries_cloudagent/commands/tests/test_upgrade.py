@@ -392,3 +392,231 @@ class TestUpgrade(AsyncTestCase):
         ) as mock_execute:
             test_module.main()
             mock_execute.assert_called_once
+
+    def test_get_explicit_upgrade_option(self):
+        assert not test_module.ExplicitUpgradeOption.get("test")
+        assert (
+            test_module.ExplicitUpgradeOption.get("critical")
+            == test_module.ExplicitUpgradeOption.ERROR_AND_STOP
+        )
+        assert (
+            test_module.ExplicitUpgradeOption.get("warning")
+            == test_module.ExplicitUpgradeOption.LOG_AND_PROCEED
+        )
+
+    async def test_upgrade_explicit_upgrade_required_check(self):
+        test_config_dict = {
+            "v0.8.1": {
+                "resave_records": [
+                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                ],
+                "update_existing_records": False,
+            },
+            "v0.7.2": {
+                "resave_records": [
+                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                ],
+                "update_existing_records": False,
+            },
+            "v0.7.1": {"resave_records": [], "update_existing_records": False},
+            "v0.7.0": {"resave_records": [], "update_existing_records": False},
+            "v0.6.0": {"resave_records": [], "update_existing_records": False},
+        }
+        check, to_skip_list, exp_version = test_module.explicit_upgrade_required_check(
+            ["v0.6.0", "v0.7.0", "v0.7.1", "v0.7.2", "v0.8.1"],
+            test_config_dict,
+        )
+        assert (check, to_skip_list, exp_version) == (False, [], None)
+
+        check, to_skip_list, exp_version = test_module.explicit_upgrade_required_check(
+            ["v0.8.1", "v0.6.0", "v0.7.1", "v0.7.2", "v0.7.0"],
+            test_config_dict,
+        )
+        assert (check, to_skip_list, exp_version) == (False, [], None)
+
+        test_config_dict = {
+            "v0.8.1": {
+                "resave_records": [
+                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                ],
+                "update_existing_records": False,
+            },
+            "v0.7.2": {
+                "resave_records": [
+                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                ],
+                "update_existing_records": False,
+                "explicit_upgrade": "warning",
+            },
+            "v0.7.1": {
+                "resave_records": [],
+                "update_existing_records": False,
+                "explicit_upgrade": "warning",
+            },
+            "v0.7.0": {"resave_records": [], "update_existing_records": False},
+            "v0.6.0": {
+                "resave_records": [],
+                "update_existing_records": False,
+                "explicit_upgrade": "warning",
+            },
+        }
+        check, to_skip_list, exp_version = test_module.explicit_upgrade_required_check(
+            ["v0.6.0", "v0.7.0", "v0.7.1", "v0.7.2", "v0.8.1"],
+            test_config_dict,
+        )
+        assert (check, to_skip_list, exp_version) == (
+            False,
+            ["v0.6.0", "v0.7.1", "v0.7.2"],
+            None,
+        )
+
+        test_config_dict = {
+            "v0.8.1": {
+                "resave_records": [
+                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                ],
+                "update_existing_records": False,
+            },
+            "v0.7.2": {
+                "resave_records": [
+                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                ],
+                "update_existing_records": False,
+                "explicit_upgrade": "critical",
+            },
+            "v0.7.1": {"resave_records": [], "update_existing_records": False},
+            "v0.7.0": {"resave_records": [], "update_existing_records": False},
+            "v0.6.0": {"resave_records": [], "update_existing_records": False},
+        }
+        check, to_skip_list, exp_version = test_module.explicit_upgrade_required_check(
+            ["v0.6.0", "v0.7.0", "v0.7.1", "v0.7.2", "v0.8.1"],
+            test_config_dict,
+        )
+        assert (check, to_skip_list, exp_version) == (True, [], "v0.7.2")
+
+        test_config_dict = {
+            "v0.8.1": {
+                "resave_records": [
+                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                ],
+                "update_existing_records": False,
+            },
+            "v0.7.2": {
+                "resave_records": [
+                    "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                ],
+                "update_existing_records": False,
+                "explicit_upgrade": "warning",
+            },
+            "v0.7.1": {
+                "resave_records": [],
+                "update_existing_records": False,
+                "explicit_upgrade": "warning",
+            },
+            "v0.7.0": {
+                "resave_records": [],
+                "update_existing_records": False,
+                "explicit_upgrade": "critical",
+            },
+            "v0.6.0": {"resave_records": [], "update_existing_records": False},
+        }
+        check, to_skip_list, exp_version = test_module.explicit_upgrade_required_check(
+            ["v0.6.0", "v0.7.0", "v0.7.1", "v0.7.2", "v0.8.1"],
+            test_config_dict,
+        )
+        assert (check, to_skip_list, exp_version) == (True, [], "v0.7.0")
+
+    async def test_upgrade_explicit_check(self):
+        self.profile.settings.extend(
+            {
+                "upgrade.from_version": "v0.7.0",
+            }
+        )
+        with async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.7.2": {
+                        "resave_records": {
+                            "base_record_path": [
+                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                            ],
+                        },
+                        "update_existing_records": True,
+                    },
+                    "v0.7.3": {
+                        "update_existing_records": True,
+                        "explicit_upgrade": "critical",
+                    },
+                    "v0.7.1": {
+                        "update_existing_records": False,
+                    },
+                }
+            ),
+        ):
+            with self.assertRaises(UpgradeError) as ctx:
+                await test_module.upgrade(profile=self.profile)
+            assert "Explicit upgrade flag with critical value found" in str(
+                ctx.exception
+            )
+
+        with async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.7.2": {
+                        "resave_records": {
+                            "base_record_path": [
+                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                            ],
+                        },
+                        "update_existing_records": True,
+                        "explicit_upgrade": "warning",
+                    },
+                    "v0.7.3": {
+                        "update_existing_records": True,
+                        "explicit_upgrade": "critical",
+                    },
+                    "v0.7.1": {
+                        "update_existing_records": False,
+                    },
+                }
+            ),
+        ):
+            with self.assertRaises(UpgradeError) as ctx:
+                await test_module.upgrade(profile=self.profile)
+            assert "Explicit upgrade flag with critical value found" in str(
+                ctx.exception
+            )
+
+        with async_mock.patch.object(
+            test_module, "LOGGER", async_mock.MagicMock()
+        ) as mock_logger, async_mock.patch.object(
+            test_module.yaml,
+            "safe_load",
+            async_mock.MagicMock(
+                return_value={
+                    "v0.7.2": {
+                        "resave_records": {
+                            "base_record_path": [
+                                "aries_cloudagent.connections.models.conn_record.ConnRecord"
+                            ],
+                        },
+                        "update_existing_records": True,
+                    },
+                    "v0.7.3": {
+                        "update_existing_records": True,
+                        "explicit_upgrade": "warning",
+                    },
+                    "v0.7.1": {
+                        "update_existing_records": True,
+                        "explicit_upgrade": "warning",
+                    },
+                }
+            ),
+        ):
+            await test_module.upgrade(profile=self.profile)
+            assert mock_logger.warning.call_count == 1
+            assert mock_logger.info.call_count == 0
