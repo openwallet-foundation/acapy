@@ -1,3 +1,11 @@
+# 1.0.0-rc3
+
+## July 7, 2023
+
+ACA-Py 1.0.0 will be a breaking update to ACA-Py with the version number indicating the maturity of the implementation. The final 1.0.0 release will be Aries Interop Profile 2.0-complete, and based on Python 3.9 or higher. The decision to start tagging early 1.0.0 releases was probably a bad one given the subsequent focus in the community on optimization of what we have vs. completing the to-do list for AIP 2.0. However, some organizations are using `1.0.0-rc` releases, so with this release of 1.0.0-rc3 we are providing an update that incorporates the many, many enhancements, improvements, and fixes that are in ACA-Py releases 0.8.0, 0.8.1 and 0.8.2.
+
+Release 1.0.0-rc3 is identical in functionality to ACA-Py Release 0.8.2 (changelog entry below). The only differences are the versions in the code/Swagger/Open API files and this changelog entry.
+
 # 0.8.2
 
 ## June 29, 2023
