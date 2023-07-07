@@ -26,6 +26,7 @@ from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
+from ....wallet.askar import _create_keypair
 from ....wallet.crypto import create_keypair, seed_to_did
 from ....wallet.did_info import DIDInfo
 from ....wallet.did_method import SOV, PEER
@@ -375,14 +376,39 @@ class ConnectionManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(connection.my_did)
         else:
+            #create peer:did:2
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
+                self._logger.debug("prototype code for did doc builder")
                 # Create new DID for connection
-                # sov_info = await wallet.create_local_did(SOV, ED25519)
-                my_info = await wallet.create_local_did(PEER, ED25519)
-                self._logger.debug("ConnMan.create_request.my_info")
-                self._logger.debug(my_info)
-            connection.my_did = my_info.did
+
+                #for peer did, create did_doc first then save did after. 
+                keypair = _create_keypair(ED25519, None)
+                verkey_bytes = keypair.get_public_bytes()
+                        
+                # JS START  library did_doc construction
+                # use library did_doc construction
+                service = {
+                    "type": "DIDCommMessaging",
+                    "serviceEndpoint": self.profile.settings.get("default_endpoint"),
+                    "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
+                }
+
+                self._logger.debug("create_peer_did")
+                peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
+                    bytes_to_b58(verkey_bytes), service=service
+                )
+
+                self._logger.debug("resolve_peer_did")
+                did_doc = PeerDIDDoc.resolve_peer_did(peer_did)
+                self._logger.debug(did_doc)
+                connection.my_did = peer_did
+                my_info = await wallet.create_local_did(PEER, ED25519, did_doc=did_doc)
+
+                self._logger.debug(f"did={my_info.did}, verkey={my_info.verkey}")
+
+
+                connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
         await self._route_manager.route_connection_as_invitee(
@@ -398,8 +424,6 @@ class ConnectionManager(BaseConnectionManager):
             if default_endpoint:
                 my_endpoints.append(default_endpoint)
             my_endpoints.extend(self.profile.settings.get("additional_endpoints", []))
-        self._logger.debug("manager:create_request.my_info")
-        self._logger.debug(my_info)
         if my_info.method == SOV:
             # legacy custom code
             did_doc = await self.create_did_document(
@@ -410,23 +434,9 @@ class ConnectionManager(BaseConnectionManager):
                     filter(None, [base_mediation_record, mediation_record])
                 ),
             )
-        else:
-            self._logger.debug("prototype code for did doc builder")
-            self._logger.debug(f"did={my_info.did}, verkey={my_info.verkey}")
-            # JS START  library did_doc construction
-            # pk = PublicKey(my_info.did, "2", my_info.verkey, PublicKeyType.ED25519_SIG_2018, my_info.did, True)
+        elif my_info.method == PEER:
+            pass
 
-            ver_method = Ed25519VerificationKey2018.make(
-                id="#default",
-                controller=my_info.did,
-                public_key_base58=my_info.verkey,
-            )
-
-            dd_builder = DIDDocumentBuilder(my_info.did)
-            dd_builder.service.add_didcomm(default_endpoint, [ver_method])
-            did_doc = dd_builder.build()
-            self._logger.debug(did_doc)
-            # JS END
         if not my_label:
             my_label = self.profile.settings.get("default_label")
         request = ConnectionRequest(
@@ -469,8 +479,6 @@ class ConnectionManager(BaseConnectionManager):
         )
         self._logger.debug("manager:recieve_request.request")
         self._logger.debug(request.__dict__)
-        self._logger.debug("manager:recieve_request.receipt")
-        self._logger.debug(receipt.__dict__)
         connection = None
         connection_key = None
         my_info = None
@@ -693,49 +701,25 @@ class ConnectionManager(BaseConnectionManager):
             self._logger.debug("prototype code for did doc builder")
             # use library did_doc construction
             ver_method = Ed25519VerificationKey2018.make(
-                id=my_info.did + "#v",
+                id="#v",
                 controller=my_info.did,
                 public_key_base58=my_info.verkey,
             )
             did_comm_service = DIDCommService(
-                id=my_info.did + "#s",
+                id="#s",
                 service_endpoint=default_endpoint,
                 recipient_keys=[ver_method.id],
             )
-
-            if False:
-                dd_builder = DIDDocumentBuilder(my_info.did)
-                dd_builder.service.add_didcomm(default_endpoint, [ver_method])
-                dd_builder.verification_method.add(
-                    type_=Ed25519VerificationKey2018,
-                    ident="default",
-                    controller=my_info.did,
-                    public_key_base58=my_info.verkey,
-                )
-                did_doc = dd_builder.build()
-
-            else:
-                did_doc = DIDDocument(
-                    id=my_info.did,
-                    service=[did_comm_service],
-                    verification_method=[ver_method],
-                )
-            self._logger.debug("did_doc")
-
-            self._logger.debug(did_doc)
-            self._logger.debug(did_doc.dereference("#s"))
-            self._logger.debug(did_doc.dereference("#v"))
 
             self._logger.debug("create_peer_did")
             peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
                 ver_method.material, service=did_comm_service
             )
-            self._logger.debug(peer_did)
 
             self._logger.debug("resolve_peer_did")
-            self._logger.debug(resolve_peer_did(peer_did))
+            did_doc = PeerDIDDoc.resolve_peer_did(peer_did)
+            self._logger.debug(did_doc)
 
-            resolve_peer_did(did_doc.id)
 
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)

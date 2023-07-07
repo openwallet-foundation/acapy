@@ -78,6 +78,7 @@ PEER = DIDMethod(
     rotation=False,
 )
 
+
 class DIDMethods:
     """DID Method class specifying DID methods with supported key types."""
 

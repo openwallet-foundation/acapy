@@ -3,7 +3,7 @@
 from marshmallow import EXCLUDE, fields
 from pydid.did import DID_PATTERN
 from peerdid.dids import resolve_peer_did, DIDDocument
-from .....connections.models.diddoc import SovDIDDoc
+from .....connections.models.diddoc import SovDIDDoc, PeerDIDDoc
 from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import ANY_DID
 
@@ -35,12 +35,9 @@ class DIDDocWrapper(fields.Field):
             The deserialized value
         """
         dd = None
-        print("DIDDocWrapper")
-        print(value["id"])
-        print(value["id"].startswith("did:peer:2"))
         if value["id"].startswith("did:peer:2"):
             print("peer_did_doc")
-            dd = DIDDocument.deserialize(value)
+            dd = PeerDIDDoc.deserialize(value)
         else:  # if sov
             print("sov_did_doc")
             dd = SovDIDDoc.deserialize(value)

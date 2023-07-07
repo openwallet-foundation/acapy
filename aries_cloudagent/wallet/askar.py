@@ -5,6 +5,7 @@ import json
 import logging
 
 from typing import List, Sequence, Tuple, Union
+from pydid import DIDDocument
 
 from aries_askar import (
     AskarError,
@@ -152,6 +153,8 @@ class AskarWallet(BaseWallet):
         seed: str = None,
         did: str = None,
         metadata: dict = None,
+        did_doc: DIDDocument = None,
+        verkey_bytes: bytes = None
     ) -> DIDInfo:
         """
         Create and store a new local DID.
@@ -180,12 +183,13 @@ class AskarWallet(BaseWallet):
             metadata = {}
 
         try:
-            keypair = _create_keypair(key_type, seed)
-            verkey_bytes = keypair.get_public_bytes()
-            verkey = bytes_to_b58(verkey_bytes)
+            if not verkey_bytes:
+                keypair = _create_keypair(key_type, seed)
+                verkey_bytes = keypair.get_public_bytes()
 
+            verkey = bytes_to_b58(verkey_bytes)
             did = did_validation.validate_or_derive_did(
-                method, key_type, verkey_bytes, did
+                method, key_type, verkey_bytes, did, did_doc
             )
             print("askar:create_local_did")
             print(f"did={did}, key_type={key_type}")

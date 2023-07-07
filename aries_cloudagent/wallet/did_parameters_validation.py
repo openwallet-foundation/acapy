@@ -1,7 +1,7 @@
 """Tooling to validate DID creation parameters."""
 
 from typing import Optional
-
+from pydid import DID, DIDDocument
 from aries_cloudagent.did.did_key import DIDKey
 from aries_cloudagent.wallet.did_method import (
     DIDMethods,
@@ -41,12 +41,16 @@ class DIDParametersValidation:
         key_type: KeyType,
         verkey: bytes,
         did: Optional[str],
+        did_doc: Optional[DIDDocument],
     ) -> str:
         """
         Validate compatibility of the provided did (if any) with the given DID method.
 
         If no DID was provided, automatically derive one for methods that support it.
         """
+        if method == PEER and did_doc:
+            #assume numalgo 2
+            return did_doc.id
         if method.holder_defined_did() == HolderDefinedDid.NO and did:
             raise WalletError(
                 f"Not allowed to set DID for DID method '{method.method_name}'"
@@ -64,7 +68,5 @@ class DIDParametersValidation:
             return DIDKey.from_public_key(verkey, key_type).did
         elif method == SOV:
             return bytes_to_b58(verkey[:16]) if not did else did
-        elif method == PEER:
-            return PeerDIDDoc.create_peer_did_2_from_verkey(bytes_to_b58(verkey))
 
         return did

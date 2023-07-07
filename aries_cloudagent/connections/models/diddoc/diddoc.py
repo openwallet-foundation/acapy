@@ -324,7 +324,7 @@ class SovDIDDoc(DIDDocument):
         return f"<DIDDoc did={self.did}>"
 
 
-class PeerDIDDoc:
+class PeerDIDDoc(DIDDocument):
     """
     did:peer:2 following the Method 2 of
     https://identity.foundation/peer-did-method-spec/#generation-method
@@ -332,7 +332,7 @@ class PeerDIDDoc:
 
     @classmethod
     def create_peer_did_2_from_verkey(
-        cls, verkey: str, service: Optional[DIDCommService] = None
+        cls, verkey: str, service: dict = None
     ) -> dids.DID:
         """verkey must by base58"""
 
@@ -340,6 +340,6 @@ class PeerDIDDoc:
         sign_keys = [keys.Ed25519VerificationKey.from_base58(verkey)]
 
         var = dids.create_peer_did_numalgo_2(
-            enc_keys, sign_keys, service.dict() if service else None
+            enc_keys, sign_keys, service
         )
         return var
