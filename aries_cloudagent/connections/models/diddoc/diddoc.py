@@ -24,7 +24,7 @@ import logging
 from typing import List, Sequence, Union, Any, Optional
 from pydid import DIDCommService
 from peerdid import dids, keys
-from peerdid.dids import DIDDocument, create_peer_did_numalgo_0
+from peerdid.dids import DID, DIDDocument, create_peer_did_numalgo_0, resolve_peer_did
 from .publickey import PublicKey, PublicKeyType
 from .service import Service
 from .util import canon_did, canon_ref, ok_did, resource

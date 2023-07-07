@@ -10,7 +10,7 @@ from peerdid.dids import (
     _build_did_doc_numalgo_2,
 )
 from pydid import DIDCommService
-from peerdid.keys import Ed25519VerificationKey2018
+from peerdid.keys import Ed25519VerificationKey2018, Ed25519VerificationKey
 
 from ....core.oob_processor import OobMessageProcessor
 from ....cache.base import BaseCache
@@ -504,7 +504,7 @@ class ConnectionManager(BaseConnectionManager):
                     f"in state {ConnRecord.State.INVITATION.rfc160}: "
                     "a prior connection request may have updated the connection state"
                 )
-
+        #JS RECIEVER NEEDS TO RESOLVE THE ANCHOR to the actual reciepient key
         invitation = None
         if connection:
             async with self.profile.session() as session:
@@ -667,9 +667,44 @@ class ConnectionManager(BaseConnectionManager):
                 my_info = await wallet.get_local_did(connection.my_did)
         else:
             async with self.profile.session() as session:
+
+                #create peer:did:2
                 wallet = session.inject(BaseWallet)
+                self._logger.debug("prototype code for did doc builder")
+                # Create new DID for connection
+
+                #for peer did, create did_doc first then save did after. 
+                keypair = _create_keypair(ED25519, None)
+                verkey_bytes = keypair.get_public_bytes()
+                        
+                # JS START  library did_doc construction
+                # use library did_doc construction
+                service = {
+                    "type": "DIDCommMessaging",
+                    "serviceEndpoint": self.profile.settings.get("default_endpoint"),
+                    "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
+                }
+                # verkey_obj = Ed25519VerificationKey(verkey_bytes, "#vk")
+                # service = DIDCommService(
+                #     id="#c",
+                #     service_endpoint=self.profile.settings.get("default_endpoint"),
+                #     recipient_keys=["#vk"]
+                # )
+                self._logger.debug("create_peer_did")
+                peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
+                    bytes_to_b58(verkey_bytes), service=service
+                )
+
+                self._logger.debug("resolve_peer_did")
+                did_doc = PeerDIDDoc.resolve_peer_did(peer_did)
+                self._logger.debug(did_doc)
+                self._logger.debug(did_doc.to_json())
+                connection.my_did = peer_did
+                my_info = await wallet.create_local_did(PEER, ED25519, did_doc=did_doc)
+
+                self._logger.debug(f"did={my_info.did}, verkey={my_info.verkey}")
+                connection.my_did = my_info.did
                 # my_info = await wallet.create_local_did(SOV, ED25519)
-                my_info = await wallet.create_local_did(PEER, ED25519)
 
             connection.my_did = my_info.did
 
@@ -697,30 +732,9 @@ class ConnectionManager(BaseConnectionManager):
                     filter(None, [base_mediation_record, mediation_record])
                 ),
             )
-        else:
-            self._logger.debug("prototype code for did doc builder")
-            # use library did_doc construction
-            ver_method = Ed25519VerificationKey2018.make(
-                id="#v",
-                controller=my_info.did,
-                public_key_base58=my_info.verkey,
-            )
-            did_comm_service = DIDCommService(
-                id="#s",
-                service_endpoint=default_endpoint,
-                recipient_keys=[ver_method.id],
-            )
-
-            self._logger.debug("create_peer_did")
-            peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
-                ver_method.material, service=did_comm_service
-            )
-
-            self._logger.debug("resolve_peer_did")
-            did_doc = PeerDIDDoc.resolve_peer_did(peer_did)
-            self._logger.debug(did_doc)
-
-
+        elif my_info.method == PEER:
+            pass
+          
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
         )
