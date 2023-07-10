@@ -11,6 +11,10 @@ import time
 from typing import List, NamedTuple, Optional, Sequence, Tuple
 from urllib.parse import urlparse
 
+from aries_askar.error import AskarError
+import base58
+from requests import RequestException, Session
+
 from anoncreds import (
     AnoncredsError,
     Credential,
@@ -18,15 +22,13 @@ from anoncreds import (
     RevocationRegistryDefinition,
     RevocationStatusList,
 )
-from aries_askar.error import AskarError
-import base58
-from requests import RequestException, Session
-
 
 from ..askar.profile import AskarProfile, AskarProfileSession
 from ..core.error import BaseError
+from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
 from ..tails.base import BaseTailsServer
+from .events import RevRegDefFinishedEvent
 from .issuer import (
     AnonCredsIssuer,
     CATEGORY_CRED_DEF,
@@ -89,7 +91,10 @@ class AnonCredsRevocation:
 
         return self._profile
 
-    # Revocation artifact management
+    async def notify(self, event: Event):
+        """Emit an event on the event bus."""
+        event_bus = self.profile.inject(EventBus)
+        await event_bus.notify(self.profile, event)
 
     async def _finish_registration(
         self,
@@ -123,6 +128,7 @@ class AnonCredsRevocation:
             tags=tags,
         )
         await txn.handle.remove(category, job_id)
+        return entry
 
     async def create_and_register_revocation_registry_definition(
         self,
@@ -219,6 +225,11 @@ class AnonCredsRevocation:
                     rev_reg_def_private.to_json_buffer(),
                 )
                 await txn.commit()
+
+            if result.revocation_registry_definition_state.state == STATE_FINISHED:
+                await self.notify(
+                    RevRegDefFinishedEvent.with_payload(ident, rev_reg_def)
+                )
         except AskarError as err:
             raise AnonCredsRevocationError(
                 "Error saving new revocation registry"
@@ -231,9 +242,10 @@ class AnonCredsRevocation:
     ):
         """Mark a rev reg def as finished."""
         async with self.profile.transaction() as txn:
-            await self._finish_registration(
+            entry = await self._finish_registration(
                 txn, CATEGORY_REV_REG_DEF, job_id, rev_reg_def_id, state=STATE_FINISHED
             )
+            rev_reg_def = RevRegDef.from_json(entry.value)
             await self._finish_registration(
                 txn,
                 CATEGORY_REV_REG_DEF_PRIVATE,
@@ -241,6 +253,10 @@ class AnonCredsRevocation:
                 rev_reg_def_id,
             )
             await txn.commit()
+
+        await self.notify(
+            RevRegDefFinishedEvent.with_payload(rev_reg_def_id, rev_reg_def)
+        )
 
     async def get_created_revocation_registry_definitions(
         self,

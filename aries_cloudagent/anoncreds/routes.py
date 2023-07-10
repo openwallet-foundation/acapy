@@ -14,6 +14,7 @@ from marshmallow import fields
 
 from ..admin.request_context import AdminRequestContext
 from ..askar.profile import AskarProfile
+from ..core.event_bus import EventBus
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import UUIDFour
 from ..revocation.error import RevocationError, RevocationNotSupportedError
@@ -37,6 +38,7 @@ from .models.anoncreds_schema import (
 )
 from .registry import AnonCredsRegistry
 from .revocation import AnonCredsRevocation, AnonCredsRevocationError
+from .revocation_setup import DefaultRevocationSetup
 
 LOGGER = logging.getLogger(__name__)
 
@@ -591,6 +593,13 @@ async def register(app: web.Application):
             web.post("/anoncreds/publish-revocations", publish_revocations),
         ]
     )
+
+
+def register_events(event_bus: EventBus):
+    """Register events."""
+    # TODO Make this pluggable?
+    setup_manager = DefaultRevocationSetup()
+    setup_manager.register_events(event_bus)
 
 
 def post_process_routes(app: web.Application):
