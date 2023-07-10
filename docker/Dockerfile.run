@@ -1,4 +1,4 @@
-FROM bcgovimages/von-image:py36-1.15-1
+FROM python:3.9-slim-bullseye
 
 ENV ENABLE_PTVSD 0
 
@@ -18,7 +18,7 @@ ADD setup.py ./
 
 RUN pip3 install --no-cache-dir -e .
 
-RUN mkdir logs && chown -R indy:indy logs && chmod -R ug+rw logs
+RUN mkdir logs && chmod -R ug+rw logs
 ADD aries_cloudagent ./aries_cloudagent
 
 ENTRYPOINT ["/bin/bash", "-c", "aca-py \"$@\"", "--"]
