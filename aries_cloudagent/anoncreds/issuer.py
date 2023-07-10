@@ -1,9 +1,12 @@
 """anoncreds-rs issuer implementation."""
 
 import asyncio
+import json
 import logging
 from time import time
 from typing import Optional, Sequence
+
+from aries_askar import AskarError
 
 from anoncreds import (
     AnoncredsError,
@@ -12,12 +15,13 @@ from anoncreds import (
     CredentialOffer,
     Schema,
 )
-from aries_askar import AskarError
 
 from ..askar.profile import AskarProfile, AskarProfileSession
 from ..core.error import BaseError
+from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
 from .base import AnonCredsSchemaAlreadyExists
+from .events import CredDefFinishedEvent
 from .models.anoncreds_cred_def import CredDef, CredDefResult
 from .models.anoncreds_schema import AnonCredsSchema, SchemaResult, SchemaState
 from .registry import AnonCredsRegistry
@@ -26,6 +30,7 @@ LOGGER = logging.getLogger(__name__)
 
 DEFAULT_CRED_DEF_TAG = "default"
 DEFAULT_SIGNATURE_TYPE = "CL"
+DEFAULT_MAX_CRED_NUM = 1000
 CATEGORY_SCHEMA = "schema"
 CATEGORY_CRED_DEF = "credential_def"
 CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
@@ -91,6 +96,11 @@ class AnonCredsIssuer:
 
         return self._profile
 
+    async def notify(self, event: Event):
+        """Accessor for the event bus instance."""
+        event_bus = self.profile.inject(EventBus)
+        await event_bus.notify(self._profile, event)
+
     async def _finish_registration(
         self, txn: AskarProfileSession, category: str, job_id: str, registered_id: str
     ):
@@ -113,6 +123,7 @@ class AnonCredsIssuer:
             tags=tags,
         )
         await txn.handle.remove(category, job_id)
+        return entry
 
     async def _store_schema(
         self,
@@ -291,6 +302,12 @@ class AnonCredsIssuer:
 
         options = options or {}
         support_revocation = options.get("support_revocation", False)
+        if not isinstance(support_revocation, bool):
+            raise ValueError("support_revocation must be a boolean")
+
+        max_cred_num = options.get("max_cred_num", DEFAULT_MAX_CRED_NUM)
+        if not isinstance(max_cred_num, int):
+            raise ValueError("max_cred_num must be an integer")
 
         try:
             # Create the cred def
@@ -342,6 +359,11 @@ class AnonCredsIssuer:
                         "schema_version": schema_result.schema.version,
                         "state": result.credential_definition_state.state,
                         "epoch": str(int(time())),
+                        # TODO We need to keep track of these but tags probably
+                        # isn't ideal. This suggests that a full record object
+                        # is necessary for non-private values
+                        "support_revocation": json.dumps(support_revocation),
+                        "max_cred_num": str(max_cred_num),
                     },
                 )
                 await txn.handle.insert(
@@ -353,6 +375,12 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_KEY_PROOF, ident, key_proof.to_json_buffer()
                 )
                 await txn.commit()
+            if result.credential_definition_state.state == STATE_FINISHED:
+                await self.notify(
+                    CredDefFinishedEvent.with_payload(
+                        schema_id, ident, issuer_id, support_revocation, max_cred_num
+                    )
+                )
         except AskarError as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
 
@@ -361,7 +389,13 @@ class AnonCredsIssuer:
     async def finish_cred_def(self, job_id: str, cred_def_id: str):
         """Finish a cred def."""
         async with self.profile.transaction() as txn:
-            await self._finish_registration(txn, CATEGORY_CRED_DEF, job_id, cred_def_id)
+            entry = await self._finish_registration(
+                txn, CATEGORY_CRED_DEF, job_id, cred_def_id
+            )
+            cred_def = CredDef.from_json(entry.value)
+            support_revocation = json.loads(entry.tags["support_revocation"])
+            max_cred_num = int(entry.tags["max_cred_num"])
+
             await self._finish_registration(
                 txn, CATEGORY_CRED_DEF_PRIVATE, job_id, cred_def_id
             )
@@ -369,6 +403,16 @@ class AnonCredsIssuer:
                 txn, CATEGORY_CRED_DEF_KEY_PROOF, job_id, cred_def_id
             )
             await txn.commit()
+
+        await self.notify(
+            CredDefFinishedEvent.with_payload(
+                schema_id=cred_def.schema_id,
+                cred_def_id=cred_def_id,
+                issuer_id=cred_def.issuer_id,
+                support_revocation=support_revocation,
+                max_cred_num=max_cred_num,
+            )
+        )
 
     async def get_created_credential_definitions(
         self,

@@ -1,10 +1,10 @@
 """Events fired by AnonCreds interface."""
 
 import re
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
-from aries_cloudagent.anoncreds.models.anoncreds_revocation import RevRegDef
 from ..core.event_bus import Event
+from .models.anoncreds_revocation import RevRegDef
 
 
 CRED_DEF_FINISHED_EVENT = "anoncreds::credential-definition::finished"
@@ -25,18 +25,32 @@ class CredDefFinishedPayload(NamedTuple):
     cred_def_id: str
     issuer_id: str
     support_revocation: bool
-    novel: bool
     max_cred_num: int
-    auto_create_rev_reg: bool = False
-    create_pending_rev_reg: bool = False
 
 
 class CredDefFinishedEvent(Event):
     """Event for cred def finished."""
 
-    def __init__(self, payload: CredDefFinishedPayload):
+    def __init__(
+        self,
+        payload: CredDefFinishedPayload,
+    ):
         self._topic = CRED_DEF_FINISHED_EVENT
         self._payload = payload
+
+    @classmethod
+    def with_payload(
+        cls,
+        schema_id: str,
+        cred_def_id: str,
+        issuer_id: str,
+        support_revocation: bool,
+        max_cred_num: int,
+    ):
+        payload = CredDefFinishedPayload(
+            schema_id, cred_def_id, issuer_id, support_revocation, max_cred_num
+        )
+        return cls(payload)
 
     @property
     def payload(self) -> CredDefFinishedPayload:
@@ -57,6 +71,15 @@ class RevRegDefFinishedEvent(Event):
     def __init__(self, payload: RevRegDefFinishedPayload):
         self._topic = REV_REG_DEF_FINISHED_EVENT
         self._payload = payload
+
+    @classmethod
+    def with_payload(
+        cls,
+        rev_reg_def_id: str,
+        rev_reg_def: RevRegDef,
+    ):
+        payload = RevRegDefFinishedPayload(rev_reg_def_id, rev_reg_def)
+        return cls(payload)
 
     @property
     def payload(self) -> RevRegDefFinishedPayload:
