@@ -116,6 +116,16 @@ class InvitationCreateRequestSchema(OpenAPISchema):
         description="Identifier for active mediation record to be used",
         **UUID4,
     )
+    goal_code = fields.Str(
+        required=False,
+        description="A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message",
+        example="issue-vc",
+    )
+    goal = fields.Str(
+        required=False,
+        description="A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message",
+        example="To issue a Faber College Graduate credential",
+    )
 
 
 class InvitationReceiveQueryStringSchema(OpenAPISchema):
@@ -172,6 +182,8 @@ async def invitation_create(request: web.BaseRequest):
     alias = body.get("alias")
     mediation_id = body.get("mediation_id")
     protocol_version = body.get("protocol_version")
+    goal_code = body.get("goal_code")
+    goal = body.get("goal")
 
     multi_use = json.loads(request.query.get("multi_use", "false"))
     auto_accept = json.loads(request.query.get("auto_accept", "null"))
@@ -193,6 +205,8 @@ async def invitation_create(request: web.BaseRequest):
             mediation_id=mediation_id,
             service_accept=service_accept,
             protocol_version=protocol_version,
+            goal_code=goal_code,
+            goal=goal,
         )
     except (StorageNotFoundError, ValidationError, OutOfBandManagerError) as e:
         raise web.HTTPBadRequest(reason=e.roll_up)
