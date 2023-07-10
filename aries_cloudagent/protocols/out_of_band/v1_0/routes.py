@@ -118,12 +118,14 @@ class InvitationCreateRequestSchema(OpenAPISchema):
     )
     goal_code = fields.Str(
         required=False,
-        description="A self-attested code the receiver may want to display to the user or use in automatically deciding what to do with the out-of-band message",
+        description="A self-attested code the receiver may want to display to the user "
+        "or use in automatically deciding what to do with the out-of-band message",
         example="issue-vc",
     )
     goal = fields.Str(
         required=False,
-        description="A self-attested string that the receiver may want to display to the user about the context-specific goal of the out-of-band message",
+        description="A self-attested string that the receiver may want to display to the "
+        "user about the context-specific goal of the out-of-band message",
         example="To issue a Faber College Graduate credential",
     )
 
