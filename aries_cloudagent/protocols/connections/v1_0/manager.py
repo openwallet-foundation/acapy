@@ -332,9 +332,6 @@ class ConnectionManager(BaseConnectionManager):
                     )
         else:
             self._logger.debug("Connection invitation will await acceptance")
-        self._logger.debug("manager:receive_invitation return")
-        self._logger.debug(connection)
-        self._logger.debug(request)
         return connection
 
     async def create_request(
@@ -379,7 +376,6 @@ class ConnectionManager(BaseConnectionManager):
             # create peer:did:2
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
-                self._logger.debug("prototype code for did doc builder")
                 # Create new DID for connection
 
                 # for peer did, create did_doc first then save did after.
@@ -393,19 +389,15 @@ class ConnectionManager(BaseConnectionManager):
                     "serviceEndpoint": self.profile.settings.get("default_endpoint"),
                     "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
                 }
-
-                self._logger.debug("create_peer_did")
                 peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
                     bytes_to_b58(verkey_bytes), service=service
                 )
 
-                self._logger.debug("resolve_peer_did")
+                self._logger.debug("resolve_peer_did, only needed so make methods have a controller")
                 did_doc = PeerDIDDoc.resolve_peer_did(peer_did)
                 self._logger.debug(did_doc)
                 connection.my_did = peer_did
-                my_info = await wallet.create_local_did(PEER, ED25519, did_doc=did_doc)
 
-                self._logger.debug(f"did={my_info.did}, verkey={my_info.verkey}")
 
                 vm = Ed25519VerificationKey2018.make(
                     id="#reqv",
@@ -419,7 +411,11 @@ class ConnectionManager(BaseConnectionManager):
                     recipient_keys=["#reqv"]
                 )
                 dd = DIDDocument.make(id=peer_did,verification_method=[vm],service=[dc_service])
-                self._logger.debug(f"dd={dd}")
+                self._logger.debug(f"my_did_doc verkey")
+                self._logger.debug(f"{dd.verification_method[0].material}")
+
+
+                my_info = await wallet.create_local_did(PEER, ED25519, did_doc=dd)
                 connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken

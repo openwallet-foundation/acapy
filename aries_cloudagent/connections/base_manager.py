@@ -166,8 +166,6 @@ class BaseConnectionManager:
                 svc_endpoint,
             )
             did_doc.set(service)
-        print("base_manager:create_did_document exit val")
-        print(did_doc.__dict__)
         return did_doc
 
     async def store_did_document(self, did_doc: DIDDocument):
@@ -417,7 +415,6 @@ class BaseConnectionManager:
         result = []
         for vor in values_or_refs:
             resource = did_doc.dereference(vor)
-            print(resource)
             if issubclass(resource.__class__, VerificationMethod):
             #insert original object for now
                 result.append(resource.material)
