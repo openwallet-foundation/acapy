@@ -71,7 +71,6 @@ async def in_memory_wallet(profile):
     yield InMemoryWallet(profile)
 
 
-@pytest.mark.ursa_jwt_signatures
 class TestJWT:
     """Tests for JWT sign and verify using dids."""
 
