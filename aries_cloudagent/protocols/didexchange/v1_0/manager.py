@@ -183,6 +183,8 @@ class DIDXManager(BaseConnectionManager):
         mediation_id: str = None,
         use_public_did: bool = False,
         alias: str = None,
+        goal_code: str = None,
+        goal: str = None,
     ) -> ConnRecord:
         """
         Create and send a request against a public DID only (no explicit invitation).
@@ -193,6 +195,8 @@ class DIDXManager(BaseConnectionManager):
             my_endpoint: my endpoint
             mediation_id: record id for mediation with routing_keys, service endpoint
             use_public_did: use my public DID for this connection
+            goal_code: Optional self-attested code for sharing intent of connection
+            goal: Optional self-attested string for sharing intent of connection
 
         Returns:
             The new `ConnRecord` instance
@@ -225,6 +229,8 @@ class DIDXManager(BaseConnectionManager):
             my_label=my_label,
             my_endpoint=my_endpoint,
             mediation_id=mediation_id,
+            goal_code=goal_code,
+            goal=goal,
         )
         conn_rec.request_id = request._id
         conn_rec.state = ConnRecord.State.REQUEST.rfc23
@@ -242,6 +248,8 @@ class DIDXManager(BaseConnectionManager):
         my_label: str = None,
         my_endpoint: str = None,
         mediation_id: str = None,
+        goal_code: str = None,
+        goal: str = None,
     ) -> DIDXRequest:
         """
         Create a new connection request for a previously-received invitation.
@@ -252,7 +260,8 @@ class DIDXManager(BaseConnectionManager):
             my_endpoint: My endpoint
             mediation_id: The record id for mediation that contains routing_keys and
                 service endpoint
-
+            goal_code: Optional self-attested code for sharing intent of connection
+            goal: Optional self-attested string for sharing intent of connection
         Returns:
             A new `DIDXRequest` message to send to the other agent
 
@@ -327,6 +336,8 @@ class DIDXManager(BaseConnectionManager):
             label=my_label,
             did=conn_rec.my_did,
             did_doc_attach=attach,
+            goal_code=goal_code,
+            goal=goal,
         )
         request.assign_thread_id(thid=request._id, pthid=pthid)
 
