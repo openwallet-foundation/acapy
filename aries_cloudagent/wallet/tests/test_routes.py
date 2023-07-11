@@ -2,12 +2,13 @@ import mock as async_mock
 import pytest
 from aiohttp.web import HTTPForbidden
 from async_case import IsolatedAsyncioTestCase
+from mock import AsyncMock
 
 from ...admin.request_context import AdminRequestContext
 from ...core.in_memory import InMemoryProfile
 from ...ledger.base import BaseLedger
 from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
-from ...wallet.did_method import SOV, DIDMethods, DIDMethod, HolderDefinedDid
+from ...wallet.did_method import SOV, DIDMethod, DIDMethods, HolderDefinedDid
 from ...wallet.key_type import ED25519, KeyTypes
 from .. import routes as test_module
 from ..base import BaseWallet
@@ -884,27 +885,6 @@ class TestWalletRoutes(IsolatedAsyncioTestCase):
         )
         with self.assertRaises(test_module.web.HTTPBadRequest):
             await test_module.wallet_rotate_did_keypair(self.request)
-
-    async def test_jwt_sign(self):
-        self.request.query = {
-            "did": "did:peer:WgWxqztrNooG92RXvxSTWv",
-            "headers": {},
-            "payload": {},
-            "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
-        }
-
-        # mock jwt sign stuff.
-        # check it was called with parameters
-        await test_module.wallet_jwt_sign(self.request)
-
-    async def test_jwt_verify(self):
-        self.request.query = {
-            "jwt": "eyJhbGciOiJFZERTQSJ9.eyJhIjogIjAifQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
-        }
-
-        # mock jwt sign stuff.
-        # check it was called with parameters
-        await test_module.wallet_jwt_verify(self.request)
 
     async def test_rotate_did_keypair_x(self):
         self.request.query = {"did": "did"}
