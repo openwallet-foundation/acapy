@@ -30,6 +30,8 @@ class DIDXRequest(AgentMessage):
         label: str = None,
         did: str = None,
         did_doc_attach: AttachDecorator = None,
+        goal_code: str = None,
+        goal: str = None,
         **kwargs,
     ):
         """
@@ -39,11 +41,20 @@ class DIDXRequest(AgentMessage):
             label: Label for this request
             did: DID for this request
             did_doc_attach: signed DID doc attachment
+            goal_code: (optional) is a self-attested code the receiver may want to
+              display to the user or use in automatically deciding what to do with
+              the request message. The goal code might be used particularly when the
+              request is sent to a resolvable DID without reference to a specfic
+              invitation.
+            goal: (optional) is a self-attested string that the receiver may want to
+              display to the user about the context-specific goal of the request message.
         """
         super().__init__(**kwargs)
         self.label = label
         self.did = did
         self.did_doc_attach = did_doc_attach
+        self.goal_code = goal_code
+        self.goal = goal
 
 
 class DIDXRequestSchema(AgentMessageSchema):
@@ -66,4 +77,16 @@ class DIDXRequestSchema(AgentMessageSchema):
         required=False,
         description="As signed attachment, DID Doc associated with DID",
         data_key="did_doc~attach",
+    )
+    goal_code = fields.Str(
+        required=False,
+        description="A self-attested code the receiver may want to display to the user "
+        "or use in automatically deciding what to do with the out-of-band message",
+        example="issue-vc",
+    )
+    goal = fields.Str(
+        required=False,
+        description="A self-attested string that the receiver may want to display to the "
+        "user about the context-specific goal of the out-of-band message",
+        example="To issue a Faber College Graduate credential",
     )

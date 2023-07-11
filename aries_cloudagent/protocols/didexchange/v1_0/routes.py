@@ -62,6 +62,18 @@ class DIDXCreateRequestImplicitQueryStringSchema(OpenAPISchema):
         required=False,
         description="Use public DID for this connection",
     )
+    goal_code = fields.Str(
+        required=False,
+        description="A self-attested code the receiver may want to display to the user "
+        "or use in automatically deciding what to do with the out-of-band message",
+        example="issue-vc",
+    )
+    goal = fields.Str(
+        required=False,
+        description="A self-attested string that the receiver may want to display to the "
+        "user about the context-specific goal of the out-of-band message",
+        example="To issue a Faber College Graduate credential",
+    )
 
 
 class DIDXReceiveRequestImplicitQueryStringSchema(OpenAPISchema):
@@ -190,6 +202,8 @@ async def didx_create_request_implicit(request: web.BaseRequest):
     mediation_id = request.query.get("mediation_id") or None
     alias = request.query.get("alias") or None
     use_public_did = json.loads(request.query.get("use_public_did", "null"))
+    goal_code = request.query.get("goal_code") or None
+    goal = request.query.get("goal") or None
 
     profile = context.profile
     didx_mgr = DIDXManager(profile)
@@ -201,6 +215,8 @@ async def didx_create_request_implicit(request: web.BaseRequest):
             mediation_id=mediation_id,
             use_public_did=use_public_did,
             alias=alias,
+            goal_code=goal_code,
+            goal=goal,
         )
     except StorageNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err

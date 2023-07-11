@@ -18,6 +18,8 @@ class TestConfig:
     test_verkey = "3Dn1SJNPaCXcvvJvSbsFWP2xaCjMom3can8CQNhWrTRx"
     test_label = "Label"
     test_endpoint = "http://localhost"
+    goal_code = "pytest"
+    goal = "pass pytest"
 
     def make_did_doc(self):
         doc = DIDDoc(did=self.test_did)
@@ -64,12 +66,16 @@ class TestDIDXRequest(AsyncTestCase, TestConfig):
             label=TestConfig.test_label,
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
+            goal_code=TestConfig.goal_code,
+            goal=TestConfig.goal,
         )
 
     def test_init(self):
         """Test initialization."""
         assert self.request.label == TestConfig.test_label
         assert self.request.did == TestConfig.test_did
+        assert self.request.goal_code == TestConfig.goal_code
+        assert self.request.goal == TestConfig.goal
 
     def test_type(self):
         """Test type."""
@@ -123,6 +129,8 @@ class TestDIDXRequestSchema(AsyncTestCase, TestConfig):
             label=TestConfig.test_label,
             did=TestConfig.test_did,
             did_doc_attach=did_doc_attach,
+            goal_code="pytest",
+            goal="pass pytest",
         )
 
     async def test_make_model(self):

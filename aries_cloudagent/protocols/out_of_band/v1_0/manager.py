@@ -90,6 +90,8 @@ class OutOfBandManager(BaseConnectionManager):
         mediation_id: str = None,
         service_accept: Optional[Sequence[Text]] = None,
         protocol_version: Optional[Text] = None,
+        goal_code: Optional[Text] = None,
+        goal: Optional[Text] = None,
     ) -> InvitationRecord:
         """
         Generate new connection invitation.
@@ -111,7 +113,8 @@ class OutOfBandManager(BaseConnectionManager):
             service_accept: Optional list of mime types in the order of preference of
             the sender that the receiver can use in responding to the message
             protocol_version: OOB protocol version [1.0, 1.1]
-
+            goal_code: Optional self-attested code for receiver logic
+            goal: Optional self-attested string for receiver logic
         Returns:
             Invitation record
 
@@ -355,6 +358,9 @@ class OutOfBandManager(BaseConnectionManager):
                 )
             ]
             invi_url = invi_msg.to_url()
+            if goal and goal_code:
+                invi_msg.goal_code = goal_code
+                invi_msg.goal = goal
 
             # Update connection record
             if conn_rec:
