@@ -191,8 +191,6 @@ class AskarWallet(BaseWallet):
             did = did_validation.validate_or_derive_did(
                 method, key_type, verkey_bytes, did, did_doc
             )
-            print("askar:create_local_did")
-            print(f"did={did}, key_type={key_type}")
 
             try:
                 await self._session.handle.insert_key(
