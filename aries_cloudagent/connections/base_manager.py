@@ -413,6 +413,19 @@ class BaseConnectionManager:
 
         return results
 
+    def resolve_verkey_references(self, did_doc:DIDDocument, values_or_refs = List[str]) -> List[str]:
+        result = []
+        for vor in values_or_refs:
+            resource = did_doc.dereference(vor)
+            print(resource)
+            if issubclass(resource.__class__, VerificationMethod):
+            #insert original object for now
+                result.append(resource.material)
+            else:
+                raise Exception(f"do not know the desired value to object of type {resource.__class__}")
+        return result
+
+
     def diddoc_connection_targets(
         self, doc: DIDDocument, sender_verkey: str, their_label: str = None
     ) -> Sequence[ConnectionTarget]:
@@ -437,12 +450,13 @@ class BaseConnectionManager:
             self._logger.debug("base_manager:diddoc_connection_targets:service")
             self._logger.debug(service)
             if service.recipient_keys:
+                recipient_verkeys = self.resolve_verkey_references(doc,service.recipient_keys)
                 targets.append(
                     ConnectionTarget(
                         did=doc.id,
                         endpoint=service.service_endpoint,
                         label=their_label,
-                        recipient_keys=[key for key in (service.recipient_keys or ())],
+                        recipient_keys=recipient_verkeys,
                         routing_keys=[
                             key.value for key in (service.routing_keys or ())
                         ],
@@ -450,6 +464,7 @@ class BaseConnectionManager:
                     )
                 )
         return targets
+    
 
     async def fetch_did_document(self, did: str) -> Tuple[DIDDocument, StorageRecord]:
         """Retrieve a DID Document for a given DID.

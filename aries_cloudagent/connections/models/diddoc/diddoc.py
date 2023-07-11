@@ -343,3 +343,7 @@ class PeerDIDDoc(DIDDocument):
             enc_keys, sign_keys, service
         )
         return var
+
+    @classmethod
+    def resolve_peer_did(self, did:DID) -> DIDDocument:
+        return resolve_peer_did(did)

@@ -376,16 +376,16 @@ class ConnectionManager(BaseConnectionManager):
                 wallet = session.inject(BaseWallet)
                 my_info = await wallet.get_local_did(connection.my_did)
         else:
-            #create peer:did:2
+            # create peer:did:2
             async with self.profile.session() as session:
                 wallet = session.inject(BaseWallet)
                 self._logger.debug("prototype code for did doc builder")
                 # Create new DID for connection
 
-                #for peer did, create did_doc first then save did after. 
+                # for peer did, create did_doc first then save did after.
                 keypair = _create_keypair(ED25519, None)
                 verkey_bytes = keypair.get_public_bytes()
-                        
+
                 # JS START  library did_doc construction
                 # use library did_doc construction
                 service = {
@@ -407,7 +407,19 @@ class ConnectionManager(BaseConnectionManager):
 
                 self._logger.debug(f"did={my_info.did}, verkey={my_info.verkey}")
 
+                vm = Ed25519VerificationKey2018.make(
+                    id="#reqv",
+                    controller=peer_did,
+                    public_key_base58=bytes_to_b58(verkey_bytes),
+                )
 
+                dc_service = DIDCommService.make(
+                    id="#reqs",
+                    service_endpoint=self.profile.settings.get("default_endpoint"),
+                    recipient_keys=["#reqv"]
+                )
+                dd = DIDDocument.make(id=peer_did,verification_method=[vm],service=[dc_service])
+                self._logger.debug(f"dd={dd}")
                 connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -441,7 +453,7 @@ class ConnectionManager(BaseConnectionManager):
             my_label = self.profile.settings.get("default_label")
         request = ConnectionRequest(
             label=my_label,
-            connection=ConnectionDetail(did=connection.my_did, did_doc=did_doc),
+            connection=ConnectionDetail(did=connection.my_did, did_doc=dd),
             image_url=self.profile.settings.get("image_url"),
         )
         request.assign_thread_id(thid=request._id, pthid=connection.invitation_msg_id)
@@ -504,7 +516,7 @@ class ConnectionManager(BaseConnectionManager):
                     f"in state {ConnRecord.State.INVITATION.rfc160}: "
                     "a prior connection request may have updated the connection state"
                 )
-        #JS RECIEVER NEEDS TO RESOLVE THE ANCHOR to the actual reciepient key
+        # JS RECIEVER NEEDS TO RESOLVE THE ANCHOR to the actual reciepient key
         invitation = None
         if connection:
             async with self.profile.session() as session:
@@ -667,16 +679,15 @@ class ConnectionManager(BaseConnectionManager):
                 my_info = await wallet.get_local_did(connection.my_did)
         else:
             async with self.profile.session() as session:
-
-                #create peer:did:2
+                # create peer:did:2
                 wallet = session.inject(BaseWallet)
                 self._logger.debug("prototype code for did doc builder")
                 # Create new DID for connection
 
-                #for peer did, create did_doc first then save did after. 
+                # for peer did, create did_doc first then save did after.
                 keypair = _create_keypair(ED25519, None)
                 verkey_bytes = keypair.get_public_bytes()
-                        
+
                 # JS START  library did_doc construction
                 # use library did_doc construction
                 service = {
@@ -684,12 +695,7 @@ class ConnectionManager(BaseConnectionManager):
                     "serviceEndpoint": self.profile.settings.get("default_endpoint"),
                     "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
                 }
-                # verkey_obj = Ed25519VerificationKey(verkey_bytes, "#vk")
-                # service = DIDCommService(
-                #     id="#c",
-                #     service_endpoint=self.profile.settings.get("default_endpoint"),
-                #     recipient_keys=["#vk"]
-                # )
+
                 self._logger.debug("create_peer_did")
                 peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
                     bytes_to_b58(verkey_bytes), service=service
@@ -734,7 +740,7 @@ class ConnectionManager(BaseConnectionManager):
             )
         elif my_info.method == PEER:
             pass
-          
+
         response = ConnectionResponse(
             connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
         )
