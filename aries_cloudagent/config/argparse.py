@@ -765,6 +765,15 @@ class RevocationGroup(ArgumentGroup):
                 "revocation received."
             ),
         )
+        parser.add_argument(
+            "--refuse-legacy-revocation",
+            action="store_true",
+            env_var="ACAPY_REFUSE_LEGACY_REVOCATION",
+            help=(
+                "Specifies that aca-py will refuse older proofs of non-revocation "
+                "for anoncreds credentials."
+            ),
+        )
 
     def get_settings(self, args: Namespace) -> dict:
         """Extract revocation settings."""
@@ -780,6 +789,8 @@ class RevocationGroup(ArgumentGroup):
             settings[
                 "revocation.monitor_notification"
             ] = args.monitor_revocation_notification
+        if args.refuse_legacy_revocation:
+            settings["revocation.anoncreds_accept_legacy"] = False
         return settings
 
 

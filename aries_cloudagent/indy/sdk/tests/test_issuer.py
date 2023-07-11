@@ -201,7 +201,10 @@ class TestIndySdkIssuer(AsyncTestCase):
         mock_indy_revoke_credential.return_value = json.dumps(TEST_RR_DELTA)
         mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
         (result, failed) = await self.issuer.revoke_credentials(
-            REV_REG_ID, tails_file_path="dummy", cred_rev_ids=test_cred_rev_ids
+            CRED_DEF_ID,
+            REV_REG_ID,
+            tails_file_path="dummy",
+            cred_rev_ids=test_cred_rev_ids,
         )
         assert json.loads(result) == TEST_RR_DELTA
         assert not failed
@@ -296,7 +299,10 @@ class TestIndySdkIssuer(AsyncTestCase):
         mock_indy_revoke_credential.side_effect = mock_revoke
         mock_indy_merge_rr_deltas.return_value = json.dumps(TEST_RR_DELTA)
         (result, failed) = await self.issuer.revoke_credentials(
-            REV_REG_ID, tails_file_path="dummy", cred_rev_ids=test_cred_rev_ids
+            CRED_DEF_ID,
+            REV_REG_ID,
+            tails_file_path="dummy",
+            cred_rev_ids=test_cred_rev_ids,
         )
         assert json.loads(result) == TEST_RR_DELTA
         assert failed == ["54", "103"]
