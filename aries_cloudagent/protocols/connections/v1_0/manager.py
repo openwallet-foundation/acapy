@@ -390,15 +390,11 @@ class ConnectionManager(BaseConnectionManager):
                     "serviceEndpoint": self.profile.settings.get("default_endpoint"),
                     "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
                 }
+
                 peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
                     bytes_to_b58(verkey_bytes), service=service
                 )
-
-                self._logger.debug("resolve_peer_did, only needed so make methods have a controller")
-                did_doc = PeerDIDDoc.resolve_peer_did(peer_did)
-                self._logger.debug(did_doc)
                 connection.my_did = peer_did
-
 
                 vm = Ed25519VerificationKey2018.make(
                     id="#reqv",
@@ -414,7 +410,6 @@ class ConnectionManager(BaseConnectionManager):
                 dd = DIDDocument.make(id=peer_did,verification_method=[vm],service=[dc_service])
                 self._logger.debug(f"my_did_doc verkey")
                 self._logger.debug(f"{dd.verification_method[0].material}")
-
 
                 my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=dd.id,  did_doc=dd)
                 connection.my_did = my_info.did
@@ -698,7 +693,6 @@ class ConnectionManager(BaseConnectionManager):
                 peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
                     bytes_to_b58(verkey_bytes), service=service
                 )
-                did_doc = PeerDIDDoc.resolve_peer_did(peer_did)
                 connection.my_did = peer_did
 
                 vm = Ed25519VerificationKey2018.make(
@@ -716,7 +710,6 @@ class ConnectionManager(BaseConnectionManager):
 
 
                 my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=dd.id,  did_doc=dd)
-                self._logger.debug(f"did={my_info.did}, verkey={my_info.verkey}")
                 connection.my_did = my_info.did
                 # my_info = await wallet.create_local_did(SOV, ED25519)
 
@@ -750,7 +743,7 @@ class ConnectionManager(BaseConnectionManager):
             pass
 
         response = ConnectionResponse(
-            connection=ConnectionDetail(did=my_info.did, did_doc=did_doc)
+            connection=ConnectionDetail(did=my_info.did, did_doc=dd)
         )
 
         # Assign thread information
