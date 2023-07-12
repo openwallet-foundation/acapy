@@ -766,12 +766,14 @@ class RevocationGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
-            "--refuse-legacy-revocation",
-            action="store_true",
-            env_var="ACAPY_REFUSE_LEGACY_REVOCATION",
+            "--anoncreds-legacy-revocation",
+            type=str,
+            default="accept",
+            choices=("accept", "reject"),
+            env_var="ACAPY_ANONCREDS_LEGACY_REVOCATION",
             help=(
-                "Specifies that aca-py will refuse older proofs of non-revocation "
-                "for anoncreds credentials."
+                "Specify the handling of older proofs of non-revocation "
+                "for anoncreds credentials. Values are 'accept' or 'reject'."
             ),
         )
 
@@ -789,8 +791,10 @@ class RevocationGroup(ArgumentGroup):
             settings[
                 "revocation.monitor_notification"
             ] = args.monitor_revocation_notification
-        if args.refuse_legacy_revocation:
-            settings["revocation.anoncreds_accept_legacy"] = False
+        if args.anoncreds_legacy_revocation:
+            settings[
+                "revocation.anoncreds_legacy_support"
+            ] = args.anoncreds_legacy_revocation
         return settings
 
 
