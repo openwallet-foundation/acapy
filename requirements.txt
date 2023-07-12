@@ -20,7 +20,8 @@ pyld~=2.0.3
 pyyaml~=5.4.0
 ConfigArgParse~=1.5.3
 pyjwt~=2.4.0
-pydid~=0.3.6
+pydid @ git+https://github.com/Indicio-tech/pydid@main
+peerdid @ git+https://github.com/sicpa-dlab/peer-did-python@main
 portalocker~=2.7.0
 jsonpath_ng==1.5.2
 pytz~=2021.1
@@ -29,4 +30,3 @@ python-json-logger~=2.0.7
 rlp==1.2.0
 unflatten~=0.1
 qrcode[pil]~=6.1
-peerdid @ git+https://github.com/jsyro/peer-did-python@fix/default_context
