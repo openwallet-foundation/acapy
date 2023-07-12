@@ -36,10 +36,10 @@ class DIDDocWrapper(fields.Field):
         """
         dd = None
         if value["id"].startswith("did:peer:2"):
-            print("peer_did_doc")
+            print("deserailize PeerDIDDoc")
             dd = PeerDIDDoc.deserialize(value)
         else:  # if sov
-            print("sov_did_doc")
+            print("deserailize SovDIDDoc")
             dd = SovDIDDoc.deserialize(value)
         print(dd)
         return dd

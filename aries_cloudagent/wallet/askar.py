@@ -154,7 +154,7 @@ class AskarWallet(BaseWallet):
         did: str = None,
         metadata: dict = None,
         did_doc: DIDDocument = None,
-        verkey_bytes: bytes = None
+        keypair: Key = None
     ) -> DIDInfo:
         """
         Create and store a new local DID.
@@ -183,9 +183,9 @@ class AskarWallet(BaseWallet):
             metadata = {}
 
         try:
-            if not verkey_bytes:
+            if not keypair:
                 keypair = _create_keypair(key_type, seed)
-                verkey_bytes = keypair.get_public_bytes()
+            verkey_bytes = keypair.get_public_bytes()
 
             verkey = bytes_to_b58(verkey_bytes)
             did = did_validation.validate_or_derive_did(

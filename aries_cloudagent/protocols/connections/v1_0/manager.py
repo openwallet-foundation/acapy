@@ -353,6 +353,7 @@ class ConnectionManager(BaseConnectionManager):
             A new `ConnectionRequest` message to send to the other agent
 
         """
+        print(f"create_request: {connection}")
 
         mediation_record = await self._route_manager.mediation_record_for_connection(
             self.profile,
@@ -415,7 +416,7 @@ class ConnectionManager(BaseConnectionManager):
                 self._logger.debug(f"{dd.verification_method[0].material}")
 
 
-                my_info = await wallet.create_local_did(PEER, ED25519, did_doc=dd)
+                my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=dd.id,  did_doc=dd)
                 connection.my_did = my_info.did
 
         # Idempotent; if routing has already been set up, no action taken
@@ -485,6 +486,7 @@ class ConnectionManager(BaseConnectionManager):
             {"request": request},
             settings=self.profile.settings,
         )
+        print(f"receive_request: {request}")
         self._logger.debug("manager:recieve_request.request")
         self._logger.debug(request.__dict__)
         connection = None
@@ -620,6 +622,7 @@ class ConnectionManager(BaseConnectionManager):
         # Clean associated oob record if not needed anymore
         oob_processor = self.profile.inject(OobMessageProcessor)
         await oob_processor.clean_finished_oob_record(self.profile, request)
+        print(f"end receive_request: {connection}")
 
         return connection
 
@@ -692,18 +695,27 @@ class ConnectionManager(BaseConnectionManager):
                     "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
                 }
 
-                self._logger.debug("create_peer_did")
                 peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
                     bytes_to_b58(verkey_bytes), service=service
                 )
-
-                self._logger.debug("resolve_peer_did")
                 did_doc = PeerDIDDoc.resolve_peer_did(peer_did)
-                self._logger.debug(did_doc)
-                self._logger.debug(did_doc.to_json())
                 connection.my_did = peer_did
-                my_info = await wallet.create_local_did(PEER, ED25519, did_doc=did_doc)
 
+                vm = Ed25519VerificationKey2018.make(
+                    id="#resv",
+                    controller=peer_did,
+                    public_key_base58=bytes_to_b58(verkey_bytes),
+                )
+
+                dc_service = DIDCommService.make(
+                    id="#ress",
+                    service_endpoint=self.profile.settings.get("default_endpoint"),
+                    recipient_keys=["#resv"]
+                )
+                dd = DIDDocument.make(id=peer_did,verification_method=[vm],service=[dc_service])
+
+
+                my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=dd.id,  did_doc=dd)
                 self._logger.debug(f"did={my_info.did}, verkey={my_info.verkey}")
                 connection.my_did = my_info.did
                 # my_info = await wallet.create_local_did(SOV, ED25519)
@@ -839,7 +851,7 @@ class ConnectionManager(BaseConnectionManager):
             raise ConnectionManagerError(
                 "No DIDDoc provided; cannot connect to public DID"
             )
-        if their_did != conn_did_doc.did:
+        if their_did != conn_did_doc.id:
             raise ConnectionManagerError("Connection DID does not match DIDDoc id")
         # Verify connection response using connection field
         async with self.profile.session() as session:
