@@ -444,8 +444,6 @@ class BaseConnectionManager:
 
         targets = []
         for service in doc.service:
-            self._logger.debug("base_manager:diddoc_connection_targets:service")
-            self._logger.debug(service)
             if service.recipient_keys:
                 recipient_verkeys = self.resolve_verkey_references(doc,service.recipient_keys)
                 targets.append(

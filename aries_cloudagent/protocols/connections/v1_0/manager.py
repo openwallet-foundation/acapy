@@ -353,8 +353,6 @@ class ConnectionManager(BaseConnectionManager):
             A new `ConnectionRequest` message to send to the other agent
 
         """
-        print(f"create_request: {connection}")
-
         mediation_record = await self._route_manager.mediation_record_for_connection(
             self.profile,
             connection,
@@ -408,8 +406,6 @@ class ConnectionManager(BaseConnectionManager):
                     recipient_keys=["#reqv"]
                 )
                 dd = DIDDocument.make(id=peer_did,verification_method=[vm],service=[dc_service])
-                self._logger.debug(f"my_did_doc verkey")
-                self._logger.debug(f"{dd.verification_method[0].material}")
 
                 my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=dd.id,  did_doc=dd)
                 connection.my_did = my_info.did
@@ -456,8 +452,6 @@ class ConnectionManager(BaseConnectionManager):
 
         async with self.profile.session() as session:
             await connection.save(session, reason="Created connection request")
-        self._logger.debug("manager:create_request.request")
-        self._logger.debug(request)
         return request
 
     async def receive_request(
@@ -481,9 +475,6 @@ class ConnectionManager(BaseConnectionManager):
             {"request": request},
             settings=self.profile.settings,
         )
-        print(f"receive_request: {request}")
-        self._logger.debug("manager:recieve_request.request")
-        self._logger.debug(request.__dict__)
         connection = None
         connection_key = None
         my_info = None
@@ -617,7 +608,6 @@ class ConnectionManager(BaseConnectionManager):
         # Clean associated oob record if not needed anymore
         oob_processor = self.profile.inject(OobMessageProcessor)
         await oob_processor.clean_finished_oob_record(self.profile, request)
-        print(f"end receive_request: {connection}")
 
         return connection
 
@@ -675,7 +665,6 @@ class ConnectionManager(BaseConnectionManager):
             async with self.profile.session() as session:
                 # create peer:did:2
                 wallet = session.inject(BaseWallet)
-                self._logger.debug("prototype code for did doc builder")
                 # Create new DID for connection
 
                 # for peer did, create did_doc first then save did after.
