@@ -536,43 +536,37 @@ def clear_prev_handlers(logger: logging.Logger) -> logging.Logger:
 
 def get_logger_inst(profile: Profile, logger_name) -> logging.Logger:
     """Return a logger instance with provided name and handlers."""
-    logger = None
-    loop = asyncio.get_event_loop()
-    did_ident = loop.run_until_complete(get_did_ident(profile))
+    did_ident = get_did_ident(profile)
     if did_ident:
-        logger = get_logger_with_handlers(
-            settings=profile.settings,
-            logger=logging.getLogger(f"{logger_name}_{did_ident}"),
-            did_ident=did_ident,
-            interval=profile.settings.get("log.handler_interval") or 7,
-            backup_count=profile.settings.get("log.handler_bakcount") or 1,
-            at_when=profile.settings.get("log.handler_when") or "d",
-        )
-    else:
-        logger = get_logger_with_handlers(
-            settings=profile.settings,
-            logger=logging.getLogger(logger_name),
-            interval=profile.settings.get("log.handler_interval") or 7,
-            backup_count=profile.settings.get("log.handler_bakcount") or 1,
-            at_when=profile.settings.get("log.handler_when") or "d",
-        )
-    return logger
+        logger_name = f"{logger_name}_{did_ident}"
+    return get_logger_with_handlers(
+        settings=profile.settings,
+        logger=logging.getLogger(logger_name),
+        did_ident=did_ident,
+        interval=profile.settings.get("log.handler_interval") or 7,
+        backup_count=profile.settings.get("log.handler_bakcount") or 1,
+        at_when=profile.settings.get("log.handler_when") or "d",
+    )
 
 
-async def get_did_ident(profile: Profile) -> Optional[str]:
+def get_did_ident(profile: Profile) -> Optional[str]:
     """Get public did identifier for logging, if applicable."""
     did_ident = None
     if profile.settings.get("log.file"):
-        async with profile.session() as session:
-            wallet = session.inject(BaseWallet)
-            req_did_info: DIDInfo = await wallet.get_public_did()
-            if not req_did_info:
-                req_did_info: DIDInfo = (await wallet.get_local_dids())[0]
-            if req_did_info:
-                did_ident = req_did_info.did
-            return did_ident
-    else:
-        return did_ident
+
+        async def _fetch_did() -> Optional[str]:
+            async with profile.session() as session:
+                wallet = session.inject(BaseWallet)
+                req_did_info: DIDInfo = await wallet.get_public_did()
+                if not req_did_info:
+                    req_did_info: DIDInfo = (await wallet.get_local_dids())[0]
+                if req_did_info:
+                    did_ident = req_did_info.did
+                return did_ident
+
+        loop = asyncio.get_event_loop()
+        did_ident = loop.run_until_complete(_fetch_did())
+    return did_ident
 
 
 def get_logger_with_handlers(
