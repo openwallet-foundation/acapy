@@ -27,6 +27,7 @@ from ....core.profile import Profile
 from ....storage.vc_holder.vc_record import VCRecord
 from ....vc.ld_proofs import (
     Ed25519Signature2018,
+    Ed25519Signature2020,
     BbsBlsSignature2020,
     BbsBlsSignatureProof2020,
     WalletKeyPair,
@@ -76,6 +77,7 @@ class DIFPresExchHandler:
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
         Ed25519Signature2018: ED25519,
+        Ed25519Signature2020: ED25519,
     }
 
     if BbsBlsSignature2020.BBS_SUPPORTED:

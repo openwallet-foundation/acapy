@@ -1,4 +1,4 @@
-TEST_VC_DOCUMENT = {
+TEST_VC_DOCUMENT_SIGNED_ED25519_2020 = {
     "@context": [
         "https://www.w3.org/2018/credentials/v1",
         "https://w3id.org/citizenship/v1",
@@ -26,5 +26,12 @@ TEST_VC_DOCUMENT = {
         "commuterClassification": "C1",
         "birthCountry": "Bahamas",
         "birthDate": "1958-07-17",
+    },
+    "proof": {
+        "created": "2023-05-24T13:39:32.366189+00:00",
+        "proofPurpose": "assertionMethod",
+        "proofValue": "z4piZ4kJk9aytWcsG93sFqozrTuViYHFamCPQmqVTVQX2qSxdp2ipJPnWpXrvv6jdt9Y41xQjTw3DKXPRLPvGZmWx",
+        "type": "Ed25519Signature2020",
+        "verificationMethod": "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL#z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL",
     },
 }

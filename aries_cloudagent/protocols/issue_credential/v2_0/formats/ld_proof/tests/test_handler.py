@@ -22,9 +22,13 @@ from .......vc.ld_proofs import (
     CredentialIssuancePurpose,
     AuthenticationProofPurpose,
     Ed25519Signature2018,
+    Ed25519Signature2020,
     BbsBlsSignature2020,
 )
-from .......vc.ld_proofs.constants import SECURITY_CONTEXT_BBS_URL
+from .......vc.ld_proofs.constants import (
+    SECURITY_CONTEXT_BBS_URL,
+    SECURITY_CONTEXT_ED25519_2020_URL,
+)
 from .......vc.tests.document_loader import custom_document_loader
 from .......wallet.default_verification_key_strategy import (
     DefaultVerificationKeyStrategy,
@@ -89,6 +93,22 @@ LD_PROOF_VC_DETAIL_BBS = {
     },
     "options": {
         "proofType": "BbsBlsSignature2020",
+        "created": "2019-12-11T03:50:55",
+    },
+}
+LD_PROOF_VC_DETAIL_ED25519_2020 = {
+    "credential": {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/2018/credentials/examples/v1",
+        ],
+        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+        "credentialSubject": {"test": "key"},
+        "issuanceDate": "2021-04-12",
+        "issuer": TEST_DID_KEY,
+    },
+    "options": {
+        "proofType": "Ed25519Signature2020",
         "created": "2019-12-11T03:50:55",
     },
 }
@@ -233,6 +253,9 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
             await self.handler._assert_can_issue_with_id_and_proof_type(
                 "did:key:found", Ed25519Signature2018.signature_type
             )
+            await self.handler._assert_can_issue_with_id_and_proof_type(
+                "did:key:found", Ed25519Signature2020.signature_type
+            )
 
             invalid_did_info = DIDInfo(
                 did=TEST_DID_SOV,
@@ -327,6 +350,19 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
         assert suite.key_pair.key_type == ED25519
         assert suite.key_pair.public_key_base58 == did_info.verkey
 
+        suite = await self.handler._get_suite(
+            proof_type=Ed25519Signature2020.signature_type,
+            verification_method="verification_method",
+            proof=proof,
+            did_info=did_info,
+        )
+
+        assert type(suite) == Ed25519Signature2020
+        assert suite.verification_method == "verification_method"
+        assert suite.proof == proof
+        assert suite.key_pair.key_type == ED25519
+        assert suite.key_pair.public_key_base58 == did_info.verkey
+
     async def test_get_proof_purpose(self):
         purpose = self.handler._get_proof_purpose()
         assert type(purpose) == CredentialIssuancePurpose
@@ -360,6 +396,16 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         assert SECURITY_CONTEXT_BBS_URL in detail.credential.context_urls
 
+    async def test_prepare_detail_ed25519_2020(self):
+        detail: LDProofVCDetail = LDProofVCDetail.deserialize(LD_PROOF_VC_DETAIL)
+        detail.options.proof_type = Ed25519Signature2020.signature_type
+
+        assert SECURITY_CONTEXT_ED25519_2020_URL not in detail.credential.context_urls
+
+        detail = await self.handler._prepare_detail(detail)
+
+        assert SECURITY_CONTEXT_ED25519_2020_URL in detail.credential.context_urls
+
     async def test_create_proposal(self):
         cred_ex_record = async_mock.MagicMock()
 
@@ -385,6 +431,19 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         # assert BBS url added to context
         assert SECURITY_CONTEXT_BBS_URL in attachment.content["credential"]["@context"]
+
+    async def test_create_proposal_adds_ed25519_2020_context(self):
+        cred_ex_record = async_mock.MagicMock()
+
+        (cred_format, attachment) = await self.handler.create_proposal(
+            cred_ex_record, deepcopy(LD_PROOF_VC_DETAIL_ED25519_2020)
+        )
+
+        # assert ED25519-2020 url added to context
+        assert (
+            SECURITY_CONTEXT_ED25519_2020_URL
+            in attachment.content["credential"]["@context"]
+        )
 
     async def test_receive_proposal(self):
         cred_ex_record = async_mock.MagicMock()
@@ -443,6 +502,34 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
         # assert BBS url added to context
         assert SECURITY_CONTEXT_BBS_URL in attachment.content["credential"]["@context"]
+
+    async def test_create_offer_adds_ed25519_2020_context(self):
+        cred_proposal = V20CredProposal(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_PROPOSAL][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            filters_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL_ED25519_2020, ident="0")
+            ],
+        )
+
+        with async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_assert_can_issue_with_id_and_proof_type",
+            async_mock.CoroutineMock(),
+        ), patch.object(test_module, "get_properties_without_context", return_value=[]):
+            (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
+
+        # assert BBS url added to context
+        assert (
+            SECURITY_CONTEXT_ED25519_2020_URL
+            in attachment.content["credential"]["@context"]
+        )
 
     async def test_create_offer_x_no_proposal(self):
         with self.assertRaises(V20CredFormatError) as context:
@@ -635,6 +722,54 @@ class TestV20LDProofCredFormatHandler(AsyncTestCase):
 
             mock_issue.assert_called_once_with(
                 credential=credential_with_bbs,
+                suite=mock_get_suite.return_value,
+                document_loader=custom_document_loader,
+                purpose=mock_get_proof_purpose.return_value,
+            )
+
+    async def test_issue_credential_adds_ed25519_2020_context(self):
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.LD_PROOF.api
+                    ],
+                )
+            ],
+            requests_attach=[
+                AttachDecorator.data_base64(LD_PROOF_VC_DETAIL_ED25519_2020, ident="0")
+            ],
+        )
+
+        cred_ex_record = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            cred_request=cred_request,
+        )
+
+        with async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_suite_for_detail",
+            async_mock.CoroutineMock(),
+        ) as mock_get_suite, async_mock.patch.object(
+            test_module, "issue", async_mock.CoroutineMock(return_value=LD_PROOF_VC)
+        ) as mock_issue, async_mock.patch.object(
+            LDProofCredFormatHandler,
+            "_get_proof_purpose",
+        ) as mock_get_proof_purpose:
+            (cred_format, attachment) = await self.handler.issue_credential(
+                cred_ex_record
+            )
+
+            credential_with_ed25519_2020 = deepcopy(
+                LD_PROOF_VC_DETAIL_ED25519_2020["credential"]
+            )
+            credential_with_ed25519_2020["@context"].append(
+                SECURITY_CONTEXT_ED25519_2020_URL
+            )
+
+            mock_issue.assert_called_once_with(
+                credential=credential_with_ed25519_2020,
                 suite=mock_get_suite.return_value,
                 document_loader=custom_document_loader,
                 purpose=mock_get_proof_purpose.return_value,

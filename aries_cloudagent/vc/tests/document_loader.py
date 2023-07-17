@@ -6,6 +6,7 @@ from .contexts import (
     CREDENTIALS_V1,
     EXAMPLES_V1,
     BBS_V1,
+    ED25519_2020_V1,
     CITIZENSHIP_V1,
     VACCINATION_V1,
     ODRL,
@@ -18,6 +19,7 @@ from ..ld_proofs.constants import (
     SECURITY_CONTEXT_BBS_URL,
     CREDENTIALS_CONTEXT_V1_URL,
     SECURITY_CONTEXT_V3_URL,
+    SECURITY_CONTEXT_ED25519_2020_URL,
 )
 from .dids import (
     DID_z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL,
@@ -41,6 +43,7 @@ DOCUMENTS = {
     DID_V1_CONTEXT_URL: DID_V1,
     CREDENTIALS_CONTEXT_V1_URL: CREDENTIALS_V1,
     SECURITY_CONTEXT_BBS_URL: BBS_V1,
+    SECURITY_CONTEXT_ED25519_2020_URL: ED25519_2020_V1,
     "https://www.w3.org/2018/credentials/examples/v1": EXAMPLES_V1,
     "https://w3id.org/citizenship/v1": CITIZENSHIP_V1,
     "https://www.w3.org/ns/odrl.jsonld": ODRL,

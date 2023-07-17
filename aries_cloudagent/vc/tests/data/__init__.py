@@ -17,7 +17,11 @@ from .bbs_vc_reveal_document_mattr import BBS_VC_REVEAL_DOCUMENT_MATTR
 from .test_ld_document_bad_signed_bbs import TEST_LD_DOCUMENT_BAD_SIGNED_BBS
 from .test_ld_document_signed_bbs import TEST_LD_DOCUMENT_SIGNED_BBS
 from .test_ld_document_bad_signed_ed25519 import TEST_LD_DOCUMENT_BAD_SIGNED_ED25519
+from .test_ld_document_bad_signed_ed25519_2020 import (
+    TEST_LD_DOCUMENT_BAD_SIGNED_ED25519_2020,
+)
 from .test_ld_document_signed_ed25519 import TEST_LD_DOCUMENT_SIGNED_ED25519
+from .test_ld_document_signed_ed25519_2020 import TEST_LD_DOCUMENT_SIGNED_ED25519_2020
 from .test_ld_document import TEST_LD_DOCUMENT
 from .test_ld_document_reveal import TEST_LD_DOCUMENT_REVEAL
 from .test_ld_document_reveal_all import TEST_LD_DOCUMENT_REVEAL_ALL
@@ -36,6 +40,7 @@ from .test_vc_document_partial_proof_bbs import TEST_VC_DOCUMENT_PARTIAL_PROOF_B
 from .test_vc_document_reveal import TEST_VC_DOCUMENT_REVEAL
 from .test_vc_document_signed_bbs import TEST_VC_DOCUMENT_SIGNED_BBS
 from .test_vc_document_signed_ed25519 import TEST_VC_DOCUMENT_SIGNED_ED25519
+from .test_vc_document_signed_ed25519_2020 import TEST_VC_DOCUMENT_SIGNED_ED25519_2020
 from .test_vc_document import TEST_VC_DOCUMENT
 from .test_vc_document_did_key_ed25519 import TEST_VC_DOCUMENT_DID_KEY_ED25519
 from .test_vc_document_signed_did_key_ed25519 import (
@@ -58,7 +63,9 @@ __all__ = [
     "TEST_LD_DOCUMENT_BAD_SIGNED_BBS",
     "TEST_LD_DOCUMENT_SIGNED_BBS",
     "TEST_LD_DOCUMENT_BAD_SIGNED_ED25519",
+    "TEST_LD_DOCUMENT_BAD_SIGNED_ED25519_2020",
     "TEST_LD_DOCUMENT_SIGNED_ED25519",
+    "TEST_LD_DOCUMENT_SIGNED_ED25519_2020",
     "TEST_LD_DOCUMENT",
     "TEST_LD_DOCUMENT_REVEAL",
     "TEST_LD_DOCUMENT_REVEAL_ALL",
@@ -73,6 +80,7 @@ __all__ = [
     "TEST_VC_DOCUMENT_REVEAL",
     "TEST_VC_DOCUMENT_SIGNED_BBS",
     "TEST_VC_DOCUMENT_SIGNED_ED25519",
+    "TEST_VC_DOCUMENT_SIGNED_ED25519_2020",
     "TEST_VC_DOCUMENT",
     "TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519",
     "TEST_VC_DOCUMENT_DID_KEY_ED25519",
