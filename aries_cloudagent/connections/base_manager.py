@@ -309,7 +309,8 @@ class BaseConnectionManager:
                     return bytes_to_b58(key)
                 else:
                     raise BaseConnectionManagerError(
-                        f"Key type {type(method).__name__} with multicodec value {codec} is not supported"
+                        f"Key type {type(method).__name__} "
+                        f"with multicodec value {codec} is not supported"
                     )
 
         elif isinstance(method, JsonWebKey2020):
@@ -317,7 +318,7 @@ class BaseConnectionManager:
                 return bytes_to_b58(b64_to_bytes(method.public_key_jwk.get("x"), True))
             else:
                 raise BaseConnectionManagerError(
-                    f"Key type {type(method).__name__}"
+                    f"Key type {type(method).__name__} "
                     f"with kty {method.public_key_jwk.get('kty')} is not supported"
                 )
         else:
