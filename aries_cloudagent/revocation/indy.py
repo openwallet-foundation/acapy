@@ -19,6 +19,7 @@ from ..storage.base import StorageNotFoundError
 
 from .error import (
     RevocationError,
+    RevocationInvalidStateValueError,
     RevocationNotSupportedError,
     RevocationRegistryBadSizeError,
 )
@@ -105,25 +106,42 @@ class IndyRevocation:
 
         return record
 
-    async def handle_full_registry(self, revoc_reg_id: str):
+    async def handle_full_registry(self, revoc_reg_id: str) -> IssuerRevRegRecord:
         """Update the registry status and start the next registry generation."""
+        return await self._set_registry_status_registry(
+            revoc_reg_id, IssuerRevRegRecord.STATE_FULL
+        )
+
+    async def decommission_registry(self, revoc_reg_id: str) -> IssuerRevRegRecord:
+        """Update the registry status and start the next registry generation."""
+        return await self._set_registry_status_registry(
+            revoc_reg_id, IssuerRevRegRecord.STATE_DECOMMISSIONED
+        )
+
+    async def _set_registry_status_registry(self, revoc_reg_id: str, state: str):
+        """Update the registry status and start the next registry generation."""
+        if state not in IssuerRevRegRecord.STATES:
+            raise RevocationInvalidStateValueError(
+                reason=f"{state} is not a valid Revocation Registry state value."
+            )
         async with self._profile.transaction() as txn:
             registry = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
                 txn, revoc_reg_id, for_update=True
             )
-            if registry.state == IssuerRevRegRecord.STATE_FULL:
+            if registry.state == state:
                 return
             await registry.set_state(
                 txn,
-                IssuerRevRegRecord.STATE_FULL,
+                state,
             )
             await txn.commit()
 
-        await self.init_issuer_registry(
-            registry.cred_def_id,
-            registry.max_cred_num,
-            registry.revoc_def_type,
-        )
+        if state in IssuerRevRegRecord.TERMINAL_STATES:
+            return await self.init_issuer_registry(
+                registry.cred_def_id,
+                registry.max_cred_num,
+                registry.revoc_def_type,
+            )
 
     async def get_active_issuer_rev_reg_record(
         self, cred_def_id: str

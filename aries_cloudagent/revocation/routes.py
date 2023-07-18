@@ -538,6 +538,34 @@ async def clear_pending_revocations(request: web.BaseRequest):
     return web.json_response({"rrid2crid": results})
 
 
+@docs(tags=["revocation"], summary="Decommision revocation registry")
+@match_info_schema(RevRegIdMatchInfoSchema())
+@response_schema(RevRegResultSchema(), 200, description="")
+async def decommission_rev_reg(request: web.BaseRequest):
+    """
+    Request handler to decommision an existing revocation registry.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The issuer revocation registry record
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile = context.profile
+    rev_reg_id = request.match_info["rev_reg_id"]
+
+    try:
+        revoc = IndyRevocation(profile)
+        issuer_rev_reg_rec = await revoc.decommission_registry(rev_reg_id)
+        del revoc
+    except RevocationNotSupportedError as e:
+        raise web.HTTPBadRequest(reason=e.message) from e
+
+    return web.json_response({"result": issuer_rev_reg_rec.serialize()})
+
+
 @docs(tags=["revocation"], summary="Creates a new revocation registry")
 @request_schema(RevRegCreateRequestSchema())
 @response_schema(RevRegResultSchema(), 200, description="")
@@ -1584,6 +1612,9 @@ async def register(app: web.Application):
                 "/revocation/registry/{rev_reg_id}/issued/indy_recs",
                 get_rev_reg_indy_recs,
                 allow_head=False,
+            ),
+            web.post(
+                "/revocation/registry/{rev_reg_id}/decommission", decommission_rev_reg
             ),
             web.post("/revocation/create-registry", create_rev_reg),
             web.post("/revocation/registry/{rev_reg_id}/definition", send_rev_reg_def),
