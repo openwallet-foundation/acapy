@@ -10,6 +10,7 @@ from hashlib import sha256
 from typing import List, Sequence, Tuple, Union
 
 from ..indy.issuer import DEFAULT_CRED_DEF_TAG, IndyIssuer, IndyIssuerError
+from ..messaging.valid import IndyDID
 from ..utils import sentinel
 from ..wallet.did_info import DIDInfo
 
@@ -294,6 +295,11 @@ class BaseLedger(ABC, metaclass=ABCMeta):
         public_info = await self.get_wallet_public_did()
         if not public_info:
             raise BadLedgerRequestError("Cannot publish schema without a public DID")
+
+        if not bool(IndyDID.PATTERN.match(public_info.did)):
+            raise BadLedgerRequestError(
+                "Cannot publish schema when public DID is not an IndyDID"
+            )
 
         schema_info = await self.check_existing_schema(
             public_info.did, schema_name, schema_version, attribute_names

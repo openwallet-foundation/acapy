@@ -10,8 +10,9 @@ from ...core.in_memory import InMemoryProfile
 from ...indy.issuer import IndyIssuer
 from ...wallet.base import BaseWallet
 from ...wallet.key_type import KeyType, ED25519
-from ...wallet.did_method import SOV, DIDMethods
+from ...wallet.did_method import SOV, DIDMethods, DIDMethod, HolderDefinedDid
 from ...wallet.did_info import DIDInfo
+from ...wallet.did_posture import DIDPosture
 
 from ..endpoint_type import EndpointType
 from ..indy_vdr import (
@@ -25,10 +26,19 @@ from ..indy_vdr import (
     VdrError,
 )
 
+WEB = DIDMethod(
+    name="web",
+    key_types=[ED25519],
+    rotation=True,
+    holder_defined_did=HolderDefinedDid.REQUIRED,
+)
+
 
 @pytest.fixture()
 def ledger():
-    profile = InMemoryProfile.test_profile(bind={DIDMethods: DIDMethods()})
+    did_methods = DIDMethods()
+    did_methods.register(WEB)
+    profile = InMemoryProfile.test_profile(bind={DIDMethods: did_methods})
     ledger = IndyVdrLedger(IndyVdrLedgerPool("test-ledger"), profile)
 
     async def open():
@@ -342,6 +352,28 @@ class TestIndyVdrLedger:
                     )
 
     @pytest.mark.asyncio
+    async def test_send_schema_no_indy_did(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        wallet = async_mock.MagicMock((await ledger.profile.session()).wallet)
+        wallet.create_public_did.return_value = {
+            "result": {
+                "did": "did:web:doma.in",
+                "verkey": "verkey",
+                "posture": DIDPosture.PUBLIC.moniker,
+                "key_type": ED25519.key_type,
+                "method": WEB.method_name,
+            }
+        }
+        issuer = async_mock.MagicMock(IndyIssuer)
+        async with ledger:
+            with pytest.raises(BadLedgerRequestError):
+                schema_id, schema_def = await ledger.create_and_send_schema(
+                    issuer, "schema_name", "9.1", ["a", "b"]
+                )
+
+    @pytest.mark.asyncio
     async def test_get_schema(
         self,
         ledger: IndyVdrLedger,
@@ -520,6 +552,26 @@ class TestIndyVdrLedger:
         ledger: IndyVdrLedger,
     ):
         async with ledger:
+            ledger.pool_handle.submit_request.return_value = {
+                "data": r'{"verkey": "VK"}',
+            }
+            result = await ledger.get_key_for_did("55GkHamhTU1ZbTbV2ab9DE")
+            assert result == "VK"
+
+    @pytest.mark.asyncio
+    async def test_get_key_for_did_non_sov_public_did(
+        self,
+        ledger: IndyVdrLedger,
+    ):
+        async with ledger:
+            wallet = async_mock.MagicMock((await ledger.profile.session()).wallet)
+            wallet.get_public_did.return_value = DIDInfo(
+                "did:web:doma.in",
+                "verkey",
+                DIDPosture.PUBLIC.metadata,
+                WEB,
+                ED25519,
+            )
             ledger.pool_handle.submit_request.return_value = {
                 "data": r'{"verkey": "VK"}',
             }
