@@ -17,6 +17,7 @@ from ....core.oob_processor import OobMessageProcessor
 from ....core.profile import Profile
 from ....did.did_key import DIDKey
 from ....messaging.responder import BaseResponder
+from ....messaging.valid import IndyDID
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -223,12 +224,16 @@ class OutOfBandManager(BaseConnectionManager):
                     "Cannot create public invitation with no public DID"
                 )
 
+            public_did_did = public_did.did
+            if bool(IndyDID.PATTERN.match(public_did.did)):
+                public_did_did = f"did:sov:{public_did.did}"
+
             invi_msg = InvitationMessage(  # create invitation message
                 _id=invitation_message_id,
                 label=my_label or self.profile.settings.get("default_label"),
                 handshake_protocols=handshake_protocols,
                 requests_attach=message_attachments,
-                services=[f"did:sov:{public_did.did}"],
+                services=[public_did_did],
                 accept=service_accept if protocol_version != "1.0" else None,
                 version=protocol_version or DEFAULT_VERSION,
                 image_url=image_url,
@@ -446,7 +451,10 @@ class OutOfBandManager(BaseConnectionManager):
         # Get the DID public did, if any
         public_did = None
         if isinstance(oob_service_item, str):
-            public_did = oob_service_item.split(":")[-1]
+            if bool(IndyDID.PATTERN.match(oob_service_item)):
+                public_did = oob_service_item.split(":")[-1]
+            else:
+                public_did = oob_service_item
 
         conn_rec = None
 
