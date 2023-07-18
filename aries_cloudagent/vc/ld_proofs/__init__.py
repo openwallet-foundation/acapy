@@ -12,6 +12,7 @@ from .suites import (
     _LinkedDataSignature as LinkedDataSignature,
     _JwsLinkedDataSignature as JwsLinkedDataSignature,
     _Ed25519Signature2018 as Ed25519Signature2018,
+    _Ed25519Signature2020 as Ed25519Signature2020,
     _BbsBlsSignature2020 as BbsBlsSignature2020,
     _BbsBlsSignatureProof2020 as BbsBlsSignatureProof2020,
 )
@@ -43,6 +44,7 @@ __all__ = [
     "LinkedDataSignature",
     "JwsLinkedDataSignature",
     "Ed25519Signature2018",
+    "Ed25519Signature2020",
     "BbsBlsSignature2020",
     "BbsBlsSignatureProof2020",
     # Key pairs

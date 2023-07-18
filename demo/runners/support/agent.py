@@ -392,6 +392,8 @@ class DemoAgent:
         if self.revocation:
             # turn on notifications if revocation is enabled
             result.append("--notify-revocation")
+        # enable extended webhooks
+        result.append("--debug-webhooks")
         # always enable notification webhooks
         result.append("--monitor-revocation-notification")
 
