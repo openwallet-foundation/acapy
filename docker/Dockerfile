@@ -78,12 +78,13 @@ RUN usermod -a -G 0 $user
 RUN mkdir -p \
     $HOME/.aries_cloudagent \
     $HOME/.cache/pip/http \
+    $HOME/.indy_client \
     $HOME/ledger/sandbox/data \
     $HOME/log
 
-# The root group needs access the directories under $HOME/.aries_cloudagent for the container to function in OpenShift.
-RUN chown -R $user:root $HOME/.aries_cloudagent && \
-    chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache
+# The root group needs access the directories under $HOME/.indy_client and $HOME/.aries_cloudagent for the container to function in OpenShift.
+RUN chown -R $user:root $HOME/.indy_client $HOME/.aries_cloudagent && \
+    chmod -R ug+rw $HOME/log $HOME/ledger $HOME/.aries_cloudagent $HOME/.cache $HOME/.indy_client
 
 # Install ACA-py from the wheel as $user,
 # and ensure the permissions on the python 'site-packages' and $HOME/.local folders are set correctly.
