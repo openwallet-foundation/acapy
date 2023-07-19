@@ -384,7 +384,7 @@ class SetRevRegStateQueryStringSchema(OpenAPISchema):
             [
                 getattr(IssuerRevRegRecord, m)
                 for m in vars(IssuerRevRegRecord)
-                if m.startswith("STATE_")
+                if m.startswith("STATE_") and m != "STATE_DECOMMISSIONED"
             ]
         ),
     )

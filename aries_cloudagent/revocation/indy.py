@@ -115,25 +115,28 @@ class IndyRevocation:
         )
 
     async def decommission_registry(self, cred_def_id: str):
-        """Decommission active registries and start the next registry generation."""
+        """Decommission post-init registries and start the next registry generation."""
         async with self._profile.session() as session:
-            active = sorted(
-                await IssuerRevRegRecord.query_by_cred_def_id(
-                    session, cred_def_id, IssuerRevRegRecord.STATE_ACTIVE
-                )
+            registries = await IssuerRevRegRecord.query_by_cred_def_id(
+                session, cred_def_id
             )
 
+        # decommission everything except init
+        recs = list(
+            filter(lambda r: r.state != IssuerRevRegRecord.STATE_INIT, registries)
+        )
+
         init = True
-        for reg in active:
-            LOGGER.info("decommission active rev. reg.")
-            LOGGER.info(f"revoc_reg_id: {reg.revoc_reg_id}")
-            LOGGER.info(f"cred_def_id: {cred_def_id}")
+        for rec in recs:
+            LOGGER.debug(f"decommission {rec.state} rev. reg.")
+            LOGGER.debug(f"revoc_reg_id: {rec.revoc_reg_id}")
+            LOGGER.debug(f"cred_def_id: {cred_def_id}")
             await self._set_registry_status_registry(
-                reg.revoc_reg_id, IssuerRevRegRecord.STATE_DECOMMISSIONED, init
+                rec.revoc_reg_id, IssuerRevRegRecord.STATE_DECOMMISSIONED, init
             )
             init = False  # only call init once.
 
-        return active
+        return recs
 
     async def _set_registry_status_registry(
         self, revoc_reg_id: str, state: str, init: bool = True

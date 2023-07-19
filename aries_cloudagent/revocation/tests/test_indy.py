@@ -172,7 +172,7 @@ class TestIndyRevocation(AsyncTestCase):
         # store the ids to verify they are decommissioned
         rev_reg_ids = [rec.revoc_reg_id for rec in recs if rec.revoc_reg_id]
 
-        # need these to be active so we can decommission
+        # need these to be not init so we can decommission
         async with self.profile.transaction() as txn:
             for rec in recs:
                 registry = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(

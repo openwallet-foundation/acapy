@@ -296,6 +296,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state not in (
             IssuerRevRegRecord.STATE_POSTED,
             IssuerRevRegRecord.STATE_ACTIVE,
+            IssuerRevRegRecord.STATE_DECOMMISSIONED,
             IssuerRevRegRecord.STATE_FULL,  # can still publish revocation deltas
         ):
             raise RevocationError(
