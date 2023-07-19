@@ -154,7 +154,7 @@ class TestIndyRevocation(AsyncTestCase):
 
         assert len(await self.revoc.list_issuer_registries()) == 2
 
-    async def test_decommision_issuer_registries(self):
+    async def test_decommission_issuer_registries(self):
         CRED_DEF_ID = [f"{self.test_did}:3:CL:{i}:default" for i in (4321, 8765)]
 
         for cd_id in CRED_DEF_ID:
