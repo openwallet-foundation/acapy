@@ -198,7 +198,7 @@ class BaseConnectionManager:
             for key in did_doc.pubkey.values():
                 if key.controller == did_doc.id:
                     await self.add_key_for_did(did_doc.id, key.value)
-        for vm in did_doc.verification_method:
+        for vm in did_doc.verification_method or []:
             if vm.controller == did_doc.id: 
                 if vm.public_key_base58:
                     await self.add_key_for_did(did_doc.id, vm.public_key_base58)
@@ -420,11 +420,13 @@ class BaseConnectionManager:
         result = []
         for vor in values_or_refs:
             resource = did_doc.dereference(vor)
+            if not resource:
+                result.append(vor)  
             if issubclass(resource.__class__, VerificationMethod):
             #insert original object for now
                 result.append(resource.material)
             else:
-                raise Exception(f"do not know the desired value to object of type {resource.__class__}")
+                self._logger.error(f"do not know the desired value to object of type {resource.__class__}.")
         return result
 
 
@@ -449,20 +451,19 @@ class BaseConnectionManager:
 
         targets = []
         for service in doc.service:
-            if service.recipient_keys:
-                recipient_verkeys = self.resolve_verkey_references(doc,service.recipient_keys)
-                targets.append(
-                    ConnectionTarget(
-                        did=doc.id,
-                        endpoint=service.service_endpoint,
-                        label=their_label,
-                        recipient_keys=recipient_verkeys,
-                        routing_keys=[
-                            key.value for key in (service.routing_keys or ())
-                        ],
-                        sender_key=sender_verkey,
-                    )
+            recipient_verkeys = self.resolve_verkey_references(doc,service.recipient_keys)
+            targets.append(
+                ConnectionTarget(
+                    did=doc.id,
+                    endpoint=service.service_endpoint,
+                    label=their_label,
+                    recipient_keys=recipient_verkeys,
+                    routing_keys=[
+                        key.value for key in (service.routing_keys or ())
+                    ],
+                    sender_key=sender_verkey,
                 )
+            )
         return targets
     
 
@@ -475,4 +476,5 @@ class BaseConnectionManager:
         async with self._profile.session() as session:
             storage = session.inject(BaseStorage)
             record = await storage.find_record(self.RECORD_TYPE_DID_DOC, {"did": did})
+        print(record)
         return DIDDocument.from_json(record.value), record

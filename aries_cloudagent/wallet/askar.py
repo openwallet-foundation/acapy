@@ -153,7 +153,6 @@ class AskarWallet(BaseWallet):
         seed: str = None,
         did: str = None,
         metadata: dict = None,
-        did_doc: DIDDocument = None,
         keypair: Key = None
     ) -> DIDInfo:
         """
@@ -189,7 +188,7 @@ class AskarWallet(BaseWallet):
 
             verkey = bytes_to_b58(verkey_bytes)
             did = did_validation.validate_or_derive_did(
-                method, key_type, verkey_bytes, did, did_doc
+                method, key_type, verkey_bytes, did
             )
 
             try:

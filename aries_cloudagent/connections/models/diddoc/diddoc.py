@@ -105,8 +105,6 @@ class SovDIDDoc(DIDDocument):
         Returns: the current DIDDoc
 
         """
-        print("diddoc.set")
-        print(self)
         if isinstance(item, Service):
             self._service[item.id] = item
         elif isinstance(item, PublicKey):

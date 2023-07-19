@@ -41,16 +41,15 @@ class DIDParametersValidation:
         key_type: KeyType,
         verkey: bytes,
         did: Optional[str],
-        did_doc: Optional[DIDDocument],
     ) -> str:
         """
         Validate compatibility of the provided did (if any) with the given DID method.
 
         If no DID was provided, automatically derive one for methods that support it.
         """
-        if method == PEER and did_doc:
+        if method == PEER and did:
             #assume numalgo 2
-            return did_doc.id
+            return did
         if method.holder_defined_did() == HolderDefinedDid.NO and did:
             raise WalletError(
                 f"Not allowed to set DID for DID method '{method.method_name}'"

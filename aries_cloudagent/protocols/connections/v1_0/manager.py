@@ -5,9 +5,6 @@ from typing import Coroutine, Optional, Sequence, Tuple, cast
 from peerdid.dids import (
     DIDDocumentBuilder,
     DIDDocument,
-    resolve_peer_did,
-    create_peer_did_numalgo_2,
-    _build_did_doc_numalgo_2,
 )
 from pydid import DIDCommService
 from peerdid.keys import Ed25519VerificationKey2018, Ed25519VerificationKey
@@ -676,7 +673,7 @@ class ConnectionManager(BaseConnectionManager):
                 service = {
                     "type": "DIDCommMessaging",
                     "serviceEndpoint": self.profile.settings.get("default_endpoint"),
-                    "accept": ["didcomm/v2", "didcomm/aip2;env=rfc587"],
+                    "recipient_keys":[]
                 }
 
                 peer_did = PeerDIDDoc.create_peer_did_2_from_verkey(
@@ -684,21 +681,7 @@ class ConnectionManager(BaseConnectionManager):
                 )
                 connection.my_did = peer_did
 
-                vm = Ed25519VerificationKey2018.make(
-                    id="#resv",
-                    controller=peer_did,
-                    public_key_base58=bytes_to_b58(verkey_bytes),
-                )
-
-                dc_service = DIDCommService.make(
-                    id="#ress",
-                    service_endpoint=self.profile.settings.get("default_endpoint"),
-                    recipient_keys=["#resv"]
-                )
-                dd = DIDDocument.make(id=peer_did,verification_method=[vm],service=[dc_service])
-
-
-                my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=dd.id,  did_doc=dd)
+                my_info = await wallet.create_local_did(PEER, ED25519,keypair=keypair, did=peer_did)
                 connection.my_did = my_info.did
                 # my_info = await wallet.create_local_did(SOV, ED25519)
 
