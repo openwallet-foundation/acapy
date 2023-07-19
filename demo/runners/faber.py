@@ -46,6 +46,7 @@ class FaberAgent(AriesAgent):
         no_auto: bool = False,
         endorser_role: str = None,
         revocation: bool = False,
+        anoncreds_legacy_revocation: str = None,
         **kwargs,
     ):
         super().__init__(
@@ -56,6 +57,7 @@ class FaberAgent(AriesAgent):
             no_auto=no_auto,
             endorser_role=endorser_role,
             revocation=revocation,
+            anoncreds_legacy_revocation=anoncreds_legacy_revocation,
             **kwargs,
         )
         self.connection_id = None
@@ -400,6 +402,7 @@ async def main(args):
             seed=faber_agent.seed,
             aip=faber_agent.aip,
             endorser_role=faber_agent.endorser_role,
+            anoncreds_legacy_revocation=faber_agent.anoncreds_legacy_revocation,
         )
 
         faber_schema_name = "degree schema"

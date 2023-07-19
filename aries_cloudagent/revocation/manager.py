@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Mapping, Sequence, Text
+from typing import Mapping, Sequence, Text, Tuple
 
 from ..protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
@@ -135,7 +135,10 @@ class RevocationManager:
             # pick up pending revocations on input revocation registry
             crids = (issuer_rr_rec.pending_pub or []) + [cred_rev_id]
             (delta_json, _) = await issuer.revoke_credentials(
-                issuer_rr_rec.revoc_reg_id, issuer_rr_rec.tails_local_path, crids
+                issuer_rr_rec.cred_def_id,
+                issuer_rr_rec.revoc_reg_id,
+                issuer_rr_rec.tails_local_path,
+                crids,
             )
             async with self._profile.transaction() as txn:
                 issuer_rr_upd = await IssuerRevRegRecord.retrieve_by_id(
@@ -162,7 +165,7 @@ class RevocationManager:
         apply_ledger_update: bool,
         rev_reg_record: IssuerRevRegRecord,
         genesis_transactions: dict,
-    ) -> (dict, dict, dict):
+    ) -> Tuple[dict, dict, dict]:
         """
         Request handler to fix ledger entry of credentials revoked against registry.
 
@@ -226,6 +229,7 @@ class RevocationManager:
                 crids = crids.intersection(limit_crids)
             if crids:
                 (delta_json, failed_crids) = await issuer.revoke_credentials(
+                    issuer_rr_rec.cred_def_id,
                     issuer_rr_rec.revoc_reg_id,
                     issuer_rr_rec.tails_local_path,
                     crids,
