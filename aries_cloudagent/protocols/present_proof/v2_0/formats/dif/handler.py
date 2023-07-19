@@ -15,6 +15,7 @@ from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.ld_proofs import (
     DocumentLoader,
     Ed25519Signature2018,
+    Ed25519Signature2020,
     BbsBlsSignature2020,
     BbsBlsSignatureProof2020,
     WalletKeyPair,
@@ -57,6 +58,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
 
     ISSUE_SIGNATURE_SUITE_KEY_TYPE_MAPPING = {
         Ed25519Signature2018: ED25519,
+        Ed25519Signature2020: ED25519,
     }
 
     if BbsBlsSignature2020.BBS_SUPPORTED:
@@ -258,10 +260,16 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                     Ed25519Signature2018.signature_type
                                     not in proof_types
                                 )
+                                and (
+                                    Ed25519Signature2020.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise V20PresFormatHandlerError(
                                     "Only BbsBlsSignature2020 and/or "
-                                    "Ed25519Signature2018 signature types "
+                                    "Ed25519Signature2018 and/or "
+                                    "Ed25519Signature2018 and/or "
+                                    "Ed25519Signature2020 signature types "
                                     "are supported"
                                 )
                             elif (
@@ -274,10 +282,14 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                     Ed25519Signature2018.signature_type
                                     not in proof_types
                                 )
+                                and (
+                                    Ed25519Signature2020.signature_type
+                                    not in proof_types
+                                )
                             ):
                                 raise V20PresFormatHandlerError(
-                                    "Only BbsBlsSignature2020 and "
-                                    "Ed25519Signature2018 signature types "
+                                    "Only BbsBlsSignature2020, Ed25519Signature2018 and "
+                                    "Ed25519Signature2020 signature types "
                                     "are supported"
                                 )
                             else:
@@ -307,8 +319,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     else:
                         raise V20PresFormatHandlerError(
                             "Currently, only ldp_vp with "
-                            "BbsBlsSignature2020 and Ed25519Signature2018"
-                            " signature types are supported"
+                            "BbsBlsSignature2020, Ed25519Signature2018 and "
+                            "Ed25519Signature2020 signature types are supported"
                         )
                 if one_of_uri_groups:
                     records = []

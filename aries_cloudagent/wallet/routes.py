@@ -26,6 +26,7 @@ from ..messaging.valid import (
     GENERIC_DID,
     INDY_DID,
     INDY_RAW_PUBLIC_KEY,
+    IndyDID,
     JWT,
     Uri,
 )
@@ -604,53 +605,60 @@ async def promote_wallet_public_did(
     """Promote supplied DID to the wallet public DID."""
     info: DIDInfo = None
     endorser_did = None
+
+    is_indy_did = bool(IndyDID.PATTERN.match(did))
+    # write only Indy DID
+    write_ledger = is_indy_did and write_ledger
+
     ledger = profile.inject_or(BaseLedger)
-    if not ledger:
-        reason = "No ledger available"
-        if not context.settings.get_value("wallet.type"):
-            reason += ": missing wallet-type?"
-        raise PermissionError(reason)
 
-    async with ledger:
-        if not await ledger.get_key_for_did(did):
-            raise LookupError(f"DID {did} is not posted to the ledger")
+    if is_indy_did:
+        if not ledger:
+            reason = "No ledger available"
+            if not context.settings.get_value("wallet.type"):
+                reason += ": missing wallet-type?"
+            raise PermissionError(reason)
 
-    # check if we need to endorse
-    if is_author_role(profile):
-        # authors cannot write to the ledger
-        write_ledger = False
+        async with ledger:
+            if not await ledger.get_key_for_did(did):
+                raise LookupError(f"DID {did} is not posted to the ledger")
 
-        # author has not provided a connection id, so determine which to use
-        if not connection_id:
-            connection_id = await get_endorser_connection_id(profile)
-        if not connection_id:
-            raise web.HTTPBadRequest(reason="No endorser connection found")
-    if not write_ledger:
-        try:
+        # check if we need to endorse
+        if is_author_role(profile):
+            # authors cannot write to the ledger
+            write_ledger = False
+
+            # author has not provided a connection id, so determine which to use
+            if not connection_id:
+                connection_id = await get_endorser_connection_id(profile)
+            if not connection_id:
+                raise web.HTTPBadRequest(reason="No endorser connection found")
+        if not write_ledger:
+            try:
+                async with profile.session() as session:
+                    connection_record = await ConnRecord.retrieve_by_id(
+                        session, connection_id
+                    )
+            except StorageNotFoundError as err:
+                raise web.HTTPNotFound(reason=err.roll_up) from err
+            except BaseModelError as err:
+                raise web.HTTPBadRequest(reason=err.roll_up) from err
+
             async with profile.session() as session:
-                connection_record = await ConnRecord.retrieve_by_id(
-                    session, connection_id
+                endorser_info = await connection_record.metadata_get(
+                    session, "endorser_info"
                 )
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except BaseModelError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        async with profile.session() as session:
-            endorser_info = await connection_record.metadata_get(
-                session, "endorser_info"
-            )
-        if not endorser_info:
-            raise web.HTTPForbidden(
-                reason="Endorser Info is not set up in "
-                "connection metadata for this connection record"
-            )
-        if "endorser_did" not in endorser_info.keys():
-            raise web.HTTPForbidden(
-                reason=' "endorser_did" is not set in "endorser_info"'
-                " in connection metadata for this connection record"
-            )
-        endorser_did = endorser_info["endorser_did"]
+            if not endorser_info:
+                raise web.HTTPForbidden(
+                    reason="Endorser Info is not set up in "
+                    "connection metadata for this connection record"
+                )
+            if "endorser_did" not in endorser_info.keys():
+                raise web.HTTPForbidden(
+                    reason=' "endorser_did" is not set in "endorser_info"'
+                    " in connection metadata for this connection record"
+                )
+            endorser_did = endorser_info["endorser_did"]
 
     did_info: DIDInfo = None
     attrib_def = None
@@ -663,7 +671,7 @@ async def promote_wallet_public_did(
         # Publish endpoint if necessary
         endpoint = did_info.metadata.get("endpoint")
 
-        if not endpoint:
+        if is_indy_did and not endpoint:
             async with session_fn() as session:
                 wallet = session.inject_or(BaseWallet)
                 endpoint = mediator_endpoint or context.settings.get("default_endpoint")

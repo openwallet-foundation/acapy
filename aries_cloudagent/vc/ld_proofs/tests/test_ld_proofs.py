@@ -12,6 +12,7 @@ from ....core.in_memory import InMemoryProfile
 from ...ld_proofs import (
     sign,
     Ed25519Signature2018,
+    Ed25519Signature2020,
     WalletKeyPair,
     AssertionProofPurpose,
     verify,
@@ -25,10 +26,13 @@ from .test_doc import (
     DOC_DERIVED_BBS,
     DOC_SIGNED_BBS,
     DOC_TEMPLATE,
+    DOC_TEMPLATE_2020,
     DOC_SIGNED,
+    DOC_SIGNED_2020,
     DOC_TEMPLATE_BBS,
     DOC_FRAME_BBS,
     DOC_VERIFIED,
+    DOC_VERIFIED_2020,
 )
 
 
@@ -76,6 +80,28 @@ class TestLDProofs(TestCase):
 
         assert signed == DOC_SIGNED
 
+    async def test_sign_Ed25519Signature2020(self):
+        # Use different key pair and suite for signing and verification
+        # as during verification a lot of information can be extracted
+        # from the proof / document
+        suite = Ed25519Signature2020(
+            verification_method=self.ed25519_verification_method,
+            key_pair=WalletKeyPair(
+                wallet=self.wallet,
+                key_type=ED25519,
+                public_key_base58=self.ed25519_key_info.verkey,
+            ),
+            date=datetime(2019, 12, 11, 3, 50, 55, 0, timezone.utc),
+        )
+        signed = await sign(
+            document=DOC_TEMPLATE_2020,
+            suite=suite,
+            purpose=AssertionProofPurpose(),
+            document_loader=custom_document_loader,
+        )
+
+        assert signed == DOC_SIGNED_2020
+
     async def test_verify_Ed25519Signature2018(self):
         # Verification requires lot less input parameters
         suite = Ed25519Signature2018(
@@ -90,6 +116,21 @@ class TestLDProofs(TestCase):
         )
 
         assert result == DOC_VERIFIED
+
+    async def test_verify_Ed25519Signature2020(self):
+        # Verification requires lot less input parameters
+        suite = Ed25519Signature2020(
+            key_pair=WalletKeyPair(wallet=self.wallet, key_type=ED25519),
+        )
+
+        result = await verify(
+            document=DOC_SIGNED_2020,
+            suites=[suite],
+            purpose=AssertionProofPurpose(),
+            document_loader=custom_document_loader,
+        )
+
+        assert result == DOC_VERIFIED_2020
 
     @pytest.mark.ursa_bbs_signatures
     async def test_sign_BbsBlsSignature2020(self):

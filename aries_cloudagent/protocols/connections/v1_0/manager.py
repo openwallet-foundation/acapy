@@ -13,6 +13,7 @@ from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
+from ....messaging.valid import IndyDID
 from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
@@ -176,8 +177,12 @@ class ConnectionManager(BaseConnectionManager):
                 )
 
             # FIXME - allow ledger instance to format public DID with prefix?
+            public_did_did = public_did.did
+            if bool(IndyDID.PATTERN.match(public_did_did)):
+                public_did_did = f"did:sov:{public_did.did}"
+
             invitation = ConnectionInvitation(
-                label=my_label, did=f"did:sov:{public_did.did}", image_url=image_url
+                label=my_label, did=public_did_did, image_url=image_url
             )
 
             connection = ConnRecord(  # create connection record
