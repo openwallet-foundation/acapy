@@ -154,6 +154,74 @@ class TestIndyRevocation(AsyncTestCase):
 
         assert len(await self.revoc.list_issuer_registries()) == 2
 
+    async def test_decommision_issuer_registries(self):
+        CRED_DEF_ID = [f"{self.test_did}:3:CL:{i}:default" for i in (4321, 8765)]
+
+        for cd_id in CRED_DEF_ID:
+            rec = await self.revoc.init_issuer_registry(cd_id)
+
+        # 2 registries, both in init state (no listener to push into active)
+        recs = await self.revoc.list_issuer_registries()
+        assert len(recs) == 2
+
+        init_list = list(
+            filter(lambda r: r.state == IssuerRevRegRecord.STATE_INIT, recs)
+        )
+        assert len(init_list) == 2
+
+        # store the ids to verify they are decommissioned
+        rev_reg_ids = [rec.revoc_reg_id for rec in recs if rec.revoc_reg_id]
+
+        # need these to be active so we can decommission
+        async with self.profile.transaction() as txn:
+            for rec in recs:
+                registry = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
+                    txn, rec.revoc_reg_id, for_update=True
+                )
+                await registry.set_state(
+                    txn,
+                    IssuerRevRegRecord.STATE_ACTIVE,
+                )
+            await txn.commit()
+
+        # still 2 registries, but now active
+        recs = await self.revoc.list_issuer_registries()
+        assert len(recs) == 2
+        active_list = list(
+            filter(lambda r: r.state == IssuerRevRegRecord.STATE_ACTIVE, recs)
+        )
+        assert len(active_list) == 2
+
+        #
+        # decommission (active-> decommission, create replacement regs)
+        #
+        for cd_id in CRED_DEF_ID:
+            rec = await self.revoc.decommission_registry(cd_id)
+
+        # four entries, 2 new (init), 2 decommissioned
+        recs = await self.revoc.list_issuer_registries()
+        assert len(recs) == 4
+
+        # previously active are decommissioned
+        decomm_list = list(
+            filter(lambda r: r.state == IssuerRevRegRecord.STATE_DECOMMISSIONED, recs)
+        )
+        assert len(decomm_list) == 2
+        decomm_rev_reg_ids = [
+            rec.revoc_reg_id for rec in decomm_list if rec.revoc_reg_id
+        ]
+
+        # new ones replacing the decommissioned are in init state
+        init_list = list(
+            filter(lambda r: r.state == IssuerRevRegRecord.STATE_INIT, recs)
+        )
+        assert len(init_list) == 2
+
+        # check that the original rev reg ids are decommissioned
+        rev_reg_ids.sort()
+        decomm_rev_reg_ids.sort()
+        assert rev_reg_ids == decomm_rev_reg_ids
+
     async def test_get_ledger_registry(self):
         CRED_DEF_ID = "{self.test_did}:3:CL:1234:default"
 

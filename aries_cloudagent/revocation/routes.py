@@ -539,31 +539,33 @@ async def clear_pending_revocations(request: web.BaseRequest):
 
 
 @docs(tags=["revocation"], summary="Decommision revocation registry")
-@match_info_schema(RevRegIdMatchInfoSchema())
-@response_schema(RevRegResultSchema(), 200, description="")
+@match_info_schema(RevocationCredDefIdMatchInfoSchema())
+@response_schema(RevRegsCreatedSchema(), 200, description="")
 async def decommission_rev_reg(request: web.BaseRequest):
     """
-    Request handler to decommision an existing revocation registry.
+    Request handler to decommision the active revocation registries for cred. def.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        The issuer revocation registry record
+        200
 
     """
     context: AdminRequestContext = request["context"]
     profile = context.profile
-    rev_reg_id = request.match_info["rev_reg_id"]
+    cred_def_id = request.match_info["cred_def_id"]
 
     try:
         revoc = IndyRevocation(profile)
-        issuer_rev_reg_rec = await revoc.decommission_registry(rev_reg_id)
+        recs = await revoc.decommission_registry(cred_def_id)
         del revoc
     except RevocationNotSupportedError as e:
         raise web.HTTPBadRequest(reason=e.message) from e
 
-    return web.json_response({"result": issuer_rev_reg_rec.serialize()})
+    return web.json_response(
+        {"rev_reg_ids": [rec.revoc_reg_id for rec in recs if rec.revoc_reg_id]}
+    )
 
 
 @docs(tags=["revocation"], summary="Creates a new revocation registry")
@@ -1598,6 +1600,10 @@ async def register(app: web.Application):
                 get_active_rev_reg,
                 allow_head=False,
             ),
+            web.post(
+                "/revocation/active-registry/{cred_def_id}/decommission",
+                decommission_rev_reg,
+            ),
             web.get(
                 "/revocation/registry/{rev_reg_id}/issued",
                 get_rev_reg_issued_count,
@@ -1612,9 +1618,6 @@ async def register(app: web.Application):
                 "/revocation/registry/{rev_reg_id}/issued/indy_recs",
                 get_rev_reg_indy_recs,
                 allow_head=False,
-            ),
-            web.post(
-                "/revocation/registry/{rev_reg_id}/decommission", decommission_rev_reg
             ),
             web.post("/revocation/create-registry", create_rev_reg),
             web.post("/revocation/registry/{rev_reg_id}/definition", send_rev_reg_def),
