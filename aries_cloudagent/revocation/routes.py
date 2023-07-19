@@ -538,18 +538,18 @@ async def clear_pending_revocations(request: web.BaseRequest):
     return web.json_response({"rrid2crid": results})
 
 
-@docs(tags=["revocation"], summary="Decommision revocation registry")
+@docs(tags=["revocation"], summary="Rotate revocation registry")
 @match_info_schema(RevocationCredDefIdMatchInfoSchema())
 @response_schema(RevRegsCreatedSchema(), 200, description="")
-async def decommission_rev_reg(request: web.BaseRequest):
+async def rotate_rev_reg(request: web.BaseRequest):
     """
-    Request handler to decommision the active revocation registries for cred. def.
+    Request handler to rotate the active revocation registries for cred. def.
 
     Args:
         request: aiohttp request object
 
     Returns:
-        200
+        list or revocation registry ids that were rotated out
 
     """
     context: AdminRequestContext = request["context"]
@@ -1601,8 +1601,8 @@ async def register(app: web.Application):
                 allow_head=False,
             ),
             web.post(
-                "/revocation/active-registry/{cred_def_id}/decommission",
-                decommission_rev_reg,
+                "/revocation/active-registry/{cred_def_id}/rotate",
+                rotate_rev_reg,
             ),
             web.get(
                 "/revocation/registry/{rev_reg_id}/issued",
