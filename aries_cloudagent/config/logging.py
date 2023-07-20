@@ -203,7 +203,7 @@ class LoggingConfigurator:
     def print_notices(cls, settings: Settings):
         """Print notices and warnings."""
         if settings.get("wallet.type", "in_memory").lower() == "indy":
-            print("DEPRECATTION NOTICE:", file=sys.stderr)
+            print("DEPRECATION NOTICE:", file=sys.stderr)
             print(
                 "\tThe Indy wallet type is deprecated, use Askar instead; see: "
                 "https://github.com/hyperledger/aries-cloudagent-python/issues/2330",
