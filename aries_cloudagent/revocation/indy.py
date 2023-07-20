@@ -110,9 +110,7 @@ class IndyRevocation:
 
     async def handle_full_registry(self, revoc_reg_id: str):
         """Update the registry status and start the next registry generation."""
-        await self._set_registry_status_registry(
-            revoc_reg_id, IssuerRevRegRecord.STATE_FULL
-        )
+        await self._set_registry_status(revoc_reg_id, IssuerRevRegRecord.STATE_FULL)
 
     async def decommission_registry(self, cred_def_id: str):
         """Decommission post-init registries and start the next registry generation."""
@@ -131,14 +129,14 @@ class IndyRevocation:
             LOGGER.debug(f"decommission {rec.state} rev. reg.")
             LOGGER.debug(f"revoc_reg_id: {rec.revoc_reg_id}")
             LOGGER.debug(f"cred_def_id: {cred_def_id}")
-            await self._set_registry_status_registry(
+            await self._set_registry_status(
                 rec.revoc_reg_id, IssuerRevRegRecord.STATE_DECOMMISSIONED, init
             )
             init = False  # only call init once.
 
         return recs
 
-    async def _set_registry_status_registry(
+    async def _set_registry_status(
         self, revoc_reg_id: str, state: str, init: bool = True
     ):
         """Update the registry status and start the next registry generation."""
@@ -158,12 +156,14 @@ class IndyRevocation:
             )
             await txn.commit()
 
-        if state in IssuerRevRegRecord.TERMINAL_STATES:
+        if (state in IssuerRevRegRecord.TERMINAL_STATES) and init:
             return await self.init_issuer_registry(
                 registry.cred_def_id,
                 registry.max_cred_num,
                 registry.revoc_def_type,
             )
+
+        return
 
     async def get_active_issuer_rev_reg_record(
         self, cred_def_id: str
