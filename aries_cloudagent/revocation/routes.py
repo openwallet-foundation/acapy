@@ -384,7 +384,7 @@ class SetRevRegStateQueryStringSchema(OpenAPISchema):
             [
                 getattr(IssuerRevRegRecord, m)
                 for m in vars(IssuerRevRegRecord)
-                if m.startswith("STATE_")
+                if m.startswith("STATE_") and m != "STATE_DECOMMISSIONED"
             ]
         ),
     )
@@ -536,6 +536,36 @@ async def clear_pending_revocations(request: web.BaseRequest):
     except StorageError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     return web.json_response({"rrid2crid": results})
+
+
+@docs(tags=["revocation"], summary="Rotate revocation registry")
+@match_info_schema(RevocationCredDefIdMatchInfoSchema())
+@response_schema(RevRegsCreatedSchema(), 200, description="")
+async def rotate_rev_reg(request: web.BaseRequest):
+    """
+    Request handler to rotate the active revocation registries for cred. def.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        list or revocation registry ids that were rotated out
+
+    """
+    context: AdminRequestContext = request["context"]
+    profile = context.profile
+    cred_def_id = request.match_info["cred_def_id"]
+
+    try:
+        revoc = IndyRevocation(profile)
+        recs = await revoc.decommission_registry(cred_def_id)
+        del revoc
+    except RevocationNotSupportedError as e:
+        raise web.HTTPBadRequest(reason=e.message) from e
+
+    return web.json_response(
+        {"rev_reg_ids": [rec.revoc_reg_id for rec in recs if rec.revoc_reg_id]}
+    )
 
 
 @docs(tags=["revocation"], summary="Creates a new revocation registry")
@@ -1569,6 +1599,10 @@ async def register(app: web.Application):
                 "/revocation/active-registry/{cred_def_id}",
                 get_active_rev_reg,
                 allow_head=False,
+            ),
+            web.post(
+                "/revocation/active-registry/{cred_def_id}/rotate",
+                rotate_rev_reg,
             ),
             web.get(
                 "/revocation/registry/{rev_reg_id}/issued",

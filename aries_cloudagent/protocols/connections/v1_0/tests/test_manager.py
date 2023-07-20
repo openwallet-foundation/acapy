@@ -1,8 +1,13 @@
 from unittest.mock import call
 
 from asynctest import TestCase as AsyncTestCase, mock as async_mock
+from multiformats import multibase, multicodec
 from pydid import DIDDocument, DIDDocumentBuilder
-from pydid.verification_method import Ed25519VerificationKey2018, JsonWebKey2020
+from pydid.verification_method import (
+    Ed25519VerificationKey2018,
+    Ed25519VerificationKey2020,
+    JsonWebKey2020,
+)
 
 from .....cache.base import BaseCache
 from .....cache.in_memory import InMemoryCache
@@ -2322,6 +2327,129 @@ class TestConnectionManager(AsyncTestCase):
             )
             with self.assertRaises(BaseConnectionManagerError):
                 await self.manager.fetch_connection_targets(mock_conn)
+
+    async def test_fetch_connection_targets_conn_invitation_supports_Ed25519VerificationKey2018_key_type_no_multicodec(
+        self,
+    ):
+        async with self.profile.session() as session:
+            builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
+            vmethod = builder.verification_method.add(
+                Ed25519VerificationKey2020,
+                public_key_multibase=multibase.encode(
+                    b58_to_bytes(self.test_target_verkey), "base58btc"
+                ),
+            )
+            builder.service.add_didcomm(
+                type_="IndyAgent",
+                service_endpoint=self.test_endpoint,
+                recipient_keys=[vmethod],
+            )
+            did_doc = builder.build()
+            self.resolver = async_mock.MagicMock()
+            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+                return_value=self.test_endpoint
+            )
+            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+            self.resolver.dereference = async_mock.CoroutineMock(
+                return_value=did_doc.verification_method[0]
+            )
+            self.context.injector.bind_instance(DIDResolver, self.resolver)
+            local_did = await session.wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+                seed=self.test_seed,
+                did=did_doc.id,
+                metadata=None,
+            )
+
+            conn_invite = ConnectionInvitation(
+                did=did_doc.id,
+                endpoint=self.test_endpoint,
+                recipient_keys=[vmethod.public_key_jwk],
+                routing_keys=[self.test_verkey],
+                label="label",
+            )
+            mock_conn = async_mock.MagicMock(
+                my_did=did_doc.id,
+                their_did=self.test_target_did,
+                connection_id="dummy",
+                their_role=ConnRecord.Role.RESPONDER.rfc23,
+                state=ConnRecord.State.INVITATION.rfc23,
+                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+            )
+
+            targets = await self.manager.fetch_connection_targets(mock_conn)
+            assert len(targets) == 1
+            target = targets[0]
+            assert target.did == mock_conn.their_did
+            assert target.endpoint == self.test_endpoint
+            assert target.label == conn_invite.label
+            assert target.recipient_keys == [self.test_target_verkey]
+            assert target.routing_keys == []
+            assert target.sender_key == local_did.verkey
+
+    async def test_fetch_connection_targets_conn_invitation_supports_Ed25519VerificationKey2018_key_type_with_multicodec(
+        self,
+    ):
+        async with self.profile.session() as session:
+            builder = DIDDocumentBuilder("did:btcr:x705-jznz-q3nl-srs")
+            vmethod = builder.verification_method.add(
+                Ed25519VerificationKey2020,
+                public_key_multibase=multibase.encode(
+                    multicodec.wrap(
+                        "ed25519-pub", b58_to_bytes(self.test_target_verkey)
+                    ),
+                    "base58btc",
+                ),
+            )
+            builder.service.add_didcomm(
+                type_="IndyAgent",
+                service_endpoint=self.test_endpoint,
+                recipient_keys=[vmethod],
+            )
+            did_doc = builder.build()
+            self.resolver = async_mock.MagicMock()
+            self.resolver.get_endpoint_for_did = async_mock.CoroutineMock(
+                return_value=self.test_endpoint
+            )
+            self.resolver.resolve = async_mock.CoroutineMock(return_value=did_doc)
+            self.resolver.dereference = async_mock.CoroutineMock(
+                return_value=did_doc.verification_method[0]
+            )
+            self.context.injector.bind_instance(DIDResolver, self.resolver)
+            local_did = await session.wallet.create_local_did(
+                method=SOV,
+                key_type=ED25519,
+                seed=self.test_seed,
+                did=did_doc.id,
+                metadata=None,
+            )
+
+            conn_invite = ConnectionInvitation(
+                did=did_doc.id,
+                endpoint=self.test_endpoint,
+                recipient_keys=[vmethod.public_key_jwk],
+                routing_keys=[self.test_verkey],
+                label="label",
+            )
+            mock_conn = async_mock.MagicMock(
+                my_did=did_doc.id,
+                their_did=self.test_target_did,
+                connection_id="dummy",
+                their_role=ConnRecord.Role.RESPONDER.rfc23,
+                state=ConnRecord.State.INVITATION.rfc23,
+                retrieve_invitation=async_mock.CoroutineMock(return_value=conn_invite),
+            )
+
+            targets = await self.manager.fetch_connection_targets(mock_conn)
+            assert len(targets) == 1
+            target = targets[0]
+            assert target.did == mock_conn.their_did
+            assert target.endpoint == self.test_endpoint
+            assert target.label == conn_invite.label
+            assert target.recipient_keys == [self.test_target_verkey]
+            assert target.routing_keys == []
+            assert target.sender_key == local_did.verkey
 
     async def test_fetch_connection_targets_conn_invitation_supported_JsonWebKey2020_key_type(
         self,

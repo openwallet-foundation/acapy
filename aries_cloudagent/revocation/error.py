@@ -13,3 +13,7 @@ class RevocationNotSupportedError(RevocationError):
 
 class RevocationRegistryBadSizeError(RevocationError):
     """Attempted to create registry with maximum credentials too large or too small."""
+
+
+class RevocationInvalidStateValueError(RevocationError):
+    """Invalid Revocation Registry State value."""
