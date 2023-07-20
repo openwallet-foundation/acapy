@@ -499,7 +499,7 @@ class DIDXManager(BaseConnectionManager):
                 conn_did_doc = await self.verify_diddoc(wallet, request.did_doc_attach)
             if request.did != conn_did_doc.did:
                 if str("did:sov:"+request.did) == str(conn_did_doc.did):
-                    self._logger.warning("legacy behaviour: Connection DID is unqualified, but did doc did has did:sov")
+                    self._logger.warning(f"legacy behaviour: Connection DID is unqualified {request.did}, but did doc did has did:sov {conn_did_doc.did}")
                 else:
                     raise DIDXManagerError(
                         (
