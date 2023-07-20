@@ -10,7 +10,7 @@ deepmerge~=0.3.0
 ecdsa~=0.16.1
 Markdown~=3.1.1
 markupsafe==2.0.1
-marshmallow==3.5.1
+marshmallow~=3.19.0
 msgpack~=1.0
 multiformats~=0.2.1
 prompt_toolkit~=2.0.9
