@@ -1,5 +1,5 @@
 """Indy revocation registry management."""
-
+import logging
 from typing import Optional, Sequence, Tuple
 from uuid import uuid4
 
@@ -19,12 +19,15 @@ from ..storage.base import StorageNotFoundError
 
 from .error import (
     RevocationError,
+    RevocationInvalidStateValueError,
     RevocationNotSupportedError,
     RevocationRegistryBadSizeError,
 )
 from .models.issuer_rev_reg_record import IssuerRevRegRecord
 from .models.revocation_registry import RevocationRegistry
 from .util import notify_revocation_reg_init_event
+
+LOGGER = logging.getLogger(__name__)
 
 
 class IndyRevocation:
@@ -107,23 +110,60 @@ class IndyRevocation:
 
     async def handle_full_registry(self, revoc_reg_id: str):
         """Update the registry status and start the next registry generation."""
+        await self._set_registry_status(revoc_reg_id, IssuerRevRegRecord.STATE_FULL)
+
+    async def decommission_registry(self, cred_def_id: str):
+        """Decommission post-init registries and start the next registry generation."""
+        async with self._profile.session() as session:
+            registries = await IssuerRevRegRecord.query_by_cred_def_id(
+                session, cred_def_id
+            )
+
+        # decommission everything except init
+        recs = list(
+            filter(lambda r: r.state != IssuerRevRegRecord.STATE_INIT, registries)
+        )
+
+        init = True
+        for rec in recs:
+            LOGGER.debug(f"decommission {rec.state} rev. reg.")
+            LOGGER.debug(f"revoc_reg_id: {rec.revoc_reg_id}")
+            LOGGER.debug(f"cred_def_id: {cred_def_id}")
+            await self._set_registry_status(
+                rec.revoc_reg_id, IssuerRevRegRecord.STATE_DECOMMISSIONED, init
+            )
+            init = False  # only call init once.
+
+        return recs
+
+    async def _set_registry_status(
+        self, revoc_reg_id: str, state: str, init: bool = True
+    ):
+        """Update the registry status and start the next registry generation."""
+        if state not in IssuerRevRegRecord.STATES:
+            raise RevocationInvalidStateValueError(
+                reason=f"{state} is not a valid Revocation Registry state value."
+            )
         async with self._profile.transaction() as txn:
             registry = await IssuerRevRegRecord.retrieve_by_revoc_reg_id(
                 txn, revoc_reg_id, for_update=True
             )
-            if registry.state == IssuerRevRegRecord.STATE_FULL:
+            if registry.state == state:
                 return
             await registry.set_state(
                 txn,
-                IssuerRevRegRecord.STATE_FULL,
+                state,
             )
             await txn.commit()
 
-        await self.init_issuer_registry(
-            registry.cred_def_id,
-            registry.max_cred_num,
-            registry.revoc_def_type,
-        )
+        if (state in IssuerRevRegRecord.TERMINAL_STATES) and init:
+            return await self.init_issuer_registry(
+                registry.cred_def_id,
+                registry.max_cred_num,
+                registry.revoc_def_type,
+            )
+
+        return
 
     async def get_active_issuer_rev_reg_record(
         self, cred_def_id: str
