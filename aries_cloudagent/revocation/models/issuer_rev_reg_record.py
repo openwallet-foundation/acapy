@@ -72,6 +72,17 @@ class IssuerRevRegRecord(BaseRecord):
     STATE_POSTED = "posted"  # definition published
     STATE_ACTIVE = "active"  # initial entry published, possibly subsequent entries
     STATE_FULL = "full"  # includes corrupt
+    STATE_DECOMMISSIONED = "decommissioned"
+
+    STATES = [
+        STATE_INIT,
+        STATE_GENERATED,
+        STATE_POSTED,
+        STATE_ACTIVE,
+        STATE_FULL,
+        STATE_DECOMMISSIONED,
+    ]
+    TERMINAL_STATES = [STATE_FULL, STATE_DECOMMISSIONED]
 
     def __init__(
         self,
@@ -285,6 +296,7 @@ class IssuerRevRegRecord(BaseRecord):
         if self.state not in (
             IssuerRevRegRecord.STATE_POSTED,
             IssuerRevRegRecord.STATE_ACTIVE,
+            IssuerRevRegRecord.STATE_DECOMMISSIONED,
             IssuerRevRegRecord.STATE_FULL,  # can still publish revocation deltas
         ):
             raise RevocationError(

@@ -181,3 +181,15 @@ There are several endpoints that must be called, and they must be called in this
 4. Write the tails file `PUT /revocation/registry/{rev_reg_id}/tails-file`
 
    - the tails server will check that the registry definition is already written to the ledger
+
+## Revocation Registry Rotation
+
+From time to time an Issuer may want to issue credentials from a new Revocation Registry. That can be done by changing the Credential Definition, but that could impact verifiers. 
+Revocation Registries go through a series of state changes: `init`, `generated`, `posted`, `active`, `full`, `decommissioned`. When issuing revocable credentials, the work is done with the `active` registry record. There are always 2 `active` registry records: one for tracking revocation until it is full, and the second to act as a "hot swap" in case issuance is done when the primary is full and being replaced. This ensures that there is always an `active` registry. When rotating, all registry records (except records in `init` state) are `decommissioned` and a new pair of `active` registry records are created.  
+  
+Issuers can rotate their Credential Definition Revocation Registry records with a simple call: `POST /revocation/active-registry/{cred_def_id}/rotate`
+
+It is advised that Issuers ensure the active registry is ready by calling `GET /revocation/active-registry/{cred_def_id}` after rotation and before issuance (if possible).
+
+
+
