@@ -244,6 +244,7 @@ class IndySdkIssuer(IndyIssuer):
 
     async def revoke_credentials(
         self,
+        cred_def_id: str,
         rev_reg_id: str,
         tails_file_path: str,
         cred_rev_ids: Sequence[str],
@@ -252,6 +253,7 @@ class IndySdkIssuer(IndyIssuer):
         Revoke a set of credentials in a revocation registry.
 
         Args:
+            cred_def_id: ID of the credential definition
             rev_reg_id: ID of the revocation registry
             tails_file_path: path to the local tails file
             cred_rev_ids: sequences of credential indexes in the revocation registry

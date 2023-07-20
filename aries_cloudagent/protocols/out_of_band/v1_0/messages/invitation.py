@@ -131,6 +131,8 @@ class InvitationMessage(AgentMessage):
         accept: Optional[Sequence[Text]] = None,
         version: str = DEFAULT_VERSION,
         msg_type: Optional[Text] = None,
+        goal_code: Optional[Text] = None,
+        goal: Optional[Text] = None,
         **kwargs,
     ):
         """
@@ -150,6 +152,8 @@ class InvitationMessage(AgentMessage):
         self.requests_attach = list(requests_attach) if requests_attach else []
         self.services = services
         self.accept = accept
+        self.goal_code = goal_code
+        self.goal = goal
 
     @classmethod
     def wrap_message(cls, message: dict) -> AttachDecorator:
@@ -264,6 +268,18 @@ class InvitationMessageSchema(AgentMessageSchema):
             "did:sov:WgWxqztrNooG92RXvxSTWv",
         ],
     )
+    goal_code = fields.Str(
+        required=False,
+        description="A self-attested code the receiver may want to display to the user "
+        "or use in automatically deciding what to do with the out-of-band message",
+        example="issue-vc",
+    )
+    goal = fields.Str(
+        required=False,
+        description="A self-attested string that the receiver may want to display to the "
+        "user about the context-specific goal of the out-of-band message",
+        example="To issue a Faber College Graduate credential",
+    )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
@@ -288,6 +304,12 @@ class InvitationMessageSchema(AgentMessageSchema):
         #     raise ValidationError(
         #         "Model must include non-empty services array"
         #     )
+        goal = data.get("goal")
+        goal_code = data.get("goal_code")
+        if goal and not goal_code:
+            raise ValidationError("Model cannot have goal without goal_code")
+        if goal_code and not goal:
+            raise ValidationError("Model cannot have goal_code without goal")
 
     @post_dump
     def post_dump(self, data, **kwargs):

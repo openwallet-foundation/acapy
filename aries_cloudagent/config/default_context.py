@@ -17,6 +17,10 @@ from ..tails.base import BaseTailsServer
 from ..transport.wire_format import BaseWireFormat
 from ..utils.dependencies import is_indy_sdk_module_installed
 from ..utils.stats import Collector
+from ..wallet.default_verification_key_strategy import (
+    DefaultVerificationKeyStrategy,
+    BaseVerificationKeyStrategy,
+)
 from ..wallet.did_method import DIDMethods
 from ..wallet.key_type import KeyTypes
 from .base_context import ContextBuilder
@@ -53,6 +57,9 @@ class DefaultContextBuilder(ContextBuilder):
         context.injector.bind_instance(DIDResolver, DIDResolver([]))
         context.injector.bind_instance(DIDMethods, DIDMethods())
         context.injector.bind_instance(KeyTypes, KeyTypes())
+        context.injector.bind_instance(
+            BaseVerificationKeyStrategy, DefaultVerificationKeyStrategy()
+        )
 
         await self.bind_providers(context)
         await self.load_plugins(context)
@@ -126,6 +133,7 @@ class DefaultContextBuilder(ContextBuilder):
         plugin_registry.register_plugin("aries_cloudagent.messaging.jsonld")
         plugin_registry.register_plugin("aries_cloudagent.revocation")
         plugin_registry.register_plugin("aries_cloudagent.resolver")
+        plugin_registry.register_plugin("aries_cloudagent.settings")
         plugin_registry.register_plugin("aries_cloudagent.wallet")
 
         if context.settings.get("multitenant.admin_enabled"):

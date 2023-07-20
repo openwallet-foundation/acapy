@@ -3,6 +3,8 @@
 import asyncio
 import logging
 
+from typing import Tuple
+
 from indy_credx import CredxError, Presentation
 
 from ...core.profile import Profile
@@ -33,7 +35,7 @@ class IndyCredxVerifier(IndyVerifier):
         credential_definitions,
         rev_reg_defs,
         rev_reg_entries,
-    ) -> (bool, list):
+    ) -> Tuple[bool, list]:
         """
         Verify a presentation.
 
@@ -46,6 +48,10 @@ class IndyCredxVerifier(IndyVerifier):
             rev_reg_entries: revocation registry entries
         """
 
+        accept_legacy_revocation = (
+            self.profile.settings.get("revocation.anoncreds_legacy_support", "accept")
+            == "accept"
+        )
         msgs = []
         try:
             msgs += self.non_revoc_intervals(pres_req, pres, credential_definitions)
@@ -72,6 +78,7 @@ class IndyCredxVerifier(IndyVerifier):
                 credential_definitions.values(),
                 rev_reg_defs.values(),
                 rev_reg_entries,
+                accept_legacy_revocation,
             )
         except CredxError as err:
             s = str(err)

@@ -309,7 +309,7 @@ class CredentialManager:
             offers_attach=[CredentialOffer.wrap_indy_offer(credential_offer)],
         )
 
-        credential_offer_message._thread = {"thid": cred_ex_record.thread_id}
+        credential_offer_message._thread = {"thid": credential_offer_message._thread_id}
         credential_offer_message.assign_trace_decorator(
             self._profile.settings, cred_ex_record.trace
         )

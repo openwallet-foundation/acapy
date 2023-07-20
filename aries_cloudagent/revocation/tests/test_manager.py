@@ -90,6 +90,7 @@ class TestRevocationManager(AsyncTestCase):
             await self.manager.revoke_credential_by_cred_ex_id(CRED_EX_ID, publish=True)
 
         issuer.revoke_credentials.assert_awaited_once_with(
+            mock_issuer_rev_reg_record.cred_def_id,
             mock_issuer_rev_reg_record.revoc_reg_id,
             mock_issuer_rev_reg_record.tails_local_path,
             ["2", "1"],

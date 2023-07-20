@@ -1,4 +1,5 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import asyncpg
 import base64
 import functools
@@ -185,6 +186,7 @@ class DemoAgent:
         self.params = params
         self.proc = None
         self.client_session: ClientSession = ClientSession()
+        self.thread_pool_executor = ThreadPoolExecutor(20)
 
         if self.endorser_role and self.endorser_role == "author":
             seed = None
@@ -341,6 +343,7 @@ class DemoAgent:
             "--preserve-exchange-records",
             "--auto-provision",
             "--public-invites",
+            # ("--log-level", "debug"),
         ]
         if self.aip == 20:
             result.append("--emit-new-didcomm-prefix")
@@ -389,6 +392,8 @@ class DemoAgent:
         if self.revocation:
             # turn on notifications if revocation is enabled
             result.append("--notify-revocation")
+        # enable extended webhooks
+        result.append("--debug-webhooks")
         # always enable notification webhooks
         result.append("--monitor-revocation-notification")
 
@@ -662,7 +667,18 @@ class DemoAgent:
             color = self.color or "fg:ansiblue"
         else:
             color = None
-        log_msg(*output, color=color, prefix=self.prefix_str, end=end, **kwargs)
+        try:
+            log_msg(*output, color=color, prefix=self.prefix_str, end=end, **kwargs)
+        except AssertionError as e:
+            if self.trace_enabled and self.trace_target == "log":
+                # when tracing to a log file,
+                # we hit an issue with the underlying prompt_toolkit.
+                # it attempts to output what is written by the log and can't find the
+                # correct terminal and throws an error. The trace log record does show
+                # in the terminal, so let's just ignore this error.
+                pass
+            else:
+                raise e
 
     def log(self, *msg, **kwargs):
         self.handle_output(*msg, **kwargs)
@@ -683,13 +699,13 @@ class DemoAgent:
             close_fds=True,
         )
         loop.run_in_executor(
-            None,
+            self.thread_pool_executor,
             output_reader,
             proc.stdout,
             functools.partial(self.handle_output, source="stdout"),
         )
         loop.run_in_executor(
-            None,
+            self.thread_pool_executor,
             output_reader,
             proc.stderr,
             functools.partial(self.handle_output, source="stderr"),
@@ -714,7 +730,9 @@ class DemoAgent:
 
         # start agent sub-process
         loop = asyncio.get_event_loop()
-        future = loop.run_in_executor(None, self._process, agent_args, my_env, loop)
+        future = loop.run_in_executor(
+            self.thread_pool_executor, self._process, agent_args, my_env, loop
+        )
         self.proc = await asyncio.wait_for(future, 20, loop=loop)
         if wait:
             await asyncio.sleep(1.0)
@@ -741,7 +759,7 @@ class DemoAgent:
         # now shut down the agent
         loop = asyncio.get_event_loop()
         if self.proc:
-            future = loop.run_in_executor(None, self._terminate)
+            future = loop.run_in_executor(self.thread_pool_executor, self._terminate)
             result = await asyncio.wait_for(future, 10, loop=loop)
 
     async def listen_webhooks(self, webhook_port):
@@ -843,6 +861,10 @@ class DemoAgent:
 
     async def handle_mediation(self, message):
         self.log(f"Received mediation message ...\n")
+
+    async def handle_keylist(self, message):
+        self.log(f"Received handle_keylist message ...\n")
+        self.log(json.dumps(message))
 
     async def taa_accept(self):
         taa_info = await self.admin_GET("/ledger/taa")
@@ -1215,6 +1237,8 @@ class DemoAgent:
                 "handshake_protocols": ["rfc23"],
                 "use_public_did": reuse_connections,
             }
+            if self.mediation:
+                payload["mediation_id"] = self.mediator_request_id
             invi_rec = await self.admin_POST(
                 "/out-of-band/create-invitation",
                 payload,
@@ -1225,9 +1249,10 @@ class DemoAgent:
                 invi_params = {
                     "auto_accept": json.dumps(auto_accept),
                 }
+                payload = {"mediation_id": self.mediator_request_id}
                 invi_rec = await self.admin_POST(
                     "/connections/create-invitation",
-                    {"mediation_id": self.mediator_request_id},
+                    payload,
                     params=invi_params,
                 )
             else:
@@ -1240,6 +1265,8 @@ class DemoAgent:
             params = {"alias": "endorser"}
         else:
             params = {}
+        if self.mediation:
+            params["mediation_id"] = self.mediator_request_id
         if "/out-of-band/" in invite.get("@type", ""):
             # always reuse connections if possible
             params["use_existing_connection"] = "true"
@@ -1337,12 +1364,12 @@ async def connect_wallet_to_mediator(agent, mediator_agent):
     log_msg("Connected agent to mediator:", agent.ident, mediator_agent.ident)
 
     # setup mediation on our connection
-    log_msg("Request mediation ...")
+    log_msg(f"Request mediation on connection {agent.mediator_connection_id} ...")
     mediation_request = await agent.admin_POST(
         "/mediation/request/" + agent.mediator_connection_id, {}
     )
     agent.mediator_request_id = mediation_request["mediation_id"]
-    log_msg("Mediation request id:", agent.mediator_request_id)
+    log_msg(f"Mediation request id: {agent.mediator_request_id}")
 
     count = 3
     while 0 < count:

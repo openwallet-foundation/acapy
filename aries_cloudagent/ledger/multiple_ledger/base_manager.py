@@ -38,6 +38,10 @@ class BaseMultipleLedgerManager(ABC):
         """Build and submit GET_NYM request and process response."""
 
     @abstractmethod
+    async def get_ledger_inst_by_id(self, ledger_id: str) -> Optional[BaseLedger]:
+        """Return ledger instance by identifier."""
+
+    @abstractmethod
     async def lookup_did_in_configured_ledgers(
         self, did: str, cache_did: bool
     ) -> Tuple[str, BaseLedger]:

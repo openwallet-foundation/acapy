@@ -13,6 +13,7 @@ from ....connections.models.connection_target import ConnectionTarget
 from ....core.error import BaseError
 from ....core.profile import Profile
 from ....messaging.responder import BaseResponder
+from ....messaging.valid import IndyDID
 from ....multitenant.base import BaseMultitenantManager
 from ....storage.error import StorageError, StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
@@ -176,8 +177,12 @@ class ConnectionManager(BaseConnectionManager):
                 )
 
             # FIXME - allow ledger instance to format public DID with prefix?
+            public_did_did = public_did.did
+            if bool(IndyDID.PATTERN.match(public_did_did)):
+                public_did_did = f"did:sov:{public_did.did}"
+
             invitation = ConnectionInvitation(
-                label=my_label, did=f"did:sov:{public_did.did}", image_url=image_url
+                label=my_label, did=public_did_did, image_url=image_url
             )
 
             connection = ConnRecord(  # create connection record
@@ -196,7 +201,7 @@ class ConnectionManager(BaseConnectionManager):
 
             # Add mapping for multitenant relaying.
             # Mediation of public keys is not supported yet
-            await self._route_manager.route_public_did(self.profile, public_did.verkey)
+            await self._route_manager.route_verkey(self.profile, public_did.verkey)
 
         else:
             # Create connection record
@@ -1088,7 +1093,13 @@ class ConnectionManager(BaseConnectionManager):
 
                     targets = await self.fetch_connection_targets(connection)
 
-                    await entry.set_result([row.serialize() for row in targets], 3600)
+                    if connection.state == ConnRecord.State.COMPLETED.rfc160:
+                        # Only set cache if connection has reached completed state
+                        # Otherwise, a replica that participated early in exchange
+                        # may have bad data set in cache.
+                        await entry.set_result(
+                            [row.serialize() for row in targets], 3600
+                        )
         else:
             targets = await self.fetch_connection_targets(connection)
         return targets
